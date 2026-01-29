@@ -32,19 +32,19 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = Snapshot.class)
 public class SnapshotResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the snapshot")
+    @Param(description = "ID of the Snapshot")
     private String id;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the snapshot")
+    @Param(description = "The Account associated with the Snapshot")
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the snapshot's account")
+    @Param(description = "The domain ID of the Snapshot's Account")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the snapshot's account")
+    @Param(description = "The domain name of the Snapshot's Account")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -52,15 +52,15 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     private String domainPath;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the snapshot")
+    @Param(description = "The project id of the Snapshot")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the snapshot")
+    @Param(description = "The project name of the Snapshot")
     private String projectName;
 
     @SerializedName(ApiConstants.SNAPSHOT_TYPE)
-    @Param(description = "the type of the snapshot")
+    @Param(description = "The type of the Snapshot")
     private String snapshotType;
 
     @SerializedName(ApiConstants.VOLUME_ID)
@@ -68,11 +68,11 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     private String volumeId;
 
     @SerializedName(ApiConstants.VOLUME_NAME)
-    @Param(description = "name of the disk volume")
+    @Param(description = "Name of the disk volume")
     private String volumeName;
 
     @SerializedName("volumetype")
-    @Param(description = "type of the disk volume")
+    @Param(description = "Type of the disk volume")
     private String volumeType;
 
     @SerializedName(ApiConstants.VOLUME_STATE)
@@ -80,23 +80,23 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     private String volumeState;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "  the date the snapshot was created")
+    @Param(description = "The date the Snapshot was created")
     private Date created;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the snapshot")
+    @Param(description = "Name of the Snapshot")
     private String name;
 
     @SerializedName(ApiConstants.INTERVAL_TYPE)
-    @Param(description = "valid types are hourly, daily, weekly, monthy, template, and none.")
+    @Param(description = "Valid types are hourly, daily, weekly, monthy, Template, and none.")
     private String intervalType;
 
     @SerializedName(ApiConstants.LOCATION_TYPE)
-    @Param(description = "valid location types are primary and secondary.")
+    @Param(description = "Valid location types are primary and secondary.")
     private String locationType;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
+    @Param(description = "The state of the Snapshot. BackedUp means that Snapshot is ready to be used; Creating - the Snapshot is being allocated on the primary storage; BackingUp - the Snapshot is being backed up on secondary storage")
     private Snapshot.State state;
 
     @SerializedName(ApiConstants.STATUS)
@@ -104,7 +104,7 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     private String status;
 
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
-    @Param(description = "physical size of backedup snapshot on image store")
+    @Param(description = "Physical size of backed up Snapshot on image store")
     private long physicalSize;
 
     @SerializedName(ApiConstants.CHAIN_SIZE)
@@ -112,7 +112,7 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     private Long chainSize;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "id of the availability zone")
+    @Param(description = "ID of the availability zone")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
@@ -120,19 +120,19 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     private String zoneName;
 
     @SerializedName(ApiConstants.REVERTABLE)
-    @Param(description = "indicates whether the underlying storage supports reverting the volume to this snapshot")
+    @Param(description = "Indicates whether the underlying storage supports reverting the volume to this Snapshot")
     private boolean revertable;
 
     @SerializedName(ApiConstants.OS_TYPE_ID)
-    @Param(description = "id of the os on volume", since = "4.10")
+    @Param(description = "ID of the os on volume", since = "4.10")
     private String osTypeId;
 
     @SerializedName(ApiConstants.OS_DISPLAY_NAME)
-    @Param(description = "display name of the os on volume")
+    @Param(description = "Display name of the os on volume")
     private String osDisplayName;
 
     @SerializedName(ApiConstants.VIRTUAL_SIZE)
-    @Param(description = "virtual size of backedup snapshot on image store")
+    @Param(description = "Virtual size of backedup Snapshot on image store")
     private long virtualSize;
 
     @SerializedName(ApiConstants.DATASTORE_ID)
@@ -154,6 +154,14 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.DOWNLOAD_DETAILS)
     @Param(description = "download progress of a snapshot", since = "4.19.0")
     private Map<String, String> downloadDetails;
+
+    @SerializedName("parent")
+    @Param(description = "The parent ID of the Snapshot", since = "4.22.1")
+    private String parent;
+
+    @SerializedName("parentname")
+    @Param(description = "The parent name of the Snapshot", since = "4.22.1")
+    private String parentName;
 
     public SnapshotResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -312,5 +320,13 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setDownloadDetails(Map<String, String> downloadDetails) {
         this.downloadDetails = downloadDetails;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
+    }
+
+    public void setParentName(String parentName) {
+        this.parentName = parentName;
     }
 }

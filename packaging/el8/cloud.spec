@@ -76,7 +76,7 @@ Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
-Requires: (genisoimage or mkisofs)
+Requires: (genisoimage or mkisofs or xorrisofs)
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: (iptables-services or iptables)
@@ -115,6 +115,8 @@ Requires: ipset
 Requires: perl
 Requires: rsync
 Requires: cifs-utils
+Requires: edk2-ovmf
+Requires: swtpm
 Requires: (python3-libvirt or python3-libvirt-python)
 Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm
@@ -269,8 +271,7 @@ install -D client/target/utilities/bin/cloud-setup-baremetal ${RPM_BUILD_ROOT}%{
 install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir}/%{name}-sysvmadm
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
 # Bundle cmk in cloudstack-management
-CMK_REL=$(wget -O - "https://api.github.com/repos/apache/cloudstack-cloudmonkey/releases" 2>/dev/null | jq -r '.[0].tag_name')
-wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/$CMK_REL/cmk.linux.x86-64 -O ${RPM_BUILD_ROOT}%{_bindir}/cmk
+wget https://github.com/apache/cloudstack-cloudmonkey/releases/latest/download/cmk.linux.x86-64 -O ${RPM_BUILD_ROOT}%{_bindir}/cmk
 chmod +x ${RPM_BUILD_ROOT}%{_bindir}/cmk
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
@@ -356,6 +357,7 @@ install -D packaging/systemd/cloudstack-agent.service ${RPM_BUILD_ROOT}%{_unitdi
 install -D packaging/systemd/cloudstack-rolling-maintenance@.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-rolling-maintenance@.service
 install -D packaging/systemd/cloudstack-agent.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
+install -D agent/target/transformed/uefi.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/uefi.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
 install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-agent
@@ -523,12 +525,20 @@ mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /usr/bin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
 /usr/bin/systemctl enable --now rngd > /dev/null 2>&1 || true
 
-# if saved configs from upgrade exist, copy them over
+# if saved agent.properties from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     mv %{_sysconfdir}/%{name}/agent/agent.properties  %{_sysconfdir}/%{name}/agent/agent.properties.rpmnew
     cp -p %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/%{name}/agent
     # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
+fi
+
+# if saved uefi.properties from upgrade exist, copy them over
+if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/uefi.properties" ]; then
+    mv %{_sysconfdir}/%{name}/agent/uefi.properties  %{_sysconfdir}/%{name}/agent/uefi.properties.rpmnew
+    cp -p %{_sysconfdir}/cloud.rpmsave/agent/uefi.properties %{_sysconfdir}/%{name}/agent
+    # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
+    mv %{_sysconfdir}/cloud.rpmsave/agent/uefi.properties %{_sysconfdir}/cloud.rpmsave/agent/uefi.properties.rpmsave
 fi
 
 systemctl daemon-reload

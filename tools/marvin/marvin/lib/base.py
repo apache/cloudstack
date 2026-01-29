@@ -1725,11 +1725,12 @@ class Template:
                 # If template is ready,
                 # template.status = Download Complete
                 # Downloading - x% Downloaded
+                # Processing - Initial status
                 # Error - Any other string
                 if template.status == 'Download Complete' and template.isready:
                     return
 
-                elif 'Downloaded' in template.status:
+                elif 'Downloaded' in template.status or template.status == 'Processing':
                     retries = retries - 1
                     continue
 

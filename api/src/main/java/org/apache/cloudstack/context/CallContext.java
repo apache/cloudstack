@@ -182,9 +182,7 @@ public class CallContext {
         }
         s_currentContext.set(callingContext);
         ThreadContext.push("ctx-" + UuidUtils.first(contextId));
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Registered: " + callingContext);
-        }
+        LOGGER.trace("Registered: {}", callingContext);
 
         s_currentContextStack.get().push(callingContext);
 
@@ -281,9 +279,7 @@ public class CallContext {
             return null;
         }
         s_currentContext.remove();
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Unregistered: " + context);
-        }
+        LOGGER.trace("Unregistered: {}", context);
         String contextId = context.getContextId();
         String sessionIdOnStack = null;
         String sessionIdPushedToNDC = "ctx-" + UuidUtils.first(contextId);
@@ -291,9 +287,7 @@ public class CallContext {
             if (sessionIdOnStack.isEmpty() || sessionIdPushedToNDC.equals(sessionIdOnStack)) {
                 break;
             }
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("Popping from NDC: " + contextId);
-            }
+            LOGGER.trace("Popping from NDC: {}", contextId);
         }
 
         Stack<CallContext> stack = s_currentContextStack.get();

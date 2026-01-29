@@ -1550,11 +1550,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     protected VMTemplateVO getTemplateForImportInstance(Long templateId, Hypervisor.HypervisorType hypervisorType) {
         VMTemplateVO template;
         if (templateId == null) {
-            template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
+            String templateName = (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) ? KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME : VM_IMPORT_DEFAULT_TEMPLATE_NAME;
+            template = templateDao.findByName(templateName);
             if (template == null) {
                 template = createDefaultDummyVmImportTemplate(Hypervisor.HypervisorType.KVM == hypervisorType);
                 if (template == null) {
-                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, hypervisorType.toString()));
+                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", templateName, hypervisorType.toString()));
                 }
             }
         } else {

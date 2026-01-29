@@ -360,6 +360,7 @@
                   <div>
                     <vnf-nics-selection
                       :items="templateVnfNics"
+                      :templateNics="templateNics"
                       :networks="networks"
                       @update-vnf-nic-networks="($event) => updateVnfNicNetworks($event)" />
                   </div>
@@ -1303,7 +1304,8 @@ export default {
       return tabList
     },
     showVnfNicsSection () {
-      return this.networks && this.networks.length > 0 && this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
+      return ((this.networks && this.networks.length > 0) || (this.templateNics && this.templateNics.length > 0)) &&
+        this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
     },
     showVnfConfigureManagement () {
       const managementDeviceIds = []
@@ -1313,9 +1315,14 @@ export default {
         }
       }
       for (const deviceId of managementDeviceIds) {
+        if (this.templateNics && this.templateNics[deviceId] &&
+          ((this.templateNics[deviceId].selectednetworktype === 'Isolated' && this.templateNics[deviceId].selectednetworkvpcid === undefined) ||
+            (this.templateNics[deviceId].selectednetworktype === 'Shared' && this.templateNics[deviceId].selectednetworkwithsg))) {
+          return true
+        }
         if (this.vnfNicNetworks && this.vnfNicNetworks[deviceId] &&
           ((this.vnfNicNetworks[deviceId].type === 'Isolated' && this.vnfNicNetworks[deviceId].vpcid === undefined) ||
-            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.zone.securitygroupsenabled))) {
+            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.vnfNicNetworks[deviceId].service.filter(svc => svc.name === 'SecurityGroupProvider')))) {
           return true
         }
       }
@@ -1761,7 +1768,7 @@ export default {
       }
       this.fetchBootTypes()
       this.fetchBootModes()
-      this.fetchInstaceGroups()
+      this.fetchInstanceGroups()
       this.fetchIoPolicyTypes()
       nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
@@ -1816,7 +1823,7 @@ export default {
         { id: 'storage_specific', description: 'storage_specific' }
       ]
     },
-    fetchInstaceGroups () {
+    fetchInstanceGroups () {
       this.options.instanceGroups = []
       getAPI('listInstanceGroups', {
         account: this.$store.getters.userInfo.account,
@@ -2090,7 +2097,7 @@ export default {
         // All checked networks should be used and only once.
         // Required NIC must be associated to a network
         // DeviceID must be consequent
-        if (this.templateVnfNics && this.templateVnfNics.length > 0) {
+        if (this.templateVnfNics && this.templateVnfNics.length > 0 && (!this.templateNics || this.templateNics.length === 0)) {
           let nextDeviceId = 0
           const usedNetworkIds = []
           const keys = Object.keys(this.vnfNicNetworks)
@@ -2720,6 +2727,9 @@ export default {
             var network = this.options.networks[Math.min(i, this.options.networks.length - 1)]
             nic.selectednetworkid = network.id
             nic.selectednetworkname = network.name
+            nic.selectednetworktype = network.type
+            nic.selectednetworkvpcid = network.vpcid
+            nic.selectednetworkwithsg = network.service.filter(svc => svc.name === 'SecurityGroupProvider').length > 0
             this.nicToNetworkSelection.push({ nic: nic.id, network: network.id })
           }
         }
@@ -2767,12 +2777,12 @@ export default {
           configuration.cpunumber = 0
           configuration.cpuspeed = 0
           configuration.memory = 0
-          for (var harwareItem of configuration.hardwareItems) {
-            if (harwareItem.resourceType === 'Processor') {
-              configuration.cpunumber = harwareItem.virtualQuantity
-              configuration.cpuspeed = harwareItem.reservation
-            } else if (harwareItem.resourceType === 'Memory') {
-              configuration.memory = harwareItem.virtualQuantity
+          for (var hardwareItem of configuration.hardwareItems) {
+            if (hardwareItem.resourceType === 'Processor') {
+              configuration.cpunumber = hardwareItem.virtualQuantity
+              configuration.cpuspeed = hardwareItem.reservation
+            } else if (hardwareItem.resourceType === 'Memory') {
+              configuration.memory = hardwareItem.virtualQuantity
             }
           }
           configurations.push(configuration)

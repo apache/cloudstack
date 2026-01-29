@@ -187,6 +187,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private boolean  usageSnapshotSelection = false;
 
     private static TimeZone usageAggregationTimeZone = TimeZone.getTimeZone("GMT");
+    private static TimeZone usageExecutionTimeZone = TimeZone.getTimeZone("GMT");
 
     public UsageManagerImpl() {
     }
@@ -241,6 +242,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (aggregationTimeZone != null && !aggregationTimeZone.isEmpty()) {
             usageAggregationTimeZone = TimeZone.getTimeZone(aggregationTimeZone);
         }
+        if (execTimeZone != null) {
+            usageExecutionTimeZone = TimeZone.getTimeZone(execTimeZone);
+        }
 
         try {
             if ((execTime == null) || (aggregationRange == null)) {
@@ -249,34 +253,18 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 throw new ConfigurationException("Missing configuration values for usage job, usage.stats.job.exec.time = " + execTime +
                         ", usage.stats.job.aggregation.range = " + aggregationRange);
             }
-            String[] execTimeSegments = execTime.split(":");
-            if (execTimeSegments.length != 2) {
-                logger.error("Unable to parse usage.stats.job.exec.time");
-                throw new ConfigurationException("Unable to parse usage.stats.job.exec.time '" + execTime + "'");
+
+            Date nextJobExecTime = UsageUtils.getNextJobExecutionTime(usageExecutionTimeZone, execTime);
+            if (nextJobExecTime == null) {
+                throw new ConfigurationException(String.format("Unable to parse configuration 'usage.stats.job.exec.time' value [%s].", execTime));
             }
-            int hourOfDay = Integer.parseInt(execTimeSegments[0]);
-            int minutes = Integer.parseInt(execTimeSegments[1]);
-
-            Date currentDate = new Date();
-            _jobExecTime.setTime(currentDate);
-
-            _jobExecTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
-            _jobExecTime.set(Calendar.MINUTE, minutes);
-            _jobExecTime.set(Calendar.SECOND, 0);
-            _jobExecTime.set(Calendar.MILLISECOND, 0);
-
-            TimeZone jobExecTimeZone = execTimeZone != null ? TimeZone.getTimeZone(execTimeZone) : Calendar.getInstance().getTimeZone();
-            _jobExecTime.setTimeZone(jobExecTimeZone);
-
-            // if the hour to execute the job has already passed, roll the day forward to the next day
-            if (_jobExecTime.getTime().before(currentDate)) {
-                _jobExecTime.roll(Calendar.DAY_OF_YEAR, true);
-            }
+            _jobExecTime.setTimeZone(usageExecutionTimeZone);
+            _jobExecTime.setTime(nextJobExecTime);
 
             logger.info("Usage is configured to execute in time zone [{}], at [{}], each [{}] minutes; the current time in that timezone is [{}] and the " +
                             "next job is scheduled to execute at [{}]. During its execution, Usage will aggregate stats according to the time zone [{}] defined in global setting [usage.aggregation.timezone].",
-                    jobExecTimeZone.getID(), execTime, aggregationRange, DateUtil.displayDateInTimezone(jobExecTimeZone, currentDate),
-                    DateUtil.displayDateInTimezone(jobExecTimeZone, _jobExecTime.getTime()), usageAggregationTimeZone.getID());
+                    usageExecutionTimeZone.getID(), execTime, aggregationRange, DateUtil.displayDateInTimezone(usageExecutionTimeZone, new Date()),
+                    DateUtil.displayDateInTimezone(usageExecutionTimeZone, _jobExecTime.getTime()), usageAggregationTimeZone.getID());
 
             _aggregationDuration = Integer.parseInt(aggregationRange);
             if (_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
@@ -817,7 +805,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 _usageVmDiskDao.saveUsageVmDisks(usageVmDisks);
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("created vm disk stats helper entries for " + numAcctsProcessed + " accts");
+                    logger.debug("Created Instance disk stats helper entries for " + numAcctsProcessed + " accts");
                 }
 
                 // commit the helper records, then start a new transaction
@@ -857,7 +845,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     } while ((accounts != null) && !accounts.isEmpty());
 
                     if (logger.isDebugEnabled()) {
-                        logger.debug("processed VM/Network Usage for " + numAcctsProcessed + " ACTIVE accts");
+                        logger.debug("Processed Instance/Network Usage for " + numAcctsProcessed + " ACTIVE accts");
                     }
                     numAcctsProcessed = 0;
 
@@ -877,12 +865,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                                     //mark public templates owned by deleted accounts as deleted
                                     List<UsageStorageVO> storageVOs = _usageStorageDao.listById(account.getId(), templateId, StorageTypes.TEMPLATE);
                                     if (storageVOs.size() > 1) {
-                                        logger.warn("More that one usage entry for storage: " + templateId + " assigned to account: " + account.getId() +
+                                        logger.warn("More that one usage entry for storage: " + templateId + " assigned to Account: " + account.getId() +
                                                 "; marking them all as deleted...");
                                     }
                                     for (UsageStorageVO storageVO : storageVOs) {
                                         if (logger.isDebugEnabled()) {
-                                            logger.debug("deleting template: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
+                                            logger.debug("Deleting Template: " + storageVO.getId() + " from Account: " + storageVO.getAccountId());
                                         }
                                         storageVO.setDeleted(account.getRemoved());
                                         _usageStorageDao.update(storageVO);
@@ -1008,7 +996,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     private boolean isVolumeEvent(String eventType) {
         return eventType != null &&
-                (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) || eventType.equals(EventTypes.EVENT_VOLUME_DELETE) || eventType.equals(EventTypes.EVENT_VOLUME_RESIZE) || eventType.equals(EventTypes.EVENT_VOLUME_UPLOAD));
+                (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) ||
+                 eventType.equals(EventTypes.EVENT_VOLUME_DELETE) ||
+                 eventType.equals(EventTypes.EVENT_VOLUME_RESIZE) ||
+                 eventType.equals(EventTypes.EVENT_VOLUME_UPLOAD) ||
+                 eventType.equals(EventTypes.EVENT_VOLUME_ATTACH) ||
+                 eventType.equals(EventTypes.EVENT_VOLUME_DETACH));
     }
 
     private boolean isTemplateEvent(String eventType) {
@@ -1101,7 +1094,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
                 if (usageInstances != null) {
                     if (usageInstances.size() > 0) {
-                        logger.error("found entries for a vm running with id: " + vmId + ", which are not stopped. Ending them all...");
+                        logger.error("Found entries for a Instance running with id: " + vmId + ", which are not stopped. Ending them all...");
                         for (UsageVMInstanceVO usageInstance : usageInstances) {
                             usageInstance.setEndDate(event.getCreateDate());
                             _usageInstanceDao.update(usageInstance);
@@ -1115,7 +1108,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.ALLOCATED_VM);
                 usageInstances = _usageInstanceDao.search(sc, null);
                 if (usageInstances == null || (usageInstances.size() == 0)) {
-                    logger.error("Cannot find allocated vm entry for a vm running with id: " + vmId);
+                    logger.error("Cannot find allocated Instance entry for a Instance running with id: " + vmId);
                 } else if (usageInstances.size() == 1) {
                     UsageVMInstanceVO usageInstance = usageInstances.get(0);
                     if (usageInstance.getSerivceOfferingId() != soId) {
@@ -1139,7 +1132,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                                 null);
                 populateDynamicComputeOfferingDetailsAndPersist(usageInstanceNew, event.getId());
             } catch (Exception ex) {
-                logger.error("Error saving usage instance for vm: " + vmId, ex);
+                logger.error("Error saving Instance usage for Instance: " + vmId, ex);
             }
         } else if (EventTypes.EVENT_VM_STOP.equals(event.getType())) {
             // find the latest usage_VM_instance row, update the stop date (should be null) to the event date
@@ -1151,7 +1144,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances != null) {
                 if (usageInstances.size() > 1) {
-                    logger.warn("found multiple entries for a vm running with id: " + vmId + ", ending them all...");
+                    logger.warn("Found multiple entries for a Instance running with id: " + vmId + ", ending them all...");
                 }
                 for (UsageVMInstanceVO usageInstance : usageInstances) {
                     usageInstance.setEndDate(event.getCreateDate());
@@ -1170,7 +1163,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                         soId, templateId, hypervisorType, event.getCreateDate(), null);
                 populateDynamicComputeOfferingDetailsAndPersist(usageInstanceNew, event.getId());
             } catch (Exception ex) {
-                logger.error("Error saving usage instance for vm: " + vmId, ex);
+                logger.error("Error saving usage for Instance: " + vmId, ex);
             }
         } else if (EventTypes.EVENT_VM_DESTROY.equals(event.getType())) {
             SearchCriteria<UsageVMInstanceVO> sc = _usageInstanceDao.createSearchCriteria();
@@ -1180,7 +1173,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances != null) {
                 if (usageInstances.size() > 1) {
-                    logger.warn("found multiple entries for a vm allocated with id: " + vmId + ", detroying them all...");
+                    logger.warn("Found multiple entries for an Instance allocated with id: " + vmId + ", destroying them all...");
                 }
                 for (UsageVMInstanceVO usageInstance : usageInstances) {
                     usageInstance.setEndDate(event.getCreateDate());
@@ -1195,7 +1188,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances != null) {
                 if (usageInstances.size() > 1) {
-                    logger.warn("found multiple entries for a vm allocated with id: " + vmId + ", updating end_date for all of them...");
+                    logger.warn("Found multiple entries for an Instance allocated with id: " + vmId + ", updating end_date for all of them...");
                 }
                 for (UsageVMInstanceVO usageInstance : usageInstances) {
                     usageInstance.setEndDate(event.getCreateDate());
@@ -1218,7 +1211,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances != null) {
                 if (usageInstances.size() > 1) {
-                    logger.warn("found multiple entries for a vm running with id: " + vmId + ", ending them all...");
+                    logger.warn("Found multiple entries for Instance running with ID: " + vmId + ", ending them all...");
                 }
                 for (UsageVMInstanceVO usageInstance : usageInstances) {
                     usageInstance.setEndDate(event.getCreateDate());
@@ -1232,7 +1225,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.ALLOCATED_VM);
             usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances == null || (usageInstances.size() == 0)) {
-                logger.error("Cannot find allocated vm entry for a vm running with id: " + vmId);
+                logger.error("Cannot find allocated Instance entry for an Instance running with id: " + vmId);
             } else if (usageInstances.size() == 1) {
                 UsageVMInstanceVO usageInstance = usageInstances.get(0);
                 if (usageInstance.getSerivceOfferingId() != soId) {
@@ -1288,7 +1281,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         long currentAccountedBytesReceived = 0L;
         if (usageNetworkStats != null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("getting current accounted bytes for... accountId: " + usageNetworkStats.getAccountId() + " in zone: " + userStat.getDataCenterId() +
+                logger.debug("Getting current accounted bytes for... accountId: " + usageNetworkStats.getAccountId() + " in zone: " + userStat.getDataCenterId() +
                         "; abr: " + toHumanReadableSize(usageNetworkStats.getAggBytesReceived()) + "; abs: " + toHumanReadableSize(usageNetworkStats.getAggBytesSent()));
             }
             currentAccountedBytesSent = usageNetworkStats.getAggBytesSent();
@@ -1332,7 +1325,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         long currentAccountedBytesWrite = 0L;
         if (usageVmDiskStat != null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("getting current accounted bytes for... accountId: " + usageVmDiskStat.getAccountId() + " in zone: " + vmDiskStat.getDataCenterId() +
+                logger.debug("Getting current accounted bytes for... accountId: " + usageVmDiskStat.getAccountId() + " in zone: " + vmDiskStat.getDataCenterId() +
                         "; aiw: " + toHumanReadableSize(vmDiskStat.getAggIOWrite()) + "; air: " + toHumanReadableSize(usageVmDiskStat.getAggIORead()) + "; abw: " + toHumanReadableSize(vmDiskStat.getAggBytesWrite()) + "; abr: " +
                         toHumanReadableSize(usageVmDiskStat.getAggBytesRead()));
             }
@@ -1347,12 +1340,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         long bytesWrite = vmDiskStat.getAggBytesWrite() - currentAccountedBytesWrite;
 
         if (ioRead < 0) {
-            logger.warn("Calculated negative value for io read: " + toHumanReadableSize(ioRead) + ", vm disk stats say: " + toHumanReadableSize(vmDiskStat.getAggIORead()) + ", previous vm disk usage was: " +
+            logger.warn("Calculated negative value for IO read: " + toHumanReadableSize(ioRead) + ", Instance disk stats say: " + toHumanReadableSize(vmDiskStat.getAggIORead()) + ", previous Instance disk usage was: " +
                     toHumanReadableSize(currentAccountedIORead));
             ioRead = 0;
         }
         if (ioWrite < 0) {
-            logger.warn("Calculated negative value for io write: " + toHumanReadableSize(ioWrite) + ", vm disk stats say: " + toHumanReadableSize(vmDiskStat.getAggIOWrite()) + ", previous vm disk usage was: " +
+            logger.warn("Calculated negative value for IO write: " + toHumanReadableSize(ioWrite) + ", Instance disk stats say: " + toHumanReadableSize(vmDiskStat.getAggIOWrite()) + ", previous Instance disk usage was: " +
                     toHumanReadableSize(currentAccountedIOWrite));
             ioWrite = 0;
         }
@@ -1391,7 +1384,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         if (EventTypes.EVENT_NET_IP_ASSIGN.equals(event.getType())) {
             if (logger.isDebugEnabled()) {
-                logger.debug("assigning ip address: " + ipAddress + " to account: " + event.getAccountId());
+                logger.debug("Assigning IP address: " + ipAddress + " to Account: " + event.getAccountId());
             }
             Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             long zoneId = event.getZoneId();
@@ -1411,12 +1404,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             sc.addAnd("released", SearchCriteria.Op.NULL);
             List<UsageIPAddressVO> ipAddressVOs = _usageIPAddressDao.search(sc, null);
             if (ipAddressVOs.size() > 1) {
-                logger.warn("More that one usage entry for ip address: " + ipAddress + " assigned to account: " + event.getAccountId() +
+                logger.warn("More that one usage entry for IP address: " + ipAddress + " assigned to Account: " + event.getAccountId() +
                         "; marking them all as released...");
             }
             for (UsageIPAddressVO ipAddressVO : ipAddressVOs) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("releasing ip address: " + ipAddressVO.getAddress() + " from account: " + ipAddressVO.getAccountId());
+                    logger.debug("Releasing IP address: " + ipAddressVO.getAddress() + " from Account: " + ipAddressVO.getAccountId());
                 }
                 ipAddressVO.setReleased(event.getCreateDate()); // there really shouldn't be more than one
                 _usageIPAddressDao.update(ipAddressVO);
@@ -1424,92 +1417,112 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
 
+    private void deleteExistingSecondaryStorageUsageForVolume(long volId, long accountId, Date deletedDate) {
+        List<UsageStorageVO> storageVOs = _usageStorageDao.listById(accountId, volId, StorageTypes.VOLUME);
+        for (UsageStorageVO storageVO : storageVOs) {
+            logger.debug("Setting the volume with id: {} to 'deleted' in the usage_storage table for account: {}.", volId, accountId);
+            storageVO.setDeleted(deletedDate);
+            _usageStorageDao.update(storageVO);
+        }
+    }
+
+    private void deleteExistingInstanceVolumeUsage(long volId, long accountId, Date deletedDate) {
+        List<UsageVolumeVO> volumesVOs = _usageVolumeDao.listByVolumeId(volId, accountId);
+        for (UsageVolumeVO volumesVO : volumesVOs) {
+            if (volumesVO.getVmId() != null) {
+                logger.debug("Setting the volume with id: {} for instance id: {} to 'deleted' in the usage_volume table for account {}.",
+                        volumesVO.getVolumeId(), volumesVO.getVmId(), accountId);
+                volumesVO.setDeleted(deletedDate);
+                _usageVolumeDao.update(volumesVO.getId(), volumesVO);
+            }
+        }
+    }
+
+    private void deleteExistingVolumeUsage(long volId, long accountId, Date deletedDate) {
+        List<UsageVolumeVO> volumesVOs = _usageVolumeDao.listByVolumeId(volId, accountId);
+        for (UsageVolumeVO volumesVO : volumesVOs) {
+            logger.debug("Setting the volume with id: {} to 'deleted' in the usage_volume table for account: {}.", volId, accountId);
+            volumesVO.setDeleted(deletedDate);
+            _usageVolumeDao.update(volumesVO.getId(), volumesVO);
+        }
+    }
+
     private void createVolumeHelperEvent(UsageEventVO event) {
 
         long volId = event.getResourceId();
+        Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        List<UsageVolumeVO> volumesVOs;
+        UsageVolumeVO volumeVO;
 
-        if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType())) {
-            //For volumes which are 'attached' successfully, set the 'deleted' column in the usage_storage table,
+        switch (event.getType()) {
+        case EventTypes.EVENT_VOLUME_CREATE:
+            //For volumes which are 'attached' successfully from uploaded state, set the 'deleted' column in the usage_storage table,
             //so that the secondary storage should stop accounting and only primary will be accounted.
-            SearchCriteria<UsageStorageVO> sc = _usageStorageDao.createSearchCriteria();
-            sc.addAnd("entityId", SearchCriteria.Op.EQ, volId);
-            sc.addAnd("storageType", SearchCriteria.Op.EQ, StorageTypes.VOLUME);
-            List<UsageStorageVO> volumesVOs = _usageStorageDao.search(sc, null);
-            if (volumesVOs != null) {
-                if (volumesVOs.size() == 1) {
-                    logger.debug("Setting the volume with id: " + volId + " to 'deleted' in the usage_storage table.");
-                    volumesVOs.get(0).setDeleted(event.getCreateDate());
-                    _usageStorageDao.update(volumesVOs.get(0));
-                }
-            }
-        }
-        if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType()) || EventTypes.EVENT_VOLUME_RESIZE.equals(event.getType())) {
-            SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("volumeId", SearchCriteria.Op.EQ, volId);
-            sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageVolumeVO> volumesVOs = _usageVolumeDao.search(sc, null);
+            deleteExistingSecondaryStorageUsageForVolume(volId, event.getAccountId(), event.getCreateDate());
+
+            volumesVOs = _usageVolumeDao.listByVolumeId(volId, event.getAccountId());
             if (volumesVOs.size() > 0) {
                 //This is a safeguard to avoid double counting of volumes.
-                logger.error("Found duplicate usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking as deleted...");
+                logger.error("Found duplicate usage entry for volume: {} assigned to Account: ; marking as deleted...", volId, event.getAccountId());
+                deleteExistingVolumeUsage(volId, event.getAccountId(), event.getCreateDate());
             }
-            //an entry exists if it is a resize volume event. marking the existing deleted and creating a new one in the case of resize.
-            for (UsageVolumeVO volumesVO : volumesVOs) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
-                }
-                volumesVO.setDeleted(event.getCreateDate());
-                _usageVolumeDao.update(volumesVO);
-            }
-            if (logger.isDebugEnabled()) {
-                logger.debug("create volume with id : " + volId + " for account: " + event.getAccountId());
-            }
-            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
-            UsageVolumeVO volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), event.getSize(), event.getCreateDate(), null);
+
+            logger.debug("Creating a new entry in usage_volume for volume with id: {} for account: {}", volId, event.getAccountId());
+            volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), null, event.getSize(), event.getCreateDate(), null);
             _usageVolumeDao.persist(volumeVO);
-        } else if (EventTypes.EVENT_VOLUME_DELETE.equals(event.getType())) {
-            SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("volumeId", SearchCriteria.Op.EQ, volId);
-            sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageVolumeVO> volumesVOs = _usageVolumeDao.search(sc, null);
-            if (volumesVOs.size() > 1) {
-                logger.warn("More that one usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
+
+            if (event.getVmId() != null) {
+                volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), event.getVmId(), event.getSize(), event.getCreateDate(), null);
+                _usageVolumeDao.persist(volumeVO);
             }
+            break;
+
+        case EventTypes.EVENT_VOLUME_RESIZE:
+            volumesVOs = _usageVolumeDao.listByVolumeId(volId, event.getAccountId());
             for (UsageVolumeVO volumesVO : volumesVOs) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
+                String delete_msg = String.format("Setting the volume with id: %s to 'deleted' in the usage_volume table for account: %s.", volId, event.getAccountId());
+                String create_msg = String.format("Creating a new entry in usage_volume for volume with id: %s after resize for account: %s", volId, event.getAccountId());
+                Long vmId = volumesVO.getVmId();
+                if (vmId != null) {
+                    delete_msg = String.format("Setting the volume with id: %s for instance id: %s to 'deleted' in the usage_volume table for account: %s.",
+                            volId, vmId, event.getAccountId());
+                    create_msg = String.format("Creating a new entry in usage_volume for volume with id: %s and instance id: %s after resize for account: %s",
+                            volId, vmId, event.getAccountId());
                 }
-                volumesVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                _usageVolumeDao.update(volumesVO);
-            }
-        } else if (EventTypes.EVENT_VOLUME_UPLOAD.equals(event.getType())) {
-            //For Upload event add an entry to the usage_storage table.
-            SearchCriteria<UsageStorageVO> sc = _usageStorageDao.createSearchCriteria();
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("entityId", SearchCriteria.Op.EQ, volId);
-            sc.addAnd("storageType", SearchCriteria.Op.EQ, StorageTypes.VOLUME);
-            sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageStorageVO> volumesVOs = _usageStorageDao.search(sc, null);
-
-            if (volumesVOs.size() > 0) {
-                //This is a safeguard to avoid double counting of volumes.
-                logger.error("Found duplicate usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking as deleted...");
-            }
-            for (UsageStorageVO volumesVO : volumesVOs) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
-                }
+                logger.debug(delete_msg);
                 volumesVO.setDeleted(event.getCreateDate());
-                _usageStorageDao.update(volumesVO);
-            }
+                _usageVolumeDao.update(volumesVO.getId(), volumesVO);
 
-            if (logger.isDebugEnabled()) {
-                logger.debug("create volume with id : " + volId + " for account: " + event.getAccountId());
+                logger.debug(create_msg);
+                volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), vmId, event.getSize(), event.getCreateDate(), null);
+                _usageVolumeDao.persist(volumeVO);
             }
-            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
-            UsageStorageVO volumeVO = new UsageStorageVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), StorageTypes.VOLUME, event.getTemplateId(), event.getSize(), event.getCreateDate(), null);
-            _usageStorageDao.persist(volumeVO);
+            break;
+
+        case EventTypes.EVENT_VOLUME_DELETE:
+            deleteExistingVolumeUsage(volId, event.getAccountId(), event.getCreateDate());
+            break;
+
+        case EventTypes.EVENT_VOLUME_ATTACH:
+            deleteExistingInstanceVolumeUsage(event.getResourceId(), event.getAccountId(), event.getCreateDate());
+
+            logger.debug("Creating a new entry in usage_volume for volume with id: {}, and instance id: {} for account: {}",
+                    volId, event.getVmId(), event.getAccountId());
+            volumeVO = new UsageVolumeVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), event.getOfferingId(), event.getTemplateId(), event.getVmId(), event.getSize(), event.getCreateDate(), null);
+            _usageVolumeDao.persist(volumeVO);
+            break;
+
+        case EventTypes.EVENT_VOLUME_DETACH:
+            deleteExistingInstanceVolumeUsage(event.getResourceId(), event.getAccountId(), event.getCreateDate());
+            break;
+
+        case EventTypes.EVENT_VOLUME_UPLOAD:
+            deleteExistingSecondaryStorageUsageForVolume(volId, event.getAccountId(), event.getCreateDate());
+
+            logger.debug("Creating a new entry in usage_storage for volume with id : {} for account: {}", volId, event.getAccountId());
+            UsageStorageVO storageVO = new UsageStorageVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), StorageTypes.VOLUME, event.getTemplateId(), event.getSize(), event.getCreateDate(), null);
+            _usageStorageDao.persist(storageVO);
+            break;
         }
     }
 
@@ -1524,22 +1537,22 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (EventTypes.EVENT_TEMPLATE_CREATE.equals(event.getType()) || EventTypes.EVENT_TEMPLATE_COPY.equals(event.getType())) {
             templateSize = event.getSize();
             if (templateSize < 1) {
-                logger.error("Incorrect size for template with Id " + templateId);
+                logger.error("Incorrect size for Template with Id " + templateId);
                 return;
             }
             if (zoneId == -1L) {
-                logger.error("Incorrect zoneId for template with Id " + templateId);
+                logger.error("Incorrect zoneId for Template with Id " + templateId);
                 return;
             }
         }
 
         if (EventTypes.EVENT_TEMPLATE_CREATE.equals(event.getType()) || EventTypes.EVENT_TEMPLATE_COPY.equals(event.getType())) {
             if (logger.isDebugEnabled()) {
-                logger.debug("create template with id : " + templateId + " for account: " + event.getAccountId());
+                logger.debug("Create Template with id : " + templateId + " for Account: " + event.getAccountId());
             }
             List<UsageStorageVO> storageVOs = _usageStorageDao.listByIdAndZone(event.getAccountId(), templateId, StorageTypes.TEMPLATE, zoneId);
             if (storageVOs.size() > 0) {
-                logger.warn("Usage entry for Template: " + templateId + " assigned to account: " + event.getAccountId() + "already exists in zone " + zoneId);
+                logger.warn("Usage entry for Template: " + templateId + " assigned to Account: " + event.getAccountId() + "already exists in zone " + zoneId);
                 return;
             }
             Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
@@ -1555,12 +1568,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 storageVOs = _usageStorageDao.listById(event.getAccountId(), templateId, StorageTypes.TEMPLATE);
             }
             if (storageVOs.size() > 1) {
-                logger.warn("More that one usage entry for storage: " + templateId + " assigned to account: " + event.getAccountId() +
+                logger.warn("More that one usage entry for storage: " + templateId + " assigned to Account: " + event.getAccountId() +
                         "; marking them all as deleted...");
             }
             for (UsageStorageVO storageVO : storageVOs) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("deleting template: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
+                    logger.debug("Deleting Template: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
                 }
                 storageVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
                 _usageStorageDao.update(storageVO);
@@ -1579,11 +1592,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         if (EventTypes.EVENT_ISO_CREATE.equals(event.getType()) || EventTypes.EVENT_ISO_COPY.equals(event.getType())) {
             if (logger.isDebugEnabled()) {
-                logger.debug("create iso with id : " + isoId + " for account: " + event.getAccountId());
+                logger.debug("Create ISO with ID: " + isoId + " for Account: " + event.getAccountId());
             }
             List<UsageStorageVO> storageVOs = _usageStorageDao.listByIdAndZone(event.getAccountId(), isoId, StorageTypes.ISO, zoneId);
             if (storageVOs.size() > 0) {
-                logger.warn("Usage entry for ISO: " + isoId + " assigned to account: " + event.getAccountId() + "already exists in zone " + zoneId);
+                logger.warn("Usage entry for ISO: " + isoId + " assigned to Account: " + event.getAccountId() + "already exists in zone " + zoneId);
                 return;
             }
             Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
@@ -1599,11 +1612,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
 
             if (storageVOs.size() > 1) {
-                logger.warn("More that one usage entry for storage: " + isoId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
+                logger.warn("More that one usage entry for storage: " + isoId + " assigned to Account: " + event.getAccountId() + "; marking them all as deleted...");
             }
             for (UsageStorageVO storageVO : storageVOs) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("deleting iso: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
+                    logger.debug("Deleting ISO: " + storageVO.getId() + " from Account: " + storageVO.getAccountId());
                 }
                 storageVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
                 _usageStorageDao.update(storageVO);
@@ -1627,7 +1640,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         if (EventTypes.EVENT_SNAPSHOT_CREATE.equals(event.getType())) {
             if (logger.isDebugEnabled()) {
-                logger.debug("create snapshot with id : " + snapId + " for account: " + event.getAccountId());
+                logger.debug("Create Snapshot with id : " + snapId + " for Account: " + event.getAccountId());
             }
             Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageStorageVO storageVO =
@@ -1636,11 +1649,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_SNAPSHOT_DELETE.equals(event.getType())) {
             List<UsageStorageVO> storageVOs = _usageStorageDao.listById(event.getAccountId(), snapId, StorageTypes.SNAPSHOT);
             if (storageVOs.size() > 1) {
-                logger.warn("More that one usage entry for storage: " + snapId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
+                logger.warn("More that one usage entry for storage: " + snapId + " assigned to Account: " + event.getAccountId() + "; marking them all as deleted...");
             }
             for (UsageStorageVO storageVO : storageVOs) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("deleting snapshot: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
+                    logger.debug("Deleting Snapshot: " + storageVO.getId() + " from Account: " + storageVO.getAccountId());
                 }
                 storageVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
                 _usageStorageDao.update(storageVO);
@@ -1726,12 +1739,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         try {
             nicId = Long.parseLong(event.getResourceName());
         } catch (Exception e) {
-            logger.warn("failed to get nic id from resource name, resource name is: " + event.getResourceName());
+            logger.warn("Failed to get NIC id from resource name, resource name is: " + event.getResourceName());
         }
 
         if (EventTypes.EVENT_NETWORK_OFFERING_CREATE.equals(event.getType()) || EventTypes.EVENT_NETWORK_OFFERING_ASSIGN.equals(event.getType())) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Creating networking offering: " + networkOfferingId + " for Vm: " + vmId + " for account: " + event.getAccountId());
+                logger.debug("Creating networking offering: " + networkOfferingId + " for Instance: " + vmId + " for Account: " + event.getAccountId());
             }
             zoneId = event.getZoneId();
             Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
@@ -1928,7 +1941,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             String snapId = detailVO.getValue();
             vmSnapshotId = Long.valueOf(snapId);
         }
-        logger.debug("Creating usage VM Snapshot for VM id [{}] assigned to account [{}] domain [{}], zone [{}], and created at [{}].",
+        logger.debug("Creating usage Instance Snapshot for Instance ID [{}] assigned to Account [{}] domain [{}], zone [{}], and created at [{}].",
                 vmId, accountId, domainId, zoneId, DateUtil.displayDateInTimezone(usageAggregationTimeZone, event.getCreateDate()));
         UsageVMSnapshotVO vsVO = new UsageVMSnapshotVO(volumeId, zoneId, accountId, domainId, vmId, offeringId, size, created, null);
         vsVO.setVmSnapshotId(vmSnapshotId);
@@ -1947,15 +1960,15 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         long zoneId = event.getZoneId();
         List<UsageVMSnapshotVO> usageVMSnapshots = findUsageVMSnapshots(accountId, zoneId, domainId, vmId, diskOfferingId);
         if (CollectionUtils.isEmpty(usageVMSnapshots)){
-            logger.warn(String.format("No usage entry for VM snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s] was found.",
+            logger.warn(String.format("No usage entry for Instance Snapshot for Instance ID [%s] assigned to Account [%s] domain [%s] and zone [%s] was found.",
                     vmId, accountId, domainId, zoneId));
         }
         if (usageVMSnapshots.size() > 1) {
-            logger.warn(String.format("More than one usage entry for VM snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s]; marking them all as deleted.", vmId,
+            logger.warn(String.format("More than one usage entry for Instance Snapshot for VM id [%s] assigned to Account [%s] domain [%s] and zone [%s]; marking them all as deleted.", vmId,
                     accountId, domainId, zoneId));
         }
         for (UsageVMSnapshotVO vmSnapshots : usageVMSnapshots) {
-            logger.debug(String.format("Deleting VM Snapshot for VM id [%s] assigned to account [%s] domain [%s] and zone [%s] that was created at [%s].", vmSnapshots.getVmId(),
+            logger.debug(String.format("Deleting Instance Snapshot for Instance id [%s] assigned to Account [%s] domain [%s] and zone [%s] that was created at [%s].", vmSnapshots.getVmId(),
                     vmSnapshots.getAccountId(), vmSnapshots.getDomainId(), vmSnapshots.getZoneId(), vmSnapshots.getCreated()));
             vmSnapshots.setProcessed(event.getCreateDate());
             _usageVMSnapshotDao.update(vmSnapshots);
@@ -2005,12 +2018,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             sc.and(sc.entity().getDeleted(), SearchCriteria.Op.NULL);
             List<UsageSnapshotOnPrimaryVO> vmsnaps = sc.list();
             if (vmsnaps.size() > 1) {
-                logger.warn("More that one usage entry for vm snapshot: " + name + " for vm id:" + vmId + " assigned to account: " + event.getAccountId()
+                logger.warn("More that one usage entry for Instance Snapshot: " + name + " for Instance id:" + vmId + " assigned to Account: " + event.getAccountId()
                         + "; marking them all as deleted...");
             }
             for (UsageSnapshotOnPrimaryVO vmsnap : vmsnaps) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("deleting vm snapshot name: " + vmsnap.getName() + " from account: " + vmsnap.getAccountId());
+                    logger.debug("Deleting Instance Snapshot name: " + vmsnap.getName() + " from Account: " + vmsnap.getAccountId());
                 }
                 vmsnap.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
                 _usageSnapshotOnPrimaryDao.updateDeleted(vmsnap);
@@ -2141,6 +2154,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                             updateJob(nextJob.getId(), null, null, null, UsageJobVO.JOB_SCHEDULED);
                             scheduleParse();
                         }
+                    }
+
+                    if (_usageJobDao.getNextRecurringJob() == null) {
+                        // Own the usage processing immediately if no other node is owning it
+                        _usageJobDao.createNewJob(_hostname, _pid, UsageJobVO.JOB_TYPE_RECURRING);
                     }
 
                     Long jobId = _usageJobDao.checkHeartbeat(_hostname, _pid, _aggregationDuration);

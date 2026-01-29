@@ -540,6 +540,9 @@
         class="row-element"
         v-else
       >
+        <advisories-view
+          v-if="$route.meta.advisories && !loading"
+        />
         <list-view
           :loading="loading"
           :columns="columns"
@@ -604,6 +607,7 @@ import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
+import AdvisoriesView from '@/components/view/AdvisoriesView'
 
 export default {
   name: 'Resource',
@@ -617,7 +621,8 @@ export default {
     TooltipLabel,
     OsLogo,
     ResourceIcon,
-    DetailsInput
+    DetailsInput,
+    AdvisoriesView
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -1191,15 +1196,12 @@ export default {
             }
           }
         }
-        if (this.items.length > 0) {
-          if (!this.showAction || this.dataView) {
-            this.resource = this.items[0]
-            this.$emit('change-resource', this.resource)
-          }
-        } else {
-          if (this.dataView) {
-            this.$router.push({ path: '/exception/404' })
-          }
+        if (this.items.length <= 0 && this.dataView) {
+          this.$router.push({ path: '/exception/404' })
+        }
+        if (!this.showAction || this.dataView) {
+          this.resource = this.items?.[0] || {}
+          this.$emit('change-resource', this.resource)
         }
       }).catch(error => {
         if (!error || !error.message) {
@@ -1997,8 +1999,13 @@ export default {
     },
     onSearch (opts) {
       const query = Object.assign({}, this.$route.query)
-      const searchFilters = this.$route?.meta?.searchFilters || []
-      searchFilters.forEach(key => delete query[key])
+      let searchFilters = this.$route?.meta?.searchFilters || []
+      if (typeof searchFilters === 'function') {
+        searchFilters = searchFilters()
+      }
+      if (Array.isArray(searchFilters)) {
+        searchFilters.forEach(key => delete query[key])
+      }
       delete query.name
       delete query.templatetype
       delete query.keyword

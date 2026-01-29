@@ -48,7 +48,7 @@ public class ConfigureOvsElementCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OvsProviderResponse.class, required = true, description = "the ID of the ovs provider")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = OvsProviderResponse.class, required = true, description = "The ID of the ovs provider")
     private Long id;
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, required = true, description = "Enabled/Disabled the service provider")

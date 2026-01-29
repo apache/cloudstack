@@ -120,7 +120,7 @@ public interface QueryService {
 
     ConfigKey<String> UserVMReadOnlyDetails = new ConfigKey<>(String.class,
     "user.vm.readonly.details", "Advanced", "dataDiskController, rootDiskController",
-            "List of read-only VM settings/details as comma separated string", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+            "List of read-only VM settings/details as comma separated string", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null, "");
 
     ConfigKey<Boolean> SortKeyAscending = new ConfigKey<>("Advanced", Boolean.class, "sortkey.algorithm", "true",
             "Sort algorithm - ascending or descending - to use. For entities that use sort key(template, disk offering, service offering, " +
@@ -132,10 +132,10 @@ public interface QueryService {
             "Determines whether users can view all user accounts within the same domain", true, ConfigKey.Scope.Domain);
 
     ConfigKey<Boolean> AllowUserViewAllDataCenters = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.all.zones", "true",
-            "Determines whether for instance a Resource Admin can view zones that are not dedicated to them.", true, ConfigKey.Scope.Domain);
+            "Determines whether for Instance a Resource Admin can view zones that are not dedicated to them.", true, ConfigKey.Scope.Domain);
 
     ConfigKey<Boolean> SharePublicTemplatesWithOtherDomains = new ConfigKey<>("Advanced", Boolean.class, "share.public.templates.with.other.domains", "true",
-            "If false, templates of this domain will not show up in the list templates of other domains.", true, ConfigKey.Scope.Domain);
+            "If false, Templates of this domain will not show up in the list Templates of other domains.", true, ConfigKey.Scope.Domain);
 
     ConfigKey<Boolean> ReturnVmStatsOnVmList = new ConfigKey<>("Advanced", Boolean.class, "list.vm.default.details.stats", "true",
             "Determines whether VM stats should be returned when details are not explicitly specified in listVirtualMachines API request. When false, details default to [group, nics, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp]. When true, all details are returned including 'stats'.", true, ConfigKey.Scope.Global);

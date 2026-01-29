@@ -934,7 +934,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     if (resp.getError() != null) {
                         err = String.format("Could not create Storpool volume for CS template %s. Error: %s", name, resp.getError());
                     } else {
-                        //updateVolume(dstData.getId());
                         VolumeObjectTO dstTO = (VolumeObjectTO)dstData.getTO();
                         dstTO.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
                         dstTO.setSize(size);
@@ -1355,7 +1354,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 return volumeStats;
             }
         } else {
-            List<VolumeVO> volumes = volumeDao.findByPoolId(storagePool.getId());
+            List<VolumeVO> volumes = volumeDao.findNonDestroyedVolumesByPoolId(storagePool.getId());
             for (VolumeVO volume : volumes) {
                 if (volume.getPath() != null && volume.getPath().equals(volumeId)) {
                     long size = volume.getSize();

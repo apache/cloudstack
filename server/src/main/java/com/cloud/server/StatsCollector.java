@@ -986,7 +986,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             double totalcpucap = 0;
             if (StringUtils.isEmpty(cpucaps)) {
                 String totalCpus = Script.runSimpleBashScript("nproc --all| tr '\\n' \" \"");
-                String maxCpuSpeed = Script.runSimpleBashScript("lscpu | egrep 'CPU max MHz' | head -1 | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
+                String maxCpuSpeed = Script.runSimpleBashScript("lscpu | grep -E 'CPU max MHz' | head -1 | cut -f 2 -d : | tr -d ' '| tr '\\n' \" \"");
                 if (StringUtils.isNotEmpty(totalCpus) && StringUtils.isNotEmpty(maxCpuSpeed)) {
                     totalcpucap = Double.parseDouble(totalCpus) * Double.parseDouble(maxCpuSpeed);
                 }
@@ -1649,7 +1649,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 List<StoragePoolVO> pools = _storagePoolDao.listAll();
 
                 for (StoragePoolVO pool : pools) {
-                    List<VolumeVO> volumes = _volsDao.findByPoolId(pool.getId(), null);
+                    List<VolumeVO> volumes = _volsDao.findNonDestroyedVolumesByPoolId(pool.getId(), null);
                     for (VolumeVO volume : volumes) {
                         if (!List.of(ImageFormat.QCOW2, ImageFormat.VHD, ImageFormat.OVA, ImageFormat.RAW).contains(volume.getFormat()) &&
                             !List.of(Storage.StoragePoolType.PowerFlex, Storage.StoragePoolType.FiberChannel).contains(pool.getPoolType())) {

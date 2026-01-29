@@ -44,7 +44,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.AutoScaleVmProfile;
 
 @APICommand(name = "createAutoScaleVmProfile",
-            description = "Creates a profile that contains information about the virtual machine which will be provisioned automatically by autoscale feature.",
+            description = "Creates a profile that contains information about the Instance which will be provisioned automatically by autoscale feature.",
         responseObject = AutoScaleVmProfileResponse.class, entityType = {AutoScaleVmProfile.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
@@ -61,33 +61,33 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = true,
-               description = "availability zone for the auto deployed virtual machine")
+               description = "Availability zone for the auto deployed Instance")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
                type = CommandType.UUID,
                entityType = ServiceOfferingResponse.class,
                required = true,
-               description = "the service offering of the auto deployed virtual machine")
+               description = "The service offering of the auto deployed Instance")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID,
                type = CommandType.UUID,
                entityType = TemplateResponse.class,
                required = true,
-               description = "the template of the auto deployed virtual machine")
+               description = "The Template of the auto deployed Instance")
     private Long templateId;
 
     @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS,
                type = CommandType.MAP,
-               description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine.\n"
+               description = "Parameters other than zoneId/serviceOfferringId/templateId of the auto deployed  Instance.\n"
                        + "Example: otherdeployparams[0].name=serviceofferingid&otherdeployparams[0].value=a7fb50f6-01d9-11ed-8bc1-77f8f0228926&otherdeployparams[1].name=rootdisksize&otherdeployparams[1].value=10 .\n"
                        + "Possible parameters are \"rootdisksize\", \"diskofferingid\",\"size\", \"securitygroupids\", \"overridediskofferingid\", \"keypairs\", \"affinitygroupids'\" and \"networkids\".")
     private Map<String, HashMap<String, String>> otherDeployParams;
 
     @Parameter(name = ApiConstants.AUTOSCALE_EXPUNGE_VM_GRACE_PERIOD,
                type = CommandType.INTEGER,
-               description = "the time allowed for existing connections to get closed before a vm is expunged")
+               description = "The time allowed for existing connections to get closed before an Instance is expunged")
     private Integer expungeVmGracePeriod;
 
     @Parameter(name = ApiConstants.COUNTERPARAM_LIST,
@@ -97,7 +97,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.USER_DATA,
             type = CommandType.STRING,
-            description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
+            description = "An optional binary data that can be sent to the Instance upon a successful deployment. " +
                     "This binary data must be base64 encoded before adding it to the request. " +
                     "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
                     "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
@@ -115,19 +115,19 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID,
                type = CommandType.UUID,
                entityType = UserResponse.class,
-               description = "the ID of the user used to launch and destroy the VMs")
+               description = "The ID of the user used to launch and destroy the Instances")
     private Long autoscaleUserId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the profile to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the profile to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that will own the autoscale VM profile")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Account that will own the autoscale Instance profile")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the autoscale VM profile")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "An optional project for the autoscale Instance profile")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a autoscale VM profile")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Domain ID of the Account owning an autoscale Instance profile")
     private Long domainId;
 
     // ///////////////////////////////////////////////////
@@ -232,7 +232,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -247,7 +247,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating AutoScale Vm Profile";
+        return "Creating AutoScale Instance Profile";
     }
 
     @Override
@@ -271,7 +271,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Vm Profile");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Autoscale Instance Profile");
         }
     }
 }

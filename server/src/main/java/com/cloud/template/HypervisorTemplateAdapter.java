@@ -288,7 +288,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
 
         for (long zoneId : zonesIds) {
-            DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);
+            DataStore imageStore = templateMgr.verifyHeuristicRulesForZone(template, zoneId);
 
             if (imageStore == null) {
                 List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
@@ -297,6 +297,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 validateSecondaryStorageAndCreateTemplate(List.of(imageStore), template, null);
             }
         }
+    }
+
+    protected List<DataStore> getImageStoresThrowsExceptionIfNotFound(long zoneId, TemplateProfile profile) {
+        List<DataStore> imageStores = storeMgr.getImageStoresByZoneIds(zoneId);
+        if (imageStores == null || imageStores.size() == 0) {
+            throw new CloudRuntimeException(String.format("Unable to find image store to download the template [%s].", profile.getTemplate()));
+        }
+        return imageStores;
     }
 
     protected void standardImageStoreAllocation(List<DataStore> imageStores, VMTemplateVO template) {
@@ -356,7 +364,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 }
 
                 Long zoneId = zoneIdList.get(0);
-                DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);
+                DataStore imageStore = templateMgr.verifyHeuristicRulesForZone(template, zoneId);
                 List<TemplateOrVolumePostUploadCommand> payloads = new LinkedList<>();
 
                 if (imageStore == null) {
@@ -497,9 +505,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 boolean dataDiskDeletetionResult = true;
                 List<VMTemplateVO> dataDiskTemplates = templateDao.listByParentTemplatetId(template.getId());
                 if (CollectionUtils.isNotEmpty(dataDiskTemplates)) {
-                    logger.info("Template: {} has Datadisk template(s) associated with it. Delete Datadisk templates before deleting the template", template);
+                    logger.info("Template: {} has Datadisk template(s) associated with it. Delete Datadisk Templates before deleting the Template", template);
                     for (VMTemplateVO dataDiskTemplate : dataDiskTemplates) {
-                        logger.info("Delete Datadisk template: {} from image store: {}", dataDiskTemplate, imageStore);
+                        logger.info("Delete Datadisk Template: {} from image store: {}", dataDiskTemplate, imageStore);
                         AsyncCallFuture<TemplateApiResult> future = imageService.deleteTemplateAsync(imageFactory.getTemplate(dataDiskTemplate.getId(), imageStore));
                         try {
                             TemplateApiResult result = future.get();
@@ -554,7 +562,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     }
                 } else {
                     logger.warn("Template: {} won't be deleted from image store: {} " +
-                            "because deletion of one of the Datadisk templates that belonged to the template failed", template, imageStore);
+                            "because deletion of one of the Datadisk Templates that belonged to the Template failed", template, imageStore);
                 }
             }
 

@@ -31,7 +31,7 @@ public interface VMSnapshotManager extends VMSnapshotService, Manager {
     static final ConfigKey<Integer> VMSnapshotExpireInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vmsnapshot.expire.interval", "-1",
             "VM Snapshot expire interval in hours", true, ConfigKey.Scope.Account);
 
-    ConfigKey<Integer> VMSnapshotMax = new ConfigKey<Integer>("Advanced", Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a single vm", true, ConfigKey.Scope.Global);
+    ConfigKey<Integer> VMSnapshotMax = new ConfigKey<Integer>("Advanced", Integer.class, "vmsnapshot.max", "10", "Maximum VM snapshots for a single VM", true, ConfigKey.Scope.Account);
 
     /**
      * Delete all VM snapshots belonging to one VM
@@ -42,7 +42,7 @@ public interface VMSnapshotManager extends VMSnapshotService, Manager {
     boolean deleteAllVMSnapshots(long id, VMSnapshot.Type type);
 
     /**
-     * Sync VM snapshot state when VM snapshot in reverting or snapshoting or expunging state
+     * Sync VM snapshot state when VM snapshot in reverting or snapshotting or expunging state
      * Used for fullsync after agent connects
      *
      * @param vm, the VM in question

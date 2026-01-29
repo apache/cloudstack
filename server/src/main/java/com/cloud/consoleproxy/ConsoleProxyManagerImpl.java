@@ -156,7 +156,7 @@ import com.google.gson.JsonParseException;
 import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 /**
- * Class to manage console proxys. <br><br>
+ * Class to manage console proxies. <br><br>
  * Possible console proxy state transition cases:<br>
  * - Stopped -> Starting -> Running <br>
  * - HA -> Stopped -> Starting -> Running <br>
@@ -563,13 +563,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public ConsoleProxyVO startNew(long dataCenterId) throws ConcurrentOperationException, ConfigurationException {
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
+            logger.debug("Assign console proxy from a newly started Instance for request from data center : " + dataCenterId);
         }
 
         if (!allowToLaunchNew(dataCenterId)) {
             String configKey = ConsoleProxyLaunchMax.key();
             Integer configValue = ConsoleProxyLaunchMax.valueIn(dataCenterId);
-            logger.warn(String.format("The number of launched console proxys on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configValue, configKey));
+            logger.warn(String.format("The number of launched console proxies on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configValue, configKey));
             return null;
         }
 
@@ -577,7 +577,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         List<VMTemplateVO> templates = vmTemplateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor,
                 ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenterId));
         if (CollectionUtils.isEmpty(templates)) {
-            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
+            throw new CloudRuntimeException("Not able to find the System Templates or not downloaded in zone " + dataCenterId);
         }
 
         Map<String, Object> context = createProxyInstance(dataCenterId, templates);
@@ -585,7 +585,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         long proxyVmId = (Long)context.get("proxyVmId");
         if (proxyVmId == 0) {
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Unable to create proxy instance in zone [%s].", dataCenterId));
+                logger.debug(String.format("Unable to create proxy Instance in zone [%s].", dataCenterId));
             }
             return null;
         }
@@ -736,7 +736,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     logger.debug("Unable to allocate proxy {} with {} in {} due to [{}]. Retrying with another template", proxy, template, dc, e.getMessage(), e);
                     continue;
                 }
-                throw new CloudRuntimeException("Failed to allocate proxy [%s] in zone [%s] with available templates", e);
+                throw new CloudRuntimeException(String.format("Failed to allocate proxy [%s] in zone [%s] with available templates", proxy, dc), e);
             }
         }
 
