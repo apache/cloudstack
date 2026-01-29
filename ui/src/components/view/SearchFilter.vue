@@ -21,8 +21,8 @@
     :wrap="false"
   >
     <template
-      v-for="(filter) in this.searchFilters"
-      :key="filter"
+      v-for="filter in this.searchFilters"
+      :key="filter.key + filter.value"
     >
       <a-col v-if="!['page', 'pagesize', 'q', 'keyword', 'tags'].includes(filter.key)">
         <a-tag
@@ -32,7 +32,7 @@
         >
           <a-tooltip
             :title="retrieveFieldLabel(filter.key) + ': ' + filter.value"
-            :placement="tooltipPlacement"
+            placement="bottom"
           >
             {{ retrieveFieldLabel(filter.key) }} : {{ getTrimmedText(filter.value, 20) }}
           </a-tooltip>
@@ -44,7 +44,7 @@
         >
           <a-tooltip
             :title="$t('label.tag') + ': ' + filter.key + '=' + filter.value"
-            :placement="tooltipPlacement"
+            placement="bottom"
           >
             {{ $t('label.tag') }}: {{ filter.key }}={{ getTrimmedText(filter.value, 20) }}
           </a-tooltip>
@@ -87,8 +87,8 @@ export default {
     return {
       searchFilters: [],
       apiMap: {
-        type: this.getType,
-        hypervisor: this.getHypervisor,
+        type: (value) => this.getType(value),
+        hypervisor: (value) => this.getHypervisor(value),
         zoneid: {
           apiName: 'listZones',
           responseKey1: 'listzonesresponse',
@@ -170,37 +170,39 @@ export default {
       }
     }
   },
-  updated () {
-    this.searchFilters = this.filters
-    const promises = []
-    for (const idx in this.filters) {
-      const filter = this.filters[idx]
-      if (this.searchFilters[idx] && this.searchFilters[idx].value !== filter.value) {
-        continue
-      }
-      promises.push(new Promise((resolve) => {
-        if (this.searchFilters[idx] && this.searchFilters[idx].value !== filter.value) {
-          resolve()
-        }
-        if (filter.key === 'tags') {
-          this.searchFilters[idx] = {
-            key: filter.key,
-            value: filter.value,
-            isTag: true
-          }
-        } else {
-          this.getSearchFilters(filter.key, filter.value).then((value) => {
-            this.searchFilters[idx] = {
-              key: filter.key,
-              value: value,
-              isTag: filter.isTag
+  watch: {
+    filters: {
+      immediate: true,
+      handler (newFilters) {
+        const clonedFilters = newFilters.map(filter => ({ ...filter }))
+        const promises = []
+        for (let idx = 0; idx < clonedFilters.length; idx++) {
+          const filter = clonedFilters[idx]
+          promises.push(new Promise((resolve) => {
+            if (filter.key === 'tags') {
+              clonedFilters[idx] = {
+                key: filter.key,
+                value: filter.value,
+                isTag: true
+              }
+              resolve()
+            } else {
+              this.getSearchFilters(filter.key, filter.value).then((value) => {
+                clonedFilters[idx] = {
+                  key: filter.key,
+                  value: value,
+                  isTag: filter.isTag
+                }
+                resolve()
+              })
             }
-          })
+          }))
         }
-        resolve()
-      }))
+        Promise.all(promises).then(() => {
+          this.searchFilters = clonedFilters
+        })
+      }
     }
-    Promise.all(promises)
   },
   methods: {
     getTrimmedText (text, length) {
@@ -241,7 +243,9 @@ export default {
       }
 
       if (key.includes('scope')) {
-        formattedValue = this.getScope(value)
+        // Check storage pool scope first (more specific), then fall back to general scope
+        const storagePoolScope = this.getStoragePoolScope(value)
+        formattedValue = storagePoolScope && storagePoolScope.length > 0 ? storagePoolScope : this.getScope(value)
       }
 
       if (key.includes('state')) {
@@ -262,10 +266,6 @@ export default {
 
       if (key.includes('systemvmtype')) {
         formattedValue = this.getSystemVmType(value)
-      }
-
-      if (key.includes('scope')) {
-        formattedValue = this.getStoragePoolScope(value)
       }
 
       if (key.includes('provider')) {
@@ -301,10 +301,11 @@ export default {
             for (const key in json.listhypervisorsresponse.hypervisor) {
               const hypervisor = json.listhypervisorsresponse.hypervisor[key]
               if (hypervisor.name === value) {
-                resolve(hypervisor.name)
+                return resolve(hypervisor.name)
               }
             }
           }
+          resolve(null)
         }).catch(() => {
           resolve(null)
         })
@@ -316,8 +317,11 @@ export default {
           return resolve('')
         }
         api(apiName, { listAll: true, id: id }).then(json => {
-          if (json[responseKey1] && json[responseKey1][responseKey2]) {
-            resolve(json[responseKey1][responseKey2][0][field])
+          const items = json && json[responseKey1] && json[responseKey1][responseKey2]
+          if (Array.isArray(items) && items.length > 0 && items[0] && items[0][field] !== undefined) {
+            resolve(items[0][field])
+          } else {
+            resolve('')
           }
         }).catch(() => {
           resolve('')
@@ -522,7 +526,7 @@ export default {
           ISO: 'ISO',
           SSH_KEYPAIR: 'SSH Key Pair',
           DOMAIN: 'Domain',
-          SERVICE_OFFERING: 'Service Offfering',
+          SERVICE_OFFERING: 'Service Offering',
           DISK_OFFERING: 'Disk Offering',
           NETWORK_OFFERING: 'Network Offering',
           POD: 'Pod',
