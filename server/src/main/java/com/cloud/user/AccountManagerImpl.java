@@ -67,6 +67,7 @@ import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupRespon
 import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -3461,7 +3462,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public Long finalyzeAccountId(final String accountName, final Long domainId, final Long projectId, final boolean enabledOnly) {
+    public Long finalizeAccountId(final String accountName, final Long domainId, final Long projectId, final boolean enabledOnly) {
         if (accountName != null) {
             if (domainId == null) {
                 throw new InvalidParameterValueException("Account must be specified with domainId parameter");
@@ -3572,6 +3573,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         assert false : "How can all of the security checkers pass on checking this caller?";
         throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + vof);
+    }
+
+    @Override
+    public void checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, bof)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Access granted to " + account + " to " + bof + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + bof);
     }
 
     @Override

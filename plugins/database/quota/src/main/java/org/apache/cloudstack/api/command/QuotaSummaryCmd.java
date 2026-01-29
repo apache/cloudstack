@@ -33,7 +33,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = "quotaSummary", responseObject = QuotaSummaryResponse.class, description = "Lists balance and quota usage for all Accounts", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaSummary", responseObject = QuotaSummaryResponse.class, description = "Lists balance and quota usage for all Accounts", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        httpMethod = "GET")
 public class QuotaSummaryCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Optional, Account Id for which statement needs to be generated")

@@ -454,6 +454,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCm
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ImportNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
@@ -682,15 +683,15 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.dao.ManagementServerJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
-import com.cloud.api.query.vo.ManagementServerJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
@@ -720,6 +721,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -760,6 +762,7 @@ import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
+import com.cloud.network.vpn.Site2SiteVpnManagerImpl;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -789,7 +792,6 @@ import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -806,6 +808,7 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -1044,7 +1047,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private BackupManager backupManager;
     @Inject
-    protected ManagementServerJoinDao managementServerJoinDao;
+    protected ManagementServerHostDao managementServerHostDao;
     @Inject
     ClusterManager _clusterMgr;
 
@@ -4045,6 +4048,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(EnableStaticNatCmd.class);
         cmdList.add(ListIpForwardingRulesCmd.class);
         cmdList.add(CreateNetworkACLCmd.class);
+        cmdList.add(ImportNetworkACLCmd.class);
         cmdList.add(CreateNetworkCmd.class);
         cmdList.add(DeleteNetworkACLCmd.class);
         cmdList.add(DeleteNetworkCmd.class);
@@ -4782,6 +4786,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Map<String, Object> capabilities = new HashMap<>();
 
         final Account caller = getCaller();
+        Long domainId = cmd.getDomainId();
+        if (domainId == null) {
+            domainId = caller.getDomainId();
+        } else {
+            Domain domain = _domainDao.findById(domainId);
+            _accountService.checkAccess(caller, domain);
+        }
+
         final boolean isCallerRootAdmin = _accountService.isRootAdmin(caller.getId());
         final boolean isCallerAdmin = isCallerRootAdmin || _accountService.isAdmin(caller.getId());
         boolean securityGroupsEnabled = false;
@@ -4803,6 +4815,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final long diskOffMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
         final long diskOffMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
         final boolean KVMSnapshotEnabled = SnapshotManager.KVMSnapshotEnabled.value();
+        final boolean SnapshotShowChainSize = SnapshotManager.snapshotShowChainSize.value();
 
         final boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
@@ -4816,7 +4829,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final boolean allowUserExpungeRecoverVolume = (VolumeApiServiceImpl.AllowUserExpungeRecoverVolume.valueIn(caller.getId()) | isCallerAdmin);
         final boolean allowUserForceStopVM = (UserVmManager.AllowUserForceStopVm.valueIn(caller.getId()) | isCallerAdmin);
 
-        final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
+        final boolean allowUserViewAllDomainAccounts = (QueryService.AllowUserViewAllDomainAccounts.valueIn(domainId));
 
         final boolean kubernetesServiceEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.service.enabled"));
         final boolean kubernetesClusterExperimentalFeaturesEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.cluster.experimental.features.enabled"));
@@ -4843,6 +4856,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
         capabilities.put("regionSecondaryEnabled", regionSecondaryEnabled);
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
+        capabilities.put("SnapshotShowChainSize", SnapshotShowChainSize);
         capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
         capabilities.put("allowUserExpungeRecoverVolume", allowUserExpungeRecoverVolume);
@@ -4869,7 +4883,51 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         capabilities.put(ApiConstants.ADDITONAL_CONFIG_ENABLED, UserVmManager.EnableAdditionalVmConfig.valueIn(caller.getId()));
 
+        Map<String, Object> vpnParams = getVpnCustomerGatewayParameters(domainId);
+        if (!vpnParams.isEmpty()) {
+            capabilities.put(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS, vpnParams);
+        }
+
         return capabilities;
+    }
+
+    private Map<String, Object> getVpnCustomerGatewayParameters(Long domainId) {
+        Map<String, Object> vpnParams = new HashMap<>();
+
+        String excludedEncryption = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedEncryptionAlgorithms.valueIn(domainId);
+        String excludedHashing = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedHashingAlgorithms.valueIn(domainId);
+        String excludedIkeVersions = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedIkeVersions.valueIn(domainId);
+        String excludedDhGroup = Site2SiteVpnManagerImpl.VpnCustomerGatewayExcludedDhGroup.valueIn(domainId);
+        String obsoleteEncryption = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteEncryptionAlgorithms.valueIn(domainId);
+        String obsoleteHashing = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteHashingAlgorithms.valueIn(domainId);
+        String obsoleteIkeVersions = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteIkeVersions.valueIn(domainId);
+        String obsoleteDhGroup = Site2SiteVpnManagerImpl.VpnCustomerGatewayObsoleteDhGroup.valueIn(domainId);
+
+        if (!excludedEncryption.isEmpty()) {
+            vpnParams.put("excludedencryptionalgorithms", excludedEncryption);
+        }
+        if (!obsoleteEncryption.isEmpty()) {
+            vpnParams.put("obsoleteencryptionalgorithms", obsoleteEncryption);
+        }
+        if (!excludedHashing.isEmpty()) {
+            vpnParams.put("excludedhashingalgorithms", excludedHashing);
+        }
+        if (!obsoleteHashing.isEmpty()) {
+            vpnParams.put("obsoletehashingalgorithms", obsoleteHashing);
+        }
+        if (!excludedIkeVersions.isEmpty()) {
+            vpnParams.put("excludedikeversions", excludedIkeVersions);
+        }
+        if (!obsoleteIkeVersions.isEmpty()) {
+            vpnParams.put("obsoleteikeversions", obsoleteIkeVersions);
+        }
+        if (!excludedDhGroup.isEmpty()) {
+            vpnParams.put("excludeddhgroups", excludedDhGroup);
+        }
+        if (!obsoleteDhGroup.isEmpty()) {
+            vpnParams.put("obsoletedhgroups", obsoleteDhGroup);
+        }
+        return vpnParams;
     }
 
     @Override
@@ -5879,7 +5937,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @ActionEvent(eventType = EventTypes.EVENT_MANAGEMENT_SERVER_REMOVE, eventDescription = "removing Management Server")
     public boolean removeManagementServer(RemoveManagementServerCmd cmd) {
         final Long id = cmd.getId();
-        ManagementServerJoinVO managementServer = managementServerJoinDao.findById(id);
+        ManagementServerHostVO managementServer = managementServerHostDao.findById(id);
 
         if (managementServer == null) {
             throw new InvalidParameterValueException(String.format("Unable to find a Management Server with ID equal to [%s].", id));
@@ -5889,8 +5947,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException(String.format("Unable to remove Management Server with ID [%s]. It can only be removed when it is in the [%s] state, however currently it is in the [%s] state.", managementServer.getUuid(), ManagementServerHost.State.Down.name(), managementServer.getState().name()));
         }
 
-        managementServer.setRemoved(new Date());
-        return managementServerJoinDao.update(id, managementServer);
+        managementServerHostDao.remove(id);
+        return true;
 
     }
 

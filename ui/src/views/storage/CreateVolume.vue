@@ -272,7 +272,9 @@ export default {
         }
         this.owner.projectid = OwnerOptions.selectedProject
       }
-      this.fetchData()
+      if (OwnerOptions.initialized) {
+        this.fetchData()
+      }
     },
     fetchData () {
       if (this.createVolumeFromSnapshot) {

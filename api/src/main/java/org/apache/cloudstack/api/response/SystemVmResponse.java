@@ -126,6 +126,10 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     @Param(description = "The public netmask for the System VM")
     private String publicNetmask;
 
+    @SerializedName("storageip")
+    @Param(description = "the ip address for the system VM on the storage network")
+    private String storageIp;
+
     @SerializedName("templateid")
     @Param(description = "The Template ID for the System VM")
     private String templateId;
@@ -353,6 +357,14 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
 
     public void setPublicNetmask(String publicNetmask) {
         this.publicNetmask = publicNetmask;
+    }
+
+    public String getStorageIp() {
+        return storageIp;
+    }
+
+    public void setStorageIp(String storageIp) {
+        this.storageIp = storageIp;
     }
 
     public String getTemplateId() {

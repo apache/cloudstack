@@ -2168,6 +2168,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                         }
                     }
 
+                    if (_usageJobDao.getNextRecurringJob() == null) {
+                        // Own the usage processing immediately if no other node is owning it
+                        _usageJobDao.createNewJob(_hostname, _pid, UsageJobVO.JOB_TYPE_RECURRING);
+                    }
+
                     Long jobId = _usageJobDao.checkHeartbeat(_hostname, _pid, _aggregationDuration);
                     if (jobId != null) {
                         // if I'm taking over the job...see how long it's been since the last job, and if it's more than the

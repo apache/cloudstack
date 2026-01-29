@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.StorageUnavailableException;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -67,9 +69,11 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -291,21 +295,41 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
-    protected boolean isSkipTemplateStoreDownload(VMTemplateVO template, Long zoneId) {
+    protected boolean shouldDownloadTemplateToStore(VMTemplateVO template, DataStore store) {
+        Long zoneId = store.getScope().getScopeId();
+        DataStore directedStore = _tmpltMgr.verifyHeuristicRulesForZone(template, zoneId);
+        if (directedStore != null && store.getId() != directedStore.getId()) {
+            logger.info("Template [{}] will not be download to image store [{}], as a heuristic rule is directing it to another store.",
+                    template.getUniqueName(), store.getName());
+            return false;
+        }
+
         if (template.isPublicTemplate()) {
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is public.", template.getUniqueName(),
+                    store.getName());
+            return true;
         }
+
         if (template.isFeatured()) {
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is featured.", template.getUniqueName(),
+                    store.getName());
+            return true;
         }
+
         if (TemplateType.SYSTEM.equals(template.getTemplateType())) {
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is a system VM template.",
+                    template.getUniqueName(),store.getName());
+            return true;
         }
+
         if (zoneId != null &&  _vmTemplateStoreDao.findByTemplateZone(template.getId(), zoneId, DataStoreRole.Image) == null) {
-            logger.debug("Template {} is not present on any image store for the zone ID: {}, its download cannot be skipped", template, zoneId);
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is not present on any image store of zone [{}].",
+                    template.getUniqueName(), store.getName(), zoneId);
+            return true;
         }
-        return true;
+
+        logger.info("Skipping download of template [{}] to image store [{}].", template.getUniqueName(), store.getName());
+        return false;
     }
 
     @Override
@@ -533,8 +557,7 @@ public class TemplateServiceImpl implements TemplateService {
                         // download.
                         for (VMTemplateVO tmplt : toBeDownloaded) {
                             // if this is private template, skip sync to a new image store
-                            if (isSkipTemplateStoreDownload(tmplt, zoneId)) {
-                                logger.info("Skip sync downloading private template {} to a new image store", tmplt);
+                            if (!shouldDownloadTemplateToStore(tmplt, store)) {
                                 continue;
                             }
 
@@ -550,10 +573,7 @@ public class TemplateServiceImpl implements TemplateService {
                             }
 
                             if (availHypers.contains(tmplt.getHypervisorType())) {
-                                boolean copied = isCopyFromOtherStoragesEnabled(zoneId) && tryCopyingTemplateToImageStore(tmplt, store);
-                                if (!copied) {
-                                    tryDownloadingTemplateToImageStore(tmplt, store);
-                                }
+                                storageOrchestrator.orchestrateTemplateCopyFromSecondaryStores(tmplt.getId(), store);
                             } else {
                                 logger.info("Skip downloading template {} since current data center does not have hypervisor {}", tmplt, tmplt.getHypervisorType());
                             }
@@ -600,6 +620,16 @@ public class TemplateServiceImpl implements TemplateService {
 
     }
 
+    @Override
+    public void handleTemplateCopyFromSecondaryStores(long templateId, DataStore destStore) {
+        VMTemplateVO template = _templateDao.findById(templateId);
+        long zoneId = destStore.getScope().getScopeId();
+        boolean copied = imageStoreDetailsUtil.isCopyTemplatesFromOtherStoragesEnabled(destStore.getId(), zoneId) && tryCopyingTemplateToImageStore(template, destStore);
+        if (!copied) {
+            tryDownloadingTemplateToImageStore(template, destStore);
+        }
+    }
+
     protected void tryDownloadingTemplateToImageStore(VMTemplateVO tmplt, DataStore destStore) {
         if (tmplt.getUrl() == null) {
             logger.info("Not downloading template [{}] to image store [{}], as it has no URL.", tmplt.getUniqueName(),
@@ -617,26 +647,132 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     protected boolean tryCopyingTemplateToImageStore(VMTemplateVO tmplt, DataStore destStore) {
-        Long zoneId = destStore.getScope().getScopeId();
-        List<DataStore> storesInZone = _storeMgr.getImageStoresByZoneIds(zoneId);
-        for (DataStore sourceStore : storesInZone) {
-            Map<String, TemplateProp> existingTemplatesInSourceStore = listTemplate(sourceStore);
-            if (existingTemplatesInSourceStore == null || !existingTemplatesInSourceStore.containsKey(tmplt.getUniqueName())) {
-                logger.debug("Template [{}] does not exist on image store [{}]; searching on another one.",
-                        tmplt.getUniqueName(), sourceStore.getName());
-                continue;
-            }
-            TemplateObject sourceTmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), sourceStore);
-            if (sourceTmpl.getInstallPath() == null) {
-                logger.warn("Can not copy template [{}] from image store [{}], as it returned a null install path.", tmplt.getUniqueName(),
-                        sourceStore.getName());
-                continue;
-            }
-            storageOrchestrator.orchestrateTemplateCopyToImageStore(sourceTmpl, destStore);
+        if (searchAndCopyWithinZone(tmplt, destStore)) {
             return true;
         }
-        logger.debug("Can't copy template [{}] from another image store.", tmplt.getUniqueName());
+
+        Long destZoneId = destStore.getScope().getScopeId();
+        logger.debug("Template [{}] not found in any image store of zone [{}]. Checking other zones.",
+                tmplt.getUniqueName(), destZoneId);
+
+        return searchAndCopyAcrossZones(tmplt, destStore, destZoneId);
+    }
+
+    private boolean searchAndCopyAcrossZones(VMTemplateVO tmplt, DataStore destStore, Long destZoneId) {
+        List<Long> allZoneIds = _dcDao.listAllIds();
+        for (Long otherZoneId : allZoneIds) {
+            if (otherZoneId.equals(destZoneId)) {
+                continue;
+            }
+
+            List<DataStore> storesInOtherZone = _storeMgr.getImageStoresByZoneIds(otherZoneId);
+            logger.debug("Checking zone [{}] for template [{}]...", otherZoneId, tmplt.getUniqueName());
+
+            if (CollectionUtils.isEmpty(storesInOtherZone)) {
+                logger.debug("Zone [{}] has no image stores. Skipping.", otherZoneId);
+                continue;
+            }
+
+            TemplateObject sourceTmpl = findUsableTemplate(tmplt, storesInOtherZone);
+            if (sourceTmpl == null) {
+                logger.debug("Template [{}] not found with a valid install path in any image store of zone [{}].",
+                        tmplt.getUniqueName(), otherZoneId);
+                continue;
+            }
+
+            logger.info("Template [{}] found in zone [{}]. Initiating cross-zone copy to zone [{}].",
+                    tmplt.getUniqueName(), otherZoneId, destZoneId);
+
+            return copyTemplateAcrossZones(destStore, sourceTmpl);
+        }
+
+        logger.debug("Template [{}] was not found in any zone. Cannot perform zone-to-zone copy.", tmplt.getUniqueName());
         return false;
+    }
+
+    protected TemplateObject findUsableTemplate(VMTemplateVO tmplt, List<DataStore> imageStores) {
+        for (DataStore store : imageStores) {
+
+            Map<String, TemplateProp> templates = listTemplate(store);
+            if (templates == null || !templates.containsKey(tmplt.getUniqueName())) {
+                continue;
+            }
+
+            TemplateObject tmpl = (TemplateObject) _templateFactory.getTemplate(tmplt.getId(), store);
+            if (tmpl.getInstallPath() == null) {
+                logger.debug("Template [{}] found in image store [{}] but install path is null. Skipping.",
+                        tmplt.getUniqueName(), store.getName());
+                continue;
+            }
+            return tmpl;
+        }
+        return null;
+    }
+
+    private boolean searchAndCopyWithinZone(VMTemplateVO tmplt, DataStore destStore) {
+        Long destZoneId = destStore.getScope().getScopeId();
+        List<DataStore> storesInSameZone = _storeMgr.getImageStoresByZoneIds(destZoneId);
+
+        TemplateObject sourceTmpl = findUsableTemplate(tmplt, storesInSameZone);
+        if (sourceTmpl == null) {
+            return false;
+        }
+
+        TemplateApiResult result;
+        AsyncCallFuture<TemplateApiResult> future = copyTemplateToImageStore(sourceTmpl, destStore);
+        try {
+            result = future.get();
+        } catch (ExecutionException | InterruptedException e) {
+            logger.warn("Exception while copying template [{}] from image store [{}] to image store [{}]: {}",
+                    sourceTmpl.getUniqueName(), sourceTmpl.getDataStore().getName(), destStore.getName(), e.toString());
+            result = new TemplateApiResult(sourceTmpl);
+            result.setResult(e.getMessage());
+        }
+        return result.isSuccess();
+    }
+
+    private boolean copyTemplateAcrossZones(DataStore destStore, TemplateObject sourceTmpl) {
+        Long dstZoneId = destStore.getScope().getScopeId();
+        DataCenterVO dstZone = _dcDao.findById(dstZoneId);
+
+        if (dstZone == null) {
+            logger.warn("Destination zone [{}] not found for template [{}].", dstZoneId, sourceTmpl.getUniqueName());
+            return false;
+        }
+
+        TemplateApiResult result;
+        try {
+            VMTemplateVO template = _templateDao.findById(sourceTmpl.getId());
+            try {
+                DataStore sourceStore = sourceTmpl.getDataStore();
+                long userId = CallContext.current().getCallingUserId();
+                boolean success = _tmpltMgr.copy(userId, template, sourceStore, dstZone);
+
+                result = new TemplateApiResult(sourceTmpl);
+                if (!success) {
+                    result.setResult("Cross-zone template copy failed");
+                }
+            } catch (StorageUnavailableException | ResourceAllocationException e) {
+                logger.error("Exception while copying template [{}] from zone [{}] to zone [{}]",
+                        template,
+                        sourceTmpl.getDataStore().getScope().getScopeId(),
+                        dstZone.getId(),
+                        e);
+                result = new TemplateApiResult(sourceTmpl);
+                result.setResult(e.getMessage());
+            } finally {
+                ThreadContext.clearAll();
+            }
+        } catch (Exception e) {
+            logger.error("Failed to copy template [{}] from zone [{}] to zone [{}].",
+                    sourceTmpl.getUniqueName(),
+                    sourceTmpl.getDataStore().getScope().getScopeId(),
+                    dstZoneId,
+                    e);
+            return false;
+        }
+
+        return result.isSuccess();
     }
 
     @Override
@@ -671,7 +807,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateApiResult res = new TemplateApiResult(tmplt);
         if (result.isSuccess()) {
             logger.info("Copied template [{}] to image store [{}].", tmplt.getUniqueName(), tmplt.getDataStore().getName());
-            tmplt.processEvent(Event.OperationSuccessed, result.getAnswer());
+            tmplt.processEvent(Event.OperationSucceeded, result.getAnswer());
             publishTemplateCreation(tmplt);
         } else {
             logger.warn("Failed to copy template [{}] to image store [{}].", tmplt.getUniqueName(), tmplt.getDataStore().getName());
@@ -680,10 +816,6 @@ public class TemplateServiceImpl implements TemplateService {
         }
         future.complete(res);
         return null;
-    }
-
-    protected boolean isCopyFromOtherStoragesEnabled(Long zoneId) {
-        return StorageManager.COPY_PUBLIC_TEMPLATES_FROM_OTHER_STORAGES.valueIn(zoneId);
     }
 
     protected void publishTemplateCreation(TemplateInfo tmplt) {
@@ -824,7 +956,7 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         try {
-            template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+            template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded);
         } catch (Exception e) {
             result.setResult(e.toString());
             if (parentCallback != null) {
@@ -1033,7 +1165,7 @@ public class TemplateServiceImpl implements TemplateService {
         CommandResult result = callback.getResult();
         TemplateObject vo = context.getTemplate();
         if (result.isSuccess()) {
-            vo.processEvent(Event.OperationSuccessed);
+            vo.processEvent(Event.OperationSucceeded);
         } else {
             vo.processEvent(Event.OperationFailed);
         }
@@ -1093,7 +1225,7 @@ public class TemplateServiceImpl implements TemplateService {
                 // no change to existing template_store_ref, will try to re-sync later if other call triggers this sync operation, like copy template
             } else {
                 // this will update install path properly, next time it will not sync anymore.
-                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -1273,7 +1405,7 @@ public class TemplateServiceImpl implements TemplateService {
                 res.setResult(result.getResult());
                 destTemplate.processEvent(Event.OperationFailed);
             } else {
-                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -1298,7 +1430,7 @@ public class TemplateServiceImpl implements TemplateService {
                 res.setResult(result.getResult());
                 destTemplate.processEvent(Event.OperationFailed);
             } else {
-                destTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                destTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             }
             future.complete(res);
         } catch (Exception e) {
@@ -1320,9 +1452,10 @@ public class TemplateServiceImpl implements TemplateService {
                 if (_vmTemplateStoreDao.isTemplateMarkedForDirectDownload(tmplt.getId())) {
                     continue;
                 }
-                tmpltStore =
-                        new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null,
-                                TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + '/', tmplt.getUrl());
+                String templateDirectoryPath = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + File.separator + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR;
+                String installPath = templateDirectoryPath + tmplt.getAccountId() + File.separator + tmplt.getId() + File.separator;
+                tmpltStore = new TemplateDataStoreVO(storeId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED,
+                        null, null, null, installPath, tmplt.getUrl());
                 tmpltStore.setSize(0L);
                 tmpltStore.setPhysicalSize(0); // no size information for
                 // pre-seeded system vm templates
@@ -1384,7 +1517,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateApiResult dataDiskTemplateResult = new TemplateApiResult((TemplateObject)dataDiskTemplate);
         try {
             if (result.isSuccess()) {
-                dataDiskTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+                dataDiskTemplate.processEvent(Event.OperationSucceeded, result.getAnswer());
             } else {
                 dataDiskTemplate.processEvent(Event.OperationFailed);
                 dataDiskTemplateResult.setResult(result.getResult());
