@@ -542,7 +542,7 @@ public class ExtensionsShareManagerImpl extends ManagerBase implements Extension
         }
         try {
             ((ExtensionArchiveDataObject)dataObject).setPath(result.getPath());
-            dataObject.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+            dataObject.processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded);
             future.complete(dataObject);
         } catch (Exception e) {
             logger.debug("Failed to update snapshot state", e);

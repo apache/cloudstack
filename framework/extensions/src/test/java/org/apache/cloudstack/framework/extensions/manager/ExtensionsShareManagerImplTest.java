@@ -1367,7 +1367,7 @@ public class ExtensionsShareManagerImplTest {
 
         assertNotNull(future.get());
         verify(dataObject).setPath("path/to/archive");
-        verify(dataObject).processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
+        verify(dataObject).processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded);
     }
 
     @Test
