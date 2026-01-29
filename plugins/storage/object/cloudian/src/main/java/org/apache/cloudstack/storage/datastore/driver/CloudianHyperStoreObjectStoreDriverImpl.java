@@ -123,14 +123,15 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
 
     /**
      * Create the HyperStore user resources matching this account if it doesn't exist.
-     *
+     * </p>
      * The following resources are created for the account:
-     * - HyperStore Group to match the CloudStack Domain UUID
-     * - HyperStore User to match the CloudStack Account UUID
-     * - HyperStore Root User Credentials to manage Account Buckets etc (kept private to this plugin)
-     * - HyperStore IAM User with IAM policy granting all S3 actions except create/delete buckets.
-     * - HyperStore IAM User Credentials (visible to end user as part of Bucket Details)
-     *
+     * <ul>
+     *   <li>HyperStore Group to match the CloudStack Domain UUID</li>
+     *   <li>HyperStore User to match the CloudStack Account UUID</li>
+     *   <li>HyperStore Root User Credentials to manage Account Buckets etc (kept private to this plugin)</li>
+     *   <li>HyperStore IAM User with IAM policy granting all S3 actions except create/delete buckets.</li>
+     *   <li>HyperStore IAM User Credentials (visible to end user as part of Bucket Details)</li>
+     *</ul>
      * @param accountId the CloudStack account
      * @param storeId the object store.
      *
@@ -161,8 +162,8 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             logger.error(msg);
             throw new CloudRuntimeException(msg);
         } else {
-            // User exists and is active. We know that the group therefore exists but
-            // we should ensure that it is active or it will lead to unknown access key errors
+            // User exists and is active. We know that the group therefore exists, but
+            // we should ensure that it is active, or it will lead to unknown access key errors
             // which might confuse the administrator. Checking is clearer.
             CloudianGroup group = client.listGroup(hsGroupId);
             if (group != null && ! group.getActive()) {
@@ -187,7 +188,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
 
     /**
      * Create IAM credentials if required.
-     *
+     * </p>
      * When the HyperStore user is first created, this method will create an IAM User with an appropriate
      * permission policy and a set of credentials which will be returned.
      * After the first run, the IAM resources should already be in place in which case we just ensure
@@ -238,7 +239,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
         iamClient.putUserPolicy(new PutUserPolicyRequest(iamUser, CloudianHyperStoreUtil.IAM_USER_POLICY_NAME, CloudianHyperStoreUtil.IAM_USER_POLICY));
 
         if (! createdUser && iamAccessKeyId == null) {
-            // User already exists but we never saved any access key before. We should try clean up
+            // User already exists, but we never saved any access key before. We should try clean up
             logger.debug("Looking for any un-managed IAM credentials for IAM User {}", iamUser);
             ListAccessKeysResult listRes = iamClient.listAccessKeys(new ListAccessKeysRequest().withUserName(iamUser));
             for (AccessKeyMetadata accessKeyMetadata : listRes.getAccessKeyMetadata()) {
@@ -379,7 +380,6 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
         }
 
         // Group exists and is enabled. Nothing to log.
-        return;
     }
 
     /**
@@ -390,7 +390,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
      * @param hsGroupId the group to add him to
      * @param account the account the user represents
      * @return user object if successfully created, null otherwise
-     * @throws ServerAPIException if on other other.
+     * @throws CloudRuntimeException if any exception occurs
      */
     private CloudianUser createHSUser(CloudianClient client, String hsUserId, String hsGroupId, Account account) {
         CloudianUser user = new CloudianUser();
@@ -401,7 +401,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
         user.setFullName(account.getAccountName());
 
         if (! client.addUser(user)) {
-            // The failure shouldn't be that the user already exists at this point so its something else.
+            // The failure shouldn't be that the user already exists at this point so it's something else.
             logger.error("Failed to add user id={} groupId={}", hsUserId, hsGroupId);
             return null;
         } else {
@@ -426,7 +426,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
         long storeId = bucket.getObjectStoreId();
         long accountId = bucket.getAccountId();
 
-        // get an s3client using Account Root User Credentials
+        // get an S3 client using Account Root User Credentials
         Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
         String s3url = storeDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_S3_URL);
         Map<String, String> accountDetails = _accountDetailsDao.findDetails(accountId);
@@ -449,14 +449,14 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
         }
 
         // Step 2: Any Exception here, we try to delete the bucket.
-        // If deletion fails, it is not the end of the world as the
-        // user can try again to create the bucket which if he is
-        // already the owner, it will succeed.
+        // If deletion fails, it is not the end of the world. The
+        // user can try to create the bucket again as it will succeed
+        // if he is already the owner.
         try {
             // Enable a permissive CORS configuration
             configureBucketCORS(s3client, bucketName);
 
-            // Update the Bucket Information (for Bucket details page etc)
+            // Update the Bucket Information (for Bucket details page etc.)
             BucketVO bucketVO = _bucketDao.findById(bucket.getId());
             bucketVO.setAccessKey(iamAccessKey);
             bucketVO.setSecretKey(iamSecretKey);
@@ -478,15 +478,15 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
 
     /**
      * Configure a permissive CrossOrigin setting on the given bucket.
-     *
+     * </p>
      * Cloudian does not enable CORS by default. The CORS configuration
      * is required by CloudStack so that the Javascript S3 bucket
      * browser can function properly.
-     *
+     * </p>
      * This method does not catch any exceptions which should be caught
      * by the calling method.
      *
-     * @param s3client bucket owner s3client
+     * @param s3client bucket owner S3 connection
      * @param bucketName the bucket name.
      *
      * @throws AmazonClientException and derivatives
@@ -494,7 +494,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
     private void configureBucketCORS(AmazonS3 s3client, String bucketName) {
         logger.debug("Configuring CORS for bucket {}", bucketName);
 
-        List<CORSRule> corsRules = new ArrayList<CORSRule>();
+        List<CORSRule> corsRules = new ArrayList<>();
         CORSRule allowAnyRule = new CORSRule().withId("AllowAny");
         allowAnyRule.setAllowedOrigins("*");
         allowAnyRule.setAllowedHeaders("*");
@@ -523,7 +523,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
     @Override
     public List<Bucket> listBuckets(long storeId) {
         Map<String, Long> bucketUsage = getAllBucketsUsage(storeId);
-        List<Bucket> bucketList = new ArrayList<Bucket>();
+        List<Bucket> bucketList = new ArrayList<>();
         for (String bucketName : bucketUsage.keySet()) {
             Bucket bucket = new BucketObject();
             bucket.setName(bucketName);
@@ -533,23 +533,46 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
     }
 
     /**
+     * Verify Service Connectivity by testing the configuration.
+     * @param storeId identifies which store's configuration to verify.
+     * @throws CloudRuntimeException if there are any connectivity issues.
+     */
+    @Override
+    public void verifyServiceConnectivity(long storeId) {
+        // 1. test Admin Service connectivity.
+        CloudianClient cloudianClient = getCloudianClientByStoreId(storeId);
+        String version = cloudianClient.getServerVersion();
+
+        // 2. test S3 Service connectivity.
+        Map<String, String> storeDetails = _storeDetailsDao.getDetails(storeId);
+        String s3Url = storeDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_S3_URL);
+        CloudianHyperStoreUtil.validateS3Url(s3Url);
+
+        // 3. test IAM Service connectivity.
+        String iamUrl = storeDetails.get(CloudianHyperStoreUtil.STORE_DETAILS_KEY_IAM_URL);
+        CloudianHyperStoreUtil.validateIAMUrl(iamUrl);
+
+        logger.info("Connectivity confirmed to Cloudian HyperStore {}", version);
+    }
+
+    /**
      * Delete an empty bucket.
      * This operation fails if the bucket is not empty.
      * @param bucket the bucket to delete
      * @param storeId the store the bucket belongs to.
-     * @returns true on success or throws an exception.
+     * @return true on success or throws an exception.
      * @throws CloudRuntimeException if the bucket deletion fails
      */
     @Override
     public boolean deleteBucket(BucketTO bucket, long storeId) {
         AmazonS3 s3client = getS3ClientByBucketAndStore(bucket, storeId);
-        logger.debug("Deleting bucket {}", bucket.getName());
+        logger.debug("Deleting the bucket {}", bucket.getName());
         try {
             s3client.deleteBucket(bucket.getName());
-            logger.info("Successfully deleted bucket {}", bucket.getName());
+            logger.info("Successfully deleted the bucket {}", bucket.getName());
             return true;
         } catch (AmazonClientException e) {
-            logger.error("Failed to delete bucket " + bucket.getName(), e);
+            logger.error("Failed to delete bucket {}", bucket.getName(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -563,7 +586,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             logger.info("Successfully got the bucket ACL for {}", bucket.getName());
             return acl;
         } catch (AmazonClientException e) {
-            logger.error("Failed to get the bucket ACL for " + bucket.getName(), e);
+            logger.error("Failed to get the bucket ACL for {}", bucket.getName(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -575,9 +598,8 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
         try {
             s3client.setBucketAcl(bucket.getName(), acl);
             logger.info("Successfully set the bucket ACL for {}", bucket.getName());
-            return;
         } catch (AmazonClientException e) {
-            logger.error("Failed to set the bucket ACL for " + bucket.getName(), e);
+            logger.error("Failed to set the bucket ACL for {}", bucket.getName(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -594,30 +616,28 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             return;
         }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\n");
-        sb.append("  \"Version\": \"2012-10-17\",\n");
-        sb.append("  \"Statement\": [\n");
-        sb.append("    {\n");
-        sb.append("      \"Sid\": \"PublicReadForObjects\",\n");
-        sb.append("      \"Effect\": \"Allow\",\n");
-        sb.append("      \"Principal\": \"*\",\n");
-        sb.append("      \"Action\": \"s3:GetObject\",\n");
-        sb.append("      \"Resource\": \"arn:aws:s3:::%s/*\"\n");
-        sb.append("    }\n");
-        sb.append("  ]\n");
-        sb.append("}\n");
+        String policyFormat = "{\n" +
+                "  \"Version\": \"2012-10-17\",\n" +
+                "  \"Statement\": [\n" +
+                "    {\n" +
+                "      \"Sid\": \"PublicReadForObjects\",\n" +
+                "      \"Effect\": \"Allow\",\n" +
+                "      \"Principal\": \"*\",\n" +
+                "      \"Action\": \"s3:GetObject\",\n" +
+                "      \"Resource\": \"arn:aws:s3:::%s/*\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}\n";
 
-        String jsonPolicy = String.format(sb.toString(), bucket.getName());
+        String jsonPolicy = String.format(policyFormat, bucket.getName());
 
         AmazonS3 s3client = getS3ClientByBucketAndStore(bucket, storeId);
         logger.debug("Setting the bucket policy to {} for {}", policy, bucket.getName());
         try {
             s3client.setBucketPolicy(bucket.getName(), jsonPolicy);
             logger.info("Successfully set the bucket policy to {} for {}", policy, bucket.getName());
-            return;
         } catch (AmazonClientException e) {
-            logger.error("Failed to set the bucket policy for " + bucket.getName(), e);
+            logger.error("Failed to set the bucket policy for {}", bucket.getName(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -631,7 +651,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             logger.info("Successfully got the bucket policy for {}", bucket.getName());
             return bp;
         } catch (AmazonClientException e) {
-            logger.error("Failed to get the bucket policy for " + bucket.getName(), e);
+            logger.error("Failed to get the bucket policy for {}", bucket.getName(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -643,9 +663,8 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
         try {
             s3client.deleteBucketPolicy(bucket.getName());
             logger.info("Successfully deleted bucket policy for {}", bucket.getName());
-            return;
         } catch (AmazonClientException e) {
-            logger.error("Failed to delete bucket policy for " + bucket.getName(), e);
+            logger.error("Failed to delete bucket policy for {}", bucket.getName(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -664,7 +683,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             ServerSideEncryptionRule sseRule = new ServerSideEncryptionRule();
             sseRule.setApplyServerSideEncryptionByDefault(sseByDefault);
 
-            List<ServerSideEncryptionRule> sseRules = new ArrayList<ServerSideEncryptionRule>();
+            List<ServerSideEncryptionRule> sseRules = new ArrayList<>();
             sseRules.add(sseRule);
 
             ServerSideEncryptionConfiguration sseConf = new ServerSideEncryptionConfiguration();
@@ -676,7 +695,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             logger.info("Successfully enabled bucket encryption configuration for {}", bucket.getName());
             return true;
         } catch (AmazonClientException e) {
-            logger.error("Failed to enable bucket encryption configuration for " + bucket.getName(), e);
+            logger.error("Failed to enable bucket encryption configuration for {}", bucket.getName(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -690,7 +709,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             logger.info("Successfully deleted bucket encryption configuration for {}", bucket.getName());
             return true;
         } catch (AmazonClientException e) {
-            logger.error("Failed to delete bucket encryption configuration for " + bucket.getName(), e);
+            logger.error("Failed to delete bucket encryption configuration for {}", bucket.getName(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -706,7 +725,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             logger.info("Successfully enabled versioning for bucket {}", bucket.getName());
             return true;
         } catch (AmazonClientException e) {
-            logger.error("Failed to enable versioning for bucket " + bucket.getName(), e);
+            logger.error("Failed to enable versioning for bucket {}", bucket.getName(), e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -722,14 +741,14 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
             logger.info("Successfully suspended versioning for bucket {}", bucket.getName());
             return true;
         } catch (AmazonClientException e) {
-            logger.error("Failed to suspend versioning for bucket " + bucket.getName(), e);
+            logger.error("Failed to suspend versioning for bucket {}", bucket.getName(), e);
             throw new CloudRuntimeException(e);
         }
     }
 
     /**
      * Set the bucket quota to a size limit specified in GiB.
-     *
+     * </p>
      * Cloudian HyperStore does not currently support bucket quota limits.
      * CloudStack itself requires a quota to be set. HyperStore may add
      * Bucket Quota support in a future version. Currently, we only support
@@ -753,8 +772,8 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
 
     /**
      * Return a map of bucket names managed by this store and their sizes (in bytes).
-     *
-     * Note: Bucket Usage Statistics in HyperStore are disabled by default. They
+     * </p>
+     * <b>Note:</b> Bucket Usage Statistics in HyperStore are disabled by default. They
      * can be enabled by the HyperStore Administrator by setting of the configuration
      * 's3.qos.bucketLevel=true'. If this is not enabled, the values returned will
      * either be 0 or out of date.
@@ -763,16 +782,16 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
      */
     @Override
     public Map<String, Long> getAllBucketsUsage(long storeId) {
-        Map<String, Long> bucketUsage = new HashMap<String, Long>();
+        Map<String, Long> bucketUsage = new HashMap<>();
         List<BucketVO> bucketList = _bucketDao.listByObjectStoreId(storeId);
         if (bucketList.isEmpty()) {
             return bucketUsage;
         }
 
-        // Create an unique list of domains from the bucket list
+        // Create a unique list of domains from the bucket list
         // and add all the bucket names to the bucketUsage map with value -1 as a marker
         // to know which buckets CloudStack cares about. The -1 will be replaced later.
-        List<Long> domainIds = new ArrayList<Long>();
+        List<Long> domainIds = new ArrayList<>();
         for (BucketVO bucket : bucketList) {
             long bucketDomainId = bucket.getDomainId();
             if (! domainIds.contains(bucketDomainId)) {
@@ -793,8 +812,8 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
                         // Update the -1 entry to actual byteCount.
                         bucketUsage.replace(cbu.getBucketName(), cbu.getByteCount());
                     } else {
-                        // Replace with 0 instead of actual value. Race condition can cause this and it
-                        // should be fixed automatically by a repair job.
+                        // Replace with 0 instead of a negative value. A race condition can cause
+                        // on the server. Usage is corrected periodically so it should self-medicate.
                         bucketUsage.replace(cbu.getBucketName(), 0L);
                         logger.info("Ignoring negative bucket usage for \"{}\": {}", cbu.getBucketName(), cbu.getByteCount());
                     }
@@ -803,7 +822,7 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
         }
 
         // Remove any remaining -1 entries. These would probably be buckets that were
-        // deleted outside of CloudStack control. A missing entry might be better than
+        // deleted outside CloudStack control. A missing entry might be better than
         // returning the bucket name with -1 or 0.
         bucketUsage.entrySet().removeIf(entry -> entry.getValue() == -1);
 
@@ -832,8 +851,8 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
      * Returns an S3 connection for the store and account identified by the bucket.
      * NOTE: https connections must use a trusted certificate.
      *
-     * @param store the object store of the S3 service to connect to
      * @param bucket bucket information identifying the account which identifies the credentials to use.
+     * @param storeId the object store of the S3 service to connect to
      * @return an S3 connection (never null)
      * @throws CloudRuntimeException on failure.
      */

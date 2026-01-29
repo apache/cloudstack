@@ -66,7 +66,7 @@ public class CloudianHyperStoreObjectStoreLifeCycleImpl implements ObjectStoreLi
             throw new CloudRuntimeException(msg);
         }
 
-        Map<String, Object> objectStoreParameters = new HashMap<String, Object>();
+        Map<String, Object> objectStoreParameters = new HashMap<>();
         objectStoreParameters.put(CloudianHyperStoreUtil.STORE_KEY_NAME, name);
         objectStoreParameters.put(CloudianHyperStoreUtil.STORE_KEY_URL, url);
         objectStoreParameters.put(CloudianHyperStoreUtil.STORE_KEY_PROVIDER_NAME, providerName);
