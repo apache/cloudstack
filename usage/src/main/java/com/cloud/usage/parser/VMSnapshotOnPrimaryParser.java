@@ -125,7 +125,7 @@ public class VMSnapshotOnPrimaryParser {
         String usageDesc = "VMSnapshot Id: " + vmSnapshotId + " On Primary Usage: VM Id: " + vmId;
         usageDesc += " Size: " + toHumanReadableSize(virtualSize);
 
-        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", usageType, new Double(usage), vmId, name, null, null,
+        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", usageType, (double) usage, vmId, name, null, null,
                 vmSnapshotId, physicalSize, virtualSize, startDate, endDate);
         s_usageDao.persist(usageRecord);
     }

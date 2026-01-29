@@ -4380,6 +4380,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             }
             usageRecResponse.setDescription(builder.toString());
+            usageRecResponse.setSize(usageRecord.getSize());
+            usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
             resourceType = ResourceObjectType.VMSnapshot;
             VMSnapshotVO vmSnapshotVO = null;
