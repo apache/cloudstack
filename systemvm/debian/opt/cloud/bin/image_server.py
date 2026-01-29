@@ -51,7 +51,7 @@ CHUNK_SIZE = 256 * 1024  # 256 KiB
 
 # Concurrency limits across ALL images.
 MAX_PARALLEL_READS = 8
-MAX_PARALLEL_WRITES = 2
+MAX_PARALLEL_WRITES = 1
 
 _READ_SEM = threading.Semaphore(MAX_PARALLEL_READS)
 _WRITE_SEM = threading.Semaphore(MAX_PARALLEL_WRITES)
@@ -269,16 +269,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _send_imageio_headers(self) -> None:
         # Include these headers for compatibility with the imageio contract.
-        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, PUT, OPTIONS")
-        self.send_header(
-            "Access-Control-Allow-Headers",
-            "Range, Content-Range, Content-Type, Content-Length",
-        )
-        self.send_header(
-            "Access-Control-Expose-Headers",
-            "Accept-Ranges, Content-Range, Content-Length",
-        )
         self.send_header("Accept-Ranges", "bytes")
 
     def _send_json(self, status: int, obj: Any) -> None:
@@ -406,10 +397,15 @@ class Handler(BaseHTTPRequestHandler):
         if self._image_cfg(image_id) is None:
             self._send_error_json(HTTPStatus.NOT_FOUND, "unknown image_id")
             return
-        self.send_response(HTTPStatus.OK)
-        self._send_imageio_headers()
-        self.send_header("Content-Length", "0")
-        self.end_headers()
+        # todo: get capabilities from backend later. this is just for upload to work
+        features = ["extents", "zero", "flush"]
+        response = {
+            "unix_socket": None,  # Not used in this implementation
+            "features": features,
+            "max_readers": MAX_PARALLEL_READS,
+            "max_writers": MAX_PARALLEL_WRITES,
+        }
+        self._send_json(HTTPStatus.OK, response)
 
     def do_GET(self) -> None:
         image_id, tail = self._parse_route()
