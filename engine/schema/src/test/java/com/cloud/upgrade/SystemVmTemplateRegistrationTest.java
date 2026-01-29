@@ -53,7 +53,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.cpu.CPU;
-import com.cloud.dc.dao.ClusterDao;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -67,7 +67,7 @@ import com.cloud.utils.script.Script;
 public class SystemVmTemplateRegistrationTest {
 
     @Mock
-    ClusterDao clusterDao;
+    HostDao hostDao;
 
     @Mock
     VMTemplateDao vmTemplateDao;
@@ -363,14 +363,15 @@ public class SystemVmTemplateRegistrationTest {
         systemVmTemplateRegistration.validateTemplates(list);
     }
 
+    @Test
     public void testValidateTemplates_downloadableFileNotFound() {
-        CPU.CPUArch arch = SystemVmTemplateRegistration.DOWNLOADABLE_TEMPLATE_ARCH_TYPES.get(0);
+        Pair<Hypervisor.HypervisorType, CPU.CPUArch> hypervisorTypeCPUArchPair = SystemVmTemplateRegistration.DOWNLOADABLE_TEMPLATE_HYPERVISOR_ARCH_TYPES.get(0);
         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> list = new ArrayList<>();
-        list.add(new Pair<>(Hypervisor.HypervisorType.KVM, arch));
+        list.add(hypervisorTypeCPUArchPair);
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
         SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
-                Hypervisor.HypervisorType.KVM, arch), details);
+                hypervisorTypeCPUArchPair.first(), hypervisorTypeCPUArchPair.second()), details);
         doReturn(null).when(systemVmTemplateRegistration).getTemplateFile(details);
         systemVmTemplateRegistration.validateTemplates(list);
     }
@@ -404,7 +405,7 @@ public class SystemVmTemplateRegistrationTest {
             Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
             CPU.CPUArch arch = CPU.CPUArch.getDefault();
             hypervisorArchList.add(new Pair<>(hypervisorType, arch));
-            doReturn(hypervisorArchList).when(clusterDao).listDistinctHypervisorsArchAcrossClusters(zoneId);
+            doReturn(hypervisorArchList).when(hostDao).listDistinctHypervisorArchTypes(zoneId);
             SystemVmTemplateRegistration.MetadataTemplateDetails details =
                     Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
             String name = "existing";
