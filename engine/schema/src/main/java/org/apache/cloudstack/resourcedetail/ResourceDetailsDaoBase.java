@@ -246,10 +246,4 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         }
         return resourceDetail.getValue();
     }
-
-    @Override
-    public boolean doesKeyValuePairExist(String key, String value) {
-        List<R> details = findDetails(key, value, null);
-        return CollectionUtils.isNotEmpty(details);
-    }
 }
