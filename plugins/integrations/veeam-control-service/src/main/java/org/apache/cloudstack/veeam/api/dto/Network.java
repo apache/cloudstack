@@ -82,4 +82,3 @@ public class Network {
     public String getId() { return id; }
     public void setId(final String id) { this.id = id; }
 }
-

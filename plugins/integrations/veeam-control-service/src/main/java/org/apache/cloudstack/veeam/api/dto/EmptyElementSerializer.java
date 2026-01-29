@@ -34,4 +34,3 @@ public final class EmptyElementSerializer extends JsonSerializer<EmptyElement> {
         gen.writeEndObject();
     }
 }
-

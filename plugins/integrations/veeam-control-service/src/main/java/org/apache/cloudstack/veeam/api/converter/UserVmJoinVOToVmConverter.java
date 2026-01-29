@@ -156,4 +156,3 @@ public final class UserVmJoinVOToVmConverter {
         return r;
     }
 }
-
