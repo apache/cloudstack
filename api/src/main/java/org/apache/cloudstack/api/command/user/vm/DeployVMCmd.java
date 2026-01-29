@@ -57,8 +57,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.LogLevel;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
