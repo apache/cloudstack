@@ -22,6 +22,8 @@ import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.AutoSelectFilter;
+import com.linbit.linstor.api.model.LayerType;
 import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
@@ -29,24 +31,36 @@ import com.linbit.linstor.api.model.Resource;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroup;
+import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
 import com.linbit.linstor.api.model.Volume;
+import com.linbit.linstor.api.model.VolumeDefinition;
+import com.linbit.linstor.api.model.VolumeDefinitionModify;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.logging.log4j.Logger;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.nio.charset.StandardCharsets;
 
 public class LinstorUtil {
     protected static Logger LOGGER = LogManager.getLogger(LinstorUtil.class);
@@ -55,6 +69,8 @@ public class LinstorUtil {
     public static final String RSC_PREFIX = "cs-";
     public static final String RSC_GROUP = "resourceGroup";
     public static final String CS_TEMPLATE_FOR_PREFIX = "_cs-template-for-";
+
+    public static final String LIN_PROP_DRBDOPT_EXACT_SIZE = "DrbdOptions/ExactSize";
 
     public static final String TEMP_VOLUME_ID = "tempVolumeId";
 
@@ -74,6 +90,32 @@ public class LinstorUtil {
                 .findFirst()
                 .map(ApiCallRc::getMessage)
                 .orElse((answers.get(0)).getMessage()) : null;
+    }
+
+    public static void logLinstorAnswer(@Nonnull ApiCallRc answer) {
+        if (answer.isError()) {
+            LOGGER.error(answer.getMessage());
+        } else if (answer.isWarning()) {
+            LOGGER.warn(answer.getMessage());
+        } else if (answer.isInfo()) {
+            LOGGER.info(answer.getMessage());
+        }
+    }
+
+    public static void logLinstorAnswers(@Nonnull ApiCallRcList answers) {
+        answers.forEach(LinstorUtil::logLinstorAnswer);
+    }
+
+    public static void checkLinstorAnswersThrow(@Nonnull ApiCallRcList answers) {
+        logLinstorAnswers(answers);
+        if (answers.hasError())
+        {
+            String errMsg = answers.stream()
+                    .filter(ApiCallRc::isError)
+                    .findFirst()
+                    .map(ApiCallRc::getMessage).orElse("Unknown linstor error");
+            throw new CloudRuntimeException(errMsg);
+        }
     }
 
     public static List<String> getLinstorNodeNames(@Nonnull DevelopersApi api) throws ApiException
@@ -487,5 +529,254 @@ public class LinstorUtil {
             LOGGER.error(apiExc.getMessage());
         }
         return false;
+    }
+
+    public static String getRscGrp(com.cloud.storage.StoragePool storagePool) {
+        return storagePool.getUserInfo() != null && !storagePool.getUserInfo().isEmpty() ?
+                storagePool.getUserInfo() : "DfltRscGrp";
+    }
+
+    /**
+     * Condition if a template resource can be shared with the given resource group.
+     * @param tgtRscGrp
+     * @param tgtLayerStack
+     * @param rg
+     * @return True if the template resource can be shared, else false.
+     */
+    private static boolean canShareTemplateForResourceGroup(
+            ResourceGroup tgtRscGrp, List<String> tgtLayerStack, ResourceGroup rg) {
+        List<String> rgLayerStack = rg.getSelectFilter() != null ?
+                rg.getSelectFilter().getLayerStack() : null;
+        return Objects.equals(tgtLayerStack, rgLayerStack) &&
+                Objects.equals(tgtRscGrp.getSelectFilter().getStoragePoolList(),
+                        rg.getSelectFilter().getStoragePoolList());
+    }
+
+    /**
+     * Searches for a shareable template for this rscGrpName and sets the aux template property.
+     * @param api
+     * @param rscName
+     * @param rscGrpName
+     * @param existingRDs
+     * @return
+     * @throws ApiException
+     */
+    private static boolean foundShareableTemplate(
+            DevelopersApi api, String rscName, String rscGrpName,
+            List<Pair<ResourceDefinition, ResourceGroup>> existingRDs) throws ApiException {
+        if (!existingRDs.isEmpty()) {
+            ResourceGroup tgtRscGrp = api.resourceGroupList(
+                    Collections.singletonList(rscGrpName), null, null, null).get(0);
+            List<String> tgtLayerStack = tgtRscGrp.getSelectFilter() != null ?
+                    tgtRscGrp.getSelectFilter().getLayerStack() : null;
+
+            // check if there is already a template copy, that we could reuse
+            // this means if select filters are similar enough to allow cloning from
+            for (Pair<ResourceDefinition, ResourceGroup> rdPair : existingRDs) {
+                ResourceGroup rg = rdPair.second();
+                if (canShareTemplateForResourceGroup(tgtRscGrp, tgtLayerStack, rg)) {
+                    LinstorUtil.setAuxTemplateForProperty(api, rscName, rscGrpName);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the layerlist of the resourceGroup with encryption(LUKS) added above STORAGE.
+     * If the resourceGroup layer list already contains LUKS this layer list will be returned.
+     * @param api Linstor developers API
+     * @param resourceGroup Resource group to get the encryption layer list
+     * @return layer list with LUKS added
+     */
+    public static List<LayerType> getEncryptedLayerList(DevelopersApi api, String resourceGroup) {
+        try {
+            List<ResourceGroup> rscGrps = api.resourceGroupList(
+                    Collections.singletonList(resourceGroup), Collections.emptyList(), null, null);
+
+            if (CollectionUtils.isEmpty(rscGrps)) {
+                throw new CloudRuntimeException(
+                        String.format("Resource Group %s not found on Linstor cluster.", resourceGroup));
+            }
+
+            final ResourceGroup rscGrp = rscGrps.get(0);
+            List<LayerType> layers = Arrays.asList(LayerType.DRBD, LayerType.LUKS, LayerType.STORAGE);
+            List<String> curLayerStack = rscGrp.getSelectFilter() != null ?
+                    rscGrp.getSelectFilter().getLayerStack() : Collections.emptyList();
+            if (CollectionUtils.isNotEmpty(curLayerStack)) {
+                layers = curLayerStack.stream().map(LayerType::valueOf).collect(Collectors.toList());
+                if (!layers.contains(LayerType.LUKS)) {
+                    layers.add(layers.size() - 1, LayerType.LUKS); // lowest layer is STORAGE
+                }
+            }
+            return layers;
+        } catch (ApiException e) {
+            throw new CloudRuntimeException(
+                    String.format("Resource Group %s not found on Linstor cluster.", resourceGroup));
+        }
+    }
+
+    /**
+     * Spawns a new Linstor resource with the given arguments.
+     * @param api
+     * @param newRscName
+     * @param sizeInBytes
+     * @param isTemplate
+     * @param rscGrpName
+     * @param volName
+     * @param vmName
+     * @throws ApiException
+     */
+    private static void spawnResource(
+            DevelopersApi api, String newRscName, long sizeInBytes, boolean isTemplate, String rscGrpName,
+            String volName, String vmName, @Nullable Long passPhraseId, @Nullable byte[] passPhrase,
+            boolean exactSize) throws ApiException
+    {
+        ResourceGroupSpawn rscGrpSpawn = new ResourceGroupSpawn();
+        rscGrpSpawn.setResourceDefinitionName(newRscName);
+        rscGrpSpawn.addVolumeSizesItem(sizeInBytes / 1024);
+        if (passPhraseId != null) {
+            AutoSelectFilter asf = new AutoSelectFilter();
+            List<LayerType> luksLayers = getEncryptedLayerList(api, rscGrpName);
+            asf.setLayerStack(luksLayers.stream().map(LayerType::toString).collect(Collectors.toList()));
+            rscGrpSpawn.setSelectFilter(asf);
+            if (passPhrase != null) {
+                String utf8Passphrase = new String(passPhrase, StandardCharsets.UTF_8);
+                rscGrpSpawn.setVolumePassphrases(Collections.singletonList(utf8Passphrase));
+            }
+        }
+
+        Properties props = new Properties();
+        if (isTemplate) {
+            props.put(LinstorUtil.getTemplateForAuxPropKey(rscGrpName), "true");
+        }
+        if (exactSize) {
+            props.put(LIN_PROP_DRBDOPT_EXACT_SIZE, "true");
+        }
+        rscGrpSpawn.setResourceDefinitionProps(props);
+
+        LOGGER.info("Linstor: Spawn resource " + newRscName);
+        ApiCallRcList answers = api.resourceGroupSpawn(rscGrpName, rscGrpSpawn);
+        checkLinstorAnswersThrow(answers);
+
+        answers = LinstorUtil.applyAuxProps(api, newRscName, volName, vmName);
+        checkLinstorAnswersThrow(answers);
+    }
+
+    /**
+     * Creates a new Linstor resource.
+     * @param rscName
+     * @param sizeInBytes
+     * @param volName
+     * @param vmName
+     * @param api
+     * @param rscGrp
+     * @param poolId
+     * @param isTemplate indicates if the resource is a template
+     * @return true if a new resource was created, false if it already existed or was reused.
+     */
+    public static boolean createResourceBase(
+            String rscName, long sizeInBytes, String volName, String vmName,
+            @Nullable Long passPhraseId, @Nullable byte[] passPhrase, DevelopersApi api,
+            String rscGrp, long poolId, boolean isTemplate, boolean exactSize)
+    {
+        try
+        {
+            LOGGER.debug("createRscBase: {} :: {} :: {} :: {}", rscName, rscGrp, isTemplate, exactSize);
+            List<Pair<ResourceDefinition, ResourceGroup>> existingRDs = LinstorUtil.getRDAndRGListStartingWith(api, rscName);
+
+            String fullRscName = String.format("%s-%d", rscName, poolId);
+            boolean alreadyCreated = existingRDs.stream()
+                    .anyMatch(p -> p.first().getName().equalsIgnoreCase(fullRscName)) ||
+                    existingRDs.stream().anyMatch(p -> p.first().getProps().containsKey(LinstorUtil.getTemplateForAuxPropKey(rscGrp)));
+            if (!alreadyCreated) {
+                boolean createNewRsc = !foundShareableTemplate(api, rscName, rscGrp, existingRDs);
+                if (createNewRsc) {
+                    String newRscName = existingRDs.isEmpty() ? rscName : fullRscName;
+                    spawnResource(api, newRscName, sizeInBytes, isTemplate, rscGrp,
+                            volName, vmName, passPhraseId, passPhrase, exactSize);
+                }
+                return createNewRsc;
+            }
+            return false;
+        } catch (ApiException apiEx)
+        {
+            LOGGER.error("Linstor: ApiEx - {}", apiEx.getMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
+    public static void applyQoSSettings(PrimaryDataStoreDao primaryDataStoreDao,
+                                  StoragePoolVO storagePool, DevelopersApi api, String rscName, Long maxIops)
+            throws ApiException
+    {
+        Long currentQosIops = null;
+        List<VolumeDefinition> vlmDfns = api.volumeDefinitionList(rscName, null, null);
+        if (!vlmDfns.isEmpty())
+        {
+            Properties props = vlmDfns.get(0).getProps();
+            long iops = Long.parseLong(props.getOrDefault("sys/fs/blkio_throttle_write_iops", "0"));
+            currentQosIops = iops > 0 ? iops : null;
+        }
+
+        if (!Objects.equals(maxIops, currentQosIops))
+        {
+            VolumeDefinitionModify vdm = new VolumeDefinitionModify();
+            if (maxIops != null)
+            {
+                Properties props = new Properties();
+                props.put("sys/fs/blkio_throttle_read_iops", "" + maxIops);
+                props.put("sys/fs/blkio_throttle_write_iops", "" + maxIops);
+                vdm.overrideProps(props);
+                LOGGER.info("Apply qos setting: {} to {}", maxIops, rscName);
+            }
+            else
+            {
+                LOGGER.info("Remove QoS setting for {}", rscName);
+                vdm.deleteProps(Arrays.asList("sys/fs/blkio_throttle_read_iops", "sys/fs/blkio_throttle_write_iops"));
+            }
+            ApiCallRcList answers = api.volumeDefinitionModify(rscName, 0, vdm);
+            LinstorUtil.checkLinstorAnswersThrow(answers);
+
+            Long capacityIops = storagePool.getCapacityIops();
+            if (capacityIops != null)
+            {
+                long vcIops = currentQosIops != null ? currentQosIops * -1 : 0;
+                long vMaxIops = maxIops != null ? maxIops : 0;
+                long newIops = vcIops + vMaxIops;
+                capacityIops -= newIops;
+                LOGGER.info("Current storagepool {} iops capacity:  {}", storagePool, capacityIops);
+                storagePool.setCapacityIops(Math.max(0, capacityIops));
+                primaryDataStoreDao.update(storagePool.getId(), storagePool);
+            }
+        }
+    }
+
+    public static String createResource(VolumeInfo vol, StoragePoolVO storagePoolVO,
+                                        PrimaryDataStoreDao primaryDataStoreDao) {
+        return createResource(vol, storagePoolVO, primaryDataStoreDao, false);
+    }
+
+    public static String createResource(VolumeInfo vol, StoragePoolVO storagePoolVO,
+                                        PrimaryDataStoreDao primaryDataStoreDao, boolean exactSize) {
+        DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress());
+        final String rscGrp = getRscGrp(storagePoolVO);
+
+        final String rscName = LinstorUtil.RSC_PREFIX + vol.getUuid();
+        createResourceBase(
+                rscName, vol.getSize(), vol.getName(), vol.getAttachedVmName(), vol.getPassphraseId(), vol.getPassphrase(),
+                linstorApi, rscGrp, storagePoolVO.getId(), false, exactSize);
+
+        try
+        {
+            applyQoSSettings(primaryDataStoreDao, storagePoolVO, linstorApi, rscName, vol.getMaxIops());
+
+            return LinstorUtil.getDevicePath(linstorApi, rscName);
+        } catch (ApiException apiEx)
+        {
+            LOGGER.error("Linstor: ApiEx - " + apiEx.getMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
     }
 }
