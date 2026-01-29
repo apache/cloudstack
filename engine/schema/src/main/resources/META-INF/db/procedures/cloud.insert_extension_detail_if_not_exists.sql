@@ -15,14 +15,25 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
---;
--- Schema upgrade from 4.20.2.0 to 4.20.3.0
---;
-
-ALTER TABLE `cloud`.`template_store_ref` MODIFY COLUMN `download_url` varchar(2048);
-
-UPDATE `cloud`.`alert` SET type = 33 WHERE name = 'ALERT.VR.PUBLIC.IFACE.MTU';
-UPDATE `cloud`.`alert` SET type = 34 WHERE name = 'ALERT.VR.PRIVATE.IFACE.MTU';
-
--- Update configuration 'kvm.ssh.to.agent' description and is_dynamic fields
-UPDATE `cloud`.`configuration` SET description = 'True if the management server will restart the agent service via SSH into the KVM hosts after or during maintenance operations', is_dynamic = 1 WHERE name = 'kvm.ssh.to.agent';
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`;
+CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_DETAIL_IF_NOT_EXISTS`(
+    IN ext_name VARCHAR(255),
+    IN detail_key VARCHAR(255),
+    IN detail_value TEXT,
+    IN display TINYINT(1)
+)
+BEGIN
+    DECLARE ext_id BIGINT
+;   SELECT `id` INTO ext_id FROM `cloud`.`extension` WHERE `name` = ext_name LIMIT 1
+;   IF NOT EXISTS (
+        SELECT 1 FROM `cloud`.`extension_details`
+        WHERE `extension_id` = ext_id AND `name` = detail_key
+    ) THEN
+        INSERT INTO `cloud`.`extension_details` (
+            `extension_id`, `name`, `value`, `display`
+        )
+        VALUES (
+            ext_id, detail_key, detail_value, display
+        )
+;   END IF
+;END;

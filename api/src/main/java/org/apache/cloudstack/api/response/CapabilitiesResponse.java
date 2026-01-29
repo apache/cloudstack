@@ -75,6 +75,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "True if Snapshot is supported for KVM host, false otherwise")
     private boolean kvmSnapshotEnabled;
 
+    @SerializedName("snapshotshowchainsize")
+    @Param(description = "True to show the parent and chain size (sum of physical size of snapshot and all its parents) for incremental snapshots", since = "4.22.1")
+    private boolean snapshotShowChainSize;
+
     @SerializedName("apilimitmax")
     @Param(description = "Max allowed number of api requests within the specified interval")
     private Integer apiLimitMax;
@@ -201,6 +205,10 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setKVMSnapshotEnabled(boolean kvmSnapshotEnabled) {
         this.kvmSnapshotEnabled = kvmSnapshotEnabled;
+    }
+
+    public void setSnapshotShowChainSize(boolean snapshotShowChainSize) {
+        this.snapshotShowChainSize = snapshotShowChainSize;
     }
 
     public void setApiLimitInterval(Integer apiLimitInterval) {

@@ -36,6 +36,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.TemplateManager;
 import org.apache.cloudstack.api.response.MigrationResponse;
 import org.apache.cloudstack.engine.orchestration.service.StorageOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -45,6 +48,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageServic
 import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageService.DataObjectResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
@@ -103,6 +107,15 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     VolumeDataStoreDao volumeDataStoreDao;
     @Inject
     DataMigrationUtility migrationHelper;
+    @Inject
+    TemplateManager templateManager;
+    @Inject
+    VMTemplateDao templateDao;
+    @Inject
+    TemplateDataFactory templateDataFactory;
+    @Inject
+    DataCenterDao dcDao;
+
 
     ConfigKey<Double> ImageStoreImbalanceThreshold = new ConfigKey<>("Advanced", Double.class,
             "image.store.imbalance.threshold",
@@ -304,8 +317,9 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     }
 
     @Override
-    public Future<TemplateApiResult> orchestrateTemplateCopyToImageStore(TemplateInfo source, DataStore destStore) {
-        return submit(destStore.getScope().getScopeId(), new CopyTemplateTask(source, destStore));
+    public Future<TemplateApiResult> orchestrateTemplateCopyFromSecondaryStores(long srcTemplateId, DataStore destStore) {
+        Long dstZoneId = destStore.getScope().getScopeId();
+        return submit(dstZoneId, new CopyTemplateFromSecondaryStorageTask(srcTemplateId, destStore));
     }
 
     protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy, int skipped) {
@@ -624,13 +638,13 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
     }
 
-    private class CopyTemplateTask implements Callable<TemplateApiResult> {
-        private TemplateInfo sourceTmpl;
-        private DataStore destStore;
-        private String logid;
+    private class CopyTemplateFromSecondaryStorageTask implements Callable<TemplateApiResult> {
+        private final long srcTemplateId;
+        private final DataStore destStore;
+        private final String logid;
 
-        public CopyTemplateTask(TemplateInfo sourceTmpl, DataStore destStore) {
-            this.sourceTmpl = sourceTmpl;
+        CopyTemplateFromSecondaryStorageTask(long srcTemplateId, DataStore destStore) {
+            this.srcTemplateId = srcTemplateId;
             this.destStore = destStore;
             this.logid = ThreadContext.get(LOGCONTEXTID);
         }
@@ -639,17 +653,16 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         public TemplateApiResult call() {
             ThreadContext.put(LOGCONTEXTID, logid);
             TemplateApiResult result;
-            AsyncCallFuture<TemplateApiResult> future = templateService.copyTemplateToImageStore(sourceTmpl, destStore);
+            long destZoneId = destStore.getScope().getScopeId();
+            TemplateInfo sourceTmpl = templateDataFactory.getTemplate(srcTemplateId, DataStoreRole.Image);
             try {
-                result = future.get();
-            } catch (ExecutionException | InterruptedException e) {
-                logger.warn("Exception while copying template [{}] from image store [{}] to image store [{}]: {}",
-                        sourceTmpl.getUniqueName(), sourceTmpl.getDataStore().getName(), destStore.getName(), e.toString());
+                templateService.handleTemplateCopyFromSecondaryStores(srcTemplateId, destStore);
                 result = new TemplateApiResult(sourceTmpl);
-                result.setResult(e.getMessage());
+            } finally {
+                tryCleaningUpExecutor(destZoneId);
+                ThreadContext.clearAll();
             }
-            tryCleaningUpExecutor(destStore.getScope().getScopeId());
-            ThreadContext.clearAll();
+
             return result;
         }
     }

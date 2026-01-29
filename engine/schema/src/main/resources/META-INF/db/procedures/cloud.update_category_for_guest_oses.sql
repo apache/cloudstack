@@ -15,14 +15,19 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
---;
--- Schema upgrade from 4.20.2.0 to 4.20.3.0
---;
-
-ALTER TABLE `cloud`.`template_store_ref` MODIFY COLUMN `download_url` varchar(2048);
-
-UPDATE `cloud`.`alert` SET type = 33 WHERE name = 'ALERT.VR.PUBLIC.IFACE.MTU';
-UPDATE `cloud`.`alert` SET type = 34 WHERE name = 'ALERT.VR.PRIVATE.IFACE.MTU';
-
--- Update configuration 'kvm.ssh.to.agent' description and is_dynamic fields
-UPDATE `cloud`.`configuration` SET description = 'True if the management server will restart the agent service via SSH into the KVM hosts after or during maintenance operations', is_dynamic = 1 WHERE name = 'kvm.ssh.to.agent';
+-- Move existing guest OS to new categories
+DROP PROCEDURE IF EXISTS `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`;
+CREATE PROCEDURE `cloud`.`UPDATE_CATEGORY_FOR_GUEST_OSES`(IN category_name VARCHAR(255), IN os_name VARCHAR(255))
+BEGIN
+    DECLARE category_id BIGINT
+;   SELECT `id` INTO category_id
+    FROM `cloud`.`guest_os_category`
+    WHERE `name` = category_name
+    LIMIT 1
+;   IF category_id IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Category not found'
+;   END IF
+;   UPDATE `cloud`.`guest_os`
+    SET `category_id` = category_id
+    WHERE `display_name` LIKE CONCAT('%', os_name, '%')
+; END;

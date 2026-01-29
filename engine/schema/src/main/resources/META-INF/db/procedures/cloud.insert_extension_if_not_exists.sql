@@ -15,14 +15,24 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
---;
--- Schema upgrade from 4.20.2.0 to 4.20.3.0
---;
-
-ALTER TABLE `cloud`.`template_store_ref` MODIFY COLUMN `download_url` varchar(2048);
-
-UPDATE `cloud`.`alert` SET type = 33 WHERE name = 'ALERT.VR.PUBLIC.IFACE.MTU';
-UPDATE `cloud`.`alert` SET type = 34 WHERE name = 'ALERT.VR.PRIVATE.IFACE.MTU';
-
--- Update configuration 'kvm.ssh.to.agent' description and is_dynamic fields
-UPDATE `cloud`.`configuration` SET description = 'True if the management server will restart the agent service via SSH into the KVM hosts after or during maintenance operations', is_dynamic = 1 WHERE name = 'kvm.ssh.to.agent';
+DROP PROCEDURE IF EXISTS `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`;
+CREATE PROCEDURE `cloud`.`INSERT_EXTENSION_IF_NOT_EXISTS`(
+    IN ext_name VARCHAR(255),
+    IN ext_desc VARCHAR(255),
+    IN ext_path VARCHAR(255)
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM `cloud`.`extension` WHERE `name` = ext_name
+    ) THEN
+        INSERT INTO `cloud`.`extension` (
+            `uuid`, `name`, `description`, `type`,
+            `relative_path`, `path_ready`,
+            `is_user_defined`, `state`, `created`, `removed`
+        )
+        VALUES (
+            UUID(), ext_name, ext_desc, 'Orchestrator',
+            ext_path, 1, 0, 'Enabled', NOW(), NULL
+        )
+;   END IF
+;END;

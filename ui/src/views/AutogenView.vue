@@ -1196,15 +1196,12 @@ export default {
             }
           }
         }
-        if (this.items.length > 0) {
-          if (!this.showAction || this.dataView) {
-            this.resource = this.items[0]
-            this.$emit('change-resource', this.resource)
-          }
-        } else {
-          if (this.dataView) {
-            this.$router.push({ path: '/exception/404' })
-          }
+        if (this.items.length <= 0 && this.dataView) {
+          this.$router.push({ path: '/exception/404' })
+        }
+        if (!this.showAction || this.dataView) {
+          this.resource = this.items?.[0] || {}
+          this.$emit('change-resource', this.resource)
         }
       }).catch(error => {
         if (!error || !error.message) {
