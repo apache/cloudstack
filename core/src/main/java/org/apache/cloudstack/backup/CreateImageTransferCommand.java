@@ -25,16 +25,18 @@ public class CreateImageTransferCommand extends Command {
     private String exportName;
     private int nbdPort;
     private String direction;
+    private String checkpointId;
 
     public CreateImageTransferCommand() {
     }
 
-    public CreateImageTransferCommand(String transferId, String hostIpAddress, String exportName, int nbdPort, String direction) {
+    public CreateImageTransferCommand(String transferId, String hostIpAddress, String exportName, int nbdPort, String direction, String checkpointId) {
         this.transferId = transferId;
         this.hostIpAddress = hostIpAddress;
         this.exportName = exportName;
         this.nbdPort = nbdPort;
         this.direction = direction;
+        this.checkpointId = checkpointId;
     }
 
     public String getExportName() {
@@ -60,5 +62,9 @@ public class CreateImageTransferCommand extends Command {
 
     public String getDirection() {
         return direction;
+    }
+
+    public String getCheckpointId() {
+        return checkpointId;
     }
 }

@@ -34,6 +34,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles = StartBackupCommand.class)
@@ -61,7 +62,7 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             }
 
             // Create backup XML
-            String backupXml = createBackupXml(cmd, fromCheckpointId, nbdPort);
+            String backupXml = createBackupXml(cmd, fromCheckpointId, nbdPort, resource);
             String checkpointXml = createCheckpointXml(toCheckpointId);
 
             // Write XMLs to temp files
@@ -101,28 +102,36 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         }
     }
 
-    private String createBackupXml(StartBackupCommand cmd, String fromCheckpointId, int nbdPort) {
+    private String createBackupXml(StartBackupCommand cmd, String fromCheckpointId, int nbdPort, LibvirtComputingResource resource) {
         StringBuilder xml = new StringBuilder();
         xml.append("<domainbackup mode=\"pull\">\n");
 
-        if (fromCheckpointId != null && !fromCheckpointId.isEmpty()) {
+        if (StringUtils.isNotBlank(fromCheckpointId)) {
             xml.append("  <incremental>").append(fromCheckpointId).append("</incremental>\n");
         }
 
-        xml.append(String.format("  <server transport=\"tcp\" name=\"%s\" port=\"%s\"/>\n", cmd.getHostIpAddress(), nbdPort));
+        xml.append(String.format("  <server transport=\"tcp\" name=\"%s\" port=\"%d\"/>\n", cmd.getHostIpAddress(), nbdPort));
         xml.append("  <disks>\n");
 
-        // Add disk entries - simplified for POC
-        Map<String, String> diskPaths = cmd.getDiskVolumePaths();
-        int diskIndex = 0;
-        for (Map.Entry<String, String> entry : diskPaths.entrySet()) {
-            String deviceName = "vd" + (char)('a' + diskIndex);
-            String scratchFile = "/var/tmp/scratch-" + entry.getKey() + ".qcow2";
-            xml.append("    <disk name=\"").append(deviceName).append("\" type=\"file\" exportname=\"")
-               .append(entry.getKey()).append("\">\n");
+        Map<String, String> diskPathUuidMap = cmd.getDiskPathUuidMap();
+        Map<String, String> diskPathLabelMap = resource.getDiskPathLabelMap(cmd.getVmName());
+
+        for (Map.Entry<String, String> entry : diskPathLabelMap.entrySet()) {
+            if (!diskPathUuidMap.containsKey(entry.getKey())) {
+                continue;
+            }
+            String diskName = entry.getValue();
+            String export = diskPathUuidMap.get(entry.getKey());
+            // todo: use UUID here as well?
+            String scratchFile = "/var/tmp/scratch-" + export + ".qcow2";
+            xml.append("    <disk name=\"").append(diskName).append("\" type=\"file\" exportname=\"").append(export);
+            if (StringUtils.isNotBlank(fromCheckpointId)) {
+                String exportBitmap = export + "-" + fromCheckpointId.substring(0, 4);
+                xml.append("\" exportbitmap=\"").append(exportBitmap);
+            }
+            xml.append("\">\n");
             xml.append("      <scratch file=\"").append(scratchFile).append("\"/>\n");
             xml.append("    </disk>\n");
-            diskIndex++;
         }
 
         xml.append("  </disks>\n");

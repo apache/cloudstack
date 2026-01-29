@@ -176,9 +176,11 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         backup = backupDao.persist(backup);
 
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
-        Map<String, String> diskVolumePaths = new HashMap<>();
+        Map<String, String> diskPathUuidMap = new HashMap<>();
         for (Volume vol : volumes) {
-            diskVolumePaths.put(vol.getUuid(), vol.getPath());
+            StoragePoolVO storagePool = primaryDataStoreDao.findById(vol.getPoolId());
+            String volumePath = String.format("/mnt/%s/%s", storagePool.getUuid(), vol.getPath());
+            diskPathUuidMap.put(volumePath, vol.getUuid());
         }
 
         Host host = hostDao.findById(vm.getHostId());
@@ -187,7 +189,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             toCheckpointId,
             fromCheckpointId,
             nbdPort,
-            diskVolumePaths,
+            diskPathUuidMap,
             host.getPrivateIpAddress()
         );
 
@@ -240,20 +242,18 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             throw new CloudRuntimeException("Backup does not belong to VM: " + vmId);
         }
 
-        // Get VM
         VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("VM not found: " + vmId);
         }
 
-        boolean dummyOffering = isDummyOffering(vm.getBackupOfferingId());
+        boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
 
         List<ImageTransferVO> transfers = imageTransferDao.listByBackupId(backupId);
         if (CollectionUtils.isNotEmpty(transfers)) {
             throw new CloudRuntimeException("Image transfers not finalized for backup: " + backupId);
         }
 
-        // Send StopBackupCommand to agent
         StopBackupCommand stopCmd = new StopBackupCommand(vm.getInstanceName(), vmId, backupId);
 
         try {
@@ -261,7 +261,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             if (dummyOffering) {
                 answer = new StopBackupAnswer(stopCmd, true, "Dummy answer");
             } else {
-                answer = (StopBackupAnswer) agentManager.send(vm.getHostId(), stopCmd);
+                answer = (StopBackupAnswer) agentManager.send(backup.getHostId(), stopCmd);
             }
 
             if (!answer.getResult()) {
@@ -276,7 +276,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
             // Delete old checkpoint if exists (POC: skip actual libvirt call)
             if (oldCheckpointId != null) {
-                // In production: send command to delete oldCheckpointId via virsh checkpoint-delete
+                // todo: In production: send command to delete oldCheckpointId via virsh checkpoint-delete
                 logger.debug("Would delete old checkpoint: " + oldCheckpointId);
             }
 
@@ -305,7 +305,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 host.getPrivateIpAddress(),
                 volume.getUuid(),
                 backup.getNbdPort(),
-                direction
+                direction,
+                backup.getFromCheckpointId()
         );
 
         try {
@@ -392,7 +393,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 host.getPrivateIpAddress(),
                 volume.getUuid(),
                 nbdPort,
-                direction
+                direction,
+                null
         );
 
         EndPoint ssvm = _epSelector.findSsvm(volume.getDataCenterId());

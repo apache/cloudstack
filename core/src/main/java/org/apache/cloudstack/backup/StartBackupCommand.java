@@ -26,19 +26,19 @@ public class StartBackupCommand extends Command {
     private String toCheckpointId;
     private String fromCheckpointId;
     private int nbdPort;
-    private Map<String, String> diskVolumePaths;  // volumeId -> path mapping
+    private Map<String, String> diskPathUuidMap;
     private String hostIpAddress;
 
     public StartBackupCommand() {
     }
 
     public StartBackupCommand(String vmName, String toCheckpointId, String fromCheckpointId,
-                             int nbdPort, Map<String, String> diskVolumePaths, String hostIpAddress) {
+                             int nbdPort, Map<String, String> diskPathUuidMap, String hostIpAddress) {
         this.vmName = vmName;
         this.toCheckpointId = toCheckpointId;
         this.fromCheckpointId = fromCheckpointId;
         this.nbdPort = nbdPort;
-        this.diskVolumePaths = diskVolumePaths;
+        this.diskPathUuidMap = diskPathUuidMap;
         this.hostIpAddress = hostIpAddress;
     }
 
@@ -58,8 +58,8 @@ public class StartBackupCommand extends Command {
         return nbdPort;
     }
 
-    public Map<String, String> getDiskVolumePaths() {
-        return diskVolumePaths;
+    public Map<String, String> getDiskPathUuidMap() {
+        return diskPathUuidMap;
     }
 
     public boolean isIncremental() {

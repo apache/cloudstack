@@ -3865,6 +3865,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             payload.put("host", hostIp);
             payload.put("port", nbdPort);
             payload.put("export", exportName);
+            String checkpointId = cmd.getCheckpointId();
+            if (checkpointId != null) {
+                payload.put("export_bitmap", exportName + "-" + checkpointId.substring(0, 4));
+            }
 
             final String json = new GsonBuilder().create().toJson(payload);
             File dir = new File("/tmp/imagetransfer");

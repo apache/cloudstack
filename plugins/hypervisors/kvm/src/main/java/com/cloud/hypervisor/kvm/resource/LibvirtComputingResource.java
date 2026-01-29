@@ -5227,6 +5227,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         logger.debug("Removed all checkpoints of volume [{}] on VM [{}].", volumeUuid, vmName);
     }
 
+    public Map<String, String> getDiskPathLabelMap(String vmName) {
+        try {
+            Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
+            List<DiskDef> disks = getDisks(conn, vmName);
+            Map<String, String> diskPathLabelMap = new HashMap<>();
+            for (DiskDef disk : disks) {
+                if (disk.getDeviceType() != DeviceType.DISK) {
+                    continue;
+                }
+                diskPathLabelMap.put(disk.getDiskPath(), disk.getDiskLabel());
+            }
+            return diskPathLabelMap;
+        } catch (LibvirtException e) {
+            logger.error("Failed to get disk path label map for VM [{}] due to: [{}].", vmName, e.getMessage(), e);
+            throw new CloudRuntimeException(e);
+        }
+    }
+
     public boolean recreateCheckpointsOnVm(List<VolumeObjectTO> volumes, String vmName, Connect conn) {
         logger.debug("Trying to recreate checkpoints on VM [{}] with volumes [{}].", vmName, volumes);
         try {
