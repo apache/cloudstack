@@ -187,6 +187,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private boolean  usageSnapshotSelection = false;
 
     private static TimeZone usageAggregationTimeZone = TimeZone.getTimeZone("GMT");
+    private static TimeZone usageExecutionTimeZone = TimeZone.getTimeZone("GMT");
 
     public UsageManagerImpl() {
     }
@@ -241,6 +242,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (aggregationTimeZone != null && !aggregationTimeZone.isEmpty()) {
             usageAggregationTimeZone = TimeZone.getTimeZone(aggregationTimeZone);
         }
+        if (execTimeZone != null) {
+            usageExecutionTimeZone = TimeZone.getTimeZone(execTimeZone);
+        }
 
         try {
             if ((execTime == null) || (aggregationRange == null)) {
@@ -249,34 +253,18 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 throw new ConfigurationException("Missing configuration values for usage job, usage.stats.job.exec.time = " + execTime +
                         ", usage.stats.job.aggregation.range = " + aggregationRange);
             }
-            String[] execTimeSegments = execTime.split(":");
-            if (execTimeSegments.length != 2) {
-                logger.error("Unable to parse usage.stats.job.exec.time");
-                throw new ConfigurationException("Unable to parse usage.stats.job.exec.time '" + execTime + "'");
+
+            Date nextJobExecTime = UsageUtils.getNextJobExecutionTime(usageExecutionTimeZone, execTime);
+            if (nextJobExecTime == null) {
+                throw new ConfigurationException(String.format("Unable to parse configuration 'usage.stats.job.exec.time' value [%s].", execTime));
             }
-            int hourOfDay = Integer.parseInt(execTimeSegments[0]);
-            int minutes = Integer.parseInt(execTimeSegments[1]);
-
-            Date currentDate = new Date();
-            _jobExecTime.setTime(currentDate);
-
-            _jobExecTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
-            _jobExecTime.set(Calendar.MINUTE, minutes);
-            _jobExecTime.set(Calendar.SECOND, 0);
-            _jobExecTime.set(Calendar.MILLISECOND, 0);
-
-            TimeZone jobExecTimeZone = execTimeZone != null ? TimeZone.getTimeZone(execTimeZone) : Calendar.getInstance().getTimeZone();
-            _jobExecTime.setTimeZone(jobExecTimeZone);
-
-            // if the hour to execute the job has already passed, roll the day forward to the next day
-            if (_jobExecTime.getTime().before(currentDate)) {
-                _jobExecTime.roll(Calendar.DAY_OF_YEAR, true);
-            }
+            _jobExecTime.setTimeZone(usageExecutionTimeZone);
+            _jobExecTime.setTime(nextJobExecTime);
 
             logger.info("Usage is configured to execute in time zone [{}], at [{}], each [{}] minutes; the current time in that timezone is [{}] and the " +
                             "next job is scheduled to execute at [{}]. During its execution, Usage will aggregate stats according to the time zone [{}] defined in global setting [usage.aggregation.timezone].",
-                    jobExecTimeZone.getID(), execTime, aggregationRange, DateUtil.displayDateInTimezone(jobExecTimeZone, currentDate),
-                    DateUtil.displayDateInTimezone(jobExecTimeZone, _jobExecTime.getTime()), usageAggregationTimeZone.getID());
+                    usageExecutionTimeZone.getID(), execTime, aggregationRange, DateUtil.displayDateInTimezone(usageExecutionTimeZone, new Date()),
+                    DateUtil.displayDateInTimezone(usageExecutionTimeZone, _jobExecTime.getTime()), usageAggregationTimeZone.getID());
 
             _aggregationDuration = Integer.parseInt(aggregationRange);
             if (_aggregationDuration < UsageUtils.USAGE_AGGREGATION_RANGE_MIN) {
@@ -2166,6 +2154,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                             updateJob(nextJob.getId(), null, null, null, UsageJobVO.JOB_SCHEDULED);
                             scheduleParse();
                         }
+                    }
+
+                    if (_usageJobDao.getNextRecurringJob() == null) {
+                        // Own the usage processing immediately if no other node is owning it
+                        _usageJobDao.createNewJob(_hostname, _pid, UsageJobVO.JOB_TYPE_RECURRING);
                     }
 
                     Long jobId = _usageJobDao.checkHeartbeat(_hostname, _pid, _aggregationDuration);

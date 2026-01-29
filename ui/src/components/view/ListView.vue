@@ -747,6 +747,20 @@
         >{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
+      <template v-if="column.key === 'parentname' && ['snapshot'].includes($route.path.split('/')[1])">
+        <router-link
+          v-if="record.parent && $router.resolve('/snapshot/' + record.parent).matched[0].redirect !== '/exception/404'"
+          :to="{ path: '/snapshot/' + record.parent }"
+        >{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'parentName' && ['vmsnapshot'].includes($route.path.split('/')[1])">
+        <router-link
+          v-if="record.parent && $router.resolve('/vmsnapshot/' + record.parent).matched[0].redirect !== '/exception/404'"
+          :to="{ path: '/vmsnapshot/' + record.parent }"
+        >{{ text }}</router-link>
+        <span v-else>{{ text }}</span>
+      </template>
       <template v-if="column.key === 'templateversion'">
         <span> {{ record.version }} </span>
       </template>
@@ -862,6 +876,14 @@
       <template v-if="['isfeatured'].includes(column.key) && ['guestoscategory'].includes($route.path.split('/')[1])">
         {{ record.isfeatured ? $t('label.yes') : $t('label.no') }}
       </template>
+      <template v-if="['agentscount'].includes(column.key)">
+        <router-link
+          v-if="['managementserver'].includes($route.path.split('/')[1]) && $router.resolve('/host').matched[0].redirect !== '/exception/404'"
+          :to="{ path: '/host', query: { managementserverid: record.id } }">
+          {{ text }}
+        </router-link>
+        <span v-else> {{ text }} </span>
+      </template>
       <template v-if="column.key === 'order'">
         <div class="shift-btns">
           <a-tooltip
@@ -966,7 +988,7 @@
           @onClick="$resetConfigurationValueConfirm(item, resetConfig)"
           v-if="editableValueKey !== record.key"
           icon="reload-outlined"
-          :disabled="!('updateConfiguration' in $store.getters.apis)"
+          :disabled="!('resetConfiguration' in $store.getters.apis) || record.value === record.defaultvalue"
         />
       </template>
       <template v-if="column.key === 'gpuDeviceActions'">
@@ -1252,15 +1274,7 @@ export default {
         this.editableValueKey = null
         this.$store.dispatch('RefreshFeatures')
         this.$messageConfigSuccess(`${this.$t('message.setting.updated')} ${record.name}`, record)
-        if (json.updateconfigurationresponse &&
-          json.updateconfigurationresponse.configuration &&
-          !json.updateconfigurationresponse.configuration.isdynamic &&
-          ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          this.$notification.warning({
-            message: this.$t('label.status'),
-            description: this.$t('message.restart.mgmt.server')
-          })
-        }
+        this.$notifyConfigurationValueChange(json?.updateconfigurationresponse?.configuration || null)
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.save.setting'))

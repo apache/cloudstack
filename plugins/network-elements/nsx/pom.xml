@@ -59,7 +59,7 @@
         <dependency>
             <groupId>com.vmware.vapi</groupId>
             <artifactId>vapi-runtime</artifactId>
-            <version>2.40.0</version>
+            <version>2.61.2</version>
         </dependency>
     </dependencies>
 </project>
