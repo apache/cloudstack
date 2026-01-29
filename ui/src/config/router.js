@@ -66,6 +66,7 @@ function generateRouterMap (section) {
       if ('show' in child && !child.show()) {
         continue
       }
+      console.log('Generating route for child:', child.name)
       var component = child.component ? child.component : shallowRef(AutogenView)
       var route = {
         name: child.name,
