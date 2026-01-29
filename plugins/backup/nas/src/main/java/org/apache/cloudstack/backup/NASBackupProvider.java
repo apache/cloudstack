@@ -215,7 +215,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
         List<Backup.VolumeInfo> backedVolumes = backup.getBackedUpVolumes();
         List<VolumeVO> volumes = backedVolumes.stream()
-                .map(volume -> volumeDao.findByUuid(volume.getUuid()))
+                .map(volume -> volumeDao.findByUuid(volume.getPath()))
                 .sorted((v1, v2) -> Long.compare(v1.getDeviceId(), v2.getDeviceId()))
                 .collect(Collectors.toList());
 
