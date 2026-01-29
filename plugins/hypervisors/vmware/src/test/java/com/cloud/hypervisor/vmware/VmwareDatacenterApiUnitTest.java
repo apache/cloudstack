@@ -79,6 +79,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -240,12 +241,16 @@ public class VmwareDatacenterApiUnitTest {
     }
 
     //@Test(expected = InvalidParameterValueException.class)
+    @Test
+    @Ignore
     public void testAddVmwareDcToInvalidZone() throws ResourceInUseException, IllegalArgumentException, DiscoveryException, Exception {
         Mockito.when(addCmd.getZoneId()).thenReturn(2L);
         _vmwareDatacenterService.addVmwareDatacenter(addCmd);
     }
 
     //@Test(expected = ResourceInUseException.class)
+    @Test
+    @Ignore
     public void testAddVmwareDcToZoneWithClusters() throws ResourceInUseException, IllegalArgumentException, DiscoveryException, Exception {
         Mockito.when(_clusterDao.listByZoneId(1L)).thenReturn(clusterList);
         _vmwareDatacenterService.addVmwareDatacenter(addCmd);
@@ -264,36 +269,48 @@ public class VmwareDatacenterApiUnitTest {
     }
 
     //@Test(expected = ResourceInUseException.class)
+    @Test
+    @Ignore
     public void testAddVmwareDcToZoneWithVmwareDc() throws ResourceInUseException, IllegalArgumentException, DiscoveryException, Exception {
         Mockito.when(_vmwareDcDao.getVmwareDatacenterByNameAndVcenter(vmwareDcName, vCenterHost)).thenReturn(vmwareDcs);
         _vmwareDatacenterService.addVmwareDatacenter(addCmd);
     }
 
     //@Test(expected = InvalidParameterValueException.class)
+    @Test
+    @Ignore
     public void testAddVmwareDcWithNullUser() throws ResourceInUseException, IllegalArgumentException, DiscoveryException, Exception {
         Mockito.when(addCmd.getUsername()).thenReturn(null);
         _vmwareDatacenterService.addVmwareDatacenter(addCmd);
     }
 
     //@Test(expected = InvalidParameterValueException.class)
+    @Test
+    @Ignore
     public void testAddVmwareDcWithNullPassword() throws ResourceInUseException, IllegalArgumentException, DiscoveryException, Exception {
         Mockito.when(addCmd.getPassword()).thenReturn(null);
         _vmwareDatacenterService.addVmwareDatacenter(addCmd);
     }
 
     //@Test(expected = InvalidParameterValueException.class)
+    @Test
+    @Ignore
     public void testAddVmwareDcWithNullUrl() throws ResourceInUseException, IllegalArgumentException, DiscoveryException, Exception {
         Mockito.when(addCmd.getVcenter()).thenReturn(null);
         _vmwareDatacenterService.addVmwareDatacenter(addCmd);
     }
 
     //@Test(expected = InvalidParameterValueException.class)
+    @Test
+    @Ignore
     public void testAddVmwareDcWithNullDcName() throws ResourceInUseException, IllegalArgumentException, DiscoveryException, Exception {
         Mockito.when(addCmd.getName()).thenReturn(null);
         _vmwareDatacenterService.addVmwareDatacenter(addCmd);
     }
 
     //@Test(expected = CloudRuntimeException.class)
+    @Test
+    @Ignore
     public void testReAddVmwareDc() throws ResourceInUseException, IllegalArgumentException, DiscoveryException, Exception {
         Mockito.when(_vmwareDcZoneMapDao.findByZoneId(1L)).thenReturn(dcZoneMap);
         _vmwareDatacenterService.addVmwareDatacenter(addCmd);

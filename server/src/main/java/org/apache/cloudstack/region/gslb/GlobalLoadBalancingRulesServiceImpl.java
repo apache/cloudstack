@@ -673,7 +673,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             // set site as 'local' for the site in that zone
             for (Pair<Long, Long> innerLoopZoneId : gslbSiteIds) {
                 SiteLoadBalancerConfig siteLb = zoneSiteLoadbalancerMap.get(innerLoopZoneId.first());
-                siteLb.setLocal(zoneId.first() == innerLoopZoneId.first());
+                siteLb.setLocal(zoneId.first().equals(innerLoopZoneId.first()));
                 slbs.add(siteLb);
             }
 

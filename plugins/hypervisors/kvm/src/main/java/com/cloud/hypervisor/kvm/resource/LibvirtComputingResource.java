@@ -3882,12 +3882,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         LOGGER.info(String.format("Host uses control group [%s].", output));
 
         if (!CGROUP_V2.equals(output)) {
-            LOGGER.info(String.format("Setting host CPU max capacity to 0, as it uses cgroup v1.", getHostCpuMaxCapacity()));
+            LOGGER.info("Setting host CPU max capacity: {} to 0, as it uses cgroup v1.", getHostCpuMaxCapacity());
             setHostCpuMaxCapacity(0);
             return;
         }
 
-        LOGGER.info(String.format("Calculating the max shares of the host."));
+        LOGGER.info("Calculating the max shares of the host.");
         setHostCpuMaxCapacity(cpuCores * cpuSpeed.intValue());
         LOGGER.info(String.format("The max shares of the host is [%d].", getHostCpuMaxCapacity()));
     }
@@ -5302,7 +5302,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         for (String snapshotName: snapshotNames) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Cleaning snapshot [%s] of VM [%s] metadata.", snapshotNames, dm.getName()));
+                LOGGER.debug("Cleaning snapshot {} of VM {} metadata.", Arrays.toString(snapshotNames), dm.getName());
             }
             DomainSnapshot snapshot = dm.snapshotLookupByName(snapshotName);
             snapshot.delete(flags); // clean metadata of vm snapshot

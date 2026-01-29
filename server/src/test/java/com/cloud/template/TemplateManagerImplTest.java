@@ -107,6 +107,7 @@ import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -254,6 +255,7 @@ public class TemplateManagerImplTest {
         templateManager.verifyTemplateId(1L);
     }
 
+    @Ignore
     public void testVerifyTemplateIdOfNonSystemTemplate() {
         templateManager.verifyTemplateId(1L);
     }

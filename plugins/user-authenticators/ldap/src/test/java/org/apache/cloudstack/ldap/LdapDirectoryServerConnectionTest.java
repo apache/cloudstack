@@ -34,6 +34,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -136,6 +137,7 @@ public class LdapDirectoryServerConnectionTest {
     }
 
 //    @Test
+    @Ignore
     public void testEmbeddedLdapAvailable() {
         try {
             List<LdapUser> usahs = ldapManager.getUsers(1L);
@@ -157,6 +159,7 @@ public class LdapDirectoryServerConnectionTest {
     }
 
 //    @Test
+    @Ignore
     public void testUserCreation() {
         LdapConnection connection = new LdapNetworkConnection( "localhost", 10389 );
         try {

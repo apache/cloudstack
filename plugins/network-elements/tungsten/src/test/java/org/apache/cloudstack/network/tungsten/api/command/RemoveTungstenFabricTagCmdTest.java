@@ -24,6 +24,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.api.response.TungstenFabricTagResponse;
 import org.apache.cloudstack.network.tungsten.service.TungstenService;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,6 +62,7 @@ public class RemoveTungstenFabricTagCmdTest {
         ReflectionTestUtils.setField(removeTungstenFabricTagCmd, "tagUuid", "test");
     }
 
+    @After
     public void tearDown() throws Exception {
         closeable.close();
     }

@@ -456,6 +456,7 @@ public class QueryManagerImplTest {
         Assert.assertTrue(CollectionUtils.isNotEmpty(result));
     }
 
+    @Test
     public void testListAffectedVmsForScopeChange() {
         Long clusterId = 1L;
         Long poolId = 2L;

@@ -55,7 +55,7 @@ public class OnwireClassRegistry {
     }
 
     public OnwireClassRegistry(List<String> packages) {
-        packages.addAll(packages);
+        this.packages.addAll(packages);
     }
 
     public List<String> getPackages() {
