@@ -2920,8 +2920,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (!isAgentOnHost || vmsMigrating || host.getStatus() == Status.Up) {
             return;
         }
-        final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
-        if (sshToAgent) {
+        if (KvmSshToAgentEnabled.value()) {
             Ternary<String, String, String> credentials = getHostCredentials(host);
             connectAndRestartAgentOnHost(host, credentials.first(), credentials.second(), credentials.third());
         } else {
