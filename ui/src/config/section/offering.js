@@ -340,9 +340,9 @@ export default {
       icon: 'cloud-upload-outlined',
       docHelp: 'adminguide/virtual_machines.html#backup-offerings',
       permission: ['listBackupOfferings'],
-      searchFilters: ['zoneid'],
-      columns: ['name', 'description', 'zonename'],
-      details: ['name', 'id', 'description', 'externalid', 'zone', 'allowuserdrivenbackups', 'created'],
+      searchFilters: ['zoneid', 'domainid'],
+      columns: ['name', 'description', 'domain', 'zonename'],
+      details: ['name', 'id', 'description', 'externalid', 'domain', 'zone', 'allowuserdrivenbackups', 'created'],
       related: [{
         name: 'vm',
         title: 'label.instances',

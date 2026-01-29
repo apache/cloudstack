@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -466,7 +467,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
+    public Long finalizeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -488,6 +489,11 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException {
         // TODO Auto-generated method stub
     }
 

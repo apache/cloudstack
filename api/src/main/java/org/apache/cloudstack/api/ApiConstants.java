@@ -282,6 +282,7 @@ public class ApiConstants {
     public static final String HOST = "host";
     public static final String HOST_CONTROL_STATE = "hostcontrolstate";
     public static final String HOSTS_MAP = "hostsmap";
+    public static final String HTTP_REQUEST_TYPE = "httprequesttype";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
     public static final String INSTANCE = "instance";
@@ -375,6 +376,7 @@ public class ApiConstants {
     public static final String MAC_ADDRESS = "macaddress";
     public static final String MAC_ADDRESSES = "macaddresses";
     public static final String MANUAL_UPGRADE = "manualupgrade";
+    public static final String MATCH_TYPE = "matchtype";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_BACKUPS = "maxbackups";
@@ -1215,6 +1217,7 @@ public class ApiConstants {
     public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
     public static final String ISO_NAME = "isoname";
     public static final String ISO_STATE = "isostate";
+    public static final String ISO_URL = "isourl";
     public static final String SEMANTIC_VERSION = "semanticversion";
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
@@ -1362,6 +1365,10 @@ public class ApiConstants {
     public static final String LIST_ONLY_DEFAULT_THEME = "listonlydefaulttheme";
 
     public static final String RECURSIVE_DOMAINS = "recursivedomains";
+
+    public static final String VPN_CUSTOMER_GATEWAY_PARAMETERS = "vpncustomergatewayparameters";
+    public static final String OBSOLETE_PARAMETERS = "obsoleteparameters";
+    public static final String EXCLUDED_PARAMETERS = "excludedparameters";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

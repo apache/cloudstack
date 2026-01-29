@@ -503,6 +503,7 @@ public class EventTypes {
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE = "VPN.S2S.CUSTOMER.GATEWAY.CREATE";
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE = "VPN.S2S.CUSTOMER.GATEWAY.DELETE";
     public static final String EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE = "VPN.S2S.CUSTOMER.GATEWAY.UPDATE";
+    public static final String EVENT_S2S_VPN_GATEWAY_OBSOLETE_PARAMS = "VPN.S2S.GATEWAY.OBSOLETE.PARAMS";
     public static final String EVENT_S2S_VPN_CONNECTION_CREATE = "VPN.S2S.CONNECTION.CREATE";
     public static final String EVENT_S2S_VPN_CONNECTION_DELETE = "VPN.S2S.CONNECTION.DELETE";
     public static final String EVENT_S2S_VPN_CONNECTION_RESET = "VPN.S2S.CONNECTION.RESET";
@@ -582,6 +583,7 @@ public class EventTypes {
 
     // Network ACL
     public static final String EVENT_NETWORK_ACL_CREATE = "NETWORK.ACL.CREATE";
+    public static final String EVENT_NETWORK_ACL_IMPORT = "NETWORK.ACL.IMPORT";
     public static final String EVENT_NETWORK_ACL_DELETE = "NETWORK.ACL.DELETE";
     public static final String EVENT_NETWORK_ACL_REPLACE = "NETWORK.ACL.REPLACE";
     public static final String EVENT_NETWORK_ACL_UPDATE = "NETWORK.ACL.UPDATE";
@@ -1151,6 +1153,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE, Site2SiteCustomerGateway.class);
         entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE, Site2SiteCustomerGateway.class);
         entityEventDetails.put(EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE, Site2SiteCustomerGateway.class);
+        entityEventDetails.put(EVENT_S2S_VPN_GATEWAY_OBSOLETE_PARAMS, Site2SiteCustomerGateway.class);
         entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_CREATE, Site2SiteVpnConnection.class);
         entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_DELETE, Site2SiteVpnConnection.class);
         entityEventDetails.put(EVENT_S2S_VPN_CONNECTION_RESET, Site2SiteVpnConnection.class);

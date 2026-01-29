@@ -81,6 +81,7 @@ function generateRouterMap (section) {
           filters: child.filters,
           params: child.params ? child.params : {},
           columns: child.columns,
+          advisories: !vueProps.$config.advisoriesDisabled ? child.advisories : undefined,
           details: child.details,
           searchFilters: child.searchFilters,
           related: child.related,
@@ -92,7 +93,7 @@ function generateRouterMap (section) {
         hideChildrenInMenu: true,
         children: [
           {
-            path: '/' + child.name + '/:id',
+            path: '/' + child.name + '/:id(.*)',
             hidden: child.hidden,
             meta: {
               title: child.title,
@@ -147,7 +148,7 @@ function generateRouterMap (section) {
     map.meta.tabs = section.tabs
 
     map.children = [{
-      path: '/' + section.name + '/:id',
+      path: '/' + section.name + '/:id(.*)',
       actions: section.actions ? section.actions : [],
       meta: {
         title: section.title,
@@ -178,6 +179,10 @@ function generateRouterMap (section) {
 
   if (section.columns) {
     map.meta.columns = section.columns
+  }
+
+  if (!vueProps.$config.advisoriesDisabled && section.advisories) {
+    map.meta.advisories = section.advisories
   }
 
   if (section.actions) {
