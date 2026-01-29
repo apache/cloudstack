@@ -16,8 +16,11 @@
 // under the License.
 package com.cloud.user.dao;
 
+import java.util.List;
+
 import com.cloud.user.UserDataVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
@@ -63,6 +66,18 @@ public class UserDataDaoImpl extends GenericDaoBase<UserDataVO, Long> implements
 
         return findOneBy(sc);
     }
+
+    @Override
+    public List<Long> listIdsByAccountId(long accountId) {
+        GenericSearchBuilder<UserDataVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("accountId", accountId);
+        return customSearch(sc, null);
+    }
+
 
     @Override
     public int removeByAccountId(long accountId) {
