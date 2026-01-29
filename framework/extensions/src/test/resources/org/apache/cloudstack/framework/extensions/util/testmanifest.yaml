@@ -1,0 +1,110 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+apiVersion: cloudstack.apache.org/v1
+kind: OrchestratorExtension
+
+metadata:
+  name: test
+  displayName: Test Extension
+  description: >
+    Test extension via the Orchestrator Extension Framework.
+  version: 0.1.0
+  maintainer: "Test Maintainer <maintainer@test.com>"
+  homepage: "https://github.com/maintainer/test"
+
+source:
+  type: git
+  url: "https://github.com/maintainer/test"
+  refs: "branchName"
+
+spec:
+  type: Orchestrator
+
+  compatibility:
+    cloudstack:
+      minVersion: 4.23.0
+
+  entrypoint:
+    path: test.py
+    targetDir: /usr/share/cloudstack-management/extensions/test
+
+  orchestrator:
+    requiresPrepareVm: false
+
+  details:
+    key1: value1
+    key2: value2
+
+  enabled: true
+
+  customActions:
+    - name: CreateSnapshot
+      displayName: "Create Snapshot"
+      description: "Create a snapshot for a virtual machine instance."
+      resourcetype: VirtualMachine
+      enabled: true
+      timeout: 600
+      allowedroletypes: [Admin, DomainAdmin, User]
+      parameters:
+        - name: snap_name
+          type: STRING
+          validationformat: NONE
+          required: true
+        - name: snap_description
+          type: STRING
+          validationformat: NONE
+          required: false
+        - name: snap_save_memory
+          type: BOOLEAN
+          validationformat: NONE
+          required: false
+
+    - name: ListSnapshots
+      displayName: "List Snapshots"
+      description: "List all snapshots for a virtual machine instance."
+      resourcetype: VirtualMachine
+      enabled: true
+      timeout: 120
+      allowedroletypes: [Admin, DomainAdmin, User]
+      parameters: []
+
+    - name: RestoreSnapshot
+      displayName: "Restore Snapshot"
+      description: "Restore a virtual machine instance from a given snapshot."
+      resourcetype: VirtualMachine
+      enabled: true
+      timeout: 900
+      allowedroletypes: [Admin, DomainAdmin, User]
+      parameters:
+        - name: snap_name
+          type: STRING
+          validationformat: NONE
+          required: true
+
+    - name: DeleteSnapshot
+      displayName: "Delete Snapshot"
+      description: "Delete a snapshot for a virtual machine instance."
+      resourcetype: VirtualMachine
+      enabled: true
+      timeout: 300
+      allowedroletypes: [Admin, DomainAdmin, User]
+      parameters:
+        - name: snap_name
+          type: STRING
+          validationformat: NONE
+          required: true
