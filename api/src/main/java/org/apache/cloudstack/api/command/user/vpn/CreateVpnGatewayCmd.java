@@ -106,7 +106,7 @@ public class CreateVpnGatewayCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("VPN gateway Id: " + getEntityId());
+        CallContext.current().setEventDetails("VPN gateway ID: " + getEntityUuid());
         Site2SiteVpnGateway result = _s2sVpnService.getVpnGateway(getEntityId());
         if (result != null) {
             Site2SiteVpnGatewayResponse response = _responseGenerator.createSite2SiteVpnGatewayResponse(result);

@@ -156,7 +156,7 @@ public class UpdateUserCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("UserId: " + getId());
+        CallContext.current().setEventDetails("User ID: " + getResourceUuid(ApiConstants.ID));
         UserAccount user = _regionService.updateUser(this);
 
         if (user != null) {

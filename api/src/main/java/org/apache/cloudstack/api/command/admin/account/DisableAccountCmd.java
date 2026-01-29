@@ -108,7 +108,15 @@ public class DisableAccountCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Disabling Account: " + getAccountName() + " in domain: " + getDomainId();
+        String message = "Disabling Account ";
+
+        if (getId() != null) {
+            message += "with ID: " + getResourceUuid(ApiConstants.ID);
+        } else {
+            message += getAccountName() + " in Domain: " + getResourceUuid(ApiConstants.DOMAIN_ID);
+        }
+
+        return message;
     }
 
     @Override

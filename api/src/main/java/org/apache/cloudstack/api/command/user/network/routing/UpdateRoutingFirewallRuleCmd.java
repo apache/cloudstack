@@ -95,7 +95,7 @@ public class UpdateRoutingFirewallRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Rule Id: " + getId());
+        CallContext.current().setEventDetails("Rule ID: " + getResourceUuid(ApiConstants.ID));
         FirewallRule rule = routedIpv4Manager.updateRoutingFirewallRule(this);
         FirewallResponse ruleResponse = _responseGenerator.createFirewallResponse(rule);
         setResponseObject(ruleResponse);

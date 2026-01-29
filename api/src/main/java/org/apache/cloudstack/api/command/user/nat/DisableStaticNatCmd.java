@@ -67,7 +67,7 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return ("Disabling static NAT for IP ID=" + ipAddressId);
+        return ("Disabling static NAT for IP with ID: " + getResourceUuid(ApiConstants.IP_ADDRESS_ID));
     }
 
     @Override

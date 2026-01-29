@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.network.bgp;
 import com.cloud.event.EventTypes;
 
 import org.apache.cloudstack.api.response.BgpPeerResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
@@ -29,6 +30,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.UUID;
+
 @RunWith(MockitoJUnitRunner.class)
 public class CreateBgpPeerCmdTest {
 
@@ -37,6 +40,7 @@ public class CreateBgpPeerCmdTest {
     @Test
     public void testCreateBgpPeerCmd() {
         Long zoneId = 1L;
+        UUID zoneUuid = UUID.randomUUID();
         String accountName = "user";
         Long projectId = 10L;
         Long domainId = 11L;
@@ -56,6 +60,8 @@ public class CreateBgpPeerCmdTest {
         ReflectionTestUtils.setField(cmd,"domainId", domainId);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
+        CallContext.current().putApiResourceUuid("zoneid", zoneUuid);
+
         Assert.assertEquals(zoneId, cmd.getZoneId());
         Assert.assertEquals(ip4Address, cmd.getIp4Address());
         Assert.assertEquals(ip6Address, cmd.getIp6Address());
@@ -67,7 +73,7 @@ public class CreateBgpPeerCmdTest {
 
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_BGP_PEER_CREATE, cmd.getEventType());
-        Assert.assertEquals(String.format("Creating Bgp Peer %s for zone=%s", peerAsNumber, zoneId), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Creating BGP Peer %s for zone with ID: %s", peerAsNumber, zoneUuid), cmd.getEventDescription());
 
         BgpPeer bgpPeer = Mockito.mock(BgpPeer.class);
         Mockito.when(routedIpv4Manager.createBgpPeer(cmd)).thenReturn(bgpPeer);
