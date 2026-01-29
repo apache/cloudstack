@@ -102,6 +102,10 @@ public class VpcOfferingResponse extends BaseResponse {
     @Param(description = "The routing mode for the network offering, supported types are Static or Dynamic.")
     private String routingMode;
 
+    @SerializedName(ApiConstants.CONSERVE_MODE)
+    @Param(description = "True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers.")
+    private Boolean conserveMode;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -200,5 +204,13 @@ public class VpcOfferingResponse extends BaseResponse {
 
     public void setRoutingMode(String routingMode) {
         this.routingMode = routingMode;
+    }
+
+    public Boolean getConserveMode() {
+        return conserveMode;
+    }
+
+    public void setConserveMode(Boolean conserveMode) {
+        this.conserveMode = conserveMode;
     }
 }
