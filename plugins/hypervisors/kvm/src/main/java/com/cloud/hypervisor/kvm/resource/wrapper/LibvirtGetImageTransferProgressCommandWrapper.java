@@ -43,7 +43,7 @@ public class LibvirtGetImageTransferProgressCommandWrapper extends CommandWrappe
             List<String> transferIds = cmd.getTransferIds();
             Map<String, String> volumePaths = cmd.getVolumePaths();
             Map<String, Long> volumeSizes = cmd.getVolumeSizes();
-            Map<String, Integer> progressMap = new HashMap<>();
+            Map<String, Long> progressMap = new HashMap<>();
 
             if (transferIds == null || transferIds.isEmpty()) {
                 return new GetImageTransferProgressAnswer(cmd, true, "No transfers to check", progressMap);
@@ -54,16 +54,16 @@ public class LibvirtGetImageTransferProgressCommandWrapper extends CommandWrappe
                 Long volumeSize = volumeSizes.get(transferId);
 
                 if (volumePath == null || volumeSize == null || volumeSize == 0) {
-                    logger.warn("Missing volume path or size for transferId: " + transferId);
-                    progressMap.put(transferId, 0);
+                    logger.warn("Missing volume path or size for transferId: {}", transferId);
+                    progressMap.put(transferId, null);
                     continue;
                 }
 
                 try {
                     File file = new File(volumePath);
                     if (!file.exists()) {
-                        logger.warn("Volume file does not exist: " + volumePath);
-                        progressMap.put(transferId, 0);
+                        logger.warn("Volume file does not exist: {}", volumePath);
+                        progressMap.put(transferId, null);
                         continue;
                     }
 
@@ -71,24 +71,17 @@ public class LibvirtGetImageTransferProgressCommandWrapper extends CommandWrappe
 
                     if (volumePath.endsWith(".qcow2") || volumePath.endsWith(".qcow")) {
                         try {
-                            long virtualSize = KVMPhysicalDisk.getVirtualSizeFromFile(volumePath);
-                            currentSize = virtualSize;
+                            currentSize = KVMPhysicalDisk.getVirtualSizeFromFile(volumePath);
                         } catch (Exception e) {
-                            logger.warn("Failed to get virtual size for qcow2 file: " + volumePath + ", using physical size", e);
+                            logger.warn("Failed to get virtual size for qcow2 file: {}, using physical size", volumePath, e);
                         }
                     }
-
-                    int progress = 0;
-                    if (volumeSize > 0) {
-                        progress = (int) Math.min(100, Math.max(0, (currentSize * 100) / volumeSize));
-                    }
-
-                    progressMap.put(transferId, progress);
-                    logger.debug("Transfer {} progress: {}% (current: {}, total: {})", transferId, progress, currentSize, volumeSize);
+                    progressMap.put(transferId, currentSize);
+                    logger.debug("Transfer {} progress, current: {})", transferId, currentSize, volumeSize);
 
                 } catch (Exception e) {
-                    logger.error("Error getting progress for transferId: " + transferId + ", path: " + volumePath, e);
-                    progressMap.put(transferId, 0);
+                    logger.error("Error getting progress for transferId: {}, path: {}", transferId, volumePath, e);
+                    progressMap.put(transferId, null);
                 }
             }
 

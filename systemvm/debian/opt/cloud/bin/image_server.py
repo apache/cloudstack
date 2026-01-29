@@ -586,14 +586,6 @@ class Handler(BaseHTTPRequestHandler):
         try:
             logging.info("PUT start image_id=%s content_length=%d", image_id, content_length)
             with _NbdConn(cfg["host"], int(cfg["port"]), cfg.get("export")) as conn:
-                size = conn.size()
-                if content_length != size:
-                    self._send_error_json(
-                        HTTPStatus.BAD_REQUEST,
-                        f"Content-Length must equal image size ({size})",
-                    )
-                    return
-
                 offset = 0
                 remaining = content_length
                 while remaining > 0:

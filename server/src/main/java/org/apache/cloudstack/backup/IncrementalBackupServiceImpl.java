@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.backup.CreateImageTransferCmd;
 import org.apache.cloudstack.api.command.admin.backup.DeleteVmCheckpointCmd;
 import org.apache.cloudstack.api.command.admin.backup.FinalizeBackupCmd;
@@ -50,20 +51,27 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
@@ -84,6 +92,9 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     @Inject
     private VolumeDao volumeDao;
+
+    @Inject
+    private VolumeDetailsDao volumeDetailsDao;
 
     @Inject
     private AgentManager agentManager;
@@ -653,6 +664,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
             Map<Long, List<ImageTransferVO>> transfersByHost = transferringTransfers.stream()
                     .collect(Collectors.groupingBy(ImageTransferVO::getHostId));
+            Map<Long, VolumeVO> transferVolumeMap = new HashMap<>();
 
             for (Map.Entry<Long, List<ImageTransferVO>> entry : transfersByHost.entrySet()) {
                 Long hostId = entry.getKey();
@@ -669,6 +681,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                             logger.warn("Volume not found for image transfer: " + transfer.getUuid());
                             continue;
                         }
+                        transferVolumeMap.put(transfer.getId(), volume);
 
                         String transferId = transfer.getUuid();
                         transferIds.add(transferId);
@@ -693,23 +706,27 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                     GetImageTransferProgressCommand cmd = new GetImageTransferProgressCommand(transferIds, volumePaths, volumeSizes);
                     GetImageTransferProgressAnswer answer = (GetImageTransferProgressAnswer) agentManager.send(hostId, cmd);
 
-                    if (answer != null && answer.getResult() && answer.getProgressMap() != null) {
-                        for (ImageTransferVO transfer : hostTransfers) {
-                            String transferId = transfer.getUuid();
-                            Integer progress = answer.getProgressMap().get(transferId);
-                            if (progress != null) {
-                                transfer.setProgress(progress);
-                                if (progress == 100) {
-                                    transfer.setPhase(ImageTransfer.Phase.finished);
-                                    logger.debug("Updated phase for image transfer {} to finished", transferId);
-                                }
-                                imageTransferDao.update(transfer.getId(), transfer);
-                                logger.debug("Updated progress for image transfer {}: {}%", transferId, progress);
-                            }
-                        }
-                    } else {
+                    if (answer == null || !answer.getResult() || MapUtils.isEmpty(answer.getProgressMap())) {
                         logger.warn("Failed to get progress for transfers on host {}: {}", hostId,
                                 answer != null ? answer.getDetails() : "null answer");
+                        return;
+                    }
+                    for (ImageTransferVO transfer : hostTransfers) {
+                        String transferId = transfer.getUuid();
+                        Long currentSize = answer.getProgressMap().get(transferId);
+                        if (currentSize == null) {
+                            continue;
+                        }
+                        VolumeVO volume = transferVolumeMap.get(transfer.getId());
+                        long totalSize = getVolumeTotalSize(volume);
+                        int progress = Math.max((int)((currentSize * 100) / totalSize), 100);
+                        transfer.setProgress(progress);
+                        if (currentSize >= 100) {
+                            transfer.setPhase(ImageTransfer.Phase.finished);
+                            logger.debug("Updated phase for image transfer {} to finished", transferId);
+                        }
+                        imageTransferDao.update(transfer.getId(), transfer);
+                        logger.debug("Updated progress for image transfer {}: {}%", transferId, progress);
                     }
 
                 } catch (AgentUnavailableException | OperationTimedoutException e) {
@@ -722,6 +739,31 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         } catch (Exception e) {
             logger.error("Error in pollImageTransferProgress", e);
         }
+    }
+
+    private long getVolumeTotalSize(VolumeVO volume) {
+        VolumeDetailVO detail = volumeDetailsDao.findDetail(volume.getId(), ApiConstants.VIRTUAL_SIZE);
+        if (detail != null) {
+            long size = NumbersUtil.parseLong(detail.getValue(), 0L);
+            if (size > 0) {
+                return size;
+            }
+        }
+        ApiDBUtils.getVolumeStatistics(volume.getPath());
+        VolumeStats vs = null;
+        if (List.of(Storage.ImageFormat.VHD, Storage.ImageFormat.QCOW2, Storage.ImageFormat.RAW).contains(volume.getFormat())) {
+            if (volume.getPath() != null) {
+                vs = ApiDBUtils.getVolumeStatistics(volume.getPath());
+            }
+        } else if (volume.getFormat() == Storage.ImageFormat.OVA) {
+            if (volume.getChainInfo() != null) {
+                vs = ApiDBUtils.getVolumeStatistics(volume.getChainInfo());
+            }
+        }
+        if (vs != null && vs.getPhysicalSize() > 0) {
+            return vs.getPhysicalSize();
+        }
+        return volume.getSize();
     }
 
     @Override

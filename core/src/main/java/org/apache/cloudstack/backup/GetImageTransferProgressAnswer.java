@@ -22,7 +22,7 @@ import java.util.Map;
 import com.cloud.agent.api.Answer;
 
 public class GetImageTransferProgressAnswer extends Answer {
-    private Map<String, Integer> progressMap; // transferId -> progress percentage (0-100)
+    private Map<String, Long> progressMap; // transferId -> progress percentage (0-100)
 
     public GetImageTransferProgressAnswer() {
     }
@@ -32,16 +32,16 @@ public class GetImageTransferProgressAnswer extends Answer {
     }
 
     public GetImageTransferProgressAnswer(GetImageTransferProgressCommand cmd, boolean success, String details,
-                                         Map<String, Integer> progressMap) {
+                                         Map<String, Long> progressMap) {
         super(cmd, success, details);
         this.progressMap = progressMap;
     }
 
-    public Map<String, Integer> getProgressMap() {
+    public Map<String, Long> getProgressMap() {
         return progressMap;
     }
 
-    public void setProgressMap(Map<String, Integer> progressMap) {
+    public void setProgressMap(Map<String, Long> progressMap) {
         this.progressMap = progressMap;
     }
 }
