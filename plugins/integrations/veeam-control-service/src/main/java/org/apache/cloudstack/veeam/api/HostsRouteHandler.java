@@ -31,10 +31,10 @@ import org.apache.cloudstack.veeam.api.dto.Host;
 import org.apache.cloudstack.veeam.api.dto.Hosts;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 public class HostsRouteHandler extends ManagerBase implements RouteHandler {
@@ -71,21 +71,19 @@ public class HostsRouteHandler extends ManagerBase implements RouteHandler {
             return;
         }
 
-        Pair<String, String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
-        if (idAndSubPath != null) {
-            // /api/hosts/{id}
-            if (idAndSubPath.first() != null) {
-                if (idAndSubPath.second() == null) {
-                    handleGetById(idAndSubPath.first(), resp, outFormat, io);
-                    return;
-                }
+        List<String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
+        if (CollectionUtils.isNotEmpty(idAndSubPath)) {
+            String id = idAndSubPath.get(0);
+            if (idAndSubPath.size() == 1) {
+                handleGetById(id, resp, outFormat, io);
+                return;
             }
         }
 
         resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
     }
 
-    public void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
+    protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         final List<Host> result = HostJoinVOToHostConverter.toHostList(listHosts());
         final Hosts response = new Hosts(result);
@@ -97,7 +95,7 @@ public class HostsRouteHandler extends ManagerBase implements RouteHandler {
         return hostJoinDao.listAll();
     }
 
-    public void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+    protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
         final HostJoinVO vo = hostJoinDao.findByUuid(id);
         if (vo == null) {

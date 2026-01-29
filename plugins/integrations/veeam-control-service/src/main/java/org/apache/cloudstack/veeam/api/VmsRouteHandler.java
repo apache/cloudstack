@@ -40,13 +40,13 @@ import org.apache.cloudstack.veeam.api.response.VmCollectionResponse;
 import org.apache.cloudstack.veeam.api.response.VmEntityResponse;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 public class VmsRouteHandler extends ManagerBase implements RouteHandler {
@@ -97,16 +97,17 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             handleGet(req, resp, outFormat, io);
             return;
         }
-        Pair<String, String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
-        if (idAndSubPath != null) {
-            // /api/vms/{id}
-            if (idAndSubPath.first() != null) {
-                if (idAndSubPath.second() == null) {
-                    handleGetById(idAndSubPath.first(), resp, outFormat, io);
-                    return;
-                }
-                if ("diskattachments".equals(idAndSubPath.second())) {
-                    handleGetDisAttachmentsByVmId(idAndSubPath.first(), resp, outFormat, io);
+
+        List<String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
+        if (CollectionUtils.isNotEmpty(idAndSubPath)) {
+            String id = idAndSubPath.get(0);
+            if (idAndSubPath.size() == 1) {
+                handleGetById(id, resp, outFormat, io);
+                return;
+            } else if (idAndSubPath.size() == 2) {
+                String subPath = idAndSubPath.get(1);
+                if ("diskattachments".equals(subPath)) {
+                    handleGetDisAttachmentsByVmId(id, resp, outFormat, io);
                     return;
                 }
             }
@@ -115,7 +116,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
     }
 
-    public void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
+    protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         final VmListQuery q = fromRequest(req);
 
@@ -154,7 +155,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         io.getWriter().write(resp, 200, response, outFormat);
     }
 
-    private static VmListQuery fromRequest(final HttpServletRequest req) {
+    protected static VmListQuery fromRequest(final HttpServletRequest req) {
         final VmListQuery q = new VmListQuery();
         q.setSearch(req.getParameter("search"));
         q.setMax(parseIntOrNull(req.getParameter("max")));
@@ -162,7 +163,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         return q;
     }
 
-    private static Integer parseIntOrNull(final String s) {
+    protected static Integer parseIntOrNull(final String s) {
         if (s == null || s.trim().isEmpty()) return null;
         try {
             return Integer.parseInt(s.trim());
@@ -176,7 +177,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         return userVmJoinDao.listAll();
     }
 
-    public void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+    protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
           final VeeamControlServlet io) throws IOException {
         final UserVmJoinVO userVmJoinVO = userVmJoinDao.findByUuid(id);
         if (userVmJoinVO == null) {
@@ -188,7 +189,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         io.getWriter().write(resp, 200, response, outFormat);
     }
 
-    public void handleGetDisAttachmentsByVmId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+    protected void handleGetDisAttachmentsByVmId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                                               final VeeamControlServlet io) throws IOException {
         final UserVmJoinVO userVmJoinVO = userVmJoinDao.findByUuid(id);
         if (userVmJoinVO == null) {
@@ -202,7 +203,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         io.getWriter().write(resp, 200, response, outFormat);
     }
 
-    private HostJoinVO getHostById(Long hostId) {
+    protected HostJoinVO getHostById(Long hostId) {
         if (hostId == null) {
             return null;
         }

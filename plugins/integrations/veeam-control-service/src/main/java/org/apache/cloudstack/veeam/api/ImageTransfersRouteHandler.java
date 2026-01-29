@@ -31,9 +31,9 @@ import org.apache.cloudstack.veeam.api.dto.ImageTransfer;
 import org.apache.cloudstack.veeam.api.dto.ImageTransfers;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -73,17 +73,28 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
                 return;
             }
         }
-
-        if (!"GET".equalsIgnoreCase(method)) {
-            io.methodNotAllowed(resp, "GET", outFormat);
-            return;
-        }
-        Pair<String, String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
-        if (idAndSubPath != null) {
-            // /api/imagetransfers/{id}
-            if (idAndSubPath.first() != null) {
-                if (idAndSubPath.second() == null) {
-                    handleGetById(idAndSubPath.first(), resp, outFormat, io);
+        List<String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
+        if (CollectionUtils.isNotEmpty(idAndSubPath)) {
+            String id = idAndSubPath.get(0);
+            if (idAndSubPath.size() == 1) {
+                if (!"GET".equalsIgnoreCase(method)) {
+                    io.methodNotAllowed(resp, "GET", outFormat);
+                    return;
+                }
+                handleGetById(id, resp, outFormat, io);
+                return;
+            } else if (idAndSubPath.size() == 2) {
+                if (!"POST".equalsIgnoreCase(method)) {
+                    io.methodNotAllowed(resp, "POST", outFormat);
+                    return;
+                }
+                String subPath = idAndSubPath.get(1);
+                if ("cancel".equals(subPath)) {
+                    handleCancelById(id, resp, outFormat, io);
+                    return;
+                }
+                if ("finalize".equals(subPath)) {
+                    handleFinalizeById(id, resp, outFormat, io);
                     return;
                 }
             }
@@ -92,7 +103,7 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
         resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
     }
 
-    public void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
+    protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         final List<ImageTransfer> result = userResourceAdapter.listAllImageTransfers();
         final ImageTransfers response = new ImageTransfers();
@@ -101,10 +112,10 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
         io.getWriter().write(resp, 400, response, outFormat);
     }
 
-    public void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
+    protected void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
                            Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         String data = RouteHandler.getRequestData(req);
-        logger.info("Received POST request on /api/imagetransfers endpoint, but method: POST is not supported atm. Request-data: {}", data);
+        logger.info("Received POST request on /api/imagetransfers endpoint. Request-data: {}", data);
         try {
             ImageTransfer request = io.getMapper().jsonMapper().readValue(data, ImageTransfer.class);
             ImageTransfer response = userResourceAdapter.handleCreateImageTransfer(request);
@@ -114,7 +125,7 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
         }
     }
 
-    public void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+    protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
         try {
             ImageTransfer response = userResourceAdapter.getImageTransfer(id);
@@ -122,5 +133,17 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
         } catch (InvalidParameterValueException e) {
             io.getWriter().write(resp, 404, e.getMessage(), outFormat);
         }
+    }
+
+    protected void handleCancelById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+                              final VeeamControlServlet io) throws IOException {
+        //ToDo: implement cancel logic
+        io.getWriter().write(resp, 200, "Image transfer cancelled successfully", outFormat);
+    }
+
+    protected void handleFinalizeById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+                                    final VeeamControlServlet io) throws IOException {
+        //ToDo: implement finalize logic
+        io.getWriter().write(resp, 200, "Image transfer finalized successfully", outFormat);
     }
 }

@@ -27,6 +27,7 @@ import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.DisksRouteHandler;
 import org.apache.cloudstack.veeam.api.HostsRouteHandler;
 import org.apache.cloudstack.veeam.api.ImageTransfersRouteHandler;
+import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.ImageTransfer;
 import org.apache.cloudstack.veeam.api.dto.Link;
 import org.apache.cloudstack.veeam.api.dto.Ref;
@@ -41,11 +42,16 @@ public class ImageTransferVOToImageTransferConverter {
         final String basePath = VeeamControlService.ContextPath.value();
         imageTransfer.setId(vo.getUuid());
         imageTransfer.setHref(basePath + ImageTransfersRouteHandler.BASE_ROUTE + "/" + vo.getUuid());
-        imageTransfer.setActive(Boolean.toString(true));
+        imageTransfer.setActive(Boolean.toString(vo.getProgress() != null && vo.getProgress() > 0 && vo.getProgress() < 100));
         imageTransfer.setDirection(vo.getDirection().name());
         imageTransfer.setFormat("cow");
-        imageTransfer.setInactivityTimeout(Integer.toString(60));
+        imageTransfer.setInactivityTimeout(Integer.toString(3600));
         imageTransfer.setPhase(vo.getPhase().name());
+        if (org.apache.cloudstack.backup.ImageTransfer.Phase.finished.equals(vo.getPhase())) {
+            imageTransfer.setPhase("finished_success");
+        } else if (org.apache.cloudstack.backup.ImageTransfer.Phase.failed.equals(vo.getPhase())) {
+            imageTransfer.setPhase("finished_failed");
+        }
         imageTransfer.setProxyUrl(vo.getTransferUrl());
         imageTransfer.setShallow(Boolean.toString(false));
         imageTransfer.setTimeoutPolicy("legacy");
@@ -61,14 +67,13 @@ public class ImageTransferVOToImageTransferConverter {
             VolumeJoinVO volumeVo = volumeResolver.apply(vo.getDiskId());
             if (volumeVo != null) {
                 imageTransfer.setDisk(Ref.of(basePath + DisksRouteHandler.BASE_ROUTE + "/" + volumeVo.getUuid(), volumeVo.getUuid()));
+                imageTransfer.setImage(Ref.of(null, volumeVo.getUuid()));
             }
         }
         final List<Link> links = new ArrayList<>();
         links.add(getLink(imageTransfer, "cancel"));
-        links.add(getLink(imageTransfer, "resume"));
-        links.add(getLink(imageTransfer, "pause"));
         links.add(getLink(imageTransfer, "finalize"));
-        links.add(getLink(imageTransfer, "extend"));
+        imageTransfer.setActions(new Actions(links));
         return imageTransfer;
     }
 

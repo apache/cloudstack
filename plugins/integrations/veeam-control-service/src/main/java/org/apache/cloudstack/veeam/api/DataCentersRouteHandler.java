@@ -37,6 +37,7 @@ import org.apache.cloudstack.veeam.api.dto.StorageDomain;
 import org.apache.cloudstack.veeam.api.dto.StorageDomains;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
@@ -46,7 +47,6 @@ import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 public class DataCentersRouteHandler extends ManagerBase implements RouteHandler {
@@ -95,20 +95,20 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
             return;
         }
 
-        Pair<String, String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
-        if (idAndSubPath != null) {
-            // /api/datacenters/{id}
-            if (idAndSubPath.first() != null) {
-                if (idAndSubPath.second() == null) {
-                    handleGetById(idAndSubPath.first(), resp, outFormat, io);
+        List<String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
+        if (CollectionUtils.isNotEmpty(idAndSubPath)) {
+            String id = idAndSubPath.get(0);
+            if (idAndSubPath.size() == 1) {
+                handleGetById(id, resp, outFormat, io);
+                return;
+            } else if (idAndSubPath.size() == 2) {
+                String subPath = idAndSubPath.get(1);
+                if ("storagedomains".equals(subPath)) {
+                    handleGetStorageDomainsByDcId(id, resp, outFormat, io);
                     return;
                 }
-                if ("storagedomains".equals(idAndSubPath.second())) {
-                    handleGetStorageDomainsByDcId(idAndSubPath.first(), resp, outFormat, io);
-                    return;
-                }
-                if ("networks".equals(idAndSubPath.second())) {
-                    handleGetNetworksByDcId(idAndSubPath.first(), resp, outFormat, io);
+                if ("networks".equals(subPath)) {
+                    handleGetNetworksByDcId(id, resp, outFormat, io);
                     return;
                 }
             }
@@ -117,7 +117,7 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
         resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
     }
 
-    public void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
+    protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         final List<DataCenter> result = DataCenterJoinVOToDataCenterConverter.toDCList(listDCs());
         final DataCenters response = new DataCenters(result);
@@ -129,7 +129,7 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
         return dataCenterJoinDao.listAll();
     }
 
-    public void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+    protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
         final DataCenterJoinVO dataCenterVO = dataCenterJoinDao.findByUuid(id);
         if (dataCenterVO == null) {
@@ -153,7 +153,7 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
         return networkDao.listAll();
     }
 
-    public void handleGetStorageDomainsByDcId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+    protected void handleGetStorageDomainsByDcId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
               final VeeamControlServlet io) throws IOException {
         final DataCenterJoinVO dataCenterVO = dataCenterJoinDao.findByUuid(id);
         if (dataCenterVO == null) {
@@ -168,7 +168,7 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
         io.getWriter().write(resp, 200, response, outFormat);
     }
 
-    public void handleGetNetworksByDcId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+    protected void handleGetNetworksByDcId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
               final VeeamControlServlet io) throws IOException {
         final DataCenterJoinVO dataCenterVO = dataCenterJoinDao.findByUuid(id);
         if (dataCenterVO == null) {

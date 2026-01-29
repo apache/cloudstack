@@ -28,6 +28,7 @@ import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.Rule;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
@@ -70,6 +71,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Grouping;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
@@ -115,6 +117,9 @@ public class UserResourceAdapter extends ManagerBase {
 
     @Inject
     VolumeJoinDao volumeJoinDao;
+
+    @Inject
+    VolumeDetailsDao volumeDetailsDao;
 
     @Inject
     VolumeApiService volumeApiService;
@@ -222,19 +227,26 @@ public class UserResourceAdapter extends ManagerBase {
         if (pool == null) {
             throw new InvalidParameterValueException("Storage domain with ID " + domain.id + " not found");
         }
-        if (StringUtils.isBlank(request.provisionedSize)) {
+        String sizeStr = request.provisionedSize;
+        if (StringUtils.isBlank(sizeStr)) {
             throw new InvalidParameterValueException("Provisioned size must be specified");
         }
-        long sizeInGb;
+        long provisionedSizeInGb;
         try {
-            sizeInGb = Long.parseLong(request.provisionedSize);
+            provisionedSizeInGb = Long.parseLong(sizeStr);
         } catch (NumberFormatException ex) {
-            throw new InvalidParameterValueException("Invalid provisioned size: " + request.provisionedSize);
+            throw new InvalidParameterValueException("Invalid provisioned size: " + sizeStr);
         }
-        if (sizeInGb <= 0) {
+        if (provisionedSizeInGb <= 0) {
             throw new InvalidParameterValueException("Provisioned size must be greater than zero");
         }
-        sizeInGb = Math.max(1L, sizeInGb / (1024L * 1024L * 1024L));
+        provisionedSizeInGb = Math.max(1L, provisionedSizeInGb / (1024L * 1024L * 1024L));
+        Long initialSize = null;
+        if (StringUtils.isNotBlank(request.initialSize)) {
+            try {
+                initialSize = Long.parseLong(request.initialSize);
+            } catch (NumberFormatException ignored) {}
+        }
         Account serviceAccount = createServiceAccountIfNeeded();
         DataCenterVO zone = dataCenterDao.findById(pool.getDataCenterId());
         if (zone == null || !Grouping.AllocationState.Enabled.equals(zone.getAllocationState())) {
@@ -246,14 +258,14 @@ public class UserResourceAdapter extends ManagerBase {
         }
         CallContext.register(serviceAccount.getId(), serviceAccount.getId());
         try {
-            return createDisk(serviceAccount, pool, name, diskOfferingId, sizeInGb);
+            return createDisk(serviceAccount, pool, name, diskOfferingId, provisionedSizeInGb, initialSize);
         } finally {
             CallContext.unregister();
         }
     }
 
     @NotNull
-    private Disk createDisk(Account serviceAccount, StoragePoolVO pool, String name, Long diskOfferingId, long sizeInGb) {
+    private Disk createDisk(Account serviceAccount, StoragePoolVO pool, String name, Long diskOfferingId, long sizeInGb, Long initialSize) {
         Volume volume;
         try {
             volume = volumeApiService.allocVolume(serviceAccount.getId(), pool.getDataCenterId(), diskOfferingId, null,
@@ -265,6 +277,9 @@ public class UserResourceAdapter extends ManagerBase {
             throw new CloudRuntimeException("Failed to create volume");
         }
         volume = volumeApiService.createVolume(volume.getId(), null, null, pool.getId(), true);
+        if (initialSize != null) {
+            volumeDetailsDao.addDetail(volume.getId(), ApiConstants.VIRTUAL_SIZE, String.valueOf(initialSize), true);
+        }
 
         // Implementation for creating a Disk resource
         return VolumeJoinVOToDiskConverter.toDisk(volumeJoinDao.findById(volume.getId()));

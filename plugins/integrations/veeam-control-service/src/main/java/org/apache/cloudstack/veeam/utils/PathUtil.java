@@ -17,46 +17,58 @@
 
 package org.apache.cloudstack.veeam.utils;
 
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.cloud.utils.UuidUtils;
 
 public class PathUtil {
 
-    public static Pair<String, String> extractIdAndSubPath(final String path, final String baseRoute) {
+    public static List<String> extractIdAndSubPath(final String path, final String baseRoute) {
 
-        // baseRoute = "/api/datacenters"
-        if (!path.startsWith(baseRoute)) {
-            return null;
-        }
+        if (StringUtils.isBlank(path)) {
+                return null;
+            }
 
-        // Remove base route
-        String rest = path.substring(baseRoute.length());
+            // Remove base route (be tolerant of trailing slash in baseRoute)
+            String rest = path;
+            if (StringUtils.isNotBlank(baseRoute)) {
+                String normalizedBase = baseRoute.endsWith("/") && baseRoute.length() > 1
+                        ? baseRoute.substring(0, baseRoute.length() - 1)
+                        : baseRoute;
+                if (rest.startsWith(normalizedBase)) {
+                    rest = rest.substring(normalizedBase.length());
+                }
+            }
 
-        // Expect "" or "/{id}" or "/{id}/{sub}"
-        if (rest.isEmpty()) {
-            return null; // /api/datacenters (no id)
-        }
+            // Expect "/{id}" or "/{id}/..." (no empty segments)
+            if (StringUtils.isBlank(rest) || !rest.startsWith("/")) {
+                return null; // /api/datacenters (no id) or invalid format
+            }
 
-        if (!rest.startsWith("/")) {
-            return null;
-        }
+            rest = rest.substring(1); // remove leading '/'
 
-        rest = rest.substring(1); // remove leading '/'
+            if (StringUtils.isBlank(rest)) {
+                return null;
+            }
 
-        final String[] parts = rest.split("/", -1);
+            final String[] parts = rest.split("/", -1);
 
-        if (parts.length == 1) {
-            // /api/datacenters/{id}
-            if (parts[0].isEmpty()) return null;
-            return new Pair<>(parts[0], null);
-        }
+            // Collect non-blank segments
+            List<String> validParts = new ArrayList<>();
+            for (String part : parts) {
+                if (StringUtils.isNotBlank(part)) {
+                    validParts.add(part);
+                }
+            }
 
-        if (parts.length == 2) {
-            // /api/datacenters/{id}/{subPath}
-            if (parts[0].isEmpty() || parts[1].isEmpty()) return null;
-            return new Pair<>(parts[0], parts[1]);
-        }
+            // Validate first segment is a UUID
+            if (validParts.isEmpty() || !UuidUtils.isUuid(validParts.get(0))) {
+                return null;
+            }
 
-        // deeper paths not handled here
-        return null;
+            return validParts;
     }
 }

@@ -31,12 +31,12 @@ import org.apache.cloudstack.veeam.api.dto.Network;
 import org.apache.cloudstack.veeam.api.dto.Networks;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 public class NetworksRouteHandler extends ManagerBase implements RouteHandler {
@@ -76,21 +76,19 @@ public class NetworksRouteHandler extends ManagerBase implements RouteHandler {
             return;
         }
 
-        Pair<String, String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
-        if (idAndSubPath != null) {
-            // /api/networks/{id}
-            if (idAndSubPath.first() != null) {
-                if (idAndSubPath.second() == null) {
-                    handleGetById(idAndSubPath.first(), resp, outFormat, io);
-                    return;
-                }
+        List<String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
+        if (CollectionUtils.isNotEmpty(idAndSubPath)) {
+            String id = idAndSubPath.get(0);
+            if (idAndSubPath.size() == 1) {
+                handleGetById(id, resp, outFormat, io);
+                return;
             }
         }
 
         resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
     }
 
-    public void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
+    protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         final List<Network> result = NetworkVOToNetworkConverter.toNetworkList(listNetworks(), this::getZoneById);
         final Networks response = new Networks(result);
@@ -102,7 +100,7 @@ public class NetworksRouteHandler extends ManagerBase implements RouteHandler {
         return networkDao.listAll();
     }
 
-    public void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+    protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
         final NetworkVO vo = networkDao.findByUuid(id);
         if (vo == null) {
@@ -114,7 +112,7 @@ public class NetworksRouteHandler extends ManagerBase implements RouteHandler {
         io.getWriter().write(resp, 200, response, outFormat);
     }
 
-    private DataCenterJoinVO getZoneById(Long zoneId) {
+    protected DataCenterJoinVO getZoneById(Long zoneId) {
         if (zoneId == null) {
             return null;
         }
