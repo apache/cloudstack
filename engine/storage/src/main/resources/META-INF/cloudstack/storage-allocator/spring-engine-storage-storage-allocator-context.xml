@@ -26,7 +26,10 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
-
+    <bean id="HPEStoragePoolAllocator"
+        class="org.apache.cloudstack.storage.allocator.HPEStoragePoolAllocator">
+        <property name="name" value="HPEStorage" />
+    </bean>
     <bean id="LocalStoragePoolAllocator"
         class="org.apache.cloudstack.storage.allocator.LocalStoragePoolAllocator">
         <property name="name" value="LocalStorage" />
