@@ -41,6 +41,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
@@ -136,6 +137,8 @@ public class VMSnapshotManagerTest {
     VMSnapshotDetailsDao _vmSnapshotDetailsDao;
     @Mock
     UserVmManager _userVmManager;
+    @Mock
+    private AccountVO accountVOMock;
 
     private static final long TEST_VM_ID = 3L;
     private static final long SERVICE_OFFERING_ID = 1L;
@@ -285,8 +288,12 @@ public class VMSnapshotManagerTest {
     @SuppressWarnings("unchecked")
     @Test(expected = CloudRuntimeException.class)
     public void testAllocVMSnapshotF4() throws ResourceAllocationException {
+        long accountId = 1L;
         List<VMSnapshotVO> mockList = mock(List.class);
         when(mockList.size()).thenReturn(10);
+        when(_userVMDao.findById(TEST_VM_ID)).thenReturn(vmMock);
+        when(userVm.getAccountId()).thenReturn(accountId);
+        when(_accountMgr.getAccount(accountId)).thenReturn(accountVOMock);
         when(_vmSnapshotDao.findByVm(TEST_VM_ID)).thenReturn(mockList);
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
@@ -295,8 +302,12 @@ public class VMSnapshotManagerTest {
     @SuppressWarnings("unchecked")
     @Test(expected = CloudRuntimeException.class)
     public void testAllocVMSnapshotF5() throws ResourceAllocationException {
+        long accountId = 1L;
         List<SnapshotVO> mockList = mock(List.class);
         when(mockList.size()).thenReturn(1);
+        when(_userVMDao.findById(TEST_VM_ID)).thenReturn(vmMock);
+        when(userVm.getAccountId()).thenReturn(accountId);
+        when(_accountMgr.getAccount(accountId)).thenReturn(accountVOMock);
         when(_snapshotDao.listByInstanceId(TEST_VM_ID, Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp)).thenReturn(mockList);
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
@@ -304,6 +315,10 @@ public class VMSnapshotManagerTest {
     // successful creation case
     @Test
     public void testCreateVMSnapshot() throws AgentUnavailableException, OperationTimedoutException, ResourceAllocationException, NoTransitionException {
+        long accountId = 1L;
+        when(_userVMDao.findById(TEST_VM_ID)).thenReturn(vmMock);
+        when(userVm.getAccountId()).thenReturn(accountId);
+        when(_accountMgr.getAccount(accountId)).thenReturn(accountVOMock);
         when(vmMock.getState()).thenReturn(State.Running);
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }

@@ -583,6 +583,7 @@ public class EventTypes {
 
     // Network ACL
     public static final String EVENT_NETWORK_ACL_CREATE = "NETWORK.ACL.CREATE";
+    public static final String EVENT_NETWORK_ACL_IMPORT = "NETWORK.ACL.IMPORT";
     public static final String EVENT_NETWORK_ACL_DELETE = "NETWORK.ACL.DELETE";
     public static final String EVENT_NETWORK_ACL_REPLACE = "NETWORK.ACL.REPLACE";
     public static final String EVENT_NETWORK_ACL_UPDATE = "NETWORK.ACL.UPDATE";

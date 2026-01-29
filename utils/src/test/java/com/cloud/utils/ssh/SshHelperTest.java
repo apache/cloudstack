@@ -21,6 +21,7 @@ package com.cloud.utils.ssh;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -139,5 +140,64 @@ public class SshHelperTest {
         SshHelper.openConnectionSession(conn);
 
         Mockito.verify(conn).openSession();
+    }
+
+    @Test
+    public void sanitizeForLoggingMasksShortPasswordFlag() throws Exception {
+        String command = "/opt/cloud/bin/script -v 10.0.0.1 -p superSecret";
+        String sanitized = invokeSanitizeForLogging(command);
+
+        Assert.assertTrue("Sanitized command should retain flag", sanitized.contains("-p *****"));
+        Assert.assertFalse("Sanitized command should not contain original password", sanitized.contains("superSecret"));
+    }
+
+    @Test
+    public void sanitizeForLoggingMasksQuotedPasswordFlag() throws Exception {
+        String command = "/opt/cloud/bin/script -v 10.0.0.1 -p \"super Secret\"";
+        String sanitized = invokeSanitizeForLogging(command);
+
+        Assert.assertTrue("Sanitized command should retain quoted flag", sanitized.contains("-p *****"));
+        Assert.assertFalse("Sanitized command should not contain original password",
+                sanitized.contains("super Secret"));
+    }
+
+    @Test
+    public void sanitizeForLoggingMasksLongPasswordAssignments() throws Exception {
+        String command = "tool --password=superSecret";
+        String sanitized = invokeSanitizeForLogging(command);
+
+        Assert.assertTrue("Sanitized command should retain assignment", sanitized.contains("--password=*****"));
+        Assert.assertFalse("Sanitized command should not contain original password", sanitized.contains("superSecret"));
+    }
+
+    @Test
+    public void sanitizeForLoggingMasksUsernamePasswordPairs() throws Exception {
+        String command = "/opt/cloud/bin/vpn_l2tp.sh -u alice,topSecret";
+        String sanitized = invokeSanitizeForLogging(command);
+
+        Assert.assertTrue("Sanitized command should retain username and mask password",
+                sanitized.contains("-u alice,*****"));
+        Assert.assertFalse("Sanitized command should not contain original password", sanitized.contains("topSecret"));
+    }
+
+    @Test
+    public void sanitizeForLoggingMasksUsernamePasswordPairsWithColon() throws Exception {
+        String command = "curl -u alice:topSecret https://example.com";
+        String sanitized = invokeSanitizeForLogging(command);
+
+        Assert.assertTrue("Sanitized command should retain username and mask password",
+                sanitized.contains("-u alice:*****"));
+        Assert.assertFalse("Sanitized command should not contain original password", sanitized.contains("topSecret"));
+    }
+
+    @Test
+    public void sanitizeForLoggingHandlesNullValues() throws Exception {
+        Assert.assertNull(invokeSanitizeForLogging(null));
+    }
+
+    private String invokeSanitizeForLogging(String value) throws Exception {
+        Method method = SshHelper.class.getDeclaredMethod("sanitizeForLogging", String.class);
+        method.setAccessible(true);
+        return (String) method.invoke(null, value);
     }
 }

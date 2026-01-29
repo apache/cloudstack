@@ -57,8 +57,8 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     ConfigKey<Boolean> KvmSshToAgentEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "kvm.ssh.to.agent","true",
-            "Number of retries when preparing a host into Maintenance Mode is faulty before failing",
-            false);
+            "True if the management server will restart the agent service via SSH into the KVM hosts after or during maintenance operations",
+            true);
 
     ConfigKey<String> HOST_MAINTENANCE_LOCAL_STRATEGY = new ConfigKey<>(String.class,
     "host.maintenance.local.storage.strategy", "Advanced","Error",
