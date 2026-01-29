@@ -228,6 +228,9 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.Global,
             null);
 
+    ConfigKey<Integer> AgentMaxDataMigrationWaitTime = new ConfigKey<>("Advanced", Integer.class, "agent.max.data.migration.wait.time", "3600",
+            "The maximum time (in seconds) that the secondary storage data migration command sent to the KVM Agent will be executed before a timeout occurs.", true, ConfigKey.Scope.Cluster);
+
     ConfigKey<Boolean> COPY_PUBLIC_TEMPLATES_FROM_OTHER_STORAGES = new ConfigKey<>(Boolean.class, "copy.public.templates.from.other.storages",
             "Storage", "true", "Allow SSVMs to try copying public templates from one secondary storage to another instead of downloading them from the source.",
             true, ConfigKey.Scope.Zone, null);
