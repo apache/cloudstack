@@ -26,7 +26,7 @@
       class="top-spaced"
       :placeholder="$t('label.search')"
       v-model:value="searchQuery"
-      @search="fetchData"
+      @search="fetchHostsForMigration"
       v-focus="true" />
     <a-table
       class="top-spaced"
@@ -97,7 +97,7 @@
     </a-pagination>
 
     <a-form-item
-      v-if="isUserVm"
+      v-if="isUserVm && hasVolumes"
       class="top-spaced">
       <template #label>
         <tooltip-label :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
@@ -106,9 +106,29 @@
         v-model:checked="migrateWithStorage"
         :disabled="!selectedHost || !selectedHost.id || selectedHost.id === -1" />
     </a-form-item>
+
+    <a-radio-group
+      v-if="migrateWithStorage"
+      v-model:value="migrateMode"
+      @change="e => { handleMigrateModeChange(e.target.value) }">
+      <a-radio class="radio-style" :value="1">
+        {{ $t('label.migrate.instance.single.storage') }}
+      </a-radio>
+      <a-radio class="radio-style" :value="2">
+        {{ $t('label.migrate.instance.specific.storages') }}
+      </a-radio>
+    </a-radio-group>
+
+    <div v-if="migrateWithStorage && migrateMode == 1">
+      <storage-pool-select-view
+        ref="storagePoolSelection"
+        :autoAssignAllowed="false"
+        :resource="resource"
+        @select="handleStoragePoolChange" />
+    </div>
     <instance-volumes-storage-pool-select-list-view
       ref="volumeToPoolSelect"
-      v-if="migrateWithStorage"
+      v-if="migrateWithStorage && migrateMode !== 1"
       class="top-spaced"
       :resource="resource"
       :clusterId="selectedHost.id ? selectedHost.clusterid : null"
@@ -118,7 +138,7 @@
 
     <div class="actions">
       <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-      <a-button type="primary" ref="submit" :disabled="!selectedHost.id" @click="submitForm">{{ $t('label.ok') }}</a-button>
+      <a-button type="primary" ref="submit" :disabled="!selectedHost.id || (migrateWithStorage && migrateMode === 1 && !volumeToPoolSelection.length)" @click="submitForm">{{ $t('label.ok') }}</a-button>
     </div>
   </div>
 </template>
@@ -126,12 +146,14 @@
 <script>
 import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import StoragePoolSelectView from '@/components/view/StoragePoolSelectView'
 import InstanceVolumesStoragePoolSelectListView from '@/components/view/InstanceVolumesStoragePoolSelectListView'
 
 export default {
   name: 'VMMigrateWizard',
   components: {
     TooltipLabel,
+    StoragePoolSelectView,
     InstanceVolumesStoragePoolSelectListView
   },
   props: {
@@ -188,6 +210,7 @@ export default {
         }
       ],
       migrateWithStorage: false,
+      migrateMode: 1,
       volumeToPoolSelection: [],
       volumes: []
     }
@@ -198,6 +221,9 @@ export default {
   computed: {
     isUserVm () {
       return this.$route.meta.resourceType === 'UserVm'
+    },
+    hasVolumes () {
+      return this.volumes && this.volumes.length > 0
     }
   },
   watch: {
@@ -212,6 +238,10 @@ export default {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
     },
     fetchData () {
+      this.fetchHostsForMigration()
+      this.fetchVolumes()
+    },
+    fetchHostsForMigration () {
       this.loading = true
       getAPI('findHostsForMigration', {
         virtualmachineid: this.resource.id,
@@ -240,23 +270,33 @@ export default {
     handleChangePage (page, pageSize) {
       this.page = page
       this.pageSize = pageSize
-      this.fetchData()
+      this.fetchHostsForMigration()
     },
     handleChangePageSize (currentPage, pageSize) {
       this.page = currentPage
       this.pageSize = pageSize
-      this.fetchData()
+      this.fetchHostsForMigration()
     },
     handleSelectedHostChange (host) {
       if (host.id === -1) {
         this.migrateWithStorage = false
-        this.fetchVolumes()
       }
       this.selectedHost = host
       this.selectedVolumeForStoragePoolSelection = {}
       this.volumeToPoolSelection = []
       if (this.migrateWithStorage) {
         this.$refs.volumeToPoolSelect.resetSelection()
+      }
+    },
+    handleMigrateModeChange () {
+      this.volumeToPoolSelection = []
+    },
+    handleStoragePoolChange (storagePool) {
+      this.volumeToPoolSelection = []
+      for (const volume of this.volumes) {
+        if (storagePool && storagePool.id && storagePool.id !== -1) {
+          this.volumeToPoolSelection.push({ volume: volume.id, pool: storagePool.id })
+        }
       }
     },
     handleVolumeToPoolChange (volumeToPool) {
@@ -269,7 +309,7 @@ export default {
         listAll: true,
         virtualmachineid: this.resource.id
       }).then(response => {
-        this.volumes = response.listvolumesresponse.volume
+        this.volumes = response?.listvolumesresponse?.volume || []
       }).finally(() => {
         this.loading = false
       })
@@ -278,7 +318,7 @@ export default {
       if (this.selectedHost.requiresStorageMotion || this.volumeToPoolSelection.length > 0) {
         return true
       }
-      if (this.selectedHost.id === -1 && this.volumes && this.volumes.length > 0) {
+      if (this.selectedHost.id === -1 && this.hasVolumes) {
         for (var volume of this.volumes) {
           if (volume.storagetype === 'local') {
             return true
@@ -306,7 +346,7 @@ export default {
       var params = this.selectedHost.id === -1
         ? { autoselect: true, virtualmachineid: this.resource.id }
         : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
-      if (this.migrateWithStorage) {
+      if (this.migrateWithStorage && this.volumeToPoolSelection && this.volumeToPoolSelection.length > 0) {
         for (var i = 0; i < this.volumeToPoolSelection.length; i++) {
           const mapping = this.volumeToPoolSelection[i]
           params['migrateto[' + i + '].volume'] = mapping.volume

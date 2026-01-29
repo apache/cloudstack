@@ -293,7 +293,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         allocateDirectIp(nic, network, vm, dc, nic.getRequestedIPv4(), nic.getRequestedIPv6());
         nic.setReservationStrategy(ReservationStrategy.Create);
 
-        if (nic.getMacAddress() == null) {
+        if (nic.getMacAddress() == null || !_networkModel.isMACUnique(nic.getMacAddress(), network.getId())) {
             nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
             if (nic.getMacAddress() == null) {
                 throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses", Network.class, network.getId());

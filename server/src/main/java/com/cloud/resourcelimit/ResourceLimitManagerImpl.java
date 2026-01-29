@@ -903,6 +903,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public ResourceLimitVO updateResourceLimit(Long accountId, Long domainId, Integer typeId, Long max, String tag) {
         Account caller = CallContext.current().getCallingAccount();
 
+        if (caller.getType().equals(Account.Type.NORMAL)) {
+            logger.info("Throwing exception because only root admins and domain admins are allowed to update resource limits.");
+            throw new PermissionDeniedException("Your account does not have the permission to update resource limits.");
+        }
+
         if (max == null) {
             max = (long)Resource.RESOURCE_UNLIMITED;
         } else if (max < Resource.RESOURCE_UNLIMITED) {
@@ -1217,7 +1222,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
 
         return Transaction.execute((TransactionCallback<Long>) status -> {
-            long newResourceCount = 0L;
             List<Long> domainIdList = childDomains.stream().map(DomainVO::getId).collect(Collectors.toList());
             domainIdList.add(domainId);
             List<Long> accountIdList = accounts.stream().map(AccountVO::getId).collect(Collectors.toList());
@@ -1235,6 +1239,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             List<ResourceCountVO> resourceCounts = _resourceCountDao.lockRows(rowIdsToLock);
 
             long oldResourceCount = 0L;
+            long newResourceCount = 0L;
             ResourceCountVO domainRC = null;
 
             // calculate project count here
@@ -1256,7 +1261,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             if (oldResourceCount != newResourceCount) {
                 domainRC.setCount(newResourceCount);
                 _resourceCountDao.update(domainRC.getId(), domainRC);
-                logger.warn("Discrepency in the resource count has been detected (original count = {} correct count = {}) for Type = {} for Domain ID = {} is fixed during resource count recalculation.",
+                logger.warn("Discrepancy in the resource count has been detected (original count = {} correct count = {}) for Type = {} for Domain ID = {} is fixed during resource count recalculation.",
                         oldResourceCount, newResourceCount, type, domainId);
             }
             return newResourceCount;
@@ -1519,16 +1524,17 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     protected long calculatePrimaryStorageForAccount(long accountId, String tag) {
+        long snapshotsPhysicalSizeOnPrimaryStorage = _snapshotDataStoreDao.getSnapshotsPhysicalSizeOnPrimaryStorageByAccountId(accountId);
         if (StringUtils.isEmpty(tag)) {
             List<Long> virtualRouters = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId);
-            return _volumeDao.primaryStorageUsedForAccount(accountId, virtualRouters);
+            return snapshotsPhysicalSizeOnPrimaryStorage + _volumeDao.primaryStorageUsedForAccount(accountId, virtualRouters);
         }
         long storage = 0;
         List<VolumeVO> volumes = getVolumesWithAccountAndTag(accountId, tag);
         for (VolumeVO volume : volumes) {
             storage += volume.getSize() == null ? 0L : volume.getSize();
         }
-        return storage;
+        return snapshotsPhysicalSizeOnPrimaryStorage + storage;
     }
 
     @Override
@@ -2288,7 +2294,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     protected class ResourceCountCheckTask extends ManagedContextRunnable {
         public ResourceCountCheckTask() {
-
         }
 
         @Override

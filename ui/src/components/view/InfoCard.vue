@@ -709,7 +709,7 @@
               <div class="resource-detail-item__label">{{ $t('label.storagepool') }}</div>
               <div class="resource-detail-item__details">
                 <database-outlined />
-                <router-link v-if="!isStatic && $router.resolve('/storagepool/' + resource.storageid).matched[0].redirect !== '/exception/404'" :to="{ path: '/storagepool/' + resource.storageid }">{{ resource.storage || resource.storageid }} </router-link>
+                <router-link v-if="!isStatic && $router.resolve('/storagepool/' + encodeURIComponent(resource.storageid)).matched[0].redirect !== '/exception/404'" :to="{ path: '/storagepool/' + encodeURIComponent(resource.storageid) }">{{ resource.storage || resource.storageid }} </router-link>
                 <span v-else>{{ resource.storage || resource.storageid }}</span>
                 <a-tag style="margin-left: 5px;" v-if="resource.storagetype">
                   {{ resource.storagetype }}
@@ -1094,7 +1094,7 @@ export default {
       return ['UserVm', 'Template', 'ISO', 'Volume', 'Snapshot', 'Backup', 'Network',
         'LoadBalancer', 'PortForwardingRule', 'FirewallRule', 'SecurityGroup', 'SecurityGroupRule',
         'PublicIpAddress', 'Project', 'Account', 'Vpc', 'NetworkACL', 'StaticRoute', 'VMSnapshot',
-        'RemoteAccessVpn', 'User', 'SnapshotPolicy', 'VpcOffering']
+        'RemoteAccessVpn', 'User', 'SnapshotPolicy', 'VpcOffering', 'Domain']
     },
     name () {
       return this.resource.displayname || this.resource.name || this.resource.displaytext || this.resource.username ||

@@ -67,12 +67,13 @@ public class AlertGenerator {
     }
 
     public static void publishAlertOnEventBus(String alertType, long dataCenterId, Long podId, String subject, String body) {
-
         String configKey = Config.PublishAlertEvent.key();
         String value = s_configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
-        if(!configValue)
+        if (!configValue) {
             return;
+        }
+
         try {
             eventDistributor = ComponentContext.getComponent(EventDistributor.class);
         } catch (NoSuchBeanDefinitionException nbe) {

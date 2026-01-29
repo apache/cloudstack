@@ -120,7 +120,7 @@ public interface QueryService {
 
     ConfigKey<String> UserVMReadOnlyDetails = new ConfigKey<>(String.class,
     "user.vm.readonly.details", "Advanced", "dataDiskController, rootDiskController",
-            "List of read-only VM settings/details as comma separated string", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+            "List of read-only VM settings/details as comma separated string", true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.CSV, null, "");
 
     ConfigKey<Boolean> SortKeyAscending = new ConfigKey<>("Advanced", Boolean.class, "sortkey.algorithm", "true",
             "Sort algorithm - ascending or descending - to use. For entities that use sort key(template, disk offering, service offering, " +

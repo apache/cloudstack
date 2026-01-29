@@ -24,15 +24,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Properties;
 
-import com.cloud.api.ApiServer;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.jmx.MBeanContainer;
-import org.eclipse.jetty.server.ForwardedRequestCustomizer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.RequestLog;
@@ -74,11 +71,6 @@ public class ServerDaemon implements Daemon {
     private static final String BIND_INTERFACE = "bind.interface";
     private static final String CONTEXT_PATH = "context.path";
     private static final String SESSION_TIMEOUT = "session.timeout";
-    private static final String HTTP_ENABLE = "http.enable";
-    private static final String HTTP_PORT = "http.port";
-    private static final String HTTPS_ENABLE = "https.enable";
-    private static final String HTTPS_PORT = "https.port";
-    private static final String KEYSTORE_FILE = "https.keystore";
     private static final String KEYSTORE_PASSWORD = "https.keystore.password";
     private static final String WEBAPP_DIR = "webapp.dir";
     private static final String ACCESS_LOG = "access.log";
@@ -140,11 +132,11 @@ public class ServerDaemon implements Daemon {
             }
             setBindInterface(properties.getProperty(BIND_INTERFACE, null));
             setContextPath(properties.getProperty(CONTEXT_PATH, "/client"));
-            setHttpEnable(Boolean.valueOf(properties.getProperty(HTTP_ENABLE, "true")));
-            setHttpPort(Integer.valueOf(properties.getProperty(HTTP_PORT, "8080")));
-            setHttpsEnable(Boolean.valueOf(properties.getProperty(HTTPS_ENABLE, "false")));
-            setHttpsPort(Integer.valueOf(properties.getProperty(HTTPS_PORT, "8443")));
-            setKeystoreFile(properties.getProperty(KEYSTORE_FILE));
+            setHttpEnable(Boolean.valueOf(properties.getProperty(ServerProperties.HTTP_ENABLE, "true")));
+            setHttpPort(Integer.valueOf(properties.getProperty(ServerProperties.HTTP_PORT, "8080")));
+            setHttpsEnable(Boolean.valueOf(properties.getProperty(ServerProperties.HTTPS_ENABLE, "false")));
+            setHttpsPort(Integer.valueOf(properties.getProperty(ServerProperties.HTTPS_PORT, "8443")));
+            setKeystoreFile(properties.getProperty(ServerProperties.KEYSTORE_FILE));
             setKeystorePassword(properties.getProperty(KEYSTORE_PASSWORD));
             setWebAppLocation(properties.getProperty(WEBAPP_DIR));
             setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
@@ -193,7 +185,6 @@ public class ServerDaemon implements Daemon {
         httpConfig.setResponseHeaderSize(8192);
         httpConfig.setSendServerVersion(false);
         httpConfig.setSendDateHeader(false);
-        addForwardingCustomiser(httpConfig);
 
         // HTTP Connector
         createHttpConnector(httpConfig);
@@ -214,21 +205,6 @@ public class ServerDaemon implements Daemon {
         // Must set the session timeout after the server has started
         pair.first().setMaxInactiveInterval(sessionTimeout * 60);
         server.join();
-    }
-
-    /**
-     * Adds a ForwardedRequestCustomizer to the HTTP configuration to handle forwarded headers.
-     * The header used for forwarding is determined by the ApiServer.listOfForwardHeaders property.
-     * Only non empty headers are considered and only the first of the comma-separated list is used.
-     * @param httpConfig the HTTP configuration to which the customizer will be added
-     */
-    private static void addForwardingCustomiser(HttpConfiguration httpConfig) {
-        ForwardedRequestCustomizer customiser = new ForwardedRequestCustomizer();
-        String header = Arrays.stream(ApiServer.listOfForwardHeaders.value().split(",")).findFirst().orElse(null);
-        if (com.cloud.utils.StringUtils.isNotEmpty(header)) {
-            customiser.setForwardedForHeader(header);
-        }
-        httpConfig.addCustomizer(customiser);
     }
 
     @Override

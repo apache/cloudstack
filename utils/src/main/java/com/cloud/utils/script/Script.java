@@ -29,8 +29,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -39,9 +41,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,8 +67,8 @@ public class Script implements Callable<String> {
     private static final int DEFAULT_TIMEOUT = 3600 * 1000; /* 1 hour */
     private volatile boolean _isTimeOut = false;
 
-    private boolean _passwordCommand = false;
     private boolean avoidLoggingCommand = false;
+    private final Set<Integer> sensitiveArgIndices = new HashSet<>();
 
     private static final ScheduledExecutorService s_executors = Executors.newScheduledThreadPool(10, new NamedThreadFactory("Script"));
 
@@ -143,6 +146,11 @@ public class Script implements Callable<String> {
         _command.add(param);
     }
 
+    public void addSensitive(String param) {
+        _command.add(param);
+        sensitiveArgIndices.add(_command.size() - 1);
+    }
+
     public Script set(String name, String value) {
         _command.add(name);
         _command.add(value);
@@ -161,7 +169,7 @@ public class Script implements Callable<String> {
             if (sanitizeViCmdParameter(cmd, builder) || sanitizeRbdFileFormatCmdParameter(cmd, builder)) {
                 continue;
             }
-            if (obscureParam) {
+            if (obscureParam || sensitiveArgIndices.contains(i)) {
                 builder.append("******").append(" ");
                 obscureParam = false;
             } else {
@@ -170,7 +178,6 @@ public class Script implements Callable<String> {
 
             if ("-y".equals(cmd) || "-z".equals(cmd)) {
                 obscureParam = true;
-                _passwordCommand = true;
             }
         }
         return builder.toString();
@@ -238,8 +245,8 @@ public class Script implements Callable<String> {
     public String execute(OutputInterpreter interpreter) {
         String[] command = _command.toArray(new String[_command.size()]);
         String commandLine = buildCommandLine(command);
-        if (_logger.isDebugEnabled() && !avoidLoggingCommand) {
-            _logger.debug(String.format("Executing command [%s].", commandLine.split(KeyStoreUtils.KS_FILENAME)[0]));
+        if (_logger.isDebugEnabled() ) {
+            _logger.debug(String.format("Executing command [%s].", commandLine));
         }
 
         try {
@@ -262,48 +269,62 @@ public class Script implements Callable<String> {
             _thread = Thread.currentThread();
             ScheduledFuture<String> future = null;
             if (_timeout > 0) {
-                _logger.trace(String.format("Scheduling the execution of command [%s] with a timeout of [%s] milliseconds.", commandLine, _timeout));
+                _logger.trace(String.format(
+                        "Scheduling the execution of command [%s] with a timeout of [%s] milliseconds.",
+                        commandLine, _timeout));
                 future = s_executors.schedule(this, _timeout, TimeUnit.MILLISECONDS);
             }
 
             long processPid = _process.pid();
             Task task = null;
             if (interpreter != null && interpreter.drain()) {
-                _logger.trace(String.format("Executing interpreting task of process [%s] for command [%s].", processPid, commandLine));
+                _logger.trace(String.format("Executing interpreting task of process [%s] for command [%s].",
+                        processPid, commandLine));
                 task = new Task(interpreter, ir);
                 s_executors.execute(task);
             }
 
             while (true) {
-                _logger.trace(String.format("Attempting process [%s] execution for command [%s] with timeout [%s].", processPid, commandLine, _timeout));
+                _logger.trace(String.format("Attempting process [%s] execution for command [%s] with timeout [%s].",
+                        processPid, commandLine, _timeout));
                 try {
                     if (_process.waitFor(_timeout, TimeUnit.MILLISECONDS)) {
-                        _logger.trace(String.format("Process [%s] execution for command [%s] completed within timeout period [%s].", processPid, commandLine,
+                        _logger.trace(String.format(
+                                "Process [%s] execution for command [%s] completed within timeout period [%s].",
+                                processPid, commandLine,
                                 _timeout));
                         if (_process.exitValue() == 0) {
-                            _logger.debug(String.format("Successfully executed process [%s] for command [%s].", processPid, commandLine));
+                            _logger.debug(String.format("Successfully executed process [%s] for command [%s].",
+                                    processPid, commandLine));
                             if (interpreter != null) {
                                 if (interpreter.drain()) {
-                                    _logger.trace(String.format("Returning task result of process [%s] for command [%s].", processPid, commandLine));
+                                    _logger.trace(
+                                            String.format("Returning task result of process [%s] for command [%s].",
+                                                    processPid, commandLine));
                                     return task.getResult();
                                 }
-                                _logger.trace(String.format("Returning interpretation of process [%s] for command [%s].", processPid, commandLine));
+                                _logger.trace(
+                                        String.format("Returning interpretation of process [%s] for command [%s].",
+                                                processPid, commandLine));
                                 return interpreter.interpret(ir);
                             } else {
                                 // null return exitValue apparently
-                                _logger.trace(String.format("Process [%s] for command [%s] exited with value [%s].", processPid, commandLine,
+                                _logger.trace(String.format("Process [%s] for command [%s] exited with value [%s].",
+                                        processPid, commandLine,
                                         _process.exitValue()));
                                 return String.valueOf(_process.exitValue());
                             }
                         } else {
-                            _logger.warn(String.format("Execution of process [%s] for command [%s] failed.", processPid, commandLine));
+                            _logger.warn(String.format("Execution of process [%s] for command [%s] failed.",
+                                    processPid, commandLine));
                             break;
                         }
                     }
                 } catch (InterruptedException e) {
                     if (!_isTimeOut) {
-                        _logger.debug(String.format("Exception [%s] occurred; however, it was not a timeout. Therefore, proceeding with the execution of process [%s] for command "
-                                + "[%s].", e.getMessage(), processPid, commandLine), e);
+                        _logger.debug(String.format(
+                                "Exception [%s] occurred; however, it was not a timeout. Therefore, proceeding with the execution of process [%s] for command [%s].",
+                                e.getMessage(), processPid, commandLine), e);
                         continue;
                     }
                 } finally {
@@ -316,18 +337,17 @@ public class Script implements Callable<String> {
                 TimedOutLogger log = new TimedOutLogger(_process);
                 Task timedoutTask = new Task(log, ir);
 
-                _logger.trace(String.format("Running timed out task of process [%s] for command [%s].", processPid, commandLine));
+                _logger.trace(String.format("Running timed out task of process [%s] for command [%s].", processPid,
+                        commandLine));
                 timedoutTask.run();
-                if (!_passwordCommand) {
-                    _logger.warn(String.format("Process [%s] for command [%s] timed out. Output is [%s].", processPid, commandLine, timedoutTask.getResult()));
-                } else {
-                    _logger.warn(String.format("Process [%s] for command [%s] timed out.", processPid, commandLine));
-                }
+                _logger.warn(String.format("Process [%s] for command [%s] timed out. Output is [%s].", processPid,
+                            commandLine, timedoutTask.getResult()));
 
                 return ERR_TIMEOUT;
             }
 
-            _logger.debug(String.format("Exit value of process [%s] for command [%s] is [%s].", processPid, commandLine, _process.exitValue()));
+            _logger.debug(String.format("Exit value of process [%s] for command [%s] is [%s].", processPid,
+                    commandLine, _process.exitValue()));
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(_process.getInputStream()), 128);
 
@@ -338,19 +358,24 @@ public class Script implements Callable<String> {
                 error = String.valueOf(_process.exitValue());
             }
 
-            _logger.warn(String.format("Process [%s] for command [%s] encountered the error: [%s].", processPid, commandLine, error));
+            _logger.warn(String.format("Process [%s] for command [%s] encountered the error: [%s].", processPid,
+                    commandLine, error));
 
             return error;
         } catch (SecurityException ex) {
-            _logger.warn(String.format("Exception [%s] occurred. This may be due to an attempt of executing command [%s] as non root.", ex.getMessage(), commandLine),
+            _logger.warn(String.format(
+                    "Exception [%s] occurred. This may be due to an attempt of executing command [%s] as non root.",
+                    ex.getMessage(), commandLine),
                     ex);
             return stackTraceAsString(ex);
         } catch (Exception ex) {
-            _logger.warn(String.format("Exception [%s] occurred when attempting to run command [%s].", ex.getMessage(), commandLine), ex);
+            _logger.warn(String.format("Exception [%s] occurred when attempting to run command [%s].",
+                    ex.getMessage(), commandLine), ex);
             return stackTraceAsString(ex);
         } finally {
             if (_process != null) {
-                _logger.trace(String.format("Destroying process [%s] for command [%s].", _process.pid(), commandLine));
+                _logger.trace(
+                        String.format("Destroying process [%s] for command [%s].", _process.pid(), commandLine));
                 IOUtils.closeQuietly(_process.getErrorStream());
                 IOUtils.closeQuietly(_process.getOutputStream());
                 IOUtils.closeQuietly(_process.getInputStream());
@@ -361,9 +386,10 @@ public class Script implements Callable<String> {
 
     public String executeIgnoreExitValue(OutputInterpreter interpreter, int exitValue) {
         String[] command = _command.toArray(new String[_command.size()]);
+        String commandLine = buildCommandLine(command);
 
         if (_logger.isDebugEnabled()) {
-            _logger.debug(String.format("Executing: %s", buildCommandLine(command).split(KeyStoreUtils.KS_FILENAME)[0]));
+            _logger.debug(String.format("Executing: %s", commandLine));
         }
 
         try {
@@ -374,7 +400,7 @@ public class Script implements Callable<String> {
 
             _process = pb.start();
             if (_process == null) {
-                _logger.warn(String.format("Unable to execute: %s", buildCommandLine(command)));
+                _logger.warn(String.format("Unable to execute: %s", commandLine));
                 return String.format("Unable to execute the command: %s", command[0]);
             }
 
@@ -438,11 +464,8 @@ public class Script implements Callable<String> {
                 Task timedoutTask = new Task(log, ir);
 
                 timedoutTask.run();
-                if (!_passwordCommand) {
-                    _logger.warn(String.format("Timed out: %s.  Output is: %s", buildCommandLine(command), timedoutTask.getResult()));
-                } else {
-                    _logger.warn(String.format("Timed out: %s", buildCommandLine(command)));
-                }
+                _logger.warn(String.format("Timed out: %s.  Output is: %s", commandLine,
+                            timedoutTask.getResult()));
 
                 return ERR_TIMEOUT;
             }
@@ -466,7 +489,7 @@ public class Script implements Callable<String> {
             _logger.warn("Security Exception....not running as root?", ex);
             return stackTraceAsString(ex);
         } catch (Exception ex) {
-            _logger.warn(String.format("Exception: %s", buildCommandLine(command)), ex);
+            _logger.warn(String.format("Exception: %s", commandLine), ex);
             return stackTraceAsString(ex);
         } finally {
             if (_process != null) {
@@ -515,9 +538,9 @@ public class Script implements Callable<String> {
                 } catch (Exception ex) {
                     result = stackTraceAsString(ex);
                 } finally {
-                        done = true;
-                        notifyAll();
-                        IOUtils.closeQuietly(reader);
+                    done = true;
+                    notifyAll();
+                    IOUtils.closeQuietly(reader);
                 }
             }
         }
@@ -729,13 +752,31 @@ public class Script implements Callable<String> {
         return executeCommandForExitValue(0, command);
     }
 
+    private static void cleanupProcesses(AtomicReference<List<Process>> processesRef) {
+        List<Process> processes = processesRef.get();
+        if (CollectionUtils.isNotEmpty(processes)) {
+            for (Process process : processes) {
+                if (process == null) {
+                    continue;
+                }
+                LOGGER.trace(String.format("Cleaning up process [%s] from piped commands.", process.pid()));
+                IOUtils.closeQuietly(process.getErrorStream());
+                IOUtils.closeQuietly(process.getOutputStream());
+                IOUtils.closeQuietly(process.getInputStream());
+                process.destroyForcibly();
+            }
+        }
+    }
+
     public static Pair<Integer, String> executePipedCommands(List<String[]> commands, long timeout) {
         if (timeout <= 0) {
             timeout = DEFAULT_TIMEOUT;
         }
+        final AtomicReference<List<Process>> processesRef = new AtomicReference<>();
         Callable<Pair<Integer, String>> commandRunner = () -> {
             List<ProcessBuilder> builders = commands.stream().map(ProcessBuilder::new).collect(Collectors.toList());
             List<Process> processes = ProcessBuilder.startPipeline(builders);
+            processesRef.set(processes);
             Process last = processes.get(processes.size()-1);
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(last.getInputStream()))) {
                 String line;
@@ -762,6 +803,8 @@ public class Script implements Callable<String> {
             result.second(ERR_TIMEOUT);
         } catch (InterruptedException | ExecutionException e) {
             LOGGER.error("Error executing piped commands", e);
+        } finally {
+            cleanupProcesses(processesRef);
         }
         return result;
     }
