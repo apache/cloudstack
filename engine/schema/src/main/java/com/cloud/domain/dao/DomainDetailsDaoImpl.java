@@ -132,4 +132,9 @@ public class DomainDetailsDaoImpl extends ResourceDetailsDaoBase<DomainDetailVO>
         }
         return vo == null ? null : getActualValue(vo);
     }
+
+    @Override
+    public boolean doesConfigKeyAndValueExist(String key, String value) {
+        return doesKeyValuePairExist(key, value);
+    }
 }

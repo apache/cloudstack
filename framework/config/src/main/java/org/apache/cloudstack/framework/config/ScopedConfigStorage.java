@@ -32,9 +32,5 @@ public interface ScopedConfigStorage {
         return getConfigValue(id, key.key());
     }
 
-    boolean doesKeyValuePairExist(String key, String value);
-
-    default boolean doesConfigKeyAndValueExist(String key, String value) {
-        return doesKeyValuePairExist(key, value);
-    }
+    boolean doesConfigKeyAndValueExist(String key, String value);
 }
