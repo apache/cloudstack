@@ -42,6 +42,25 @@
             v-model:value="form.displaytext"
             :placeholder="$t('label.displaytext')"/>
         </a-form-item>
+        <a-form-item name="categoryid" ref="categoryid" v-if="!isSystem">
+          <template #label>
+            <tooltip-label :title="$t('label.category')" :tooltip="apiParams.categoryid ? apiParams.categoryid.description : $t('label.category')"/>
+          </template>
+          <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
+            v-model:value="form.categoryid"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="categoryLoading"
+            :placeholder="$t('label.category')">
+            <a-select-option v-for="category in categories" :key="category.id" :label="category.name">
+              {{ category.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item name="systemvmtype" ref="systemvmtype" v-if="isSystem">
           <template #label>
             <tooltip-label :title="$t('label.systemvmtype')" :tooltip="apiParams.systemvmtype.description"/>
@@ -745,7 +764,9 @@ export default {
       leaseexpiryaction: undefined,
       vgpuProfiles: [],
       vgpuProfileLoading: false,
-      externalDetailsEnabled: false
+      externalDetailsEnabled: false,
+      categories: [],
+      categoryLoading: false
     }
   },
   beforeCreate () {
@@ -857,6 +878,7 @@ export default {
       this.fetchDomainData()
       this.fetchZoneData()
       this.fetchGPUCards()
+      this.fetchCategories()
       if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
@@ -880,6 +902,15 @@ export default {
         })
       }).finally(() => {
         this.gpuCardLoading = false
+      })
+    },
+    fetchCategories () {
+      this.categoryLoading = true
+      getAPI('listServiceOfferingCategories', {
+      }).then(json => {
+        this.categories = json.listserviceofferingcategoriesresponse.serviceofferingcategory || []
+      }).finally(() => {
+        this.categoryLoading = false
       })
     },
     addDiskOffering () {
@@ -1087,6 +1118,10 @@ export default {
 
         if (values.diskofferingid) {
           params.diskofferingid = values.diskofferingid
+        }
+
+        if (values.categoryid) {
+          params.categoryid = values.categoryid
         }
 
         // Add GPU parameters
