@@ -38,46 +38,51 @@ public interface AlertService {
             }
         }
 
-        public static final AlertType ALERT_TYPE_MEMORY = new AlertType(Capacity.CAPACITY_TYPE_MEMORY, "ALERT.MEMORY", true, false);
-        public static final AlertType ALERT_TYPE_CPU = new AlertType(Capacity.CAPACITY_TYPE_CPU, "ALERT.CPU", true, false);
-        public static final AlertType ALERT_TYPE_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_STORAGE, "ALERT.STORAGE", true, false);
-        public static final AlertType ALERT_TYPE_STORAGE_ALLOCATED = new AlertType(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, "ALERT.STORAGE.ALLOCATED", true, false);
-        public static final AlertType ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = new AlertType(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, "ALERT.NETWORK.PUBLICIP", true, false);
-        public static final AlertType ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET = new AlertType(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET, "ALERT.NETWORK.IPV6SUBNET", true, false);
-        public static final AlertType ALERT_TYPE_PRIVATE_IP = new AlertType(Capacity.CAPACITY_TYPE_PRIVATE_IP, "ALERT.NETWORK.PRIVATEIP", true, false);
-        public static final AlertType ALERT_TYPE_SECONDARY_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE, "ALERT.STORAGE.SECONDARY", true, false);
+        private AlertType(short type, String name, boolean isDefault) {
+            this(type, name, isDefault, false);
+        }
+
+        public static final AlertType ALERT_TYPE_MEMORY = new AlertType(Capacity.CAPACITY_TYPE_MEMORY, "ALERT.MEMORY", true);
+        public static final AlertType ALERT_TYPE_CPU = new AlertType(Capacity.CAPACITY_TYPE_CPU, "ALERT.CPU", true);
+        public static final AlertType ALERT_TYPE_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_STORAGE, "ALERT.STORAGE", true);
+        public static final AlertType ALERT_TYPE_STORAGE_ALLOCATED = new AlertType(Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, "ALERT.STORAGE.ALLOCATED", true);
+        public static final AlertType ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = new AlertType(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, "ALERT.NETWORK.PUBLICIP",
+            true);
+        public static final AlertType ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET = new AlertType(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET, "ALERT.NETWORK.IPV6SUBNET", true);
+        public static final AlertType ALERT_TYPE_PRIVATE_IP = new AlertType(Capacity.CAPACITY_TYPE_PRIVATE_IP, "ALERT.NETWORK.PRIVATEIP", true);
+        public static final AlertType ALERT_TYPE_SECONDARY_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE, "ALERT.STORAGE.SECONDARY", true);
         public static final AlertType ALERT_TYPE_HOST = new AlertType((short)7, "ALERT.COMPUTE.HOST", true, true);
         public static final AlertType ALERT_TYPE_USERVM = new AlertType((short)8, "ALERT.USERVM", true, true);
         public static final AlertType ALERT_TYPE_DOMAIN_ROUTER = new AlertType((short)9, "ALERT.SERVICE.DOMAINROUTER", true, true);
         public static final AlertType ALERT_TYPE_CONSOLE_PROXY = new AlertType((short)10, "ALERT.SERVICE.CONSOLEPROXY", true, true);
-        public static final AlertType ALERT_TYPE_ROUTING = new AlertType((short)11, "ALERT.NETWORK.ROUTING", true, false);
+        public static final AlertType ALERT_TYPE_ROUTING = new AlertType((short)11, "ALERT.NETWORK.ROUTING", true);
         public static final AlertType ALERT_TYPE_STORAGE_MISC = new AlertType((short)12, "ALERT.STORAGE.MISC", true, true);
-        public static final AlertType ALERT_TYPE_USAGE_SERVER = new AlertType((short)13, "ALERT.USAGE", true, false);
+        public static final AlertType ALERT_TYPE_USAGE_SERVER = new AlertType((short)13, "ALERT.USAGE", true);
         public static final AlertType ALERT_TYPE_MANAGEMENT_NODE = new AlertType((short)14, "ALERT.MANAGEMENT", true, true);
-        public static final AlertType ALERT_TYPE_DOMAIN_ROUTER_MIGRATE = new AlertType((short)15, "ALERT.NETWORK.DOMAINROUTERMIGRATE", true, false);
-        public static final AlertType ALERT_TYPE_CONSOLE_PROXY_MIGRATE = new AlertType((short)16, "ALERT.SERVICE.CONSOLEPROXYMIGRATE", true, false);
-        public static final AlertType ALERT_TYPE_USERVM_MIGRATE = new AlertType((short)17, "ALERT.USERVM.MIGRATE", true, false);
-        public static final AlertType ALERT_TYPE_VLAN = new AlertType((short)18, "ALERT.NETWORK.VLAN", true, false);
+        public static final AlertType ALERT_TYPE_DOMAIN_ROUTER_MIGRATE = new AlertType((short)15, "ALERT.NETWORK.DOMAINROUTERMIGRATE", true);
+        public static final AlertType ALERT_TYPE_CONSOLE_PROXY_MIGRATE = new AlertType((short)16, "ALERT.SERVICE.CONSOLEPROXYMIGRATE", true);
+        public static final AlertType ALERT_TYPE_USERVM_MIGRATE = new AlertType((short)17, "ALERT.USERVM.MIGRATE", true);
+        public static final AlertType ALERT_TYPE_VLAN = new AlertType((short)18, "ALERT.NETWORK.VLAN", true);
         public static final AlertType ALERT_TYPE_SSVM = new AlertType((short)19, "ALERT.SERVICE.SSVM", true, true);
-        public static final AlertType ALERT_TYPE_USAGE_SERVER_RESULT = new AlertType((short)20, "ALERT.USAGE.RESULT", true, false);
-        public static final AlertType ALERT_TYPE_STORAGE_DELETE = new AlertType((short)21, "ALERT.STORAGE.DELETE", true, false);
-        public static final AlertType ALERT_TYPE_UPDATE_RESOURCE_COUNT = new AlertType((short)22, "ALERT.RESOURCE.COUNT", true, false);
-        public static final AlertType ALERT_TYPE_USAGE_SANITY_RESULT = new AlertType((short)23, "ALERT.USAGE.SANITY", true, false);
-        public static final AlertType ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP = new AlertType((short)24, "ALERT.NETWORK.DIRECTPUBLICIP", true, false);
-        public static final AlertType ALERT_TYPE_LOCAL_STORAGE = new AlertType((short)25, "ALERT.STORAGE.LOCAL", true, false);
+        public static final AlertType ALERT_TYPE_USAGE_SERVER_RESULT = new AlertType((short)20, "ALERT.USAGE.RESULT", true);
+        public static final AlertType ALERT_TYPE_STORAGE_DELETE = new AlertType((short)21, "ALERT.STORAGE.DELETE", true);
+        public static final AlertType ALERT_TYPE_UPDATE_RESOURCE_COUNT = new AlertType((short)22, "ALERT.RESOURCE.COUNT", true);
+        public static final AlertType ALERT_TYPE_USAGE_SANITY_RESULT = new AlertType((short)23, "ALERT.USAGE.SANITY", true);
+        public static final AlertType ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP = new AlertType((short)24, "ALERT.NETWORK.DIRECTPUBLICIP", true);
+        public static final AlertType ALERT_TYPE_LOCAL_STORAGE = new AlertType((short)25, "ALERT.STORAGE.LOCAL", true);
         public static final AlertType ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED = new AlertType((short)26, "ALERT.RESOURCE.EXCEED", true, true);
-        public static final AlertType ALERT_TYPE_SYNC = new AlertType((short)27, "ALERT.TYPE.SYNC", true, false);
+        public static final AlertType ALERT_TYPE_SYNC = new AlertType((short)27, "ALERT.TYPE.SYNC", true);
         public static final AlertType ALERT_TYPE_UPLOAD_FAILED = new AlertType((short)28, "ALERT.UPLOAD.FAILED", true, true);
         public static final AlertType ALERT_TYPE_OOBM_AUTH_ERROR = new AlertType((short)29, "ALERT.OOBM.AUTHERROR", true, true);
         public static final AlertType ALERT_TYPE_HA_ACTION = new AlertType((short)30, "ALERT.HA.ACTION", true, true);
         public static final AlertType ALERT_TYPE_CA_CERT = new AlertType((short)31, "ALERT.CA.CERT", true, true);
-        public static final AlertType ALERT_TYPE_VM_SNAPSHOT = new AlertType((short)32, "ALERT.VM.SNAPSHOT", true, false);
-        public static final AlertType ALERT_TYPE_VR_PUBLIC_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PUBLIC.IFACE.MTU", true, false);
-        public static final AlertType ALERT_TYPE_VR_PRIVATE_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PRIVATE.IFACE.MTU", true, false);
+        public static final AlertType ALERT_TYPE_VM_SNAPSHOT = new AlertType((short)32, "ALERT.VM.SNAPSHOT", true);
+        public static final AlertType ALERT_TYPE_VR_PUBLIC_IFACE_MTU = new AlertType((short)33, "ALERT.VR.PUBLIC.IFACE.MTU", true);
+        public static final AlertType ALERT_TYPE_VR_PRIVATE_IFACE_MTU = new AlertType((short)34, "ALERT.VR.PRIVATE.IFACE.MTU", true);
         public static final AlertType ALERT_TYPE_EXTENSION_PATH_NOT_READY = new AlertType((short)33, "ALERT.TYPE.EXTENSION.PATH.NOT.READY", true, true);
         public static final AlertType ALERT_TYPE_VPN_GATEWAY_OBSOLETE_PARAMETERS = new AlertType((short)34, "ALERT.S2S.VPN.GATEWAY.OBSOLETE.PARAMETERS", true, true);
-        public static final AlertType ALERT_TYPE_BACKUP_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_BACKUP_STORAGE, "ALERT.STORAGE.BACKUP", true, false);
-        public static final AlertType ALERT_TYPE_OBJECT_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, "ALERT.STORAGE.OBJECT", true, false);
+        public static final AlertType ALERT_TYPE_BACKUP_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_BACKUP_STORAGE, "ALERT.STORAGE.BACKUP", true);
+        public static final AlertType ALERT_TYPE_OBJECT_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, "ALERT.STORAGE.OBJECT", true);
 
         public short getType() {
             return type;

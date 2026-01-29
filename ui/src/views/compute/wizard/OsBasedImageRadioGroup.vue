@@ -42,7 +42,8 @@
               class="radio-group__os-logo"
               size="2x"
               :osId="item.ostypeid"
-              :os-name="item.osName" />
+              :os-name="item.osName"
+              :use-cache="true" />
             &nbsp;
             {{ item.displaytext }}
             <span v-if="item?.projectid">

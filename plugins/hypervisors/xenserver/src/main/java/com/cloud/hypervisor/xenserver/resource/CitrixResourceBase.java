@@ -51,6 +51,7 @@ import java.util.concurrent.TimeoutException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.xensource.xenapi.VTPM;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
@@ -5825,5 +5826,83 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     public void destroyVm(VM vm, Connection connection) throws XenAPIException, XmlRpcException {
         destroyVm(vm, connection, false);
+    }
+
+    /**
+     * Configure vTPM (Virtual Trusted Platform Module) support for a VM.
+     * vTPM provides a virtual TPM 2.0 device for VMs, enabling features like Secure Boot and disk encryption.
+     *
+     * Requirements:
+     * - XenServer/XCP-ng 8.3 (and above)
+     * - UEFI Secure Boot enabled
+     * - VM in halted state
+     *
+     * @param conn XenServer connection
+     * @param vm The VM to configure
+     * @param vmSpec VM specification containing vTPM settings
+     */
+    public void configureVTPM(Connection conn, VM vm, VirtualMachineTO vmSpec) throws XenAPIException, XmlRpcException {
+        if (vmSpec == null || vmSpec.getDetails() == null) {
+            return;
+        }
+
+        String vtpmEnabled = vmSpec.getDetails().getOrDefault(VmDetailConstants.VIRTUAL_TPM_ENABLED, null);
+
+        final Map<String, String> platform = vm.getPlatform(conn);
+        if (platform != null) {
+            final String guestRequiresVtpm = platform.get("vtpm");
+            if (guestRequiresVtpm != null && Boolean.parseBoolean(guestRequiresVtpm) && !Boolean.parseBoolean(vtpmEnabled)) {
+                logger.warn("Guest OS requires vTPM by default, even if VM details doesn't have the setting: {}", vmSpec.getName());
+                return;
+            }
+        }
+
+        if (!Boolean.parseBoolean(vtpmEnabled)) {
+            return;
+        }
+
+        String bootMode = StringUtils.defaultIfEmpty(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()), null);
+        String bootType = (bootMode == null) ? ApiConstants.BootType.BIOS.toString() : ApiConstants.BootType.UEFI.toString();
+
+        if (!ApiConstants.BootType.UEFI.toString().equals(bootType)) {
+            logger.warn("vTPM requires UEFI boot mode. Skipping vTPM configuration for VM: {}", vmSpec.getName());
+            return;
+        }
+
+        try {
+            Set<VTPM> existingVtpms = vm.getVTPMs(conn);
+            if (!existingVtpms.isEmpty()) {
+                logger.debug("vTPM already exists for VM: {}", vmSpec.getName());
+                return;
+            }
+
+            // Creates vTPM using: xe vtpm-create vm-uuid=<uuid>
+            String vmUuid = vm.getUuid(conn);
+            String result = callHostPlugin(conn, "vmops", "create_vtpm", "vm_uuid", vmUuid);
+
+            if (result == null || result.isEmpty() || result.startsWith("ERROR:") || result.startsWith("EXCEPTION:")) {
+                throw new CloudRuntimeException("Failed to create vTPM, result: " + result);
+            }
+
+            logger.info("Successfully created vTPM {} for VM: {}", result.trim(), vmSpec.getName());
+        } catch (Exception e) {
+            logger.warn("Failed to configure vTPM for VM: {}, continuing without vTPM", vmSpec.getName(), e);
+        }
+    }
+
+    public boolean isVTPMSupported(Connection conn, Host host) {
+        try {
+            Host.Record hostRecord = host.getRecord(conn);
+            String productVersion = hostRecord.softwareVersion.get("product_version");
+            if (productVersion == null) {
+                return false;
+            }
+            ComparableVersion currentVersion = new ComparableVersion(productVersion);
+            ComparableVersion minVersion = new ComparableVersion("8.2.0");
+            return currentVersion.compareTo(minVersion) >= 0;
+        } catch (Exception e) {
+            logger.warn("Failed to check vTPM support on host", e);
+            return false;
+        }
     }
 }

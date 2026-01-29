@@ -18,6 +18,8 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import { getAPI, postAPI, getBaseUrl } from '@/api'
+import { getLatestKubernetesIsoParams } from '@/utils/acsrepo'
 import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
 
 export default {
@@ -582,6 +584,182 @@ export default {
         }
       ],
       resourceType: 'KubernetesCluster',
+      advisories: [
+        {
+          id: 'cks-min-offering',
+          severity: 'warning',
+          message: 'message.advisory.cks.min.offering',
+          docsHelp: 'plugins/cloudstack-kubernetes-service.html',
+          dismissOnConditionFail: true,
+          condition: async (store) => {
+            if (!('listServiceOfferings' in store.getters.apis)) {
+              return false
+            }
+            const params = {
+              cpunumber: 2,
+              memory: 2048,
+              issystem: false
+            }
+            try {
+              const json = await getAPI('listServiceOfferings', params)
+              const offerings = json?.listserviceofferingsresponse?.serviceoffering || []
+              return !offerings.some(o => !o.iscustomized)
+            } catch (error) {}
+            return false
+          },
+          actions: [
+            {
+              primary: true,
+              label: 'label.add.minimum.required.compute.offering',
+              loadingLabel: 'message.adding.minimum.required.compute.offering.kubernetes.cluster',
+              show: (store) => { return ('createServiceOffering' in store.getters.apis) },
+              run: async () => {
+                const params = {
+                  name: 'CKS Instance',
+                  cpunumber: 2,
+                  cpuspeed: 1000,
+                  memory: 2048,
+                  iscustomized: false,
+                  issystem: false
+                }
+                try {
+                  const json = await postAPI('createServiceOffering', params)
+                  if (json?.createserviceofferingresponse?.serviceoffering) {
+                    return true
+                  }
+                } catch (error) {}
+                return false
+              },
+              successMessage: 'message.added.minimum.required.compute.offering.kubernetes.cluster',
+              errorMessage: 'message.add.minimum.required.compute.offering.kubernetes.cluster.failed'
+            },
+            {
+              label: 'label.go.to.compute.offerings',
+              show: (store) => { return ('listServiceOfferings' in store.getters.apis) },
+              run: (store, router) => {
+                router.push({ name: 'computeoffering' })
+                return false
+              }
+            }
+          ]
+        },
+        {
+          id: 'cks-version-check',
+          severity: 'warning',
+          message: 'message.advisory.cks.version.check',
+          docsHelp: 'plugins/cloudstack-kubernetes-service.html',
+          dismissOnConditionFail: true,
+          condition: async (store) => {
+            const api = 'listKubernetesSupportedVersions'
+            if (!(api in store.getters.apis)) {
+              return false
+            }
+            try {
+              const json = await getAPI(api, {})
+              const versions = json?.listkubernetessupportedversionsresponse?.kubernetessupportedversion || []
+              return versions.length === 0
+            } catch (error) {}
+            return false
+          },
+          actions: [
+            {
+              primary: true,
+              label: 'label.add.latest.kubernetes.iso',
+              loadingLabel: 'message.adding.latest.kubernetes.iso',
+              show: (store) => { return ('addKubernetesSupportedVersion' in store.getters.apis) },
+              run: async () => {
+                let arch = 'x86_64'
+                if ('listClusters' in store.getters.apis) {
+                  try {
+                    const json = await getAPI('listClusters', { allocationstate: 'Enabled', page: 1, pagesize: 1 })
+                    const cluster = json?.listclustersresponse?.cluster?.[0] || {}
+                    arch = cluster.architecture || 'x86_64'
+                  } catch (error) {}
+                }
+                const params = await getLatestKubernetesIsoParams(arch)
+                try {
+                  const json = await postAPI('addKubernetesSupportedVersion', params)
+                  if (json?.addkubernetessupportedversionresponse?.kubernetessupportedversion) {
+                    return true
+                  }
+                } catch (error) {}
+                return false
+              },
+              successMessage: 'message.added.latest.kubernetes.iso',
+              errorMessage: 'message.add.latest.kubernetes.iso.failed'
+            },
+            {
+              label: 'label.go.to.kubernetes.isos',
+              show: true,
+              run: (store, router) => {
+                router.push({ name: 'kubernetesiso' })
+                return false
+              }
+            }
+          ]
+        },
+        {
+          id: 'cks-endpoint-url',
+          severity: 'warning',
+          message: 'message.advisory.cks.endpoint.url.not.configured',
+          docsHelp: 'plugins/cloudstack-kubernetes-service.html',
+          dismissOnConditionFail: true,
+          condition: async (store) => {
+            if (!['Admin'].includes(store.getters.userInfo.roletype)) {
+              return false
+            }
+            let url = ''
+            const baseUrl = getBaseUrl()
+            if (baseUrl.startsWith('/')) {
+              url = window.location.origin + baseUrl
+            }
+            if (!url || url.startsWith('http://localhost')) {
+              return false
+            }
+            const params = {
+              name: 'endpoint.url'
+            }
+            const json = await getAPI('listConfigurations', params)
+            const configuration = json?.listconfigurationsresponse?.configuration?.[0] || {}
+            return !configuration.value || configuration.value.startsWith('http://localhost')
+          },
+          actions: [
+            {
+              primary: true,
+              label: 'label.fix.global.setting',
+              show: (store) => { return ('updateConfiguration' in store.getters.apis) },
+              run: async () => {
+                let url = ''
+                const baseUrl = getBaseUrl()
+                if (baseUrl.startsWith('/')) {
+                  url = window.location.origin + baseUrl
+                }
+                const params = {
+                  name: 'endpoint.url',
+                  value: url
+                }
+                try {
+                  const json = await postAPI('updateConfiguration', params)
+                  if (json?.updateconfigurationresponse?.configuration) {
+                    return true
+                  }
+                } catch (error) {}
+                return false
+              },
+              successMessage: 'message.global.setting.updated',
+              errorMessage: 'message.global.setting.update.failed'
+            },
+            {
+              label: 'label.go.to.global.settings',
+              show: (store) => { return ('listConfigurations' in store.getters.apis) },
+              run: (store, router) => {
+                router.push({ name: 'globalsetting' })
+                return false
+              }
+            }
+          ]
+        }
+      ],
       actions: [
         {
           api: 'createKubernetesCluster',

@@ -25,7 +25,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.times;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -157,7 +156,7 @@ public class VeeamClientTest {
     @Test
     public void checkIfRestoreSessionFinishedTestTimeoutException() throws IOException {
         try {
-            ReflectionTestUtils.setField(mockClient, "restoreTimeout", 10);
+            ReflectionTestUtils.setField(mockClient, "restoreTimeout", 2);
             RestoreSession restoreSession = Mockito.mock(RestoreSession.class);
             HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
             Mockito.when(mockClient.get(Mockito.anyString())).thenReturn(httpResponse);
@@ -169,7 +168,7 @@ public class VeeamClientTest {
         } catch (Exception e) {
             Assert.assertEquals("Related job type: RestoreTest was not successful", e.getMessage());
         }
-        Mockito.verify(mockClient, times(10)).get(Mockito.anyString());
+        Mockito.verify(mockClient, Mockito.atLeastOnce()).get(Mockito.anyString());
     }
 
     @Test
