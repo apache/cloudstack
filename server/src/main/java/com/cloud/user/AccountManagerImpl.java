@@ -86,7 +86,6 @@ import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -177,6 +176,7 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
@@ -592,10 +592,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             if ((isRootAdmin(accountId)) || (isDomainAdmin(accountId)) || (isResourceDomainAdmin(accountId))) {
                 return true;
-            } else if (acct.getType() == Account.Type.READ_ONLY_ADMIN) {
-                return true;
+            } else {
+                return acct.getType() == Account.Type.READ_ONLY_ADMIN;
             }
-
         }
         return false;
     }
@@ -649,10 +648,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public boolean isNormalUser(long accountId) {
         AccountVO acct = _accountDao.findById(accountId);
-        if (acct != null && acct.getType() == Account.Type.NORMAL) {
-            return true;
-        }
-        return false;
+        return acct != null && acct.getType() == Account.Type.NORMAL;
     }
 
     @Override
@@ -683,10 +679,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (account == null) {
             return false;  //account is deleted or does not exist
         }
-        if (isRootAdmin(accountId) || (account.getType() == Account.Type.ADMIN)) {
-            return true;
-        }
-        return false;
+        return isRootAdmin(accountId) || (account.getType() == Account.Type.ADMIN);
     }
 
     @Override
@@ -736,12 +729,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<>();
 
         for (ControlledEntity entity : entities) {
-            long domainId = entity.getDomainId();
-            if (entity.getAccountId() != -1 && domainId == -1) { // If account exists domainId should too so calculate
-                // it. This condition might be hit for templates or entities which miss domainId in their tables
-                Account account = ApiDBUtils.findAccountById(entity.getAccountId());
-                domainId = account != null ? account.getDomainId() : -1;
-            }
+            long domainId = getDomainIdFor(entity);
             if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)
                     && !(entity instanceof Network && accessType != null && (accessType == AccessType.UseEntry || accessType == AccessType.OperateEntry))
                     && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)) {
@@ -791,6 +779,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // check that resources belong to the same account
 
+    }
+
+    private static long getDomainIdFor(ControlledEntity entity) {
+        long domainId = entity.getDomainId();
+        if (entity.getAccountId() != -1 && domainId == -1) {
+            // If account exists domainId should too so calculate it.
+            // This condition might be hit for templates or entities which miss domainId in their tables
+            Account account = ApiDBUtils.findAccountById(entity.getAccountId());
+            domainId = account != null ? account.getDomainId() : -1;
+        }
+        return domainId;
     }
 
     @Override
@@ -2830,11 +2829,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             final Boolean ApiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
 
             if (ApiSourceCidrChecksEnabled) {
-                logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
+                logger.debug("CIDRs from which account '{}' is allowed to perform API calls: {}", account, accessAllowedCidrs);
 
                 // Block when is not in the list of allowed IPs
                 if (!NetUtils.isIpInCidrList(loginIpAddress, accessAllowedCidrs.split(","))) {
-                    logger.warn("Request by account '" + account.toString() + "' was denied since " + loginIpAddress.toString().replace("/", "") + " does not match " + accessAllowedCidrs);
+                    logger.warn("Request by account '{}' was denied since {} does not match {}", account , loginIpAddress.toString().replace("/", ""), accessAllowedCidrs);
                     throw new CloudAuthenticationException("Failed to authenticate user '" + username + "' in domain '" + domain.getPath() + "' from ip "
                             + loginIpAddress.toString().replace("/", "") + "; please provide valid credentials");
                 }
@@ -3007,7 +3006,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     if (unsignedRequestBuffer.length() != 0) {
                         unsignedRequestBuffer.append("&");
                     }
-                    unsignedRequestBuffer.append(paramName).append("=").append(URLEncoder.encode(paramValue, "UTF-8"));
+                    unsignedRequestBuffer.append(paramName).append("=").append(URLEncoder.encode(paramValue, StringUtils.getPreferredCharset()));
                 }
             }
 
