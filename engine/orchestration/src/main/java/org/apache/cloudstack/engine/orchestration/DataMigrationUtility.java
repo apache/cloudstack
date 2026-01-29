@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -94,7 +95,7 @@ public class DataMigrationUtility {
      *  "Ready" "Allocated", "Destroying", "Destroyed", "Failed". If this is the case, and if the migration policy is complete,
      *  the migration is terminated.
      */
-    public boolean filesReadyToMigrate(Long srcDataStoreId, List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots, List<VolumeDataStoreVO> volumes) {
+    public boolean filesReadyToMigrate(List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots, List<VolumeDataStoreVO> volumes) {
         State[] validStates = {State.Ready, State.Allocated, State.Destroying, State.Destroyed, State.Failed};
         boolean isReady = true;
         for (TemplateDataStoreVO template : templates) {
@@ -116,7 +117,8 @@ public class DataMigrationUtility {
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStoreId);
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStoreId, DataStoreRole.Image);
         List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStoreId);
-        return filesReadyToMigrate(srcDataStoreId, templates, snapshots, volumes);
+
+        return filesReadyToMigrate(templates, snapshots, volumes);
     }
 
     protected void checkIfCompleteMigrationPossible(ImageStoreService.MigrationPolicy policy, Long srcDataStoreId) {
@@ -165,11 +167,11 @@ public class DataMigrationUtility {
     }
 
     protected List<DataObject> getSortedValidSourcesList(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains,
-            Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates, List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots) {
+            Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates, List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots, Set<Long> snapshotIdsToMigrate) {
         List<DataObject> files = new ArrayList<>();
 
         files.addAll(getAllReadyTemplates(srcDataStore, childTemplates, templates));
-        files.addAll(getAllReadySnapshotsAndChains(srcDataStore, snapshotChains, snapshots));
+        files.addAll(getAllReadySnapshotsAndChains(srcDataStore, snapshotChains, snapshots, snapshotIdsToMigrate));
 
         files = sortFilesOnSize(files, snapshotChains);
 
@@ -177,15 +179,26 @@ public class DataMigrationUtility {
     }
 
     protected List<DataObject> getSortedValidSourcesList(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains,
-            Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates) {
+            Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates, Set<Long> snapshotIdsToMigrate) {
         List<DataObject> files = new ArrayList<>();
         files.addAll(getAllReadyTemplates(srcDataStore, childTemplates));
-        files.addAll(getAllReadySnapshotsAndChains(srcDataStore, snapshotChains));
+        files.addAll(getAllReadySnapshotsAndChains(srcDataStore, snapshotChains, snapshotIdsToMigrate));
         files.addAll(getAllReadyVolumes(srcDataStore));
 
         files = sortFilesOnSize(files, snapshotChains);
 
         return files;
+    }
+
+    private List<SnapshotInfo> createKvmIncrementalSnapshotChain(SnapshotDataStoreVO snapshot) {
+        List<SnapshotInfo> chain = new LinkedList<>();
+        SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshot.getSnapshotId(), snapshot.getDataStoreId(), snapshot.getRole());
+
+        chain.addAll(snapshotInfo.getParents());
+        chain.add(snapshotInfo);
+        chain.addAll(snapshotInfo.getChildAndGrandchildren());
+
+        return chain;
     }
 
     protected List<DataObject> sortFilesOnSize(List<DataObject> files, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
@@ -274,8 +287,9 @@ public class DataMigrationUtility {
      * for each parent snapshot and the cumulative size of the chain - this is done to ensure that all the snapshots in a chain
      * are migrated to the same datastore
      */
-    protected List<DataObject> getAllReadySnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, List<SnapshotDataStoreVO> snapshots) {
+    protected List<DataObject> getAllReadySnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, List<SnapshotDataStoreVO> snapshots, Set<Long> snapshotIdsToMigrate) {
         List<SnapshotInfo> files = new LinkedList<>();
+        Set<Long> snapshotIdsAlreadyInChain = new HashSet<>();
         Set<Long> idsForMigration = new HashSet<>();
 
         for (SnapshotDataStoreVO snapshot : snapshots) {
@@ -300,13 +314,22 @@ public class DataMigrationUtility {
             if (snapshot.getParentSnapshotId() != 0) {
                 continue; // The child snapshot will be migrated in the for loop below.
             }
-            SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), snapshot.getDataStoreId(), snapshot.getRole());
-            if (snap == null) {
-                logger.debug("Not migrating snapshot [{}] because we could not get its information.", snapshot);
-                continue;
+
+            if (snapshotVO.getHypervisorType() == Hypervisor.HypervisorType.KVM && snapshot.getKvmCheckpointPath() != null && !snapshotIdsAlreadyInChain.contains(snapshotVO.getId())) {
+                List<SnapshotInfo> kvmIncrementalSnapshotChain = createKvmIncrementalSnapshotChain(snapshot);
+                SnapshotInfo parent = kvmIncrementalSnapshotChain.get(0);
+                snapshotIdsAlreadyInChain.addAll(kvmIncrementalSnapshotChain.stream().map(DataObject::getId).collect(Collectors.toSet()));
+                snapshotChains.put(parent, new Pair<>(kvmIncrementalSnapshotChain, getTotalChainSize(kvmIncrementalSnapshotChain.stream().filter(snapInfo -> snapshotIdsToMigrate.contains(snapInfo.getId())).collect(Collectors.toList()))));
+                files.add(parent);
+            } else {
+                SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), snapshot.getDataStoreId(), snapshot.getRole());
+                if (snap == null) {
+                    logger.debug("Not migrating snapshot [{}] because we could not get its information.", snapshot);
+                    continue;
+                }
+                files.add(snap);
+                idsForMigration.add(snapshotId);
             }
-            files.add(snap);
-            idsForMigration.add(snapshotId);
         }
 
         for (SnapshotInfo parent : files) {
@@ -319,15 +342,16 @@ public class DataMigrationUtility {
                     chain.addAll(children);
                 }
             }
-            snapshotChains.put(parent, new Pair<>(chain, getTotalChainSize(chain)));
+            snapshotChains.putIfAbsent(parent, new Pair<>(chain, getTotalChainSize(chain)));
         }
 
         return (List<DataObject>) (List<?>) files;
     }
 
-    protected List<DataObject> getAllReadySnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains) {
+    protected List<DataObject> getAllReadySnapshotsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, Set<Long> snapshotIdsToMigrate) {
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStore.getId(), DataStoreRole.Image);
-        return getAllReadySnapshotsAndChains(srcDataStore, snapshotChains, snapshots);
+        snapshotIdsToMigrate.addAll(snapshots.stream().map(SnapshotDataStoreVO::getSnapshotId).collect(Collectors.toSet()));
+        return getAllReadySnapshotsAndChains(srcDataStore, snapshotChains, snapshots, snapshotIdsToMigrate);
     }
 
     protected Long getTotalChainSize(List<? extends DataObject> chain) {

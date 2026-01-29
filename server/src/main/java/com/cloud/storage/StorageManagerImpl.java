@@ -4616,6 +4616,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 AllowVolumeReSizeBeyondAllocation,
                 StoragePoolHostConnectWorkers,
                 ObjectStorageCapacityThreshold,
+                AgentMaxDataMigrationWaitTime,
                 COPY_PUBLIC_TEMPLATES_FROM_OTHER_STORAGES
         };
     }
