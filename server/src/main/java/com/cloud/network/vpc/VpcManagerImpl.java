@@ -388,7 +388,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     }
                     createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap,
                             true, State.Enabled, null, false,
-                            false, false, null, null, false, true);
+                            false, false, null, null, false, false);
                 }
 
                 // configure default vpc offering with Netscaler as LB Provider
@@ -429,7 +429,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled,
-                            null, false, false, true, null, null, false, true);
+                            null, false, false, true, null, null, false, false);
                 }
 
                 // configure default vpc offering with NSX as network service provider in NAT mode
