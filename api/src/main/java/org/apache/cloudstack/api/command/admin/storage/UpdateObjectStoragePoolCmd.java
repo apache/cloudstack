@@ -92,7 +92,6 @@ public class UpdateObjectStoragePoolCmd extends BaseCmd {
         }
         return detailsMap;
     }
-  
     public Long getSize() {
         return size;
     }
