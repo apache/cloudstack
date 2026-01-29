@@ -5440,6 +5440,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.RAM_RESERVATION, Collections.emptyList());
             options.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, Arrays.asList("true", "false"));
         }
+
+        if (HypervisorType.XenServer.equals(hypervisorType)) {
+            options.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, Arrays.asList("true", "false"));
+        }
     }
 
     @Override
