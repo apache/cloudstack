@@ -44,6 +44,7 @@ import javax.net.ssl.SSLEngine;
 
 import com.cloud.resource.ResourceState;
 import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -573,7 +574,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
     protected AgentAttache getAttache(final Long hostId) throws AgentUnavailableException {
         assert hostId != null : "Who didn't check their id value?";
-        final HostVO host = _hostDao.findById(hostId);
+        final HostVO host = CallContext.current().getRequestEntityCache()
+                .get(HostVO.class, hostId, () -> _hostDao.findById(hostId));
         if (host == null) {
             throw new AgentUnavailableException("Can't find the host ", hostId);
         }

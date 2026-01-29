@@ -2998,22 +2998,31 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public String[] getStorageAccessGroups(Long zoneId, Long podId, Long clusterId, Long hostId) {
         List<String> storageAccessGroups = new ArrayList<>();
         if (hostId != null) {
-            HostVO host = _hostDao.findById(hostId);
-            ClusterVO cluster = _clusterDao.findById(host.getClusterId());
-            HostPodVO pod = _podDao.findById(cluster.getPodId());
-            DataCenterVO zone = _dcDao.findById(pod.getDataCenterId());
+            HostVO host = CallContext.current().getRequestEntityCache().get(HostVO.class, hostId,
+                    () -> _hostDao.findById(hostId));
+            ClusterVO cluster = CallContext.current().getRequestEntityCache().get(ClusterVO.class, host.getClusterId(),
+                    () -> _clusterDao.findById(host.getClusterId()));
+            HostPodVO pod = CallContext.current().getRequestEntityCache().get(HostPodVO.class, cluster.getPodId(),
+                    () -> _podDao.findById(cluster.getPodId()));
+            DataCenterVO zone = CallContext.current().getRequestEntityCache().get(DataCenterVO.class, pod.getDataCenterId(),
+                    () -> _dcDao.findById(pod.getDataCenterId()));
             storageAccessGroups.addAll(List.of(com.cloud.utils.StringUtils.splitCommaSeparatedStrings(host.getStorageAccessGroups(), cluster.getStorageAccessGroups(), pod.getStorageAccessGroups(), zone.getStorageAccessGroups())));
         } else if (clusterId != null) {
-            ClusterVO cluster = _clusterDao.findById(clusterId);
+            ClusterVO cluster = CallContext.current().getRequestEntityCache().get(ClusterVO.class, clusterId,
+                    () -> _clusterDao.findById(clusterId));
             HostPodVO pod = _podDao.findById(cluster.getPodId());
-            DataCenterVO zone = _dcDao.findById(pod.getDataCenterId());
+            DataCenterVO zone = CallContext.current().getRequestEntityCache().get(DataCenterVO.class, pod.getDataCenterId(),
+                    () -> _dcDao.findById(pod.getDataCenterId()));
             storageAccessGroups.addAll(List.of(com.cloud.utils.StringUtils.splitCommaSeparatedStrings(cluster.getStorageAccessGroups(), pod.getStorageAccessGroups(), zone.getStorageAccessGroups())));
         } else if (podId != null) {
-            HostPodVO pod = _podDao.findById(podId);
-            DataCenterVO zone = _dcDao.findById(pod.getDataCenterId());
+            HostPodVO pod = CallContext.current().getRequestEntityCache().get(HostPodVO.class, podId,
+                    () -> _podDao.findById(podId));
+            DataCenterVO zone = CallContext.current().getRequestEntityCache().get(DataCenterVO.class, pod.getDataCenterId(),
+                    () -> _dcDao.findById(pod.getDataCenterId()));
             storageAccessGroups.addAll(List.of(com.cloud.utils.StringUtils.splitCommaSeparatedStrings(pod.getStorageAccessGroups(), zone.getStorageAccessGroups())));
         } else if (zoneId != null) {
-            DataCenterVO zone = _dcDao.findById(zoneId);
+            DataCenterVO zone = CallContext.current().getRequestEntityCache().get(DataCenterVO.class, zoneId,
+                    () -> _dcDao.findById(zoneId));
             storageAccessGroups.addAll(List.of(com.cloud.utils.StringUtils.splitCommaSeparatedStrings(zone.getStorageAccessGroups())));
         }
 
