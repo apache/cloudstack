@@ -25,8 +25,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.servlet.ServletConfig;
@@ -52,10 +52,9 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
 import org.apache.commons.collections.MapUtils;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
@@ -70,10 +69,9 @@ import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-
 import com.cloud.utils.HttpUtils;
-import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.HttpUtils.ApiSessionKeyCheckOption;
+import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.NetUtils;
@@ -117,6 +115,7 @@ public class ApiServlet extends HttpServlet {
             "listandswitchsamlaccount",
             "uploadresourceicon"
     ));
+    public static final String CLIENT_INET_ADDRESS_KEY = "client-inet-address";
 
     @Inject
     ApiServerService apiServer;
