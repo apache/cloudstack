@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ValidatedConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.utils.Pair;
@@ -42,10 +43,20 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "false",
             "Is backup and recovery framework enabled.", false, ConfigKey.Scope.Zone);
 
-    ConfigKey<String> BackupProviderPlugin = new ConfigKey<>("Advanced", String.class,
+    ConfigKey<String> BackupProviderPlugin = new ValidatedConfigKey<>("Advanced", String.class,
             "backup.framework.provider.plugin",
             "dummy",
-            "The backup and recovery provider plugin.", true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key());
+            "The backup and recovery provider plugin. Valid plugin values: dummy, veeam, networker and nas",
+            true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key(),
+            (value) -> {
+                if (value != null && ((String)value).contains(",") || ((String)value).contains(" ")) {
+                    throw new IllegalArgumentException("Multiple backup provider plugins are not supported. Please provide a single plugin value.");
+                }
+                List<String> validPlugins = List.of("dummy", "veeam", "networker", "nas");
+                if (!validPlugins.contains(((String) value).toLowerCase())) {
+                    throw new IllegalArgumentException("Invalid backup provider plugin: " + value + ". Valid plugin values are: " + String.join(", ", validPlugins));
+                }
+            });
 
     ConfigKey<Long> BackupSyncPollingInterval = new ConfigKey<>("Advanced", Long.class,
             "backup.framework.sync.interval",
