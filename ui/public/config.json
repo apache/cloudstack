@@ -98,5 +98,6 @@
   "multipleServer": false,
   "allowSettingTheme": true,
   "docHelpMappings": {},
-  "notifyLatestCSVersion": true
+  "notifyLatestCSVersion": true,
+  "showSearchFilters": true
 }
