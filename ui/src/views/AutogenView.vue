@@ -17,7 +17,10 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
+    <a-affix
+      :key="'affix-' + showSearchFilters"
+      :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78"
+    >
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
           <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
@@ -107,8 +110,8 @@
           </a-col>
         </a-row>
         <a-row
-          v-if="!dataView && $config.showSearchFilters"
-          style="min-height: 36px; padding-top: 12px;"
+          v-if="showSearchFilters"
+          style="min-height: 36px; padding-top: 12px; padding-left: 12px;"
         >
           <search-filter
             :filters="getActiveFilters()"
@@ -687,6 +690,10 @@ export default {
     }
   },
   computed: {
+    showSearchFilters () {
+      const excludedKeys = ['page', 'pagesize', 'q', 'keyword', 'tags', 'projectid']
+      return !this.dataView && this.$config.showSearchFilters && this.getActiveFilters().some(f => !excludedKeys.includes(f.key))
+    },
     hasSelected () {
       return this.selectedRowKeys.length > 0
     },
