@@ -1026,8 +1026,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     protected void destroyLocalStoragePoolVolumes(long poolId) {
-        List<VolumeVO> rootDisks = volumeDao.findByPoolId(poolId);
-        List<VolumeVO> dataVolumes = volumeDao.findByPoolId(poolId, Volume.Type.DATADISK);
+        List<VolumeVO> rootDisks = volumeDao.findNonDestroyedVolumesByPoolId(poolId);
+        List<VolumeVO> dataVolumes = volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK);
 
         List<VolumeVO> volumes = new ArrayList<>();
         addVolumesToList(volumes, rootDisks);
@@ -1417,7 +1417,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         throw new CloudRuntimeException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
                     }
                 } else {
-                    logger.info("Maintenance: scheduling migration of VM {} from host {}", vm, host);
+                    logger.info("Maintenance: scheduling migration of {} from {}", vm, host);
                     _haMgr.scheduleMigration(vm, HighAvailabilityManager.ReasonType.HostMaintenance);
                 }
             }
@@ -2920,8 +2920,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (!isAgentOnHost || vmsMigrating || host.getStatus() == Status.Up) {
             return;
         }
-        final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
-        if (sshToAgent) {
+        if (KvmSshToAgentEnabled.value()) {
             Ternary<String, String, String> credentials = getHostCredentials(host);
             connectAndRestartAgentOnHost(host, credentials.first(), credentials.second(), credentials.third());
         } else {

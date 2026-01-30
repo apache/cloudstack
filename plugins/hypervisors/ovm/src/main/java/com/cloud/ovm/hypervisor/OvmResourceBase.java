@@ -362,7 +362,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
         sshConnection = SSHCmdHelper.acquireAuthorizedConnection(_ip, _username, _password);
         if (sshConnection == null) {
-            throw new CloudRuntimeException(String.format("Cannot connect to ovm host(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
+            throw new CloudRuntimeException(String.format("Cannot connect to ovm host(IP=%1$s, username=%2$s)", _ip, _username));
         }
 
         if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "sh /usr/bin/configureOvm.sh postSetup")) {
