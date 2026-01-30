@@ -245,7 +245,8 @@ export default {
       userdataid: null,
       userdatapolicy: null,
       userdatapolicylist: {},
-      architectureTypes: {}
+      architectureTypes: {},
+      details: {}
     }
   },
   beforeCreate () {
@@ -295,6 +296,11 @@ export default {
           }
         }
       }
+      if (this.resource.details) {
+        this.details = Object.keys(this.resource.details).map(k => {
+          return { name: k, value: this.resource.details[k] }
+        })
+      }
       const resourceDetailsFields = []
       if (this.resource.hypervisor === 'KVM') {
         resourceDetailsFields.push('rootDiskController')
@@ -304,7 +310,7 @@ export default {
       for (var detailsField of resourceDetailsFields) {
         var detailValue = this.resource?.details?.[detailsField] || null
         if (detailValue) {
-          this.form[detailValue] = fieldValue
+          this.form[detailsField] = detailValue
         }
       }
     },
@@ -494,6 +500,11 @@ export default {
         this.loading = true
         const params = {
           id: this.resource.id
+        }
+        if (this.resource.details) {
+          Object.keys(this.resource.details).forEach((detail, index) => {
+            params['details[0].' + detail] = this.resource.details[detail]
+          })
         }
         const detailsField = ['rootDiskController', 'nicAdapter', 'keyboard']
         for (const key in values) {
