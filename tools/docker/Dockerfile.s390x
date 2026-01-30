@@ -88,4 +88,3 @@ VOLUME /var/lib/mysql
 EXPOSE 8080 8096 5050
 
 CMD ["/usr/bin/supervisord"]
-
