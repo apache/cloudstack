@@ -164,7 +164,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
             vmVolumes.sort(Comparator.comparing(Volume::getDeviceId));
-            List<String> volumePaths = getVolumePaths(vmVolumes);
+            List<String> volumePaths = getVolumePaths(vmVolumes, Collections.emptyList());
             command.setVolumePaths(volumePaths);
         }
 
@@ -215,7 +215,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
         List<Backup.VolumeInfo> backedVolumes = backup.getBackedUpVolumes();
         List<VolumeVO> volumes = backedVolumes.stream()
-                .map(volume -> volumeDao.findByUuid(volume.getPath()))
+                .map(volume -> volumeDao.findByUuid(volume.getUuid()))
                 .sorted((v1, v2) -> Long.compare(v1.getDeviceId(), v2.getDeviceId()))
                 .collect(Collectors.toList());
 
@@ -229,7 +229,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
         restoreCommand.setMountOptions(backupRepository.getMountOptions());
         restoreCommand.setVmName(vm.getName());
-        restoreCommand.setVolumePaths(getVolumePaths(volumes));
+        restoreCommand.setVolumePaths(getVolumePaths(volumes, backedVolumes));
         restoreCommand.setVmExists(vm.getRemoved() == null);
         restoreCommand.setVmState(vm.getState());
 
@@ -244,7 +244,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return answer.getResult();
     }
 
-    private List<String> getVolumePaths(List<VolumeVO> volumes) {
+    private List<String> getVolumePaths(List<VolumeVO> volumes, List<Backup.VolumeInfo> backedVolumes) {
         List<String> volumePaths = new ArrayList<>();
         for (VolumeVO volume : volumes) {
             StoragePoolVO storagePool = primaryDataStoreDao.findById(volume.getPoolId());
@@ -259,7 +259,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             } else {
                 volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
             }
-            volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
+            backedVolumes.stream().filter(backedVolume -> backedVolume.getUuid().equals(volume.getUuid())).findFirst()
+                .ifPresent(backedVolume -> {
+                    if (backedVolume.getPath() != null && !backedVolume.getPath().isEmpty()) {
+                        volumePaths.add(String.format("%s/%s", volumePathPrefix, backedVolume.getPath()));
+                    } else {
+                        volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
+                    }
+                });
         }
         return volumePaths;
     }
