@@ -24,7 +24,7 @@
       v-for="filter in this.searchFilters"
       :key="filter.key + filter.value"
     >
-      <a-col v-if="!['page', 'pagesize', 'q', 'keyword', 'tags'].includes(filter.key)">
+      <a-col v-if="!['page', 'pagesize', 'q', 'keyword', 'tags', 'projectid'].includes(filter.key)">
         <a-tag
           v-if="!filter.isTag"
           closable
@@ -175,6 +175,7 @@ export default {
       immediate: true,
       handler (newFilters) {
         const clonedFilters = newFilters.map(filter => ({ ...filter }))
+        this.searchFilters = clonedFilters.map(f => ({ ...f }))
         const promises = []
         for (let idx = 0; idx < clonedFilters.length; idx++) {
           const filter = clonedFilters[idx]
