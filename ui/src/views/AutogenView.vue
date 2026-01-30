@@ -17,7 +17,10 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 103 : 78">
+    <a-affix
+      :key="'affix-' + showSearchFilters"
+      :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 103 : 78"
+    >
       <a-card
         class="breadcrumb-card"
         style="z-index: 10"
@@ -127,11 +130,11 @@
           </a-col>
         </a-row>
         <a-row
-          v-if="!dataView && $config.showSearchFilters"
-          style="min-height: 36px; padding-top: 12px;"
+          v-if="showSearchFilters"
+          style="min-height: 36px; padding-top: 12px; padding-left: 12px;"
         >
           <search-filter
-            :filters="getActiveFilters()"
+            :filters="activeFiltersList"
             :apiName="apiName"
             @removeFilter="removeFilter"
           />
@@ -829,6 +832,37 @@ export default {
     }
   },
   computed: {
+    activeFiltersList () {
+      const queryParams = Object.assign({}, this.$route.query)
+      const activeFilters = []
+      for (const filter in queryParams) {
+        if (this.$route.name === 'host' && filter === 'type') {
+          continue
+        }
+        if (!filter.startsWith('tags[')) {
+          activeFilters.push({
+            key: filter,
+            value: queryParams[filter],
+            isTag: false
+          })
+        } else if (filter.endsWith('].key')) {
+          const tagIdx = filter.split('[')[1].split(']')[0]
+          const tagKey = queryParams[`tags[${tagIdx}].key`]
+          const tagValue = queryParams[`tags[${tagIdx}].value`]
+          activeFilters.push({
+            key: tagKey,
+            value: tagValue,
+            isTag: true,
+            tagIdx: tagIdx
+          })
+        }
+      }
+      return activeFilters
+    },
+    showSearchFilters () {
+      const excludedKeys = ['page', 'pagesize', 'q', 'keyword', 'tags', 'projectid']
+      return !this.dataView && this.$config.showSearchFilters && this.activeFiltersList.some(f => !excludedKeys.includes(f.key))
+    },
     hasSelected () {
       return this.selectedRowKeys.length > 0
     },
@@ -1273,30 +1307,6 @@ export default {
     cancelAction () {
       eventBus.emit('action-closing', { action: this.currentAction })
       this.closeAction()
-    },
-    getActiveFilters () {
-      const queryParams = Object.assign({}, this.$route.query)
-      const activeFilters = []
-      for (const filter in queryParams) {
-        if (!filter.startsWith('tags[')) {
-          activeFilters.push({
-            key: filter,
-            value: queryParams[filter],
-            isTag: false
-          })
-        } else if (filter.endsWith('].key')) {
-          const tagIdx = filter.split('[')[1].split(']')[0]
-          const tagKey = queryParams[`tags[${tagIdx}].key`]
-          const tagValue = queryParams[`tags[${tagIdx}].value`]
-          activeFilters.push({
-            key: tagKey,
-            value: tagValue,
-            isTag: true,
-            tagIdx: tagIdx
-          })
-        }
-      }
-      return activeFilters
     },
     removeFilter (filter) {
       const queryParams = Object.assign({}, this.$route.query)
