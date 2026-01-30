@@ -56,7 +56,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.LogLevel;
 import com.cloud.event.EventTypes;
@@ -74,6 +73,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.StringUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 
@@ -298,6 +298,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     public String getDisplayName() {
+        if (StringUtils.isEmpty(displayName)) {
+            displayName = name;
+        }
         return displayName;
     }
 
