@@ -23,17 +23,17 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.vm.VirtualMachine;
 
-import java.util.Map;
+import java.util.List;
 
 public class RestoreBackupCommand extends Command  {
     private String vmName;
     private String backupPath;
     private String backupRepoType;
     private String backupRepoAddress;
-    private Map<String, String> volumePathsAndUuids;
+    private List<String> volumePaths;
+    private List<String> backupFiles;
     private String diskType;
     private Boolean vmExists;
-    private String restoreVolumeUUID;
     private VirtualMachine.State vmState;
 
     protected RestoreBackupCommand() {
@@ -72,12 +72,20 @@ public class RestoreBackupCommand extends Command  {
         this.backupRepoAddress = backupRepoAddress;
     }
 
-    public Map<String, String> getVolumePathsAndUuids() {
-        return volumePathsAndUuids;
+    public List<String> getVolumePaths() {
+        return volumePaths;
     }
 
-    public void setVolumePathsAndUuids(Map<String, String> volumePathsAndUuids) {
-        this.volumePathsAndUuids = volumePathsAndUuids;
+    public void setVolumePaths(List<String> volumePaths) {
+        this.volumePaths = volumePaths;
+    }
+
+    public List<String> getBackupFiles() {
+        return backupFiles;
+    }
+
+    public void setBackupFiles(List<String> backupFiles) {
+        this.backupFiles = backupFiles;
     }
 
     public Boolean isVmExists() {
@@ -102,14 +110,6 @@ public class RestoreBackupCommand extends Command  {
 
     public void setMountOptions(String mountOptions) {
         this.mountOptions = mountOptions;
-    }
-
-    public String getRestoreVolumeUUID() {
-        return restoreVolumeUUID;
-    }
-
-    public void setRestoreVolumeUUID(String restoreVolumeUUID) {
-        this.restoreVolumeUUID = restoreVolumeUUID;
     }
 
     public VirtualMachine.State getVmState() {

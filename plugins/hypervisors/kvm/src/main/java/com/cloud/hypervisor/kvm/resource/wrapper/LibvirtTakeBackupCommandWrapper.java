@@ -19,6 +19,7 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
@@ -31,7 +32,6 @@ import org.apache.cloudstack.backup.TakeBackupCommand;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @ResourceWrapper(handles = TakeBackupCommand.class)
@@ -43,7 +43,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         final String backupRepoType = command.getBackupRepoType();
         final String backupRepoAddress = command.getBackupRepoAddress();
         final String mountOptions = command.getMountOptions();
-        final Map<String, String> diskPathsAndUuids = command.getVolumePathsAndUuids();
+        final List<String> diskPaths = command.getVolumePaths();
 
         List<String[]> commands = new ArrayList<>();
         commands.add(new String[]{
@@ -54,7 +54,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 "-s", backupRepoAddress,
                 "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
                 "-p", backupPath,
-                "-d", (Objects.nonNull(diskPathsAndUuids) && !diskPathsAndUuids.isEmpty()) ? String.join(",", diskPathsAndUuids.keySet()) : ""
+                "-d", (Objects.nonNull(diskPaths) && !diskPaths.isEmpty()) ? String.join(",", diskPaths) : ""
         });
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
@@ -65,7 +65,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         }
 
         long backupSize = 0L;
-        if (diskPathsAndUuids == null || diskPathsAndUuids.isEmpty()) {
+        if (CollectionUtils.isNullOrEmpty(diskPaths)) {
             List<String> outputLines = Arrays.asList(result.second().trim().split("\n"));
             if (!outputLines.isEmpty()) {
                 backupSize = Long.parseLong(outputLines.get(outputLines.size() - 1).trim());
