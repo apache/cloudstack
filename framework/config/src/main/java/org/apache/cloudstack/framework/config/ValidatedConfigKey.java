@@ -18,10 +18,10 @@ package org.apache.cloudstack.framework.config;
 
 import java.util.function.Consumer;
 
-public class ValidatedConfigKey<T> extends ConfigKey<String> {
+public class ValidatedConfigKey<T> extends ConfigKey<T> {
     private final Consumer<T> validator;
 
-    public ValidatedConfigKey(String category, Class<String> type, String name, String defaultValue, String description, boolean dynamic, Scope scope, String parent, Consumer<T> validator) {
+    public ValidatedConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean dynamic, Scope scope, String parent, Consumer<T> validator) {
         super(category, type, name, defaultValue, description, dynamic, scope, parent);
         this.validator = validator;
     }

@@ -152,7 +152,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
 
     static void validateBackupProviderConfig(String value) {
-        if (value != null && (value.trim().contains(",") || value.contains(" "))) {
+        if (value != null && (value.contains(",") || value.trim().contains(" "))) {
             throw new IllegalArgumentException("Multiple backup provider plugins are not supported. Please provide a single plugin value.");
         }
         List<String> validPlugins = List.of("dummy", "veeam", "networker", "nas");
