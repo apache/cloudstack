@@ -36,6 +36,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupOffering;
 
 public interface AccountService {
 
@@ -115,13 +116,15 @@ public interface AccountService {
 
     void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException;
 
+    void checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException;
+
     void checkAccess(User user, ControlledEntity entity);
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) throws PermissionDeniedException;
 
     void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource);
 
-    Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+    Long finalizeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
 
     /**
      * returns the user account object for a given user id

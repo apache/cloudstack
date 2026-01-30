@@ -53,6 +53,8 @@
         <project.systemvm.template.version>4.22.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.exclusions>engine/schema/src/main/java/org/apache/cloudstack/backup/BackupOfferingDetailsVO.java</sonar.exclusions>
+        <sonar.exclusions>api/src/main/java/org/apache/cloudstack/api/response/BackupOfferingResponse.java</sonar.exclusions>
 
         <!-- Build properties -->
         <cs.jdk.version>11</cs.jdk.version>
@@ -87,7 +89,7 @@
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
 
         <!-- Apache Commons versions -->
-        <cs.codec.version>1.15</cs.codec.version>
+        <cs.codec.version>1.20.0</cs.codec.version>
         <cs.commons-cli.version>1.5.0</cs.commons-cli.version>
         <cs.commons-collections.version>4.4</cs.commons-collections.version>
         <cs.commons-compress.version>1.26.0</cs.commons-compress.version>
@@ -188,6 +190,7 @@
         <org.springframework.version>5.3.26</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.caffeine.version>3.1.7</cs.caffeine.version>
+        <cs.protobuf.version>3.25.5</cs.protobuf.version>
     </properties>
 
     <distributionManagement>
@@ -723,6 +726,17 @@
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
                 <version>2.0.2</version>
+            </dependency>
+            <!-- enforced protobuf version here as mysql-connector-java is pulling older version (3.19.3) -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${cs.protobuf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java-util</artifactId>
+                <version>${cs.protobuf.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.linbit.linstor.api</groupId>

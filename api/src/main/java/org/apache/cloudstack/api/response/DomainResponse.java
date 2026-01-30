@@ -16,21 +16,21 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponseWithAnnotations;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Domain.class)
-public class DomainResponse extends BaseResponseWithAnnotations implements ResourceLimitAndCountResponse, SetResourceIconResponse {
+public class DomainResponse extends BaseResponseWithTagInformation implements ResourceLimitAndCountResponse, SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "The ID of the domain")
     private String id;
@@ -588,5 +588,9 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @Override
     public void setTaggedResourceLimitsAndCounts(List<TaggedResourceLimitAndCountResponse> taggedResourceLimitsAndCounts) {
         this.taggedResources = taggedResourceLimitsAndCounts;
+    }
+
+    public void setTags(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }
