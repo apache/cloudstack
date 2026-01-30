@@ -56,7 +56,7 @@
 
 <script>
 
-import { api } from '@/api/index'
+import { getAPI, postAPI } from '@/api/index'
 
 export default {
   name: 'SearchFilter',
@@ -296,7 +296,7 @@ export default {
     },
     getHypervisor (value) {
       return new Promise((resolve) => {
-        api('listHypervisors').then(json => {
+        getAPI('listHypervisors').then(json => {
           if (json?.listhypervisorsresponse?.hypervisor) {
             for (const key in json.listhypervisorsresponse.hypervisor) {
               const hypervisor = json.listhypervisorsresponse.hypervisor[key]
@@ -316,7 +316,7 @@ export default {
         if (!this.$isValidUuid(id)) {
           return resolve('')
         }
-        api(apiName, { listAll: true, id: id }).then(json => {
+        postAPI(apiName, { listAll: true, id: id }).then(json => {
           const items = json && json[responseKey1] && json[responseKey1][responseKey2]
           if (Array.isArray(items) && items.length > 0 && items[0] && items[0][field] !== undefined) {
             resolve(items[0][field])
@@ -337,7 +337,7 @@ export default {
     },
     getAlertType (type) {
       return new Promise((resolve) => {
-        api('listAlertTypes').then(json => {
+        getAPI('listAlertTypes').then(json => {
           const alertTypes = {}
           for (const key in json.listalerttypesresponse.alerttype) {
             const alerttype = json.listalerttypesresponse.alerttype[key]
@@ -351,7 +351,7 @@ export default {
     },
     getAffinityGroupType (type) {
       return new Promise((resolve) => {
-        api('listAffinityGroupTypes').then(json => {
+        getAPI('listAffinityGroupTypes').then(json => {
           const alertTypes = {}
           for (const key in json.listaffinitygrouptypesresponse.affinityGroupType) {
             const affinityGroupType = json.listaffinitygrouptypesresponse.affinityGroupType[key]
