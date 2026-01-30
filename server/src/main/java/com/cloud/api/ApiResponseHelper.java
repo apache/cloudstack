@@ -4378,7 +4378,8 @@ public class ApiResponseHelper implements ResponseGenerator {
                             .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
                 }
             }
-            builder.append(" with size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
+            builder.append(" with size ").append(toHumanReadableSize(usageRecord.getSize()));
+            builder.append(" and with virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
             usageRecResponse.setDescription(builder.toString());
             usageRecResponse.setSize(usageRecord.getSize());
             usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
