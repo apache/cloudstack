@@ -1,0 +1,88 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.cloudstack.storage.provider;
+
+
+import com.cloud.utils.component.ComponentContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.storage.driver.OntapPrimaryDatastoreDriver;
+import org.apache.cloudstack.storage.lifecycle.OntapPrimaryDatastoreLifecycle;
+import org.apache.cloudstack.storage.listener.OntapHostListener;
+import org.apache.cloudstack.storage.utils.Constants;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+@Component
+public class OntapPrimaryDatastoreProvider implements PrimaryDataStoreProvider {
+
+    private static final Logger s_logger = LogManager.getLogger(OntapPrimaryDatastoreProvider.class);
+    private OntapPrimaryDatastoreDriver primaryDatastoreDriver;
+    private OntapPrimaryDatastoreLifecycle primaryDatastoreLifecycle;
+    private HypervisorHostListener listener;
+
+    public OntapPrimaryDatastoreProvider() {
+        s_logger.info("OntapPrimaryDatastoreProvider initialized");
+    }
+    @Override
+    public DataStoreLifeCycle getDataStoreLifeCycle() {
+        return primaryDatastoreLifecycle;
+    }
+
+    @Override
+    public DataStoreDriver getDataStoreDriver() {
+        return primaryDatastoreDriver;
+    }
+
+    @Override
+    public HypervisorHostListener getHostListener() {
+        return listener;
+    }
+
+    @Override
+    public String getName() {
+        s_logger.trace("OntapPrimaryDatastoreProvider: getName: Called");
+        return Constants.ONTAP_PLUGIN_NAME;
+    }
+
+    @Override
+    public boolean configure(Map<String, Object> params) {
+        s_logger.trace("OntapPrimaryDatastoreProvider: configure: Called");
+        primaryDatastoreDriver = ComponentContext.inject(OntapPrimaryDatastoreDriver.class);
+        primaryDatastoreLifecycle = ComponentContext.inject(OntapPrimaryDatastoreLifecycle.class);
+        listener = ComponentContext.inject(OntapHostListener.class);
+        return true;
+    }
+
+    @Override
+    public Set<DataStoreProviderType> getTypes() {
+        s_logger.trace("OntapPrimaryDatastoreProvider: getTypes: Called");
+        Set<DataStoreProviderType> typeSet = new HashSet<DataStoreProviderType>();
+        typeSet.add(DataStoreProviderType.PRIMARY);
+        return typeSet;
+    }
+}

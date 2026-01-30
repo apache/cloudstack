@@ -129,6 +129,7 @@
         <module>storage/volume/default</module>
         <module>storage/volume/nexenta</module>
         <module>storage/volume/sample</module>
+        <module>storage/volume/ontap</module>
         <module>storage/volume/solidfire</module>
         <module>storage/volume/scaleio</module>
         <module>storage/volume/linstor</module>
