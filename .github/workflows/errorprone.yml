@@ -21,7 +21,7 @@ on:
   push:
     branches: [ main, add-errorprone ]
   pull_request:
-    branches: [ main, '4.20' ]
+    branches: [ main, '4.20', 'ghi11438-errorprone-fixes' ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
