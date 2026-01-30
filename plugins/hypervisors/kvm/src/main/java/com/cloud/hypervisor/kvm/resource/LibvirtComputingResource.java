@@ -4787,12 +4787,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         String dataDiskController = details.get(VmDetailConstants.DATA_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(dataDiskController)) {
-            LOGGER.debug("Passed custom disk controller for DATA disk " + dataDiskController);
-            for (DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
-                if (bus.toString().equalsIgnoreCase(dataDiskController)) {
-                    LOGGER.debug("Found matching enum for disk controller for DATA disk " + dataDiskController);
-                    return bus;
-                }
+            LOGGER.debug("Passed custom disk controller for DATA disk {}", dataDiskController);
+            DiskDef.DiskBus bus = DiskDef.DiskBus.fromValue(dataDiskController);
+            if (bus != null) {
+                LOGGER.debug("Found matching enum for disk controller for DATA disk {}", dataDiskController);
+                return bus;
             }
         }
         return null;
