@@ -348,10 +348,14 @@ export default {
           successMessage: `${this.$t('label.action.delete.domain')} ${domain.name}`,
           catchMessage: this.$t('error.fetching.async.job.result'),
           successMethod: () => {
-            if (this.$route.params.id === domain.id) {
-              this.$router.push({ path: '/domain' })
-            }
-            this.fetchData()
+            this.$router.replace({ path: '/domain' })
+            this.resource = {}
+            this.treeSelected = {}
+            this.treeDeletedKey = null
+            this.treeViewKey += 1
+            this.$nextTick(() => {
+              this.fetchData()
+            })
           }
         })
       }).catch(error => {

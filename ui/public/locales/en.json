@@ -2971,7 +2971,7 @@
 "message.delete.account.success": "Successfully deleted account",
 "message.delete.account.warning": "Deleting this account will delete all of the instances, volumes and snapshots associated with the account.",
 "message.delete.domain.confirm": "Please confirm that you want to delete this domain by entering the name of the domain below.",
-"message.delete.domain.warning": "This domain may contain accounts, users, or sub-domains. All of these must be removed before the domain can be deleted. This action cannot be undone.",
+"message.delete.domain.warning": "All associated accounts, users, VMs, and sub-domains will be permanently deleted. This action cannot be undone.",
 "message.delete.domain.failed": "Delete domain failed",
 "message.delete.acl.processing": "Removing ACL rule...",
 "message.delete.acl.rule": "Remove ACL rule",
