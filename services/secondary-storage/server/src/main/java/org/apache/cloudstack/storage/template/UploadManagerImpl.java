@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ConvertSnapshotCommand;
@@ -52,7 +53,9 @@ import com.cloud.storage.template.FtpTemplateUploader;
 import com.cloud.storage.template.TemplateUploader;
 import com.cloud.storage.template.TemplateUploader.Status;
 import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -347,6 +350,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
                 // This is because the ssvm might already be destroyed and the symlinks do not exist.
                 logger.warn("Error in deleting symlink :" + result);
             }
+            deleteEntitySymlinkRootPathIfNeeded(cmd, linkPath);
         }
 
         // If its a volume or archive also delete the Hard link since it was created only for the purpose of download.
@@ -378,6 +382,30 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
 
         return new Answer(cmd, true, "");
+    }
+
+    protected void deleteEntitySymlinkRootPathIfNeeded(DeleteEntityDownloadURLCommand cmd, String linkPath) {
+        if (StringUtils.isEmpty(linkPath)) {
+            return;
+        }
+        String[] parts = linkPath.split("/");
+        if (parts.length == 0) {
+            return;
+        }
+        String rootDir = parts[0];
+        if (StringUtils.isEmpty(rootDir) || !UuidUtils.isUuid(rootDir)) {
+            return;
+        }
+        logger.info("Deleting symlink root directory: {} for {}", rootDir, cmd.getExtractUrl());
+        Path rootDirPath = Path.of(BASE_EXTRACT_DIR + rootDir);
+        String failMsg = "Failed to delete symlink root directory: {} for {}";
+        try {
+            if (!FileUtil.deleteRecursively(rootDirPath)) {
+                logger.warn(failMsg, rootDir, cmd.getExtractUrl());
+            }
+        } catch (IOException e) {
+            logger.warn(failMsg, rootDir, cmd.getExtractUrl(), e);
+        }
     }
 
     private String getInstallPath(String jobId) {
