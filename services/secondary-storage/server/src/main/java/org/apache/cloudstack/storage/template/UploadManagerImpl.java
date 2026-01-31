@@ -349,8 +349,9 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
                 // FIXME - Ideally should bail out if you can't delete symlink. Not doing it right now.
                 // This is because the ssvm might already be destroyed and the symlinks do not exist.
                 logger.warn("Error in deleting symlink :" + result);
+            } else {
+                deleteEntitySymlinkRootPathIfNeeded(cmd, linkPath);
             }
-            deleteEntitySymlinkRootPathIfNeeded(cmd, linkPath);
         }
 
         // If its a volume or archive also delete the Hard link since it was created only for the purpose of download.
