@@ -99,6 +99,14 @@ status() {
     echo '{"status": "success", "power_state": "poweron"}'
 }
 
+statuses() {
+    parse_json "$1" || exit 1
+    # This external system can not return an output like the following:
+    # {"status":"success","power_state":{"i-3-23-VM":"poweroff","i-2-25-VM":"poweron"}}
+    # CloudStack can fallback to retrieving the power state of the single VM using the "status" action
+    echo '{"status": "error", "message": "Not supported"}'
+}
+
 get_console() {
     parse_json "$1" || exit 1
     local response
@@ -144,6 +152,9 @@ case $action in
         ;;
     status)
         status "$parameters"
+        ;;
+    statuses)
+        statuses "$parameters"
         ;;
     getconsole)
         get_console "$parameters"
