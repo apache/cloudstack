@@ -1210,17 +1210,17 @@ export default {
     createPathBasedOnVmType: createPathBasedOnVmType,
     quickViewEnabled (actions, columns, key) {
       return actions.length > 0 &&
-        (columns && ['name', 'provider', 'hypervisor', 'intervaltype'].includes(columns[0].dataIndex) || ['displayname'].includes(key)) &&
+        (columns && key === columns[0].dataIndex) &&
         new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
-        '/volume', '/snapshot', '/vmsnapshot', '/backup',
-        '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
-        '/template', '/iso',
-        '/project', '/account', 'buckets', 'objectstore',
-        '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
-        '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', 'webhookfilters', '/quotatariff', '/sharedfs',
-        '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule'].join('|'))
-        .test(this.$route.path)
+          '/volume', '/snapshot', '/vmsnapshot', '/backup',
+          '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
+          '/template', '/iso',
+          '/project', '/account', 'buckets', 'objectstore',
+          '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
+          '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
+          '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', 'webhookfilters', '/quotatariff', '/sharedfs',
+          '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule'].join('|'))
+          .test(this.$route.path)
     },
     enableGroupAction () {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'autoscalevmgroup', 'volume', 'snapshot',
