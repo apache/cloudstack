@@ -550,6 +550,17 @@ export const dialogUtilPlugin = {
         onOk: () => callback(configRecord)
       })
     }
+
+    app.config.globalProperties.$notifyConfigurationValueChange = function (configRecord) {
+      if (!configRecord || configRecord.isdynamic || store.getters.userInfo?.roletype !== 'Admin') {
+        return
+      }
+      const server = configRecord.group === 'Usage Server' ? 'usage' : 'mgmt'
+      this.$notification.warning({
+        message: this.$t('label.status'),
+        description: this.$t('message.restart.' + server + '.server')
+      })
+    }
   }
 }
 
