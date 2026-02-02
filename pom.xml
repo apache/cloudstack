@@ -68,7 +68,7 @@
         <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
         <cs.jacoco-plugin.version>0.8.11</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
-        <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
+        <cs.dependency-plugin.version>3.9.0</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
         <cs.spotbugs.version>3.1.12</cs.spotbugs.version>
         <cs.spotbugs-maven-plugin.version>3.1.12.2</cs.spotbugs-maven-plugin.version>
