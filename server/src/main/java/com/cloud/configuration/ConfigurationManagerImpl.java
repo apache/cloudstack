@@ -8242,7 +8242,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (offering.getVmType() != null && offering.getVmType().equalsIgnoreCase(VirtualMachine.Type.DomainRouter.toString())) {
                 networkRate = NetworkOrchestrationService.NetworkThrottlingRate.valueIn(dataCenterId);
             } else {
-                networkRate = NetworkOrchestrationService.VmNetworkThrottlingRate.value();}
+                networkRate = NetworkOrchestrationService.VmNetworkThrottlingRate.value();
+            }
         }
 
         // networkRate is unsigned int in serviceOffering table, and can't be
