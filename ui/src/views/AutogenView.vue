@@ -17,7 +17,10 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 103 : 78">
+    <a-affix
+      :key="'affix-' + showSearchFilters"
+      :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 103 : 78"
+    >
       <a-card
         class="breadcrumb-card"
         style="z-index: 10"
@@ -125,6 +128,16 @@
               @change-filter="changeFilter"
             />
           </a-col>
+        </a-row>
+        <a-row
+          v-if="showSearchFilters"
+          style="min-height: 36px; padding-top: 12px; padding-left: 12px;"
+        >
+          <search-filter
+            :filters="activeFiltersList"
+            :apiName="apiName"
+            @removeFilter="removeFilter"
+          />
         </a-row>
       </a-card>
     </a-affix>
@@ -540,6 +553,9 @@
         class="row-element"
         v-else
       >
+        <advisories-view
+          v-if="$route.meta.advisories && !loading"
+        />
         <list-view
           :loading="loading"
           :columns="columns"
@@ -599,11 +615,13 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import SearchFilter from '@/components/view/SearchFilter'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
+import AdvisoriesView from '@/components/view/AdvisoriesView'
 
 export default {
   name: 'Resource',
@@ -613,11 +631,13 @@ export default {
     ListView,
     ActionButton,
     SearchView,
+    SearchFilter,
     BulkActionProgress,
     TooltipLabel,
     OsLogo,
     ResourceIcon,
-    DetailsInput
+    DetailsInput,
+    AdvisoriesView
   },
   mixins: [mixinDevice],
   provide: function () {
@@ -812,6 +832,37 @@ export default {
     }
   },
   computed: {
+    activeFiltersList () {
+      const queryParams = Object.assign({}, this.$route.query)
+      const activeFilters = []
+      for (const filter in queryParams) {
+        if (this.$route.name === 'host' && filter === 'type') {
+          continue
+        }
+        if (!filter.startsWith('tags[')) {
+          activeFilters.push({
+            key: filter,
+            value: queryParams[filter],
+            isTag: false
+          })
+        } else if (filter.endsWith('].key')) {
+          const tagIdx = filter.split('[')[1].split(']')[0]
+          const tagKey = queryParams[`tags[${tagIdx}].key`]
+          const tagValue = queryParams[`tags[${tagIdx}].value`]
+          activeFilters.push({
+            key: tagKey,
+            value: tagValue,
+            isTag: true,
+            tagIdx: tagIdx
+          })
+        }
+      }
+      return activeFilters
+    },
+    showSearchFilters () {
+      const excludedKeys = ['page', 'pagesize', 'q', 'keyword', 'tags', 'projectid']
+      return !this.dataView && this.$config.showSearchFilters && this.activeFiltersList.some(f => !excludedKeys.includes(f.key))
+    },
     hasSelected () {
       return this.selectedRowKeys.length > 0
     },
@@ -1191,15 +1242,12 @@ export default {
             }
           }
         }
-        if (this.items.length > 0) {
-          if (!this.showAction || this.dataView) {
-            this.resource = this.items[0]
-            this.$emit('change-resource', this.resource)
-          }
-        } else {
-          if (this.dataView) {
-            this.$router.push({ path: '/exception/404' })
-          }
+        if (this.items.length <= 0 && this.dataView) {
+          this.$router.push({ path: '/exception/404' })
+        }
+        if (!this.showAction || this.dataView) {
+          this.resource = this.items?.[0] || {}
+          this.$emit('change-resource', this.resource)
         }
       }).catch(error => {
         if (!error || !error.message) {
@@ -1259,6 +1307,18 @@ export default {
     cancelAction () {
       eventBus.emit('action-closing', { action: this.currentAction })
       this.closeAction()
+    },
+    removeFilter (filter) {
+      const queryParams = Object.assign({}, this.$route.query)
+      if (filter.isTag) {
+        delete queryParams[`tags[${filter.tagIdx}].key`]
+        delete queryParams[`tags[${filter.tagIdx}].value`]
+      } else {
+        delete queryParams[filter.key]
+      }
+      queryParams.page = '1'
+      queryParams.pagesize = String(this.pageSize)
+      this.$router.push({ query: queryParams })
     },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection

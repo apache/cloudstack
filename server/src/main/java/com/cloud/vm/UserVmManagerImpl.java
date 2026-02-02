@@ -2309,7 +2309,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private List<String> getVolumesByHost(HostVO host, StoragePool pool){
         List<VMInstanceVO> vmsPerHost = _vmInstanceDao.listByHostId(host.getId());
         return vmsPerHost.stream()
-                .flatMap(vm -> _volsDao.findByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol ->
+                .flatMap(vm -> _volsDao.findNonDestroyedVolumesByInstanceIdAndPoolId(vm.getId(),pool.getId()).stream().map(vol ->
                 vol.getState() == Volume.State.Ready ? (vol.getFormat() == ImageFormat.OVA ? vol.getChainInfo() : vol.getPath()) : null).filter(Objects::nonNull))
                 .collect(Collectors.toList());
     }
@@ -2866,6 +2866,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
+    protected void updateVmExtraConfig(UserVmVO userVm, String extraConfig, boolean cleanupExtraConfig) {
+        if (cleanupExtraConfig) {
+            logger.info("Cleaning up extraconfig from user vm: {}", userVm.getUuid());
+            vmInstanceDetailsDao.removeDetailsWithPrefix(userVm.getId(), ApiConstants.EXTRA_CONFIG);
+            return;
+        }
+        if (StringUtils.isNotBlank(extraConfig)) {
+            if (EnableAdditionalVmConfig.valueIn(userVm.getAccountId())) {
+                logger.info("Adding extra configuration to user vm: {}", userVm.getUuid());
+                addExtraConfig(userVm, extraConfig);
+            } else {
+                throw new InvalidParameterValueException("attempted setting extraconfig but enable.additional.vm.configuration is disabled");
+            }
+        }
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_UPDATE, eventDescription = "updating Vm")
     public UserVm updateVirtualMachine(UpdateVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
@@ -2883,6 +2899,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         List<Long> securityGroupIdList = getSecurityGroupIdList(cmd);
         boolean cleanupDetails = cmd.isCleanupDetails();
         String extraConfig = cmd.getExtraConfig();
+        boolean cleanupExtraConfig = cmd.isCleanupExtraConfig();
 
         UserVmVO vmInstance = _vmDao.findById(cmd.getId());
         VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
@@ -2919,7 +2936,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
         List<VMInstanceDetailVO> existingDetails = vmInstanceDetailsDao.listDetails(id);
-        if (cleanupDetails){
+        if (cleanupDetails) {
             if (caller != null && caller.getType() == Account.Type.ADMIN) {
                 for (final VMInstanceDetailVO detail : existingDetails) {
                     if (detail != null && detail.isDisplay() && !isExtraConfig(detail.getName())) {
@@ -2982,15 +2999,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vmInstance.setDetails(details);
                 _vmDao.saveDetails(vmInstance);
             }
-            if (StringUtils.isNotBlank(extraConfig)) {
-                if (EnableAdditionalVmConfig.valueIn(accountId)) {
-                    logger.info("Adding extra configuration to user vm: " + vmInstance.getUuid());
-                    addExtraConfig(vmInstance, extraConfig);
-                } else {
-                    throw new InvalidParameterValueException("attempted setting extraconfig but enable.additional.vm.configuration is disabled");
-                }
-            }
         }
+        updateVmExtraConfig(userVm, extraConfig, cleanupExtraConfig);
 
         if (VMLeaseManager.InstanceLeaseEnabled.value() && cmd.getLeaseDuration() != null) {
             applyLeaseOnUpdateInstance(vmInstance, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
@@ -6284,7 +6294,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private void verifyTemplate(BaseDeployVMCmd cmd, VirtualMachineTemplate template, Long serviceOfferingId) {
         if (TemplateType.VNF.equals(template.getTemplateType())) {
-            vnfTemplateManager.validateVnfApplianceNics(template, cmd.getNetworkIds());
+            vnfTemplateManager.validateVnfApplianceNics(template, cmd.getNetworkIds(), cmd.getVmNetworkMap());
         } else if (cmd instanceof DeployVnfApplianceCmd) {
             throw new InvalidParameterValueException("Can't deploy VNF appliance from a non-VNF template");
         }

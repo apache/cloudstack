@@ -64,7 +64,7 @@ parse_json() {
     token="${host_token:-$extension_token}"
     secret="${host_secret:-$extension_secret}"
 
-    check_required_fields vm_internal_name url user token secret node
+    check_required_fields url user token secret node
 }
 
 urlencode() {
@@ -206,6 +206,10 @@ prepare() {
 
 create() {
     if [[ -z "$vm_name" ]]; then
+        if [[ -z "$vm_internal_name" ]]; then
+            echo '{"error":"Missing required fields: vm_internal_name"}'
+            exit 1
+        fi
         vm_name="$vm_internal_name"
     fi
     validate_name "VM" "$vm_name"
@@ -331,71 +335,102 @@ get_node_host() {
     echo "$host"
 }
 
- get_console() {
-     check_required_fields node vmid
+get_console() {
+    check_required_fields node vmid
 
-     local api_resp port ticket
-     if ! api_resp="$(call_proxmox_api POST "/nodes/${node}/qemu/${vmid}/vncproxy")"; then
-         echo "$api_resp" | jq -c '{status:"error", error:(.errors.curl // (.errors|tostring))}'
-         exit 1
-     fi
+    local api_resp port ticket
+    if ! api_resp="$(call_proxmox_api POST "/nodes/${node}/qemu/${vmid}/vncproxy")"; then
+       echo "$api_resp" | jq -c '{status:"error", error:(.errors.curl // (.errors|tostring))}'
+       exit 1
+    fi
 
-     port="$(echo "$api_resp"   | jq -re '.data.port // empty' 2>/dev/null || true)"
-     ticket="$(echo "$api_resp" | jq -re '.data.ticket // empty' 2>/dev/null || true)"
+    port="$(echo "$api_resp"   | jq -re '.data.port // empty' 2>/dev/null || true)"
+    ticket="$(echo "$api_resp" | jq -re '.data.ticket // empty' 2>/dev/null || true)"
 
-     if [[ -z "$port" || -z "$ticket" ]]; then
-         jq -n --arg raw "$api_resp" \
-             '{status:"error", error:"Proxmox response missing port/ticket", upstream:$raw}'
-         exit 1
-     fi
+    if [[ -z "$port" || -z "$ticket" ]]; then
+       jq -n --arg raw "$api_resp" \
+           '{status:"error", error:"Proxmox response missing port/ticket", upstream:$raw}'
+       exit 1
+    fi
 
-     # Derive host from node’s network info
-     local host
-     host="$(get_node_host)"
-     if [[ -z "$host" ]]; then
-         jq -n --arg msg "Could not determine host IP for node $node" \
-             '{status:"error", error:$msg}'
-         exit 1
-     fi
+    # Derive host from node’s network info
+    local host
+    host="$(get_node_host)"
+    if [[ -z "$host" ]]; then
+       jq -n --arg msg "Could not determine host IP for node $node" \
+           '{status:"error", error:$msg}'
+       exit 1
+    fi
 
-     jq -n \
-         --arg host "$host" \
-         --arg port "$port" \
-         --arg password "$ticket" \
-         --argjson passwordonetimeuseonly true \
-         '{
-             status: "success",
-             message: "Console retrieved",
-             console: {
-                 host: $host,
-                 port: $port,
-                 password: $password,
-                 passwordonetimeuseonly: $passwordonetimeuseonly,
-                 protocol: "vnc"
-             }
-         }'
- }
+    jq -n \
+       --arg host "$host" \
+       --arg port "$port" \
+       --arg password "$ticket" \
+       --argjson passwordonetimeuseonly true \
+       '{
+           status: "success",
+           message: "Console retrieved",
+           console: {
+               host: $host,
+               port: $port,
+               password: $password,
+               passwordonetimeuseonly: $passwordonetimeuseonly,
+               protocol: "vnc"
+           }
+       }'
+}
+
+statuses() {
+    local response
+    response=$(call_proxmox_api GET "/nodes/${node}/qemu")
+
+    if [[ -z "$response" ]]; then
+        echo '{"status":"error","message":"empty response from Proxmox API"}'
+        return 1
+    fi
+
+    if ! echo "$response" | jq empty >/dev/null 2>&1; then
+        echo '{"status":"error","message":"invalid JSON response from Proxmox API"}'
+        return 1
+    fi
+
+    echo "$response" | jq -c '
+      def map_state(s):
+        if   s=="running" then "poweron"
+        elif s=="stopped" then "poweroff"
+        else "unknown" end;
+
+      {
+        status: "success",
+        power_state: (
+          .data
+          | map(select(.template != 1))
+          | map({ ( (.name // (.vmid|tostring)) ): map_state(.status) })
+          | add // {}
+        )
+      }'
+}
 
 list_snapshots() {
     snapshot_response=$(call_proxmox_api GET "/nodes/${node}/qemu/${vmid}/snapshot")
     echo "$snapshot_response" | jq '
-      def to_date:
-        if . == "-" then "-"
-        elif . == null then "-"
-        else (. | tonumber | strftime("%Y-%m-%d %H:%M:%S"))
-        end;
+        def to_date:
+            if . == "-" then "-"
+            elif . == null then "-"
+            else (. | tonumber | strftime("%Y-%m-%d %H:%M:%S"))
+            end;
 
-      {
-        status: "success",
-        printmessage: "true",
-        message: [.data[] | {
-          name: .name,
-          snaptime: ((.snaptime // "-") | to_date),
-          description: .description,
-          parent: (.parent // "-"),
-          vmstate: (.vmstate // "-")
-        }]
-      }
+        {
+            status: "success",
+            printmessage: "true",
+            message: [.data[] | {
+                name: .name,
+                snaptime: ((.snaptime // "-") | to_date),
+                description: .description,
+                parent: (.parent // "-"),
+                vmstate: (.vmstate // "-")
+            }]
+        }
     '
 }
 
@@ -463,9 +498,9 @@ parse_json "$parameters" || exit 1
 
 cleanup_vm=0
 cleanup() {
-  if (( cleanup_vm == 1 )); then
-    execute_and_wait DELETE "/nodes/${node}/qemu/${vmid}"
-  fi
+    if (( cleanup_vm == 1 )); then
+        execute_and_wait DELETE "/nodes/${node}/qemu/${vmid}"
+    fi
 }
 
 trap cleanup EXIT
@@ -491,6 +526,9 @@ case $action in
         ;;
     status)
         status
+        ;;
+    statuses)
+        statuses
         ;;
     getconsole)
         get_console

@@ -282,6 +282,7 @@ public class ApiConstants {
     public static final String HOST = "host";
     public static final String HOST_CONTROL_STATE = "hostcontrolstate";
     public static final String HOSTS_MAP = "hostsmap";
+    public static final String HTTP_REQUEST_TYPE = "httprequesttype";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
     public static final String INSTANCE = "instance";
@@ -502,6 +503,7 @@ public class ApiConstants {
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
     public static final String REPAIR = "repair";
+    public static final String REPETITION_ALLOWED = "repetitionallowed";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCES = "resources";
     public static final String RESOURCE_COUNT = "resourcecount";
@@ -1167,6 +1169,7 @@ public class ApiConstants {
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
     public static final String CLEAN_UP_EXTERNAL_DETAILS = "cleanupexternaldetails";
+    public static final String CLEAN_UP_EXTRA_CONFIG = "cleanupextraconfig";
     public static final String CLEAN_UP_PARAMETERS = "cleanupparameters";
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
@@ -1217,6 +1220,7 @@ public class ApiConstants {
     public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
     public static final String ISO_NAME = "isoname";
     public static final String ISO_STATE = "isostate";
+    public static final String ISO_URL = "isourl";
     public static final String SEMANTIC_VERSION = "semanticversion";
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";

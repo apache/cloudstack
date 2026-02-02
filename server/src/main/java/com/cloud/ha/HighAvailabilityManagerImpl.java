@@ -837,7 +837,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         if (checkAndCancelWorkIfNeeded(work)) {
             return null;
         }
-        logger.info("Migration attempt: for VM {}from host {}. Starting attempt: {}/{} times.", vm, srcHost, 1 + work.getTimesTried(), _maxRetries);
+        logger.info("Migration attempt: for {} from {}. Starting attempt: {}/{} times.", vm, srcHost, 1 + work.getTimesTried(), _maxRetries);
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             logger.info(String.format("vm %s is Stopped, skipping migrate.", vm));
@@ -847,8 +847,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             logger.info(String.format("VM %s is running on a different host %s, skipping migration", vm, vm.getHostId()));
             return null;
         }
-        logger.info("Migration attempt: for VM " + vm.getUuid() + "from host id " + srcHostId +
-                ". Starting attempt: " + (1 + work.getTimesTried()) + "/" + _maxRetries + " times.");
 
         try {
             work.setStep(Step.Migrating);
