@@ -8298,42 +8298,59 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         logger.info("Cloning network offering {} (id: {}) to new offering with name: {}",
                     sourceOffering.getName(), sourceOfferingId, name);
 
-        String detectedProvider = cmd.getProvider();
-
-        if (detectedProvider == null || detectedProvider.isEmpty()) {
-            Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap =
+        Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap =
                 _networkModel.getNetworkOfferingServiceProvidersMap(sourceOfferingId);
 
-            if (sourceServiceProviderMap.containsKey(Network.Service.NetworkACL)) {
-                Set<Network.Provider> networkAclProviders = sourceServiceProviderMap.get(Network.Service.NetworkACL);
-                if (networkAclProviders != null && !networkAclProviders.isEmpty()) {
-                    Network.Provider provider = networkAclProviders.iterator().next();
-                    if (provider == Network.Provider.Nsx) {
-                        detectedProvider = "NSX";
-                    } else if (provider == Network.Provider.Netris) {
-                        detectedProvider = "Netris";
-                    }
-                }
-            }
-        }
+        validateProvider(sourceOffering, sourceServiceProviderMap, cmd.getProvider(), cmd.getNetworkMode());
 
-        // If this is an NSX/Netris offering, prevent network mode changes
-        if (detectedProvider != null && (detectedProvider.equals("NSX") || detectedProvider.equals("Netris"))) {
-            String cmdNetworkMode = cmd.getNetworkMode();
-            if (cmdNetworkMode != null && sourceOffering.getNetworkMode() != null) {
-                if (!cmdNetworkMode.equalsIgnoreCase(sourceOffering.getNetworkMode().toString())) {
-                    throw new InvalidParameterValueException(
-                        String.format("Cannot change network mode when cloning %s provider network offerings. " +
-                            "Source offering has network mode '%s', but '%s' was specified. " +
-                            "The network mode is determined by the provider configuration and cannot be modified.",
-                            detectedProvider, sourceOffering.getNetworkMode(), cmdNetworkMode));
-                }
-            }
-        }
-
-        applySourceOfferingValuesToCloneCmd(cmd, sourceOffering);
+        applySourceOfferingValuesToCloneCmd(cmd, sourceServiceProviderMap, sourceOffering);
 
         return createNetworkOffering(cmd);
+    }
+
+    private void validateProvider(NetworkOfferingVO sourceOffering,
+                                  Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap,
+                                  String detectedProvider, String networkMode) {
+
+        detectedProvider = getExternalNetworkProvider(detectedProvider, sourceServiceProviderMap);
+        // If this is an NSX/Netris offering, prevent network mode changes
+        if (detectedProvider != null && (detectedProvider.equals("NSX") || detectedProvider.equals("Netris"))) {
+            if (networkMode != null && sourceOffering.getNetworkMode() != null) {
+                if (!networkMode.equalsIgnoreCase(sourceOffering.getNetworkMode().toString())) {
+                    throw new InvalidParameterValueException(
+                            String.format("Cannot change network mode when cloning %s provider network offerings. " +
+                                            "Source offering has network mode '%s', but '%s' was specified. ",
+                                    detectedProvider, sourceOffering.getNetworkMode(), networkMode));
+                }
+            }
+        }
+    }
+
+    public static String getExternalNetworkProvider(String detectedProvider,
+                                             Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap) {
+        if (StringUtils.isNotEmpty(detectedProvider)) {
+            return detectedProvider;
+        }
+
+        if (sourceServiceProviderMap == null || sourceServiceProviderMap.isEmpty()) {
+            return null;
+        }
+
+        for (Set<Provider> providers : sourceServiceProviderMap.values()) {
+            if (CollectionUtils.isEmpty(providers)) {
+                continue;
+            }
+            for (Provider provider : providers) {
+                if (provider == Provider.Nsx) {
+                    return "NSX";
+                }
+                if (provider == Provider.Netris) {
+                    return "Netris";
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -8364,11 +8381,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return apiFormatMap;
     }
 
-    private void applySourceOfferingValuesToCloneCmd(CloneNetworkOfferingCmd cmd, NetworkOfferingVO sourceOffering) {
+    private void applySourceOfferingValuesToCloneCmd(CloneNetworkOfferingCmd cmd,
+                                                     Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap,
+                                                     NetworkOfferingVO sourceOffering) {
         Long sourceOfferingId = sourceOffering.getId();
-
-        Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap =
-            _networkModel.getNetworkOfferingServiceProvidersMap(sourceOfferingId);
 
         // Build final services list with add/drop support
         List<String> finalServices = resolveFinalServicesList(cmd, sourceServiceProviderMap);
