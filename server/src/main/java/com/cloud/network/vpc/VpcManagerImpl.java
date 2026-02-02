@@ -835,21 +835,39 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         VpcOfferingVO vpcOfferingVO = _vpcOffDao.findByUniqueName(name);
         if (vpcOfferingVO != null) {
             throw new InvalidParameterValueException(String.format("A VPC offering with name %s already exists", name));
-
         }
 
         logger.info("Cloning VPC offering {} (id: {}) to new offering with name: {}",
                 sourceVpcOffering.getName(), sourceVpcOfferingId, name);
 
-        applySourceOfferingValuesToCloneCmd(cmd, sourceVpcOffering);
+        Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap = getVpcOffSvcProvidersMap(sourceVpcOfferingId);
+        validateProvider(sourceVpcOffering, sourceServiceProviderMap, cmd.getProvider(), cmd.getNetworkMode());
+
+        applySourceOfferingValuesToCloneCmd(cmd, sourceServiceProviderMap, sourceVpcOffering);
 
         return createVpcOffering(cmd);
     }
 
-    private void applySourceOfferingValuesToCloneCmd(CloneVPCOfferingCmd cmd, VpcOffering sourceVpcOffering) {
-        Long sourceOfferingId = sourceVpcOffering.getId();
+    private void validateProvider(VpcOffering sourceVpcOffering,
+                                  Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap,
+                                  String provider, String networkMode) {
+        provider = ConfigurationManagerImpl.getExternalNetworkProvider(provider, sourceServiceProviderMap);
+        if (provider != null && (provider.equals("NSX") || provider.equals("Netris"))) {
+            if (networkMode != null && sourceVpcOffering.getNetworkMode() != null) {
+                if (!networkMode.equalsIgnoreCase(sourceVpcOffering.getNetworkMode().toString())) {
+                    throw new InvalidParameterValueException(
+                            String.format("Cannot change network mode when cloning %s provider VPC offerings. " +
+                                            "Source offering has network mode '%s', but '%s' was specified. ",
+                                    provider, sourceVpcOffering.getNetworkMode(), networkMode));
+                }
+            }
+        }
+    }
 
-        Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap = getVpcOffSvcProvidersMap(sourceOfferingId);
+    private void applySourceOfferingValuesToCloneCmd(CloneVPCOfferingCmd cmd,
+                                                     Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap,
+                                                     VpcOffering sourceVpcOffering) {
+        Long sourceOfferingId = sourceVpcOffering.getId();
 
         List<String> finalServices = resolveFinalServicesList(cmd, sourceServiceProviderMap);
 

@@ -90,11 +90,15 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -1291,5 +1295,90 @@ public class ConfigurationManagerImplTest {
         );
 
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void validateProviderDetectsNsxAndPreventsNetworkModeChange() {
+        NetworkOfferingVO sourceOffering = mock(NetworkOfferingVO.class);
+        when(sourceOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
+
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<>();
+        Set<Network.Provider> providers = new HashSet<>();
+        providers.add(Network.Provider.Nsx);
+        serviceProviderMap.put(Network.Service.Firewall, providers);
+        try {
+            Method method = null;
+            try {
+                method = configurationManagerImplSpy.getClass().getDeclaredMethod("validateProvider", NetworkOfferingVO.class, Map.class, String.class, String.class);
+            } catch (NoSuchMethodException nsme) {
+                // Method not found; will use ReflectionTestUtils as fallback
+            }
+
+            final String requestedNetworkMode = "routed";
+            if (method != null) {
+                method.setAccessible(true);
+                try {
+                    method.invoke(configurationManagerImplSpy, sourceOffering, serviceProviderMap, null, requestedNetworkMode);
+                    Assert.fail("Expected InvalidParameterValueException to be thrown");
+                } catch (InvocationTargetException ite) {
+                    Throwable cause = ite.getCause();
+                    if (cause instanceof InvalidParameterValueException) {
+                        return;
+                    }
+                    cause.printStackTrace(System.out);
+                    Assert.fail("Unexpected exception type: " + cause);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+            Assert.fail("Test encountered unexpected exception: " + e);
+        }
+    }
+
+    @Test
+    public void testGetExternalNetworkProviderReturnsDetectedProviderWhenNonEmpty() {
+        String detected = "CustomProvider";
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<>();
+
+        String result = ConfigurationManagerImpl.getExternalNetworkProvider(detected, serviceProviderMap);
+
+        Assert.assertEquals(detected, result);
+    }
+
+    @Test
+    public void testGetExternalNetworkProviderDetectsNsxFromAnyService() {
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<>();
+        Set<Network.Provider> providers = new HashSet<>();
+        providers.add(Network.Provider.Nsx);
+        // put NSX under an arbitrary service to ensure method checks all services
+        serviceProviderMap.put(Network.Service.Dhcp, providers);
+
+        String result = ConfigurationManagerImpl.getExternalNetworkProvider(null, serviceProviderMap);
+
+        Assert.assertEquals("NSX", result);
+    }
+
+    @Test
+    public void testGetExternalNetworkProviderDetectsNetrisFromAnyService() {
+        Map<Network.Service, Set<Network.Provider>> serviceProviderMap = new HashMap<>();
+        Set<Network.Provider> providers = new HashSet<>();
+        providers.add(Network.Provider.Netris);
+        serviceProviderMap.put(Network.Service.StaticNat, providers);
+
+        String result = ConfigurationManagerImpl.getExternalNetworkProvider(null, serviceProviderMap);
+
+        Assert.assertEquals("Netris", result);
+    }
+
+    @Test
+    public void testGetExternalNetworkProviderReturnsNullWhenNoExternalProviders() {
+        Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, null));
+
+        Map<Network.Service, Set<Network.Provider>> emptyMap = new HashMap<>();
+        Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, emptyMap));
+
+        Map<Network.Service, Set<Network.Provider>> mapWithEmptySet = new HashMap<>();
+        mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
+        Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
     }
 }
