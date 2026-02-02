@@ -22,6 +22,7 @@ import static org.mockito.MockitoAnnotations.openMocks;
 import java.util.Arrays;
 import java.util.EnumSet;
 
+import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseObject;
@@ -77,6 +78,9 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
 
     @Mock
     private VnfTemplateDetailsDao vnfTemplateDetailsDao;
+
+    @Mock
+    private VMTemplateDao vmTemplateDao;
 
     private UserVmJoinVO userVm = new UserVmJoinVO();
     private UserVmResponse userVmResponse = new UserVmResponse();
