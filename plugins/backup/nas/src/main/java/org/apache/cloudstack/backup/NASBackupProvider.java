@@ -259,15 +259,24 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             } else {
                 volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
             }
-            backedVolumes.stream().filter(backedVolume -> backedVolume.getUuid().equals(volume.getUuid())).findFirst()
-                .ifPresent(backedVolume -> {
+            boolean hasBackedVolumes = backedVolumes != null && !backedVolumes.isEmpty();
+            if (hasBackedVolumes) {
+                Optional<Backup.VolumeInfo> opt = backedVolumes.stream()
+                        .filter(bv -> bv.getUuid().equals(volume.getUuid())).findFirst();
+                if (opt.isPresent()) {
+                    Backup.VolumeInfo backedVolume = opt.get();
                     if (backedVolume.getPath() != null && !backedVolume.getPath().isEmpty()) {
                         volumePaths.add(String.format("%s/%s", volumePathPrefix, backedVolume.getPath()));
                     } else {
                         volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
                     }
-                });
+                    continue;
+                }
+            }
+
+            volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
         }
+
         return volumePaths;
     }
 
