@@ -1247,17 +1247,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         if (clusterHypervisor.equals(HypervisorType.KVM)) {
             logger.debug("The cluster {} where the VM is deployed uses the {} hypervisor. Therefore, the {} setting value [{}] will be used.", cluster.getName(), clusterHypervisor, VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsKvm.valueIn(cluster.getId()));
-            return VirtualMachineMaxNicsKvm.valueIn(cluster.getId());
+            return getVirtualMachineMaxNicsKvm(cluster.getId());
         }
 
         if (clusterHypervisor.equals(HypervisorType.VMware)) {
             logger.debug("The cluster {} where the VM is deployed uses the {} hypervisor. Therefore, the {} setting value [{}] will be used.", cluster.getName(), clusterHypervisor, VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsVmware.valueIn(cluster.getId()));
-            return VirtualMachineMaxNicsVmware.valueIn(cluster.getId());
+            return getVirtualMachineMaxNicsVmware(cluster.getId());
         }
 
         if (clusterHypervisor.equals(HypervisorType.XenServer)) {
             logger.debug("The cluster {} where the VM is deployed uses the {} hypervisor. Therefore, the {} setting value [{}] will be used.", cluster.getName(), clusterHypervisor, VirtualMachineMaxNicsXenserver, VirtualMachineMaxNicsXenserver.valueIn(cluster.getId()));
-            return VirtualMachineMaxNicsXenserver.valueIn(cluster.getId());
+            return getVirtualMachineMaxNicsXenserver(cluster.getId());
         }
 
         return null;
@@ -1274,21 +1274,45 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         if (virtualMachineHypervisorType.equals(HypervisorType.KVM)) {
             logger.debug("Using the {} setting global value {} as the VM {} has the {} hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsKvm, VirtualMachineMaxNicsKvm.value(), virtualMachine.getUuid(), virtualMachineHypervisorType);
-            return VirtualMachineMaxNicsKvm.value();
+            return getVirtualMachineMaxNicsKvm(null);
         }
 
         if (virtualMachineHypervisorType.equals(HypervisorType.VMware)) {
             logger.debug("Using the {} setting global value {} as the VM {} has the {} hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsVmware, VirtualMachineMaxNicsVmware.value(), virtualMachine.getUuid(), virtualMachineHypervisorType);
-            return VirtualMachineMaxNicsVmware.value();
+            return getVirtualMachineMaxNicsVmware(null);
         }
 
         if (virtualMachineHypervisorType.equals(HypervisorType.XenServer)) {
             logger.debug("Using the {} setting global value {} as the VM {} has the {} hypervisor type and is not deployed on either a host or a cluster.", VirtualMachineMaxNicsXenserver, VirtualMachineMaxNicsXenserver.value(), virtualMachine.getUuid(), virtualMachineHypervisorType);
-            return VirtualMachineMaxNicsXenserver.value();
+            return getVirtualMachineMaxNicsXenserver(null);
         }
 
         logger.debug("Not considering the hypervisor maximum limits as we were unable to find a compatible hypervisor on the VM and VM cluster for virtual machine maximum NICs configurations.");
         return null;
+    }
+
+    protected Integer getVirtualMachineMaxNicsKvm(Long clusterId) {
+        if (clusterId != null) {
+            VirtualMachineMaxNicsKvm.valueIn(clusterId);
+        }
+
+        return VirtualMachineMaxNicsKvm.value();
+    }
+
+    protected Integer getVirtualMachineMaxNicsVmware(Long clusterId) {
+        if (clusterId != null) {
+            VirtualMachineMaxNicsVmware.valueIn(clusterId);
+        }
+
+        return VirtualMachineMaxNicsVmware.value();
+    }
+
+    protected Integer getVirtualMachineMaxNicsXenserver(Long clusterId) {
+        if (clusterId != null) {
+            VirtualMachineMaxNicsXenserver.valueIn(clusterId);
+        }
+
+        return VirtualMachineMaxNicsXenserver.value();
     }
 
     private void setMtuDetailsInVRNic(final Pair<NetworkVO, VpcVO> networks, Network network, NicVO vo) {

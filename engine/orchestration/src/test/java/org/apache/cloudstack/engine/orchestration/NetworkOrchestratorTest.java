@@ -24,8 +24,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,7 +39,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddressManager;
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -1087,11 +1084,9 @@ public class NetworkOrchestratorTest extends TestCase {
     @Test
     public void getVirtualMachineMaxNicsValueFromClusterTestKvmClusterReturnsVirtualMachineMaxNicsKvmClusterValue() throws NoSuchFieldException, IllegalAccessException {
         ClusterVO clusterVoMock = Mockito.mock(ClusterVO.class);
-        ConfigKey virtualMachineMaxNicsKvmMock = Mockito.mock(ConfigKey.class);
         Mockito.doReturn(1L).when(clusterVoMock).getId();
         Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(clusterVoMock).getHypervisorType();
-        Mockito.doReturn(33).when(virtualMachineMaxNicsKvmMock).valueIn(1L);
-        updateFinalStaticField(testOrchestrator.getClass().getField("VirtualMachineMaxNicsKvm"), virtualMachineMaxNicsKvmMock);
+        Mockito.doReturn(33).when(testOrchestrator).getVirtualMachineMaxNicsKvm(1L);
 
         Integer virtualMachineMaxNicsValue = testOrchestrator.getVirtualMachineMaxNicsValueFromCluster(clusterVoMock);
 
@@ -1101,11 +1096,9 @@ public class NetworkOrchestratorTest extends TestCase {
     @Test
     public void getVirtualMachineMaxNicsValueFromClusterTestVmwareClusterReturnsVirtualMachineMaxNicsVmwareClusterValue() throws NoSuchFieldException, IllegalAccessException {
         ClusterVO clusterVoMock = Mockito.mock(ClusterVO.class);
-        ConfigKey virtualMachineMaxNicsVmwareMock = Mockito.mock(ConfigKey.class);
         Mockito.doReturn(1L).when(clusterVoMock).getId();
         Mockito.doReturn(Hypervisor.HypervisorType.VMware).when(clusterVoMock).getHypervisorType();
-        Mockito.doReturn(22).when(virtualMachineMaxNicsVmwareMock).valueIn(1L);
-        updateFinalStaticField(testOrchestrator.getClass().getField("VirtualMachineMaxNicsVmware"), virtualMachineMaxNicsVmwareMock);
+        Mockito.doReturn(22).when(testOrchestrator).getVirtualMachineMaxNicsVmware(1L);
 
         Integer virtualMachineMaxNicsValue = testOrchestrator.getVirtualMachineMaxNicsValueFromCluster(clusterVoMock);
 
@@ -1115,11 +1108,9 @@ public class NetworkOrchestratorTest extends TestCase {
     @Test
     public void getVirtualMachineMaxNicsValueFromClusterTestXenserverClusterReturnsVirtualMachineMaxNicsXenserverClusterValue() throws NoSuchFieldException, IllegalAccessException {
         ClusterVO clusterVoMock = Mockito.mock(ClusterVO.class);
-        ConfigKey virtualMachineMaxNicsXenserverMock = Mockito.mock(ConfigKey.class);
         Mockito.doReturn(1L).when(clusterVoMock).getId();
         Mockito.doReturn(Hypervisor.HypervisorType.XenServer).when(clusterVoMock).getHypervisorType();
-        Mockito.doReturn(11).when(virtualMachineMaxNicsXenserverMock).valueIn(1L);
-        updateFinalStaticField(testOrchestrator.getClass().getField("VirtualMachineMaxNicsXenserver"), virtualMachineMaxNicsXenserverMock);
+        Mockito.doReturn(11).when(testOrchestrator).getVirtualMachineMaxNicsXenserver(1L);
 
         Integer virtualMachineMaxNicsValue = testOrchestrator.getVirtualMachineMaxNicsValueFromCluster(clusterVoMock);
 
@@ -1140,10 +1131,8 @@ public class NetworkOrchestratorTest extends TestCase {
     @Test
     public void getVirtualMachineMaxNicsValueFromVmHypervisorTypeTestKvmHypervisorReturnsVirtualMachineMaxNicsKvmGlobalValue() throws NoSuchFieldException, IllegalAccessException {
         VirtualMachine virtualMachineMock = Mockito.mock(VirtualMachine.class);
-        ConfigKey virtualMachineMaxNicsKvmMock = Mockito.mock(ConfigKey.class);
         Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(virtualMachineMock).getHypervisorType();
-        Mockito.doReturn(23).when(virtualMachineMaxNicsKvmMock).value();
-        updateFinalStaticField(testOrchestrator.getClass().getField("VirtualMachineMaxNicsKvm"), virtualMachineMaxNicsKvmMock);
+        Mockito.doReturn(23).when(testOrchestrator).getVirtualMachineMaxNicsKvm(null);
 
         Integer virtualMachineMaxNicsValue = testOrchestrator.getVirtualMachineMaxNicsValueFromVmHypervisorType(virtualMachineMock);
 
@@ -1153,10 +1142,8 @@ public class NetworkOrchestratorTest extends TestCase {
     @Test
     public void getVirtualMachineMaxNicsValueFromVmHypervisorTypeTestVmwareHypervisorReturnsVirtualMachineMaxNicsVmwareGlobalValue() throws NoSuchFieldException, IllegalAccessException {
         VirtualMachine virtualMachineMock = Mockito.mock(VirtualMachine.class);
-        ConfigKey virtualMachineMaxNicsVmwareMock = Mockito.mock(ConfigKey.class);
         Mockito.doReturn(Hypervisor.HypervisorType.VMware).when(virtualMachineMock).getHypervisorType();
-        Mockito.doReturn(10).when(virtualMachineMaxNicsVmwareMock).value();
-        updateFinalStaticField(testOrchestrator.getClass().getField("VirtualMachineMaxNicsVmware"), virtualMachineMaxNicsVmwareMock);
+        Mockito.doReturn(10).when(testOrchestrator).getVirtualMachineMaxNicsVmware(null);
 
         Integer virtualMachineMaxNicsValue = testOrchestrator.getVirtualMachineMaxNicsValueFromVmHypervisorType(virtualMachineMock);
 
@@ -1166,10 +1153,8 @@ public class NetworkOrchestratorTest extends TestCase {
     @Test
     public void getVirtualMachineMaxNicsValueFromVmHypervisorTypeTestXenserverHypervisorReturnsVirtualMachineMaxNicsXenserverGlobalValue() throws NoSuchFieldException, IllegalAccessException {
         VirtualMachine virtualMachineMock = Mockito.mock(VirtualMachine.class);
-        ConfigKey virtualMachineMaxNicsXenserverMock = Mockito.mock(ConfigKey.class);
         Mockito.doReturn(Hypervisor.HypervisorType.XenServer).when(virtualMachineMock).getHypervisorType();
-        Mockito.doReturn(7).when(virtualMachineMaxNicsXenserverMock).value();
-        updateFinalStaticField(testOrchestrator.getClass().getField("VirtualMachineMaxNicsXenserver"), virtualMachineMaxNicsXenserverMock);
+        Mockito.doReturn(7).when(testOrchestrator).getVirtualMachineMaxNicsXenserver(null);
 
         Integer virtualMachineMaxNicsValue = testOrchestrator.getVirtualMachineMaxNicsValueFromVmHypervisorType(virtualMachineMock);
 
@@ -1184,15 +1169,5 @@ public class NetworkOrchestratorTest extends TestCase {
         Integer virtualMachineMaxNicsValue = testOrchestrator.getVirtualMachineMaxNicsValueFromVmHypervisorType(virtualMachineMock);
 
         Assert.assertNull(virtualMachineMaxNicsValue);
-    }
-
-    void updateFinalStaticField(Field field, Object newValue) throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
-        field.setAccessible(true);
-
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-        field.set(null, newValue);
     }
 }
