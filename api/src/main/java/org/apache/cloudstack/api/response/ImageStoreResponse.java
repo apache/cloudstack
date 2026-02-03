@@ -71,6 +71,14 @@ public class ImageStoreResponse extends BaseResponseWithAnnotations {
     @Param(description = "The host's currently used disk size")
     private Long diskSizeUsed;
 
+    @SerializedName(ApiConstants.S3_END_POINT)
+    @Param(description = "The S3 endpoint URL")
+    private String s3Endpoint;
+
+    @SerializedName(ApiConstants.S3_BUCKET_NAME)
+    @Param(description = "The S3 bucket name")
+    private String s3BucketName;
+
     public ImageStoreResponse() {
     }
 
@@ -155,5 +163,21 @@ public class ImageStoreResponse extends BaseResponseWithAnnotations {
 
     public void setDiskSizeUsed(Long diskSizeUsed) {
         this.diskSizeUsed = diskSizeUsed;
+    }
+
+    public String getS3Endpoint() {
+        return s3Endpoint;
+    }
+
+    public void setS3Endpoint(String s3Endpoint) {
+        this.s3Endpoint = s3Endpoint;
+    }
+
+    public String getS3BucketName() {
+        return s3BucketName;
+    }
+
+    public void setS3BucketName(String s3BucketName) {
+        this.s3BucketName = s3BucketName;
     }
 }
