@@ -120,13 +120,10 @@ public class QuotaSummaryCmd extends BaseListCmd {
     }
 
     public QuotaAccountStateFilter getAccountStateToShow() {
-        if (StringUtils.isNotBlank(accountStateToShow)) {
-            QuotaAccountStateFilter state = QuotaAccountStateFilter.getValue(accountStateToShow);
-            if (state != null) {
-                return state;
-            }
+        QuotaAccountStateFilter state = QuotaAccountStateFilter.getValue(accountStateToShow);
+        if (state != null) {
+            return state;
         }
-
         return QuotaAccountStateFilter.ACTIVE;
     }
 
