@@ -514,6 +514,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == StopCommand.class) {
                 String vmName = ((StopCommand) cmd).getVmName();
                 setTaskContext(cmdSequence, cmd, vmName);
+                Thread.sleep(3 * 60 * 1000); // 3 mins
                 answer = execute((StopCommand) cmd);
             } else if (clz == RebootRouterCommand.class) {
                 answer = execute((RebootRouterCommand) cmd);
@@ -589,7 +590,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             } else if (clz == StartCommand.class) {
                 String vmName = ((StartCommand) cmd).getVirtualMachine().getName();
                 setTaskContext(cmdSequence, cmd, vmName);
-                Thread.sleep(3 * 1000);
+                Thread.sleep(3 * 60 * 1000); // 3 mins
                 answer = execute((StartCommand) cmd);
             } else if (clz == CheckSshCommand.class) {
                 answer = execute((CheckSshCommand) cmd);
@@ -706,6 +707,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     private void setTaskContext(long cmdSequence, Command cmd, String vmName) {
         String commandType = cmd.getClass().getSimpleName();
         VmwareHelper.setTaskContext(cmdSequence, vmName, commandType);
+    }
+
+    @Override
+    public boolean isRequestSequenceCancellable(long sequence) {
+        return VmwareHelper.isActiveVmTaskCancellable(sequence);
+    }
+
+    @Override
+    public boolean cancelRequestSequence(long sequence) {
+        return VmwareHelper.cancelActiveVmTask(sequence);
     }
 
     private ExecutionResult getSystemVmVersionAndChecksum(String controlIp) {
