@@ -17,6 +17,7 @@
 package com.cloud.agent.manager;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,7 @@ public class DirectAgentAttache extends AgentAttache {
     ServerResource _resource;
     List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
     private final Map<Long, Future<?>> _taskFutures = new ConcurrentHashMap<>();
+    private final Map<Long, Request> _taskRequests = new ConcurrentHashMap<>();
     long _seq = 0;
     LinkedList<Task> tasks = new LinkedList<Task>();
     AtomicInteger _outstandingTaskCount;
@@ -73,8 +75,16 @@ public class DirectAgentAttache extends AgentAttache {
         }
 
         synchronized (this) {
+            for (Task task : tasks) {
+                task._req.cancel();
+            }
             tasks.clear();
         }
+
+        for (Request request : _taskRequests.values()) {
+            request.cancel();
+        }
+        _taskRequests.clear();
 
         for (Future<?> future : _taskFutures.values()) {
             boolean cancelled = future.cancel(true);
@@ -90,6 +100,66 @@ public class DirectAgentAttache extends AgentAttache {
         }
 
         cleanup(state);
+    }
+
+    @Override
+    protected synchronized boolean isExecutionCancellable(final long seq) {
+        if (_taskFutures.containsKey(seq)) {
+            final ServerResource resource = _resource;
+            return resource == null || resource.isRequestSequenceCancellable(seq);
+        }
+
+        if (_taskRequests.containsKey(seq)) {
+            return true;
+        }
+
+        for (Task task : tasks) {
+            if (task._req.getSequence() == seq) {
+                return true;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    protected synchronized void cancel(final long seq) {
+        Request request = _taskRequests.get(seq);
+        if (request != null) {
+            request.cancel();
+        }
+
+        final Iterator<Task> iterator = tasks.iterator();
+        while (iterator.hasNext()) {
+            final Task task = iterator.next();
+            if (task._req.getSequence() == seq) {
+                task._req.cancel();
+                iterator.remove();
+                _taskRequests.remove(seq);
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancelled queued task.");
+                super.cancel(seq);
+                return;
+            }
+        }
+
+        final Future<?> future = _taskFutures.get(seq);
+        if (future != null) {
+            final ServerResource resource = _resource;
+            if (resource != null && !resource.isRequestSequenceCancellable(seq)) {
+                logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Cancellation requested but command is not cancellable, continuing execution.");
+                return;
+            }
+
+            if (resource != null) {
+                resource.cancelRequestSequence(seq);
+            }
+
+            final boolean cancelled = future.cancel(true);
+            logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Running task " + (cancelled ? "cancelled" : "not cancelled"));
+            _taskFutures.remove(seq);
+        }
+
+        _taskRequests.remove(seq);
+        super.cancel(seq);
     }
 
     @Override
@@ -155,6 +225,7 @@ public class DirectAgentAttache extends AgentAttache {
 
     private synchronized void queueTask(Task task) {
         tasks.add(task);
+        _taskRequests.put(task._req.getSequence(), task._req);
     }
 
     private synchronized void scheduleFromQueue() {
@@ -352,6 +423,17 @@ public class DirectAgentAttache extends AgentAttache {
                                 logger.warn("Resource returned null answer!");
                                 answer = new Answer(cmds[i], false, "Resource returned null answer");
                             }
+
+                            // If cancellation was requested while the current command was running,
+                            // stop scheduling further commands for cancellable sequences.
+                            if ((Thread.currentThread().isInterrupted() || _req.isCancelled())
+                                    && resource.isRequestSequenceCancellable(seq)) {
+                                answers.add(answer);
+                                for (int j = i + 1; j < cmds.length; j++) {
+                                    answers.add(new Answer(cmds[j], false, "Command cancelled"));
+                                }
+                                break;
+                            }
                         } else {
                             answer = new Answer(cmds[i], false, "Agent is disconnected");
                         }
@@ -401,6 +483,7 @@ public class DirectAgentAttache extends AgentAttache {
                 logger.error(LOG_SEQ_FORMATTED_STRING, seq, "Throwable caught in runInContext, this will cause the management to become unpredictable", t);
             } finally {
                 _taskFutures.remove(seq);
+                _taskRequests.remove(seq);
                 _outstandingTaskCount.decrementAndGet();
                 scheduleFromQueue();
             }
