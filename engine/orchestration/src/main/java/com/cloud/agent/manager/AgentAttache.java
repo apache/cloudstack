@@ -234,6 +234,10 @@ public abstract class AgentAttache {
         }
     }
 
+    protected boolean isExecutionCancellable(final long seq) {
+        return true;
+    }
+
     protected synchronized int findRequest(final Request req) {
         return Collections.binarySearch(_requests, req, s_reqComparator);
     }
@@ -421,7 +425,7 @@ public abstract class AgentAttache {
         try {
             for (int i = 0; i < 2; i++) {
                 Answer[] answers = null;
-                if (_agentMgr._asyncJobDao.isJobCancelled(jobId)) {
+                if (_agentMgr._asyncJobDao.isJobCancelled(jobId) && isExecutionCancellable(seq)) {
                     throw new OperationCancelledException(req.getCommands(), _id, seq, wait, false);
                 }
                 Command[] cmds = req.getCommands();
@@ -435,7 +439,7 @@ public abstract class AgentAttache {
                     } catch (final InterruptedException e) {
                         logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Interrupted while waiting for job commands processing");
                         Thread.currentThread().interrupt();
-                        if (_agentMgr._asyncJobDao.isJobCancelled(jobId)) {
+                        if (_agentMgr._asyncJobDao.isJobCancelled(jobId) && isExecutionCancellable(seq)) {
                             throw new OperationCancelledException(req.getCommands(), _id, seq, wait, true, "Cancelled during waiting for job commands processing");
                         }
                     }
