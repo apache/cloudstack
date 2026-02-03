@@ -33,8 +33,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.quota.QuotaAccountStateFilter;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-
 
 import java.util.List;
 

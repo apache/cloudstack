@@ -44,7 +44,6 @@ import javax.inject.Inject;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
