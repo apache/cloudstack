@@ -15,9 +15,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
-- uses: sbomify/github-action@master
-  env:
-    LOCK_FILE: ui/package-lock.json
-    OUTPUT_FILE: sbom.ui.cdx.json
-    UPLOAD: false
-    ENRICH: true
+name: generate sboms
+
+jobs:
+  build:
+    name: ui sbom
+    uses: sbomify/github-action@master
+    env:
+      LOCK_FILE: ui/package-lock.json
+      OUTPUT_FILE: sbom.ui.cdx.json
+      COMPONENT_NAME: my-app
+      COMPONENT_VERSION: ${{ github.ref_name }}
+      UPLOAD: false
+      ENRICH: true
