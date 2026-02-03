@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -230,7 +231,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         Pattern saveTimePattern = Pattern.compile(nstRegex);
 
         try {
-            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), 22,
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), AgentManager.KVMHostDiscoverySshPort.value(),
                     username, null, password, command, 120000, 120000, 3600000);
             if (!response.first()) {
                 LOG.error(String.format("Backup Script failed on HYPERVISOR %s due to: %s", host, response.second()));
@@ -251,7 +252,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     private boolean executeRestoreCommand(HostVO host, String username, String password, String command) {
 
         try {
-            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), 22,
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), AgentManager.KVMHostDiscoverySshPort.value(),
                 username, null, password, command, 120000, 120000, 3600000);
 
             if (!response.first()) {
