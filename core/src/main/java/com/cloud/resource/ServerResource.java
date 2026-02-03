@@ -92,4 +92,20 @@ public interface ServerResource extends Manager {
     }
 
     default void processPingAnswer(PingAnswer answer) {};
+
+    /**
+     * Indicates whether a currently executing request sequence can be cancelled or not.
+     * Resources that cannot determine cancellability should return true.
+     */
+    default boolean isRequestSequenceCancellable(long sequence) {
+        return true;
+    }
+
+    /**
+     * Attempts to cancel a currently executing request sequence at the resource layer.
+     * Returning false indicates cancellation was not possible and execution should continue.
+     */
+    default boolean cancelRequestSequence(long sequence) {
+        return true;
+    }
 }
