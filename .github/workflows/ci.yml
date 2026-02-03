@@ -29,7 +29,7 @@ permissions:
 jobs:
   build:
     if: github.repository == 'apache/cloudstack'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
@@ -89,7 +89,10 @@ jobs:
                   smoke/test_nested_virtualization
                   smoke/test_set_sourcenat
                   smoke/test_webhook_lifecycle
-                  smoke/test_purge_expunged_vms",
+                  smoke/test_purge_expunged_vms
+                  smoke/test_extension_lifecycle
+                  smoke/test_extension_custom_action_lifecycle
+                  smoke/test_extension_custom",
                 "smoke/test_network
                   smoke/test_network_acl
                   smoke/test_network_ipv6
@@ -137,6 +140,7 @@ jobs:
                   smoke/test_vm_deployment_planner
                   smoke/test_vm_strict_host_tags
                   smoke/test_vm_schedule
+                  smoke/test_deploy_vgpu_enabled_vm
                   smoke/test_vm_life_cycle
                   smoke/test_vm_lifecycle_unmanage_import
                   smoke/test_vm_snapshot_kvm
@@ -164,7 +168,8 @@ jobs:
                   component/test_cpu_limits
                   component/test_cpu_max_limits
                   component/test_cpu_project_limits
-                  component/test_deploy_vm_userdata_multi_nic",
+                  component/test_deploy_vm_userdata_multi_nic
+                  component/test_deploy_vm_lease",
                 "component/test_egress_fw_rules
                   component/test_invalid_gw_nm
                   component/test_ip_reservation",
@@ -211,20 +216,19 @@ jobs:
                   smoke/test_list_volumes"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
         with:
-          java-version: '11'
-          distribution: 'adopt'
-          architecture: x64
-          cache: maven
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
           architecture: 'x64'
@@ -232,11 +236,29 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git uuid-runtime genisoimage netcat ipmitool build-essential libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython3-dev libssl-dev libffi-dev python3-openssl python3-dev python3-setuptools
+          sudo apt-get install -y git uuid-runtime genisoimage netcat-openbsd ipmitool build-essential libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython3-dev libssl-dev libffi-dev python3-openssl python3-dev python3-setuptools
+
+      - name: Setup IPMI Tool for CloudStack
+        run: |
+          # Create cloudstack-common directory if it doesn't exist
+          sudo mkdir -p /usr/share/cloudstack-common
+
+          # Copy ipmitool to cloudstack-common directory if it doesn't exist
+          if [ ! -f /usr/share/cloudstack-common/ipmitool ]; then
+            sudo cp /usr/bin/ipmitool /usr/share/cloudstack-common/ipmitool
+            sudo chmod 755 /usr/share/cloudstack-common/ipmitool
+          fi
+
+          # Create ipmitool-C3 wrapper script
+          sudo tee /usr/bin/ipmitool > /dev/null << 'EOF'
+          #!/bin/bash
+          /usr/share/cloudstack-common/ipmitool -C3 $@
+          EOF
+          sudo chmod 755 /usr/bin/ipmitool
 
       - name: Install Python dependencies
         run: |
-          python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid
+          python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycryptodome mock flask netaddr pylint pycodestyle six astroid pynose
 
       - name: Install jacoco dependencies
         run: |
@@ -271,7 +293,7 @@ jobs:
       - name: Setup Simulator Prerequisites
         run: |
           sudo python3 -m pip install --upgrade netaddr mysql-connector-python
-          python3 -m pip install --user --upgrade tools/marvin/dist/Marvin-*.tar.gz
+          python3 -m pip install --user --upgrade tools/marvin/dist/[mM]arvin-*.tar.gz
           mvn -q -Pdeveloper -pl developer -Ddeploydb
           mvn -q -Pdeveloper -pl developer -Ddeploydb-simulator
 

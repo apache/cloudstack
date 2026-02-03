@@ -16,11 +16,25 @@
 // under the License.
 package com.cloud.alert;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 import javax.mail.MessagingException;
+import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
@@ -35,26 +49,25 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.StorageManager;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
+import com.cloud.utils.Ternary;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AlertManagerImplTest {
@@ -95,6 +108,18 @@ public class AlertManagerImplTest {
 
     @Mock
     SMTPMailSender mailSenderMock;
+
+    @Mock
+    CapacityDao capacityDao;
+
+    @Mock
+    BackupManager backupManager;
+
+    @Mock
+    ConfigurationDao configDao;
+
+    @Mock
+    MessageBus messageBus;
 
     private final String[] recipients = new String[]{"test@test.com"};
     private final String senderAddress = "sender@test.com";
@@ -218,5 +243,115 @@ public class AlertManagerImplTest {
         alertManagerImplMock.recalculateStorageCapacities();
         Mockito.verify(storageManager, Mockito.times(2)).createCapacityEntry(sharedPool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, 10L);
         Mockito.verify(storageManager, Mockito.times(1)).createCapacityEntry(nonSharedPool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, 20L);
+    }
+
+    @Test
+    public void testCheckForAlerts() throws ConfigurationException {
+        Long zoneId = 1L;
+        Mockito.doNothing().when(alertManagerImplMock).recalculateCapacity();
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        Mockito.when(dc.getId()).thenReturn(zoneId);
+        Mockito.when(dc.getName()).thenReturn("zone1");
+        Mockito.when(_dcDao.listAll()).thenReturn(List.of(dc));
+        Mockito.when(_dcDao.findById(zoneId)).thenReturn(dc);
+        Mockito.when(configDao.getConfiguration("management-server", null)).thenReturn(new HashMap<>());
+
+        alertManagerImplMock.configure(null, null);
+        CapacityVO secondaryStorageCapacity = new CapacityVO(null, zoneId, null, null, 100L, 200L, Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
+        CapacityVO storagePoolCapacity = new CapacityVO(null, zoneId, null, null, 200L, 300L, Capacity.CAPACITY_TYPE_STORAGE);
+        CapacityVO objectStoreCapacity = new CapacityVO(null, zoneId, null, null, 200L, 300L, Capacity.CAPACITY_TYPE_OBJECT_STORAGE);
+        CapacityVO backupCapacity = new CapacityVO(null, zoneId, null, null, 180L, 200L, Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        Mockito.when(storageManager.getSecondaryStorageUsedStats(null, zoneId)).thenReturn(secondaryStorageCapacity);
+        Mockito.when(storageManager.getObjectStorageUsedStats(zoneId)).thenReturn(objectStoreCapacity);
+        Mockito.when(backupManager.getBackupStorageUsedStats(zoneId)).thenReturn(backupCapacity);
+        alertManagerImplMock.checkForAlerts();
+
+        Mockito.verify(alertManagerImplMock).recalculateCapacity();
+
+        ArgumentCaptor<AlertVO> alertCaptor = ArgumentCaptor.forClass(AlertVO.class);
+        verify(_alertDao).persist(alertCaptor.capture());
+        AlertVO capturedAlert = alertCaptor.getValue();
+        assertNotNull("Captured alert should not be null", capturedAlert);
+        assertEquals(Optional.of(zoneId), Optional.ofNullable(capturedAlert.getDataCenterId()));
+        assertEquals("System Alert: Low Available Backup Storage in availability zone zone1", capturedAlert.getSubject());
+        assertEquals("Available backup storage space is low, total: 200.0 MB, used: 180.0 MB (90%)", capturedAlert.getContent());
+        assertEquals(AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE.getType(), capturedAlert.getType());
+    }
+
+    @Test
+    public void initMessageBusListenerSubscribesToConfigurationEditEvent() {
+        MessageBus messageBusMock = Mockito.mock(MessageBus.class);
+        alertManagerImplMock.messageBus = messageBusMock;
+        alertManagerImplMock.initMessageBusListener();
+        Mockito.verify(messageBusMock).subscribe(Mockito.eq(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT), Mockito.any());
+    }
+
+    @Test
+    public void initMessageBusListenerTriggersSetupRepetitiveAlertTypesOnAllowedKeyEdit() {
+        MessageBus messageBusMock = Mockito.mock(MessageBus.class);
+        alertManagerImplMock.messageBus = messageBusMock;
+        alertManagerImplMock.initMessageBusListener();
+        ArgumentCaptor<MessageSubscriber> captor = ArgumentCaptor.forClass(MessageSubscriber.class);
+        Mockito.verify(messageBusMock).subscribe(Mockito.eq(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT), captor.capture());
+        Ternary<String, ConfigKey.Scope, Long> args = new Ternary<>(AlertManager.AllowedRepetitiveAlertTypes.key(), ConfigKey.Scope.Global, 1L);
+        captor.getValue().onPublishMessage(null, null, args);
+        Mockito.verify(alertManagerImplMock).setupRepetitiveAlertTypes();
+    }
+
+    @Test
+    public void initMessageBusListenerDoesNotTriggerSetupRepetitiveAlertTypesOnOtherKeyEdit() {
+        MessageBus messageBusMock = Mockito.mock(MessageBus.class);
+        alertManagerImplMock.messageBus = messageBusMock;
+        alertManagerImplMock.initMessageBusListener();
+        ArgumentCaptor<MessageSubscriber> captor = ArgumentCaptor.forClass(MessageSubscriber.class);
+        Mockito.verify(messageBusMock).subscribe(Mockito.eq(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT), captor.capture());
+        Ternary<String, ConfigKey.Scope, Long> args = new Ternary<>("some.other.key", ConfigKey.Scope.Global, 1L);
+        captor.getValue().onPublishMessage(null, null, args);
+        Mockito.verify(alertManagerImplMock, Mockito.never()).setupRepetitiveAlertTypes();
+    }
+
+    private void mockAllowedRepetitiveAlertTypesConfigKey(String value) {
+        ReflectionTestUtils.setField(AlertManager.AllowedRepetitiveAlertTypes, "_defaultValue", value);
+    }
+
+    @Test
+    public void setupRepetitiveAlertTypesParsesValidAlertTypesCorrectly() {
+        mockAllowedRepetitiveAlertTypesConfigKey(AlertManager.AlertType.ALERT_TYPE_CPU.getName() + "," + AlertManager.AlertType.ALERT_TYPE_MEMORY.getName());
+        alertManagerImplMock.setupRepetitiveAlertTypes();
+        List<String> expectedTypes = (List<String>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypeNames");
+        Assert.assertNotNull(expectedTypes);
+        Assert.assertEquals(2, expectedTypes.size());
+        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_CPU.getName().toLowerCase()));
+        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_MEMORY.getName().toLowerCase()));
+    }
+
+    @Test
+    public void setupRepetitiveAlertTypesHandlesEmptyConfigValue() {
+        mockAllowedRepetitiveAlertTypesConfigKey("");
+        alertManagerImplMock.setupRepetitiveAlertTypes();
+        List<String> expectedTypes = (List<String>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypeNames");
+        Assert.assertNotNull(expectedTypes);
+        Assert.assertTrue(expectedTypes.isEmpty());
+    }
+
+    @Test
+    public void setupRepetitiveAlertTypesIgnoresCustomAlertTypes() {
+        String customAlertTypeName = "CUSTOM_ALERT_TYPE";
+        mockAllowedRepetitiveAlertTypesConfigKey(AlertManager.AlertType.ALERT_TYPE_CPU.getName() + "," + customAlertTypeName);
+        alertManagerImplMock.setupRepetitiveAlertTypes();
+        List<String> expectedTypes = (List<String>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypeNames");
+        Assert.assertNotNull(expectedTypes);
+        Assert.assertEquals(2, expectedTypes.size());
+        Assert.assertTrue(expectedTypes.contains(AlertManager.AlertType.ALERT_TYPE_CPU.getName().toLowerCase()));
+        Assert.assertTrue(expectedTypes.contains(customAlertTypeName.toLowerCase()));
+    }
+
+    @Test
+    public void setupRepetitiveAlertTypesHandlesNullConfigValue() {
+        mockAllowedRepetitiveAlertTypesConfigKey(null);
+        alertManagerImplMock.setupRepetitiveAlertTypes();
+        List<String> expectedTypes = (List<String>)ReflectionTestUtils.getField(alertManagerImplMock, "allowedRepetitiveAlertTypeNames");
+        Assert.assertNotNull(expectedTypes);
+        Assert.assertTrue(expectedTypes.isEmpty());
     }
 }

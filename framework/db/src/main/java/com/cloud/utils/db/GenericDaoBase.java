@@ -89,6 +89,7 @@ import net.sf.cglib.proxy.NoOp;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
+import org.springframework.util.ClassUtils;
 
 /**
  *  GenericDaoBase is a simple way to implement DAOs.  It DOES NOT
@@ -573,6 +574,9 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 } else {
                     field.set(entity, rs.getLong(index));
                 }
+            } else if (field.getDeclaredAnnotation(Convert.class) != null) {
+                Object val = _conversionSupport.convertToEntityAttribute(field, rs.getObject(index));
+                field.set(entity, val);
             } else if (type.isEnum()) {
                 final Enumerated enumerated = field.getAnnotation(Enumerated.class);
                 final EnumType enumType = (enumerated == null) ? EnumType.STRING : enumerated.value();
@@ -677,9 +681,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 }
             } else if (type == byte[].class) {
                 field.set(entity, rs.getBytes(index));
-            } else if (field.getDeclaredAnnotation(Convert.class) != null) {
-                Object val = _conversionSupport.convertToEntityAttribute(field, rs.getObject(index));
-                field.set(entity, val);
             } else {
                 field.set(entity, rs.getObject(index));
             }
@@ -949,7 +950,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected List<T> listBy(SearchCriteria<T> sc, final Filter filter) {
+    public List<T> listBy(SearchCriteria<T> sc, final Filter filter) {
         sc = checkAndSetRemovedIsNull(sc);
         return listIncludingRemovedBy(sc, filter);
     }
@@ -1004,6 +1005,17 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
         return findOneBy(sc);
+    }
+
+    @Override
+    @DB()
+    public List<T> listByUuids(final Collection<String> uuids) {
+        if (org.apache.commons.collections.CollectionUtils.isEmpty(uuids)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<T> sc = createSearchCriteria();
+        sc.addAnd("uuid", SearchCriteria.Op.IN, uuids.toArray());
+        return listBy(sc);
     }
 
     @Override
@@ -1160,6 +1172,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 if (filter.getLimit() != null) {
                     sql.append(", ").append(filter.getLimit());
                 }
+            } else if (filter.getLimit() != null) {
+                sql.append(" LIMIT ").append(filter.getLimit());
             }
         }
     }
@@ -1321,7 +1335,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         Filter filter = null;
         final long batchSizeFinal = ObjectUtils.defaultIfNull(batchSize, 0L);
         if (batchSizeFinal > 0) {
-            filter = new Filter(batchSizeFinal);
+            filter = new Filter(null, batchSizeFinal);
         }
         int expunged = 0;
         int currentExpunged = 0;
@@ -2047,16 +2061,22 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected void setField(final Object entity, final ResultSet rs, ResultSetMetaData meta, final int index) throws SQLException {
-        Attribute attr = _allColumns.get(new Pair<String, String>(meta.getTableName(index), meta.getColumnName(index)));
+        String tableName = meta.getTableName(index);
+        String columnName = meta.getColumnName(index);
+        Attribute attr = _allColumns.get(new Pair<>(tableName, columnName));
         if (attr == null) {
             // work around for mysql bug to return original table name instead of view name in db view case
             Table tbl = entity.getClass().getSuperclass().getAnnotation(Table.class);
             if (tbl != null) {
-                attr = _allColumns.get(new Pair<String, String>(tbl.name(), meta.getColumnLabel(index)));
+                attr = _allColumns.get(new Pair<>(tbl.name(), meta.getColumnLabel(index)));
             }
         }
-        assert (attr != null) : "How come I can't find " + meta.getCatalogName(index) + "." + meta.getColumnName(index);
-        setField(entity, attr.field, rs, index);
+        if(attr == null) {
+            logger.warn(String.format("Failed to find attribute in the entity %s to map column %s.%s (%s)",
+                    ClassUtils.getUserClass(entity).getSimpleName(), tableName, columnName));
+        } else {
+            setField(entity, attr.field, rs, index);
+        }
     }
 
     @Override

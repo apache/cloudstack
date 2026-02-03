@@ -56,7 +56,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VmDetailConstants;
 
 @APICommand(name = "importUnmanagedInstance",
-        description = "Import unmanaged virtual machine from a given cluster.",
+        description = "Import unmanaged Instance from a given cluster.",
         responseObject = UserVmResponse.class,
         responseView = ResponseObject.ResponseView.Full,
         requestHasSensitiveInfo = false,
@@ -76,83 +76,83 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = ClusterResponse.class,
             required = true,
-            description = "the cluster ID")
+            description = "The cluster ID")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
             required = true,
-            description = "the name of the instance as it is known to the hypervisor")
+            description = "The name of the Instance as it is known to the hypervisor")
     private String name;
 
     @Parameter(name = ApiConstants.DISPLAY_NAME,
             type = CommandType.STRING,
-            description = "the display name of the instance")
+            description = "The display name of the Instance")
     private String displayName;
 
     @Parameter(name = ApiConstants.HOST_NAME,
             type = CommandType.STRING,
-            description = "the host name of the instance")
+            description = "The host name of the Instance")
     private String hostName;
 
     @Parameter(name = ApiConstants.ACCOUNT,
             type = CommandType.STRING,
-            description = "an optional account for the virtual machine. Must be used with domainId.")
+            description = "An optional account for the Instance. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "import instance to the domain specified")
+            description = "Import Instance to the domain specified")
     private Long domainId;
 
     @Parameter(name = ApiConstants.PROJECT_ID,
             type = CommandType.UUID,
             entityType = ProjectResponse.class,
-            description = "import instance for the project")
+            description = "Import Instance for the project")
     private Long projectId;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID,
             type = CommandType.UUID,
             entityType = TemplateResponse.class,
-            description = "the ID of the template for the virtual machine")
+            description = "The ID of the Template for the Instance")
     private Long templateId;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
             required = true,
-            description = "the service offering for the virtual machine")
+            description = "The service offering for the Instance")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.NIC_NETWORK_LIST,
             type = CommandType.MAP,
-            description = "VM nic to network id mapping using keys nic and network")
+            description = "VM NIC to network id mapping using keys NIC and network")
     private Map nicNetworkList;
 
     @Parameter(name = ApiConstants.NIC_IP_ADDRESS_LIST,
             type = CommandType.MAP,
-            description = "VM nic to ip address mapping using keys nic, ip4Address")
+            description = "VM NIC to ip address mapping using keys NIC, ip4Address")
     private Map nicIpAddressList;
 
     @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST,
             type = CommandType.MAP,
-            description = "datadisk template to disk-offering mapping using keys disk and diskOffering")
+            description = "Datadisk Template to disk-offering mapping using keys disk and diskOffering")
     private Map dataDiskToDiskOfferingList;
 
     @Parameter(name = ApiConstants.DETAILS,
             type = CommandType.MAP,
-            description = "used to specify the custom parameters.")
+            description = "Used to specify the custom parameters.")
     private Map<String, String> details;
 
     @Parameter(name = ApiConstants.MIGRATE_ALLOWED,
             type = CommandType.BOOLEAN,
-            description = "vm and its volumes are allowed to migrate to different host/pool when offerings passed are incompatible with current host/pool")
+            description = "Instance and its volumes are allowed to migrate to different host/pool when offerings passed are incompatible with current host/pool")
     private Boolean migrateAllowed;
 
     @Parameter(name = ApiConstants.FORCED,
             type = CommandType.BOOLEAN,
-            description = "VM is imported despite some of its NIC's MAC addresses are already present, in case the MAC address exists then a new MAC address is generated")
+            description = "Instance is imported despite some of its NIC's MAC addresses are already present, in case the MAC address exists then a new MAC address is generated")
     private Boolean forced;
 
     /////////////////////////////////////////////////////
@@ -201,9 +201,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicNetworkList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String networkUuid = entry.get(VmDetailConstants.NETWORK);
-                if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
-                }
+                logger.debug("Checking if NIC '{}' can be mapped on network '{}'", nic, networkUuid);
                 if (StringUtils.isAnyEmpty(nic, networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
                 }
@@ -219,9 +217,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)nicIpAddressList.values()) {
                 String nic = entry.get(VmDetailConstants.NIC);
                 String ipAddress = StringUtils.defaultIfEmpty(entry.get(VmDetailConstants.IP4_ADDRESS), null);
-                if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("nic, '%s', gets ip, '%s'", nic, ipAddress));
-                }
+                logger.debug("Checking if IP address '{}' can be mapped to NIC '{}'", ipAddress, nic);
                 if (StringUtils.isEmpty(nic)) {
                     throw new InvalidParameterValueException(String.format("NIC ID: '%s' is invalid for IP address mapping", nic));
                 }
@@ -244,9 +240,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             for (Map<String, String> entry : (Collection<Map<String, String>>)dataDiskToDiskOfferingList.values()) {
                 String disk = entry.get(VmDetailConstants.DISK);
                 String offeringUuid = entry.get(VmDetailConstants.DISK_OFFERING);
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("disk, '%s', gets offering, '%s'", disk, offeringUuid));
-                }
+                logger.trace("Checking if offering '{}' can be used on disk '{}'", offeringUuid, disk);
                 if (StringUtils.isAnyEmpty(disk, offeringUuid) || _entityMgr.findByUuid(DiskOffering.class, offeringUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Disk offering ID: %s for disk ID: %s is invalid", offeringUuid, disk));
                 }
@@ -278,7 +272,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         String vmName = this.name;
-        return String.format("Importing unmanaged VM: %s", vmName);
+        return String.format("Importing unmanaged Instance: %s", vmName);
     }
 
     public boolean isForced() {
@@ -298,7 +292,7 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             Account account = CallContext.current().getCallingAccount();
             if (account != null) {

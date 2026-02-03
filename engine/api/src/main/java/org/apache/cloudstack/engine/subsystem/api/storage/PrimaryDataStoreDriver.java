@@ -146,6 +146,14 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     }
 
     /**
+     * intended for managed storage
+     * returns true if the host can be disconnected from storage pool
+     */
+    default boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool) {
+        return true;
+    }
+
+    /**
      * Used by storage pools which want to keep VMs' information
      * @return true if additional VM info is needed (intended for storage pools).
      */

@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.datastore.db;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
@@ -46,15 +47,36 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId);
 
-    List<SnapshotDataStoreVO> listBySnapshot(long snapshotId, DataStoreRole role);
+    SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long zoneId, Long volumeId, boolean kvmIncrementalSnapshot, Hypervisor.HypervisorType hypervisorType);
+
+    SnapshotDataStoreVO findBySnapshotIdAndDataStoreRoleAndState(long snapshotId, DataStoreRole role, ObjectInDataStoreStateMachine.State state);
+
+    List<SnapshotDataStoreVO> listReadyByVolumeIdAndCheckpointPathNotNull(long volumeId);
+
+    SnapshotDataStoreVO findOneBySnapshotId(long snapshotId, long zoneId);
+
+    List<SnapshotDataStoreVO> listBySnapshotId(long snapshotId);
+
+    List<SnapshotDataStoreVO> listBySnapshotAndDataStoreRole(long snapshotId, DataStoreRole role);
+
+    List<SnapshotDataStoreVO> listExtractedSnapshotsBeforeDate(Date beforeDate);
+
+    List<SnapshotDataStoreVO> listSnapshotsBySnapshotId(long snapshotId);
 
     List<SnapshotDataStoreVO> listReadyBySnapshot(long snapshotId, DataStoreRole role);
 
+    List<SnapshotDataStoreVO> listReadyBySnapshotId(long snapshotId);
     SnapshotDataStoreVO findBySourceSnapshot(long snapshotId, DataStoreRole role);
+
+    List<SnapshotDataStoreVO> findBySnapshotIdAndNotInDestroyedHiddenState(long snapshotId);
+
+    SnapshotDataStoreVO findBySnapshotIdInAnyState(long snapshotId, DataStoreRole role);
 
     List<SnapshotDataStoreVO> listDestroyed(long storeId);
 
     List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId);
+
+    List<SnapshotDataStoreVO> findBySnapshotIdWithNonDestroyedState(long snapshotId);
 
     void duplicateCacheRecordsOnRegionStore(long storeId);
 
@@ -108,4 +130,18 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     void updateDisplayForSnapshotStoreRole(long snapshotId, long storeId, DataStoreRole role, boolean display);
 
     int expungeBySnapshotList(List<Long> snapshotIds, Long batchSize);
+
+    /**
+     * Returns the total physical size, in bytes, of all snapshots stored on primary
+     * storage for the specified account that have not yet been backed up to
+     * secondary storage.
+     *
+     * <p>If no such snapshots are found, this method returns {@code 0}.</p>
+     *
+     * @param accountId the ID of the account whose snapshots on primary storage
+     *                  should be considered
+     * @return the total physical size in bytes of matching snapshots on primary
+     *         storage, or {@code 0} if none are found
+     */
+    long getSnapshotsPhysicalSizeOnPrimaryStorageByAccountId(long accountId);
 }

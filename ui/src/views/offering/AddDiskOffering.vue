@@ -211,6 +211,9 @@
             <a-radio-button value="writethrough">
               {{ $t('label.writethrough') }}
             </a-radio-button>
+            <a-radio-button value="hypervisor_default">
+              {{ $t('label.hypervisor.default') }}
+            </a-radio-button>
           </a-radio-group>
         </a-form-item>
         <a-form-item v-if="isAdmin() || isDomainAdminAllowedToInformTags" name="tags" ref="tags">
@@ -218,6 +221,7 @@
             <tooltip-label :title="$t('label.storagetags')" :tooltip="apiParams.tags.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             mode="tags"
             v-model:value="form.tags"
             showSearch
@@ -242,6 +246,7 @@
           </template>
           <a-select
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.domainid"
             showSearch
             optionFilterProp="label"
@@ -266,6 +271,7 @@
           <a-select
             id="zone-selection"
             mode="multiple"
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.zoneid"
             showSearch
             optionFilterProp="label"
@@ -289,6 +295,7 @@
             <tooltip-label :title="$t('label.vmware.storage.policy')" :tooltip="apiParams.storagepolicy.description"/>
           </template>
           <a-select
+            :getPopupContainer="(trigger) => trigger.parentNode"
             v-model:value="form.storagepolicy"
             :placeholder="apiParams.storagepolicy.description"
             showSearch
@@ -311,7 +318,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { reactive, ref, toRaw } from 'vue'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
@@ -422,7 +429,7 @@ export default {
     },
     checkIfDomainAdminIsAllowedToInformTag () {
       const params = { id: store.getters.userInfo.accountid }
-      api('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
+      getAPI('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
         this.isDomainAdminAllowedToInformTags = json.isaccountallowedtocreateofferingswithtagsresponse.isallowed.isallowed
       })
     },
@@ -435,7 +442,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
@@ -446,7 +453,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
@@ -458,7 +465,7 @@ export default {
     fetchStorageTagData () {
       const params = {}
       this.storageTagLoading = true
-      api('listStorageTags', params).then(json => {
+      getAPI('listStorageTags', params).then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
         for (const tag of tags) {
           if (!this.storageTags.includes(tag.name)) {
@@ -477,7 +484,7 @@ export default {
       const zoneid = this.zones[zoneIndex].id
       if ('importVsphereStoragePolicies' in this.$store.getters.apis) {
         this.storagePolicies = []
-        api('listVsphereStoragePolicies', {
+        getAPI('listVsphereStoragePolicies', {
           zoneid: zoneid
         }).then(response => {
           this.storagePolicies = response.listvspherestoragepoliciesresponse.StoragePolicy || []
@@ -491,7 +498,6 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         var params = {
-          isMirrored: false,
           name: values.name,
           displaytext: values.displaytext,
           storageType: values.storagetype,
@@ -571,7 +577,7 @@ export default {
         if (values.storagepolicy) {
           params.storagepolicy = values.storagepolicy
         }
-        api('createDiskOffering', params).then(json => {
+        postAPI('createDiskOffering', params).then(json => {
           this.$emit('publish-disk-offering-id', json?.creatediskofferingresponse?.diskoffering?.id)
           this.$message.success(`${this.$t('message.disk.offering.created')} ${values.name}`)
           this.$emit('refresh-data')
@@ -601,7 +607,7 @@ export default {
     width: 80vw;
 
     @media (min-width: 800px) {
-      width: 430px;
+      width: 480px;
     }
   }
 </style>

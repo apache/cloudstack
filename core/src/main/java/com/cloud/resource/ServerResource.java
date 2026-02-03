@@ -22,6 +22,7 @@ package com.cloud.resource;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PingAnswer;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
@@ -90,4 +91,5 @@ public interface ServerResource extends Manager {
         return false;
     }
 
+    default void processPingAnswer(PingAnswer answer) {};
 }

@@ -25,6 +25,7 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.Pair;
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,7 +48,7 @@ public class AgentManagerImplTest {
         host = new HostVO("some-Uuid");
         host.setDataCenterId(1L);
         cmds = new StartupCommand[]{new StartupRoutingCommand()};
-        attache = new ConnectedAgentAttache(null, 1L, "uuid", "kvm-attache", null, false);
+        attache = new ConnectedAgentAttache(null, 1L, "uuid", "kvm-attache", Hypervisor.HypervisorType.KVM, null, false);
 
         hostDao = Mockito.mock(HostDao.class);
         storagePoolMonitor = Mockito.mock(Listener.class);

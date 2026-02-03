@@ -41,18 +41,19 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
@@ -131,17 +132,19 @@ public class VMSnapshotManagerTest {
     @Mock
     ServiceOfferingDao _serviceOfferingDao;
     @Mock
-    UserVmDetailsDao _userVmDetailsDao;
+    VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Mock
     VMSnapshotDetailsDao _vmSnapshotDetailsDao;
     @Mock
     UserVmManager _userVmManager;
+    @Mock
+    private AccountVO accountVOMock;
 
     private static final long TEST_VM_ID = 3L;
     private static final long SERVICE_OFFERING_ID = 1L;
     private static final long SERVICE_OFFERING_DIFFERENT_ID = 2L;
     private static VMSnapshot.Type vmSnapshotType;
-    private static List<UserVmDetailVO> userVmDetails;
+    private static List<VMInstanceDetailVO> userVmDetails;
     private static List<VMSnapshotDetailsVO> vmSnapshotDetails;
 
     private static final long VM_SNAPSHOT_ID = 1L;
@@ -157,9 +160,9 @@ public class VMSnapshotManagerTest {
     @Mock
     ServiceOfferingVO serviceOffering;
     @Mock
-    UserVmDetailVO userVmDetailCpuNumber;
+    VMInstanceDetailVO userVmDetailCpuNumber;
     @Mock
-    UserVmDetailVO userVmDetailMemory;
+    VMInstanceDetailVO userVmDetailMemory;
     @Mock
     VMSnapshotDetailsVO vmSnapshotDetailCpuNumber;
     @Mock
@@ -172,7 +175,7 @@ public class VMSnapshotManagerTest {
     @Captor
     ArgumentCaptor<Map<String,String>> mapDetailsCaptor;
     @Captor
-    ArgumentCaptor<List<UserVmDetailVO>> listUserVmDetailsCaptor;
+    ArgumentCaptor<List<VMInstanceDetailVO>> listUserVmDetailsCaptor;
 
     private AutoCloseable closeable;
 
@@ -194,7 +197,7 @@ public class VMSnapshotManagerTest {
         doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
 
         _vmSnapshotMgr._serviceOfferingDao = _serviceOfferingDao;
-        _vmSnapshotMgr._userVmDetailsDao = _userVmDetailsDao;
+        _vmSnapshotMgr._vmInstanceDetailsDao = _vmInstanceDetailsDao;
         _vmSnapshotMgr._vmSnapshotDetailsDao = _vmSnapshotDetailsDao;
         _vmSnapshotMgr._userVmManager = _userVmManager;
 
@@ -238,7 +241,7 @@ public class VMSnapshotManagerTest {
 
         userVmDetails = Arrays.asList(userVmDetailCpuNumber, userVmDetailMemory);
         vmSnapshotDetails = Arrays.asList(vmSnapshotDetailCpuNumber, vmSnapshotDetailMemory);
-        when(_userVmDetailsDao.listDetails(TEST_VM_ID)).thenReturn(userVmDetails);
+        when(_vmInstanceDetailsDao.listDetails(TEST_VM_ID)).thenReturn(userVmDetails);
         when(_vmSnapshotDetailsDao.listDetails(VM_SNAPSHOT_ID)).thenReturn(vmSnapshotDetails);
 
         when(userVm.getId()).thenReturn(TEST_VM_ID);
@@ -285,8 +288,12 @@ public class VMSnapshotManagerTest {
     @SuppressWarnings("unchecked")
     @Test(expected = CloudRuntimeException.class)
     public void testAllocVMSnapshotF4() throws ResourceAllocationException {
+        long accountId = 1L;
         List<VMSnapshotVO> mockList = mock(List.class);
         when(mockList.size()).thenReturn(10);
+        when(_userVMDao.findById(TEST_VM_ID)).thenReturn(vmMock);
+        when(userVm.getAccountId()).thenReturn(accountId);
+        when(_accountMgr.getAccount(accountId)).thenReturn(accountVOMock);
         when(_vmSnapshotDao.findByVm(TEST_VM_ID)).thenReturn(mockList);
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
@@ -295,8 +302,12 @@ public class VMSnapshotManagerTest {
     @SuppressWarnings("unchecked")
     @Test(expected = CloudRuntimeException.class)
     public void testAllocVMSnapshotF5() throws ResourceAllocationException {
+        long accountId = 1L;
         List<SnapshotVO> mockList = mock(List.class);
         when(mockList.size()).thenReturn(1);
+        when(_userVMDao.findById(TEST_VM_ID)).thenReturn(vmMock);
+        when(userVm.getAccountId()).thenReturn(accountId);
+        when(_accountMgr.getAccount(accountId)).thenReturn(accountVOMock);
         when(_snapshotDao.listByInstanceId(TEST_VM_ID, Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp)).thenReturn(mockList);
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
@@ -304,6 +315,10 @@ public class VMSnapshotManagerTest {
     // successful creation case
     @Test
     public void testCreateVMSnapshot() throws AgentUnavailableException, OperationTimedoutException, ResourceAllocationException, NoTransitionException {
+        long accountId = 1L;
+        when(_userVMDao.findById(TEST_VM_ID)).thenReturn(vmMock);
+        when(userVm.getAccountId()).thenReturn(accountId);
+        when(_accountMgr.getAccount(accountId)).thenReturn(accountVOMock);
         when(vmMock.getState()).thenReturn(State.Running);
         _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
@@ -327,7 +342,7 @@ public class VMSnapshotManagerTest {
     @Test
     public void testAddSupportForCustomServiceOfferingNotDynamicServiceOffering() {
         _vmSnapshotMgr.addSupportForCustomServiceOffering(TEST_VM_ID, SERVICE_OFFERING_ID, VM_SNAPSHOT_ID);
-        verify(_userVmDetailsDao, never()).listDetails(TEST_VM_ID);
+        verify(_vmInstanceDetailsDao, never()).listDetails(TEST_VM_ID);
     }
 
     @Test
@@ -335,7 +350,7 @@ public class VMSnapshotManagerTest {
         when(serviceOffering.isDynamic()).thenReturn(true);
         _vmSnapshotMgr.addSupportForCustomServiceOffering(TEST_VM_ID, SERVICE_OFFERING_ID, VM_SNAPSHOT_ID);
 
-        verify(_userVmDetailsDao).listDetails(TEST_VM_ID);
+        verify(_vmInstanceDetailsDao).listDetails(TEST_VM_ID);
         verify(_vmSnapshotDetailsDao).saveDetails(listVmSnapshotDetailsCaptor.capture());
     }
 
@@ -405,7 +420,7 @@ public class VMSnapshotManagerTest {
         when(serviceOffering.isDynamic()).thenReturn(true);
         _vmSnapshotMgr.revertUserVmDetailsFromVmSnapshot(vmMock, vmSnapshotVO);
         verify(_vmSnapshotDetailsDao).listDetails(VM_SNAPSHOT_ID);
-        verify(_userVmDetailsDao).saveDetails(listUserVmDetailsCaptor.capture());
+        verify(_vmInstanceDetailsDao).saveDetails(listUserVmDetailsCaptor.capture());
     }
 
 }

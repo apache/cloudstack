@@ -90,45 +90,31 @@
           <template #label>
             <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           </template>
-          <a-select
-            :loading="domainLoading"
+          <infinite-scroll-select
             v-model:value="form.domainid"
+            api="listDomains"
+            :apiParams="domainsApiParams"
+            resourceType="domain"
+            optionValueKey="id"
+            optionLabelKey="path"
+            defaultIcon="block-outlined"
+            :selectFirstOption="true"
             :placeholder="apiParams.domainid.description"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option v-for="domain in domainsList" :key="domain.id" :label="domain.path || domain.name || domain.description">
-              <span>
-                <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <block-outlined v-else style="margin-right: 5px" />
-                {{ domain.path || domain.name || domain.description }}
-              </span>
-            </a-select-option>
-          </a-select>
+            @change-option-value="handleDomainChange" />
         </a-form-item>
         <a-form-item name="account" ref="account" v-if="!account">
           <template #label>
             <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.account"
-            :loading="loadingAccount"
-            :placeholder="apiParams.account.description"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option v-for="(item, idx) in accountList" :key="idx" :label="item.name">
-              <span>
-                <resource-icon v-if="item && item.icon" :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <team-outlined v-else style="margin-right: 5px" />
-                {{ item.name }}
-              </span>
-            </a-select-option>
-          </a-select>
+            api="listAccounts"
+            :apiParams="accountsApiParams"
+            resourceType="account"
+            optionValueKey="name"
+            optionLabelKey="name"
+            defaultIcon="team-outlined"
+            :placeholder="apiParams.account.description" />
         </a-form-item>
         <a-form-item name="timezone" ref="timezone">
           <template #label>
@@ -180,17 +166,19 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
 
 export default {
   name: 'AddUser',
   components: {
     TooltipLabel,
-    ResourceIcon
+    ResourceIcon,
+    InfiniteScrollSelect
   },
   data () {
     this.fetchTimeZone = debounce(this.fetchTimeZone, 800)
@@ -198,14 +186,9 @@ export default {
       loading: false,
       timeZoneLoading: false,
       timeZoneMap: [],
-      domainLoading: false,
-      domainsList: [],
-      selectedDomain: '',
       samlEnable: false,
       idpLoading: false,
       idps: [],
-      loadingAccount: false,
-      accountList: [],
       account: null,
       domainid: null
     }
@@ -218,6 +201,19 @@ export default {
   computed: {
     samlAllowed () {
       return 'authorizeSamlSso' in this.$store.getters.apis
+    },
+    domainsApiParams () {
+      return {
+        listall: true,
+        showicon: true,
+        details: 'min'
+      }
+    },
+    accountsApiParams () {
+      return {
+        showicon: true,
+        domainid: this.form?.domainid || null
+      }
     }
   },
   methods: {
@@ -241,53 +237,18 @@ export default {
     fetchData () {
       this.account = this.$route.query && this.$route.query.account ? this.$route.query.account : null
       this.domainid = this.$route.query && this.$route.query.domainid ? this.$route.query.domainid : null
-      if (!this.domianid) {
-        this.fetchDomains()
+      // Set initial domain if provided from route
+      if (this.domainid) {
+        this.form.domainid = this.domainid
       }
       this.fetchTimeZone()
       if (this.samlAllowed) {
         this.fetchIdps()
       }
     },
-    fetchDomains () {
-      this.domainLoading = true
-      var params = {
-        listAll: true,
-        showicon: true,
-        details: 'min'
-      }
-      api('listDomains', params).then(response => {
-        this.domainsList = response.listdomainsresponse.domain || []
-      }).catch(error => {
-        this.$notification.error({
-          message: `${this.$t('label.error')} ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
-      }).finally(() => {
-        const domainid = this.domainsList[0]?.id || ''
-        this.form.domainid = domainid
-        this.fetchAccount(domainid)
-        this.domainLoading = false
-      })
-    },
-    fetchAccount (domainid) {
-      this.accountList = []
+    handleDomainChange (domainId) {
+      this.form.domainid = domainId
       this.form.account = null
-      this.loadingAccount = true
-      var params = { listAll: true, showicon: true }
-      if (domainid) {
-        params.domainid = domainid
-      }
-      api('listAccounts', params).then(response => {
-        this.accountList = response.listaccountsresponse.account || []
-      }).catch(error => {
-        this.$notification.error({
-          message: `${this.$t('label.error')} ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext
-        })
-      }).finally(() => {
-        this.loadingAccount = false
-      })
     },
     fetchTimeZone (value) {
       this.timeZoneMap = []
@@ -300,7 +261,7 @@ export default {
     },
     fetchIdps () {
       this.idpLoading = true
-      api('listIdps').then(response => {
+      getAPI('listIdps').then(response => {
         this.idps = response.listidpsresponse.idp || []
         this.form.samlentity = this.idps[0].id || ''
       }).finally(() => {
@@ -331,7 +292,7 @@ export default {
 
         const user = userCreationResponse?.createuserresponse?.user
         if (values.samlenable && user) {
-          await api('authorizeSamlSso', {
+          await postAPI('authorizeSamlSso', {
             enable: values.samlenable,
             entityid: values.samlentity,
             userid: user.id
@@ -369,12 +330,14 @@ export default {
         accounttype: 0
       }
 
+      // Account: use route query account if available, otherwise use form value (which is the account name)
       if (this.account) {
         params.account = this.account
-      } else if (this.accountList[rawParams.account]) {
-        params.account = this.accountList[rawParams.account].name
+      } else if (rawParams.account) {
+        params.account = rawParams.account
       }
 
+      // Domain: use route query domainid if available, otherwise use form value
       if (this.domainid) {
         params.domainid = this.domainid
       } else if (rawParams.domainid) {
@@ -385,7 +348,7 @@ export default {
         params.timezone = rawParams.timezone
       }
 
-      return api('createUser', {}, 'POST', params)
+      return postAPI('createUser', params)
     },
     async validateConfirmPassword (rule, value) {
       if (!value || value.length === 0) {

@@ -51,6 +51,7 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.script.Script2;
@@ -121,7 +122,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
             String hostname = url.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
             String ipmiIp = ia.getHostAddress();
-            String guid = UUID.nameUUIDFromBytes(ipmiIp.getBytes()).toString();
+            String guid = UuidUtils.nameUUIDFromBytes(ipmiIp.getBytes()).toString();
 
             String injectScript = "scripts/util/ipmi.py";
             String scriptPath = Script.findScript("", injectScript);

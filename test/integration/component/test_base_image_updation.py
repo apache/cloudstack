@@ -537,7 +537,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                                             vm_with_reset.rootdeviceid
                                         )
 
-        self.debug("Creating recurring snapshot policy for root disk on vm created with IsVolatile=True")
+        self.debug("Creating recurring snapshot policy for root disk on Instance created with IsVolatile=True")
         self.debug("Snapshot Policy - Type : %s Scheduled Hours : %s" %(
             self.services["recurring_snapshot"]["intervaltype"],
             self.services["recurring_snapshot"]["schedule"]))
@@ -575,7 +575,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                         )
         sleep_seconds = (self.services["recurring_snapshot"]["schedule"]) * 3600 + 600
         sleep_minutes = sleep_seconds/60
-        self.debug("Sleeping for %s minutes till the volume is snapshoted" %sleep_minutes)
+        self.debug("Sleeping for %s minutes till the volume is snapshotted" %sleep_minutes)
         time.sleep(sleep_seconds)
 
         retriesCount = self.services["retriesCount"]

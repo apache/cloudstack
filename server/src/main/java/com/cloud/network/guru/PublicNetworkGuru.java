@@ -18,6 +18,10 @@ package com.cloud.network.guru;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.dc.DataCenter;
@@ -74,7 +78,15 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     Ipv6Service ipv6Service;
     @Inject
-    NetworkModel networkModel;
+    protected NetworkModel networkModel;
+    @Inject
+    protected VpcDao vpcDao;
+    @Inject
+    protected VlanDetailsDao vlanDetailsDao;
+    @Inject
+    protected VpcOfferingDao vpcOfferingDao;
+    @Inject
+    protected VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Public};
 
@@ -217,7 +229,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         if (logger.isDebugEnabled()) {
-            logger.debug("public network deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIPv4Address());
+            logger.debug("Public Network deallocate Network: " + nic.getNetworkId() + ", IP: " + nic.getIPv4Address());
         }
 
         final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());

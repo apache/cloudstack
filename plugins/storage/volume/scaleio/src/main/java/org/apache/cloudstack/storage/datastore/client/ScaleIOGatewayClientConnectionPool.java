@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -76,11 +77,23 @@ public class ScaleIOGatewayClientConnectionPool {
         synchronized (gatewayClients) {
             client = gatewayClients.get(storagePoolId);
             if (client == null) {
-                final String url = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_ENDPOINT).getValue();
-                final String encryptedUsername = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_USERNAME).getValue();
-                final String username = DBEncryptionUtil.decrypt(encryptedUsername);
-                final String encryptedPassword = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_PASSWORD).getValue();
-                final String password = DBEncryptionUtil.decrypt(encryptedPassword);
+                String url = null;
+                StoragePoolDetailVO urlDetail  = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_ENDPOINT);
+                if (urlDetail != null) {
+                    url = urlDetail.getValue();
+                }
+                String username = null;
+                StoragePoolDetailVO encryptedUsernameDetail = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_USERNAME);
+                if (encryptedUsernameDetail != null) {
+                    final String encryptedUsername = encryptedUsernameDetail.getValue();
+                    username = DBEncryptionUtil.decrypt(encryptedUsername);
+                }
+                String password = null;
+                StoragePoolDetailVO encryptedPasswordDetail = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.GATEWAY_API_PASSWORD);
+                if (encryptedPasswordDetail != null) {
+                    final String encryptedPassword = encryptedPasswordDetail.getValue();
+                    password = DBEncryptionUtil.decrypt(encryptedPassword);
+                }
                 final int clientTimeout = StorageManager.STORAGE_POOL_CLIENT_TIMEOUT.valueIn(storagePoolId);
                 final int clientMaxConnections = StorageManager.STORAGE_POOL_CLIENT_MAX_CONNECTIONS.valueIn(storagePoolId);
 

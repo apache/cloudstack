@@ -21,10 +21,12 @@ import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.servlet.ServletConfig;
@@ -35,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -44,13 +47,14 @@ import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
+import org.apache.cloudstack.api.command.user.gui.theme.ListGuiThemesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
@@ -65,22 +69,51 @@ import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-
 import com.cloud.utils.HttpUtils;
-import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.HttpUtils.ApiSessionKeyCheckOption;
+import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component("apiServlet")
 public class ApiServlet extends HttpServlet {
     protected static Logger LOGGER = LogManager.getLogger(ApiServlet.class);
-    private final static List<String> s_clientAddressHeaders = Collections
-            .unmodifiableList(Arrays.asList("X-Forwarded-For",
-                    "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR", "Remote_Addr"));
+    private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
+    public static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
+    private static final HashSet<String> POST_REQUESTS_TO_DISABLE_LOGGING = new HashSet<>(Set.of(
+            "login",
+            "oauthlogin",
+            "createaccount",
+            "createuser",
+            "updateuser",
+            "forgotpassword",
+            "resetpassword",
+            "importrole",
+            "updaterolepermission",
+            "updateprojectrolepermission",
+            "createstoragepool",
+            "addhost",
+            "updatehostpassword",
+            "addcluster",
+            "addvmwaredc",
+            "configureoutofbandmanagement",
+            "uploadcustomcertificate",
+            "addciscovnmcresource",
+            "addnetscalerloadbalancer",
+            "createtungstenfabricprovider",
+            "addnsxcontroller",
+            "configtungstenfabricservice",
+            "createnetworkacl",
+            "updatenetworkaclitem",
+            "quotavalidateactivationrule",
+            "quotatariffupdate",
+            "listandswitchsamlaccount",
+            "uploadresourceicon"
+    ));
 
     @Inject
     ApiServerService apiServer;
@@ -196,11 +229,24 @@ public class ApiServlet extends HttpServlet {
 
         utf8Fixup(req, params);
 
+        final Object[] commandObj = params.get(ApiConstants.COMMAND);
+        final String command = commandObj == null ? null : (String) commandObj[0];
+
         // logging the request start and end in management log for easy debugging
         String reqStr = "";
         String cleanQueryString = StringUtils.cleanString(req.getQueryString());
         if (LOGGER.isDebugEnabled()) {
             reqStr = auditTrailSb.toString() + " " + cleanQueryString;
+            if (req.getMethod().equalsIgnoreCase("POST") && org.apache.commons.lang3.StringUtils.isNotBlank(command)) {
+                if (!POST_REQUESTS_TO_DISABLE_LOGGING.contains(command.toLowerCase()) && !reqParams.containsKey(ApiConstants.USER_DATA)) {
+                    String cleanParamsString = getCleanParamsString(reqParams);
+                    if (org.apache.commons.lang3.StringUtils.isNotBlank(cleanParamsString)) {
+                        reqStr += "\n" + cleanParamsString;
+                    }
+                } else {
+                    reqStr += " " + command;
+                }
+            }
             LOGGER.debug("===START=== " + reqStr);
         }
 
@@ -216,8 +262,6 @@ public class ApiServlet extends HttpServlet {
                 responseType = (String)responseTypeParam[0];
             }
 
-            final Object[] commandObj = params.get(ApiConstants.COMMAND);
-            final String command = commandObj == null ? null : (String) commandObj[0];
             final Object[] userObj = params.get(ApiConstants.USERNAME);
             String username = userObj == null ? null : (String)userObj[0];
             if (LOGGER.isTraceEnabled()) {
@@ -320,6 +364,19 @@ public class ApiServlet extends HttpServlet {
                 }
             }
 
+            if (apiServer.isPostRequestsAndTimestampsEnforced() && isStateChangingCommandNotUsingPOST(command, req.getMethod(), params)) {
+                String errorText = String.format("State changing command %s needs to be sent using POST request", command);
+                if (command.equalsIgnoreCase("updateConfiguration") && params.containsKey("name")) {
+                    errorText = String.format("Changes for configuration %s needs to be sent using POST request", params.get("name")[0]);
+                }
+                auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + errorText);
+                final String serializedResponse =
+                        apiServer.getSerializedApiError(new ServerApiException(ApiErrorCode.BAD_REQUEST, errorText), params,
+                                responseType);
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONcontentType.value());
+                return;
+            }
+
             Long userId = null;
             if (!isNew) {
                 userId = (Long)session.getAttribute("userid");
@@ -339,6 +396,8 @@ public class ApiServlet extends HttpServlet {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
             }
             setProjectContext(params);
+            setGuiThemeParameterIfApiCallIsUnauthenticated(userId, command, req, params);
+
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("verifying request for user %s from %s with %d parameters",
                         userId, remoteAddress.getHostAddress(), params.size()));
@@ -374,7 +433,7 @@ public class ApiServlet extends HttpServlet {
             LOGGER.error("unknown exception writing api response", ex);
             auditTrailSb.append(" unknown exception writing api response");
         } finally {
-            LOGGER.info(auditTrailSb.toString());
+            ACCESSLOGGER.info(auditTrailSb.toString());
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("===END=== " + reqStr);
             }
@@ -399,6 +458,19 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
+    private void setGuiThemeParameterIfApiCallIsUnauthenticated(Long userId, String command, HttpServletRequest req, Map<String, Object[]> params) {
+        String listGuiThemesApiName = ListGuiThemesCmd.class.getAnnotation(APICommand.class).name();
+
+        if (userId != null || !listGuiThemesApiName.equalsIgnoreCase(command)) {
+            return;
+        }
+
+        String serverName = req.getServerName();
+        LOGGER.info("Unauthenticated call to {} API, thus, the `commonName` parameter will be inferred as {}.", listGuiThemesApiName, serverName);
+        params.put(ApiConstants.COMMON_NAME, new String[]{serverName});
+    }
+
+
     private boolean checkIfAuthenticatorIsOf2FA(String command) {
         boolean verify2FA = false;
         APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
@@ -408,6 +480,34 @@ public class ApiServlet extends HttpServlet {
             verify2FA = false;
         }
         return verify2FA;
+    }
+
+    protected boolean isStateChangingCommandNotUsingPOST(String command, String method, Map<String, Object[]> params) {
+        if (BaseCmd.HTTPMethod.POST.toString().equalsIgnoreCase(method)) {
+            return false;
+        }
+        if (command == null || method == null) {
+            return true;
+        }
+        String commandHttpMethod = null;
+        try {
+            Class<?> cmdClass = apiServer.getCmdClass(command);
+            if (cmdClass != null) {
+                APICommand at = cmdClass.getAnnotation(APICommand.class);
+                if (at != null && org.apache.commons.lang3.StringUtils.isNotBlank(at.httpMethod())) {
+                    commandHttpMethod = at.httpMethod();
+                }
+            }
+        } catch (CloudRuntimeException e) {
+            LOGGER.trace("Command class not found for {}; falling back to pattern match", command, e);
+        }
+        if (BaseCmd.HTTPMethod.GET.toString().equalsIgnoreCase(commandHttpMethod) ||
+                GET_REQUEST_COMMANDS.matcher(command.toLowerCase()).matches()) {
+            return false;
+        }
+        return !command.equalsIgnoreCase("updateConfiguration") ||
+                !params.containsKey("name") ||
+                !ApiServer.EnforcePostRequestsAndTimestamps.key().equalsIgnoreCase(params.get("name")[0].toString());
     }
 
     protected boolean skip2FAcheckForAPIs(String command) {
@@ -595,38 +695,34 @@ public class ApiServlet extends HttpServlet {
         }
         return false;
     }
-    boolean doUseForwardHeaders() {
+    static boolean doUseForwardHeaders() {
         return Boolean.TRUE.equals(ApiServer.useForwardHeader.value());
     }
 
-    String[] proxyNets() {
+    static String[] proxyNets() {
         return ApiServer.proxyForwardList.value().split(",");
     }
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    public InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
-        String ip = null;
-        InetAddress pretender = InetAddress.getByName(request.getRemoteAddr());
-        if(doUseForwardHeaders()) {
-            if (NetUtils.isIpInCidrList(pretender, proxyNets())) {
+    public static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
+        final String remote = request.getRemoteAddr();
+        if (doUseForwardHeaders()) {
+            final InetAddress remoteAddr = InetAddress.getByName(remote);
+            if (NetUtils.isIpInCidrList(remoteAddr, proxyNets())) {
                 for (String header : getClientAddressHeaders()) {
                     header = header.trim();
-                    ip = getCorrectIPAddress(request.getHeader(header));
+                    final String ip = getCorrectIPAddress(request.getHeader(header));
                     if (StringUtils.isNotBlank(ip)) {
-                        LOGGER.debug(String.format("found ip %s in header %s ", ip, header));
-                        break;
+                        LOGGER.debug("found ip {} in header {}", ip, header);
+                        return InetAddress.getByName(ip);
                     }
-                } // no address found in header so ip is blank and use remote addr
-            } // else not an allowed proxy address, ip is blank and use remote addr
+                }
+            }
         }
-        if (StringUtils.isBlank(ip)) {
-            LOGGER.trace(String.format("no ip found in headers, returning remote address %s.", pretender.getHostAddress()));
-            return pretender;
-        }
-
-        return InetAddress.getByName(ip);
+        LOGGER.trace("no ip found in headers, returning remote address {}.", remote);
+        return InetAddress.getByName(remote);
     }
 
-    private String[] getClientAddressHeaders() {
+    private static String[] getClientAddressHeaders() {
         return ApiServer.listOfForwardHeaders.value().split(",");
     }
 
@@ -646,5 +742,46 @@ public class ApiServlet extends HttpServlet {
             }
         }
         return null;
+    }
+
+    private String getCleanParamsString(Map<String, String[]> reqParams) {
+        if (MapUtils.isEmpty(reqParams)) {
+            return "";
+        }
+
+        StringBuilder cleanParamsString = new StringBuilder();
+        for (Map.Entry<String, String[]> reqParam : reqParams.entrySet()) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(reqParam.getKey())) {
+                continue;
+            }
+
+            cleanParamsString.append(reqParam.getKey());
+            cleanParamsString.append("=");
+
+            if (reqParam.getKey().toLowerCase().contains("password")
+                    || reqParam.getKey().toLowerCase().contains("privatekey")
+                    || reqParam.getKey().toLowerCase().contains("accesskey")
+                    || reqParam.getKey().toLowerCase().contains("secretkey")) {
+                cleanParamsString.append("\n");
+                continue;
+            }
+
+            if (reqParam.getValue() == null || reqParam.getValue().length == 0) {
+                cleanParamsString.append("\n");
+                continue;
+            }
+
+            for (String param : reqParam.getValue()) {
+                if (org.apache.commons.lang3.StringUtils.isBlank(param)) {
+                    continue;
+                }
+                String cleanParamString = StringUtils.cleanString(param.trim());
+                cleanParamsString.append(cleanParamString);
+                cleanParamsString.append(" ");
+            }
+            cleanParamsString.append("\n");
+        }
+
+        return cleanParamsString.toString();
     }
 }

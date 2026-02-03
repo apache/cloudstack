@@ -113,6 +113,10 @@ store = common.createMockStore(state, actions, mutations)
 i18n = common.createMockI18n('en', mockData.messages)
 
 mocks = {
+  $config: {
+    showSearchFilters: true,
+    docBase: 'http://docs.cloudstack.apache.org/en/latest'
+  },
   $notifyError: jest.fn((error) => {
     return error
   }),
@@ -434,7 +438,6 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'listProjects',
             id: '111111111111111111111111111111111111',
@@ -576,16 +579,15 @@ describe('Views > AutogenView.vue', () => {
 
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
-          data: new URLSearchParams(),
-          method: 'GET',
-          params: {
+          data: common.createDataParams({
             command: 'testApiNameCase2',
+            response: 'json',
             listall: true,
             key: 'test-value',
             page: 1,
-            pagesize: 20,
-            response: 'json'
-          },
+            pagesize: 20
+          }),
+          method: 'POST',
           url: '/'
         })
 
@@ -604,16 +606,15 @@ describe('Views > AutogenView.vue', () => {
 
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
-          data: new URLSearchParams(),
-          method: 'GET',
-          params: {
+          data: common.createDataParams({
             command: 'testApiNameCase3',
+            response: 'json',
             listall: true,
             key: 'test-value',
             page: 1,
-            pagesize: 20,
-            response: 'json'
-          },
+            pagesize: 20
+          }),
+          method: 'POST',
           url: '/'
         })
         done()
@@ -655,28 +656,26 @@ describe('Views > AutogenView.vue', () => {
           testapinamecase1response: {
             count: 0,
             testapinamecase1: [{
-              id: 'test-id-1',
+              id: 'uuid1',
               name: 'test-name-1'
             }]
           }
         })
-        await router.push({ name: 'testRouter13', params: { id: 'test-id' } })
+        await router.push({ name: 'testRouter13', params: { id: 'uuid1' } })
         await flushPromises()
 
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
+            response: 'json',
             listall: true,
-            id: 'test-id',
-            hostname: 'test-id',
+            id: 'uuid1',
             page: 1,
-            pagesize: 20,
-            response: 'json'
-          }
+            pagesize: 20
+          })
         })
         done()
       })
@@ -781,6 +780,7 @@ describe('Views > AutogenView.vue', () => {
           testapinamecase1response: {
             count: 1,
             testapinamecase1: [{
+              id: 'uuid1',
               name: 'test-name-value',
               hostname: 'test-hostname-value'
             }]
@@ -790,13 +790,13 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         expect(wrapper.vm.items).toEqual([{
-          id: 'test-hostname-value',
+          id: 'uuid1',
           name: 'test-name-value',
           hostname: 'test-hostname-value',
           key: 0
         }])
         expect(wrapper.vm.resource).toEqual({
-          id: 'test-hostname-value',
+          id: 'uuid1',
           name: 'test-name-value',
           hostname: 'test-hostname-value',
           key: 0
@@ -1259,14 +1259,13 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
+            response: 'json',
             listall: true,
-            showicon: true,
-            response: 'json'
-          }
+            showicon: true
+          })
         })
         expect(param).toEqual({
           name: 'template',
@@ -1299,11 +1298,10 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'listTestApiNames',
-            listall: true,
-            response: 'json'
+            response: 'json',
+            listall: true
           }
         })
         expect(param).toEqual({
@@ -1354,15 +1352,14 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
+            response: 'json',
             listall: true,
             name: 'test-name-value',
-            showicon: true,
-            response: 'json'
-          }
+            showicon: true
+          })
         })
         expect(param).toEqual({
           name: 'template',
@@ -1398,12 +1395,11 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'listTemplates',
+            response: 'json',
             listall: true,
-            templatefilter: 'executable',
-            response: 'json'
+            templatefilter: 'executable'
           }
         })
         expect(param).toEqual({
@@ -1438,12 +1434,11 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'listIsos',
+            response: 'json',
             listall: true,
-            isofilter: 'executable',
-            response: 'json'
+            isofilter: 'executable'
           }
         })
         expect(param).toEqual({
@@ -1478,12 +1473,11 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'listHosts',
+            response: 'json',
             listall: true,
-            type: 'routing',
-            response: 'json'
+            type: 'routing'
           }
         })
         expect(param).toEqual({
@@ -1513,13 +1507,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
-            listall: true,
-            response: 'json'
-          }
+            response: 'json',
+            listall: true
+          })
         })
         expect(param).toEqual({
           name: 'id',
@@ -1556,11 +1549,10 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'queryAsyncJobResult',
-            jobId: 'test-job-id',
-            response: 'json'
+            response: 'json',
+            jobId: 'test-job-id'
           }
         })
         done()
@@ -1598,11 +1590,10 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'queryAsyncJobResult',
-            jobId: 'test-job-id',
-            response: 'json'
+            response: 'json',
+            jobId: 'test-job-id'
           }
         })
 
@@ -1635,11 +1626,10 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'GET',
-          data: new URLSearchParams(),
           params: {
             command: 'queryAsyncJobResult',
-            jobId: 'test-job-id',
-            response: 'json'
+            response: 'json',
+            jobId: 'test-job-id'
           }
         })
         done()
@@ -2382,13 +2372,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
-            id: 'test-resource-id',
-            response: 'json'
-          }
+            response: 'json',
+            id: 'test-resource-id'
+          })
         })
         done()
       })
@@ -2421,13 +2410,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
-            id: 'test-resource-id',
-            response: 'json'
-          }
+            response: 'json',
+            id: 'test-resource-id'
+          })
         })
         done()
       })
@@ -2459,13 +2447,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
-            column1: false,
-            response: 'json'
-          }
+            response: 'json',
+            column1: false
+          })
         })
         done()
       })
@@ -2497,13 +2484,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
-            column1: false,
-            response: 'json'
-          }
+            response: 'json',
+            column1: false
+          })
         })
         done()
       })
@@ -2535,13 +2521,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
-            column1: false,
-            response: 'json'
-          }
+            response: 'json',
+            column1: false
+          })
         })
         done()
       })
@@ -2573,12 +2558,11 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
             response: 'json'
-          }
+          })
         })
         done()
       })
@@ -2615,13 +2599,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
-            column1: 'column-value2',
-            response: 'json'
-          }
+            response: 'json',
+            column1: 'column-value2'
+          })
         })
         done()
       })
@@ -2674,13 +2657,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
-            column1: 'test-id-2,test-id-3',
-            response: 'json'
-          }
+            response: 'json',
+            column1: 'test-id-2,test-id-3'
+          })
         })
         done()
       })
@@ -2713,13 +2695,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'createAccount',
-            account: 'test-account-value',
-            response: 'json'
-          }
+            response: 'json',
+            account: 'test-account-value'
+          })
         })
         done()
       })
@@ -2752,13 +2733,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'addAccountToProject',
-            keypair: 'test-keypair-value',
-            response: 'json'
-          }
+            response: 'json',
+            keypair: 'test-keypair-value'
+          })
         })
         done()
       })
@@ -2809,13 +2789,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
-            keypair: 'test-name-2',
-            response: 'json'
-          }
+            response: 'json',
+            keypair: 'test-name-2'
+          })
         })
         done()
       })
@@ -2848,13 +2827,12 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
-            column1: 'test-column-value',
-            response: 'json'
-          }
+            response: 'json',
+            column1: 'test-column-value'
+          })
         })
         done()
       })
@@ -2890,14 +2868,13 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
+            response: 'json',
             column1: 'test-column1-value',
-            column2: 'test-column2-value',
-            response: 'json'
-          }
+            column2: 'test-column2-value'
+          })
         })
         done()
       })
@@ -2939,14 +2916,13 @@ describe('Views > AutogenView.vue', () => {
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
-          method: 'GET',
-          data: new URLSearchParams(),
-          params: {
+          method: 'POST',
+          data: common.createDataParams({
             command: 'testApiNameCase1',
+            response: 'json',
             column1: 'test-column1-value',
-            column2: 'test-name-value',
-            response: 'json'
-          }
+            column2: 'test-name-value'
+          })
         })
         done()
       })
@@ -2966,6 +2942,8 @@ describe('Views > AutogenView.vue', () => {
         await wrapper.setData({
           showAction: true,
           currentAction: {
+            command: 'testApiNameCase1',
+            response: 'json',
             api: 'testApiNameCase1',
             label: 'label.name',
             params: [{ name: 'id', type: 'uuid' }],
@@ -2980,17 +2958,15 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         const postData = new URLSearchParams()
+        postData.append('command', 'testApiNameCase1')
+        postData.append('response', 'json')
         postData.append('id', 'test-id-value')
 
         expect(mockAxios).toHaveBeenCalled()
         expect(mockAxios).toHaveBeenLastCalledWith({
           url: '/',
           method: 'POST',
-          data: postData,
-          params: {
-            command: 'testApiNameCase1',
-            response: 'json'
-          }
+          data: postData
         })
         done()
       })

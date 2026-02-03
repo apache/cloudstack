@@ -21,7 +21,7 @@
       {{ name }}
     </template>
     <font-awesome-icon
-      :icon="['fab', logo]"
+      :icon="logo"
       :size="size"
       :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#666' }]"
       />
@@ -29,7 +29,10 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
+
+const CACHE_TTL_MS = 30_000
+const osTypeCache = new Map() // osId -> { ts, value?, promise? }
 
 export default {
   name: 'OsLogo',
@@ -45,81 +48,79 @@ export default {
     size: {
       type: String,
       default: 'lg'
+    },
+    useCache: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
-    return {
-      name: '',
-      osLogo: 'linux'
-    }
+    return { name: '', osLogo: ['fas', 'image'] }
   },
-  computed: {
-    logo: function () {
-      if (!this.name) {
-        this.fetchData()
-      }
-      return this.osLogo
-    }
-  },
+  computed: { logo () { return this.osLogo } },
+  mounted () { this.fetchData() },
   watch: {
-    osId: function () {
-      this.fetchData()
-    }
+    osId () { this.fetchData() },
+    osName () { this.fetchData() }
   },
   methods: {
+    async fetchOsTypeName (osId, useCache = this.useCache) {
+      const now = Date.now()
+      if (useCache) {
+        const cached = osTypeCache.get(osId)
+        if (cached?.value && (now - cached.ts) < CACHE_TTL_MS) return cached.value
+        if (cached?.promise) return cached.promise
+        const promise = getAPI('listOsTypes', { id: osId })
+          .then(json => {
+            const t = json?.listostypesresponse?.ostype
+            const name = t?.length
+              ? (t[0].description || t[0].osdisplayname || 'Linux')
+              : 'Linux'
+            osTypeCache.set(osId, { ts: Date.now(), value: name })
+            return name
+          })
+          .catch(e => { osTypeCache.delete(osId); throw e })
+        osTypeCache.set(osId, { ts: now, promise })
+        return promise
+      }
+      const json = await getAPI('listOsTypes', { id: osId })
+      const t = json?.listostypesresponse?.ostype
+      return t?.length ? (t[0].description || t[0].osdisplayname || 'Linux') : 'Linux'
+    },
     fetchData () {
       if (this.osName) {
         this.discoverOsLogo(this.osName)
-      } else if (this.osId) {
-        this.findOsName(this.osId)
+      } else if (this.osId && ('listOsTypes' in this.$store.getters.apis)) {
+        this.fetchOsTypeName(this.osId)
+          .then(this.discoverOsLogo)
+          .catch(() => this.discoverOsLogo('Linux'))
       }
-    },
-    findOsName (osId) {
-      if (!('listOsTypes' in this.$store.getters.apis)) {
-        return
-      }
-      this.name = 'linux'
-      api('listOsTypes', { id: osId }).then(json => {
-        if (json && json.listostypesresponse && json.listostypesresponse.ostype && json.listostypesresponse.ostype.length > 0) {
-          this.discoverOsLogo(json.listostypesresponse.ostype[0].description)
-        } else {
-          this.discoverOsLogo('Linux')
-        }
-      })
     },
     discoverOsLogo (name) {
       this.name = name
-      const osname = name.toLowerCase()
-      if (osname.includes('centos')) {
-        this.osLogo = 'centos'
-      } else if (osname.includes('debian')) {
-        this.osLogo = 'debian'
-      } else if (osname.includes('ubuntu')) {
-        this.osLogo = 'ubuntu'
-      } else if (osname.includes('suse')) {
-        this.osLogo = 'suse'
-      } else if (osname.includes('redhat')) {
-        this.osLogo = 'redhat'
-      } else if (osname.includes('fedora')) {
-        this.osLogo = 'fedora'
-      } else if (osname.includes('linux')) {
-        this.osLogo = 'linux'
-      } else if (osname.includes('bsd')) {
-        this.osLogo = 'freebsd'
-      } else if (osname.includes('apple')) {
-        this.osLogo = 'apple'
-      } else if (osname.includes('window') || osname.includes('dos')) {
-        this.osLogo = 'windows'
-      } else if (osname.includes('oracle')) {
-        this.osLogo = 'java'
-      } else {
-        this.osLogo = 'linux'
+      const osname = (name || '').toLowerCase()
+      const logos = [
+        { name: 'centos' },
+        { name: 'debian' },
+        { name: 'ubuntu' },
+        { name: 'suse' },
+        { name: 'redhat' },
+        { name: 'fedora' },
+        { name: 'linux' },
+        { name: 'bsd', alternate: 'freebsd' },
+        { name: 'apple' },
+        { name: 'macos', alternate: 'apple' },
+        { name: 'window', alternate: 'windows' },
+        { name: 'dos', alternate: 'windows' },
+        { name: 'oracle', alternate: 'java' }
+      ]
+      const match = logos.find(entry => osname.includes(entry.name))
+      if (match) {
+        this.osLogo = ['fab', match.alternate ? match.alternate : match.name]
+        return
       }
-      this.$emit('update-osname', this.name)
+      this.osLogo = ['fas', 'image']
     }
   }
 }
 </script>
-
-<style scoped>
-</style>

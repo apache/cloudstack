@@ -77,7 +77,7 @@ public class QuotaSummaryResponse extends BaseResponse {
     private String currency;
 
     @SerializedName("quotaenabled")
-    @Param(description = "if the account has the quota config enabled")
+    @Param(description = "If the account has the quota config enabled")
     private boolean quotaEnabled;
 
     @SerializedName("projectname")

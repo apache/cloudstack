@@ -24,22 +24,28 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class StringUtils extends org.apache.commons.lang3.StringUtils {
     private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-    private static Charset preferredACSCharset;
+    private static final Charset preferredACSCharset;
     private static final String UTF8 = "UTF-8";
 
     static {
         if (isUtf8Supported()) {
-            preferredACSCharset = Charset.forName(UTF8);
+            preferredACSCharset = StandardCharsets.UTF_8;
         } else {
             preferredACSCharset = Charset.defaultCharset();
         }
@@ -61,8 +67,8 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         if (tags != null) {
             final String[] tokens = tags.split(",");
             final StringBuilder t = new StringBuilder();
-            for (int i = 0; i < tokens.length; i++) {
-                t.append(tokens[i].trim()).append(",");
+            for (String token : tokens) {
+                t.append(token.trim()).append(",");
             }
             t.delete(t.length() - 1, t.length());
             tags = t.toString();
@@ -72,16 +78,16 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     }
 
     /**
-     * @param tags
+     * @param tags a {code}String{code} containing a list of comma separated tags
      * @return List of tags
      */
     public static List<String> csvTagsToList(final String tags) {
-        final List<String> tagsList = new ArrayList<String>();
+        final List<String> tagsList = new ArrayList<>();
 
         if (tags != null) {
             final String[] tokens = tags.split(",");
-            for (int i = 0; i < tokens.length; i++) {
-                tagsList.add(tokens[i].trim());
+            for (String token : tokens) {
+                tagsList.add(token.trim());
             }
         }
 
@@ -90,13 +96,13 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 
     /**
      * Converts a List of tags to a comma separated list
-     * @param tags
+     * @param tagsList List of tags to convert to a comma separated list in a {code}String{code}
      * @return String containing a comma separated list of tags
      */
 
     public static String listToCsvTags(final List<String> tagsList) {
         final StringBuilder tags = new StringBuilder();
-        if (tagsList.size() > 0) {
+        if (!tagsList.isEmpty()) {
             for (int i = 0; i < tagsList.size(); i++) {
                 tags.append(tagsList.get(i));
                 if (i != tagsList.size() - 1) {
@@ -106,22 +112,6 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         }
 
         return tags.toString();
-    }
-
-    public static String getExceptionStackInfo(final Throwable e) {
-        final StringBuffer sb = new StringBuffer();
-
-        sb.append(e.toString()).append("\n");
-        final StackTraceElement[] elemnents = e.getStackTrace();
-        for (final StackTraceElement element : elemnents) {
-            sb.append(element.getClassName()).append(".");
-            sb.append(element.getMethodName()).append("(");
-            sb.append(element.getFileName()).append(":");
-            sb.append(element.getLineNumber()).append(")");
-            sb.append("\n");
-        }
-
-        return sb.toString();
     }
 
     public static String unicodeEscape(final String s) {
@@ -146,24 +136,21 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
             return "*";
         }
 
-        final StringBuffer sb = new StringBuffer();
-        sb.append(password.charAt(0));
-        for (int i = 1; i < password.length(); i++) {
-            sb.append("*");
-        }
-
-        return sb.toString();
+        return password.charAt(0) +
+                "*".repeat(password.length() - 1);
     }
 
     // removes a password request param and it's value, also considering password is in query parameter value which has been url encoded
-    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?[^(&|%26)]*((p|P)assword|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]|$))");
+    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?[^(&|%26)]*(([pP])assword|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]|$))");
 
     // removes a password/accesskey/ property from a response json object
-    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"((p|P)assword|privatekey|accesskey|secretkey)\":\\s?\".*?\",?");
+    private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"(([pP])assword|privatekey|accesskey|secretkey)\":\\s?\".*?\",?");
 
-    private static final Pattern REGEX_PASSWORD_DETAILS = Pattern.compile("(&|%26)?details(\\[|%5B)\\d*(\\]|%5D)\\.key(=|%3D)((p|P)assword|accesskey|secretkey)(?=(%26|[&'\"]))");
+    private static final Pattern REGEX_PASSWORD_DETAILS = Pattern.compile("(&|%26)?details(\\[|%5B)\\d*(\\]|%5D)\\.key(=|%3D)(([pP])assword|accesskey|secretkey)(?=(%26|[&'\"]))");
 
     private static final Pattern REGEX_PASSWORD_DETAILS_INDEX = Pattern.compile("details(\\[|%5B)\\d*(\\]|%5D)");
+
+    private static final Pattern REGEX_SESSION_KEY = Pattern.compile("sessionkey=[A-Za-z0-9_-]+");
 
     private static final Pattern REGEX_REDUNDANT_AND = Pattern.compile("(&|%26)(&|%26)+");
 
@@ -173,6 +160,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         if (stringToClean != null) {
             cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
             cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
+            cleanResult = REGEX_SESSION_KEY.matcher(cleanResult).replaceAll("");
             final Matcher detailsMatcher = REGEX_PASSWORD_DETAILS.matcher(cleanResult);
             while (detailsMatcher.find()) {
                 final Matcher detailsIndexMatcher = REGEX_PASSWORD_DETAILS_INDEX.matcher(detailsMatcher.group());
@@ -200,24 +188,20 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
             return true;
         }
 
-        if (tags1 != null && tags2 == null) {
-            return false;
-        }
-
-        if (tags1 == null && tags2 != null) {
+        if (tags1 == null ^ tags2 == null) {
             return false;
         }
 
         final String delimiter = ",";
 
-        final List<String> lstTags1 = new ArrayList<String>();
+        final List<String> lstTags1 = new ArrayList<>();
         final String[] aTags1 = tags1.split(delimiter);
 
         for (final String tag1 : aTags1) {
             lstTags1.add(tag1.toLowerCase());
         }
 
-        final List<String> lstTags2 = new ArrayList<String>();
+        final List<String> lstTags2 = new ArrayList<>();
         final String[] aTags2 = tags2.split(delimiter);
 
         for (final String tag2 : aTags2) {
@@ -228,7 +212,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     }
 
     public static Map<String, String> stringToMap(final String s) {
-        final Map<String, String> map = new HashMap<String, String>();
+        final Map<String, String> map = new HashMap<>();
         final String[] elements = s.split(";");
         for (final String parts : elements) {
             final String[] keyValue = parts.split(":");
@@ -238,14 +222,14 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     }
 
     public static String mapToString(final Map<String, String> map) {
-        String s = "";
+        StringBuilder s = new StringBuilder();
         for (final Map.Entry<String, String> entry : map.entrySet()) {
-            s += entry.getKey() + ":" + entry.getValue() + ";";
+            s.append(entry.getKey()).append(":").append(entry.getValue()).append(";");
         }
         if (s.length() > 0) {
-            s = s.substring(0, s.length() - 1);
+            s = new StringBuilder(s.substring(0, s.length() - 1));
         }
-        return s;
+        return s.toString();
     }
 
     public static <T> List<T> applyPagination(final List<T> originalList, final Long startIndex, final Long pageSizeVal) {
@@ -266,7 +250,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
     }
 
     private static <T> List<List<T>> partitionList(final List<T> originalList, final int chunkSize) {
-        final List<List<T>> listOfChunks = new ArrayList<List<T>>();
+        final List<List<T>> listOfChunks = new ArrayList<>();
         for (int i = 0; i < originalList.size() / chunkSize; i++) {
             listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize + chunkSize));
         }
@@ -294,14 +278,164 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         if (org.apache.commons.lang3.StringUtils.isNotBlank(jsonString)) {
             try {
                 JsonNode jsonNode = objectMapper.readTree(jsonString);
-                jsonNode.fields().forEachRemaining(entry -> {
-                    mapResult.put(entry.getKey(), entry.getValue().asText());
-                });
+                jsonNode.fields().forEachRemaining(entry -> mapResult.put(entry.getKey(), entry.getValue().asText()));
             } catch (Exception e) {
                 throw new CloudRuntimeException("Error while parsing json to convert it to map " + e.getMessage());
             }
         }
 
         return mapResult;
+    }
+
+    /**
+     * Converts the comma separated numbers to ranges for any consecutive numbers in the input with numbers (and ranges)
+     * Eg: "198,200-203,299,300,301,303,304,305,306,307,308,311,197" to "197-198,200-203,299-301,303-308,311"
+     * @param inputNumbersAndRanges
+     * @return String containing a converted ranges for any consecutive numbers
+     */
+    public static String numbersToRange(String inputNumbersAndRanges) {
+        Set<Integer> numberSet = new TreeSet<>();
+        for (String inputNumber : inputNumbersAndRanges.split(",")) {
+            inputNumber = inputNumber.trim();
+            if (inputNumber.contains("-")) {
+                String[] range = inputNumber.split("-");
+                if (range.length == 2 && range[0] != null && range[1] != null) {
+                    int start = NumbersUtil.parseInt(range[0], 0);
+                    int end = NumbersUtil.parseInt(range[1], 0);
+                    for (int i = start; i <= end; i++) {
+                        numberSet.add(i);
+                    }
+                }
+            } else {
+                numberSet.add(NumbersUtil.parseInt(inputNumber, 0));
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
+        if (!numberSet.isEmpty()) {
+            List<Integer> numbers = new ArrayList<>(numberSet);
+            int startNumber = numbers.get(0);
+            int endNumber = startNumber;
+
+            for (int i = 1; i < numbers.size(); i++) {
+                if (numbers.get(i) == endNumber + 1) {
+                    endNumber = numbers.get(i);
+                } else {
+                    appendRange(result, startNumber, endNumber);
+                    startNumber = endNumber = numbers.get(i);
+                }
+            }
+            appendRange(result, startNumber, endNumber);
+        }
+
+        return result.toString();
+    }
+
+    private static void appendRange(StringBuilder sb, int startNumber, int endNumber) {
+        if (sb.length() > 0) {
+            sb.append(",");
+        }
+        if (startNumber == endNumber) {
+            sb.append(startNumber);
+        } else {
+            sb.append(startNumber).append("-").append(endNumber);
+        }
+    }
+
+    /**
+     * Converts the comma separated numbers and ranges to numbers
+     * Eg: "197-198,200-203,299-301,303-308,311" to "197,198,200,201,202,203,299,300,301,303,304,305,306,307,308,311"
+     * @param inputNumbersAndRanges
+     * @return String containing a converted numbers
+     */
+    public static String rangeToNumbers(String inputNumbersAndRanges) {
+        Set<Integer> numberSet = new TreeSet<>();
+        for (String inputNumber : inputNumbersAndRanges.split(",")) {
+            inputNumber = inputNumber.trim();
+            if (inputNumber.contains("-")) {
+                String[] range = inputNumber.split("-");
+                int startNumber = Integer.parseInt(range[0]);
+                int endNumber = Integer.parseInt(range[1]);
+                for (int i = startNumber; i <= endNumber; i++) {
+                    numberSet.add(i);
+                }
+            } else {
+                numberSet.add(Integer.parseInt(inputNumber));
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (int number : numberSet) {
+            if (result.length() > 0) {
+                result.append(",");
+            }
+            result.append(number);
+        }
+
+        return result.toString();
+    }
+
+    public static String[] splitCommaSeparatedStrings(String... tags) {
+        StringBuilder sb = new StringBuilder();
+        for (String tag : tags) {
+            if (tag != null && !tag.isEmpty()) {
+                if (sb.length() > 0) {
+                    sb.append(",");
+                }
+                sb.append(tag);
+            }
+        }
+        String appendedTags = sb.toString();
+        String[] finalMergedTagsArray = appendedTags.split(",");
+        return finalMergedTagsArray;
+    }
+
+
+    /**
+     * Converts the comma separated numbers and ranges to numbers
+     * @param originalString the original string (can be null or empty) containing list of comma separated values that has to be updated
+     * @param value the value to add to, or remove from the original string
+     * @param add if true, adds the input value; if false, removes it
+     * @return String containing the modified original string (or null if empty)
+     */
+    public static String updateCommaSeparatedStringWithValue(String originalString, String value, boolean add) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(value)) {
+            return originalString;
+        }
+
+        Set<String> values = new LinkedHashSet<>();
+
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(originalString)) {
+            values.addAll(Arrays.stream(originalString.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList()));
+        }
+
+        if (add) {
+            values.add(value);
+        } else {
+            values.remove(value);
+        }
+
+        return values.isEmpty() ? null : String.join(",", values);
+    }
+
+    /**
+     * Returns the first value from a comma-separated string.
+     * @param inputString the input string (can be null or empty) containing list of comma separated values
+     * @return the first value, or null if none found
+     */
+    public static String getFirstValueFromCommaSeparatedString(String inputString) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(inputString)) {
+            return inputString;
+        }
+
+        String[] values = inputString.split(",");
+        if (values.length > 0) {
+            return values[0].trim();
+        }
+
+        return null;
     }
 }

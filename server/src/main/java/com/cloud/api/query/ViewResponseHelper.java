@@ -262,6 +262,15 @@ public class ViewResponseHelper {
         return new ArrayList<HostResponse>(vrDataList.values());
     }
 
+    public static List<HostResponse> createMinimalHostResponse(HostJoinVO... hosts) {
+        LinkedHashMap<Long, HostResponse> vrDataList = new LinkedHashMap<>();
+        for (HostJoinVO vr : hosts) {
+            HostResponse vrData = ApiDBUtils.newMinimalHostResponse(vr);
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<HostResponse>(vrDataList.values());
+    }
+
     public static List<HostForMigrationResponse> createHostForMigrationResponse(EnumSet<HostDetails> details, HostJoinVO... hosts) {
         LinkedHashMap<Long, HostForMigrationResponse> vrDataList = new LinkedHashMap<>();
         // Initialise the vrdatalist with the input data
@@ -324,6 +333,18 @@ public class ViewResponseHelper {
             } else {
                 // update tags
                 vrData = ApiDBUtils.fillStoragePoolDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<StoragePoolResponse>(vrDataList.values());
+    }
+
+    public static List<StoragePoolResponse> createMinimalStoragePoolResponse(StoragePoolJoinVO... pools) {
+        LinkedHashMap<Long, StoragePoolResponse> vrDataList = new LinkedHashMap<>();
+        for (StoragePoolJoinVO vr : pools) {
+            StoragePoolResponse vrData = vrDataList.get(vr.getId());
+            if (vrData == null) {
+                vrData = ApiDBUtils.newMinimalStoragePoolResponse(vr);
             }
             vrDataList.put(vr.getId(), vrData);
         }
@@ -450,6 +471,7 @@ public class ViewResponseHelper {
         resourceLimitMap.put(Resource.ResourceType.vpc, domainJoinVO.getVpcLimit());
         resourceLimitMap.put(Resource.ResourceType.cpu, domainJoinVO.getCpuLimit());
         resourceLimitMap.put(Resource.ResourceType.memory, domainJoinVO.getMemoryLimit());
+        resourceLimitMap.put(Resource.ResourceType.gpu, domainJoinVO.getGpuLimit());
         resourceLimitMap.put(Resource.ResourceType.primary_storage, domainJoinVO.getPrimaryStorageLimit());
         resourceLimitMap.put(Resource.ResourceType.secondary_storage, domainJoinVO.getSecondaryStorageLimit());
         resourceLimitMap.put(Resource.ResourceType.project, domainJoinVO.getProjectLimit());
@@ -469,6 +491,7 @@ public class ViewResponseHelper {
         domainJoinVO.setVpcLimit(resourceLimitMap.get(Resource.ResourceType.vpc));
         domainJoinVO.setCpuLimit(resourceLimitMap.get(Resource.ResourceType.cpu));
         domainJoinVO.setMemoryLimit(resourceLimitMap.get(Resource.ResourceType.memory));
+        domainJoinVO.setGpuLimit(resourceLimitMap.get(Resource.ResourceType.gpu));
         domainJoinVO.setPrimaryStorageLimit(resourceLimitMap.get(Resource.ResourceType.primary_storage));
         domainJoinVO.setSecondaryStorageLimit(resourceLimitMap.get(Resource.ResourceType.secondary_storage));
         domainJoinVO.setProjectLimit(resourceLimitMap.get(Resource.ResourceType.project));
@@ -491,6 +514,7 @@ public class ViewResponseHelper {
             Long vpcLimit = resourceLimitMap.get(Resource.ResourceType.vpc);
             Long cpuLimit = resourceLimitMap.get(Resource.ResourceType.cpu);
             Long memoryLimit = resourceLimitMap.get(Resource.ResourceType.memory);
+            Long gpuLimit = resourceLimitMap.get(Resource.ResourceType.gpu);
             Long primaryStorageLimit = resourceLimitMap.get(Resource.ResourceType.primary_storage);
             Long secondaryStorageLimit = resourceLimitMap.get(Resource.ResourceType.secondary_storage);
             Long projectLimit = resourceLimitMap.get(Resource.ResourceType.project);
@@ -534,6 +558,10 @@ public class ViewResponseHelper {
             if (memoryLimit == null) {
                 memoryLimit = parentDomainJoinVO.getMemoryLimit();
                 resourceLimitMap.put(Resource.ResourceType.memory, memoryLimit);
+            }
+            if (gpuLimit == null) {
+                gpuLimit = parentDomainJoinVO.getGpuLimit();
+                resourceLimitMap.put(Resource.ResourceType.gpu, gpuLimit);
             }
             if (primaryStorageLimit == null) {
                 primaryStorageLimit = parentDomainJoinVO.getPrimaryStorageLimit();
@@ -596,8 +624,16 @@ public class ViewResponseHelper {
 
     public static List<ZoneResponse> createDataCenterResponse(ResponseView view, Boolean showCapacities, Boolean showResourceImage, DataCenterJoinVO... dcs) {
         List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
-        for (DataCenterJoinVO vt : dcs){
+        for (DataCenterJoinVO vt : dcs) {
             respList.add(ApiDBUtils.newDataCenterResponse(view, vt, showCapacities, showResourceImage));
+        }
+        return respList;
+    }
+
+    public static List<ZoneResponse> createMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO... dcs) {
+        List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
+        for (DataCenterJoinVO vt : dcs) {
+            respList.add(ApiDBUtils.newMinimalDataCenterResponse(view, vt));
         }
         return respList;
     }

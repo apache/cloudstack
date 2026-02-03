@@ -41,6 +41,7 @@ SELECT
     `vm_template`.`guest_os_id` AS `guest_os_id`,
     `guest_os`.`uuid` AS `guest_os_uuid`,
     `guest_os`.`display_name` AS `guest_os_name`,
+    `guest_os`.`category_id` AS `guest_os_category_id`,
     `vm_template`.`bootable` AS `bootable`,
     `vm_template`.`prepopulate` AS `prepopulate`,
     `vm_template`.`cross_zones` AS `cross_zones`,
@@ -100,11 +101,15 @@ SELECT
            IFNULL(`data_center`.`id`, 0)) AS `temp_zone_pair`,
     `vm_template`.`direct_download` AS `direct_download`,
     `vm_template`.`deploy_as_is` AS `deploy_as_is`,
+    `vm_template`.`for_cks` AS `for_cks`,
     `user_data`.`id` AS `user_data_id`,
     `user_data`.`uuid` AS `user_data_uuid`,
     `user_data`.`name` AS `user_data_name`,
     `user_data`.`params` AS `user_data_params`,
-    `vm_template`.`user_data_link_policy` AS `user_data_policy`
+    `vm_template`.`user_data_link_policy` AS `user_data_policy`,
+    `extension`.`id` AS `extension_id`,
+    `extension`.`uuid` AS `extension_uuid`,
+    `extension`.`name` AS `extension_name`
 FROM
     (((((((((((((`vm_template`
         JOIN `guest_os` ON ((`guest_os`.`id` = `vm_template`.`guest_os_id`)))
@@ -127,6 +132,7 @@ FROM
             OR (`template_zone_ref`.`zone_id` = `data_center`.`id`))))
         LEFT JOIN `launch_permission` ON ((`launch_permission`.`template_id` = `vm_template`.`id`)))
         LEFT JOIN `user_data` ON ((`user_data`.`id` = `vm_template`.`user_data_id`))
+        LEFT JOIN `extension` ON ((`extension`.`id` = `vm_template`.`extension_id`))
         LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_template`.`id`)
         AND ((`resource_tags`.`resource_type` = 'Template')
             OR (`resource_tags`.`resource_type` = 'ISO')))));

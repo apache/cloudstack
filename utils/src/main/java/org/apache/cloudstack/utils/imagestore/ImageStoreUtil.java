@@ -55,7 +55,7 @@ public class ImageStoreUtil {
 
         // vmdk
         if ((output.contains("VMware") || output.contains("data")) && isCorrectExtension(uripath, "vmdk")) {
-            LOGGER.debug("File at path " + path + " looks like a vmware image :" + output);
+            LOGGER.debug("File at path " + path + " looks like a VMware image :" + output);
             return "";
         }
         // raw
@@ -86,7 +86,7 @@ public class ImageStoreUtil {
         }
 
         if ((output.startsWith("ISO 9660") || output.startsWith("DOS/MBR")) && isCorrectExtension(uripath, "iso")) {
-            LOGGER.debug("File at path " + path + " looks like an iso : " + output);
+            LOGGER.debug("File at path " + path + " looks like an ISO : " + output);
             return "";
         }
         return output;

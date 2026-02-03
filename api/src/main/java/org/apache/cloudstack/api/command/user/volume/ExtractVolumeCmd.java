@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.volume;
 
 
+import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -46,20 +47,20 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="the ID of the volume")
+            required=true, description = "The ID of the volume")
     private Long id;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, length = 2048, description = "the url to which the volume would be extracted")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, length = 2048, description = "The URL to which the volume would be extracted")
     private String url;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = true,
-               description = "the ID of the zone where the volume is located")
+               description = "The ID of the zone where the volume is located")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.MODE, type = CommandType.STRING, required = true, description = "the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
+    @Parameter(name = ApiConstants.MODE, type = CommandType.STRING, required = true, description = "The mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
     private String mode;
 
     /////////////////////////////////////////////////////
@@ -114,12 +115,15 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Extraction job";
+        String volumeId = this._uuidMgr.getUuid(Volume.class, getId());
+        String zoneId = this._uuidMgr.getUuid(DataCenter.class, getZoneId());
+
+        return String.format("Extracting volume: %s from zone: %s", volumeId, zoneId);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()));
+        CallContext.current().setEventDetails(getEventDescription());
         String uploadUrl = _volumeService.extractVolume(this);
         if (uploadUrl != null) {
             ExtractResponse response = _responseGenerator.createVolumeExtractResponse(id, zoneId, getEntityOwnerId(), mode, uploadUrl);

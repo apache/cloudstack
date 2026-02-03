@@ -17,6 +17,8 @@
 
 package com.cloud.network;
 
+import static com.cloud.network.Network.Service.SecurityGroup;
+
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -145,8 +147,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-import static com.cloud.network.Network.Service.SecurityGroup;
-
 public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
     public static final String UNABLE_TO_USE_NETWORK = "Unable to use network with id= %s, permission denied";
     @Inject
@@ -207,7 +207,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     DomainManager _domainMgr;
 
     @Inject
-    NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+    protected NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
@@ -494,7 +494,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public Map<Provider, ArrayList<PublicIpAddress>> getProviderToIpList(Network network, Map<PublicIpAddress, Set<Service>> ipToServices) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (!offering.isConserveMode() && !offering.isForNsx()) {
+        boolean isForNsx = isProviderForNetworkOffering(Provider.Nsx, offering.getId());
+        if (!offering.isConserveMode() && !isForNsx) {
             for (PublicIpAddress ip : ipToServices.keySet()) {
                 Set<Service> services = new HashSet<Service>();
                 services.addAll(ipToServices.get(ip));
@@ -593,22 +594,34 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public String getNextAvailableMacAddressInNetwork(long networkId) throws InsufficientAddressCapacityException {
         NetworkVO network = _networksDao.findById(networkId);
-        Integer zoneIdentifier = MACIdentifier.value();
-        if (zoneIdentifier.intValue() == 0) {
-            zoneIdentifier = Long.valueOf(network.getDataCenterId()).intValue();
+        if (network == null) {
+            throw new CloudRuntimeException("Could not find network with id " + networkId);
         }
+
+        Integer zoneMacIdentifier = Long.valueOf(getMacIdentifier(network.getDataCenterId())).intValue();
         String mac;
         do {
-            mac = _networksDao.getNextAvailableMacAddress(networkId, zoneIdentifier);
+            mac = _networksDao.getNextAvailableMacAddress(networkId, zoneMacIdentifier);
             if (mac == null) {
                 throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
             }
-        } while(! isMACUnique(mac));
+        } while (!isMACUnique(mac, networkId));
         return mac;
     }
 
-    private boolean isMACUnique(String mac) {
-        return (_nicDao.findByMacAddress(mac) == null);
+    @Override
+    public String getUniqueMacAddress(long macAddress, long networkId, long datacenterId) throws InsufficientAddressCapacityException {
+        String macAddressStr = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(macAddress, getMacIdentifier(datacenterId)));
+        if (!isMACUnique(macAddressStr, networkId)) {
+            macAddressStr = getNextAvailableMacAddressInNetwork(networkId);
+        }
+        return macAddressStr;
+    }
+
+    @Override
+    public boolean isMACUnique(String mac, long networkId) {
+        return (_nicDao.findByMacAddress(mac, networkId) == null);
+
     }
 
     @Override
@@ -796,7 +809,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         NetworkVO ret_network = null;
         for (NetworkVO nw : networks) {
             try {
-                checkAccountNetworkPermissions(account, nw);
+                checkNetworkPermissions(account, nw);
             } catch (PermissionDeniedException e) {
                 continue;
             }
@@ -1430,11 +1443,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return null;
         }
 
+        NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
         Long physicalNetworkId = null;
         if (effectiveTrafficType != TrafficType.Guest) {
             physicalNetworkId = getNonGuestNetworkPhysicalNetworkId(network, effectiveTrafficType);
         } else {
-            NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
             physicalNetworkId = network.getPhysicalNetworkId();
             if (physicalNetworkId == null) {
                 physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags(), offering.getTrafficType());
@@ -1447,6 +1460,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return null;
         }
 
+        if (offering != null && TrafficType.Guest.equals(offering.getTrafficType()) && offering.isSystemOnly()) {
+            // For private gateway, do not check the Guest traffic type
+            return _pNTrafficTypeDao.getNetworkTag(physicalNetworkId, null, hType);
+        }
         return _pNTrafficTypeDao.getNetworkTag(physicalNetworkId, effectiveTrafficType, hType);
     }
 
@@ -1631,7 +1648,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (!canIpUsedForService(publicIp, service, networkId)) {
             return false;
         }
-        if (!offering.isConserveMode() && !offering.isForNsx()) {
+        boolean isForNsx = isProviderForNetworkOffering(Provider.Nsx, offering.getId());
+        if (!offering.isConserveMode() && !isForNsx) {
             return canIpUsedForNonConserveService(publicIp, service);
         }
         return true;
@@ -2195,29 +2213,29 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (nic == null) {
             return null;
         }
-        NetworkVO network = _networksDao.findById(networkId);
-        Integer networkRate = getNetworkRate(network.getId(), vm.getId());
+        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+        return getNicProfile(vm, nic, dc);
+    }
 
+    @Override
+    public NicProfile getNicProfile(VirtualMachine vm, Nic nic, DataCenter dataCenter) {
+        NetworkVO network = _networksDao.findById(nic.getNetworkId());
+        Integer networkRate = getNetworkRate(network.getId(), vm.getId());
         NicProfile profile =
-            new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
-                vm.getHypervisorType(), network));
+                new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate,
+                        isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
         if (network.getTrafficType() == TrafficType.Public && network.getPublicMtu() != null) {
             profile.setMtu(network.getPublicMtu());
         }
         if (network.getTrafficType() == TrafficType.Guest && network.getPrivateMtu() != null) {
             profile.setMtu(network.getPrivateMtu());
         }
-
-        DataCenter dc = _dcDao.findById(network.getDataCenterId());
-
-        Pair<String, String> ip4Dns = getNetworkIp4Dns(network, dc);
+        Pair<String, String> ip4Dns = getNetworkIp4Dns(network, dataCenter);
         profile.setIPv4Dns1(ip4Dns.first());
         profile.setIPv4Dns2(ip4Dns.second());
-
-        Pair<String, String> ip6Dns = getNetworkIp6Dns(network, dc);
+        Pair<String, String> ip6Dns = getNetworkIp6Dns(network, dataCenter);
         profile.setIPv6Dns1(ip6Dns.first());
         profile.setIPv6Dns2(ip6Dns.second());
-
         return profile;
     }
 
@@ -2310,6 +2328,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
             if (capabilities != null && implementedProvider != null) {
                 for (Service service : capabilities.keySet()) {
+                    logger.info("Add provider {} and service {}", implementedProvider.getName(), service.getName());
                     if (s_serviceToImplementedProvidersMap.containsKey(service)) {
                         List<Provider> providers = s_serviceToImplementedProvidersMap.get(service);
                         providers.add(implementedProvider);
@@ -2580,7 +2599,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         // The active nics count (nics_count in op_networks table) might be wrong due to some reasons, should check the state of vms as well.
         // (nics for Starting VMs might not be allocated yet as Starting state also used when vm is being Created)
         if (_nicDao.countNicsForNonStoppedVms(networkId) > 0 || _nicDao.countNicsForNonStoppedRunningVrs(networkId) > 0) {
-            logger.debug("Network {} is not ready for GC as it has vms that are not Stopped at the moment", network);
+            logger.debug("Network {} is not ready for GC as it has Instances that are not Stopped at the moment", network);
             return false;
         }
 
@@ -2814,5 +2833,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             return networkWithSecurityGroup != null;
         }
         return false;
+    }
+
+    @Override
+    public long getMacIdentifier(Long dataCenterId) {
+        long macAddress = 0;
+        if (dataCenterId == null) {
+            macAddress = NetworkModel.MACIdentifier.value();
+        } else {
+            macAddress = NetworkModel.MACIdentifier.valueIn(dataCenterId);
+            if (macAddress == 0) {
+                macAddress = dataCenterId;
+            }
+        }
+        return macAddress;
     }
 }

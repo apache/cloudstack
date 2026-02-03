@@ -43,7 +43,7 @@
           v-model:value="form.displaytext"
           :placeholder="apiParams.displaytext.description" />
       </a-form-item>
-      <a-form-item ref="zoneid" name="zoneid">
+      <a-form-item v-if="resource.intervaltype" ref="zoneid" name="zoneid">
         <template #label>
           <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         </template>
@@ -73,42 +73,32 @@
           <template #label>
             <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.domainid"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="domainLoading"
+            api="listDomains"
+            :apiParams="domainsApiParams"
+            resourceType="domain"
+            optionValueKey="id"
+            optionLabelKey="path"
+            defaultIcon="block-outlined"
+            allowClear="true"
             :placeholder="apiParams.domainid.description"
-            @change="val => { handleDomainChange(val) }">
-            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description" :value="opt.id">
-              <span>
-                <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <block-outlined v-else style="margin-right: 5px" />
-                {{ opt.path || opt.name || opt.description }}
-              </span>
-            </a-select-option>
-          </a-select>
+            @change-option-value="handleDomainChange" />
         </a-form-item>
         <a-form-item name="account" ref="account" v-if="domainid">
           <template #label>
             <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.account"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="apiParams.account.description"
-            @change="val => { handleAccountChange(val) }">
-            <a-select-option v-for="(acc, index) in accounts" :value="acc.name" :key="index">
-              {{ acc.name }}
-            </a-select-option>
-          </a-select>
+            api="listAccounts"
+            :apiParams="accountsApiParams"
+            resourceType="account"
+            optionValueKey="name"
+            optionLabelKey="name"
+            defaultIcon="team-outlined"
+            allowClear="true"
+            :placeholder="apiParams.account.description" />
         </a-form-item>
 
       <a-form-item
@@ -129,41 +119,59 @@
           </a-select-option>
           </a-select>
       </a-form-item>
+      <a-form-item
+        name="arch"
+        ref="arch">
+        <template #label>
+          <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+        </template>
+        <a-select
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          v-model:value="form.arch"
+          :placeholder="apiParams.arch.description">
+          <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+            {{ opt.name || opt.description }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
       <a-row :gutter="12">
-        <a-col :md="24" :lg="24">
-          <a-form-item ref="groupenabled" name="groupenabled">
-            <a-checkbox-group
-              v-model:value="form.groupenabled"
-              style="width: 100%;"
-            >
-              <a-row>
-                <a-col :span="12">
-                  <a-checkbox value="passwordenabled">
-                    {{ $t('label.passwordenabled') }}
-                  </a-checkbox>
-                </a-col>
-                <a-col :span="12">
-                  <a-checkbox value="isdynamicallyscalable">
-                    {{ $t('label.isdynamicallyscalable') }}
-                  </a-checkbox>
-                </a-col>
-                <a-col :span="12">
-                  <a-checkbox value="requireshvm">
-                    {{ $t('label.requireshvm') }}
-                  </a-checkbox>
-                </a-col>
-                <a-col :span="12" v-if="isAdminRole">
-                  <a-checkbox value="isfeatured">
-                    {{ $t('label.isfeatured') }}
-                  </a-checkbox>
-                </a-col>
-                <a-col :span="12" v-if="isAdminRole || $store.getters.features.userpublictemplateenabled">
-                  <a-checkbox value="ispublic">
-                    {{ $t('label.ispublic') }}
-                  </a-checkbox>
-                </a-col>
-              </a-row>
-            </a-checkbox-group>
+        <a-col :md="24" :lg="12">
+          <a-form-item ref="isdynamicallyscalable" name="isdynamicallyscalable">
+            <template #label>
+              <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+            </template>
+            <a-switch v-model:checked="form.isdynamicallyscalable" />
+          </a-form-item>
+          <a-form-item ref="requireshvm" name="requireshvm">
+            <template #label>
+              <tooltip-label :title="$t('label.requireshvm')" :tooltip="apiParams.requireshvm.description"/>
+            </template>
+            <a-switch v-model:checked="form.requireshvm" />
+          </a-form-item>
+          <a-form-item ref="passwordenabled" name="passwordenabled">
+            <template #label>
+              <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
+            </template>
+            <a-switch v-model:checked="form.passwordenabled" />
+          </a-form-item>
+          <a-form-item
+            ref="ispublic"
+            name="ispublic"
+            v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
+            <template #label>
+              <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
+            </template>
+            <a-switch v-model:checked="form.ispublic" />
+          </a-form-item>
+          <a-form-item ref="isfeatured" name="isfeatured" v-if="$store.getters.userInfo.roletype === 'Admin'">
+              <template #label>
+                <tooltip-label :title="$t('label.isfeatured')" :tooltip="apiParams.isfeatured.description"/>
+              </template>
+              <a-switch v-model:checked="form.isfeatured" />
           </a-form-item>
         </a-col>
       </a-row>
@@ -177,17 +185,19 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
 
 export default {
   name: 'CreateTemplate',
   mixins: [mixinForm],
   components: {
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    InfiniteScrollSelect
   },
   props: {
     resource: {
@@ -201,16 +211,29 @@ export default {
       zones: [],
       osTypes: {},
       loading: false,
-      domains: [],
-      accounts: [],
-      domainLoading: false,
       domainid: null,
-      account: null
+      account: null,
+      architectureTypes: {}
     }
   },
   computed: {
     isAdminRole () {
       return this.$store.getters.userInfo.roletype === 'Admin'
+    },
+    domainsApiParams () {
+      return {
+        listall: true,
+        showicon: true,
+        details: 'min'
+      }
+    },
+    accountsApiParams () {
+      if (!this.domainid) {
+        return null
+      }
+      return {
+        domainid: this.domainid
+      }
     }
   },
   beforeCreate () {
@@ -234,16 +257,16 @@ export default {
     },
     fetchData () {
       this.fetchOsTypes()
-      this.fetchSnapshotZones()
-      if ('listDomains' in this.$store.getters.apis) {
-        this.fetchDomains()
+      if (this.resource.intervaltype) {
+        this.fetchSnapshotZones()
       }
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
     },
     fetchOsTypes () {
       this.osTypes.opts = []
       this.osTypes.loading = true
 
-      api('listOsTypes').then(json => {
+      getAPI('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
         this.defaultOsType = this.osTypes.opts[1].description
@@ -260,7 +283,7 @@ export default {
       } else {
         params.id = id
       }
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         this.zones = json.listzonesresponse.zone || []
         this.form.zoneid = this.zones[0].id || ''
       }).finally(() => {
@@ -274,7 +297,7 @@ export default {
         showunique: false,
         id: this.resource.id
       }
-      api('listSnapshots', params).then(json => {
+      getAPI('listSnapshots', params).then(json => {
         const snapshots = json.listsnapshotsresponse.snapshot || []
         for (const snapshot of snapshots) {
           if (!this.snapshotZoneIds.includes(snapshot.zoneid)) {
@@ -287,41 +310,16 @@ export default {
         }
       })
     },
-    fetchDomains () {
-      const params = {}
-      params.listAll = true
-      params.showicon = true
-      params.details = 'min'
-      this.domainLoading = true
-      api('listDomains', params).then(json => {
-        this.domains = json.listdomainsresponse.domain
-      }).finally(() => {
-        this.domainLoading = false
-        this.handleDomainChange(null)
-      })
-    },
-    handleDomainChange (domain) {
-      this.domainid = domain
+    handleDomainChange (domainId) {
+      this.domainid = domainId
       this.form.account = null
       this.account = null
-      if ('listAccounts' in this.$store.getters.apis) {
-        this.fetchAccounts()
-      }
     },
-    fetchAccounts () {
-      api('listAccounts', {
-        domainid: this.domainid
-      }).then(response => {
-        this.accounts = response.listaccountsresponse.account || []
-      }).catch(error => {
-        this.$notifyError(error)
-      })
-    },
-    handleAccountChange (acc) {
-      if (acc) {
-        this.account = acc.name
+    handleAccountChange (accountName) {
+      if (accountName) {
+        this.account = accountName
       } else {
-        this.account = acc
+        this.account = null
       }
     },
     handleSubmit (e) {
@@ -329,17 +327,22 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-        values.snapshotid = this.resource.id
-        if (values.groupenabled) {
-          const input = values.groupenabled
-          for (const index in input) {
-            const name = input[index]
-            values[name] = true
+        const params = {}
+        if (this.resource.intervaltype) {
+          params.snapshotid = this.resource.id
+        } else {
+          params.volumeid = this.resource.id
+        }
+
+        for (const key in values) {
+          const input = values[key]
+          if (input === undefined) {
+            continue
           }
-          delete values.groupenabled
+          params[key] = input
         }
         this.loading = true
-        api('createTemplate', values).then(response => {
+        postAPI('createTemplate', params).then(response => {
           this.$pollJob({
             jobId: response.createtemplateresponse.jobid,
             title: this.$t('message.success.create.template'),

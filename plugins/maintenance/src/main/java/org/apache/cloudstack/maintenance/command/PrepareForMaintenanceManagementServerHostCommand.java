@@ -20,17 +20,23 @@ package org.apache.cloudstack.maintenance.command;
 
 public class PrepareForMaintenanceManagementServerHostCommand extends BaseShutdownManagementServerHostCommand {
     String lbAlgorithm;
+    boolean forced;
 
     public PrepareForMaintenanceManagementServerHostCommand(long msId) {
         super(msId);
     }
 
-    public PrepareForMaintenanceManagementServerHostCommand(long msId, String lbAlgorithm) {
+    public PrepareForMaintenanceManagementServerHostCommand(long msId, String lbAlgorithm, boolean forced) {
         super(msId);
         this.lbAlgorithm = lbAlgorithm;
+        this.forced = forced;
     }
 
     public String getLbAlgorithm() {
         return lbAlgorithm;
+    }
+
+    public boolean isForced() {
+        return forced;
     }
 }

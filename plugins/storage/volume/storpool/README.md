@@ -1,3 +1,22 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # StorPool CloudStack Integration
 
 ## CloudStack Overview
@@ -39,7 +58,7 @@ independent parts:
   * ./src/com/... directory tree: agent related classes and commands send from management to agent
   * ./src/org/... directory tree: management related classes
 
-The plugin is intended to be self contained and non-intrusive, thus ideally deploying it would consist of only
+The plugin is intended to be self-contained and non-intrusive, thus ideally deploying it would consist of only
 dropping the jar file into the appropriate places. This is the reason why all StorPool related communication
 (ex. data copying, volume resize) is done with StorPool specific commands even when there is a CloudStack command
 that does pretty much the same.
@@ -183,7 +202,7 @@ This storage tag may be used later, when defining service or disk offerings.
   <td>takeSnapshot + copyAsync (S => S)</td>
 </tr>
 <tr>
-  <td>Create volume from snapshoot</td>
+  <td>Create volume from snapshot</td>
   <td>create volume from snapshot</td>
   <td>management + agent(?)</td>
   <td>copyAsync (S => V)</td>
@@ -279,7 +298,7 @@ In this case only snapshots won't be downloaded to secondary storage.
 
 #### If bypass option is enabled
 
-The snapshot exists only on PRIMARY (StorPool) storage. From this snapshot it will be created a template on SECONADRY.
+The snapshot exists only on PRIMARY (StorPool) storage. From this snapshot it will be created a template on SECONDARY.
 
 #### If bypass option is disabled
 
@@ -290,7 +309,7 @@ This is independent of StorPool as snapshots exist on secondary.
 ### Creating ROOT volume from templates
 
 When creating the first volume based on the given template, if snapshot of the template does not exists on StorPool it will be first downloaded (cached) to PRIMARY storage.
-This is mapped to a StorPool snapshot so, creating succecutive volumes from the same template does not incur additional
+This is mapped to a StorPool snapshot so, creating successive volumes from the same template does not incur additional
 copying of data to PRIMARY storage.
 
 This cached snapshot is garbage collected when the original template is deleted from CloudStack. This cleanup is done
@@ -340,8 +359,6 @@ Max IOPS are kept in StorPool's volumes with the help of custom service offering
 corresponding system disk offering.
 
 CloudStack has no way to specify max BW. Do they want to be able to specify max BW only is sufficient.
-
-================================================================================
 
 StorPool provides the ‘storpool_qos’ service ([QoS user guide](https://kb.storpool.com/storpool_misc/qos.html#storpool-qos-user-guide)) that tracks and configures the storage tier for all volumes based on a specifically provided `qc` tag specifying the storage tier for each volume.
 

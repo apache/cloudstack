@@ -35,7 +35,8 @@ import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 
-@APICommand(name = "quotaBalance", responseObject = QuotaStatementItemResponse.class, description = "Create a quota balance statement", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaBalance", responseObject = QuotaStatementItemResponse.class, description = "Create a quota balance statement", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        httpMethod = "GET")
 public class QuotaBalanceCmd extends BaseCmd {
 
 
@@ -56,7 +57,7 @@ public class QuotaBalanceCmd extends BaseCmd {
     private Date startDate;
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified Account")
     private Long accountId;
 
     @Inject

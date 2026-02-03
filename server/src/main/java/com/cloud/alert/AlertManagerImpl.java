@@ -36,23 +36,25 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
-import com.cloud.org.Cluster;
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
@@ -65,9 +67,11 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -81,13 +85,18 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
     protected Logger logger = LogManager.getLogger(AlertManagerImpl.class.getName());
@@ -98,37 +107,43 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private static final DecimalFormat DfWhole = new DecimalFormat("########");
 
     @Inject
-    private AlertDao _alertDao;
+    AlertDao _alertDao;
     @Inject
     protected StorageManager _storageMgr;
     @Inject
     protected CapacityManager _capacityMgr;
     @Inject
-    private CapacityDao _capacityDao;
+    CapacityDao _capacityDao;
     @Inject
-    private DataCenterDao _dcDao;
+    DataCenterDao _dcDao;
     @Inject
-    private HostPodDao _podDao;
+    HostPodDao _podDao;
     @Inject
-    private ClusterDao _clusterDao;
+    ClusterDao _clusterDao;
     @Inject
-    private IPAddressDao _publicIPAddressDao;
+    IPAddressDao _publicIPAddressDao;
     @Inject
-    private DataCenterIpAddressDao _privateIPAddressDao;
+    DataCenterIpAddressDao _privateIPAddressDao;
     @Inject
-    private PrimaryDataStoreDao _storagePoolDao;
+    PrimaryDataStoreDao _storagePoolDao;
     @Inject
-    private ConfigurationDao _configDao;
+    ConfigurationDao _configDao;
     @Inject
-    private ResourceManager _resourceMgr;
+    ResourceManager _resourceMgr;
     @Inject
-    private ConfigurationManager _configMgr;
+    ConfigurationManager _configMgr;
+    @Inject
+    protected BackupManager backupManager;
     @Inject
     protected ConfigDepot _configDepot;
+    @Inject
+    private ObjectStoreDao _objectStoreDao;
     @Inject
     Ipv6Service ipv6Service;
     @Inject
     HostDao hostDao;
+    @Inject
+    MessageBus messageBus;
 
     private Timer _timer = null;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // One hour by default.
@@ -138,13 +153,17 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private double _vlanCapacityThreshold = 0.75;
     private double _directNetworkPublicIpCapacityThreshold = 0.75;
     private double _localStorageCapacityThreshold = 0.75;
-    Map<Short, Double> _capacityTypeThresholdMap = new HashMap<Short, Double>();
+    private double _backupStorageCapacityThreshold = 0.75;
+    private double _objectStorageCapacityThreshold = 0.75;
+    Map<Short, Double> _capacityTypeThresholdMap = new HashMap<>();
 
     private final ExecutorService _executor;
 
     protected SMTPMailSender mailSender;
     protected String[] recipients = null;
     protected String senderAddress = null;
+
+    private final List<String> allowedRepetitiveAlertTypeNames = new ArrayList<>();
 
     public AlertManagerImpl() {
         _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Email-Alerts-Sender"));
@@ -180,6 +199,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         String vlanCapacityThreshold = _configDao.getValue(Config.VlanCapacityThreshold.key());
         String directNetworkPublicIpCapacityThreshold = _configDao.getValue(Config.DirectNetworkPublicIpCapacityThreshold.key());
         String localStorageCapacityThreshold = _configDao.getValue(Config.LocalStorageCapacityThreshold.key());
+        String backupStorageCapacityThreshold = _configDao.getValue(BackupManager.BackupStorageCapacityThreshold.key());
+        String objectStorageCapacityThreshold = _configDao.getValue(_storageMgr.ObjectStorageCapacityThreshold.key());
 
         if (publicIPCapacityThreshold != null) {
             _publicIPCapacityThreshold = Double.parseDouble(publicIPCapacityThreshold);
@@ -199,6 +220,12 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         if (localStorageCapacityThreshold != null) {
             _localStorageCapacityThreshold = Double.parseDouble(localStorageCapacityThreshold);
         }
+        if (backupStorageCapacityThreshold != null) {
+            _backupStorageCapacityThreshold = Double.parseDouble(backupStorageCapacityThreshold);
+        }
+        if (objectStorageCapacityThreshold != null) {
+            _objectStorageCapacityThreshold = Double.parseDouble(objectStorageCapacityThreshold);
+        }
 
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, _publicIPCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_PRIVATE_IP, _privateIPCapacityThreshold);
@@ -207,6 +234,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP, _directNetworkPublicIpCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_LOCAL_STORAGE, _localStorageCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET, Ipv6SubnetCapacityThreshold.value());
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_BACKUP_STORAGE, _backupStorageCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, _objectStorageCapacityThreshold);
 
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
@@ -215,10 +244,30 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 _capacityCheckPeriod = Long.parseLong(Config.CapacityCheckPeriod.getDefaultValue());
             }
         }
+        initMessageBusListener();
+        setupRepetitiveAlertTypes();
 
         _timer = new Timer("CapacityChecker");
 
         return true;
+    }
+
+    protected void setupRepetitiveAlertTypes() {
+        allowedRepetitiveAlertTypeNames.clear();
+        String allowedRepetitiveAlertsStr = AllowedRepetitiveAlertTypes.value();
+        logger.trace("Allowed repetitive alert types specified by {}: {} ", AllowedRepetitiveAlertTypes.key(),
+                allowedRepetitiveAlertsStr);
+        if (StringUtils.isBlank(allowedRepetitiveAlertsStr)) {
+            return;
+        }
+        String[] allowedRepetitiveAlertTypesArray = allowedRepetitiveAlertsStr.split(",");
+        for (String allowedTypeName : allowedRepetitiveAlertTypesArray) {
+            if (StringUtils.isBlank(allowedTypeName)) {
+                continue;
+            }
+            allowedRepetitiveAlertTypeNames.add(allowedTypeName.toLowerCase());
+        }
+        logger.trace("{} alert types specified for repetitive alerts", allowedRepetitiveAlertTypeNames.size());
     }
 
     @Override
@@ -301,13 +350,18 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 Math.min(CapacityManager.CapacityCalculateWorkers.value(), storagePoolIds.size())));
         for (Long poolId: storagePoolIds) {
             futures.put(poolId, executorService.submit(() -> {
-                final StoragePoolVO pool = _storagePoolDao.findById(poolId);
-                long disk = _capacityMgr.getAllocatedPoolCapacity(pool, null);
-                if (pool.isShared()) {
-                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
-                } else {
-                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
-                }
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        final StoragePoolVO pool = _storagePoolDao.findById(poolId);
+                        long disk = _capacityMgr.getAllocatedPoolCapacity(pool, null);
+                        if (pool.isShared()) {
+                            _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
+                        } else {
+                            _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
+                        }
+                    }
+                });
                 return null;
             }));
         }
@@ -402,18 +456,15 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private void createOrUpdateVlanCapacity(long dcId, AllocationState capacityState) {
 
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
-
-        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
-        capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
         capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, Capacity.CAPACITY_TYPE_VLAN);
-        capacities = _capacityDao.search(capacitySC, null);
+        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
         int totalVlans = _dcDao.countZoneVlans(dcId, false);
         int allocatedVlans = _dcDao.countZoneVlans(dcId, true);
 
         CapacityState vlanCapacityState = (capacityState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
-        if (capacities.size() == 0) {
+        if (capacities.isEmpty()) {
             CapacityVO newVlanCapacity = new CapacityVO(null, dcId, null, null, allocatedVlans, totalVlans, Capacity.CAPACITY_TYPE_VLAN);
             newVlanCapacity.setCapacityState(vlanCapacityState);
             _capacityDao.persist(newVlanCapacity);
@@ -430,16 +481,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     public void createOrUpdateIpCapacity(Long dcId, Long podId, short capacityType, AllocationState capacityState) {
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
-
-        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
-        capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("podId", SearchCriteria.Op.EQ, podId);
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
         capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
 
         int totalIPs;
         int allocatedIPs;
-        capacities = _capacityDao.search(capacitySC, null);
+        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
         if (capacityType == Capacity.CAPACITY_TYPE_PRIVATE_IP) {
             totalIPs = _privateIPAddressDao.countIPs(podId, dcId, false);
             allocatedIPs = _privateIPAddressDao.countIPs(podId, dcId, true);
@@ -452,7 +500,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
 
         CapacityState ipCapacityState = (capacityState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
-        if (capacities.size() == 0) {
+        if (capacities.isEmpty()) {
             CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, podId, null, allocatedIPs, totalIPs, capacityType);
             newPublicIPCapacity.setCapacityState(ipCapacityState);
             _capacityDao.persist(newPublicIPCapacity);
@@ -477,7 +525,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         int total = usedTotal.second();
         int allocated = usedTotal.first();
         CapacityState state = (capacityState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
-        if (capacities.size() == 0) {
+        if (capacities.isEmpty()) {
             CapacityVO capacityVO = new CapacityVO(null, dcId, null, null, allocated, total, capacityType);
             capacityVO.setCapacityState(state);
             _capacityDao.persist(capacityVO);
@@ -524,13 +572,14 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         // Generate Alerts for Zone Level capacities
         for (DataCenterVO dc : dataCenterList) {
             for (Short capacityType : dataCenterCapacityTypes) {
-                List<SummedCapacity> capacity = new ArrayList<SummedCapacity>();
-                capacity = _capacityDao.findCapacityBy(capacityType.intValue(), dc.getId(), null, null);
+                List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), dc.getId(), null, null);
 
-                if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
+                if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE ||
+                    capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE ||
+                    capacityType == Capacity.CAPACITY_TYPE_BACKUP_STORAGE) {
                     capacity.add(getUsedStats(capacityType, dc.getId(), null, null));
                 }
-                if (capacity == null || capacity.size() == 0) {
+                if (capacity == null || capacity.isEmpty()) {
                     continue;
                 }
                 double totalCapacity = capacity.get(0).getTotalCapacity();
@@ -545,7 +594,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         for (HostPodVO pod : podList) {
             for (Short capacityType : podCapacityTypes) {
                 List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), pod.getDataCenterId(), pod.getId(), null);
-                if (capacity == null || capacity.size() == 0) {
+                if (capacity == null || capacity.isEmpty()) {
                     continue;
                 }
                 double totalCapacity = capacity.get(0).getTotalCapacity();
@@ -559,11 +608,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         // Generate Alerts for Cluster Level capacities
         for (ClusterVO cluster : clusterList) {
             for (Short capacityType : clusterCapacityTypes) {
-                List<SummedCapacity> capacity = new ArrayList<SummedCapacity>();
-                capacity = _capacityDao.findCapacityBy(capacityType.intValue(), cluster.getDataCenterId(), null, cluster.getId());
+                List<SummedCapacity> capacity = _capacityDao.findCapacityBy(capacityType.intValue(), cluster.getDataCenterId(), null, cluster.getId());
 
                 // cpu and memory allocated capacity notification threshold can be defined at cluster level, so getting the value if they are defined at cluster level
-                double threshold = 0;
+                double threshold;
                 switch (capacityType) {
                 case Capacity.CAPACITY_TYPE_STORAGE:
                     capacity.add(getUsedStats(capacityType, cluster.getDataCenterId(), cluster.getPodId(), cluster.getId()));
@@ -581,7 +629,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 default:
                     threshold = _capacityTypeThresholdMap.get(capacityType);
                 }
-                if (capacity == null || capacity.size() == 0) {
+                if (capacity == null || capacity.isEmpty()) {
                     continue;
                 }
 
@@ -597,125 +645,113 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     private SummedCapacity getUsedStats(short capacityType, long zoneId, Long podId, Long clusterId) {
-        CapacityVO capacity;
+        CapacityVO capacity = null;
+
         if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
             capacity = _storageMgr.getSecondaryStorageUsedStats(null, zoneId);
-        } else {
+        } else if (capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
             capacity = _storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId);
+        } else if (capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE) {
+            capacity = _storageMgr.getObjectStorageUsedStats(zoneId);
+        } else if (capacityType == Capacity.CAPACITY_TYPE_BACKUP_STORAGE) {
+            capacity = (CapacityVO) backupManager.getBackupStorageUsedStats(zoneId);
         }
         if (capacity != null) {
             return new SummedCapacity(capacity.getUsedCapacity(), 0, capacity.getTotalCapacity(), capacityType, clusterId, podId);
         } else {
             return null;
         }
-
     }
 
     private void generateEmailAlert(DataCenterVO dc, HostPodVO pod, ClusterVO cluster, double totalCapacity, double usedCapacity, short capacityType) {
 
         String msgSubject = null;
         String msgContent = null;
-        String totalStr;
-        String usedStr;
-        String pctStr = formatPercent(usedCapacity / totalCapacity);
+        String percentual = formatPercent(usedCapacity / totalCapacity);
+        String totalInMB = formatBytesToMegabytes(totalCapacity);
+        String usedInMB = formatBytesToMegabytes(usedCapacity);
+        String totalInString = String.valueOf(totalCapacity);
+        String usedInString = String.valueOf(usedCapacity);
         AlertType alertType = null;
         Long podId = pod == null ? null : pod.getId();
         Long clusterId = cluster == null ? null : cluster.getId();
+        String clusterName = cluster == null ? null : cluster.getName();
+        String podName = pod == null ? null : pod.getName();
+        String dataCenterName = dc.getName();
 
         switch (capacityType) {
-
-        //Cluster Level
-        case Capacity.CAPACITY_TYPE_MEMORY:
-            msgSubject = "System Alert: Low Available Memory in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " + dc.getName();
-            totalStr = formatBytesToMegabytes(totalCapacity);
-            usedStr = formatBytesToMegabytes(usedCapacity);
-            msgContent = "System memory is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_MEMORY;
-            break;
-        case Capacity.CAPACITY_TYPE_CPU:
-            msgSubject = "System Alert: Low Unallocated CPU in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " + dc.getName();
-            totalStr = DfWhole.format(totalCapacity);
-            usedStr = DfWhole.format(usedCapacity);
-            msgContent = "Unallocated CPU is low, total: " + totalStr + " Mhz, used: " + usedStr + " Mhz (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_CPU;
-            break;
-        case Capacity.CAPACITY_TYPE_STORAGE:
-            msgSubject = "System Alert: Low Available Storage in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " + dc.getName();
-            totalStr = formatBytesToMegabytes(totalCapacity);
-            usedStr = formatBytesToMegabytes(usedCapacity);
-            msgContent = "Available storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_STORAGE;
-            break;
-        case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
-            msgSubject = "System Alert: Remaining unallocated Storage is low in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " +
-                    dc.getName();
-            totalStr = formatBytesToMegabytes(totalCapacity);
-            usedStr = formatBytesToMegabytes(usedCapacity);
-            msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_STORAGE_ALLOCATED;
-            break;
-        case Capacity.CAPACITY_TYPE_LOCAL_STORAGE:
-            msgSubject = "System Alert: Remaining unallocated Local Storage is low in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " +
-                    dc.getName();
-            totalStr = formatBytesToMegabytes(totalCapacity);
-            usedStr = formatBytesToMegabytes(usedCapacity);
-            msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_LOCAL_STORAGE;
-            break;
-
-            //Pod Level
-        case Capacity.CAPACITY_TYPE_PRIVATE_IP:
-            msgSubject = "System Alert: Number of unallocated private IPs is low in pod " + pod.getName() + " of availability zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated private IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_PRIVATE_IP;
-            break;
-
-            //Zone Level
-        case Capacity.CAPACITY_TYPE_SECONDARY_STORAGE:
-            msgSubject = "System Alert: Low Available Secondary Storage in availability zone " + dc.getName();
-            totalStr = formatBytesToMegabytes(totalCapacity);
-            usedStr = formatBytesToMegabytes(usedCapacity);
-            msgContent = "Available secondary storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_SECONDARY_STORAGE;
-            break;
-        case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP:
-            msgSubject = "System Alert: Number of unallocated virtual network public IPs is low in availability zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated public IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP;
-            break;
-        case Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP:
-            msgSubject = "System Alert: Number of unallocated shared network IPs is low in availability zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated shared network IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP;
-            break;
-        case Capacity.CAPACITY_TYPE_VLAN:
-            msgSubject = "System Alert: Number of unallocated VLANs is low in availability zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated VLANs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_VLAN;
-            break;
-        case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET:
-            msgSubject = "System Alert: Number of unallocated virtual network guest IPv6 subnets is low in availability zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated virtual network guest IPv6 subnets is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
-            break;
+            case Capacity.CAPACITY_TYPE_MEMORY:
+                msgSubject = String.format("System Alert: Low Available Memory in cluster [%s] pod [%s] of availability zone [%s].", clusterName, podName, dataCenterName);
+                msgContent = String.format("System memory is low, total: %s MB, used: %s MB (%s%%).", totalInMB, usedInMB, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_MEMORY;
+                break;
+            case Capacity.CAPACITY_TYPE_CPU:
+                msgSubject = String.format("System Alert: Low Unallocated CPU in cluster [%s] pod [%s] of availability zone [%s].", clusterName, podName, dataCenterName);
+                msgContent = String.format("Unallocated CPU is low, total: %s Mhz, used: %s Mhz (%s%%).", DfWhole.format(totalCapacity), DfWhole.format(usedCapacity), percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_CPU;
+                break;
+            case Capacity.CAPACITY_TYPE_STORAGE:
+                msgSubject = String.format("System Alert: Low Available Storage in cluster [%s] pod [%s] of availability zone [%s].", clusterName, podName, dataCenterName);
+                msgContent = String.format("Available storage space is low, total: %s MB, used: %s MB (%s%%).", totalInMB, usedInMB, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_STORAGE;
+                break;
+            case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
+                msgSubject = String.format("System Alert: Remaining unallocated Storage is low in cluster [%s] pod [%s] of availability zone [%s].", clusterName, podName,
+                        dataCenterName);
+                msgContent = String.format("Unallocated storage space is low, total: %s MB, allocated: %s MB (%s%%)", totalInMB, usedInMB, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_STORAGE_ALLOCATED;
+                break;
+            case Capacity.CAPACITY_TYPE_LOCAL_STORAGE:
+                msgSubject = String.format("System Alert: Remaining unallocated Local Storage is low in cluster [%s] pod [%s] of availability zone [%s].", clusterName, podName,
+                        dataCenterName);
+                msgContent = String.format("Unallocated storage space is low, total: %s MB, allocated: %s MB (%s%%)", totalInMB, usedInMB, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_LOCAL_STORAGE;
+                break;
+            case Capacity.CAPACITY_TYPE_PRIVATE_IP:
+                msgSubject = String.format("System Alert: Number of unallocated private IPs is low in pod %s of availability zone [%s].", podName, dataCenterName);
+                msgContent = String.format("Number of unallocated private IPs is low, total: %s, allocated: %s (%s%%)", totalInString, usedInString, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_PRIVATE_IP;
+                break;
+            case Capacity.CAPACITY_TYPE_SECONDARY_STORAGE:
+                msgSubject = String.format("System Alert: Low Available Secondary Storage in availability zone [%s].", dataCenterName);
+                msgContent = String.format("Available secondary storage space is low, total: %s MB, used: %s MB (%s%%).", totalInMB, usedInMB, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_SECONDARY_STORAGE;
+                break;
+            case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP:
+                msgSubject = String.format("System Alert: Number of unallocated virtual network public IPs is low in availability zone [%s].", dataCenterName);
+                msgContent = String.format("Number of unallocated public IPs is low, total: %s, allocated: %s (%s%%).", totalInString, usedInString, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP;
+                break;
+            case Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP:
+                msgSubject = String.format("System Alert: Number of unallocated shared network IPs is low in availability zone [%s].", dataCenterName);
+                msgContent = String.format("Number of unallocated shared network IPs is low, total: %s, allocated: %s (%s%%).", totalInString, usedInString, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP;
+                break;
+            case Capacity.CAPACITY_TYPE_VLAN:
+                msgSubject = String.format("System Alert: Number of unallocated VLANs is low in availability zone [%s].", dataCenterName);
+                msgContent = String.format("Number of unallocated VLANs is low, total: %s, allocated: %s (%s%%).", totalInString, usedInString, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_VLAN;
+                break;
+            case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET:
+                msgSubject = String.format("System Alert: Number of unallocated virtual network guest IPv6 subnets is low in availability zone [%s].", dc.getName());
+                msgContent = String.format("Number of unallocated virtual network guest IPv6 subnets is low, total: [%s], allocated: [%s] (%s%%).", totalInString, usedInString, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
+                break;
+            case Capacity.CAPACITY_TYPE_BACKUP_STORAGE:
+                msgSubject = "System Alert: Low Available Backup Storage in availability zone " + dc.getName();
+                msgContent = "Available backup storage space is low, total: " + totalInString + " MB, used: " + usedInString + " MB (" + percentual + "%)";
+                alertType = AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE;
+                break;
+            case Capacity.CAPACITY_TYPE_OBJECT_STORAGE:
+                msgSubject = "System Alert: Low Available Object Storage in availability zone " + dc.getName();
+                msgContent = "Available object storage space is low, total: " + totalInString + " MB, used: " + usedInString + " MB (" + percentual + "%)";
+                alertType = AlertManager.AlertType.ALERT_TYPE_OBJECT_STORAGE;
+                break;
         }
 
         try {
-            if (logger.isDebugEnabled()) {
-                logger.debug(msgSubject);
-                logger.debug(msgContent);
-            }
-            sendAlert(alertType, dc, pod, cluster, msgSubject, msgContent);
+            logger.debug("Sending alert with subject [{}] and content [{}].", msgSubject, msgContent);
+            sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
         } catch (Exception ex) {
             logger.error("Exception in CapacityChecker", ex);
         }
@@ -723,19 +759,21 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     private List<Short> getCapacityTypesAtZoneLevel() {
 
-        List<Short> dataCenterCapacityTypes = new ArrayList<Short>();
+        List<Short> dataCenterCapacityTypes = new ArrayList<>();
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VLAN);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET);
+        dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_OBJECT_STORAGE);
         return dataCenterCapacityTypes;
 
     }
 
     private List<Short> getCapacityTypesAtPodLevel() {
 
-        List<Short> podCapacityTypes = new ArrayList<Short>();
+        List<Short> podCapacityTypes = new ArrayList<>();
         podCapacityTypes.add(Capacity.CAPACITY_TYPE_PRIVATE_IP);
         return podCapacityTypes;
 
@@ -743,7 +781,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     private List<Short> getCapacityTypesAtClusterLevel() {
 
-        List<Short> clusterCapacityTypes = new ArrayList<Short>();
+        List<Short> clusterCapacityTypes = new ArrayList<>();
         clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_CPU);
         clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_MEMORY);
         clusterCapacityTypes.add(Capacity.CAPACITY_TYPE_STORAGE);
@@ -774,19 +812,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     public void sendAlert(AlertType alertType, DataCenter dataCenter, Pod pod, Cluster cluster, String subject, String content)
             throws MessagingException, UnsupportedEncodingException {
-        logger.warn(String.format("alertType=[%s] dataCenter=[%s] pod=[%s] cluster=[%s] message=[%s].", alertType, dataCenter, pod, cluster, subject));
-        AlertVO alert = null;
         Long clusterId = cluster == null ? null : cluster.getId();
         Long podId = pod == null ? null : pod.getId();
         long dcId = dataCenter == null ? 0L : dataCenter.getId();
-        if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) && (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) && (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) && (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE) && (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED) && (alertType != AlertManager.AlertType.ALERT_TYPE_OOBM_AUTH_ERROR)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_HA_ACTION) && (alertType != AlertManager.AlertType.ALERT_TYPE_CA_CERT)) {
-            alert = _alertDao.getLastAlert(alertType.getType(), dcId, podId, clusterId);
-        }
+        logger.warn(String.format("alertType=[%s] dataCenterId=[%s] podId=[%s] clusterId=[%s] message=[%s].", alertType, dcId, podId, clusterId, subject));
+        AlertVO alert = getAlertForTrivialAlertType(alertType, dcId, podId, clusterId);
 
         if (alert == null) {
             AlertVO newAlert = new AlertVO();
@@ -828,6 +858,15 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     }
 
+    @Nullable
+    private AlertVO getAlertForTrivialAlertType(AlertType alertType, long dataCenterId, Long podId, Long clusterId) {
+        if (alertType.isRepetitionAllowed() || (StringUtils.isNotBlank(alertType.getName()) &&
+                allowedRepetitiveAlertTypeNames.contains(alertType.getName().toLowerCase()))) {
+            return null;
+        }
+        return _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
+    }
+
     protected void sendMessage(SMTPMailProperties mailProps) {
         _executor.execute(new Runnable() {
             @Override
@@ -854,7 +893,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold, AlertSmtpEnabledSecurityProtocols,
-            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth};
+            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold, AlertSmtpUseAuth, AllowedRepetitiveAlertTypes};
     }
 
     @Override
@@ -867,5 +906,17 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
             return false;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void initMessageBusListener() {
+        messageBus.subscribe(EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, (senderAddress, subject, args) -> {
+            Ternary<String, ConfigKey.Scope, Long> updatedSetting = (Ternary<String, ConfigKey.Scope, Long>) args;
+            String updatedSettingName = updatedSetting.first();
+            if (!AllowedRepetitiveAlertTypes.key().equals(updatedSettingName)) {
+                return;
+            }
+            setupRepetitiveAlertTypes();
+        });
     }
 }

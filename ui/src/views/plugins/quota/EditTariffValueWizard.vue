@@ -58,7 +58,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import moment from 'moment'
 
 export default {
@@ -110,7 +110,7 @@ export default {
 
         this.loading = true
 
-        api('quotaTariffUpdate', {}, 'POST', params).then(json => {
+        postAPI('quotaTariffUpdate', params).then(json => {
           const tariffResponse = json.quotatariffupdateresponse.quotatariff || {}
           if (Object.keys(tariffResponse).length > 0) {
             const effectiveDate = moment(tariffResponse.effectiveDate).format(this.pattern)

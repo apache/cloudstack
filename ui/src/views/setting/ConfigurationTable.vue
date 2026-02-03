@@ -32,11 +32,15 @@
           <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
         </template>
         <template v-if="column.key === 'value'">
-          <ConfigurationValue :configrecord="record" />
+          <ConfigurationValue
+            :configrecord="record"
+            :resource="resource"
+            @refresh="handleConfigRefresh" />
         </template>
       </template>
     </a-table>
     <a-pagination
+      v-if="this.$route.meta.name === 'globalsetting'"
       class="config-row-element"
       style="margin-top: 10px"
       size="small"
@@ -84,6 +88,10 @@ export default {
     pagesize: {
       type: Number,
       default: 20
+    },
+    resource: {
+      type: Object,
+      required: false
     }
   },
   data () {
@@ -108,6 +116,9 @@ export default {
         return 'config-light-row'
       }
       return 'config-dark-row'
+    },
+    handleConfigRefresh (name, updatedRecord) {
+      this.$emit('refresh-config', name, updatedRecord)
     }
   }
 }

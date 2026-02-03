@@ -34,6 +34,7 @@ import org.apache.cloudstack.storage.datastore.api.SnapshotGroup;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
@@ -103,7 +104,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     public StrategyPriority canHandle(VMSnapshot vmSnapshot) {
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
         if (volumeTOs == null) {
-            throw new CloudRuntimeException("Failed to get the volumes for the vm snapshot: " + vmSnapshot.getUuid());
+            throw new CloudRuntimeException("Failed to get the volumes for the Instance Snapshot: " + vmSnapshot.getUuid());
         }
 
         if (!VMSnapshot.State.Allocated.equals(vmSnapshot.getState())) {
@@ -191,7 +192,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
                 SnapshotGroup snapshotGroup = client.takeSnapshot(srcVolumeDestSnapshotMap);
                 if (snapshotGroup == null) {
-                    throw new CloudRuntimeException("Failed to take VM snapshot on PowerFlex storage pool");
+                    throw new CloudRuntimeException("Failed to take Instance Snapshot on PowerFlex storage pool");
                 }
 
                 String snapshotGroupId = snapshotGroup.getSnapshotGroupId();
@@ -211,7 +212,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
 
                 finalizeCreate(vmSnapshotVO, volumeTOs);
                 result = true;
-                logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
+                logger.debug("Create Instance Snapshot " + vmSnapshot.getName() + " succeeded for Instance: " + userVm.getInstanceName());
 
                 long new_chain_size=0;
                 for (VolumeObjectTO volumeTo : volumeTOs) {
@@ -221,7 +222,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_ON_PRIMARY, vmSnapshot, userVm, new_chain_size - prev_chain_size, virtual_size);
                 return vmSnapshot;
             } catch (Exception e) {
-                String errMsg = "Unable to take vm snapshot due to: " + e.getMessage();
+                String errMsg = "Unable to take Instance Snapshot due to: " + e.getMessage();
                 logger.warn(errMsg, e);
                 throw new CloudRuntimeException(errMsg);
             }
@@ -230,11 +231,11 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
 
-                    String subject = "Take snapshot failed for VM: " + userVm.getDisplayName();
-                    String message = "Snapshot operation failed for VM: " + userVm.getDisplayName() + ", Please check and delete if any stale volumes created with VM snapshot id: " + vmSnapshot.getVmId();
+                    String subject = "Take snapshot failed for Instance: " + userVm.getDisplayName();
+                    String message = "Snapshot operation failed for Instance: " + userVm.getDisplayName() + ", Please check and delete if any stale volumes created with Instance Snapshot id: " + vmSnapshot.getVmId();
                     alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_VM_SNAPSHOT, userVm.getDataCenterId(), userVm.getPodIdToDeployIn(), subject, message);
                 } catch (NoTransitionException e1) {
-                    logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -271,7 +272,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 }
             });
         } catch (Exception e) {
-            String errMsg = "Error while finalize create vm snapshot: " + vmSnapshot.getName() + " due to " + e.getMessage();
+            String errMsg = "Error while finalize create Instance Snapshot: " + vmSnapshot.getName() + " due to " + e.getMessage();
             logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         }
@@ -301,15 +302,19 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 srcSnapshotDestVolumeMap.put(srcSnapshotVolumeId, destVolumeId);
             }
 
-            String systemId = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+            String systemId = null;
+            StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+            if (systemIdDetail != null) {
+                systemId = systemIdDetail.getValue();
+            }
             if (systemId == null) {
-                throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool for reverting VM snapshot: " + vmSnapshot.getName());
+                throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool for reverting Instance Snapshot: " + vmSnapshot.getName());
             }
 
             final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
             result = client.revertSnapshot(systemId, srcSnapshotDestVolumeMap);
             if (!result) {
-                throw new CloudRuntimeException("Failed to revert VM snapshot on PowerFlex storage pool");
+                throw new CloudRuntimeException("Failed to revert Instance Snapshot on PowerFlex storage pool");
             }
 
             finalizeRevert(vmSnapshotVO, volumeTOs);
@@ -323,7 +328,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -359,7 +364,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 }
             });
         } catch (Exception e) {
-            String errMsg = "Error while finalize revert vm snapshot: " + vmSnapshot.getName() + " due to " + e.getMessage();
+            String errMsg = "Error while finalize revert Instance Snapshot: " + vmSnapshot.getName() + " due to " + e.getMessage();
             logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         }
@@ -373,30 +378,34 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
-            logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
-            throw new CloudRuntimeException("Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
+            logger.debug("Failed to change Instance Snapshot state with event ExpungeRequested");
+            throw new CloudRuntimeException("Failed to change Instance Snapshot state with event ExpungeRequested: " + e.getMessage());
         }
 
         try {
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
             StoragePoolVO storagePool = vmSnapshotHelper.getStoragePoolForVM(userVm);
-            String systemId = storagePoolDetailsDao.findDetail(storagePool.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+            String systemId = null;
+            StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(storagePool.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+            if (systemIdDetail != null) {
+                systemId = systemIdDetail.getValue();
+            }
             if (systemId == null) {
-                throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool for deleting VM snapshot: " + vmSnapshot.getName());
+                throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool for deleting Instance Snapshot: " + vmSnapshot.getName());
             }
 
             VMSnapshotDetailsVO vmSnapshotDetailsVO = vmSnapshotDetailsDao.findDetail(vmSnapshot.getId(), "SnapshotGroupId");
             if (vmSnapshotDetailsVO == null) {
-                throw new CloudRuntimeException("Failed to get snapshot group id for the VM snapshot: " + vmSnapshot.getName());
+                throw new CloudRuntimeException("Failed to get snapshot group id for the Instance Snapshot: " + vmSnapshot.getName());
             }
 
             String snapshotGroupId = vmSnapshotDetailsVO.getValue();
             final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
             int volumesDeleted = client.deleteSnapshotGroup(systemId, snapshotGroupId);
             if (volumesDeleted <= 0) {
-                throw new CloudRuntimeException("Failed to delete VM snapshot: " + vmSnapshot.getName());
+                throw new CloudRuntimeException("Failed to delete Instance Snapshot: " + vmSnapshot.getName());
             } else if (volumesDeleted != volumeTOs.size()) {
-                logger.warn("Unable to delete all volumes of the VM snapshot: " + vmSnapshot.getName());
+                logger.warn("Unable to delete all volumes of the Instance Snapshot: " + vmSnapshot.getName());
             }
 
             finalizeDelete(vmSnapshotVO, volumeTOs);
@@ -408,7 +417,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY, vmSnapshot, userVm, full_chain_size, 0L);
             return true;
         } catch (Exception e) {
-            String errMsg = "Unable to delete vm snapshot: " + vmSnapshot.getName() + " of vm " + userVm.getInstanceName() + " due to " + e.getMessage();
+            String errMsg = "Unable to delete Instance Snapshot: " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " due to " + e.getMessage();
             logger.warn(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         }
@@ -451,7 +460,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 }
             });
         } catch (Exception e) {
-            String errMsg = "Error while finalize delete vm snapshot: " + vmSnapshot.getName() + " due to " + e.getMessage();
+            String errMsg = "Error while finalize delete Instance Snapshot: " + vmSnapshot.getName() + " due to " + e.getMessage();
             logger.error(errMsg, e);
             throw new CloudRuntimeException(errMsg);
         }
@@ -462,8 +471,8 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
-            logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
-            throw new CloudRuntimeException("Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
+            logger.debug("Failed to change Instance Snapshot state with event ExpungeRequested");
+            throw new CloudRuntimeException("Failed to change Instance Snapshot state with event ExpungeRequested: " + e.getMessage());
         }
         UserVm userVm = userVmDao.findById(vmSnapshot.getVmId());
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
@@ -477,6 +486,16 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY, vmSnapshot, userVm, full_chain_size, 0L);
         }
         return vmSnapshotDao.remove(vmSnapshot.getId());
+    }
+
+    @Override
+    public void updateOperationFailed(VMSnapshot vmSnapshot) throws NoTransitionException {
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+        } catch (NoTransitionException e) {
+            logger.debug("Failed to change vm snapshot state with event OperationFailed");
+            throw e;
+        }
     }
 
     private void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, VolumeObjectTO volumeTo) {

@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -136,6 +137,16 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setDomainId(offering.getDomainUuid());
         offeringResponse.setZone(offering.getZoneName());
         offeringResponse.setZoneId(offering.getZoneUuid());
+        offeringResponse.setGpuCardId(offering.getGpuCardUuid());
+        offeringResponse.setGpuCardName(offering.getGpuCardName());
+        offeringResponse.setVgpuProfileId(offering.getVgpuProfileUuid());
+        offeringResponse.setVgpuProfileName(offering.getVgpuProfileName());
+        offeringResponse.setVideoRam(offering.getVideoRam());
+        offeringResponse.setMaxHeads(offering.getMaxHeads());
+        offeringResponse.setMaxResolutionX(offering.getMaxResolutionX());
+        offeringResponse.setMaxResolutionY(offering.getMaxResolutionY());
+        offeringResponse.setGpuCount(offering.getGpuCount());
+        offeringResponse.setGpuDisplay(offering.getGpuDisplay());
         offeringResponse.setNetworkRate(offering.getRateMbps());
         offeringResponse.setHostTag(offering.getHostTag());
         offeringResponse.setDeploymentPlanner(offering.getDeploymentPlanner());
@@ -174,6 +185,11 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
             if (StringUtils.isNotBlank(purgeResource)) {
                 offeringResponse.setPurgeResources(Boolean.parseBoolean(purgeResource));
             }
+        }
+
+        if (VMLeaseManager.InstanceLeaseEnabled.value() && offering.getLeaseDuration() != null && offering.getLeaseDuration() > 0L) {
+            offeringResponse.setLeaseDuration(offering.getLeaseDuration());
+            offeringResponse.setLeaseExpiryAction(offering.getLeaseExpiryAction().name());
         }
 
         long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;

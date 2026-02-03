@@ -121,15 +121,20 @@
                   ref="domain"
                   name="domain"
                 >
-                  <a-auto-complete
+                  <infinite-scroll-select
                     v-model:value="form.domain"
-                    :options="domains"
+                    api="listDomains"
+                    :apiParams="domainsApiParams"
+                    resourceType="domain"
+                    optionValueKey="id"
+                    optionLabelKey="path"
+                    defaultIcon="block-outlined"
                     :placeholder="$t('label.domain')"
-                    :filter-option="filterOption"
+                    :defaultOption="{ id: null, path: ''}"
+                    :allowClear="true"
                     style="width: 100%;"
-                    @select="getAccounts"
-                    :dropdownMatchSelectWidth="false"
-                  />
+                    @change-option-value="handleDomainChange"
+                    @change-option="handleDomainOptionChange" />
                 </a-form-item>
               </a-col>
             </a-row>&nbsp;
@@ -150,15 +155,20 @@
               ref="account"
               name="account"
             >
-            <a-auto-complete
+              <infinite-scroll-select
                 v-model:value="form.account"
-                :options="accounts"
+                api="listAccounts"
+                :apiParams="accountsApiParams"
+                resourceType="account"
+                optionValueKey="id"
+                optionLabelKey="name"
+                defaultIcon="team-outlined"
                 :placeholder="$t('label.account')"
-                :filter-option="filterOption"
                 :disabled="form.isRecursive"
-                :dropdownMatchSelectWidth="false"
-                @select="selectAccount"
-              />
+                :defaultOption="{ id: null, name: ''}"
+                allowClear="true"
+                @change-option-value="selectAccount"
+                @change-option="selectAccountOption" />
             </a-form-item>
           </a-col>
           <a-col :span="3" v-if="'listUsageTypes' in $store.getters.apis">
@@ -351,7 +361,7 @@ import { ref, reactive, toRaw } from 'vue'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import utc from 'dayjs/plugin/utc'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { toCsv } from '@/utils/util.js'
 import { mixinForm } from '@/utils/mixin'
 
@@ -361,6 +371,7 @@ import ListView from '@/components/view/ListView'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import Status from '@/components/widgets/Status'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
 
 dayjs.extend(relativeTime)
 dayjs.extend(utc)
@@ -374,7 +385,8 @@ export default {
     ListView,
     Status,
     TooltipLabel,
-    TooltipButton
+    TooltipButton,
+    InfiniteScrollSelect
   },
   props: {
     resource: {
@@ -402,8 +414,6 @@ export default {
       page: 1,
       pageSize: 20,
       usageTypes: [],
-      domains: [],
-      accounts: [],
       account: null,
       domain: null,
       usageType: null,
@@ -436,6 +446,23 @@ export default {
     this.fetchData()
     this.updateColumns()
   },
+  computed: {
+    domainsApiParams () {
+      return {
+        listall: true
+      }
+    },
+    accountsApiParams () {
+      if (!this.form.domain) {
+        return {
+          listall: true
+        }
+      }
+      return {
+        domainid: this.form.domain
+      }
+    }
+  },
   methods: {
     clearFilters () {
       this.formRef.value.resetFields()
@@ -445,8 +472,6 @@ export default {
       this.usageType = null
       this.page = 1
       this.pageSize = 20
-
-      this.getAccounts()
     },
     disabledDate (current) {
       return current && current > dayjs().endOf('day')
@@ -473,8 +498,6 @@ export default {
       this.listUsageServerMetrics()
       this.getUsageTypes()
       this.getAllUsageRecordColumns()
-      this.getDomains()
-      this.getAccounts()
       if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
         this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
         this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] = this.selectedColumnKeys
@@ -509,7 +532,7 @@ export default {
       }
 
       this.serverMetricsLoading = true
-      api('listUsageServerMetrics').then(json => {
+      getAPI('listUsageServerMetrics').then(json => {
         this.stats = []
         if (json && json.listusageservermetricsresponse && json.listusageservermetricsresponse.usageMetrics) {
           this.serverStats = json.listusageservermetricsresponse.usageMetrics
@@ -528,16 +551,6 @@ export default {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
-    selectAccount (value, option) {
-      if (option && option.id) {
-        this.account = option
-      } else {
-        this.account = null
-        if (this.formRef?.value) {
-          this.formRef.value.resetFields('account')
-        }
-      }
-    },
     selectUsageType (value, option) {
       if (option && option.id) {
         this.usageType = option
@@ -548,24 +561,12 @@ export default {
         }
       }
     },
-    getDomains () {
-      api('listDomains', { listAll: true }).then(json => {
-        if (json && json.listdomainsresponse && json.listdomainsresponse.domain) {
-          this.domains = [{ id: null, value: '' }, ...json.listdomainsresponse.domain.map(x => {
-            return {
-              id: x.id,
-              value: x.path
-            }
-          })]
-        }
-      })
+    handleDomainChange (domainId) {
+      this.form.domain = domainId
+      this.form.account = null
     },
-    getAccounts (value, option) {
-      var params = {
-        listAll: true
-      }
+    handleDomainOptionChange (option) {
       if (option && option.id) {
-        params.domainid = option.id
         this.domain = option
       } else {
         this.domain = null
@@ -573,16 +574,19 @@ export default {
           this.formRef.value.resetFields('domain')
         }
       }
-      api('listAccounts', params).then(json => {
-        if (json && json.listaccountsresponse && json.listaccountsresponse.account) {
-          this.accounts = [{ id: null, value: '' }, ...json.listaccountsresponse.account.map(x => {
-            return {
-              id: x.id,
-              value: x.name
-            }
-          })]
+    },
+    selectAccount (accountId) {
+      this.form.account = accountId
+    },
+    selectAccountOption (option) {
+      if (option && option.id) {
+        this.account = option
+      } else {
+        this.account = null
+        if (this.formRef?.value) {
+          this.formRef.value.resetFields('account')
         }
-      })
+      }
     },
     getParams (page, pageSize) {
       const formRaw = toRaw(this.form)
@@ -626,7 +630,7 @@ export default {
         this.loading = false
         return
       }
-      api('listUsageRecords', params).then(json => {
+      getAPI('listUsageRecords', params).then(json => {
         if (json && json.listusagerecordsresponse) {
           this.usageRecords = json?.listusagerecordsresponse?.usagerecord || []
           this.totalUsageRecords = json?.listusagerecordsresponse?.count || 0
@@ -648,7 +652,7 @@ export default {
         return
       }
 
-      api('listUsageTypes').then(json => {
+      getAPI('listUsageTypes').then(json => {
         if (json && json.listusagetypesresponse && json.listusagetypesresponse.usagetype) {
           this.usageTypes = [{ id: null, value: '' }, ...json.listusagetypesresponse.usagetype.map(x => {
             return {
@@ -703,6 +707,7 @@ export default {
             title = this.$t('label.view')
             break
           case 'virtualmachinename':
+            title = this.$t('label.virtualmachinename')
             dataIndex = 'name'
             break
           default:
@@ -733,7 +738,7 @@ export default {
         this.downloadStatus = 'active'
         this.loading = true
         var params = this.getParams(1, 0) // to get count
-        api('listUsageRecords', params).then(json => {
+        getAPI('listUsageRecords', params).then(json => {
           if (Object.getOwnPropertyNames(json.listusagerecordsresponse).length === 0 || json.listusagerecordsresponse.count === 0) {
             this.$notifyError({
               response: { data: null },
@@ -786,7 +791,7 @@ export default {
     },
     fetchUsageRecords (params) {
       return new Promise((resolve, reject) => {
-        api('listUsageRecords', params).then(json => {
+        getAPI('listUsageRecords', params).then(json => {
           return resolve(json.listusagerecordsresponse.usagerecord)
         }).catch(error => {
           return reject(error)
@@ -794,7 +799,7 @@ export default {
       })
     },
     getAllUsageRecordColumns () {
-      api('listApis', { name: 'listUsageRecords' }).then(json => {
+      getAPI('listApis', { name: 'listUsageRecords' }).then(json => {
         if (json && json.listapisresponse && json.listapisresponse.api) {
           var apiResponse = json.listapisresponse.api.filter(x => x.name === 'listUsageRecords')[0].response
           this.usageRecordKeys = []
@@ -811,7 +816,7 @@ export default {
       return this.$toLocaleDate(dayjs(date))
     },
     generateUsageRecords () {
-      api('generateUsageRecords').then(json => {
+      postAPI('generateUsageRecords').then(json => {
         this.$message.success(this.$t('label.usage.records.generated'))
       }).catch(error => {
         this.$notifyError(error)
@@ -823,7 +828,7 @@ export default {
       var params = {
         interval: this.purgeDays
       }
-      api('removeRawUsageRecords', params).then(json => {
+      postAPI('removeRawUsageRecords', params).then(json => {
         this.$message.success(this.$t('label.purge.usage.records.success'))
       }).catch(error => {
         this.$message.error(this.$t('label.purge.usage.records.error') + ': ' + error.message)

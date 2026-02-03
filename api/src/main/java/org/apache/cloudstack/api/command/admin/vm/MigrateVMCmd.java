@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 
 import org.apache.cloudstack.api.APICommand;
@@ -44,7 +45,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "migrateVirtualMachine",
-        description = "Attempts Migration of a VM to a different host or Root volume of the vm to a different storage pool",
+        description = "Attempts Migration of an Instance to a different host or Root volume of the Instance to a different storage pool",
         responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true)
@@ -59,21 +60,21 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             type = CommandType.UUID,
             entityType = HostResponse.class,
             required = false,
-            description = "Destination Host ID to migrate VM to.")
+            description = "Destination Host ID to migrate Instance to.")
     private Long hostId;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "the ID of the virtual machine")
+            description = "The ID of the Instance")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.STORAGE_ID,
             type = CommandType.UUID,
             entityType = StoragePoolResponse.class,
             required = false,
-            description = "Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
+            description = "Destination storage pool ID to migrate Instance volumes to. Required for migrating the root disk volume")
     private Long storageId;
 
     @Parameter(name = ApiConstants.AUTO_SELECT,
@@ -125,11 +126,11 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         String eventDescription;
         if (getHostId() != null) {
-            eventDescription = String.format("Attempting to migrate VM id: %s to host Id: %s", getVirtualMachineId(), getHostId());
+            eventDescription = String.format("Attempting to migrate Instance id: %s to host Id: %s", getVirtualMachineId(), getHostId());
         } else if (getStoragePoolId() != null) {
-            eventDescription = String.format("Attempting to migrate VM id: %s to storage pool Id: %s", getVirtualMachineId(), getStoragePoolId());
+            eventDescription = String.format("Attempting to migrate Instance id: %s to storage pool Id: %s", getVirtualMachineId(), getStoragePoolId());
         } else {
-            eventDescription = String.format("Attempting to migrate VM id: %s", getVirtualMachineId());
+            eventDescription = String.format("Attempting to migrate Instance id: %s", getVirtualMachineId());
         }
         return eventDescription;
     }
@@ -142,7 +143,11 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
         UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
         if (userVm == null) {
-            throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId());
+            throw new InvalidParameterValueException("Unable to find the Instance by id=" + getVirtualMachineId());
+        }
+
+        if (Hypervisor.HypervisorType.External.equals(userVm.getHypervisorType())) {
+            throw new InvalidParameterValueException("Migrate VM instance operation is not allowed for External hypervisor type");
         }
 
         Host destinationHost = null;
@@ -151,18 +156,18 @@ public class MigrateVMCmd extends BaseAsyncCmd {
         if (getStoragePoolId() != null) {
             destStoragePool = _storageService.getStoragePool(getStoragePoolId());
             if (destStoragePool == null) {
-                throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
+                throw new InvalidParameterValueException("Unable to find the storage pool to migrate the Instance");
             }
             CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: " + getStoragePoolId());
         } else if (getHostId() != null) {
             destinationHost = _resourceService.getHost(getHostId());
             if (destinationHost == null) {
-                throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
+                throw new InvalidParameterValueException("Unable to find the host to migrate the Instance, host id=" + getHostId());
             }
             if (destinationHost.getType() != Host.Type.Routing) {
-                throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the VM, please specify another one");
+                throw new InvalidParameterValueException("The specified host(" + destinationHost.getName() + ") is not suitable to migrate the Instance, please specify another one");
             }
-            CallContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
+            CallContext.current().setEventDetails("Instance Id: " + getVirtualMachineId() + " to host Id: " + getHostId());
         } else if (! isAutoSelect()) {
             throw new InvalidParameterValueException("Please specify a host or storage as destination, or pass 'autoselect=true' to automatically select a destination host which do not require storage migration");
         }
@@ -179,7 +184,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vm");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate Instance");
             }
         } catch (ResourceUnavailableException ex) {
             logger.warn("Exception: ", ex);

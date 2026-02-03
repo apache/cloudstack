@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -37,7 +38,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeyCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
 
@@ -118,7 +119,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public String[] createApiKeyAndSecretKey(RegisterCmd arg0) {
+    public String[] createApiKeyAndSecretKey(RegisterUserKeyCmd arg0) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -232,6 +233,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public boolean isDomainAdmin(Long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isResourceDomainAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -460,7 +467,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
+    public Long finalizeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -482,6 +489,11 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException {
         // TODO Auto-generated method stub
     }
 
@@ -532,5 +544,9 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
         return null;
+    }
+
+    @Override
+    public void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount) {
     }
 }

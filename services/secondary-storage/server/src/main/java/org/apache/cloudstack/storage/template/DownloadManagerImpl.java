@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.ConvertSnapshotCommand;
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
@@ -85,6 +86,7 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
@@ -407,6 +409,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         String[] items = uri.getPath().split("/");
         name = items[items.length - 1];
+        name = name.replace(ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME, "");
         if (items.length < 2) {
             return name;
         }
@@ -545,7 +548,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         try {
             loc.create(dnld.getId(), true, dnld.getTmpltName());
         } catch (IOException e) {
-            logger.warn("Something is wrong with template location " + resourcePath, e);
+            logger.warn("Something is wrong with Template location " + resourcePath, e);
             loc.purge();
             return "Unable to download due to " + e.getMessage();
         }
@@ -593,7 +596,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         if (extension.equals("iso")) {
             templateName = jobs.get(jobId).getTmpltName().trim().replace(" ", "_");
         } else {
-            templateName = UUID.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
+            templateName = UuidUtils.nameUUIDFromBytes((jobs.get(jobId).getTmpltName() + System.currentTimeMillis()).getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
         }
         return templateName;
     }
@@ -629,7 +632,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         String checksum = newValue.toString();
         if (checksum == null) {
-            logger.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
+            logger.warn("Something wrong happened when try to calculate the checksum of downloaded Template!");
         }
         dnld.setCheckSum(checksum);
         return null;
@@ -1035,7 +1038,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             throw new CloudRuntimeException("Error while executing script " + script.toString());
         }
         result.addAll(zpp.getPaths());
-        logger.info("found " + zpp.getPaths().size() + " templates" + zpp.getPaths());
+        logger.info("Found " + zpp.getPaths().size() + " Templates" + zpp.getPaths());
         return result;
     }
 
@@ -1055,12 +1058,11 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             try {
                 if (!loc.load()) {
                     logger.warn("Post download installation was not completed for " + path);
-                    // loc.purge();
                     _storage.cleanup(path, templateDir);
                     continue;
                 }
             } catch (IOException e) {
-                logger.warn("Unable to load template location " + path, e);
+                logger.warn("Unable to load Template location " + path, e);
                 continue;
             }
 
@@ -1075,12 +1077,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     loc.updateVirtualSize(vSize);
                     loc.save();
                 } catch (Exception e) {
-                    logger.error("Unable to get the virtual size of the template: " + tInfo.getInstallPath() + " due to " + e.getMessage());
+                    logger.error("Unable to get the virtual size of the Template: " + tInfo.getInstallPath() + " due to " + e.getMessage());
                 }
             }
 
             result.put(tInfo.getTemplateName(), tInfo);
-            logger.debug("Added template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
+            logger.debug("Added Template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
         }
         return result;
     }
@@ -1101,7 +1103,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             try {
                 if (!loc.load()) {
                     logger.warn("Post download installation was not completed for " + path);
-                    // loc.purge();
                     _storage.cleanup(path, volumeDir);
                     continue;
                 }

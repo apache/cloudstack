@@ -40,8 +40,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = "quotaSummary", responseObject = QuotaSummaryResponse.class, description = "Lists accounts' balance summary.", since = "4.7.0",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaSummary", responseObject = QuotaSummaryResponse.class, description = "Lists Quota balance summary of Accounts.", since = "4.7.0",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, httpMethod = "GET")
 public class QuotaSummaryCmd extends BaseListCmd {
 
     @Inject
@@ -62,7 +62,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
 
     @Deprecated
     @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False (default) lists balance summary for account. True lists balance summary for " +
-            "accounts which the caller has access.")
+            "Accounts which the caller has access.")
     private Boolean listAll;
 
     @Parameter(name = ApiConstants.ACCOUNT_STATE_TO_SHOW, type = CommandType.STRING, description =  "Possible values are [ALL, ACTIVE, REMOVED]. ALL will list summaries for " +
@@ -71,7 +71,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
     private String accountStateToShow;
 
     @ACL
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Project Id for which balance will be listed. Can not be specified with accountId.", since = "4.21.0")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "ID of the project for which balance will be listed. Can not be specified with accountId.", since = "4.21.0")
     private Long projectId;
 
     @Override

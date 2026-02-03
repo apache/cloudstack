@@ -22,36 +22,27 @@ import org.apache.cloudstack.api.MetricConstants;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 
 import java.util.Date;
-import java.util.List;
 
 public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(MetricConstants.AVAILABLE_PROCESSORS)
-    @Param(description = "the number of processors available to the JVM")
+    @Param(description = "The number of processors available to the JVM")
     private Integer availableProcessors;
 
-    @SerializedName(MetricConstants.LAST_AGENTS)
-    @Param(description = "the last agents this Management Server is responsible for, before preparing for maintenance", since = "4.18.1")
-    private List<String> lastAgents;
-
-    @SerializedName(MetricConstants.AGENTS)
-    @Param(description = "the agents this Management Server is responsible for", since = "4.18.1")
-    private List<String> agents;
-
     @SerializedName(MetricConstants.AGENT_COUNT)
-    @Param(description = "the number of agents this Management Server is responsible for")
+    @Param(description = "The number of agents this Management Server is responsible for")
     private Integer agentCount;
 
     @SerializedName(MetricConstants.SESSIONS)
-    @Param(description = "the number of client sessions active on this Management Server")
+    @Param(description = "The number of client sessions active on this Management Server")
     private Long sessions;
 
     @SerializedName(MetricConstants.HEAP_MEMORY_USED)
-    @Param(description = "the amount of memory used by this Management Server")
+    @Param(description = "The amount of memory used by this Management Server")
     private Long heapMemoryUsed;
 
     @SerializedName(MetricConstants.HEAP_MEMORY_TOTAL)
-    @Param(description = "the amount of memory allocated to this Management Server")
+    @Param(description = "The amount of memory allocated to this Management Server")
     private Long heapMemoryTotal;
 
     @SerializedName(MetricConstants.THREADS_BLOCKED_COUNT)
@@ -95,47 +86,39 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     private String systemMemoryVirtualSize;
 
     @SerializedName(MetricConstants.logger_INFO)
-    @Param(description = "the log files and their usage on disk")
+    @Param(description = "The log files and their usage on disk")
     private String logInfo;
 
     @SerializedName(MetricConstants.SYSTEM_CYCLES)
-    @Param(description = "the total system cpu capacity")
+    @Param(description = "The total system cpu capacity")
     private Double systemTotalCpuCycles;
 
     @SerializedName(MetricConstants.SYSTEM_LOAD_AVERAGES)
-    @Param(description = "the load averages for 1 5 and 15 minutes")
+    @Param(description = "The load averages for 1 5 and 15 minutes")
     private double[] systemLoadAverages;
 
     @SerializedName(MetricConstants.SYSTEM_CYCLE_USAGE)
-    @Param(description = "the system load for user, and system processes and the system idle cycles")
+    @Param(description = "The system load for user, and system processes and the system idle cycles")
     private long[] systemCycleUsage;
 
     @SerializedName(MetricConstants.DATABASE_IS_LOCAL)
-    @Param(description = "the system is running against a local database")
+    @Param(description = "The system is running against a local database")
     private Boolean dbLocal;
 
     @SerializedName(MetricConstants.USAGE_IS_LOCAL)
-    @Param(description = "the system has a usage server running locally")
+    @Param(description = "The system has a usage server running locally")
     private Boolean usageLocal;
 
     @SerializedName(MetricConstants.CPULOAD)
-    @Param(description = "the current cpu load")
+    @Param(description = "The current cpu load")
     private String cpuLoad;
 
     @SerializedName(MetricConstants.COLLECTION_TIME)
-    @Param(description = "the time these statistics were collected")
+    @Param(description = "The time these statistics were collected")
     private Date collectionTime;
 
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
-    }
-
-    public void setLastAgents(List<String> lastAgents) {
-        this.lastAgents = lastAgents;
-    }
-
-    public void setAgents(List<String> agents) {
-        this.agents = agents;
     }
 
     public void setAgentCount(int agentCount) {

@@ -17,8 +17,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-about
-=====
+# about
 
 This document talks about the *evolving* continuous test infrastructure used to setup, deploy, configure and test Apache CloudStack. Information here is useful for anyone involved in build, test, continuous integration even operators of CloudStack.
 
@@ -72,7 +71,7 @@ systems - these are virtual/physical infrastructure mapped to cobbler profiles b
 
 When a new image needs to be added we create a 'distro' in cobbler and associate that with a profile's kickstart. Any new systems to be hooked-up to be serviced by the profile can then be added easily by cmd line.
 
-b. Puppet master - Cobbler reimages machines on-demand but it is upto puppet recipes to do configuration management within them. The configuration management is required for kvm hypervisors (kvm agent for eg:) and for the cloudstack management server which needs mysql, cloudstack, etc. The puppetmasterd daemon on the driver-vm is responsible for 'kicking' nodes to initiate configuration management on themselves when they come alive.
+b. Puppet master - Cobbler reimages machines on-demand, but it is upto puppet recipes to do configuration management within them. The configuration management is required for kvm hypervisors (kvm agent for eg:) and for the cloudstack management server which needs mysql, cloudstack, etc. The puppetmasterd daemon on the driver-vm is responsible for 'kicking' nodes to initiate configuration management on themselves when they come alive.
 
 So the driver-vm is also the repository of all the puppet recipes for various modules that need to be configured for the test infrastructure to work. The modules are placed in /etc/puppet and bear the same structure as our GitHub repo. When we need to affect a configuration change on any of our systems we only change the GitHub repo and the systems in place are affected upon next run.
 
@@ -80,7 +79,7 @@ c. dnsmasq - DNS is controlled by cobbler but its configuration of hosts is set 
 
 d. dhcp - DHCP is also done by dnsmasq. All configuration is in /etc/dnsmasq.conf. static mac-ip-name mappings are given for hypervisors while the virtual instances get dynamic ips
 
-e. ipmitool - ipmi for power management is setup on all the test servers and the ipmitool provides a convienient cli for booting the machines on the network into PXEing.
+e. ipmitool - ipmi for power management is setup on all the test servers and the ipmitool provides a convenient cli for booting the machines on the network into PXEing.
 
 f. jenkins-slave - jenkins slave.jar is placed on the driver-vm as a service in /etc/init.d to react to jenkins schedules and to post reports to. The slave runs in headless mode as the driver-vm does not run X.
 
@@ -96,22 +95,19 @@ b. multiple cluster
 c. inter-zone tests
 d. multi-pod tests
 
-marvin integration
-==================
+## marvin integration
 
-once cloudstack has been installed and the hypervisors prepared we are ready to use marvin to stitch together zones, pods, clusters and compute and storage to put together a 'cloud'.  once configured - we perform a cursory health check to see if we have all systemVMs running in all zones and that built-in templates are downloaded in all zones. Subsequently we are able to launch tests on this environment
+once cloudstack has been installed and the hypervisors prepared we are ready to use marvin to stitch together zones, pods, clusters and compute and storage to put together a 'cloud'.  once configured - we perform a cursory health check to see if we have all systemVMs running in all zones and that built-in templates are downloaded in all zones. Subsequently, we are able to launch tests on this environment
 
 Only the latest tests from git are run on the setup. This allows us to test in a pseudo-continuous fashion with a nightly build deployed on the environment. Each test run takes a few hours to finish.
 
-control via github
-==================
+## control via github
 
 there are two GitHub repositories controlling the test infrastructure.
 a. The puppet recipes at gh:acs-infra-test
 b. The gh:cloud-autodeploy repo that has the scripts to orchestrate the overall workflow
 
-workflow
-========
+## workflow
 
 When jenkins triggers the job following sequence of actions occur on the test infrastructure
 
@@ -121,7 +117,7 @@ When jenkins triggers the job following sequence of actions occur on the test in
 
 3. we fetch the last successful marvin build from builds.a.o and install it within this virtualenv. installing a new marvin on each run helps us test with the latest APIs available.
 
-4. we fetch the latest version of the driver script from github:cloud-autodeploy. fetching the latest allows us to make adjustments to the infra without having to copy scripts in to the test infrastrcuture.
+4. we fetch the latest version of the driver script from github:cloud-autodeploy. fetching the latest allows us to make adjustments to the infra without having to copy scripts in to the test infrastructure.
 
 5. based on the hypervisor chosen we choose a profile for cobbler to reimage the hosts in the infrastructure. if xen is chosen we bring up the profile of the latest xen kickstart available in cobbler. currently - this is at xen 6.0.2. if kvm is chosen we can pick between ubuntu and rhel based host OS  kickstarts.
 
@@ -149,11 +145,10 @@ The $distro argument chooses the hostOS of the mgmt server - this can be ubuntu 
 
 12. Tests are run using the nose test runner with the marvin plugin and reports are recorded by jenkins.
 
-limitations
-===========
+## limitations
 
-enhancements
-============
+## enhancements
+
 - packaging tests
 - puppetize the cobbler appliance
 - dogfooding
@@ -164,14 +159,12 @@ enhancements
 - external devices (LB, VPX, FW)
 - mcollective?
 
-future
-======
+## future
+
 - not everyone deploys cloudstack the same
 - multiple hv environments with multiple hv configurations
 - multiple storage configurations
 
-troubleshooting
-===============
+## troubleshooting
 
-acknowledgements
-================
+## acknowledgements
