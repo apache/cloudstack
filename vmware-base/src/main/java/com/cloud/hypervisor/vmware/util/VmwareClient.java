@@ -825,7 +825,7 @@ public class VmwareClient {
         return vCenterSessionTimeout;
     }
 
-    public boolean isTaskCancelable(ManagedObjectReference task) throws Exception {
+    public boolean isTaskCancellable(ManagedObjectReference task) throws Exception {
         TaskInfo info = (TaskInfo)(getDynamicProperty(task, "info"));
         if (info == null) {
             LOGGER.warn("Unable to get the task info for task: " + task.getValue());
@@ -849,8 +849,8 @@ public class VmwareClient {
     public Pair<Boolean, String> cancelTask(ManagedObjectReference task) throws Exception {
         TaskInfo info = (TaskInfo)(getDynamicProperty(task, "info"));
         if (info == null) {
-            LOGGER.warn("Unable to get the task info, so couldn't cancel the task");
-            return new Pair<>(false, "Unable to get the task info, so couldn't cancel the task");
+            LOGGER.warn("Unable to get the VM task info, so couldn't cancel the task");
+            return new Pair<>(false, "Unable to get the VM task info, so couldn't cancel the task");
         }
 
         String taskName = StringUtils.isNotBlank(info.getName()) ? info.getName() : "Unknown";
@@ -859,22 +859,22 @@ public class VmwareClient {
         String entityName = StringUtils.isNotBlank(info.getEntityName()) ? info.getEntityName() : "";
 
         if (info.getState().equals(TaskInfoState.SUCCESS)) {
-            LOGGER.debug(taskName + " task successfully completed for the entity " + entityName + ", can't cancel it");
-            return new Pair<>(false, "Task successfully completed for the entity " + entityName);
+            LOGGER.debug("VM task " + " successfully completed for the entity " + entityName + ", can't cancel it");
+            return new Pair<>(false, "VM task successfully completed for the entity " + entityName);
         }
 
         if (info.getState().equals(TaskInfoState.ERROR)) {
-            LOGGER.debug(taskName + " task execution failed for the entity " + entityName + ", can't cancel it");
-            return new Pair<>(false, "Task execution failed for the entity " + entityName);
+            LOGGER.debug("VM task " + taskName + " execution failed for the entity " + entityName + ", can't cancel it");
+            return new Pair<>(false, "VM task execution failed for the entity " + entityName);
         }
 
-        LOGGER.debug(taskName + " task pending for the entity " + entityName + ", trying to cancel");
+        LOGGER.debug("VM task " + taskName + " pending for the entity " + entityName + ", trying to cancel");
         if (!info.isCancelable()) {
-            LOGGER.warn(taskName + " task will continue to run on vCenter because it can't be cancelled");
-            return new Pair<>(false, "Task will continue to run because it can't be cancelled" + entityName);
+            LOGGER.warn("VM task " + taskName + " will continue to run on vCenter because it can't be cancelled");
+            return new Pair<>(false, "VM task will continue to run because it can't be cancelled" + entityName);
         }
 
-        LOGGER.debug("Cancelling task " + taskName + " of the entity " + entityName);
+        LOGGER.debug("Cancelling VM task " + taskName + " of the entity " + entityName);
         getService().cancelTask(task);
 
         // Since task cancellation is asynchronous, wait for the task to be cancelled
@@ -883,20 +883,20 @@ public class VmwareClient {
 
         if (result != null && result.length == 2) { //result for 2 properties: info.state, info.error
             if (result[0].equals(TaskInfoState.SUCCESS)) {
-                LOGGER.warn("Failed to cancel" + taskName + " task of the entity " + entityName + ", the task successfully completed");
-                return new Pair<>(false, "Task successfully completed for the entity " + entityName);
+                LOGGER.warn("Failed to cancel VM task " + taskName + " of the entity " + entityName + ", the task successfully completed");
+                return new Pair<>(false, "VM task successfully completed for the entity " + entityName);
             }
 
             if (result[1] instanceof LocalizedMethodFault) {
                 MethodFault fault = ((LocalizedMethodFault)result[1]).getFault();
                 if (fault instanceof RequestCanceled) {
-                    LOGGER.debug(taskName + " task of the entity " + entityName + " was successfully cancelled");
-                    return new Pair<>(true, "Successfully cancelled");
+                    LOGGER.debug("VM task " + taskName + " of the entity " + entityName + " was successfully cancelled");
+                    return new Pair<>(true, "VM task successfully cancelled");
                 }
             } else {
-                LOGGER.warn("Couldn't cancel " + taskName + " task of the entity " + entityName + " due to " + ((LocalizedMethodFault)result[1]).getLocalizedMessage());
+                LOGGER.warn("Couldn't cancel VM task " + taskName + " of the entity " + entityName + " due to " + ((LocalizedMethodFault)result[1]).getLocalizedMessage());
             }
         }
-        return new Pair<>(false, "Unable to cancel " + taskName + " of the entity " + entityName);
+        return new Pair<>(false, "Unable to cancel VM task " + taskName + " of the entity " + entityName);
     }
 }

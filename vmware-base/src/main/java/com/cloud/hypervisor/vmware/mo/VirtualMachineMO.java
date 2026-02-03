@@ -3997,9 +3997,13 @@ public class VirtualMachineMO extends BaseMO {
                 vmTasks++;
                 if (!(info.getState().equals(TaskInfoState.SUCCESS) || info.getState().equals(TaskInfoState.ERROR))) {
                     String taskName = StringUtils.isNotBlank(info.getName()) ? info.getName() : "Unknown";
-                    logger.debug(taskName + " task pending for the Instance: " + vmName + ", cancelling it");
-                    vmPendingTasks++;
-                    _context.getVimClient().cancelTask(task);
+                    if (_context.getVimClient().isTaskCancellable(task)) {
+                        logger.debug(taskName + " task pending for the Instance: " + vmName + ", cancelling it");
+                        vmPendingTasks++;
+                        _context.getVimClient().cancelTask(task);
+                    } else {
+                        logger.debug(taskName + " task pending for the Instance: " + vmName + ", but not cancellable");
+                    }
                 }
             }
         }

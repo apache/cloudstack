@@ -345,10 +345,7 @@ public class VmwareContext {
 
     public void waitForTaskProgressDone(ManagedObjectReference morTask) throws Exception {
         while (true) {
-            if (Thread.currentThread().isInterrupted()) {
-                Thread.currentThread().interrupt();
-                throw new InterruptedException("Task progress wait cancelled for task: " + morTask.getValue());
-            }
+            checkThreadInterrupted(morTask);
 
             TaskInfo tinfo = (TaskInfo)_vimClient.getDynamicProperty(morTask, "info");
             Integer progress = tinfo.getProgress();
@@ -358,11 +355,15 @@ public class VmwareContext {
             if (progress.intValue() >= 100)
                 break;
 
-            if (Thread.currentThread().isInterrupted()) {
-                Thread.currentThread().interrupt();
-                throw new InterruptedException("Task progress wait cancelled for task: " + morTask.getValue());
-            }
+            checkThreadInterrupted(morTask);
             Thread.sleep(1000);
+        }
+    }
+
+    private void checkThreadInterrupted(ManagedObjectReference morTask) throws InterruptedException {
+        if (Thread.currentThread().isInterrupted()) {
+            Thread.currentThread().interrupt();
+            throw new InterruptedException("Task progress wait cancelled for task: " + morTask.getValue());
         }
     }
 

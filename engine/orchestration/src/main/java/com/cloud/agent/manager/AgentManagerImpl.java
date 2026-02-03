@@ -63,6 +63,7 @@ import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
@@ -2109,7 +2110,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 if (sequence != null) {
                     try {
                         final AgentAttache agent = getAttache(sequence.first());
-                        agent.cancel(sequence.second());
+                        if (agent.isExecutionCancellable(sequence.second())) {
+                            agent.cancel(sequence.second());
+                            if (job.getStatus() != JobInfo.Status.CANCELLED) {
+                                job.setStatus(JobInfo.Status.CANCELLED);
+                                _asyncJobDao.update(job.getId(), job);
+                            }
+                        } else {
+                            logger.info("Job {} cancellation requested but sequence {} on host {} is not cancellable, allowing execution to continue.",
+                                    job.getId(), sequence.second(), sequence.first());
+                        }
                     } catch (AgentUnavailableException e) {
                         logger.debug("Agent {} not found", sequence.first());
                     }
