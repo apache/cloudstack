@@ -51,7 +51,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
     QuotaService quotaService;
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account for which balance will be listed. Can not be specified with projectId.", since = "4.21.0")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account for which balance will be listed. Can not be specified with projectId.", since = "4.23.0")
     private Long accountId;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Optional, Account Id for which statement needs to be generated")
@@ -60,18 +60,17 @@ public class QuotaSummaryCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
 
-    @Deprecated
-    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False (default) lists balance summary for account. True lists balance summary for " +
+    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False (default) lists the Quota balance summary for calling Account. True lists balance summary for " +
             "Accounts which the caller has access.")
     private Boolean listAll;
 
     @Parameter(name = ApiConstants.ACCOUNT_STATE_TO_SHOW, type = CommandType.STRING, description =  "Possible values are [ALL, ACTIVE, REMOVED]. ALL will list summaries for " +
             "active and removed accounts; ACTIVE will list summaries only for active accounts; REMOVED will list summaries only for removed accounts. The default value is ACTIVE.",
-            since = "4.21.0")
+            since = "4.23.0")
     private String accountStateToShow;
 
     @ACL
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "ID of the project for which balance will be listed. Can not be specified with accountId.", since = "4.21.0")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "ID of the project for which balance will be listed. Can not be specified with accountId.", since = "4.23.0")
     private Long projectId;
 
     @Override
@@ -136,6 +135,6 @@ public class QuotaSummaryCmd extends BaseListCmd {
         if (ObjectUtils.allNull(accountId, accountName, projectId)) {
             return -1;
         }
-        return quotaService.finalizeAccountId(accountId, accountName, domainId, projectId);
+        return _accountService.finalizeAccountId(accountId, accountName, domainId, projectId);
     }
 }

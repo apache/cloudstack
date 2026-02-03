@@ -16,16 +16,20 @@
 // under the License.
 package org.apache.cloudstack.quota;
 
+import org.apache.commons.lang3.StringUtils;
+
 public enum QuotaAccountStateFilter {
     ALL, ACTIVE, REMOVED;
 
     public static QuotaAccountStateFilter getValue(String value) {
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
         for (QuotaAccountStateFilter state : values()) {
             if (state.name().equalsIgnoreCase(value)) {
                 return state;
             }
         }
-
         return null;
     }
 }

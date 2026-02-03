@@ -56,6 +56,8 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -86,6 +88,7 @@ import org.apache.cloudstack.webhook.WebhookHelper;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -3504,6 +3507,48 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
         return null;
+    }
+
+    @Override
+    public Long finalizeAccountId(Long accountId, String accountName, Long domainId, Long projectId) {
+        if (projectId != null) {
+            if (ObjectUtils.anyNotNull(accountId, accountName)) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Project and account can not be specified together.");
+            }
+            return getActiveProjectAccountByProjectId(projectId);
+        }
+        if (accountId != null) {
+            if (getActiveAccountById(accountId) != null) {
+                return accountId;
+            }
+            throw new InvalidParameterValueException(String.format("Unable to find account with ID [%s].", accountId));
+        }
+
+        if (accountName == null && domainId == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Either %s or %s is required.", ApiConstants.ACCOUNT_ID, ApiConstants.PROJECT_ID));
+        }
+
+        try {
+            Account activeAccount = getActiveAccountByName(accountName, domainId);
+            if (activeAccount != null) {
+                return activeAccount.getId();
+            }
+        } catch (InvalidParameterValueException exception) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Both %s and %s are needed if using either. Consider using %s instead.",
+                    ApiConstants.ACCOUNT, ApiConstants.DOMAIN_ID, ApiConstants.ACCOUNT_ID));
+        }
+        throw new InvalidParameterValueException(String.format("Unable to find account by name [%s] on domain [%s].", accountName, domainId));
+    }
+
+    protected long getActiveProjectAccountByProjectId(long projectId) {
+        Project project = _projectMgr.getProject(projectId);
+        if (project == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find project with ID [%s].", projectId));
+        }
+        if (project.getState() != Project.State.Active) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Project with ID [%s] is not active.", projectId));
+        }
+        return project.getProjectAccountId();
     }
 
     @Override

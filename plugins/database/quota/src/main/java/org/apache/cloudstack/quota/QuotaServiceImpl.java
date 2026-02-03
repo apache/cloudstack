@@ -26,12 +26,8 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.user.AccountService;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
@@ -290,48 +286,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         }
     }
 
-    /**
-     * Returns the Id of the account that will be used when provided with either accountId, projectId or accountName and domainId.
-     */
-    @Override
-    public Long finalizeAccountId(Long accountId, String accountName, Long domainId, Long projectId) {
-        if (projectId != null) {
-            if (accountId != null || accountName != null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Project and account can not be specified together.");
-            }
-            final Project project = projectMgr.getProject(projectId);
-            if (project == null) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find project with id: [%s].", projectId));
-            }
-            if (project.getState() != Project.State.Active) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Project with projectId [%s] is not active.", projectId));
-            }
-            return project.getProjectAccountId();
-        }
-
-        if (accountId != null) {
-            if (accountService.getActiveAccountById(accountId) != null) {
-                return accountId;
-            }
-            throw new InvalidParameterValueException(String.format("Unable to find account with accountId: [%s].", accountId));
-        }
-
-        if (accountName == null && domainId == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Either %s or %s is required.", ApiConstants.ACCOUNT_ID, ApiConstants.PROJECT_ID));
-        }
-        try {
-            Account activeAccount = accountService.getActiveAccountByName(accountName, domainId);
-            if (activeAccount != null) {
-                return activeAccount.getId();
-            }
-        } catch (InvalidParameterValueException exception) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Both %s and %s are needed if using either. Consider using %s instead.",
-                    ApiConstants.ACCOUNT, ApiConstants.DOMAIN_ID, ApiConstants.ACCOUNT_ID));
-        }
-        throw new InvalidParameterValueException(String.format("Unable to find account by name: [%s] on domain: [%s]", accountName, domainId));
-    }
-
-
     @Override
     public void setMinBalance(Long accountId, Double balance) {
         QuotaAccountVO acc = _quotaAcc.findByIdQuotaAccount(accountId);
@@ -343,36 +297,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             acc.setQuotaMinBalance(new BigDecimal(balance));
             _quotaAcc.updateQuotaAccount(accountId, acc);
         }
-    }
-
-    protected Long getAccountToWhomQuotaBalancesWillBeListed(Long accountId, String accountName, Long domainId) {
-        if (accountId != null) {
-            Account account = _accountDao.findByIdIncludingRemoved(accountId);
-            if (account == null) {
-                throw new InvalidParameterValueException(String.format("Unable to find account [%s].", accountId));
-            }
-            return accountId;
-        }
-
-        validateIsChildDomain(accountName, domainId);
-
-        Account account = _accountDao.findActiveAccount(accountName, domainId);
-        if (account == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find active account [%s] in domain [%s].", accountName, domainId));
-        }
-        return account.getAccountId();
-    }
-
-    protected void validateIsChildDomain(String accountName, Long domainId) {
-        Account caller = CallContext.current().getCallingAccount();
-
-        long callerDomainId = caller.getDomainId();
-        if (_domainDao.isChildDomain(callerDomainId, domainId)) {
-            return;
-        }
-
-        logger.debug(String.format("Domain with ID [%s] is not a child of the caller's domain [%s].", domainId, callerDomainId));
-        throw new PermissionDeniedException(String.format("Account [%s] or domain [%s] is invalid.", accountName, domainId));
     }
 
     @Override

@@ -198,21 +198,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(QuotaSummaryCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
 
-        if (cmd.getProjectId() != null && !cmd.isListAll() && accountTypesThatCanListAllQuotaSummaries.contains(caller.getType())) {
-            ProjectVO projectVO = projectDao.findById(cmd.getProjectId());
-            Long projectAccountId = projectVO.getProjectAccountId();
-            return getQuotaSummaryResponse(projectAccountId, null, null, null, cmd);
-        }
-
-        else if (cmd.getAccountId() != null && !cmd.isListAll() && accountTypesThatCanListAllQuotaSummaries.contains(caller.getType())) {
-            return getQuotaSummaryResponse(cmd.getAccountId(), null, null, null, cmd);
-        }
-
-        else if (cmd.getDomainId() != null && !cmd.isListAll() && accountTypesThatCanListAllQuotaSummaries.contains(caller.getType())) {
-            return getQuotaSummaryResponse(null, null, cmd.getDomainId(), null, cmd);
-        }
-
-        else if (!accountTypesThatCanListAllQuotaSummaries.contains(caller.getType()) || !cmd.isListAll()) {
+        if (!accountTypesThatCanListAllQuotaSummaries.contains(caller.getType()) || !cmd.isListAll()) {
             return getQuotaSummaryResponse(caller.getAccountId(), null, null, null, cmd);
         }
 
@@ -222,7 +208,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     protected Pair<List<QuotaSummaryResponse>, Integer> getQuotaSummaryResponseWithListAll(QuotaSummaryCmd cmd, Account caller) {
         Long accountId = cmd.getEntityOwnerId();
         if (accountId == -1) {
-            accountId = null;
+            accountId = cmd.isListAll() ? null : caller.getAccountId();
         }
 
         Long domainId = cmd.getDomainId();
@@ -276,7 +262,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         _accountMgr.checkAccess(caller, domain);
 
         if (domain == null) {
-            throw new InvalidParameterValueException(String.format("Domain id [%s] is invalid.", domainId));
+            throw new InvalidParameterValueException(String.format("Domain ID [%s] is invalid.", domainId));
         }
 
         return domain.getPath();
@@ -288,8 +274,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         List<QuotaSummaryVO> summaries = pairSummaries.first();
 
         if (CollectionUtils.isEmpty(summaries)) {
-            logger.info(String.format("There are no summaries to list for parameters [%s].",
-                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "accountName", "domainId", "listAll", "page", "pageSize")));
+            logger.info("There are no summaries to list for parameters [{}].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "accountName", "domainId", "listAll", "page", "pageSize"));
             return new Pair<>(new ArrayList<>(), 0);
         }
 
