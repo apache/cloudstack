@@ -267,8 +267,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                     Backup.VolumeInfo backedVolume = opt.get();
                     if (backedVolume.getPath() != null && !backedVolume.getPath().isEmpty()) {
                         volumePaths.add(String.format("%s/%s", volumePathPrefix, backedVolume.getPath()));
-                    } else {
-                        volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
                     }
                     continue;
                 }
