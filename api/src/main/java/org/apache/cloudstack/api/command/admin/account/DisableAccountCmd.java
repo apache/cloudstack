@@ -121,7 +121,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("Account Name: " + getAccountName() + ", Domain Id:" + getDomainId());
+        CallContext.current().setEventDetails("Account Name: " + getAccountName() + ", Domain Id:" + getResourceUuid(ApiConstants.DOMAIN_ID));
         Account result = _regionService.disableAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(ResponseView.Full, result);
