@@ -198,7 +198,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Account caller = CallContext.current().getCallingAccount();
 
         if (!accountTypesThatCanListAllQuotaSummaries.contains(caller.getType()) || !cmd.isListAll()) {
-            return getQuotaSummaryResponse(caller.getAccountId(), null, null, null, cmd);
+            return getQuotaSummaryResponse(cmd.getEntityOwnerId(), null, null, null, cmd);
         }
 
         return getQuotaSummaryResponseWithListAll(cmd, caller);
@@ -268,6 +268,10 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     protected Pair<List<QuotaSummaryResponse>, Integer> getQuotaSummaryResponse(Long accountId, String accountName, Long domainId, String domainPath, QuotaSummaryCmd cmd) {
+        if (accountId == -1) {
+            accountId = CallContext.current().getCallingAccountId();
+        }
+
         Pair<List<QuotaSummaryVO>, Integer> pairSummaries = quotaSummaryDao.listQuotaSummariesForAccountAndOrDomain(accountId, accountName, domainId, domainPath,
                 cmd.getAccountStateToShow(), cmd.getStartIndex(), cmd.getPageSizeVal());
         List<QuotaSummaryVO> summaries = pairSummaries.first();
