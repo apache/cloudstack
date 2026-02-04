@@ -60,12 +60,12 @@ public class ConnectedAgentAttacheTest {
     }
 
     @Test
-    public void testEqualsFalseDiffId() throws Exception {
+    public void testEqualsFalseDiffUuid() throws Exception {
 
         Link link1 = mock(Link.class);
 
-        ConnectedAgentAttache agentAttache1 = new ConnectedAgentAttache(null, 1, "uuid", null, link1, false);
-        ConnectedAgentAttache agentAttache2 = new ConnectedAgentAttache(null, 2, "uuid", null, link1, false);
+        ConnectedAgentAttache agentAttache1 = new ConnectedAgentAttache(null, 1, "uuid1", null, link1, false);
+        ConnectedAgentAttache agentAttache2 = new ConnectedAgentAttache(null, 2, "uuid2", null, link1, false);
 
         assertFalse(agentAttache1.equals(agentAttache2));
     }
