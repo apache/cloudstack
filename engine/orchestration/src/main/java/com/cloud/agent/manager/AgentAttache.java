@@ -352,7 +352,8 @@ public abstract class AgentAttache {
             return false;
         }
         AgentAttache that = (AgentAttache)obj;
-        return _id == that._id;
+        return Objects.equals(_uuid, that._uuid) &&
+               Objects.equals(_name, that._name);
     }
 
     public void send(final Request req, final Listener listener) throws AgentUnavailableException {
@@ -500,7 +501,7 @@ public abstract class AgentAttache {
 
     @Override
     public int hashCode() {
-        return Objects.hash(_id, _uuid, _name);
+        return Objects.hash(_uuid, _name);
     }
 
     protected class Alarm extends ManagedContextRunnable {

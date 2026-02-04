@@ -1730,7 +1730,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } catch (final OperationTimedoutException e) {
             throw new AgentUnavailableException(String.format("Unable to stop vm [%s] because the operation to stop timed out", vmUuid), e.getAgentId(), e);
         } catch (final ConcurrentOperationException e) {
-            throw new CloudRuntimeException(String.format("Unable to stop vm: %s because of a concurrent operation", vmUuid), e);
+            throw new CloudRuntimeException(String.format("Unable to stop vm [%s] because of a concurrent operation", vmUuid), e);
         }
 
     }

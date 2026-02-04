@@ -98,7 +98,7 @@ public class DatabaseAccessObject {
                 return true;
             }
         } catch (SQLException e) {
-            logger.debug(String.format("Index %s doesn't exist, ignoring exception:", indexName), e.getMessage());
+            logger.debug("Index {} doesn't exist, ignoring exception: {}", indexName, e.getMessage());
         }
         return false;
     }
