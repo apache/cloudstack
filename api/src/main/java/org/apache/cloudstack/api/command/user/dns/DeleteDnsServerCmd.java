@@ -1,0 +1,80 @@
+package org.apache.cloudstack.api.command.user.dns;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DnsServerResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.dns.DnsServer;
+
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+
+@APICommand(name = "deleteDnsServer", description = "Removes a DNS server integration",
+        responseObject = SuccessResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class DeleteDnsServerCmd extends BaseAsyncCmd {
+    private static final String COMMAND_RESPONSE_NAME = "deletednsserverresponse";
+
+    /////////////////////////////////////////////////////
+    //////////////// API Parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsServerResponse.class,
+            required = true, description = "the ID of the DNS server")
+    private Long id;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// Implementation //////////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public void execute() {
+        try {
+            boolean result = dnsProviderManager.deleteDnsServer(this);
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete DNS server");
+            }
+        } catch (Exception e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete DNS server: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public String getCommandName() {
+        return COMMAND_RESPONSE_NAME;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        // Look up the server to find its owner.
+        // This allows the Framework to check: Is Caller == Owner?
+        DnsServer server = dnsProviderManager.getDnsServer(id);
+        if (server != null) {
+            return server.getAccountId();
+        }
+
+        // If server not found, return System to fail safely (or let manager handle 404)
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() { return EventTypes.EVENT_DNS_SERVER_DELETE; }
+
+    @Override
+    public String getEventDescription() { return "Deleting DNS Server ID: " + getId(); }
+}
