@@ -970,17 +970,22 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
                     logger.trace("End cleanup expired async-jobs");
 
-                    // 3) Cleanup orphaned networks stuck in Implementing state without async jobs
-                    try {
-                        cleanupOrphanedNetworks();
-                    } catch (Throwable e) {
-                        logger.error("Unexpected exception when trying to cleanup orphaned networks", e);
-                    }
+                    cleanupNetworksStuckInImplementing();
+
                 } catch (Throwable e) {
                     logger.error("Unexpected exception when trying to execute queue item, ", e);
                 }
             }
         };
+    }
+
+    private void cleanupNetworksStuckInImplementing() {
+        // Cleanup orphaned networks stuck in Implementing state without async jobs
+        try {
+            cleanupOrphanedNetworks();
+        } catch (Throwable e) {
+            logger.error("Unexpected exception when trying to cleanup orphaned networks", e);
+        }
     }
 
     @DB
