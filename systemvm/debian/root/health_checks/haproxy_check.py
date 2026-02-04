@@ -28,6 +28,16 @@ def checkMaxconn(haproxyData, haCfgSections):
 
     return True
 
+def checkIdletimeout(haproxyData, haCfgSections):
+    if "idletimeout" in haproxyData:
+        if "timeout client" not in haCfgSections["defaults"] or "timeout server" not in haCfgSections["defaults"]:
+            print("defaults timeout client or timeout server missing")
+
+        if haproxyData["idletimeout"] != haCfgSections["defaults"]["timeout client"][0].strip() or haproxyData["idletimeout"] != haCfgSections["defaults"]["timeout server"][0].strip():
+            print("defaults timeout client or timeout server mismatch occurred")
+            return False
+
+    return True
 
 def checkLoadBalance(haproxyData, haCfgSections):
     correct = True
@@ -120,9 +130,10 @@ def main():
             currSectionDict[lineSec[0]].append(lineSec[1] if len(lineSec) > 1 else '')
 
     checkMaxConn = checkMaxconn(haproxyData[0], haCfgSections)
+    checkIdleTimeout = checkIdletimeout(haproxyData[0], haCfgSections)
     checkLbRules = checkLoadBalance(haproxyData, haCfgSections)
 
-    if checkMaxConn and checkLbRules:
+    if checkMaxConn and checkIdleTimeout and checkLbRules:
         print("All checks pass")
         exit(0)
     else:
