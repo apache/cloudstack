@@ -158,11 +158,17 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                 String domainPath = null;
 
                 if (params.containsKey(ApiConstants.IDP_ID)) {
-                    idpId = ((String[])params.get(ApiConstants.IDP_ID))[0];
+                    String[] idpIds = (String[])params.get(ApiConstants.IDP_ID);
+                    if (idpIds != null && idpIds.length > 0) {
+                        idpId = idpIds[0];
+                    }
                 }
 
                 if (params.containsKey(ApiConstants.DOMAIN)) {
-                    domainPath = ((String[])params.get(ApiConstants.DOMAIN))[0];
+                    String[] domainPaths = (String[])params.get(ApiConstants.DOMAIN);
+                    if (domainPaths != null && domainPaths.length > 0) {
+                        domainPath = domainPaths[0];
+                    }
                 }
 
                 if (domainPath != null && !domainPath.isEmpty()) {
