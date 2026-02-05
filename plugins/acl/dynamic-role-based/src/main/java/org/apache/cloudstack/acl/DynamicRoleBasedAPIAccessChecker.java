@@ -107,7 +107,8 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         return accountService.getAccount(accountId);
     }
 
-    protected Pair<Role, List<RolePermission>> getRolePermissions(long roleId) {
+    @Override
+    public Pair<Role, List<RolePermission>> getRolePermissions(long roleId) {
         final Role accountRole = roleService.findRole(roleId);
         if (accountRole == null || accountRole.getId() < 1L) {
             return new Pair<>(null, null);
@@ -149,7 +150,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             throw new PermissionDeniedException(String.format("Account role for user id [%s] cannot be found.", user.getUuid()));
         }
         if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
-            logger.info("Account for user id {} is Root Admin or Domain Admin, all APIs are allowed.", user.getUuid());
+            logger.info("Account for user id {} is Root Admin, all APIs are allowed.", user.getUuid());
             return true;
         }
         List<RolePermission> allPermissions = roleAndPermissions.second();
@@ -174,6 +175,25 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         }
 
         List<RolePermission> allPermissions = roleService.findAllPermissionsBy(accountRole.getId());
+        if (checkApiPermissionByRole(accountRole, commandName, allPermissions)) {
+            return true;
+        }
+        throw new UnavailableCommandException(String.format("The API [%s] does not exist or is not available for the account %s.", commandName, account));
+    }
+
+    @Override
+    public boolean checkAccess(Account account, String commandName, Role accountRole, List<RolePermission> allPermissions) {
+        if (accountRole == null) {
+            throw new PermissionDeniedException(String.format("The account [%s] has role null or unknown.", account));
+        }
+
+        if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("Account [%s] is Root Admin, all APIs are allowed.", account));
+            }
+            return true;
+        }
+
         if (checkApiPermissionByRole(accountRole, commandName, allPermissions)) {
             return true;
         }
