@@ -41,8 +41,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -50,19 +48,14 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 public class ApiXmlDocWriter {
     protected static Logger LOGGER = LogManager.getLogger(ApiXmlDocWriter.class);
@@ -93,8 +86,8 @@ public class ApiXmlDocWriter {
                 "org.apache.cloudstack.api.command.admin.zone", "org.apache.cloudstack.network.contrail.api.command"});
 
         for (Class<?> cmdClass : cmdClasses) {
-            if(cmdClass.getAnnotation(APICommand.class)==null){
-               System.out.println("Warning, API Cmd class " + cmdClass.getName() + " has no APICommand annotation ");
+            if (cmdClass.getAnnotation(APICommand.class) == null) {
+               System.out.println("Warning: API Cmd class " + cmdClass.getName() + " has no APICommand annotation ");
                continue;
             }
             String apiName = cmdClass.getAnnotation(APICommand.class).name();
@@ -104,12 +97,8 @@ public class ApiXmlDocWriter {
                 if (curCmd.isAssignableFrom(cmdClass)) {
                     // api_cmd map always keep the admin cmd class to get full response and parameters
                     s_apiNameCmdClassMap.put(apiName, cmdClass);
-                } else if (cmdClass.isAssignableFrom(curCmd)) {
-                    // just skip this one without warning
-                    continue;
-                } else {
-                    System.out.println("Warning, API Cmd class " + cmdClass.getName() + " has non-unique apiname " + apiName);
-                    continue;
+                } else if (!cmdClass.isAssignableFrom(curCmd)) {
+                    System.out.println("Warning: API Cmd class " + cmdClass.getName() + " has non-unique api name " + apiName);
                 }
             } else {
                 s_apiNameCmdClassMap.put(apiName, cmdClass);
@@ -178,8 +167,6 @@ public class ApiXmlDocWriter {
 
     private static void writeCommand(ObjectOutputStream out, String command) throws ClassNotFoundException, IOException {
         Class<?> clas = Class.forName(s_allApiCommands.get(command));
-        ArrayList<Argument> request = new ArrayList<Argument>();
-        ArrayList<Argument> response = new ArrayList<Argument>();
 
         // Create a new command, set name/description/usage
         Command apiCommand = new Command();
@@ -220,19 +207,19 @@ public class ApiXmlDocWriter {
 
             Set<Field> fields = ReflectUtil.getAllFieldsForClass(clas, new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
-            request = setRequestFields(fields);
+            ArrayList<Argument> request = setRequestFields(fields);
 
             // Get response parameters
             Class<?> responseClas = impl.responseObject();
             Field[] responseFields = responseClas.getDeclaredFields();
-            response = setResponseFields(responseFields, responseClas);
+            ArrayList<Argument> response = setResponseFields(responseFields, responseClas);
 
             apiCommand.setRequest(request);
             apiCommand.setResponse(response);
 
             out.writeObject(apiCommand);
         } else {
-            LOGGER.debug("Command " + command + " is not exposed in api doc");
+            LOGGER.debug("Command {} is not exposed in api doc", command);
         }
     }
 
@@ -361,49 +348,6 @@ public class ApiXmlDocWriter {
         return arguments;
     }
 
-    private static void zipDir(String zipFileName, String dir) throws Exception {
-        File dirObj = new File(dir);
-        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
-        addDir(dirObj, out);
-        out.close();
-    }
-
-    static void addDir(File dirObj, ZipOutputStream out) throws IOException {
-        File[] files = dirObj.listFiles();
-        byte[] tmpBuf = new byte[1024];
-        String pathToDir = s_dirName;
-
-        for (int i = 0; i < files.length; i++) {
-            if (files[i].isDirectory()) {
-                addDir(files[i], out);
-                continue;
-            }
-            try(FileInputStream in = new FileInputStream(files[i].getPath());) {
-                out.putNextEntry(new ZipEntry(files[i].getPath().substring(pathToDir.length())));
-                int len;
-                while ((len = in.read(tmpBuf)) > 0) {
-                    out.write(tmpBuf, 0, len);
-                }
-                out.closeEntry();
-            }catch(IOException ex)
-            {
-                LOGGER.error("addDir:Exception:"+ ex.getMessage(),ex);
-            }
-        }
-    }
-
-    private static void deleteDir(File dir) {
-        if (dir.isDirectory()) {
-            String[] children = dir.list();
-            if (children != null) {
-                for (int i = 0; i < children.length; i++) {
-                    deleteDir(new File(dir, children[i]));
-                }
-            }
-        }
-        dir.delete();
-    }
-
     private static void writeAlertTypes(String dirName) {
         XStream xs = new XStream();
         xs.alias("alert", Alert.class);
@@ -419,22 +363,6 @@ public class ApiXmlDocWriter {
             LOGGER.error("Failed to create output stream to write an alert types ", e);
         } catch (IllegalAccessException e) {
             LOGGER.error("Failed to read alert fields ", e);
-        }
-    }
-
-    private static class LinkedProperties extends Properties {
-        private final LinkedList<Object> keys = new LinkedList<Object>();
-
-        @Override
-        public Enumeration<Object> keys() {
-            return Collections.<Object> enumeration(keys);
-        }
-
-        @Override
-        public Object put(Object key, Object value) {
-            // System.out.println("Adding key" + key);
-            keys.add(key);
-            return super.put(key, value);
         }
     }
 }
