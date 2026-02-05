@@ -58,7 +58,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
      */
     static String[] SUPPORTED_OUI_LIST = {
         "0002ac", // HPE Primera 3PAR
-        "24a937"  // Pure Flasharray
+        "24a937"  // Pure Storage FlashArray
     };
 
     /**

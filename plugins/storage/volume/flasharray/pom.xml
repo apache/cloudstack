@@ -20,7 +20,7 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cloud-plugin-storage-volume-flasharray</artifactId>
-    <name>Apache CloudStack Plugin - Storage Volume - Pure Flash Array</name>
+    <name>Apache CloudStack Plugin - Storage Volume - Pure Storage FlashArray</name>
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-plugins</artifactId>
