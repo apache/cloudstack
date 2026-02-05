@@ -59,7 +59,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   name: 'DomainDeleteConfirm',
@@ -104,7 +104,7 @@ export default {
     async fetchDomainImpact () {
       this.loading = true
       try {
-        const accResp = await api('listAccounts', {
+        const accResp = await getAPI('listAccounts', {
           domainid: this.domain.id,
           listall: true
         })
@@ -115,7 +115,7 @@ export default {
             ? accResp.listaccountsresponse.account
             : []
 
-        const vmResp = await api('listVirtualMachines', {
+        const vmResp = await getAPI('listVirtualMachines', {
           domainid: this.domain.id,
           listall: true
         })
