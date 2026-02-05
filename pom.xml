@@ -1039,6 +1039,7 @@
                             <exclude>CHANGES.md</exclude>
                             <exclude>ISSUE_TEMPLATE.md</exclude>
                             <exclude>PULL_REQUEST_TEMPLATE.md</exclude>
+                            <exclude>client/conf/error-messages.json.in</exclude>
                             <exclude>build/build.number</exclude>
                             <exclude>debian/cloudstack-agent.dirs</exclude>
                             <exclude>debian/cloudstack-usage.dirs</exclude>

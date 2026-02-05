@@ -16,35 +16,10 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.org.Grouping;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.server.TaggedResourceService;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotPolicyDao;
-import com.cloud.storage.dao.SnapshotZoneDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.User;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -58,13 +33,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-
-import org.junit.Assert;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -72,9 +45,34 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.org.Grouping;
+import com.cloud.server.TaggedResourceService;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotPolicyDao;
+import com.cloud.storage.dao.SnapshotZoneDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SnapshotManagerImplTest {
@@ -243,7 +241,7 @@ public class SnapshotManagerImplTest {
         DataCenterVO zone1 = Mockito.mock(DataCenterVO.class);
         Mockito.when(zone1.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
         Mockito.when(dataCenterDao.findById(2L)).thenReturn(zone1);
-        Mockito.when(accountManager.isRootAdmin(Mockito.any())).thenReturn(false);
+        Mockito.when(accountManager.isRootAdmin(Mockito.anyLong())).thenReturn(false);
         snapshotManager.validatePolicyZones(List.of(2L), null, volumeVO, Mockito.mock(Account.class));
     }
 

@@ -229,7 +229,8 @@ export const notifierPlugin = {
         } else if (error.response.data) {
           const responseKey = _.findKey(error.response.data, 'errortext')
           if (responseKey) {
-            desc = error.response.data[responseKey].errortext
+            const errObj = error.response.data[responseKey]
+            desc = this.$toLocaleError(errObj.errortext, errObj.errortextkey, errObj.errormetadata)
           } else if (typeof error.response.data === 'string') {
             desc = error.response.data
           }
@@ -617,6 +618,26 @@ export const backupUtilPlugin = {
         return false
       }
       return ['nas'].includes(provider.toLowerCase())
+    }
+  }
+}
+
+export const localeErrorUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$toLocaleError = function (msg, key, params) {
+      if (!key) {
+        return msg
+      }
+      let localeMsg = i18n.global.t(key)
+      if (!localeMsg || localeMsg === key) {
+        return msg
+      }
+      if (params && params.constructor === Object) {
+        for (const paramKey in params) {
+          localeMsg = localeMsg.replace(`{{${paramKey}}}`, params[paramKey])
+        }
+      }
+      return localeMsg
     }
   }
 }
