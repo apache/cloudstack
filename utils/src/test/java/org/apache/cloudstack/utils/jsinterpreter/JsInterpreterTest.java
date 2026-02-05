@@ -160,24 +160,6 @@ public class JsInterpreterTest {
     }
 
     @Test
-    public void injectStringVariableTestNullValueDoNothing() {
-        jsInterpreterSpy.variables = new LinkedHashMap<>();
-
-        jsInterpreterSpy.injectStringVariable("a", null);
-
-        Assert.assertTrue(jsInterpreterSpy.variables.isEmpty());
-    }
-
-    @Test
-    public void injectStringVariableTestNotNullValueSurroundWithDoubleQuotes() {
-        jsInterpreterSpy.variables = new LinkedHashMap<>();
-
-        jsInterpreterSpy.injectStringVariable("a", "b");
-
-        Assert.assertEquals(jsInterpreterSpy.variables.get("a"), "b");
-    }
-
-    @Test
     public void executeScriptTestValidScriptShouldPassWithMixedVariables() {
         try (JsInterpreter jsInterpreter = new JsInterpreter(1000)) {
             jsInterpreter.injectVariable("x", 10);

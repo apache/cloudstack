@@ -428,7 +428,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         }
 
         injectPresetVariablesIntoJsInterpreter(jsInterpreter, presetVariables);
-        jsInterpreter.injectVariable("lastTariffs", lastAppliedTariffsList.toString());
+        jsInterpreter.injectVariable("lastTariffs", lastAppliedTariffsList);
 
         String scriptResult = jsInterpreter.executeScript(activationRule).toString();
 
@@ -458,18 +458,18 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     protected void injectPresetVariablesIntoJsInterpreter(JsInterpreter jsInterpreter, PresetVariables presetVariables) {
         jsInterpreter.discardCurrentVariables();
 
-        jsInterpreter.injectVariable("account", presetVariables.getAccount().toString());
-        jsInterpreter.injectVariable("domain", presetVariables.getDomain().toString());
+        jsInterpreter.injectVariable("account", presetVariables.getAccount());
+        jsInterpreter.injectVariable("domain", presetVariables.getDomain());
 
         GenericPresetVariable project = presetVariables.getProject();
         if (project != null) {
-            jsInterpreter.injectVariable("project", project.toString());
+            jsInterpreter.injectVariable("project", project);
 
         }
 
         jsInterpreter.injectVariable("resourceType", presetVariables.getResourceType());
-        jsInterpreter.injectVariable("value", presetVariables.getValue().toString());
-        jsInterpreter.injectVariable("zone", presetVariables.getZone().toString());
+        jsInterpreter.injectVariable("value", presetVariables.getValue());
+        jsInterpreter.injectVariable("zone", presetVariables.getZone());
     }
 
     /**
