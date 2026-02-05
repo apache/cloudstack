@@ -49,7 +49,7 @@
       </div>
     </template>
     <template #bodyCell="{ column, text, record }">
-      <template v-if="['name', 'provider'].includes(column.key) ">
+      <template v-if="['name', 'provider'].includes(column.key)">
         <span
           v-if="['vm', 'vnfapp'].includes($route.path.split('/')[1])"
           style="margin-right: 5px"
@@ -70,7 +70,7 @@
             style="margin-left: 5px"
             :actions="actions"
             :resource="record"
-            :enabled="quickViewEnabled() && actions.length > 0 && columns && ['name', 'provider'].includes(columns[0].dataIndex)"
+            :enabled="quickViewEnabled(actions, columns, column.key)"
             @exec-action="$parent.execAction"
           />
           <span
@@ -257,7 +257,7 @@
           style="margin-right: 8px"
           :actions="actions"
           :resource="record"
-          :enabled="quickViewEnabled() && actions.length > 0"
+          :enabled="quickViewEnabled(actions, columns, column.key)"
           @exec-action="$parent.execAction"
         />
         <span v-if="record.intervaltype===0">
@@ -282,7 +282,7 @@
           style="margin-left: 5px"
           :actions="actions"
           :resource="record"
-          :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'displayname' "
+          :enabled="quickViewEnabled(actions, columns, column.key)"
           @exec-action="$parent.execAction"
         />
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -436,7 +436,7 @@
             style="margin-left: 5px"
             :actions="actions"
             :resource="record"
-            :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'hypervisor' "
+            :enabled="quickViewEnabled(actions, columns, column.key)"
             @exec-action="$parent.execAction"
           />
           <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -845,7 +845,7 @@
           style="margin-left: 5px"
           :actions="actions"
           :resource="record"
-          :enabled="quickViewEnabled() && actions.length > 0"
+          :enabled="quickViewEnabled(actions, columns, column.key)"
           @exec-action="$parent.execAction"
         />
       </template>
@@ -1208,17 +1208,19 @@ export default {
         '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy'].includes(this.$route.path)
     },
     createPathBasedOnVmType: createPathBasedOnVmType,
-    quickViewEnabled () {
-      return new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
-        '/volume', '/snapshot', '/vmsnapshot', '/backup',
-        '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
-        '/template', '/iso',
-        '/project', '/account', 'buckets', 'objectstore',
-        '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
-        '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
-        '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', 'webhookfilters', '/quotatariff', '/sharedfs',
-        '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule'].join('|'))
-        .test(this.$route.path)
+    quickViewEnabled (actions, columns, key) {
+      return actions.length > 0 &&
+        (columns && key === columns[0].dataIndex) &&
+        new RegExp(['/vm', '/kubernetes', '/ssh', '/userdata', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
+          '/volume', '/snapshot', '/vmsnapshot', '/backup',
+          '/guestnetwork', '/vpc', '/vpncustomergateway', '/vnfapp',
+          '/template', '/iso',
+          '/project', '/account', 'buckets', 'objectstore',
+          '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
+          '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
+          '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', 'webhookfilters', '/quotatariff', '/sharedfs',
+          '/ipv4subnets', '/managementserver', '/gpucard', '/gpudevices', '/vgpuprofile', '/extension', '/snapshotpolicy', '/backupschedule'].join('|'))
+          .test(this.$route.path)
     },
     enableGroupAction () {
       return ['vm', 'alert', 'vmgroup', 'ssh', 'userdata', 'affinitygroup', 'autoscalevmgroup', 'volume', 'snapshot',
