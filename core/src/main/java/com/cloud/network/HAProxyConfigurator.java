@@ -643,6 +643,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             // is a fixed size.  So lets just mark the entry as blank.
             dSection.set(9, "");
             dSection.set(10, "");
+        } else {
+            // Negative idleTimeout values are considered invalid; retain the
+            // default HAProxy timeout values from defaultsSection for predictability.
+            logger.warn("Negative idleTimeout ({}) configured; retaining default HAProxy timeouts.", lbCmd.idleTimeout);
         }
 
         if (logger.isDebugEnabled()) {
