@@ -2375,6 +2375,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones, HypervisorType hypervisorType) {
+        if (cmd instanceof GetUploadParamsForIsoCmd) {
+            return TemplateType.USER;
+        }
         if (!(cmd instanceof UpdateTemplateCmd) && !(cmd instanceof RegisterTemplateCmd) && !(cmd instanceof GetUploadParamsForTemplateCmd)) {
             return null;
         }
