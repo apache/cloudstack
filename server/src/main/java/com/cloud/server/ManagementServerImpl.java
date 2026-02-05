@@ -44,6 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.vpc.VpcVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -2580,12 +2581,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (associatedNetworkId != null) {
-            _accountMgr.checkAccess(caller, null, false, networkDao.findById(associatedNetworkId));
-            sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+            NetworkVO associatedNetwork = networkDao.findById(associatedNetworkId);
+
+            if (associatedNetwork != null) {
+                _accountMgr.checkAccess(caller, null, false, associatedNetwork);
+                sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+            }
         }
+
         if (vpcId != null) {
-            _accountMgr.checkAccess(caller, null, false, _vpcDao.findById(vpcId));
-            sc.setParameters("vpcId", vpcId);
+            VpcVO vpc = _vpcDao.findById(vpcId);
+
+            if (vpc != null) {
+                _accountMgr.checkAccess(caller, null, false, vpc);
+                sc.setParameters("vpcId", vpcId);
+            }
         }
 
         addrs = _publicIpAddressDao.search(sc, searchFilter); // Allocated
