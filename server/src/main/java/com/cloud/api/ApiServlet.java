@@ -164,7 +164,6 @@ public class ApiServlet extends HttpServlet {
                 LOGGER.warn(message);
             }
         });
-
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
@@ -549,6 +548,9 @@ public class ApiServlet extends HttpServlet {
         try {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(msg);
+            }
+            if (session == null) {
+                return;
             }
             session.invalidate();
         } catch (final IllegalStateException ise) {

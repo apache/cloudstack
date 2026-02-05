@@ -177,12 +177,8 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
     protected Long getDomainIdFromParams(Map<String, Object[]> params, StringBuilder auditTrailSb, String responseType) {
         String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
-
-        if (domainIdArr == null) {
-            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
-        }
         Long domainId = null;
-        if ((domainIdArr != null) && (domainIdArr.length > 0)) {
+        if (domainIdArr != null && domainIdArr.length > 0) {
             try {
                 //check if UUID is passed in for domain
                 domainId = _apiServer.fetchDomainId(domainIdArr[0]);
