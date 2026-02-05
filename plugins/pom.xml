@@ -140,6 +140,7 @@
         <module>storage/object/ceph</module>
         <module>storage/object/cloudian</module>
         <module>storage/object/simulator</module>
+        <module>storage/object/ECS</module>
 
 
         <module>storage-allocators/random</module>
