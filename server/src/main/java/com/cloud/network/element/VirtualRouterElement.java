@@ -24,6 +24,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -183,6 +184,11 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     @Qualifier("networkHelper")
     protected NetworkHelper _networkHelper;
 
+    private DataCenterVO findDataCenter(final long dataCenterId) {
+        return CallContext.current().getRequestEntityCache().get(DataCenterVO.class, dataCenterId,
+                () -> _dcDao.findById(dataCenterId));
+    }
+
     protected boolean canHandle(final Network network, final Service service) {
         final Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
         if (physicalNetworkId == null) {
@@ -294,7 +300,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 }
             }
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             for (final DomainRouterVO domainRouterVO : routers) {
@@ -332,7 +338,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 return true;
             }
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             for (final DomainRouterVO domainRouterVO : routers) {
@@ -356,7 +362,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 return null;
             }
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             return networkTopology.applyVpnUsers(network, users, routers);
@@ -423,7 +429,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 return true;
             }
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             for (final DomainRouterVO domainRouterVO : routers) {
@@ -597,7 +603,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 return true;
             }
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             for (final DomainRouterVO domainRouterVO : routers) {
@@ -701,7 +707,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
         final VirtualMachineProfile uservm = vm;
 
-        final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
         // If any router is running then send save password command otherwise
@@ -759,7 +765,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
         final VirtualMachineProfile uservm = vm;
 
-        final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
         boolean result = true;
@@ -814,7 +820,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
         final VirtualMachineProfile uservm = vm;
 
-        final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+        final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
         boolean result = true;
@@ -886,7 +892,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 return true;
             }
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             for (final DomainRouterVO domainRouterVO : routers) {
@@ -978,7 +984,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             return networkTopology.configDhcpForSubnet(network, nic, uservm, dest, routers);
@@ -1010,7 +1016,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             for (final DomainRouterVO domainRouterVO : routers) {
@@ -1081,7 +1087,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             for (final DomainRouterVO domainRouterVO : routers) {
@@ -1110,7 +1116,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
             }
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             for (final DomainRouterVO domainRouterVO : routers) {
@@ -1263,7 +1269,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             assert vm instanceof DomainRouterVO;
             final DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             try {
@@ -1287,7 +1293,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             assert vm instanceof DomainRouterVO;
             final DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             try {
@@ -1310,7 +1316,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             assert vm instanceof DomainRouterVO;
             final DomainRouterVO router = (DomainRouterVO) vm.getVirtualMachine();
 
-            final DataCenterVO dcVO = _dcDao.findById(network.getDataCenterId());
+            final DataCenterVO dcVO = findDataCenter(network.getDataCenterId());
             final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
             try {
@@ -1421,7 +1427,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
         boolean result = true;
         long dataCenterId = vpc != null ? vpc.getZoneId() : network.getDataCenterId();
-        final DataCenterVO dcVO = _dcDao.findById(dataCenterId);
+        final DataCenterVO dcVO = findDataCenter(dataCenterId);
         final NetworkTopology networkTopology = networkTopologyContext.retrieveNetworkTopology(dcVO);
 
         for (final DomainRouterVO domainRouterVO : routers) {

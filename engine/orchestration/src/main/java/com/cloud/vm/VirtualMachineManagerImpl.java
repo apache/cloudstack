@@ -1574,7 +1574,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                             startedVm = vm;
                             logger.debug("Start completed for VM {}", vm);
-                            final Host vmHost = _hostDao.findById(destHostId);
+                            long finalDestHostId = destHostId;
+                            final Host vmHost = CallContext.current().getRequestEntityCache().get(HostVO.class, finalDestHostId,
+                                    () -> _hostDao.findById(finalDestHostId));
                             if (vmHost != null && (VirtualMachine.Type.ConsoleProxy.equals(vm.getType()) ||
                                     VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) && caManager.canProvisionCertificates()) {
                                 for (int retries = 3; retries > 0; retries--) {
@@ -1770,7 +1772,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         NetworkVO networkVO = _networkDao.findById(networkId);
         Account acc = accountDao.findById(networkVO.getAccountId());
         Domain domain = domainDao.findById(networkVO.getDomainId());
-        DataCenter zone = _dcDao.findById(dataCenterId);
+        DataCenter zone = CallContext.current().getRequestEntityCache()
+                .get(DataCenterVO.class, dataCenterId, () -> _dcDao.findById(dataCenterId));
         if (Objects.isNull(zone)) {
             throw new CloudRuntimeException(String.format("Failed to find zone with ID: %s", dataCenterId));
         }

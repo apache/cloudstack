@@ -8231,7 +8231,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public Integer getServiceOfferingNetworkRate(final long serviceOfferingId, final Long dataCenterId) {
 
         // validate network offering information
-        final ServiceOffering offering = _serviceOfferingDao.findById(serviceOfferingId);
+        final ServiceOffering offering = CallContext.current().getRequestEntityCache()
+                .get(ServiceOfferingVO.class, serviceOfferingId, () -> _serviceOfferingDao.findById(serviceOfferingId));
         if (offering == null) {
             throw new InvalidParameterValueException("Unable to find service offering by id=" + serviceOfferingId);
         }
