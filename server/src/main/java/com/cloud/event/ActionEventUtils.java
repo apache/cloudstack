@@ -227,7 +227,9 @@ public class ActionEventUtils {
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         Project project = s_projectDao.findByProjectAccountId(accountId);
-        Account account = s_accountDao.findById(accountId);
+        Account account = (accountId == CallContext.current().getCallingAccountId())
+                ? CallContext.current().getCallingAccount()
+                : s_accountDao.findById(accountId);
         User user = s_userDao.findById(userId);
         // if account has been deleted, this might be called during cleanup of resources and results in null pointer
         if (account == null)
