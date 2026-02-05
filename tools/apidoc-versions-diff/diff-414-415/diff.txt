@@ -1,0 +1,966 @@
+Added commands:
+
+    listVsphereStoragePolicyCompatiblePools (List storage pools compatible with a vSphere storage policy)
+
+    listProjectRolePermissions (Lists a project's project role permissions)
+
+    importVsphereStoragePolicies (Import vSphere storage policies)
+
+    migrateSecondaryStorageData (migrates data objects from one secondary storage to destination image store(s))
+
+    unmanageVirtualMachine (Unmanage a guest virtual machine.)
+
+    updateImageStore (Updates image store read-only status)
+
+    deleteProjectRole (Delete Project roles in CloudStack)
+
+    deleteUserFromProject (Deletes user from the project)
+
+    listProjectRoles (Lists Project roles in CloudStack)
+
+    createProjectRole (Creates a Project role)
+
+    updateProjectRole (Creates a Project role)
+
+    listVsphereStoragePolicies (List vSphere storage policies)
+
+    createProjectRolePermission (Adds API permissions to a project role)
+
+    updateProjectRolePermission (Updates a project role permission and/or order)
+
+    addUserToProject (Adds user to a project)
+
+    importRole (Imports a role based on provided map of rule permissions)
+
+    deleteProjectRolePermission (Deletes a project role permission in the project)
+
+Removed commands:
+
+	listTemplateOvfProperties (List template OVF properties if available.)
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	copyIso
+
+		Response:
+
+			New parameters: deployasis, deployasisdetails, downloaddetails, url 
+
+	listVirtualMachinesMetrics
+
+		Request:
+
+			New parameters: haenable (optional), securitygroupid (optional) 
+
+	listHosts
+
+		Response:
+
+			New parameters: cpuallocatedpercentage, cpuallocatedvalue, cpuallocatedwithoverprovisioning, memoryallocatedbytes, memoryallocatedpercentage 
+
+	updateStoragePool
+
+		Request:
+
+			New parameters: name (optional) 
+
+	rebootSystemVm
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	listNetworks
+
+		Request:
+
+			New parameters: networkofferingid (optional) 
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	restoreVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	updateHost
+
+		Request:
+
+			New parameters: name (optional) 
+
+		Response:
+
+			New parameters: cpuallocatedpercentage, cpuallocatedvalue, cpuallocatedwithoverprovisioning, memoryallocatedbytes, memoryallocatedpercentage 
+
+	destroySystemVm
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	addSwift
+
+		Response:
+
+			New parameters: disksizetotal, disksizeused, readonly 
+
+	scaleSystemVm
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	stopRouter
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	listProjectInvitations
+
+		Request:
+
+			New parameters: userid (optional) 
+
+		Response:
+
+			New parameters: userid 
+
+	listLdapConfigurations
+
+		Request:
+
+			New parameters: listall (optional) 
+
+	listSecondaryStagingStores
+
+		Response:
+
+			New parameters: disksizetotal, disksizeused, readonly 
+
+	startRouter
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	changeServiceForVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	listTemplates
+
+		Request:
+
+			New parameters: details (optional), showunique (optional) 
+
+		Response:
+
+			New parameters: deployasis, deployasisdetails, downloaddetails, url 
+
+	listPhysicalNetworks
+
+		Response:
+
+			New parameters: zonename 
+
+	createSecondaryStagingStore
+
+		Response:
+
+			New parameters: disksizetotal, disksizeused, readonly 
+
+	rebootVirtualMachine
+
+		Request:
+
+			New parameters: bootintosetup (optional) 
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	updateVPC
+
+		Response:
+
+			New parameters: vpcofferingname 
+
+	stopSystemVm
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	listPrivateGateways
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	updateVmNicIp
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	startInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	updateDiskOffering
+
+		Request:
+
+			New parameters: bytesreadrate (optional), bytesreadratemax (optional), bytesreadratemaxlength (optional), byteswriterate (optional), byteswriteratemax (optional), byteswriteratemaxlength (optional), cachemode (optional), iopsreadrate (optional), iopsreadratemax (optional), iopsreadratemaxlength (optional), iopswriterate (optional), iopswriteratemax (optional), iopswriteratemaxlength (optional), tags (optional) 
+
+		Response:
+
+			New parameters: vspherestoragepolicy 
+
+	addAccountToProject
+
+		Request:
+
+			New parameters: projectroleid (optional), roletype (optional) 
+
+	listKubernetesClusters
+
+		Response:
+
+			New parameters: ipaddress, ipaddressid, virtualmachines 
+
+			Removed parameters: virtualmachineids 
+
+	scaleKubernetesCluster
+
+		Request:
+
+			Changed parameters: id (old version - optional, new version - required) 
+
+		Response:
+
+			New parameters: ipaddress, ipaddressid, virtualmachines 
+
+			Removed parameters: virtualmachineids 
+
+	stopNetScalerVpx
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	updatePhysicalNetwork
+
+		Response:
+
+			New parameters: zonename 
+
+	createRolePermission
+
+		Response:
+
+			Removed parameters: description, permission, rule 
+
+	listSystemVms
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	createProject
+
+		Request:
+
+			New parameters: accountid (optional), userid (optional) 
+
+		Response:
+
+			New parameters: owner 
+
+	changeServiceForSystemVm
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	rebootRouter
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	findHostsForMigration
+
+		Response:
+
+			New parameters: cpuallocatedpercentage, cpuallocatedvalue, cpuallocatedwithoverprovisioning, memoryallocatedbytes, memoryallocatedpercentage 
+
+	addNicToVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	listStaticRoutes
+
+		Request:
+
+			New parameters: state (optional) 
+
+	listPublicIpAddresses
+
+		Response:
+
+			New parameters: networkname, vpcname 
+
+	updateIso
+
+		Response:
+
+			New parameters: deployasis, deployasisdetails, downloaddetails, url 
+
+	listExternalLoadBalancers
+
+		Response:
+
+			New parameters: cpuallocatedpercentage, cpuallocatedvalue, cpuallocatedwithoverprovisioning, memoryallocatedbytes, memoryallocatedpercentage 
+
+	updateDefaultNicForVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	prepareTemplate
+
+		Response:
+
+			New parameters: deployasis, deployasisdetails, downloaddetails, url 
+
+	stopInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	restartNetwork
+
+		Response:
+
+			New parameters: networkname, vpcname 
+
+	addImageStore
+
+		Response:
+
+			New parameters: disksizetotal, disksizeused, readonly 
+
+	listRolePermissions
+
+		Response:
+
+			Removed parameters: description, permission, rule 
+
+	listNetworkACLs
+
+		Response:
+
+			New parameters: aclname 
+
+	copyTemplate
+
+		Response:
+
+			New parameters: deployasis, deployasisdetails, downloaddetails, url 
+
+	createServiceOffering
+
+		Request:
+
+			New parameters: rootdisksize (optional), storagepolicy (optional) 
+
+		Response:
+
+			New parameters: rootdisksize, vspherestoragepolicy 
+
+	listNiciraNvpDeviceNetworks
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	assignVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	updateTemplate
+
+		Request:
+
+			New parameters: templatetype (optional) 
+
+		Response:
+
+			New parameters: deployasis, deployasisdetails, downloaddetails, url 
+
+	listPaloAltoFirewallNetworks
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	changeServiceForRouter
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	updateVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	addSecondaryStorage
+
+		Response:
+
+			New parameters: disksizetotal, disksizeused, readonly 
+
+	updateNetwork
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	updateVpnGateway
+
+		Response:
+
+			New parameters: vpcname 
+
+	migrateVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	createTemplate
+
+		Response:
+
+			New parameters: deployasis, deployasisdetails, downloaddetails, url 
+
+	resetPasswordForVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	associateIpAddress
+
+		Response:
+
+			New parameters: networkname, vpcname 
+
+	createNetworkACL
+
+		Response:
+
+			New parameters: aclname 
+
+	resetSSHKeyForVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	createVPC
+
+		Response:
+
+			New parameters: vpcofferingname 
+
+	listInternalLoadBalancerVMs
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	listSrxFirewallNetworks
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	detachIso
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	createRole
+
+		Request:
+
+			New parameters: roleid (optional) 
+
+			Changed parameters: type (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: isdefault 
+
+			Removed parameters: id, description, name 
+
+	prepareHostForMaintenance
+
+		Response:
+
+			New parameters: cpuallocatedpercentage, cpuallocatedvalue, cpuallocatedwithoverprovisioning, memoryallocatedbytes, memoryallocatedpercentage 
+
+	listVirtualMachines
+
+		Request:
+
+			New parameters: haenable (optional), securitygroupid (optional) 
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	listDiskOfferings
+
+		Response:
+
+			New parameters: vspherestoragepolicy 
+
+	upgradeKubernetesCluster
+
+		Response:
+
+			New parameters: ipaddress, ipaddressid, virtualmachines 
+
+			Removed parameters: virtualmachineids 
+
+	listProjects
+
+		Request:
+
+			New parameters: username (optional) 
+
+		Response:
+
+			New parameters: owner 
+
+	revertToVMSnapshot
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	registerIso
+
+		Response:
+
+			New parameters: deployasis, deployasisdetails, downloaddetails, url 
+
+	deployVirtualMachine
+
+		Request:
+
+			New parameters: bootintosetup (optional), nicnetworklist (optional), properties (optional) 
+
+			Removed parameters: ovfproperties 
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	cancelHostMaintenance
+
+		Response:
+
+			New parameters: cpuallocatedpercentage, cpuallocatedvalue, cpuallocatedwithoverprovisioning, memoryallocatedbytes, memoryallocatedpercentage 
+
+	listProjectAccounts
+
+		Request:
+
+			New parameters: projectroleid (optional), userid (optional) 
+
+		Response:
+
+			New parameters: owner 
+
+	createDiskOffering
+
+		Request:
+
+			New parameters: storagepolicy (optional) 
+
+		Response:
+
+			New parameters: vspherestoragepolicy 
+
+	createNetwork
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	listVPCs
+
+		Response:
+
+			New parameters: vpcofferingname 
+
+	migrateVirtualMachineWithVolume
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	restartVPC
+
+		Response:
+
+			New parameters: vpcofferingname 
+
+	addHost
+
+		Response:
+
+			New parameters: cpuallocatedpercentage, cpuallocatedvalue, cpuallocatedwithoverprovisioning, memoryallocatedbytes, memoryallocatedpercentage 
+
+	updateProject
+
+		Request:
+
+			New parameters: roletype (optional), swapowner (optional), userid (optional) 
+
+		Response:
+
+			New parameters: owner 
+
+	listIsos
+
+		Request:
+
+			New parameters: showunique (optional) 
+
+		Response:
+
+			New parameters: deployasis, deployasisdetails, downloaddetails, url 
+
+	updateCloudToUseObjectStore
+
+		Response:
+
+			New parameters: disksizetotal, disksizeused, readonly 
+
+	updateRole
+
+		Response:
+
+			New parameters: isdefault 
+
+			Removed parameters: id, description, name 
+
+	listNetscalerLoadBalancerNetworks
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	startSystemVm
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	createKubernetesCluster
+
+		Response:
+
+			New parameters: ipaddress, ipaddressid, virtualmachines 
+
+			Removed parameters: virtualmachineids 
+
+	updateVMAffinityGroup
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	migrateVPC
+
+		Response:
+
+			New parameters: vpcofferingname 
+
+	recoverVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	getUploadParamsForTemplate
+
+		Request:
+
+			Changed parameters: ostypeid (old version - required, new version - optional) 
+
+	updateProjectInvitation
+
+		Request:
+
+			New parameters: userid (optional) 
+
+	migrateSystemVm
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	listVpnGateways
+
+		Response:
+
+			New parameters: vpcname 
+
+	listRoles
+
+		Response:
+
+			New parameters: isdefault 
+
+			Removed parameters: id, description, name 
+
+	updateNetworkACLItem
+
+		Response:
+
+			New parameters: aclname 
+
+	listRouters
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	listBrocadeVcsDeviceNetworks
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	listSwifts
+
+		Response:
+
+			New parameters: disksizetotal, disksizeused, readonly 
+
+	listUsageRecords
+
+		Response:
+
+			New parameters: ostypeid, vpcid 
+
+	suspendProject
+
+		Response:
+
+			New parameters: owner 
+
+	updateIpAddress
+
+		Response:
+
+			New parameters: networkname, vpcname 
+
+	migrateNetwork
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	registerTemplate
+
+		Request:
+
+			Changed parameters: ostypeid (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: deployasis, deployasisdetails, downloaddetails, url 
+
+	importUnmanagedInstance
+
+		Request:
+
+			New parameters: forced (optional) 
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	addImageStoreS3
+
+		Response:
+
+			New parameters: disksizetotal, disksizeused, readonly 
+
+	createPhysicalNetwork
+
+		Response:
+
+			New parameters: zonename 
+
+	listF5LoadBalancerNetworks
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	listVMSnapshot
+
+		Response:
+
+			New parameters: hypervisor 
+
+	moveNetworkAclItem
+
+		Response:
+
+			New parameters: aclname 
+
+	attachIso
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	createVpnGateway
+
+		Response:
+
+			New parameters: vpcname 
+
+	createVMSnapshot
+
+		Response:
+
+			New parameters: hypervisor 
+
+	destroyRouter
+
+		Response:
+
+			New parameters: podname, templatename 
+
+	listImageStores
+
+		Request:
+
+			New parameters: readonly (optional) 
+
+		Response:
+
+			New parameters: disksizetotal, disksizeused, readonly 
+
+	removeNicFromVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	activateProject
+
+		Response:
+
+			New parameters: owner 
+
+	reconnectHost
+
+		Response:
+
+			New parameters: cpuallocatedpercentage, cpuallocatedvalue, cpuallocatedwithoverprovisioning, memoryallocatedbytes, memoryallocatedpercentage 
+
+	startKubernetesCluster
+
+		Response:
+
+			New parameters: ipaddress, ipaddressid, virtualmachines 
+
+			Removed parameters: virtualmachineids 
+
+	createPrivateGateway
+
+		Response:
+
+			New parameters: aclname, vpcname 
+
+	uploadSslCert
+
+		Request:
+
+			New parameters: enabledrevocationcheck (optional) 
+
+	addBaremetalHost
+
+		Response:
+
+			New parameters: cpuallocatedpercentage, cpuallocatedvalue, cpuallocatedwithoverprovisioning, memoryallocatedbytes, memoryallocatedpercentage 
+
+	destroyVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	listServiceOfferings
+
+		Request:
+
+			New parameters: cpunumber (optional), cpuspeed (optional), memory (optional) 
+
+		Response:
+
+			New parameters: rootdisksize, vspherestoragepolicy 
+
+	startVirtualMachine
+
+		Request:
+
+			New parameters: bootintosetup (optional) 
+
+		Response:
+
+			New parameters: osdisplayname 
+
+	updateServiceOffering
+
+		Response:
+
+			New parameters: rootdisksize, vspherestoragepolicy 
+
+	stopVirtualMachine
+
+		Response:
+
+			New parameters: osdisplayname 

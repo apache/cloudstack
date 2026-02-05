@@ -1,0 +1,594 @@
+Added commands:
+
+    configureOutOfBandManagement (Configures a host's out-of-band management interface)
+
+    disableOutOfBandManagementForZone (Disables out-of-band management for a zone)
+
+    updateRolePermission (Updates a role permission order)
+
+    ldapConfig (Configure the LDAP context for this site.)
+
+    createRole (Creates a role)
+
+    deleteStratosphereSsp (Removes stratosphere ssp server)
+
+    searchLdap (Searches LDAP based on the username attribute)
+
+    enableOutOfBandManagementForCluster (Enables out-of-band management for a cluster)
+
+    getPathForVolume (Get the path associated with the provided volume UUID)
+
+    listRolePermissions (Lists role permissions)
+
+    changeOutOfBandManagementPassword (Changes out-of-band management interface password on the host and updates the interface configuration in CloudStack if the operation succeeds, else reverts the old password)
+
+    listRoles (Lists dynamic roles in CloudStack)
+
+    updateRole (Updates a role)
+
+    createRolePermission (Adds a API permission to a role)
+
+    enableOutOfBandManagementForHost (Enables out-of-band management for a host)
+
+    disableOutOfBandManagementForCluster (Disables out-of-band management for a cluster)
+
+    deleteRolePermission (Deletes a role permission)
+
+    getVolumeiScsiName (Get Volume's iSCSI Name)
+
+    getVolumeSnapshotDetails (Get Volume Snapshot Details)
+
+    notifyBaremetalProvisionDone (Notify provision has been done on a host. This api is for baremetal virtual router service, not for end user)
+
+    ldapRemove (Remove the LDAP context for this site.)
+
+    deleteUcsManager (Delete a Ucs manager)
+
+    issueOutOfBandManagementPowerAction (Initiates the specified power action to the host's out-of-band management interface)
+
+    disableOutOfBandManagementForHost (Disables out-of-band management for a host)
+
+    deleteRole (Deletes a role)
+
+    enableOutOfBandManagementForZone (Enables out-of-band management for a zone)
+
+Removed commands:
+
+	issueNuageVspResourceRequest (Issues a Nuage VSP REST API resource request)
+
+	getSolidFireVolumeIscsiName (Get SolidFire Volume's Iscsi Name)
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	reconnectHost
+
+		Response:
+
+			New parameters: outofbandmanagement 
+
+	copyTemplate
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	addNicToVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	addCluster
+
+		Response:
+
+			New parameters: resourcedetails 
+
+	listVolumes
+
+		Request:
+
+			New parameters: ids (optional) 
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	importLdapUsers
+
+		Request:
+
+			New parameters: roleid (optional) 
+
+			Changed parameters: accounttype (old version - required, new version - optional) 
+
+	createTemplate
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	migrateVolume
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	enableAccount
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	listClusters
+
+		Response:
+
+			New parameters: resourcedetails 
+
+	attachVolume
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	resetSSHKeyForVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	updateVmNicIp
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	updateVolume
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	cancelHostMaintenance
+
+		Response:
+
+			New parameters: outofbandmanagement 
+
+	addNuageVspDevice
+
+		Request:
+
+			Changed parameters: retrycount (old version - required, new version - optional), retryinterval (old version - required, new version - optional), apiversion (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: cmsid 
+
+	addBaremetalHost
+
+		Response:
+
+			New parameters: outofbandmanagement 
+
+	resizeVolume
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	recoverVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	listCapabilities
+
+		Response:
+
+			New parameters: dynamicrolesenabled 
+
+	deployVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	enableUser
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	updateAccount
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	addHost
+
+		Response:
+
+			New parameters: outofbandmanagement 
+
+	updateNuageVspDevice
+
+		Response:
+
+			New parameters: cmsid 
+
+	updateHost
+
+		Response:
+
+			New parameters: outofbandmanagement 
+
+	lockAccount
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	createUser
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	detachVolume
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	listSnapshots
+
+		Request:
+
+			New parameters: ids (optional) 
+
+	ldapCreateAccount
+
+		Request:
+
+			New parameters: roleid (optional) 
+
+			Changed parameters: accounttype (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	registerTemplate
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	createAccount
+
+		Request:
+
+			New parameters: roleid (optional) 
+
+			Changed parameters: accounttype (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	prepareHostForMaintenance
+
+		Response:
+
+			New parameters: outofbandmanagement 
+
+	listNuageVspDevices
+
+		Response:
+
+			New parameters: cmsid 
+
+	attachIso
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	getUser
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	updateCluster
+
+		Response:
+
+			New parameters: resourcedetails 
+
+	listTemplates
+
+		Request:
+
+			New parameters: ids (optional) 
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	prepareTemplate
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	rebootVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	updateVMAffinityGroup
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	updateUser
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	updateTemplate
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	disableUser
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	removeNicFromVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	updateDefaultNicForVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	registerIso
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	listExternalLoadBalancers
+
+		Response:
+
+			New parameters: outofbandmanagement 
+
+	createVolume
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	resetPasswordForVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	changeServiceForVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	startVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	detachIso
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	disableAccount
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	migrateVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	listVMSnapshot
+
+		Request:
+
+			New parameters: vmsnapshotids (optional) 
+
+	assignVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	updateVirtualMachine
+
+		Request:
+
+			New parameters: securitygroupids (optional), securitygroupnames (optional) 
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	getSolidFireVolumeSize
+
+		Request:
+
+			Removed parameters: storageid 
+
+	restoreVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	copyIso
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	uploadVolume
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	migrateVirtualMachineWithVolume
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	stopVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	listAccounts
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	updateIso
+
+		Response:
+
+			Removed parameters: tags(*) 
+
+	destroyVirtualMachine
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	revertToVMSnapshot
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	markDefaultZoneForAccount
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	lockUser
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	listVirtualMachines
+
+		Response:
+
+			New parameters: memoryintfreekbs, memorykbs, memorytargetkbs 
+
+			Removed parameters: tags(*) 
+
+	listHosts
+
+		Request:
+
+			New parameters: outofbandmanagementenabled (optional), outofbandmanagementpowerstate (optional) 
+
+		Response:
+
+			New parameters: outofbandmanagement 
+
+	listUsers
+
+		Response:
+
+			New parameters: roleid, rolename, roletype 
+
+	listIsos
+
+		Response:
+
+			Removed parameters: tags(*) 

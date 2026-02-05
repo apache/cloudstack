@@ -1,0 +1,1162 @@
+Added commands:
+
+    changeBgpPeersForNetwork (Change the BGP peers for a network.)
+
+    enableRole (Enables a role)
+
+    updateSharedFileSystem (Update a Shared FileSystem)
+
+    updateIpv4SubnetForZone (Updates an existing IPv4 subnet for a zone.)
+
+    listASNumbers (List Autonomous Systems Numbers)
+
+    updateRoutingFirewallRule (Updates Routing firewall rule with specified ID)
+
+    quotaListEmailConfiguration (List quota email template configurations)
+
+    deleteBackupRepository (delete a backup repository)
+
+    changeBgpPeersForVpc (Change the BGP peers for a VPC.)
+
+    createSharedFileSystem (Create a new Shared File System of specified size and disk offering, attached to the given network)
+
+    quotaPresetVariablesList (List the preset variables available for using in the Quota tariff activation rules given the usage type.)
+
+    addNsxController (Add NSX Controller to CloudStack)
+
+    purgeExpungedResources (Purge expunged resources)
+
+    deleteNsxController (delete NSX Controller to CloudStack)
+
+    listWebhooks (Lists Webhooks)
+
+    executeWebhookDelivery (Executes a Webhook delivery)
+
+    recoverSharedFileSystem (Recover a Shared FileSystem by id)
+
+    listIpv4SubnetsForGuestNetwork (Lists IPv4 subnets for guest networks.)
+
+    releaseIpv4SubnetForZone (Releases an existing dedicated IPv4 subnet for a zone.)
+
+    createIpv4SubnetForZone (Creates a IPv4 subnet for a zone.)
+
+    listNetworkProtocols (Lists details of network protocols)
+
+    createASNRange (Creates a range of Autonomous Systems for BGP Dynamic Routing)
+
+    deleteBgpPeer (Deletes an existing Bgp Peer.)
+
+    updateBgpPeer (Updates an existing Bgp Peer.)
+
+    deleteIpv4SubnetForGuestNetwork (Deletes an existing IPv4 subnet for guest network.)
+
+    createRoutingFirewallRule (Creates a routing firewall rule in the given network in ROUTED mode)
+
+    releaseASNumber (Releases an AS Number back to the pool)
+
+    listWebhookDeliveries (Lists Webhook deliveries)
+
+    restartSharedFileSystem (Restart a Shared FileSystem)
+
+    forgotPassword (Sends an email to the user with a token to reset the password using resetPassword command.)
+
+    listASNRanges (List Autonomous Systems Number Ranges)
+
+    resetPassword (Resets the password for the user using the token generated via forgotPassword command.)
+
+    disableRole (Disables a role)
+
+    listBackupRepositories (Lists all backup repositories)
+
+    createBgpPeer (Creates a Bgp Peer for a zone.)
+
+    dedicateBgpPeer (Dedicates an existing Bgp Peer to an account or a domain.)
+
+    createIpv4SubnetForGuestNetwork (Creates a IPv4 subnet for guest networks.)
+
+    destroySharedFileSystem (Destroy a Shared FileSystem by id)
+
+    deleteASNRange (deletes a range of Autonomous Systems for BGP Dynamic Routing)
+
+    listRoutingFirewallRules (Lists all Routing firewall rules)
+
+    listIpv4SubnetsForZone (Lists IPv4 subnets for zone.)
+
+    startSharedFileSystem (Start a Shared FileSystem)
+
+    addBackupRepository (Adds a backup repository to store NAS backups)
+
+    stopSharedFileSystem (Stop a Shared FileSystem)
+
+    deleteRoutingFirewallRule (Deletes a routing firewall rule)
+
+    listBgpPeers (Lists Bgp Peers.)
+
+    listNsxControllers (list all NSX controllers added to CloudStack)
+
+    releaseBgpPeer (Releases an existing dedicated Bgp Peer.)
+
+    deleteIpv4SubnetForZone (Deletes an existing IPv4 subnet for a zone.)
+
+    deleteWebhookDelivery (Deletes Webhook delivery)
+
+    changeSharedFileSystemServiceOffering (Change Service offering of a Shared FileSystem)
+
+    quotaConfigureEmail (Configure a quota email template)
+
+    dedicateIpv4SubnetForZone (Dedicates an existing IPv4 subnet for a zone to an account or a domain.)
+
+    listSharedFileSystems (List Shared FileSystems)
+
+    deleteWebhook (Deletes a Webhook)
+
+    updateWebhook (Updates a Webhook)
+
+    changeSharedFileSystemDiskOffering (Change Disk offering of a Shared FileSystem)
+
+    expungeSharedFileSystem (Expunge a Shared FileSystem by id)
+
+    createWebhook (Creates a Webhook)
+
+    extractSnapshot (Returns a download URL for extracting a snapshot. It must be in the Backed Up state.)
+
+    listSharedFileSystemProviders (Lists all available shared filesystem providers.)
+
+Removed commands:
+
+Changes in command type (sync versus async)
+
+
+Changes in commands arguments:
+
+	createVPCOffering
+
+		Request:
+
+			New parameters: fornsx (optional), networkmode (optional), nsxsupportlb (optional), routingmode (optional), specifyasnumber (optional) 
+
+			Changed parameters: supportedservices (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: fornsx, networkmode, routingmode, specifyasnumber 
+
+	ldapCreateAccount
+
+		Response:
+
+			New parameters: taggedresources 
+
+	copyIso
+
+		Response:
+
+			New parameters: arch 
+
+	updateResourceLimit
+
+		Request:
+
+			New parameters: tag (optional) 
+
+		Response:
+
+			New parameters: tag 
+
+	restoreVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	updateHost
+
+		Response:
+
+			New parameters: arch, explicithosttags, implicithosttags 
+
+	listClusters
+
+		Response:
+
+			New parameters: arch 
+
+	listStoragePoolObjects
+
+		Response:
+
+			New parameters: snapshotname, templatename, volumename 
+
+	updateVPC
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	updateVmNicIp
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	updateDiskOffering
+
+		Response:
+
+			New parameters: suitableforvirtualmachine 
+
+	quotaTariffUpdate
+
+		Request:
+
+			New parameters: position (optional) 
+
+		Response:
+
+			New parameters: id, position 
+
+			Removed parameters: uuid 
+
+	listCapabilities
+
+		Response:
+
+			New parameters: allowuserforcestopvm, sharedfsvmmincpucount, sharedfsvmminramsize 
+
+	checkVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	updateDomain
+
+		Response:
+
+			New parameters: taggedresources 
+
+	detachVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	findHostsForMigration
+
+		Response:
+
+			New parameters: explicithosttags, implicithosttags 
+
+	addNicToVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	listPublicIpAddresses
+
+		Request:
+
+			New parameters: forsystemvms (optional) 
+
+		Response:
+
+			New parameters: forsystemvms 
+
+	updateDefaultNicForVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	copyTemplate
+
+		Response:
+
+			New parameters: arch 
+
+	listNiciraNvpDeviceNetworks
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	resizeVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	changeOfferingForVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	updateNetwork
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	listUsageTypes
+
+		Response:
+
+			New parameters: id, name 
+
+			Removed parameters: usagetypeid 
+
+	migrateVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	resetPasswordForVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	createVPC
+
+		Request:
+
+			New parameters: asnumber (optional), bgppeerids (optional), cidrsize (optional) 
+
+			Changed parameters: cidr (old version - required, new version - optional) 
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	detachIso
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	prepareHostForMaintenance
+
+		Response:
+
+			New parameters: arch, explicithosttags, implicithosttags 
+
+	listVirtualMachines
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	listDiskOfferings
+
+		Request:
+
+			New parameters: virtualmachineid (optional) 
+
+		Response:
+
+			New parameters: suitableforvirtualmachine 
+
+	listProjects
+
+		Response:
+
+			New parameters: taggedresources 
+
+	createAccount
+
+		Response:
+
+			New parameters: taggedresources 
+
+	revertToVMSnapshot
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	registerIso
+
+		Request:
+
+			New parameters: arch (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	cancelHostMaintenance
+
+		Response:
+
+			New parameters: arch, explicithosttags, implicithosttags 
+
+	updateZone
+
+		Response:
+
+			New parameters: asnrange, ismultiarch, isnsxenabled 
+
+	listVlanIpRanges
+
+		Response:
+
+			New parameters: fornsx 
+
+	listProjectAccounts
+
+		Response:
+
+			New parameters: taggedresources 
+
+	createDiskOffering
+
+		Response:
+
+			New parameters: suitableforvirtualmachine 
+
+	migrateVirtualMachineWithVolume
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	attachVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	addHost
+
+		Response:
+
+			New parameters: arch, explicithosttags, implicithosttags 
+
+	updateProject
+
+		Response:
+
+			New parameters: taggedresources 
+
+	listZones
+
+		Response:
+
+			New parameters: asnrange, ismultiarch, isnsxenabled 
+
+	listNetscalerLoadBalancerNetworks
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	migrateVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	migrateVPC
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	dedicatePublicIpRange
+
+		Response:
+
+			New parameters: fornsx 
+
+	recoverVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	cancelHostAsDegraded
+
+		Response:
+
+			New parameters: arch, explicithosttags, implicithosttags 
+
+	listBrocadeVcsDeviceNetworks
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	importRole
+
+		Response:
+
+			New parameters: state 
+
+	quotaTariffCreate
+
+		Request:
+
+			New parameters: position (optional) 
+
+		Response:
+
+			New parameters: id, position 
+
+			Removed parameters: uuid 
+
+	suspendProject
+
+		Response:
+
+			New parameters: taggedresources 
+
+	createZone
+
+		Response:
+
+			New parameters: asnrange, ismultiarch, isnsxenabled 
+
+	listDomainChildren
+
+		Response:
+
+			New parameters: taggedresources 
+
+	importUnmanagedInstance
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	attachIso
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	generateUsageRecords
+
+		Request:
+
+			Changed parameters: enddate (old version - required, new version - optional), startdate (old version - required, new version - optional) 
+
+	listAccounts
+
+		Request:
+
+			New parameters: tag (optional) 
+
+		Response:
+
+			New parameters: taggedresources 
+
+	activateProject
+
+		Response:
+
+			New parameters: taggedresources 
+
+	deleteVnfTemplate
+
+		Request:
+
+			New parameters: issystem (optional) 
+
+	addBaremetalHost
+
+		Response:
+
+			New parameters: arch, explicithosttags, implicithosttags 
+
+	destroyVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	startVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	listHosts
+
+		Response:
+
+			New parameters: arch, explicithosttags, implicithosttags 
+
+	moveDomain
+
+		Response:
+
+			New parameters: taggedresources 
+
+	listNetworks
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	listAffinityGroups
+
+		Response:
+
+			New parameters: dedicatedresources 
+
+	reserveIpAddress
+
+		Response:
+
+			New parameters: forsystemvms 
+
+	listVPCOfferings
+
+		Response:
+
+			New parameters: fornsx, networkmode, routingmode, specifyasnumber 
+
+	uploadVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	lockAccount
+
+		Response:
+
+			New parameters: taggedresources 
+
+	changeServiceForVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	listTemplates
+
+		Request:
+
+			New parameters: arch (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	createAffinityGroup
+
+		Response:
+
+			New parameters: dedicatedresources 
+
+	rebootVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	listVnfTemplates
+
+		Request:
+
+			New parameters: arch (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	deployVnfAppliance
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	updateNetworkOffering
+
+		Response:
+
+			New parameters: fornsx, networkmode, routingmode, specifyasnumber, supportsinternallb 
+
+	createNetworkOffering
+
+		Request:
+
+			New parameters: fornsx (optional), networkmode (optional), nsxsupportlb (optional), nsxsupportsinternallb (optional), routingmode (optional), specifyasnumber (optional) 
+
+		Response:
+
+			New parameters: fornsx, networkmode, routingmode, specifyasnumber, supportsinternallb 
+
+	quotaTariffList
+
+		Request:
+
+			New parameters: id (optional), listonlyremoved (optional) 
+
+		Response:
+
+			New parameters: id, position 
+
+			Removed parameters: uuid 
+
+	destroyVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	createProject
+
+		Response:
+
+			New parameters: taggedresources 
+
+	markDefaultZoneForAccount
+
+		Response:
+
+			New parameters: taggedresources 
+
+	listImageStoreObjects
+
+		Response:
+
+			New parameters: snapshotname, templatename, volumename 
+
+	updateIso
+
+		Request:
+
+			New parameters: arch (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	prepareTemplate
+
+		Response:
+
+			New parameters: arch 
+
+	createDomain
+
+		Response:
+
+			New parameters: taggedresources 
+
+	assignVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	createServiceOffering
+
+		Request:
+
+			New parameters: purgeresources (optional) 
+
+		Response:
+
+			New parameters: purgeresources 
+
+	assignVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	updateTemplate
+
+		Request:
+
+			New parameters: arch (optional), templatetag (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	createVlanIpRange
+
+		Request:
+
+			New parameters: fornsx (optional) 
+
+		Response:
+
+			New parameters: fornsx 
+
+	listPaloAltoFirewallNetworks
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	updateVolume
+
+		Request:
+
+			New parameters: deleteprotection (optional) 
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	updateVirtualMachine
+
+		Request:
+
+			New parameters: deleteprotection (optional) 
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	updateAccount
+
+		Response:
+
+			New parameters: taggedresources 
+
+	disableAccount
+
+		Response:
+
+			New parameters: taggedresources 
+
+	listDomains
+
+		Request:
+
+			New parameters: tag (optional) 
+
+		Response:
+
+			New parameters: taggedresources 
+
+	resetUserDataForVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	deleteTemplate
+
+		Request:
+
+			New parameters: issystem (optional) 
+
+	importVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	createTemplate
+
+		Response:
+
+			New parameters: arch 
+
+	associateIpAddress
+
+		Response:
+
+			New parameters: forsystemvms 
+
+	resetSSHKeyForVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	addKubernetesSupportedVersion
+
+		Request:
+
+			New parameters: arch (optional) 
+
+	linkUserDataToTemplate
+
+		Response:
+
+			New parameters: arch 
+
+	createRole
+
+		Response:
+
+			New parameters: state 
+
+	updateCluster
+
+		Request:
+
+			New parameters: arch (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	listHostTags
+
+		Response:
+
+			New parameters: isimplicit 
+
+	deployVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	listVolumes
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	createNetwork
+
+		Request:
+
+			New parameters: asnumber (optional), bgppeerids (optional), cidrsize (optional) 
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	listNetworkOfferings
+
+		Request:
+
+			New parameters: routingmode (optional) 
+
+		Response:
+
+			New parameters: fornsx, networkmode, routingmode, specifyasnumber, supportsinternallb 
+
+	listVPCs
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	updateVlanIpRange
+
+		Response:
+
+			New parameters: fornsx 
+
+	listResourceLimits
+
+		Request:
+
+			New parameters: tag (optional) 
+
+		Response:
+
+			New parameters: tag 
+
+	listIsos
+
+		Request:
+
+			New parameters: arch (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	updateRole
+
+		Response:
+
+			New parameters: state 
+
+	registerVnfTemplate
+
+		Request:
+
+			New parameters: arch (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	declareHostAsDegraded
+
+		Response:
+
+			New parameters: arch, explicithosttags, implicithosttags 
+
+	updateVMAffinityGroup
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	getUploadParamsForTemplate
+
+		Request:
+
+			New parameters: arch (optional) 
+
+	updateResourceCount
+
+		Request:
+
+			New parameters: tag (optional) 
+
+		Response:
+
+			New parameters: tag 
+
+	listRoles
+
+		Request:
+
+			New parameters: state (optional) 
+
+		Response:
+
+			New parameters: state 
+
+	recoverVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	updateIpAddress
+
+		Response:
+
+			New parameters: forsystemvms 
+
+	migrateNetwork
+
+		Response:
+
+			New parameters: asnumber, asnumberid, bgppeers, ip4routes, ip4routing 
+
+	registerTemplate
+
+		Request:
+
+			New parameters: arch (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	listVnfAppliances
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	createVolume
+
+		Response:
+
+			New parameters: deleteprotection 
+
+	removeSecondaryStorageSelector
+
+		Response:
+
+			New parameters: displaytext, success 
+
+			Removed parameters: id, created, description, heuristicrule, name, removed, type, zoneid 
+
+	addCluster
+
+		Request:
+
+			New parameters: arch (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	removeNicFromVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	enableAccount
+
+		Response:
+
+			New parameters: taggedresources 
+
+	reconnectHost
+
+		Response:
+
+			New parameters: arch, explicithosttags, implicithosttags 
+
+	updateVnfTemplate
+
+		Request:
+
+			New parameters: arch (optional), templatetag (optional) 
+
+		Response:
+
+			New parameters: arch 
+
+	updateVPCOffering
+
+		Response:
+
+			New parameters: fornsx, networkmode, routingmode, specifyasnumber 
+
+	listServiceOfferings
+
+		Request:
+
+			New parameters: templateid (optional) 
+
+		Response:
+
+			New parameters: purgeresources 
+
+	importVm
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	listCapacity
+
+		Request:
+
+			New parameters: tag (optional) 
+
+		Response:
+
+			New parameters: tag 
+
+	stopVirtualMachine
+
+		Response:
+
+			New parameters: deleteprotection, vmtype 
+
+	updateServiceOffering
+
+		Request:
+
+			New parameters: purgeresources (optional) 
+
+		Response:
+
+			New parameters: purgeresources 
