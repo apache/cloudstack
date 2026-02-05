@@ -286,6 +286,14 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "Action to be taken once lease is over", since = "4.21.0")
     private String leaseExpiryAction;
 
+    @SerializedName("categoryid")
+    @Param(description = "the ID of the service offering category", since = "4.23")
+    private String categoryId;
+
+    @SerializedName("category")
+    @Param(description = "the name of the service offering category", since = "4.23")
+    private String categoryName;
+
     public ServiceOfferingResponse() {
     }
 
@@ -707,4 +715,9 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     public void setPurgeResources(Boolean purgeResources) {
         this.purgeResources = purgeResources;
     }
+
+    public String getCategoryId() { return categoryId; }
+    public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
+    public String getCategoryName() { return categoryName; }
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
 }

@@ -78,11 +78,14 @@ import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
@@ -256,6 +259,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offering.ServiceOfferingCategory;
 import com.cloud.offerings.NetworkOfferingDetailsVO;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -269,6 +273,8 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOfferingCategoryVO;
+import com.cloud.service.dao.ServiceOfferingCategoryDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -364,6 +370,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     ServiceOfferingDao _serviceOfferingDao;
     @Inject
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    ServiceOfferingCategoryDao _serviceOfferingCategoryDao;
     @Inject
     DiskOfferingDao _diskOfferingDao;
     @Inject
@@ -3474,6 +3482,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        // validate optional category id
+        final Long serviceOfferingCategoryId = cmd.getCategoryId();
+        if (serviceOfferingCategoryId != null && _serviceOfferingCategoryDao.findById(serviceOfferingCategoryId) == null) {
+            throw new InvalidParameterValueException("Please specify a valid service offering category id");
+        }
+
         // validate lease properties and set leaseExpiryAction
         Integer leaseDuration = cmd.getLeaseDuration();
         VMLeaseManager.ExpiryAction leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
@@ -3489,7 +3503,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
                 cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
-                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), vgpuProfileId, gpuCount, cmd.getGpuDisplay(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
+                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), vgpuProfileId, gpuCount, cmd.getGpuDisplay(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction, serviceOfferingCategoryId);
     }
 
     private Integer validateVgpuProfileAndGetGpuCount(final Long vgpuProfileId, Integer gpuCount) {
@@ -3519,7 +3533,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                       Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
                                                       final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
                                                       final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
-                                                      final boolean isCustomized, final boolean encryptRoot, Long vgpuProfileId, Integer gpuCount, Boolean gpuDisplay, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
+                                                      final boolean isCustomized, final boolean encryptRoot, Long vgpuProfileId, Integer gpuCount, Boolean gpuDisplay, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction, final Long categoryId) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
@@ -3604,6 +3618,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         serviceOffering.setVgpuProfileId(vgpuProfileId);
         serviceOffering.setGpuCount(gpuCount);
         serviceOffering.setGpuDisplay(gpuDisplay);
+        // Set category if provided (categoryId was validated in caller)
+        if (categoryId != null) {
+            serviceOffering.setCategoryId(categoryId);
+        }
 
         DiskOfferingVO diskOffering = null;
         if (diskOfferingId == null) {
@@ -3863,9 +3881,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean purgeResources = cmd.isPurgeResources();
         final Map<String, String> externalDetails = cmd.getExternalDetails();
         final boolean cleanupExternalDetails = cmd.isCleanupExternalDetails();
+        final Long categoryId = cmd.getCategoryId();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
+        }
+
+        // Validate category if provided
+        if (categoryId != null && _serviceOfferingCategoryDao.findById(categoryId) == null) {
+            throw new InvalidParameterValueException("Please specify a valid service offering category id");
         }
 
         // Verify input parameters
@@ -3960,7 +3984,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to update service offering: %s by id user: %s because it is not root-admin or domain-admin", offeringHandle, user));
         }
 
-        final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null || state != null;
+        final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null || state != null || categoryId != null;
         final boolean serviceOfferingExternalDetailsNeedUpdate =
                 serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, cleanupExternalDetails);
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) ||
@@ -3986,6 +4010,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (state != null) {
             offering.setState(state);
+        }
+
+        if (categoryId != null) {
+            offering.setCategoryId(categoryId);
         }
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(offeringHandle.getDiskOfferingId());
@@ -8591,5 +8619,92 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         public void setScope(String scope) {
             this.scope = scope;
         }
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_CREATE, eventDescription = "creating service offering category")
+    public ServiceOfferingCategory createServiceOfferingCategory(CreateServiceOfferingCategoryCmd cmd) {
+        String name = cmd.getName();
+        Integer sortKey = cmd.getSortKey();
+
+        // Check if category with same name already exists
+        ServiceOfferingCategoryVO existingCategory = _serviceOfferingCategoryDao.findByName(name);
+        if (existingCategory != null) {
+            throw new InvalidParameterValueException("Service offering category with name " + name + " already exists");
+        }
+
+        ServiceOfferingCategoryVO category = new ServiceOfferingCategoryVO(name);
+        if (sortKey != null) {
+            category.setSortKey(sortKey);
+        }
+
+        category = _serviceOfferingCategoryDao.persist(category);
+        CallContext.current().setEventDetails("Service offering category id=" + category.getId());
+        return category;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_DELETE, eventDescription = "deleting service offering category")
+    public boolean deleteServiceOfferingCategory(DeleteServiceOfferingCategoryCmd cmd) {
+        Long categoryId = cmd.getId();
+
+        ServiceOfferingCategoryVO category = _serviceOfferingCategoryDao.findById(categoryId);
+        if (category == null) {
+            throw new InvalidParameterValueException("Unable to find service offering category with id " + categoryId);
+        }
+
+        // Check if any service offering is using this category
+        // For now we'll just check if it's the default category (id=1)
+        if (categoryId == 1L) {
+            throw new InvalidParameterValueException("Cannot delete the default service offering category");
+        }
+
+        boolean result = _serviceOfferingCategoryDao.remove(categoryId);
+        if (result) {
+            CallContext.current().setEventDetails("Service offering category id=" + categoryId);
+        }
+        return result;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_EDIT, eventDescription = "updating service offering category")
+    public ServiceOfferingCategory updateServiceOfferingCategory(UpdateServiceOfferingCategoryCmd cmd) {
+        Long categoryId = cmd.getId();
+        String name = cmd.getName();
+        Integer sortKey = cmd.getSortKey();
+
+        // Validate category exists
+        ServiceOfferingCategoryVO category = _serviceOfferingCategoryDao.findById(categoryId);
+        if (category == null) {
+            throw new InvalidParameterValueException("Unable to find service offering category with id " + categoryId);
+        }
+
+        // Check if at least one parameter is being updated
+        if (name == null && sortKey == null) {
+            throw new InvalidParameterValueException("Please specify at least one parameter to update (name or sortKey)");
+        }
+
+        // If name is being updated, check for duplicates
+        if (name != null && !name.equals(category.getName())) {
+            ServiceOfferingCategoryVO existingCategory = _serviceOfferingCategoryDao.findByName(name);
+            if (existingCategory != null) {
+                throw new InvalidParameterValueException("A service offering category with name '" + name + "' already exists");
+            }
+            category.setName(name);
+        }
+
+        // Update sort key if provided
+        if (sortKey != null) {
+            category.setSortKey(sortKey);
+        }
+
+        // Persist changes
+        boolean updated = _serviceOfferingCategoryDao.update(categoryId, category);
+        if (!updated) {
+            throw new CloudRuntimeException("Failed to update service offering category");
+        }
+
+        CallContext.current().setEventDetails("Service offering category id=" + categoryId);
+        return _serviceOfferingCategoryDao.findById(categoryId);
     }
 }

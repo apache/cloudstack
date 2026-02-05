@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse;
 import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -287,6 +288,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
             since = "4.21.0")
     private Map externalDetails;
+
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_CATEGORY_ID,
+            type = CommandType.UUID,
+            entityType = ServiceOfferingCategoryResponse.class,
+            required = false,
+            description = "the ID of the service offering category to associate with this offering",
+            since = "4.23")
+    private Long categoryId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -558,6 +567,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Boolean getGpuDisplay() {
         return Boolean.TRUE.equals(gpuDisplay);
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
     }
 
     /////////////////////////////////////////////////////

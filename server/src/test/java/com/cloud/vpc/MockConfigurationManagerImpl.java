@@ -42,6 +42,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offering.ServiceOfferingCategory;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.org.Grouping.AllocationState;
@@ -62,11 +63,14 @@ import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
@@ -143,6 +147,24 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
 
     @Override
     public List<Long> getServiceOfferingZones(Long serviceOfferingId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ServiceOfferingCategory createServiceOfferingCategory(CreateServiceOfferingCategoryCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean deleteServiceOfferingCategory(DeleteServiceOfferingCategoryCmd cmd) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public ServiceOfferingCategory updateServiceOfferingCategory(UpdateServiceOfferingCategoryCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }

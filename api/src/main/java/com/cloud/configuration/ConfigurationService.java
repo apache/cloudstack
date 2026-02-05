@@ -35,11 +35,14 @@ import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCategoryCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
 import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
@@ -72,6 +75,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offering.ServiceOfferingCategory;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -126,6 +130,30 @@ public interface ConfigurationService {
      * Retrieve ID of domains for a service offering
      */
     List<Long> getServiceOfferingZones(Long serviceOfferingId);
+
+    /**
+     * Creates a service offering category
+     *
+     * @param cmd - the command specifying name and sort key
+     * @return the newly created service offering category
+     */
+    ServiceOfferingCategory createServiceOfferingCategory(CreateServiceOfferingCategoryCmd cmd);
+
+    /**
+     * Deletes a service offering category
+     *
+     * @param cmd - the command specifying category id
+     * @return true if successful, false otherwise
+     */
+    boolean deleteServiceOfferingCategory(DeleteServiceOfferingCategoryCmd cmd);
+
+    /**
+     * Updates a service offering category
+     *
+     * @param cmd - the command specifying category id, name, and/or sort key
+     * @return updated service offering category
+     */
+    ServiceOfferingCategory updateServiceOfferingCategory(UpdateServiceOfferingCategoryCmd cmd);
 
     /**
      * Updates a disk offering
