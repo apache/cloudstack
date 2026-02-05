@@ -69,6 +69,14 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
             true,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Boolean> VmUnmanageLibvirtMetadataCleanup = new ConfigKey<>(Boolean.class,
+            "vm.unmanage.libvirt.metadata.cleanup",
+            "Advanced",
+            "true",
+            "Specifies whether metadata should be cleaned up when a VM is unmanaged, applicable to the KVM hypervisor.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
 
     static boolean isSupported(Hypervisor.HypervisorType hypervisorType) {
         return hypervisorType == VMware || hypervisorType == KVM;

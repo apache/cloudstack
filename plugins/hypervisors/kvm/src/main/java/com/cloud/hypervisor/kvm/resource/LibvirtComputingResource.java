@@ -3013,7 +3013,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.addComp(createDevicesDef(vmTO, guest, vcpus, isUefiEnabled));
 
         MetadataDef metaDef;
-        if ((metaDef = createMetadataDef(vmTO)) != null) {
+        boolean excludeMetadata = vmTO.isExcludeMetadata();
+        if (!excludeMetadata && (metaDef = createMetadataDef(vmTO)) != null) {
             vm.addComp(metaDef);
         }
 
