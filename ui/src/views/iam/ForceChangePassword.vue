@@ -84,9 +84,11 @@
 
             <a-form-item>
               <a-button
+                html-type="submit"
                 type="primary"
                 size="large"
                 block
+                :disabled="loading"
                 :loading="loading"
                 @click="handleSubmit"
               >

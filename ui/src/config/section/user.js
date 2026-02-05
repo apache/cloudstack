@@ -96,8 +96,8 @@ export default {
       },
       popup: true,
       show: (record, store) => {
-        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) &&
-          !record.isdefault && (store.userInfo.id !== record.id)
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          store.userInfo.id !== record.id && record.state === 'enabled' && record.usersource === 'native'
       }
     },
     {
