@@ -62,7 +62,7 @@ public class RemoveGuestOsMappingCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Guest OS Mapping Id: " + id);
+        CallContext.current().setEventDetails("Guest OS Mapping ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _mgr.removeGuestOsMapping(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -74,7 +74,7 @@ public class RemoveGuestOsMappingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing Guest OS Mapping: " + getId();
+        return "Removing Guest OS Mapping with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

@@ -89,7 +89,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Stopping system vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Stopping System VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -108,7 +108,7 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
         VirtualMachine result = _mgr.stopSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);

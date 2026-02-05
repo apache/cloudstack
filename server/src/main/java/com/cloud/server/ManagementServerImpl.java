@@ -5705,7 +5705,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (_hypervisorCapabilitiesDao.update(id, hpvCapabilities)) {
             hpvCapabilities = _hypervisorCapabilitiesDao.findById(id);
-            CallContext.current().setEventDetails("Hypervisor Capabilities id=" + hpvCapabilities.getId());
+            CallContext.current().setEventDetails("Hypervisor Capabilities ID: " + hpvCapabilities.getUuid());
             return hpvCapabilities;
         } else {
             return null;

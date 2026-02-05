@@ -113,7 +113,7 @@ public class UpdateBucketCmd extends BaseCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException {
-        CallContext.current().setEventDetails("Bucket Id: " + this._uuidMgr.getUuid(Bucket.class, getId()));
+        CallContext.current().setEventDetails("Bucket ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = false;
         try {
             result = _bucketService.updateBucket(this, CallContext.current().getCallingAccount());

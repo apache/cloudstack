@@ -112,7 +112,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "applying Instances for load balancer: " + getLoadBalancerId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
+        return "Applying Instances for load balancer with ID: " + getResourceUuid(ApiConstants.ID) + " (Instances IDs: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
     }
 
 
@@ -155,7 +155,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Load balancer Id: " + getLoadBalancerId() + " Instance IDs: " + StringUtils.join(getVirtualMachineIds(), ","));
+        CallContext.current().setEventDetails("Load balancer ID: " + getResourceUuid(ApiConstants.ID) + " Instances IDs: " + StringUtils.join(getVirtualMachineIds(), ","));
 
         Map<Long, List<String>> vmIdIpsMap = getVmIdIpListMap();
         boolean result = false;

@@ -93,7 +93,7 @@ public class ConfigureOvsElementCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "configuring ovs provider: " + id;
+        return "Configuring OVS provider with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class ConfigureOvsElementCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Ovs element: " + id);
+        CallContext.current().setEventDetails("OVS element: " + getResourceUuid(ApiConstants.ID));
         OvsProvider result = _service.get(0).configure(this);
         if (result != null) {
             OvsProviderResponse ovsResponse = _responseGenerator

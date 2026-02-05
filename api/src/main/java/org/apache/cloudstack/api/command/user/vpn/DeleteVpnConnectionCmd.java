@@ -65,7 +65,7 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Delete site-to-site VPN connection for Account " + getEntityOwnerId();
+        return "Deleting site-to-site VPN connection for Account " + getEntityOwnerId();
     }
 
     @Override

@@ -88,7 +88,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "starting Internal LB Instance: " + getId();
+        return "Starting internal LB Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -103,7 +103,7 @@ public class StartInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Internal LB Instance ID: " + getId());
+        CallContext.current().setEventDetails("Internal LB Instance ID: " + getResourceUuid(ApiConstants.ID));
         VirtualRouter result = null;
         VirtualRouter router = _routerService.findRouter(getId());
         if (router == null || router.getRole() != Role.INTERNAL_LB_VM) {

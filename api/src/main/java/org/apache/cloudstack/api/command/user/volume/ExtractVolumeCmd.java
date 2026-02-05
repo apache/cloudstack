@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-
-import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -115,10 +113,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        String volumeId = this._uuidMgr.getUuid(Volume.class, getId());
-        String zoneId = this._uuidMgr.getUuid(DataCenter.class, getZoneId());
-
-        return String.format("Extracting volume: %s from zone: %s", volumeId, zoneId);
+        return "Extracting volume with ID: " + getResourceUuid(ApiConstants.ID) + " from zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
     @Override

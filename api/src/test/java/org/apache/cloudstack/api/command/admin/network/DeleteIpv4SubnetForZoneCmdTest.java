@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.network;
 import com.cloud.event.EventTypes;
 
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,6 +28,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DeleteIpv4SubnetForZoneCmdTest {
@@ -36,15 +39,18 @@ public class DeleteIpv4SubnetForZoneCmdTest {
     @Test
     public void testDeleteIpv4SubnetForZoneCmd() {
         Long id = 1L;
+        UUID uuid = UUID.randomUUID();
 
         DeleteIpv4SubnetForZoneCmd cmd = new DeleteIpv4SubnetForZoneCmd();
         ReflectionTestUtils.setField(cmd, "id", id);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
+        CallContext.current().putApiResourceUuid("id", uuid);
+
         Assert.assertEquals(id, cmd.getId());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_ZONE_IP4_SUBNET_DELETE, cmd.getEventType());
-        Assert.assertEquals(String.format("Deleting zone IPv4 subnet %s", id), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Deleting zone IPv4 subnet with ID: %s", uuid), cmd.getEventDescription());
 
         Mockito.when(routedIpv4Manager.deleteDataCenterIpv4GuestSubnet(cmd)).thenReturn(true);
 

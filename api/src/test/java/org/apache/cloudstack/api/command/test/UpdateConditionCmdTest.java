@@ -31,11 +31,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
 import org.apache.cloudstack.api.response.ConditionResponse;
 
+import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 
@@ -53,6 +56,7 @@ public class UpdateConditionCmdTest {
     private static final Long threshold = 100L;
 
     private static final long accountId = 5L;
+    private static final UUID conditionUuid = UUID.randomUUID();
 
     @Before
     public void setUp() {
@@ -71,6 +75,8 @@ public class UpdateConditionCmdTest {
         ReflectionTestUtils.setField(updateConditionCmd,"relationalOperator", relationalOperator);
         ReflectionTestUtils.setField(updateConditionCmd,"threshold", threshold);
 
+        CallContext.current().putApiResourceUuid("id", conditionUuid);
+
         condition = Mockito.mock(Condition.class);
     }
 
@@ -83,7 +89,7 @@ public class UpdateConditionCmdTest {
         Assert.assertEquals(ApiCommandResourceType.Condition, updateConditionCmd.getApiResourceType());
         Assert.assertEquals("updateconditionresponse", updateConditionCmd.getCommandName());
         Assert.assertEquals(EventTypes.EVENT_CONDITION_UPDATE, updateConditionCmd.getEventType());
-        Assert.assertEquals("Updating a condition.", updateConditionCmd.getEventDescription());
+        Assert.assertEquals("Updating Instance AutoScale condition with ID: " + conditionUuid, updateConditionCmd.getEventDescription());
 
         when(entityMgr.findById(Condition.class, conditionId)).thenReturn(condition);
         when(condition.getAccountId()).thenReturn(accountId);

@@ -25,11 +25,13 @@ import static org.mockito.ArgumentMatchers.isNull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -72,11 +74,6 @@ public class CreateSnapshotCmdTest extends TestCase {
             @Override
             public long getEntityOwnerId(){
                 return 1L;
-            }
-
-            @Override
-            protected String getVolumeUuid() {
-                return "123";
             }
         };
 
@@ -121,6 +118,9 @@ public class CreateSnapshotCmdTest extends TestCase {
         AccountService accountService = Mockito.mock(AccountService.class);
         Account account = Mockito.mock(Account.class);
         Mockito.when(accountService.getAccount(anyLong())).thenReturn(account);
+        UUID volumeUuid = UUID.randomUUID();
+
+        CallContext.current().putApiResourceUuid("volumeid", volumeUuid);
 
         VolumeApiService volumeApiService = Mockito.mock(VolumeApiService.class);
 
@@ -137,7 +137,7 @@ public class CreateSnapshotCmdTest extends TestCase {
         try {
             createSnapshotCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to create Snapshot due to an internal error creating Snapshot for volume 123", exception.getDescription());
+            Assert.assertEquals("Failed to create Snapshot due to an internal error creating Snapshot for volume " + volumeUuid, exception.getDescription());
         }
     }
 

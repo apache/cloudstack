@@ -87,7 +87,7 @@ public class RecoverVolumeCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getId());
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
         Volume result = _volumeService.recoverVolume(getId());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);

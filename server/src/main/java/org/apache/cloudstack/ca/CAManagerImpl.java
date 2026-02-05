@@ -181,7 +181,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         if (host == null) {
             throw new CloudRuntimeException("Unable to find valid host to renew certificate for");
         }
-        CallContext.current().setEventDetails("host id: " + host.getId());
+        CallContext.current().setEventDetails("Host ID: " + host.getUuid());
         CallContext.current().putContextParameter(Host.class, host.getUuid());
         String csr = null;
 
@@ -206,7 +206,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         if (sshAccessDetails != null && !sshAccessDetails.isEmpty()) {
             cmd.setAccessDetail(sshAccessDetails);
         }
-        CallContext.current().setEventDetails("generating keystore and CSR for host id: " + host.getId());
+        CallContext.current().setEventDetails("generating keystore and CSR for Host with ID: " + host.getUuid());
         final SetupKeystoreAnswer answer = (SetupKeystoreAnswer)agentManager.send(host.getId(), cmd);
         return answer.getCsr();
     }
@@ -223,12 +223,12 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         if (sshAccessDetails != null && !sshAccessDetails.isEmpty()) {
             cmd.setAccessDetail(sshAccessDetails);
         }
-        CallContext.current().setEventDetails("deploying certificate for host id: " + host.getId());
+        CallContext.current().setEventDetails("deploying certificate for Host with ID: " + host.getUuid());
         final SetupCertificateAnswer answer = (SetupCertificateAnswer)agentManager.send(host.getId(), cmd);
         if (answer.getResult()) {
-            CallContext.current().setEventDetails("successfully deployed certificate for host id: " + host.getId());
+            CallContext.current().setEventDetails("successfully deployed certificate for Host with ID: " + host.getUuid());
         } else {
-            CallContext.current().setEventDetails("failed to deploy certificate for host id: " + host.getId());
+            CallContext.current().setEventDetails("failed to deploy certificate for Host with ID: " + host.getUuid());
         }
 
         if (answer.getResult()) {

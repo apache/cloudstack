@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.network;
 import com.cloud.event.EventTypes;
 
 import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
@@ -29,6 +30,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.UUID;
+
 @RunWith(MockitoJUnitRunner.class)
 public class CreateIpv4SubnetForZoneCmdTest {
 
@@ -37,6 +40,7 @@ public class CreateIpv4SubnetForZoneCmdTest {
     @Test
     public void testCreateIpv4SubnetForZoneCmd() {
         Long zoneId = 1L;
+        UUID zoneUuid = UUID.randomUUID();
         String subnet = "192.168.1.0/24";
         String accountName = "user";
         Long projectId = 10L;
@@ -50,6 +54,8 @@ public class CreateIpv4SubnetForZoneCmdTest {
         ReflectionTestUtils.setField(cmd,"domainId", domainId);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
+        CallContext.current().putApiResourceUuid("zoneid", zoneUuid);
+
         Assert.assertEquals(zoneId, cmd.getZoneId());
         Assert.assertEquals(subnet, cmd.getSubnet());
         Assert.assertEquals(accountName, cmd.getAccountName());
@@ -57,7 +63,7 @@ public class CreateIpv4SubnetForZoneCmdTest {
         Assert.assertEquals(domainId, cmd.getDomainId());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_ZONE_IP4_SUBNET_CREATE, cmd.getEventType());
-        Assert.assertEquals(String.format("Creating guest IPv4 subnet %s for zone=%s", subnet, zoneId), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Creating guest IPv4 subnet %s for zone: %s", subnet, zoneUuid), cmd.getEventDescription());
 
         DataCenterIpv4GuestSubnet zoneSubnet = Mockito.mock(DataCenterIpv4GuestSubnet.class);
         Mockito.when(routedIpv4Manager.createDataCenterIpv4GuestSubnet(cmd)).thenReturn(zoneSubnet);

@@ -112,6 +112,12 @@ public class DedicatePodCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "dedicating a pod";
+        String baseDescription = "Dedicating pod with ID:" + getResourceUuid(ApiConstants.POD_ID) + " to domain with ID: " + getResourceUuid(ApiConstants.DOMAIN_ID);
+
+        if (accountName != null) {
+            baseDescription += baseDescription + " and account " + accountName;
+        }
+
+        return baseDescription;
     }
 }

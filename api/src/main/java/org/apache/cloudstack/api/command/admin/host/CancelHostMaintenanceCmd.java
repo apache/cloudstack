@@ -76,7 +76,7 @@ public class CancelHostMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Canceling maintenance for host: " + getId();
+        return "Canceling maintenance for host with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

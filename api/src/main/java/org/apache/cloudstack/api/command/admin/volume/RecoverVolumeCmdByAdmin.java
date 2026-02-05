@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.volume;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
@@ -38,7 +39,7 @@ public class RecoverVolumeCmdByAdmin extends RecoverVolumeCmd implements AdminCm
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getId());
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
         Volume result = _volumeService.recoverVolume(getId());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);

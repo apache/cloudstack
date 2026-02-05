@@ -81,7 +81,13 @@ public class DedicateClusterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "dedicating a cluster";
+        String baseDescription = "Dedicating cluster with ID: " + getResourceUuid(ApiConstants.CLUSTER_ID) + " to domain with ID: " + getResourceUuid(ApiConstants.DOMAIN_ID);
+
+        if (accountName != null) {
+            baseDescription = baseDescription + " and account " + accountName;
+        }
+
+        return baseDescription;
     }
 
     /////////////////////////////////////////////////////

@@ -143,12 +143,12 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "removing Instances from load balancer: " + getId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
+        return "Removing Instances from load balancer with ID: " + getResourceUuid(ApiConstants.ID) + " (instances IDs: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
     }
 
     @Override
     public void execute()  {
-        CallContext.current().setEventDetails("Load balancer Id: " + getId() + " Instance IDs: " + StringUtils.join(getVirtualMachineIds(), ","));
+        CallContext.current().setEventDetails("Load balancer ID: " + getResourceUuid(ApiConstants.ID) + " Instances IDs: " + StringUtils.join(getVirtualMachineIds(), ","));
         Map<Long, List<String>> vmIdIpsMap = getVmIdIpListMap();
         try {
             boolean result = _lbService.removeFromLoadBalancer(id, virtualMachineIds, vmIdIpsMap, false);

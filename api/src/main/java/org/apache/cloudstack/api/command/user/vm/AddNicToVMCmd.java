@@ -40,7 +40,6 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.Dhcp;
@@ -121,7 +120,7 @@ public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Adding Network " + this._uuidMgr.getUuid(Network.class, getNetworkId()) + " to User Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
+        return "Adding NIC on Network " + getResourceUuid(ApiConstants.NETWORK_ID) + " to User Instance: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override
@@ -167,7 +166,7 @@ public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()) + " Network Id: " + this._uuidMgr.getUuid(Network.class, getNetworkId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " Network ID: " + getResourceUuid(ApiConstants.NETWORK_ID));
         UserVm result = _userVmService.addNicToVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));

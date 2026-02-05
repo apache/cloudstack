@@ -70,7 +70,7 @@ public class ChangeOutOfBandManagementPasswordCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find host by ID: " + getHostId());
         }
 
-        CallContext.current().setEventDetails("Host Id: " + host.getId() + " Password: " + getPassword().charAt(0) + "****");
+        CallContext.current().setEventDetails("Host ID: " + host.getUuid() + " Password: " + getPassword().charAt(0) + "****");
         CallContext.current().putContextParameter(Host.class, host.getUuid());
 
         final OutOfBandManagementResponse response = outOfBandManagementService.changePassword(host, getPassword());
@@ -101,7 +101,7 @@ public class ChangeOutOfBandManagementPasswordCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "change out-of-band management password for host: " + getHostId();
+        return "Changing out-of-band management password for host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 
     @Override

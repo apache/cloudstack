@@ -140,7 +140,7 @@ public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Getting diagnostics data files from System VM: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
+        return "Getting diagnostics data files from System Instance with ID: " + getResourceUuid(ApiConstants.TARGET_ID);
     }
 
     @Override

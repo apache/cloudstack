@@ -93,7 +93,7 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Update storage ip range " + getId() + " [StartIp=" + getStartIp() + ", EndIp=" + getEndIp() + ", vlan=" + getVlan() + ", netmask=" + getNetmask() + ']';
+        return "Updating storage IP range " + getResourceUuid(ApiConstants.ID) + " [StartIp=" + getStartIp() + ", EndIp=" + getEndIp() + ", VLAN=" + getVlan() + ", netmask=" + getNetmask() + ']';
     }
 
     @Override

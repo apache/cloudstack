@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.network;
 import com.cloud.event.EventTypes;
 
 import org.apache.cloudstack.api.response.DataCenterIpv4SubnetResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.datacenter.DataCenterIpv4GuestSubnet;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
@@ -29,6 +30,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.UUID;
+
 @RunWith(MockitoJUnitRunner.class)
 public class UpdateIpv4SubnetForZoneCmdTest {
 
@@ -37,6 +40,7 @@ public class UpdateIpv4SubnetForZoneCmdTest {
     @Test
     public void testUpdateIpv4SubnetForZoneCmd() {
         Long id = 1L;
+        UUID uuid = UUID.randomUUID();
         String subnet = "192.168.1.0/24";
 
         UpdateIpv4SubnetForZoneCmd cmd = new UpdateIpv4SubnetForZoneCmd();
@@ -44,11 +48,13 @@ public class UpdateIpv4SubnetForZoneCmdTest {
         ReflectionTestUtils.setField(cmd, "subnet", subnet);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
+        CallContext.current().putApiResourceUuid("id", uuid);
+
         Assert.assertEquals(id, cmd.getId());
         Assert.assertEquals(subnet, cmd.getSubnet());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_ZONE_IP4_SUBNET_UPDATE, cmd.getEventType());
-        Assert.assertEquals(String.format("Updating zone IPv4 subnet %s", id), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Updating zone IPv4 subnet with ID: %s", uuid), cmd.getEventDescription());
 
         DataCenterIpv4GuestSubnet zoneSubnet = Mockito.mock(DataCenterIpv4GuestSubnet.class);
         Mockito.when(routedIpv4Manager.updateDataCenterIpv4GuestSubnet(cmd)).thenReturn(zoneSubnet);

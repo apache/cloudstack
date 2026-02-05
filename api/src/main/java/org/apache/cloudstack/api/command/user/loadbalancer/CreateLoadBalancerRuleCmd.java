@@ -268,7 +268,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
         boolean success = true;
         LoadBalancer rule = null;
         try {
-            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
 
             if (getOpenFirewall()) {
                 success = success && _firewallService.applyIngressFirewallRules(getSourceIpAddressId(), callerContext.getCallingAccount());

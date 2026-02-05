@@ -88,7 +88,7 @@ public class DeletePaloAltoFirewallCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Palo Alto firewall device";
+        return "Deleting Palo Alto firewall device with ID: " + getResourceUuid(ApiConstants.FIREWALL_DEVICE_ID);
     }
 
     @Override

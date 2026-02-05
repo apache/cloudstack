@@ -267,7 +267,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 if (!_firewallDao.setStateToAdd(newRule)) {
                     throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                 }
-                CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                CallContext.current().setEventDetails("Rule ID: " + newRule.getUuid());
                 CallContext.current().putContextParameter(FirewallRule.class, newRule.getId());
 
                 return newRule;

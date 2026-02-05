@@ -160,7 +160,7 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "creating AutoScale Policy";
+        return "Creating AutoScale Policy";
     }
 
     @Override

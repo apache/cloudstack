@@ -74,7 +74,7 @@ public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Virtual router element Id: " + getEntityId());
+        CallContext.current().setEventDetails("Virtual router element ID: " + getEntityUuid());
         InternalLoadBalancerElementService service = _networkService.getInternalLoadBalancerElementByNetworkServiceProviderId(getNspId());
         VirtualRouterProvider result = service.getInternalLoadBalancerElement(getEntityId());
         if (result != null) {

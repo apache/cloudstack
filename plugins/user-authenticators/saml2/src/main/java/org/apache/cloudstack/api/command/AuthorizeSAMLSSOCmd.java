@@ -83,7 +83,7 @@ public class AuthorizeSAMLSSOCmd extends BaseCmd {
         _accountService.checkAccess(CallContext.current().getCallingAccount(), domain);
         _accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, true, account);
 
-        CallContext.current().setEventDetails("UserId: " + getId());
+        CallContext.current().setEventDetails("User ID: " + getResourceUuid(ApiConstants.USER_ID));
         SuccessResponse response = new SuccessResponse();
         Boolean status = false;
 

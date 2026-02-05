@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.network.bgp;
 import com.cloud.event.EventTypes;
 
 import org.apache.cloudstack.api.response.BgpPeerResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
@@ -29,6 +30,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.UUID;
+
 @RunWith(MockitoJUnitRunner.class)
 public class UpdateBgpPeerCmdTest {
 
@@ -37,6 +40,7 @@ public class UpdateBgpPeerCmdTest {
     @Test
     public void testUpdateBgpPeerCmd() {
         Long id = 1L;
+        UUID uuid = UUID.randomUUID();
         String ip4Address = "ip4-address";
         String ip6Address = "ip6-address";
         Long peerAsNumber = 15000L;
@@ -50,6 +54,8 @@ public class UpdateBgpPeerCmdTest {
         ReflectionTestUtils.setField(cmd, "password", peerPassword);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
+        CallContext.current().putApiResourceUuid("id", uuid);
+
         Assert.assertEquals(id, cmd.getId());
         Assert.assertEquals(ip4Address, cmd.getIp4Address());
         Assert.assertEquals(ip6Address, cmd.getIp6Address());
@@ -57,7 +63,7 @@ public class UpdateBgpPeerCmdTest {
         Assert.assertEquals(peerPassword, cmd.getPassword());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_BGP_PEER_UPDATE, cmd.getEventType());
-        Assert.assertEquals(String.format("Updating Bgp Peer %s", id), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Updating BGP Peer with ID: %s", uuid), cmd.getEventDescription());
 
         BgpPeer bgpPeer = Mockito.mock(BgpPeer.class);
         Mockito.when(routedIpv4Manager.updateBgpPeer(cmd)).thenReturn(bgpPeer);

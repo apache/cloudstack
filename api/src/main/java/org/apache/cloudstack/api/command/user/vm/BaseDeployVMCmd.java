@@ -828,15 +828,15 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     @Override
     public String getCreateEventDescription() {
-        return "creating Vm";
+        return "Creating Instance";
     }
 
     @Override
     public String getEventDescription() {
         if(getStartVm()) {
-            return "starting Vm. Vm Id: " + getEntityUuid();
+            return "Starting Instance with ID: " + getEntityUuid();
         }
-        return "deploying Vm. Vm Id: " + getEntityUuid();
+        return "Deploying Instance with ID: " + getEntityUuid();
     }
 
     @Override

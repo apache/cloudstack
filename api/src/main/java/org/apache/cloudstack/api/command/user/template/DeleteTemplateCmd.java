@@ -98,7 +98,7 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting Template " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId());
+        return "Deleting Template with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -113,7 +113,7 @@ public class DeleteTemplateCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Template Id: " + this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId()));
+        CallContext.current().setEventDetails("Template ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _templateService.deleteTemplate(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

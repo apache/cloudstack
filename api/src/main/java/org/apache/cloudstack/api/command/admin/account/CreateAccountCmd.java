@@ -177,7 +177,7 @@ public class CreateAccountCmd extends BaseCmd {
     @Override
     public void execute() {
         validateParams();
-        CallContext.current().setEventDetails("Account Name: " + getUsername() + ", Domain Id:" + getDomainId());
+        CallContext.current().setEventDetails("Account Name: " + getUsername() + ", Domain ID:" + getResourceUuid(ApiConstants.DOMAIN_ID));
         UserAccount userAccount =
             _accountService.createUserAccount(this);
         if (userAccount != null) {

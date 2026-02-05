@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.event.EventTypes;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
@@ -110,7 +109,7 @@ public class MigrateVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate volume Id: " + this._uuidMgr.getUuid(Volume.class, getVolumeId()) + " to storage pool Id: " + this._uuidMgr.getUuid(StoragePool.class, getStoragePoolId());
+        return "Attempting to migrate volume with ID: " + getResourceUuid(ApiConstants.VOLUME_ID) + " to storage pool: " + getResourceUuid(ApiConstants.STORAGE_ID);
     }
 
     public Long getNewDiskOfferingId() {
