@@ -175,6 +175,13 @@ public class ImageStoreDaoImpl extends GenericDaoBase<ImageStoreVO, Long> implem
     }
 
     @Override
+    public Integer countAllImageCacheStores() {
+        SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
+        sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.Image);
+        return getCount(sc);
+    }
+
+    @Override
     public List<ImageStoreVO> listImageCacheStores() {
         SearchCriteria<ImageStoreVO> sc = createSearchCriteria();
         sc.addAnd("role", SearchCriteria.Op.EQ, DataStoreRole.ImageCache);
