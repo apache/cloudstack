@@ -134,7 +134,6 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute() {
-
         ListResponse<EventResponse> response = _queryService.searchForEvents(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);

@@ -727,7 +727,6 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -1219,57 +1218,64 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public boolean archiveEvents(final ArchiveEventsCmd cmd) {
-        final Account caller = getCaller();
-        final List<Long> ids = cmd.getIds();
-        boolean result = true;
-        List<Long> permittedAccountIds = new ArrayList<>();
+    public boolean archiveEvents(ArchiveEventsCmd cmd) {
+        List<Long> ids = cmd.getIds();
+        String type = cmd.getType();
+        Date startDate = cmd.getStartDate();
+        Date endDate = cmd.getEndDate();
 
-        if (_accountService.isNormalUser(caller.getId()) || caller.getType() == Account.Type.PROJECT) {
-            permittedAccountIds.add(caller.getId());
+        validateEventOperationParameters(ids, type, endDate, startDate);
+
+        Long accountId = null;
+        List<Long> domainIds = null;
+        Account caller = getCaller();
+        Account.Type callerType = caller.getType();
+
+        if (callerType == Account.Type.NORMAL || callerType == Account.Type.PROJECT) {
+            accountId = caller.getId();
         } else {
-            final DomainVO domain = _domainDao.findById(caller.getDomainId());
-            final List<Long> permittedDomainIds = _domainDao.getDomainChildrenIds(domain.getPath());
-            permittedAccountIds = _accountDao.getAccountIdsForDomains(permittedDomainIds);
+            domainIds = _domainDao.getDomainAndChildrenIds(caller.getDomainId());
         }
 
-        final List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
-        final ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, sameOwnerEvents);
+        long totalArchived = _eventDao.archiveEvents(ids, type, startDate, endDate, accountId, domainIds,
+                ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
 
-        if (ids != null && events.size() < ids.size()) {
-            return false;
-        }
-        _eventDao.archiveEvents(events);
-        return result;
+        return totalArchived > 0;
     }
 
     @Override
-    public boolean deleteEvents(final DeleteEventsCmd cmd) {
-        final Account caller = getCaller();
-        final List<Long> ids = cmd.getIds();
-        boolean result = true;
-        List<Long> permittedAccountIds = new ArrayList<>();
+    public boolean deleteEvents(DeleteEventsCmd cmd) {
+        List<Long> ids = cmd.getIds();
+        String type = cmd.getType();
+        Date startDate = cmd.getStartDate();
+        Date endDate = cmd.getEndDate();
 
-        if (_accountMgr.isNormalUser(caller.getId()) || caller.getType() == Account.Type.PROJECT) {
-            permittedAccountIds.add(caller.getId());
+        validateEventOperationParameters(ids, type, endDate, startDate);
+
+        Long accountId = null;
+        List<Long> domainIds = null;
+        Account caller = getCaller();
+        Account.Type callerType = caller.getType();
+
+        if (callerType == Account.Type.NORMAL || callerType == Account.Type.PROJECT) {
+            accountId = caller.getId();
         } else {
-            final DomainVO domain = _domainDao.findById(caller.getDomainId());
-            final List<Long> permittedDomainIds = _domainDao.getDomainChildrenIds(domain.getPath());
-            permittedAccountIds = _accountDao.getAccountIdsForDomains(permittedDomainIds);
+            domainIds = _domainDao.getDomainAndChildrenIds(caller.getDomainId());
         }
 
-        final List<EventVO> events = _eventDao.listToArchiveOrDeleteEvents(ids, cmd.getType(), cmd.getStartDate(), cmd.getEndDate(), permittedAccountIds);
-        final ControlledEntity[] sameOwnerEvents = events.toArray(new ControlledEntity[events.size()]);
-        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, sameOwnerEvents);
+        long totalRemoved = _eventDao.purgeAll(ids, startDate, endDate, null, type, accountId, domainIds,
+                ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
 
-        if (ids != null && events.size() < ids.size()) {
-            return false;
+        return totalRemoved > 0;
+    }
+
+    protected void validateEventOperationParameters(List<Long> ids, String type, Date endDate, Date startDate) {
+        if (CollectionUtils.isEmpty(ids) && ObjectUtils.allNull(type, endDate)) {
+            throw new InvalidParameterValueException("Either 'ids', 'type' or 'enddate' must be specified.");
         }
-        for (final EventVO event : events) {
-            _eventDao.remove(event.getId());
+        if (startDate != null && endDate == null) {
+            throw new InvalidParameterValueException("'startdate' must be specified with 'enddate' parameter.");
         }
-        return result;
     }
 
     @Override
@@ -4412,12 +4418,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                     final Calendar purgeCal = Calendar.getInstance();
                     purgeCal.add(Calendar.DAY_OF_YEAR, -_purgeDelay);
                     final Date purgeTime = purgeCal.getTime();
-                    logger.debug("Deleting events older than: " + purgeTime);
-                    final List<EventVO> oldEvents = _eventDao.listOlderEvents(purgeTime);
-                    logger.debug("Found " + oldEvents.size() + " events to be purged");
-                    for (final EventVO event : oldEvents) {
-                        _eventDao.expunge(event.getId());
-                    }
+                    logger.debug("Starting to purge all event rows older than [{}].", purgeTime);
+                    long totalRemoved = _eventDao.purgeAll(null, null, null, purgeTime, null, null, null,
+                            ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE.value());
+                    logger.info("Purged a total of [{}] event rows older than [{}].", totalRemoved, purgeTime);
                 } catch (final Exception e) {
                     logger.error("Exception ", e);
                 } finally {
