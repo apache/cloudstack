@@ -19,6 +19,7 @@ package com.cloud.storage.dao;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -47,6 +48,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -206,5 +208,50 @@ public class VMTemplateDaoImplTest {
         doReturn(templates).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
         VMTemplateVO readyTemplate = templateDao.findSystemVMReadyTemplate(zoneId, Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64.getType());
         Assert.assertEquals(CPU.CPUArch.arm64, readyTemplate.getArch());
+    }
+
+    @Test
+    public void listByUserdataIdsNotAccount_ReturnsEmptyListWhenUserdataIdsIsEmpty() {
+        List<Long> result = templateDao.listByUserdataIdsNotAccount(Collections.emptyList(), 1L);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void listByUserdataIdsNotAccount_ReturnsMatchingTemplates() {
+        List<Long> userdataIds = Arrays.asList(1L, 2L);
+        long accountId = 3L;
+
+        GenericSearchBuilder<VMTemplateVO, Long> sb = mock(GenericSearchBuilder.class);
+        when(sb.entity()).thenReturn(mock(VMTemplateVO.class));
+        SearchCriteria<Long> sc = mock(SearchCriteria.class);
+        doReturn(sb).when(templateDao).createSearchBuilder(Long.class);
+        doReturn(sc).when(sb).create();
+        doReturn(Arrays.asList(10L, 20L)).when(templateDao).customSearch(sc, null);
+
+        List<Long> result = templateDao.listByUserdataIdsNotAccount(userdataIds, accountId);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertTrue(result.contains(10L));
+        assertTrue(result.contains(20L));
+    }
+
+    @Test
+    public void listByUserdataIdsNotAccount_ReturnsEmptyListWhenNoMatchingTemplates() {
+        List<Long> userdataIds = Arrays.asList(1L, 2L);
+        long accountId = 3L;
+
+        GenericSearchBuilder<VMTemplateVO, Long> sb = mock(GenericSearchBuilder.class);
+        when(sb.entity()).thenReturn(mock(VMTemplateVO.class));
+        SearchCriteria<Long> sc = mock(SearchCriteria.class);
+        doReturn(sb).when(templateDao).createSearchBuilder(Long.class);
+        doReturn(sc).when(sb).create();
+        doReturn(Collections.emptyList()).when(templateDao).customSearch(sc, null);
+
+        List<Long> result = templateDao.listByUserdataIdsNotAccount(userdataIds, accountId);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 }

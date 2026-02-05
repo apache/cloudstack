@@ -863,4 +863,22 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         }
         return rows > 0;
     }
+
+    @Override
+    public List<Long> listByUserdataIdsNotBelongingToAccount(List<Long> userdataIds, long accountId) {
+        if (CollectionUtils.isEmpty(userdataIds)) {
+            return Collections.emptyList();
+        }
+        GenericSearchBuilder<VMTemplateVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("userDataId", sb.entity().getUserDataId(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.NEQ);
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("userDataId", userdataIds.toArray());
+        sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
+        sc.setParameters("accountId", accountId);
+        return customSearch(sc, null);
+    }
 }
