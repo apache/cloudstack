@@ -108,6 +108,7 @@ import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.jsinterpreter.JsInterpreterHelper;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
@@ -213,7 +214,6 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
-import com.cloud.server.ManagementService;
 import com.cloud.server.StatsCollector;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
@@ -400,7 +400,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
     @Inject
-    ManagementService managementService;
+    JsInterpreterHelper jsInterpreterHelper;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -946,6 +946,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
+        jsInterpreterHelper.ensureInterpreterEnabledIfParameterProvided(ApiConstants.IS_TAG_A_RULE, Boolean.TRUE.equals(cmd.isTagARule()));
+
         String providerName = cmd.getStorageProviderName();
         Map<String,String> uriParams = extractUriParamsAsMap(cmd.getUrl());
         boolean isFileScheme = "file".equals(uriParams.get("scheme"));
@@ -1017,9 +1019,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone is currently disabled: %s", zone));
         }
-
-        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
-                Boolean.TRUE.equals(cmd.isTagARule()));
 
         Map<String, Object> params = new HashMap<>();
         params.put("zoneId", zone.getId());
@@ -1201,11 +1200,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @ActionEvent(eventType = EventTypes.EVENT_UPDATE_PRIMARY_STORAGE, eventDescription = "update storage pool")
     public PrimaryDataStoreInfo updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException {
         // Input validation
+        jsInterpreterHelper.ensureInterpreterEnabledIfParameterProvided(ApiConstants.IS_TAG_A_RULE, Boolean.TRUE.equals(cmd.isTagARule()));
+
         Long id = cmd.getId();
-
-        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
-                Boolean.TRUE.equals(cmd.isTagARule()));
-
         StoragePoolVO pool = _storagePoolDao.findById(id);
         if (pool == null) {
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
@@ -2508,6 +2505,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (StringUtils.isBlank(heuristicRule)) {
             throw new IllegalArgumentException("Unable to create a new secondary storage selector as the given heuristic rule is blank.");
         }
+        jsInterpreterHelper.ensureInterpreterEnabledIfParameterProvided(ApiConstants.HEURISTIC_RULE, true);
     }
 
     public void syncDatastoreClusterStoragePool(long datastoreClusterPoolId, List<ModifyStoragePoolAnswer> childDatastoreAnswerList, long hostId) {
