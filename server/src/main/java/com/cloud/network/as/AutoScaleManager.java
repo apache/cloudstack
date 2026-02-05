@@ -39,6 +39,12 @@ public interface AutoScaleManager extends AutoScaleService {
             "The Number of worker threads to scan the autoscale vm groups.",
             false);
 
+    ConfigKey<Boolean> UseAutoscaleVmHostnamePrefixEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
+            "autoscale.vm.hostname.prefixenabled",
+            "true",
+            "If true, the auto scale vm group name will be used as a prefix for the auto scale vm hostnames.",
+            true);
+
     ConfigKey<Integer> AutoScaleErroredInstanceThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
             "autoscale.errored.instance.threshold",
             "10",

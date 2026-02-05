@@ -80,6 +80,7 @@
                 </dependencies>
                 <executions>
                     <execution>
+                        <?m2e execute onConfiguration,onIncremental?>
                         <id>set-properties</id>
                         <phase>validate</phase>
                         <goals>
