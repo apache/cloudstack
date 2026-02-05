@@ -163,6 +163,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "Excluded and obsolete VPN customer gateway cryptographic parameters")
     private Map<String, Object> vpnCustomerGatewayParameters;
 
+    @SerializedName(ApiConstants.LOGS_WEB_SERVER_ENABLED)
+    @Param(description = "true if Logs Web Server plugin is enabled, false otherwise", since = "4.23.0")
+    private boolean logsWebServerEnabled;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -293,9 +297,14 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setAdditionalConfigEnabled(Boolean additionalConfigEnabled) {
         this.additionalConfigEnabled = additionalConfigEnabled;
+
     }
 
     public void setVpnCustomerGatewayParameters(Map<String, Object> vpnCustomerGatewayParameters) {
         this.vpnCustomerGatewayParameters = vpnCustomerGatewayParameters;
+    }
+
+    public void setLogsWebServerEnabled(boolean logsWebServerEnabled) {
+        this.logsWebServerEnabled = logsWebServerEnabled;
     }
 }

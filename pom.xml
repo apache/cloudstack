@@ -191,6 +191,7 @@
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.caffeine.version>3.1.7</cs.caffeine.version>
         <cs.protobuf.version>3.25.5</cs.protobuf.version>
+        <cs.netty.version>4.1.95.Final</cs.netty.version>
     </properties>
 
     <distributionManagement>
@@ -276,6 +277,7 @@
         <module>client</module>
         <module>services</module>
         <module>quickcloud</module>
+        <module>framework/websocket-server</module>
     </modules>
 
     <dependencyManagement>
@@ -632,6 +634,17 @@
                 <version>${cs.jetty.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.jetty.websocket</groupId>
+                <artifactId>websocket-server</artifactId>
+                <version>${cs.jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.websocket</groupId>
+                <artifactId>javax.websocket-api</artifactId>
+                <version>1.1</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse.persistence</groupId>
                 <artifactId>javax.persistence</artifactId>
                 <version>${cs.jpa.version}</version>
@@ -742,6 +755,11 @@
                 <groupId>com.linbit.linstor.api</groupId>
                 <artifactId>java-linstor</artifactId>
                 <version>${cs.java-linstor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${cs.netty.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

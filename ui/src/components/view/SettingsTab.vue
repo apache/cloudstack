@@ -106,6 +106,9 @@ export default {
       case 'imagestore':
         this.scopeKey = 'imagestoreuuid'
         break
+      case 'managementserver':
+        this.scopeKey = 'managementserverid'
+        break
       default:
         this.scopeKey = ''
     }

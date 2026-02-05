@@ -72,7 +72,7 @@
                   layout="vertical"
                 >
                   <a-col :md="24" :lg="24">
-                    <a-form-item name="sourcehypervisor" ref="sourcehypervisor" :label="$t('label.source')">
+                    <a-form-item name="sourcehypervisor" ref="sourcehypervisor" :label="$t('label.source.hypervisor')">
                       <a-radio-group
                         style="text-align: center; width: 100%"
                         v-model:value="form.sourceHypervisor"

@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import com.google.gson.annotations.SerializedName;
 
 import com.cloud.serializer.Param;
@@ -31,6 +35,10 @@ public abstract class BaseResponse implements ResponseObject {
     @SerializedName(ApiConstants.JOB_STATUS)
     @Param(description = "The current status of the latest async job acting on this object")
     private Integer jobStatus;
+
+    @SerializedName(ApiConstants.LOG_IDS)
+    @Param(description = "the IDs of the logs for the request")
+    private List<String> logsIds;
 
     public BaseResponse() {
     }
@@ -82,5 +90,18 @@ public abstract class BaseResponse implements ResponseObject {
     @Override
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
+    }
+
+    @Override
+    public List<String> getLogIds() {
+        return logsIds;
+    }
+
+    @Override
+    public void addLogIds(String... logId) {
+        if (this.logsIds == null) {
+            logsIds = new ArrayList<>();
+        }
+        this.logsIds.addAll(Arrays.asList(logId));
     }
 }
