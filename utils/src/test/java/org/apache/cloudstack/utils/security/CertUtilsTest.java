@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package org.apache.cloudstack.utils.security;
+package org.apache.cloudstack.utils.security;  // Add the correct package statement
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -38,6 +38,7 @@ public class CertUtilsTest {
 
     @Before
     public void setUp() throws Exception {
+        // Assuming CertUtils.generateRandomKeyPair() and CertUtils.generateV3Certificate() are static methods
         caKeyPair = CertUtils.generateRandomKeyPair(1024);
         caCertificate = CertUtils.generateV3Certificate(null, caKeyPair, caKeyPair.getPublic(), "CN=test", "SHA256WithRSAEncryption", 365, null, null);
     }
@@ -54,6 +55,7 @@ public class CertUtilsTest {
         final X509Certificate in = caCertificate;
         final String pem = CertUtils.x509CertificateToPem(in);
         final X509Certificate out = CertUtils.pemToX509Certificate(pem);
+
         Assert.assertTrue(pem.startsWith("-----BEGIN CERTIFICATE-----\n"));
         Assert.assertTrue(pem.endsWith("-----END CERTIFICATE-----\n"));
         Assert.assertEquals(in.getSerialNumber(), out.getSerialNumber());
@@ -114,5 +116,4 @@ public class CertUtilsTest {
             }
         }
     }
-
 }
