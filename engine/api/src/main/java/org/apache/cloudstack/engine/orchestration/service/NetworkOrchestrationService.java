@@ -112,6 +112,9 @@ public interface NetworkOrchestrationService {
     ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
 
+    ConfigKey<Integer> VmNetworkThrottlingRate = new ConfigKey<Integer>("Network", Integer.class, "vm.network.throttling.rate", "200",
+            "Default data transfer rate in megabits per second allowed in User vm's default network.", true);
+
     ConfigKey<Boolean> NETRIS_ENABLED = new ConfigKey<>(Boolean.class, "netris.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the Netris plugin", false, ConfigKey.Scope.Zone, null);
     ConfigKey<Integer> NETWORK_LB_HAPROXY_MAX_CONN = new ConfigKey<>(
