@@ -1678,6 +1678,7 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
     }
 
+    @Test
     public void testGetRootVolumeSizeForVmRestore() {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);

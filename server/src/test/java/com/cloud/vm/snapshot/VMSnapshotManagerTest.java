@@ -389,10 +389,9 @@ public class VMSnapshotManagerTest {
 
     @Test
     public void testUpgradeUserVmServiceOffering() throws ConcurrentOperationException, ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException {
-        Map<String, String> details = new HashMap<String, String>() {{
-                put(userVmDetailCpuNumber.getName(), userVmDetailCpuNumber.getValue());
-                put(userVmDetailMemory.getName(), userVmDetailMemory.getValue());
-        }};
+        Map<String, String> details = new HashMap<>();
+        details.put(userVmDetailCpuNumber.getName(), userVmDetailCpuNumber.getValue());
+        details.put(userVmDetailMemory.getName(), userVmDetailMemory.getValue());
         when(_userVmManager.upgradeVirtualMachine(TEST_VM_ID, SERVICE_OFFERING_ID, details)).thenReturn(true);
         _vmSnapshotMgr.upgradeUserVmServiceOffering(userVm, SERVICE_OFFERING_ID, details);
 

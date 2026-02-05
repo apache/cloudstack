@@ -155,7 +155,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         // Assert
         verify(mockNwDao, times(1)).acquireInLockTable(NW_ID_1, 600);
         assertNotNull(LOCK_NOT_CORRECTLY_GOT, deployment.tableLockId);
-        assertEquals(LOCK_NOT_CORRECTLY_GOT, NW_ID_1, NW_ID_1, deployment.tableLockId.longValue());
+        assertEquals(LOCK_NOT_CORRECTLY_GOT, NW_ID_1, deployment.tableLockId);
     }
 
     @Test(expected = ConcurrentOperationException.class)

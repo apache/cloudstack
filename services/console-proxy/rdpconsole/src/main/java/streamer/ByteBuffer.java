@@ -215,7 +215,7 @@ public class ByteBuffer {
 
     public void extend(int newLength) {
         if (data.length < newLength)
-            Arrays.copyOf(data, newLength);
+            data = Arrays.copyOf(data, newLength);
     }
 
     public void ref() {
