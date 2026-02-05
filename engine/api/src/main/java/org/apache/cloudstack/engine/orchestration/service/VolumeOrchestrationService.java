@@ -90,11 +90,11 @@ public interface VolumeOrchestrationService {
             "volume.allocation.algorithm",
             "Advanced",
             "random",
-            "Order in which storage pool within a cluster will be considered for volume allocation. The value can be 'random', 'firstfit', 'userdispersing', or 'firstfitleastconsumed'.",
+            "Order in which storage pool within a cluster will be considered for volume allocation. The value can be 'random', 'firstfit', 'userdispersing', 'firstfitleastconsumed' or 'maxfree'.",
             true,
             ConfigKey.Scope.Global, null, null, null, null, null,
             ConfigKey.Kind.Select,
-            "random,firstfit,userdispersing,firstfitleastconsumed");
+            "random,firstfit,userdispersing,firstfitleastconsumed,maxfree");
 
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
         throws ConcurrentOperationException, StorageUnavailableException;
