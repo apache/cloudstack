@@ -68,6 +68,7 @@ import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.CreateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.ImportExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
@@ -570,13 +571,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_CREATE, eventDescription = "creating extension")
-    public Extension createExtension(CreateExtensionCmd cmd) {
-        final String name = cmd.getName();
-        final String description = cmd.getDescription();
-        final String typeStr = cmd.getType();
-        String relativePath = cmd.getPath();
-        final Boolean orchestratorRequiresPrepareVm = cmd.isOrchestratorRequiresPrepareVm();
-        final String stateStr = cmd.getState();
+    public Extension createExtension(String name, String description, String typeStr, String relativePath,
+                     String stateStr, Boolean orchestratorRequiresPrepareVm, Map<String, String> details) {
         ExtensionVO extensionByName = extensionDao.findByName(name);
         if (extensionByName != null) {
             throw new CloudRuntimeException("Extension by name already exists");
@@ -612,7 +608,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             }
             extension = extensionDao.persist(extension);
 
-            Map<String, String> details = cmd.getDetails();
             List<ExtensionDetailsVO> detailsVOList = new ArrayList<>();
             if (MapUtils.isNotEmpty(details)) {
                 for (Map.Entry<String, String> entry : details.entrySet()) {
@@ -638,6 +633,22 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     extensionVO.getName()));
         }
         return extensionVO;
+    }
+
+
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_CREATE, eventDescription = "creating extension")
+    public Extension createExtension(CreateExtensionCmd cmd) {
+        final String name = cmd.getName();
+        final String description = cmd.getDescription();
+        final String typeStr = cmd.getType();
+        String relativePath = cmd.getPath();
+        final Boolean orchestratorRequiresPrepareVm = cmd.isOrchestratorRequiresPrepareVm();
+        final String stateStr = cmd.getState();
+        final Map<String, String> details = cmd.getDetails();
+        return createExtension(name, description, typeStr, relativePath, stateStr, orchestratorRequiresPrepareVm,
+                details);
     }
 
     @Override
@@ -973,18 +984,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_CUSTOM_ACTION_ADD, eventDescription = "adding extension custom action")
-    public ExtensionCustomAction addCustomAction(AddCustomActionCmd cmd) {
-        String name = cmd.getName();
-        String description = cmd.getDescription();
-        Long extensionId = cmd.getExtensionId();
-        String resourceTypeStr = cmd.getResourceType();
-        List<String> rolesStrList = cmd.getAllowedRoleTypes();
-        final int timeout = ObjectUtils.defaultIfNull(cmd.getTimeout(), 3);
-        final boolean enabled = cmd.isEnabled();
-        Map parametersMap = cmd.getParametersMap();
-        final String successMessage = cmd.getSuccessMessage();
-        final String errorMessage = cmd.getErrorMessage();
-        Map<String, String> details = cmd.getDetails();
+    public ExtensionCustomAction addCustomAction(String name, String description, long extensionId,
+                 String resourceTypeStr, List<String> rolesStrList, int timeout , boolean enabled, Map parametersMap,
+                 String successMessage, String errorMessage, Map<String, String> details) {
+
         if (name == null || !name.matches("^[a-zA-Z0-9 _-]+$")) {
             throw new InvalidParameterValueException(String.format("Invalid action name: %s. It can contain " +
                     "only alphabets, numbers, hyphen, underscore and space", name));
@@ -1004,7 +1007,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             if (resourceType == null) {
                 throw new InvalidParameterValueException(
                         String.format("Invalid resource type specified: %s. Valid values are: %s", resourceTypeStr,
-                        EnumSet.allOf(ExtensionCustomAction.ResourceType.class)));
+                                EnumSet.allOf(ExtensionCustomAction.ResourceType.class)));
             }
         }
         if (resourceType == null && Extension.Type.Orchestrator.equals(extensionVO.getType())) {
@@ -1048,6 +1051,24 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             CallContext.current().setEventResourceId(savedAction.getId());
             return savedAction;
         });
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_CUSTOM_ACTION_ADD, eventDescription = "adding extension custom action")
+    public ExtensionCustomAction addCustomAction(AddCustomActionCmd cmd) {
+        String name = cmd.getName();
+        String description = cmd.getDescription();
+        Long extensionId = cmd.getExtensionId();
+        String resourceTypeStr = cmd.getResourceType();
+        List<String> rolesStrList = cmd.getAllowedRoleTypes();
+        final int timeout = ObjectUtils.defaultIfNull(cmd.getTimeout(), 3);
+        final boolean enabled = cmd.isEnabled();
+        Map parametersMap = cmd.getParametersMap();
+        final String successMessage = cmd.getSuccessMessage();
+        final String errorMessage = cmd.getErrorMessage();
+        Map<String, String> details = cmd.getDetails();
+        return addCustomAction(name, description, extensionId, resourceTypeStr, rolesStrList, timeout, enabled,
+                parametersMap, successMessage, errorMessage, details);
     }
 
     @Override
@@ -1637,6 +1658,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         cmds.add(RunCustomActionCmd.class);
 
         cmds.add(CreateExtensionCmd.class);
+        cmds.add(ImportExtensionCmd.class);
         cmds.add(ListExtensionsCmd.class);
         cmds.add(DeleteExtensionCmd.class);
         cmds.add(UpdateExtensionCmd.class);
