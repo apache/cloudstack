@@ -460,6 +460,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return null;
     }
 
+    @Override
+    public HostVO findHostByGuidPrefix(String guid) {
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#findHostByName(java.lang.String)
      */
