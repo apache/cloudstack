@@ -316,7 +316,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="form.advancedmode && form?.etcdnodes > 0" name="etcdtemplateid" ref="etcdtemplateid">
+        <a-form-item v-if="form.advancedmode && form.etcdnodes && form.etcdnodes > 0" name="etcdtemplateid" ref="etcdtemplateid">
           <template #label>
             <tooltip-label :title="$t('label.cks.cluster.etcd.nodes.templateid')" :tooltip="$t('label.cks.cluster.etcd.nodes.templateid')"/>
           </template>
@@ -332,6 +332,57 @@
             :placeholder="$t('label.cks.cluster.etcd.nodes.templateid')">
             <a-select-option v-for="(opt, optIndex) in templates" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item v-if="form.advancedmode" name="controlaffinitygroupids" ref="controlaffinitygroupids">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.control.nodes.affinitygroupid')" :tooltip="$t('label.cks.cluster.control.nodes.affinitygroupid')"/>
+          </template>
+          <a-select
+            v-model:value="controlAffinityGroups"
+            mode="multiple"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0"
+            :loading="affinityGroupLoading"
+            :placeholder="$t('label.cks.cluster.control.nodes.affinitygroupid')">
+            <a-select-option v-for="opt in affinityGroups" :key="opt.id" :label="opt.name">
+              {{ opt.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item v-if="form.advancedmode" name="workeraffinitygroupids" ref="workeraffinitygroupids">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.worker.nodes.affinitygroupid')" :tooltip="$t('label.cks.cluster.worker.nodes.affinitygroupid')"/>
+          </template>
+          <a-select
+            v-model:value="workerAffinityGroups"
+            mode="multiple"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0"
+            :loading="affinityGroupLoading"
+            :placeholder="$t('label.cks.cluster.worker.nodes.affinitygroupid')">
+            <a-select-option v-for="opt in affinityGroups" :key="opt.id" :label="opt.name">
+              {{ opt.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item v-if="form.advancedmode && form.etcdnodes && form.etcdnodes > 0" name="etcdaffinitygroupids" ref="etcdaffinitygroupids">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.etcd.nodes.affinitygroupid')" :tooltip="$t('label.cks.cluster.etcd.nodes.affinitygroupid')"/>
+          </template>
+          <a-select
+            v-model:value="etcdAffinityGroups"
+            mode="multiple"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0"
+            :loading="affinityGroupLoading"
+            :placeholder="$t('label.cks.cluster.etcd.nodes.affinitygroupid')">
+            <a-select-option v-for="opt in affinityGroups" :key="opt.id" :label="opt.name">
+              {{ opt.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -490,7 +541,12 @@ export default {
       cksNetworkOffering: null,
       asNumbersZone: [],
       asNumberLoading: false,
-      selectedAsNumber: 0
+      selectedAsNumber: 0,
+      affinityGroups: [],
+      affinityGroupLoading: false,
+      controlAffinityGroups: [],
+      workerAffinityGroups: [],
+      etcdAffinityGroups: []
     }
   },
   beforeCreate () {
@@ -560,6 +616,22 @@ export default {
       this.fetchCKSNetworkOfferingName()
       this.fetchCniConfigurations()
     },
+    fetchAffinityGroups () {
+      this.affinityGroups = []
+      const params = {}
+      if (!this.isObjectEmpty(this.selectedZone)) {
+        params.zoneid = this.selectedZone.id
+      }
+      this.affinityGroupLoading = true
+      getAPI('listAffinityGroups', params).then(json => {
+        const groups = json.listaffinitygroupsresponse.affinitygroup
+        if (this.arrayHasItems(groups)) {
+          this.affinityGroups = groups
+        }
+      }).finally(() => {
+        this.affinityGroupLoading = false
+      })
+    },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
@@ -600,6 +672,7 @@ export default {
       this.fetchNetworkData()
       this.fetchZoneHypervisors()
       this.fetchZoneASNumbers()
+      this.fetchAffinityGroups()
     },
     handleASNumberChange (selectedIndex) {
       this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
@@ -879,6 +952,21 @@ export default {
             params['nodetemplates[' + advancedTemplates + '].node'] = 'etcd'
             params['nodetemplates[' + advancedTemplates + '].template'] = this.templates[values.etcdtemplateid].id
             advancedTemplates++
+          }
+        }
+        if (values.advancedmode) {
+          let affinityIndex = 0
+          const addAffinityGroups = (nodeType, groups) => {
+            if (groups && groups.length > 0) {
+              params[`nodeaffinitygroups[${affinityIndex}].node`] = nodeType
+              params[`nodeaffinitygroups[${affinityIndex}].affinitygroup`] = groups.join(',')
+              affinityIndex++
+            }
+          }
+          addAffinityGroups('control', this.controlAffinityGroups)
+          addAffinityGroups('worker', this.workerAffinityGroups)
+          if (values.etcdnodes > 0) {
+            addAffinityGroups('etcd', this.etcdAffinityGroups)
           }
         }
         if (this.isValidValueForKey(values, 'noderootdisksize') && values.noderootdisksize > 0) {

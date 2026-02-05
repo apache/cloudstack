@@ -18,12 +18,16 @@ package com.cloud.kubernetes.cluster;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -65,6 +69,8 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
     protected VMTemplateDao vmTemplateDao;
+    @Inject
+    protected AffinityGroupDao affinityGroupDao;
     @Inject
     KubernetesClusterService kubernetesClusterService;
 
@@ -242,6 +248,81 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
             }
         }
         return mapping;
+    }
+
+    protected void checkNodeTypeAffinityGroupEntryCompleteness(String nodeType, String affinityGroupUuids) {
+        if (StringUtils.isAnyBlank(nodeType, affinityGroupUuids)) {
+            String error = String.format("Any Node Type to Affinity Group entry should have valid '%s' and '%s' values",
+                    VmDetailConstants.CKS_NODE_TYPE, VmDetailConstants.AFFINITY_GROUP);
+            logger.error(error);
+            throw new InvalidParameterValueException(error);
+        }
+    }
+
+    protected void checkNodeTypeAffinityGroupEntryNodeType(String nodeType) {
+        if (!isValidNodeType(nodeType)) {
+            String error = String.format("The provided value '%s' for Node Type is invalid", nodeType);
+            logger.error(error);
+            throw new InvalidParameterValueException(error);
+        }
+    }
+
+    protected Long validateAffinityGroupUuidAndGetId(String affinityGroupUuid) {
+        if (StringUtils.isBlank(affinityGroupUuid)) {
+            String error = "Empty affinity group UUID provided";
+            logger.error(error);
+            throw new InvalidParameterValueException(error);
+        }
+        AffinityGroup affinityGroup = affinityGroupDao.findByUuid(affinityGroupUuid);
+        if (affinityGroup == null) {
+            String error = String.format("Cannot find an affinity group with ID %s", affinityGroupUuid);
+            logger.error(error);
+            throw new InvalidParameterValueException(error);
+        }
+        return affinityGroup.getId();
+    }
+
+    protected List<Long> validateAndGetAffinityGroupIds(String affinityGroupUuids) {
+        String[] uuids = affinityGroupUuids.split(",");
+        List<Long> affinityGroupIds = new ArrayList<>();
+        for (String uuid : uuids) {
+            String trimmedUuid = uuid.trim();
+            Long affinityGroupId = validateAffinityGroupUuidAndGetId(trimmedUuid);
+            affinityGroupIds.add(affinityGroupId);
+        }
+        return affinityGroupIds;
+    }
+
+    protected void addNodeTypeAffinityGroupEntry(String nodeType, List<Long> affinityGroupIds, Map<String, List<Long>> nodeTypeToAffinityGroupIds) {
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Node Type: '%s' should use affinity group IDs: '%s'", nodeType, affinityGroupIds));
+        }
+        KubernetesClusterNodeType clusterNodeType = KubernetesClusterNodeType.valueOf(nodeType.toUpperCase());
+        nodeTypeToAffinityGroupIds.put(clusterNodeType.name(), affinityGroupIds);
+    }
+
+    protected void processNodeTypeAffinityGroupEntryAndAddToMappingIfValid(Map<String, String> nodeTypeAffinityConfig, Map<String, List<Long>> nodeTypeToAffinityGroupIds) {
+        if (MapUtils.isEmpty(nodeTypeAffinityConfig)) {
+            return;
+        }
+        String nodeType = nodeTypeAffinityConfig.get(VmDetailConstants.CKS_NODE_TYPE);
+        String affinityGroupUuids = nodeTypeAffinityConfig.get(VmDetailConstants.AFFINITY_GROUP);
+        checkNodeTypeAffinityGroupEntryCompleteness(nodeType, affinityGroupUuids);
+        checkNodeTypeAffinityGroupEntryNodeType(nodeType);
+
+        List<Long> affinityGroupIds = validateAndGetAffinityGroupIds(affinityGroupUuids);
+        addNodeTypeAffinityGroupEntry(nodeType, affinityGroupIds, nodeTypeToAffinityGroupIds);
+    }
+
+    @Override
+    public Map<String, List<Long>> getAffinityGroupNodeTypeMap(Map<String, Map<String, String>> affinityGroupNodeTypeMap) {
+        Map<String, List<Long>> nodeTypeToAffinityGroupIds = new HashMap<>();
+        if (MapUtils.isNotEmpty(affinityGroupNodeTypeMap)) {
+            for (Map<String, String> nodeTypeAffinityConfig : affinityGroupNodeTypeMap.values()) {
+                processNodeTypeAffinityGroupEntryAndAddToMappingIfValid(nodeTypeAffinityConfig, nodeTypeToAffinityGroupIds);
+            }
+        }
+        return nodeTypeToAffinityGroupIds;
     }
 
     public void cleanupForAccount(Account account) {

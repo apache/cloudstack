@@ -34,6 +34,19 @@ CREATE TABLE `cloud`.`backup_offering_details` (
 UPDATE `cloud`.`configuration` SET value='random' WHERE name IN ('vm.allocation.algorithm', 'volume.allocation.algorithm') AND value='userconcentratedpod_random';
 UPDATE `cloud`.`configuration` SET value='firstfit' WHERE name IN ('vm.allocation.algorithm', 'volume.allocation.algorithm') AND value='userconcentratedpod_firstfit';
 
+-- Create kubernetes_cluster_affinity_group_map table for CKS per-node-type affinity groups
+CREATE TABLE IF NOT EXISTS `cloud`.`kubernetes_cluster_affinity_group_map` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `cluster_id` bigint unsigned NOT NULL COMMENT 'kubernetes cluster id',
+    `node_type` varchar(32) NOT NULL COMMENT 'CONTROL, WORKER, or ETCD',
+    `affinity_group_id` bigint unsigned NOT NULL COMMENT 'affinity group id',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_kubernetes_cluster_ag_map__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `kubernetes_cluster`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_kubernetes_cluster_ag_map__ag_id` FOREIGN KEY (`affinity_group_id`) REFERENCES `affinity_group`(`id`) ON DELETE CASCADE,
+    INDEX `i_kubernetes_cluster_ag_map__cluster_id`(`cluster_id`),
+    INDEX `i_kubernetes_cluster_ag_map__ag_id`(`affinity_group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Create webhook_filter table
 DROP TABLE IF EXISTS `cloud`.`webhook_filter`;
 CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (

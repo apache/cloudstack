@@ -90,6 +90,7 @@ import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
 import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterAffinityGroupMapDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDetailsDao;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
@@ -217,6 +218,7 @@ public class KubernetesClusterActionWorker {
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
     protected KubernetesClusterDetailsDao kubernetesClusterDetailsDao;
+    protected KubernetesClusterAffinityGroupMapDao kubernetesClusterAffinityGroupMapDao;
     protected KubernetesSupportedVersionDao kubernetesSupportedVersionDao;
 
     protected KubernetesCluster kubernetesCluster;
@@ -251,6 +253,7 @@ public class KubernetesClusterActionWorker {
         this.kubernetesClusterDao = clusterManager.kubernetesClusterDao;
         this.kubernetesClusterDetailsDao = clusterManager.kubernetesClusterDetailsDao;
         this.kubernetesClusterVmMapDao = clusterManager.kubernetesClusterVmMapDao;
+        this.kubernetesClusterAffinityGroupMapDao = clusterManager.kubernetesClusterAffinityGroupMapDao;
         this.kubernetesSupportedVersionDao = clusterManager.kubernetesSupportedVersionDao;
         this.manager = clusterManager;
     }
@@ -1111,5 +1114,19 @@ public class KubernetesClusterActionWorker {
             return groupVO.getId();
         }
         return null;
+    }
+
+    protected List<Long> getAffinityGroupIdsForNodeType(KubernetesClusterNodeType nodeType) {
+        return new ArrayList<>(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(
+            kubernetesCluster.getId(), nodeType.name()));
+    }
+
+    protected List<Long> getMergedAffinityGroupIds(KubernetesClusterNodeType nodeType, Long domainId, Long accountId) {
+        List<Long> affinityGroupIds = getAffinityGroupIdsForNodeType(nodeType);
+        Long explicitAffinityGroupId = getExplicitAffinityGroup(domainId, accountId);
+        if (explicitAffinityGroupId != null && !affinityGroupIds.contains(explicitAffinityGroupId)) {
+            affinityGroupIds.add(explicitAffinityGroupId);
+        }
+        return affinityGroupIds.isEmpty() ? null : affinityGroupIds;
     }
 }
