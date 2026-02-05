@@ -334,7 +334,7 @@ export default {
       const domain = this.deleteDomainResource
       const params = { id: domain.id, cleanup: true }
 
-      api('deleteDomain', params).then(json => {
+      callAPI('deleteDomain', params).then(json => {
         const jobId = json.deletedomainresponse.jobid
 
         this.$pollJob({

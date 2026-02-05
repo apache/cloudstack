@@ -260,7 +260,7 @@ export default {
       userdatapolicy: null,
       userdatapolicylist: {},
       architectureTypes: {},
-      originalOstypeid: null
+      originalOstypeid: null,
       detailsFields: [],
       details: {}
     }
@@ -511,7 +511,7 @@ export default {
       params.id = this.resource.id
       params.templatefilter = 'all'
 
-      api('listTemplates', params).then(response => {
+      getAPI('listTemplates', params).then(response => {
         if (response?.listtemplatesresponse?.template?.length > 0) {
           this.details = response.listtemplatesresponse.template[0].details
           if (this.details) {
