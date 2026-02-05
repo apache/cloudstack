@@ -140,8 +140,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             throw new CloudRuntimeException("VM not found: " + vmId);
         }
 
-        if (vm.getState() != State.Running) {
-            throw new CloudRuntimeException("VM must be running to start backup");
+        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+            throw new CloudRuntimeException("VM must be running or stopped to start backup");
         }
 
         Backup existingBackup = backupDao.findByVmId(vmId);
@@ -163,13 +163,15 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
         String toCheckpointId = "ckp-" + UUID.randomUUID().toString().substring(0, 8);
         String fromCheckpointId = vm.getActiveCheckpointId();
+        Long fromCheckpointCreateTime = vm.getActiveCheckpointCreateTime();
 
         backup.setToCheckpointId(toCheckpointId);
         backup.setFromCheckpointId(fromCheckpointId);
 
         int nbdPort = allocateNbdPort();
+        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
         backup.setNbdPort(nbdPort);
-        backup.setHostId(vm.getHostId());
+        backup.setHostId(hostId);
         // Will be changed later if incremental was done
         backup.setType("FULL");
 
@@ -178,53 +180,52 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         Map<String, String> diskPathUuidMap = new HashMap<>();
         for (Volume vol : volumes) {
-            StoragePoolVO storagePool = primaryDataStoreDao.findById(vol.getPoolId());
-            String volumePath = String.format("/mnt/%s/%s", storagePool.getUuid(), vol.getPath());
+            String volumePath = getVolumePathForFileBasedBackend(vol);
             diskPathUuidMap.put(volumePath, vol.getUuid());
         }
 
-        Host host = hostDao.findById(vm.getHostId());
+        Host host = hostDao.findById(hostId);
         StartBackupCommand startCmd = new StartBackupCommand(
             vm.getInstanceName(),
             toCheckpointId,
             fromCheckpointId,
+            fromCheckpointCreateTime,
             nbdPort,
             diskPathUuidMap,
-            host.getPrivateIpAddress()
+            host.getPrivateIpAddress(),
+            vm.getState() == State.Stopped
         );
 
+        StartBackupAnswer answer;
         try {
-            StartBackupAnswer answer;
-
             if (dummyOffering) {
                 answer = new StartBackupAnswer(startCmd, true, "Dummy answer", System.currentTimeMillis());
             } else {
-                answer = (StartBackupAnswer) agentManager.send(vm.getHostId(), startCmd);
+                answer = (StartBackupAnswer) agentManager.send(hostId, startCmd);
             }
-
-            if (!answer.getResult()) {
-                backupDao.remove(backup.getId());
-                throw new CloudRuntimeException("Failed to start backup: " + answer.getDetails());
-            }
-
-            // Update backup with checkpoint creation time
-            backup.setCheckpointCreateTime(answer.getCheckpointCreateTime());
-            if (Boolean.TRUE.equals(answer.getIncremental())) {
-                // todo: set it in the backend
-                backup.setType("Incremental");
-            }
-            backupDao.update(backup.getId(), backup);
-
-            BackupResponse response = new BackupResponse();
-            response.setId(backup.getUuid());
-            response.setVmId(vm.getUuid());
-            response.setStatus(backup.getStatus());
-            return response;
-
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             backupDao.remove(backup.getId());
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
+
+        if (!answer.getResult()) {
+            backupDao.remove(backup.getId());
+            throw new CloudRuntimeException("Failed to start backup: " + answer.getDetails());
+        }
+
+        // Update backup with checkpoint creation time
+        backup.setCheckpointCreateTime(answer.getCheckpointCreateTime());
+        if (Boolean.TRUE.equals(answer.getIncremental())) {
+            // todo: set it in the backend
+            backup.setType("Incremental");
+        }
+        backupDao.update(backup.getId(), backup);
+
+        BackupResponse response = new BackupResponse();
+        response.setId(backup.getUuid());
+        response.setVmId(vm.getUuid());
+        response.setStatus(backup.getStatus());
+        return response;
     }
 
     @Override
@@ -254,40 +255,43 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             throw new CloudRuntimeException("Image transfers not finalized for backup: " + backupId);
         }
 
-        StopBackupCommand stopCmd = new StopBackupCommand(vm.getInstanceName(), vmId, backupId);
+        if (vm.getState() == State.Running) {
+            StopBackupCommand stopCmd = new StopBackupCommand(vm.getInstanceName(), vmId, backupId);
 
-        try {
             StopBackupAnswer answer;
-            if (dummyOffering) {
-                answer = new StopBackupAnswer(stopCmd, true, "Dummy answer");
-            } else {
-                answer = (StopBackupAnswer) agentManager.send(backup.getHostId(), stopCmd);
+            try {
+                if (dummyOffering) {
+                    answer = new StopBackupAnswer(stopCmd, true, "Dummy answer");
+                } else {
+                    answer = (StopBackupAnswer) agentManager.send(backup.getHostId(), stopCmd);
+                }
+
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                throw new CloudRuntimeException("Failed to communicate with agent", e);
             }
 
             if (!answer.getResult()) {
                 throw new CloudRuntimeException("Failed to stop backup: " + answer.getDetails());
             }
-
-            // Update VM checkpoint tracking
-            String oldCheckpointId = vm.getActiveCheckpointId();
-            vm.setActiveCheckpointId(backup.getToCheckpointId());
-            vm.setActiveCheckpointCreateTime(backup.getCheckpointCreateTime());
-            vmInstanceDao.update(vmId, vm);
-
-            // Delete old checkpoint if exists (POC: skip actual libvirt call)
-            if (oldCheckpointId != null) {
-                // todo: In production: send command to delete oldCheckpointId via virsh checkpoint-delete
-                logger.debug("Would delete old checkpoint: " + oldCheckpointId);
-            }
-
-            // Delete backup session record
-            backupDao.remove(backup.getId());
-
-            return true;
-
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
-            throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
+
+        // Update VM checkpoint tracking
+        String oldCheckpointId = vm.getActiveCheckpointId();
+        vm.setActiveCheckpointId(backup.getToCheckpointId());
+        vm.setActiveCheckpointCreateTime(backup.getCheckpointCreateTime());
+        vmInstanceDao.update(vmId, vm);
+
+        // Delete old checkpoint if exists (POC: skip actual libvirt call)
+        if (oldCheckpointId != null) {
+            // todo: In production: send command to delete oldCheckpointId via virsh checkpoint-delete
+            logger.debug("Would delete old checkpoint: " + oldCheckpointId);
+        }
+
+        // Delete backup session record
+        backupDao.remove(backup.getId());
+
+        return true;
+
     }
 
     private ImageTransferVO createDownloadImageTransfer(Long backupId, VolumeVO volume) {
@@ -300,6 +304,13 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
         String transferId = UUID.randomUUID().toString();
         Host host = hostDao.findById(backup.getHostId());
+
+        VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
+        if (vm.getState() == State.Stopped) {
+            String volumePath = getVolumePathForFileBasedBackend(volume);
+            startNBDServer(transferId, direction, host, volume.getUuid(), volumePath, backup.getNbdPort());
+        }
+
         CreateImageTransferCommand transferCmd = new CreateImageTransferCommand(
                 transferId,
                 host.getPrivateIpAddress(),
@@ -357,27 +368,16 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         return hosts.get(0);
     }
 
-    private ImageTransferVO createUploadImageTransfer(VolumeVO volume) {
-        final String direction = ImageTransfer.Direction.upload.toString();
-        String transferId = UUID.randomUUID().toString();
-
-        int nbdPort = allocateNbdPort();
-        Long poolId = volume.getPoolId();
-        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
-        Host host = getFirstHostFromStoragePool(storagePoolVO);
-
-        // todo: This only works with file based storage (not ceph, linbit)
-        String volumePath = String.format("/mnt/%s/%s", storagePoolVO.getUuid(), volume.getPath());
+    private void startNBDServer(String transferId, String direction, Host host, String exportName, String volumePath, int nbdPort) {
         StartNBDServerAnswer nbdServerAnswer;
         StartNBDServerCommand nbdServerCmd = new StartNBDServerCommand(
                 transferId,
                 host.getPrivateIpAddress(),
-                volume.getUuid(),
+                exportName,
                 volumePath,
                 nbdPort,
                 direction
         );
-
         try {
             nbdServerAnswer = (StartNBDServerAnswer) agentManager.send(host.getId(), nbdServerCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
@@ -386,6 +386,40 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         if (!nbdServerAnswer.getResult()) {
             throw new CloudRuntimeException("Failed to start the NBD server");
         }
+    }
+
+    private String getVolumePathForFileBasedBackend(Volume volume) {
+        Long poolId = volume.getPoolId();
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
+        // todo: This only works with file based storage (not ceph, linbit)
+        String volumePath = String.format("/mnt/%s/%s", storagePoolVO.getUuid(), volume.getPath());
+        return volumePath;
+    }
+
+    private ImageTransferVO createUploadImageTransfer(VolumeVO volume) {
+        final String direction = ImageTransfer.Direction.upload.toString();
+        String transferId = UUID.randomUUID().toString();
+        int nbdPort = allocateNbdPort();
+
+        Long poolId = volume.getPoolId();
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
+        Host host = getFirstHostFromStoragePool(storagePoolVO);
+        String volumePath = getVolumePathForFileBasedBackend(volume);
+
+        startNBDServer(transferId, direction, host, volume.getUuid(), volumePath, nbdPort);
+
+        ImageTransferVO imageTransfer = new ImageTransferVO(
+                transferId,
+                null,
+                volume.getId(),
+                host.getId(),
+                nbdPort,
+                ImageTransferVO.Phase.transferring,
+                ImageTransfer.Direction.upload,
+                volume.getAccountId(),
+                volume.getDomainId(),
+                volume.getDataCenterId()
+        );
 
         CreateImageTransferAnswer transferAnswer;
         CreateImageTransferCommand transferCmd = new CreateImageTransferCommand(
@@ -401,22 +435,10 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         transferAnswer = (CreateImageTransferAnswer) ssvm.sendMessage(transferCmd);
 
         if (!transferAnswer.getResult()) {
-            StopNBDServerCommand stopNbdServerCommand = new StopNBDServerCommand(transferId, direction, nbdPort);
+            stopNbdServer(imageTransfer);
             throw new CloudRuntimeException("Failed to create image transfer: " + transferAnswer.getDetails());
         }
 
-        ImageTransferVO imageTransfer = new ImageTransferVO(
-                transferId,
-                null,
-                volume.getId(),
-                host.getId(),
-                nbdPort,
-                ImageTransferVO.Phase.transferring,
-                ImageTransfer.Direction.upload,
-                volume.getAccountId(),
-                volume.getDomainId(),
-                volume.getDataCenterId()
-        );
 
         imageTransfer.setTransferUrl(transferAnswer.getTransferUrl());
         imageTransfer.setSignedTicketId(transferAnswer.getImageTransferId());
@@ -484,6 +506,29 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
+
+        VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
+        if (vm.getState() == State.Stopped) {
+            boolean stopNbdServerResult = stopNbdServer(imageTransfer);
+            if (!stopNbdServerResult) {
+                throw new CloudRuntimeException("Failed to stop the nbd server");
+            }
+        }
+    }
+
+    private boolean stopNbdServer(ImageTransferVO imageTransfer) {
+        String transferId = imageTransfer.getUuid();
+        int nbdPort = imageTransfer.getNbdPort();
+        String direction = imageTransfer.getDirection().toString();
+        StopNBDServerCommand stopNbdServerCommand = new StopNBDServerCommand(transferId, direction, nbdPort);
+        Answer answer;
+        try {
+            answer = agentManager.send(imageTransfer.getHostId(), stopNbdServerCommand);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Failed to stop NBD server on image transfer finalization", e);
+            return false;
+        }
+        return answer.getResult();
     }
 
     private void finalizeUploadImageTransfer(ImageTransferVO imageTransfer) {
@@ -491,20 +536,14 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         int nbdPort = imageTransfer.getNbdPort();
         String direction = imageTransfer.getDirection().toString();
 
-        StopNBDServerCommand stopNbdServerCommand = new StopNBDServerCommand(transferId, direction, nbdPort);
-        Answer answer;
-        try {
-            answer = agentManager.send(imageTransfer.getHostId(), stopNbdServerCommand);
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
-            throw new CloudRuntimeException("Failed to communicate with agent", e);
-        }
-        if (!answer.getResult()) {
+        boolean stopNbdServerResult = stopNbdServer(imageTransfer);
+        if (!stopNbdServerResult) {
             throw new CloudRuntimeException("Failed to stop the nbd server");
         }
 
         FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId, direction, nbdPort);
         EndPoint ssvm = _epSelector.findSsvm(imageTransfer.getDataCenterId());
-        answer = ssvm.sendMessage(finalizeCmd);
+        Answer answer = ssvm.sendMessage(finalizeCmd);
 
         if (!answer.getResult()) {
             throw new CloudRuntimeException("Failed to finalize image transfer: " + answer.getDetails());
@@ -527,7 +566,6 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         }
         imageTransfer.setPhase(ImageTransferVO.Phase.finished);
         imageTransferDao.update(imageTransfer.getId(), imageTransfer);
-        imageTransferDao.remove(imageTransfer.getId());
         return true;
     }
 
@@ -688,15 +726,11 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                         String transferId = transfer.getUuid();
                         transferIds.add(transferId);
 
-                        String volumePath = volume.getPath();
-                        if (volumePath == null) {
+                        if (volume.getPath() == null) {
                             logger.warn("Volume path is null for image transfer: " + transfer.getUuid());
                             continue;
                         }
-
-                        StoragePoolVO storagePool = primaryDataStoreDao.findById(volume.getPoolId());
-                        volumePath = String.format("/mnt/%s/%s", storagePool.getUuid(), volumePath);
-
+                        String volumePath = getVolumePathForFileBasedBackend(volume);
                         volumePaths.put(transferId, volumePath);
                         volumeSizes.put(transferId, volume.getSize());
                     }

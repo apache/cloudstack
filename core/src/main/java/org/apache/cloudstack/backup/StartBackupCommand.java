@@ -25,21 +25,25 @@ public class StartBackupCommand extends Command {
     private String vmName;
     private String toCheckpointId;
     private String fromCheckpointId;
+    private Long fromCheckpointCreateTime;
     private int nbdPort;
     private Map<String, String> diskPathUuidMap;
     private String hostIpAddress;
+    private boolean stoppedVM;
 
     public StartBackupCommand() {
     }
 
-    public StartBackupCommand(String vmName, String toCheckpointId, String fromCheckpointId,
-                             int nbdPort, Map<String, String> diskPathUuidMap, String hostIpAddress) {
+    public StartBackupCommand(String vmName, String toCheckpointId, String fromCheckpointId, Long fromCheckpointCreateTime,
+                             int nbdPort, Map<String, String> diskPathUuidMap, String hostIpAddress, boolean stoppedVM) {
         this.vmName = vmName;
         this.toCheckpointId = toCheckpointId;
         this.fromCheckpointId = fromCheckpointId;
+        this.fromCheckpointCreateTime = fromCheckpointCreateTime;
         this.nbdPort = nbdPort;
         this.diskPathUuidMap = diskPathUuidMap;
         this.hostIpAddress = hostIpAddress;
+        this.stoppedVM = stoppedVM;
     }
 
     public String getVmName() {
@@ -52,6 +56,10 @@ public class StartBackupCommand extends Command {
 
     public String getFromCheckpointId() {
         return fromCheckpointId;
+    }
+
+    public Long getFromCheckpointCreateTime() {
+        return fromCheckpointCreateTime;
     }
 
     public int getNbdPort() {
@@ -68,6 +76,10 @@ public class StartBackupCommand extends Command {
 
     public String getHostIpAddress() {
         return hostIpAddress;
+    }
+
+    public boolean isStoppedVM() {
+        return stoppedVM;
     }
 
     @Override

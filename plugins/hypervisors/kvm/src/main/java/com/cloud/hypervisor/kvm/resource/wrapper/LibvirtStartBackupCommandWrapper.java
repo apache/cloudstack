@@ -25,13 +25,8 @@ import org.apache.cloudstack.backup.StartBackupAnswer;
 import org.apache.cloudstack.backup.StartBackupCommand;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.libvirt.Connect;
-import org.libvirt.Domain;
-import org.libvirt.DomainInfo;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.StringUtils;
@@ -43,22 +38,25 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
 
     @Override
     public Answer execute(StartBackupCommand cmd, LibvirtComputingResource resource) {
+        if (cmd.isStoppedVM()) {
+            return handleStoppedVmBackup(cmd, resource, cmd.getToCheckpointId());
+        }
+        return handleRunningVmBackup(cmd, resource);
+    }
+
+    public Answer handleRunningVmBackup(StartBackupCommand cmd, LibvirtComputingResource resource) {
         String vmName = cmd.getVmName();
         String toCheckpointId = cmd.getToCheckpointId();
         String fromCheckpointId = cmd.getFromCheckpointId();
+        Long fromCheckpointCreateTime = cmd.getFromCheckpointCreateTime();
         int nbdPort = cmd.getNbdPort();
 
         try {
-            Connect conn = LibvirtConnection.getConnection();
-            Domain dm = conn.domainLookupByName(vmName);
-
-            if (dm == null) {
-                return new StartBackupAnswer(cmd, false, "Domain not found: " + vmName);
-            }
-
-            DomainInfo info = dm.getInfo();
-            if (info.state != DomainInfo.DomainState.VIR_DOMAIN_RUNNING) {
-                return new StartBackupAnswer(cmd, false, "VM is not running");
+            if (StringUtils.isNotBlank(fromCheckpointId)) {
+                Answer redefineAnswer = ensureFromCheckpointExists(cmd, fromCheckpointId, fromCheckpointCreateTime);
+                if (redefineAnswer != null) {
+                    return redefineAnswer;
+                }
             }
 
             // Create backup XML
@@ -92,14 +90,55 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
                 return new StartBackupAnswer(cmd, false, "Backup begin failed: " + result);
             }
 
-            // Get checkpoint creation time - using current time for POC
-            long checkpointCreateTime = System.currentTimeMillis();
-
+            long checkpointCreateTime = getCheckpointCreateTime();
             return new StartBackupAnswer(cmd, true, "Backup started successfully", checkpointCreateTime);
 
         } catch (Exception e) {
             return new StartBackupAnswer(cmd, false, "Error starting backup: " + e.getMessage());
         }
+    }
+
+    private Answer ensureFromCheckpointExists(StartBackupCommand cmd, String fromCheckpointId, Long fromCheckpointCreateTime) {
+        String vmName = cmd.getVmName();
+        Script dumpScript = new Script("/bin/bash");
+        dumpScript.add("-c");
+        dumpScript.add(String.format("virsh checkpoint-dumpxml --domain %s --checkpointname %s --no-domain",
+            vmName, fromCheckpointId));
+        if (dumpScript.execute() == null) {
+            return null;
+        }
+        String redefineXml = createCheckpointXmlForRedefine(fromCheckpointId, fromCheckpointCreateTime);
+        File redefineFile;
+        try {
+            redefineFile = File.createTempFile("checkpoint-redefine-", ".xml");
+        } catch (Exception e) {
+            return new StartBackupAnswer(cmd, false, "Failed to create temp file for checkpoint redefine: " + e.getMessage());
+        }
+        try (FileWriter writer = new FileWriter(redefineFile)) {
+            writer.write(redefineXml);
+        } catch (Exception e) {
+            redefineFile.delete();
+            return new StartBackupAnswer(cmd, false, "Failed to write checkpoint redefine XML: " + e.getMessage());
+        }
+        String createCmd = String.format(LibvirtComputingResource.CHECKPOINT_CREATE_COMMAND, vmName, redefineFile.getAbsolutePath());
+        Script createScript = new Script("/bin/bash");
+        createScript.add("-c");
+        createScript.add(createCmd);
+        String result = createScript.execute();
+        redefineFile.delete();
+        if (result != null) {
+            return new StartBackupAnswer(cmd, false, "Failed to redefine from-checkpoint " + fromCheckpointId + ": " + result);
+        }
+        return null;
+    }
+
+    private String createCheckpointXmlForRedefine(String checkpointName, Long createTime) {
+        StringBuilder xml = new StringBuilder();
+        xml.append("<domaincheckpoint>\n");
+        xml.append("  <name>").append(checkpointName).append("</name>\n");
+        xml.append("  <creationTime>").append(createTime).append("</creationTime>\n");
+        xml.append("</domaincheckpoint>");
+        return xml.toString();
     }
 
     private String createBackupXml(StartBackupCommand cmd, String fromCheckpointId, int nbdPort, LibvirtComputingResource resource) {
@@ -144,5 +183,31 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         return "<domaincheckpoint>\n" +
                "  <name>" + checkpointId + "</name>\n" +
                "</domaincheckpoint>";
+    }
+
+    private Answer handleStoppedVmBackup(StartBackupCommand cmd, LibvirtComputingResource resource, String toCheckpointId) {
+        String vmName = cmd.getVmName();
+        Map<String, String> diskPathUuidMap = cmd.getDiskPathUuidMap();
+        for (Map.Entry<String, String> entry : diskPathUuidMap.entrySet()) {
+            String diskPath = entry.getKey();
+            Script script = new Script("sudo");
+            script.add("qemu-img");
+            script.add("bitmap");
+            script.add("--add");
+            script.add(diskPath);
+            script.add(toCheckpointId);
+            String result = script.execute();
+            if (result != null) {
+                return new StartBackupAnswer(cmd, false,
+                    "Failed to add bitmap " + toCheckpointId + " to disk " + diskPath + ": " + result);
+            }
+        }
+        long checkpointCreateTime = getCheckpointCreateTime();
+        return new StartBackupAnswer(cmd, true, "Stopped VM backup: checkpoint bitmap added successfully",
+            checkpointCreateTime);
+    }
+
+    private long getCheckpointCreateTime() {
+        return System.currentTimeMillis() / 1000;
     }
 }

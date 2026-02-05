@@ -32,7 +32,8 @@ import com.cloud.utils.script.Script;
 public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBDServerCommand, Answer, LibvirtComputingResource> {
     protected Logger logger = LogManager.getLogger(getClass());
 
-    private StartNBDServerAnswer handleUpload(StartNBDServerCommand cmd) {
+    @Override
+    public Answer execute(StartNBDServerCommand cmd, LibvirtComputingResource resource) {
         String volumePath = cmd.getVolumePath();
         int nbdPort = cmd.getNbdPort();
         String hostIpAddress = cmd.getHostIpAddress();
@@ -60,8 +61,14 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
         }
 
         String systemdRunCmd = String.format(
-                "systemd-run --unit=%s --property=Restart=no qemu-nbd --export-name %s --bind %s --port %d --persistent %s",
-                unitName, exportName, hostIpAddress, nbdPort, volumePath
+                "systemd-run --unit=%s --property=Restart=no " +
+                        "qemu-nbd --export-name %s --bind %s --port %d --persistent %s %s",
+                unitName,
+                exportName,
+                hostIpAddress,
+                nbdPort,
+                cmd.getDirection().equals("download") ? "--read-only" : "",
+                volumePath
         );
 
         Script startScript = new Script("/bin/bash", logger);
@@ -107,24 +114,5 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
         String transferUrl = String.format("nbd://%s:%d/%s", hostIpAddress, nbdPort, exportName);
         return new StartNBDServerAnswer(cmd, true, "qemu-nbd service started for upload",
                     transferId, transferUrl);
-    }
-
-    private StartNBDServerAnswer handleDownload(StartNBDServerCommand cmd) {
-        String exportName = cmd.getExportName();
-        int nbdPort = cmd.getNbdPort();
-        String hostIpAddress = cmd.getHostIpAddress();
-        String transferUrl = String.format("nbd://%s:%d/%s", hostIpAddress, nbdPort, exportName);
-
-        return new StartNBDServerAnswer(cmd, true, "qemu-nbd service started for download",
-                cmd.getTransferId(), transferUrl);
-    }
-
-    @Override
-    public Answer execute(StartNBDServerCommand cmd, LibvirtComputingResource resource) {
-        if (cmd.getDirection().equals("download")) {
-            return handleDownload(cmd);
-        } else {
-            return handleUpload(cmd);
-        }
     }
 }
