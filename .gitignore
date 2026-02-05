@@ -99,6 +99,9 @@ tools/marvin/marvin/cloudstackAPI/*
 unittest
 venv
 waf-*
+waf3-*
+
+**/.mvn/.develocity*
 
 # this ignores _all files starting with '.'. Don't do that!
 #.*
