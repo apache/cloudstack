@@ -42,13 +42,16 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
@@ -56,6 +59,7 @@ import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaPresetVariablesListCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
+import org.apache.cloudstack.api.command.QuotaSummaryCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
@@ -74,11 +78,13 @@ import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariable
 import org.apache.cloudstack.quota.activationrule.presetvariables.Value;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
+
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailConfigurationDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
+import org.apache.cloudstack.quota.dao.QuotaSummaryDao;
 import org.apache.cloudstack.quota.dao.QuotaTariffDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
@@ -86,10 +92,13 @@ import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
+import org.apache.cloudstack.quota.vo.QuotaSummaryVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Sets;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -108,7 +117,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 
 @Component
 public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
@@ -121,7 +129,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Inject
     private QuotaCreditsDao quotaCreditsDao;
     @Inject
-    private QuotaUsageDao _quotaUsageDao;
+    private QuotaUsageDao quotaUsageDao;
     @Inject
     private QuotaEmailTemplatesDao _quotaEmailTemplateDao;
 
@@ -132,23 +140,29 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Inject
     private AccountDao _accountDao;
     @Inject
+    private ProjectDao projectDao;
+    @Inject
     private QuotaAccountDao quotaAccountDao;
     @Inject
-    private DomainDao _domainDao;
+    private DomainDao domainDao;
     @Inject
     private AccountManager _accountMgr;
     @Inject
-    private QuotaStatement _statement;
+    private QuotaStatement quotaStatement;
     @Inject
     private QuotaManager _quotaManager;
     @Inject
     private QuotaEmailConfigurationDao quotaEmailConfigurationDao;
+    @Inject
+    private QuotaSummaryDao quotaSummaryDao;
     @Inject
     private JsInterpreterHelper jsInterpreterHelper;
     @Inject
     private ApiDiscoveryService apiDiscoveryService;
 
     private final Class<?>[] assignableClasses = {GenericPresetVariable.class, ComputingResources.class};
+
+    private Set<Account.Type> accountTypesThatCanListAllQuotaSummaries = Sets.newHashSet(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN);
 
     protected void checkActivationRulesAllowed(String activationRule) {
         if (!_quotaService.isJsInterpretationEnabled() && StringUtils.isNotEmpty(activationRule)) {
@@ -180,63 +194,140 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
-    public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(final String accountName, final Long domainId) {
-        List<QuotaSummaryResponse> result = new ArrayList<QuotaSummaryResponse>();
+    public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(QuotaSummaryCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
 
-        if (accountName != null && domainId != null) {
-            Account account = _accountDao.findActiveAccount(accountName, domainId);
-            QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
-            result.add(qr);
+        if (!accountTypesThatCanListAllQuotaSummaries.contains(caller.getType()) || !cmd.isListAll()) {
+            return getQuotaSummaryResponse(caller.getAccountId(), null, null, null, cmd);
         }
 
-        return new Pair<>(result, result.size());
+        return getQuotaSummaryResponseWithListAll(cmd, caller);
     }
 
-    @Override
-    public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll) {
-        return createQuotaSummaryResponse(listAll, null, null, null);
-    }
+    protected Pair<List<QuotaSummaryResponse>, Integer> getQuotaSummaryResponseWithListAll(QuotaSummaryCmd cmd, Account caller) {
+        Long accountId = cmd.getEntityOwnerId();
+        if (accountId == -1) {
+            accountId = cmd.isListAll() ? null : caller.getAccountId();
+        }
 
-    @Override
-    public Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(Boolean listAll, final String keyword, final Long startIndex, final Long pageSize) {
-        List<QuotaSummaryResponse> result = new ArrayList<QuotaSummaryResponse>();
-        Integer count = 0;
-        if (listAll) {
-            Filter filter = new Filter(AccountVO.class, "accountName", true, startIndex, pageSize);
-            Pair<List<AccountVO>, Integer> data = _accountDao.findAccountsLike(keyword, filter);
-            count = data.second();
-            for (final AccountVO account : data.first()) {
-                QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
-                result.add(qr);
-            }
-        } else {
-            Pair<List<QuotaAccountVO>, Integer> data = quotaAccountDao.listAllQuotaAccount(startIndex, pageSize);
-            count = data.second();
-            for (final QuotaAccountVO quotaAccount : data.first()) {
-                AccountVO account = _accountDao.findById(quotaAccount.getId());
-                if (account == null) {
-                    continue;
-                }
-                QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
-                result.add(qr);
+        Long domainId = cmd.getDomainId();
+        if (domainId != null) {
+            DomainVO domain = domainDao.findByIdIncludingRemoved(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException(String.format("Domain [%s] does not exist.", domainId));
             }
         }
-        return new Pair<>(result, count);
+
+        String domainPath = getDomainPathByDomainIdForDomainAdmin(caller);
+
+        String keyword = null;
+        if (Account.Type.ADMIN.equals(caller.getType())) {
+            keyword = cmd.getKeyword();
+        }
+
+        return getQuotaSummaryResponse(accountId, keyword, domainId, domainPath, cmd);
+    }
+
+
+    protected Long getAccountIdByAccountName(String accountName, Long domainId, Account caller) {
+        if (ObjectUtils.anyNull(accountName, domainId)) {
+            return null;
+        }
+
+        Domain domain = domainDao.findByIdIncludingRemoved(domainId);
+        _accountMgr.checkAccess(caller, domain);
+
+        Account account = _accountDao.findAccountIncludingRemoved(accountName, domainId);
+
+        if (account == null) {
+            throw new InvalidParameterValueException(String.format("Account name [%s] or domain id [%s] is invalid.", accountName, domainId));
+        }
+
+        return account.getAccountId();
+    }
+
+    /**
+     * Retrieves the domain path of the caller's domain (if the caller is Domain Admin) for filtering in the quota summary query.
+     * @return null if the caller is an Admin or the domain path of the caller's domain if the caller is a Domain Admin.
+     * @throws InvalidParameterValueException if it cannot find the domain.
+     */
+    protected String getDomainPathByDomainIdForDomainAdmin(Account caller) {
+        if (caller.getType() != Account.Type.DOMAIN_ADMIN) {
+            return null;
+        }
+
+        Long domainId = caller.getDomainId();
+        Domain domain = domainDao.findById(domainId);
+        _accountMgr.checkAccess(caller, domain);
+
+        if (domain == null) {
+            throw new InvalidParameterValueException(String.format("Domain ID [%s] is invalid.", domainId));
+        }
+
+        return domain.getPath();
+    }
+
+    protected Pair<List<QuotaSummaryResponse>, Integer> getQuotaSummaryResponse(Long accountId, String accountName, Long domainId, String domainPath, QuotaSummaryCmd cmd) {
+        Pair<List<QuotaSummaryVO>, Integer> pairSummaries = quotaSummaryDao.listQuotaSummariesForAccountAndOrDomain(accountId, accountName, domainId, domainPath,
+                cmd.getAccountStateToShow(), cmd.getStartIndex(), cmd.getPageSizeVal());
+        List<QuotaSummaryVO> summaries = pairSummaries.first();
+
+        if (CollectionUtils.isEmpty(summaries)) {
+            logger.info("There are no summaries to list for parameters [{}].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "accountName", "domainId", "listAll", "page", "pageSize"));
+            return new Pair<>(new ArrayList<>(), 0);
+        }
+
+        List<QuotaSummaryResponse> responses = summaries.stream().map(this::getQuotaSummaryResponse).collect(Collectors.toList());
+
+        return new Pair<>(responses, pairSummaries.second());
+    }
+
+    protected QuotaSummaryResponse getQuotaSummaryResponse(QuotaSummaryVO summary) {
+        QuotaSummaryResponse response = new QuotaSummaryResponse();
+        Account account = _accountDao.findByUuidIncludingRemoved(summary.getAccountUuid());
+
+        Calendar[] period = quotaStatement.getCurrentStatementTime();
+        Date startDate = period[0].getTime();
+        Date endDate = period[1].getTime();
+        BigDecimal quotaUsage = quotaUsageDao.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, startDate, endDate);
+
+        response.setQuotaUsage(quotaUsage);
+        response.setStartDate(startDate);
+        response.setEndDate(endDate);
+        response.setAccountId(summary.getAccountUuid());
+        response.setAccountName(summary.getAccountName());
+        response.setDomainId(summary.getDomainUuid());
+        response.setDomainPath(summary.getDomainPath());
+        response.setBalance(summary.getQuotaBalance());
+        response.setState(summary.getAccountState());
+        response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+        response.setQuotaEnabled(QuotaConfig.QuotaAccountEnabled.valueIn(account.getId()));
+        response.setDomainRemoved(summary.getDomainRemoved() != null);
+        response.setAccountRemoved(summary.getAccountRemoved() != null);
+        response.setObjectName("summary");
+
+        if (summary.getProjectUuid() != null) {
+            response.setProjectId(summary.getProjectUuid());
+            response.setProjectName(summary.getProjectName());
+            response.setProjectRemoved(summary.getProjectRemoved() != null);
+        }
+
+        return response;
     }
 
     protected QuotaSummaryResponse getQuotaSummaryResponse(final Account account) {
-        Calendar[] period = _statement.getCurrentStatementTime();
+        Calendar[] period = quotaStatement.getCurrentStatementTime();
 
         if (account != null) {
             QuotaSummaryResponse qr = new QuotaSummaryResponse();
-            DomainVO domain = _domainDao.findById(account.getDomainId());
+            DomainVO domain = domainDao.findById(account.getDomainId());
             BigDecimal curBalance = _quotaBalanceDao.lastQuotaBalance(account.getAccountId(), account.getDomainId(), period[1].getTime());
-            BigDecimal quotaUsage = _quotaUsageDao.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, period[0].getTime(), period[1].getTime());
+            BigDecimal quotaUsage = quotaUsageDao.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, period[0].getTime(), period[1].getTime());
 
             qr.setAccountId(account.getUuid());
             qr.setAccountName(account.getAccountName());
             qr.setDomainId(domain.getUuid());
-            qr.setDomainName(domain.getName());
+            qr.setDomainPath(domain.getName());
             qr.setBalance(curBalance);
             qr.setQuotaUsage(quotaUsage);
             qr.setState(account.getState());

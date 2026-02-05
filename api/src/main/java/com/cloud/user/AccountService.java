@@ -126,6 +126,8 @@ public interface AccountService {
 
     Long finalizeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
 
+    Long finalizeAccountId(Long accountId, String accountName, Long domainId, Long projectId);
+
     /**
      * returns the user account object for a given user id
      * @param userId user id

@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Date;
 
 import com.google.gson.annotations.SerializedName;
@@ -30,40 +29,48 @@ import com.cloud.user.Account.State;
 public class QuotaSummaryResponse extends BaseResponse {
 
     @SerializedName("accountid")
-    @Param(description = "Account ID")
+    @Param(description = "Account's ID")
     private String accountId;
 
     @SerializedName("account")
-    @Param(description = "Account name")
+    @Param(description = "Account's name")
     private String accountName;
 
     @SerializedName("domainid")
-    @Param(description = "Domain ID")
+    @Param(description = "Domain's ID")
     private String domainId;
 
     @SerializedName("domain")
-    @Param(description = "Domain name")
-    private String domainName;
+    @Param(description = "Domain's path")
+    private String domainPath;
 
     @SerializedName("balance")
-    @Param(description = "Account balance")
+    @Param(description = "Account's balance")
     private BigDecimal balance;
 
     @SerializedName("state")
-    @Param(description = "Account state")
+    @Param(description = "Account's state")
     private State state;
 
+    @SerializedName("domainremoved")
+    @Param(description = "If the domain is removed or not", since = "4.21.0")
+    private boolean domainRemoved;
+
+    @SerializedName("accountremoved")
+    @Param(description = "If the account is removed or not", since = "4.21.0")
+    private boolean accountRemoved;
+
     @SerializedName("quota")
-    @Param(description = "Quota usage of this period")
+    @Param(description = "Quota consumed between the startdate and enddate")
     private BigDecimal quotaUsage;
 
     @SerializedName("startdate")
-    @Param(description = "Start date")
-    private Date startDate = null;
+    @Param(description = "Start date of the quota consumption")
+    private Date startDate;
 
     @SerializedName("enddate")
-    @Param(description = "End date")
-    private Date endDate = null;
+    @Param(description = "End date of the quota consumption")
+    private Date endDate;
 
     @SerializedName("currency")
     @Param(description = "Currency")
@@ -73,9 +80,17 @@ public class QuotaSummaryResponse extends BaseResponse {
     @Param(description = "If the account has the quota config enabled")
     private boolean quotaEnabled;
 
-    public QuotaSummaryResponse() {
-        super();
-    }
+    @SerializedName("projectname")
+    @Param(description = "Name of the project", since = "4.21.0")
+    private String projectName;
+
+    @SerializedName("projectid")
+    @Param(description = "Project's id", since = "4.21.0")
+    private String projectId;
+
+    @SerializedName("projectremoved")
+    @Param(description = "Whether the project is removed or not", since = "4.21.0")
+    private Boolean projectRemoved;
 
     public String getAccountId() {
         return accountId;
@@ -101,28 +116,16 @@ public class QuotaSummaryResponse extends BaseResponse {
         this.domainId = domainId;
     }
 
-    public String getDomainName() {
-        return domainName;
-    }
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
-    }
-
-    public BigDecimal getQuotaUsage() {
-        return quotaUsage;
-    }
-
-    public State getState() {
-        return state;
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setState(State state) {
         this.state = state;
     }
 
-    public void setQuotaUsage(BigDecimal startQuota) {
-        this.quotaUsage = startQuota.setScale(2, RoundingMode.HALF_EVEN);
+    public void setQuotaUsage(BigDecimal quotaUsage) {
+        this.quotaUsage = quotaUsage;
     }
 
     public BigDecimal getBalance() {
@@ -130,38 +133,42 @@ public class QuotaSummaryResponse extends BaseResponse {
     }
 
     public void setBalance(BigDecimal balance) {
-        this.balance = balance.setScale(2, RoundingMode.HALF_EVEN);
-    }
-
-    public Date getStartDate() {
-        return startDate == null ?  null : new Date(startDate.getTime());
+        this.balance = balance;
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate =  startDate == null ?  null : new Date(startDate.getTime());
-    }
-
-    public Date getEndDate() {
-        return  endDate == null ?  null : new Date(endDate.getTime());
+        this.startDate = startDate;
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate == null ?  null : new Date(endDate.getTime());
-    }
-
-    public String getCurrency() {
-        return currency;
+        this.endDate = endDate;
     }
 
     public void setCurrency(String currency) {
         this.currency = currency;
     }
 
-    public boolean getQuotaEnabled() {
-        return quotaEnabled;
-    }
-
     public void setQuotaEnabled(boolean quotaEnabled) {
         this.quotaEnabled = quotaEnabled;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setProjectRemoved(Boolean projectRemoved) {
+        this.projectRemoved = projectRemoved;
+    }
+
+    public void setDomainRemoved(boolean domainRemoved) {
+        this.domainRemoved = domainRemoved;
+    }
+
+    public void setAccountRemoved(boolean accountRemoved) {
+        this.accountRemoved = accountRemoved;
     }
 }

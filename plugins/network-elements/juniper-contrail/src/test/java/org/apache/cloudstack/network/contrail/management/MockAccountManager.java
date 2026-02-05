@@ -473,6 +473,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public Long finalizeAccountId(Long accountId, String accountName, Long domainId, Long projectId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public void checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
         // TODO Auto-generated method stub
     }
