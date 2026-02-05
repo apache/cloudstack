@@ -347,7 +347,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @Override
     @DB()
     public T lockOneRandomRow(final SearchCriteria<T> sc, final boolean exclusive) {
-        final Filter filter = new Filter(1);
+        final Filter filter = new Filter(1, true);
         final List<T> beans = search(sc, filter, exclusive, true);
         return beans.isEmpty() ? null : beans.get(0);
     }
