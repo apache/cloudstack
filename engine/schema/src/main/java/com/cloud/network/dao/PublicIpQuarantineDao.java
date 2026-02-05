@@ -19,9 +19,21 @@ package com.cloud.network.dao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.utils.db.GenericDao;
 
+import java.util.Date;
+import java.util.List;
+
 public interface PublicIpQuarantineDao extends GenericDao<PublicIpQuarantineVO, Long> {
 
     PublicIpQuarantineVO findByPublicIpAddressId(long publicIpAddressId);
 
     PublicIpQuarantineVO findByIpAddress(String publicIpAddress);
+
+    /**
+     * Returns a list of public IP addresses that are actively quarantined at the specified date and the previous owner differs from the specified user.
+     *
+     * @param userId used to check against the IP's previous owner.
+     * @param date used to check if the quarantine is active;
+     * @return a list of PublicIpQuarantineVOs
+     */
+    List<PublicIpQuarantineVO> listQuarantinedIpAddressesToUser(Long userId, Date date);
 }
