@@ -274,7 +274,9 @@ public abstract class NioConnection implements Callable<Boolean> {
                     if (!Link.doHandshake(socketChannel, sslEngine, getSslHandshakeTimeout())) {
                         throw new IOException("SSL handshake timed out with " + socketAddress);
                     }
-                    logger.trace("SSL: Handshake done");
+                    logger.trace("SSL: Handshake done with {} protocol: {}, cipher suite: {}",
+                            socketAddress, sslEngine.getSession().getProtocol(),
+                            sslEngine.getSession().getCipherSuite());
                     final Link link = new Link(socketAddress, nioConnection);
                     link.setSSLEngine(sslEngine);
                     link.setKey(socketChannel.register(key.selector(), SelectionKey.OP_READ, link));

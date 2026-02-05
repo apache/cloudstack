@@ -74,7 +74,8 @@ public class NioClient extends NioConnection {
             if (!Link.doHandshake(clientConnection, sslEngine, getSslHandshakeTimeout())) {
                 throw new IOException(String.format("SSL Handshake failed while connecting to host: %s", hostLog));
             }
-            logger.info("SSL: Handshake done");
+            logger.info("SSL: Handshake done with {} protocol: {}, cipher suite: {}",
+                    serverAddress, sslEngine.getSession().getProtocol(), sslEngine.getSession().getCipherSuite());
 
             final Link link = new Link(serverAddress, this);
             link.setSSLEngine(sslEngine);
