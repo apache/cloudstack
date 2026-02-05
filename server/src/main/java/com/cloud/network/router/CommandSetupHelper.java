@@ -296,6 +296,10 @@ public class CommandSetupHelper {
         dhcpCommand.setDefault(nic.isDefaultNic());
         dhcpCommand.setRemove(remove);
 
+        // Set DHCP lease timeout from zone-scoped config (0 = infinite)
+        Long leaseTime = (long) NetworkOrchestrationService.DhcpLeaseTimeout.valueIn(router.getDataCenterId());
+        dhcpCommand.setLeaseTime(leaseTime);
+
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(nic.getNetworkId(), router.getId()));
