@@ -14,15 +14,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.vmware.mo;
+package org.apache.cloudstack.storage.dao;
 
-public enum DiskControllerType {
-    // These enums are used only for default values and validations.
-    // To add support for a new disk controller, create a new disk controller mapping instead.
-    osdefault,
-    ide,
-    scsi,
-    lsilogic,
-    pvscsi,
-    none;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import org.apache.cloudstack.storage.DiskControllerMappingVO;
+import com.cloud.utils.db.GenericDao;
+
+import java.util.List;
+
+public interface DiskControllerMappingDao extends GenericDao<DiskControllerMappingVO, Long> {
+    DiskControllerMappingVO findDiskControllerMapping(String name, String classReference, HypervisorType hypervisor);
+
+    List<DiskControllerMappingVO> listForHypervisor(HypervisorType hypervisor);
 }

@@ -60,7 +60,9 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.storage.DiskControllerMappingVO;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
+import org.apache.cloudstack.storage.dao.DiskControllerMappingDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -235,6 +237,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject
     private VMInstanceDao vmInstanceDao;
     @Inject
+    private DiskControllerMappingDao diskControllerMappingDao;
     private UserVmCloneSettingDao cloneSettingDao;
     @Inject
     private TemplateManager templateManager;
@@ -391,6 +394,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         ((VmwareStorageManagerImpl)_storageMgr).configure(params);
 
         _agentMgr.registerForHostEvents(this, true, true, true);
+
+        List<DiskControllerMappingVO> mappingsInDatabase = diskControllerMappingDao.listForHypervisor(Hypervisor.HypervisorType.VMware);
+        VmwareHelper.configureDiskControllerMappingsInVmwareBaseModule(mappingsInDatabase);
 
         logger.info("VmwareManagerImpl has been successfully configured");
         return true;

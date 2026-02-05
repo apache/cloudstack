@@ -67,6 +67,7 @@
   <bean id="dataCenterJoinDaoImpl" class="com.cloud.api.query.dao.DataCenterJoinDaoImpl" />
   <bean id="domainVlanMapDaoImpl" class="com.cloud.dc.dao.DomainVlanMapDaoImpl" />
   <bean id="engineDcDetailsDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DcDetailsDaoImpl" />
+  <bean id="diskControllerMappingDaoImpl" class="org.apache.cloudstack.storage.dao.DiskControllerMappingDaoImpl" />
   <bean id="diskOfferingJoinDaoImpl" class="com.cloud.api.query.dao.DiskOfferingJoinDaoImpl" />
   <bean id="domainDaoImpl" class="com.cloud.domain.dao.DomainDaoImpl" />
   <bean id="domainDetailsDaoImpl" class="com.cloud.domain.dao.DomainDetailsDaoImpl" />

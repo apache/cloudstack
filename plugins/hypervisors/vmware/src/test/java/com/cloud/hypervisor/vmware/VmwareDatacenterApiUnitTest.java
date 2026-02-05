@@ -73,6 +73,7 @@ import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.dao.DiskControllerMappingDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -493,6 +494,11 @@ public class VmwareDatacenterApiUnitTest {
         @Bean
         public VsphereStoragePolicyDao vsphereStoragePolicyDao() {
             return Mockito.mock(VsphereStoragePolicyDao.class);
+        }
+
+        @Bean
+        public DiskControllerMappingDao diskControllerMappingDao() {
+            return Mockito.mock(DiskControllerMappingDao.class);
         }
 
         @Bean
