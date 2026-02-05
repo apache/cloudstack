@@ -216,10 +216,10 @@
       @cancel="closeModal">
       <div v-ctrl-enter="addRule">
         <span
-          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || this.vpcConserveMode)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            :v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+            :v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || this.vpcConserveMode)"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
@@ -467,7 +467,8 @@ export default {
       vmPageSize: 10,
       vmCount: 0,
       searchQuery: null,
-      cidrlist: ''
+      cidrlist: '',
+      vpcConserveMode: false
     }
   },
   computed: {
@@ -504,13 +505,24 @@ export default {
       })
     },
     fetchData () {
+      this.fetchVpc()
       this.fetchListTiers()
       this.fetchPFRules()
     },
-    fetchListTiers () {
-      if ('vpcid' in this.resource && 'associatednetworkid' in this.resource) {
+    fetchVpc () {
+      if (!this.resource.vpcid) {
         return
       }
+      this.vpcConserveMode = false
+      getAPI('listVPCs', {
+        id: this.resource.vpcid
+      }).then(json => {
+        this.vpcConserveMode = json.listvpcsresponse?.vpc?.[0].vpcofferingconservemode || false
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
+    fetchListTiers () {
       this.selectedTier = null
       this.tiers.loading = true
       getAPI('listNetworks', {
@@ -630,7 +642,7 @@ export default {
       if (this.loading) return
       this.loading = true
       this.addVmModalVisible = false
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource || this.vpcConserveMode))) ? this.selectedTier : this.resource.associatednetworkid
       postAPI('createPortForwardingRule', {
         ...this.newRule,
         ipaddressid: this.resource.id,
@@ -788,7 +800,7 @@ export default {
       this.newRule.virtualmachineid = e.target.value
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkId: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+        networkId: ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
         if (!response.listnicsresponse.nic || response.listnicsresponse.nic.length < 1) return
         const nic = response.listnicsresponse.nic[0]
@@ -808,7 +820,7 @@ export default {
       this.vmCount = 0
       this.vms = []
       this.addVmModalLoading = true
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       if (!networkId) {
         this.addVmModalLoading = false
         return

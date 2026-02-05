@@ -135,8 +135,10 @@ export default {
         return
       }
       if (this.resource && this.resource.vpcid) {
-        // VPC IPs with source nat have only VPN
-        if (this.resource.issourcenat) {
+        const vpc = await this.fetchVpc()
+
+        // VPC IPs with source nat have only VPN when VPC offering conserve mode = false
+        if (this.resource.issourcenat && vpc.vpcofferingconservemode === false) {
           this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
           return
         }
@@ -154,7 +156,12 @@ export default {
 
         const network = await this.fetchNetwork()
         if (network && network.networkofferingconservemode) {
-          this.tabs = tabs
+          // VPC IPs with source nat have only VPN when VPC offering conserve mode = false
+          if (this.resource.issourcenat && vpc.vpcofferingconservemode === false) {
+            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+          } else {
+            this.tabs = tabs
+          }
           return
         }
 
@@ -192,6 +199,21 @@ export default {
     },
     fetchAction () {
       this.actions = this.$route.meta.actions || []
+    },
+    fetchVpc () {
+      if (!this.resource.vpcid) {
+        return null
+      }
+      return new Promise((resolve, reject) => {
+        getAPI('listVPCs', {
+          id: this.resource.vpcid
+        }).then(json => {
+          const vpc = json.listvpcsresponse?.vpc?.[0] || null
+          resolve(vpc)
+        }).catch(e => {
+          reject(e)
+        })
+      })
     },
     fetchNetwork () {
       if (!this.resource.associatednetworkid) {

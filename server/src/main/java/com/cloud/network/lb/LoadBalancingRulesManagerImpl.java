@@ -1761,7 +1761,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
 
             result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current(),
-                    lbProtocol, forDisplay, cidrString);
+                    lbProtocol, forDisplay, cidrString, networkId);
         } catch (Exception ex) {
             logger.warn("Failed to create load balancer due to ", ex);
             if (ex instanceof NetworkRuleConflictException) {
@@ -1824,7 +1824,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public LoadBalancer createPublicLoadBalancer(final String xId, final String name, final String description, final int srcPort, final int destPort, final long sourceIpId,
                                                  final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol,
-                                                 final Boolean forDisplay, String cidrList) throws NetworkRuleConflictException {
+                                                 final Boolean forDisplay, String cidrList, Long networkIdParam) throws NetworkRuleConflictException {
         if (!NetUtils.isValidPort(destPort)) {
             throw new InvalidParameterValueException("privatePort is an invalid value: " + destPort);
         }
@@ -1853,7 +1853,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             _accountMgr.checkAccess(caller.getCallingAccount(), null, true, ipAddr);
 
-            final Long networkId = ipAddr.getAssociatedWithNetworkId();
+            final Long networkId = ipAddr.getVpcId() == null ? ipAddr.getAssociatedWithNetworkId() : networkIdParam;
             if (networkId == null) {
                 InvalidParameterValueException ex =
                         new InvalidParameterValueException("Unable to create load balancer rule ; specified sourceip id is not associated with any network");

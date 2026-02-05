@@ -39,7 +39,7 @@ public interface VpcProvisioningService {
                                   Map serviceCapabilitystList, NetUtils.InternetProtocol internetProtocol,
                                   Long serviceOfferingId, String externalProvider, NetworkOffering.NetworkMode networkMode,
                                   List<Long> domainIds, List<Long> zoneIds, VpcOffering.State state,
-                                  NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber);
+                                  NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber, boolean conserveMode);
 
 
     Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(ListVPCOfferingsCmd cmd);
