@@ -150,7 +150,6 @@ import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -315,7 +314,6 @@ import com.cloud.resource.ResourceState;
 import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
-import com.cloud.server.StatsCollector;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -615,28 +613,28 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     SnapshotPolicyDao snapshotPolicyDao;
     @Inject
     BackupScheduleDao backupScheduleDao;
-
-    @Inject
-    private StatsCollector statsCollector;
     @Inject
     private UserDataDao userDataDao;
-
     @Inject
     protected SnapshotHelper snapshotHelper;
-
     @Inject
     private AutoScaleManager autoScaleManager;
-
-    @Inject
-    VMScheduleManager vmScheduleManager;
     @Inject
     NsxProviderDao nsxProviderDao;
-
     @Inject
     NetworkService networkService;
-
     @Inject
     SnapshotDataFactory snapshotDataFactory;
+    @Inject
+    private OrchestrationService _orchSrvc;
+    @Inject
+    private VolumeOrchestrationService volumeMgr;
+    @Inject
+    private ManagementService _mgr;
+    @Inject
+    private UserDataManager userDataManager;
+    @Inject
+    VnfTemplateManager vnfTemplateManager;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -646,18 +644,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private int capacityReleaseInterval;
     private ExecutorService _vmIpFetchThreadExecutor;
     private List<KubernetesServiceHelper> kubernetesServiceHelpers;
-
-
     private String _instance;
     private boolean _instanceNameFlag;
     private int _scaleRetry;
     private Map<Long, VmAndCountDetails> vmIdCountMap = new ConcurrentHashMap<>();
 
     protected static long ROOT_DEVICE_ID = 0;
-
-    private static final int MAX_HTTP_GET_LENGTH = 2 * MAX_USER_DATA_LENGTH_BYTES;
-    private static final int NUM_OF_2K_BLOCKS = 512;
-    private static final int MAX_HTTP_POST_LENGTH = NUM_OF_2K_BLOCKS * MAX_USER_DATA_LENGTH_BYTES;
 
     public List<KubernetesServiceHelper> getKubernetesServiceHelpers() {
         return kubernetesServiceHelpers;
@@ -667,34 +659,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         this.kubernetesServiceHelpers = kubernetesServiceHelpers;
     }
 
-    @Inject
-    private OrchestrationService _orchSrvc;
-
-    @Inject
-    private VolumeOrchestrationService volumeMgr;
-
-    @Inject
-    private ManagementService _mgr;
-
-    @Inject
-    private UserDataManager userDataManager;
-
-    @Inject
-    VnfTemplateManager vnfTemplateManager;
-
-    private static final ConfigKey<Integer> VmIpFetchWaitInterval = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmip.retrieval.interval", "180",
+    private static final ConfigKey<Integer> VmIpFetchWaitInterval = new ConfigKey<>("Advanced", Integer.class, "externaldhcp.vmip.retrieval.interval", "180",
             "Wait Interval (in seconds) for shared network vm dhcp ip addr fetch for next iteration ", true);
 
-    private static final ConfigKey<Integer> VmIpFetchTrialMax = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmip.max.retry", "10",
+    private static final ConfigKey<Integer> VmIpFetchTrialMax = new ConfigKey<>("Advanced", Integer.class, "externaldhcp.vmip.max.retry", "10",
             "The max number of retrieval times for shared network vm dhcp ip fetch, in case of failures", true);
 
-    private static final ConfigKey<Integer> VmIpFetchThreadPoolMax = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmipFetch.threadPool.max", "10",
+    private static final ConfigKey<Integer> VmIpFetchThreadPoolMax = new ConfigKey<>("Advanced", Integer.class, "externaldhcp.vmipFetch.threadPool.max", "10",
             "number of threads for fetching vms ip address", true);
 
-    private static final ConfigKey<Integer> VmIpFetchTaskWorkers = new ConfigKey<Integer>("Advanced", Integer.class, "externaldhcp.vmipfetchtask.workers", "10",
+    private static final ConfigKey<Integer> VmIpFetchTaskWorkers = new ConfigKey<>("Advanced", Integer.class, "externaldhcp.vmipfetchtask.workers", "10",
             "number of worker threads for vm ip fetch task ", true);
 
-    private static final ConfigKey<Boolean> AllowDeployVmIfGivenHostFails = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.deploy.vm.if.deploy.on.given.host.fails", "false",
+    private static final ConfigKey<Boolean> AllowDeployVmIfGivenHostFails = new ConfigKey<>("Advanced", Boolean.class, "allow.deploy.vm.if.deploy.on.given.host.fails", "false",
             "allow vm to deploy on different host if vm fails to deploy on the given host ", true);
 
     private static final ConfigKey<String> KvmAdditionalConfigAllowList = new ConfigKey<>(String.class,
@@ -706,7 +683,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<String> VmwareAdditionalConfigAllowList = new ConfigKey<>(String.class,
     "allow.additional.vm.configuration.list.vmware", "Advanced", "", "Comma separated list of allowed additional configuration options.", true, ConfigKey.Scope.Global, null, null, EnableAdditionalVmConfig.key(), null, null, ConfigKey.Kind.CSV, null);
 
-    private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
+    private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
 
     @Override
@@ -734,7 +711,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public class VmAndCountDetails {
         long vmId;
         int  retrievalCount = VmIpFetchTrialMax.value();
-
 
         public VmAndCountDetails() {
         }
@@ -1192,7 +1168,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
                     //List all networks of vm
                     List<Long> vmNetworks = _vmNetworkMapDao.getNetworks(vmId);
-                    List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
+                    List<DomainRouterVO> routers = new ArrayList<>();
                     //List the stopped routers
                     for(long vmNetworkId : vmNetworks) {
                         List<DomainRouterVO> router = _routerDao.listStopped(vmNetworkId);
@@ -2903,11 +2879,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         UserVmVO vmInstance = _vmDao.findById(cmd.getId());
         VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
-        if (MapUtils.isNotEmpty(details) || cmd.isCleanupDetails()) {
-            if (template != null && template.isDeployAsIs()) {
-                throw new CloudRuntimeException("Detail settings are read from OVA, it cannot be changed by API call.");
-            }
-        }
+
         UserVmVO userVm = _vmDao.findById(cmd.getId());
         if (userVm != null && UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
@@ -2937,6 +2909,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 .collect(Collectors.toList());
         List<VMInstanceDetailVO> existingDetails = vmInstanceDetailsDao.listDetails(id);
         if (cleanupDetails) {
+            if (template != null && template.isDeployAsIs()) {
+                throw new InvalidParameterValueException("Detail settings are read from OVA, it cannot be cleaned up by API call.");
+            }
             if (caller != null && caller.getType() == Account.Type.ADMIN) {
                 for (final VMInstanceDetailVO detail : existingDetails) {
                     if (detail != null && detail.isDisplay() && !isExtraConfig(detail.getName())) {
@@ -2963,6 +2938,23 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 if (details.containsKey("extraconfig")) {
                     throw new InvalidParameterValueException("'extraconfig' should not be included in details as key");
+                }
+
+                if (template != null && template.isDeployAsIs()) {
+                    final List<String> vmwareAllowedDetailsFromOva = VmwareAdditionalDetailsFromOvaEnabled.valueIn(vmInstance.getDataCenterId()) ?
+                            Stream.of(VmwareAllowedAdditionalDetailsFromOva.valueIn(vmInstance.getDataCenterId()).split(","))
+                            .map(String::trim)
+                            .collect(Collectors.toList()) : List.of();
+                    for (String detailKey : details.keySet()) {
+                        if (vmwareAllowedDetailsFromOva.contains(detailKey)) {
+                            continue;
+                        }
+                        VMInstanceDetailVO detailVO = existingDetails.stream().filter(d -> Objects.equals(d.getName(), detailKey)).findFirst().orElse(null);
+                        if (detailVO != null && ObjectUtils.allNotNull(detailVO.getValue(), details.get(detailKey)) && detailVO.getValue().equals(details.get(detailKey))) {
+                            continue;
+                        }
+                        throw new InvalidParameterValueException("Detail settings are read from OVA, it cannot be changed by API call.");
+                    }
                 }
 
                 details.entrySet().removeIf(detail -> isExtraConfig(detail.getKey()));
@@ -3214,7 +3206,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             // Verify that vm's hostName is unique
 
-            List<NetworkVO> vmNtwks = new ArrayList<NetworkVO>(nics.size());
+            List<NetworkVO> vmNtwks = new ArrayList<>(nics.size());
             for (Nic nic : nics) {
                 vmNtwks.add(_networkDao.findById(nic.getNetworkId()));
             }
@@ -3784,7 +3776,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     StorageUnavailableException, ResourceAllocationException {
 
         Account caller = CallContext.current().getCallingAccount();
-        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+        List<NetworkVO> networkList = new ArrayList<>();
 
         // Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, null, true, owner);
@@ -3810,7 +3802,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             //add the default securityGroup only if no security group is specified
             if (securityGroupIdList == null || securityGroupIdList.isEmpty()) {
                 if (securityGroupIdList == null) {
-                    securityGroupIdList = new ArrayList<Long>();
+                    securityGroupIdList = new ArrayList<>();
                 }
                 SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
                 if (defaultGroup != null) {
@@ -3842,7 +3834,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                                             Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId, String vmType, Volume volume, Snapshot snapshot) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException {
 
         Account caller = CallContext.current().getCallingAccount();
-        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+        List<NetworkVO> networkList = new ArrayList<>();
         boolean isSecurityGroupEnabledNetworkUsed = false;
         boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
 
@@ -3920,7 +3912,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             //add the default securityGroup only if no security group is specified
             if (securityGroupIdList == null || securityGroupIdList.isEmpty()) {
                 if (securityGroupIdList == null) {
-                    securityGroupIdList = new ArrayList<Long>();
+                    securityGroupIdList = new ArrayList<>();
                 }
 
                 SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(owner.getId());
@@ -3955,7 +3947,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     StorageUnavailableException, ResourceAllocationException {
 
         Account caller = CallContext.current().getCallingAccount();
-        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+        List<NetworkVO> networkList = new ArrayList<>();
 
         // Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, null, true, owner);
@@ -4910,10 +4902,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             logger.debug("Allocating in the DB for vm");
             DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
 
-            List<String> computeTags = new ArrayList<String>();
+            List<String> computeTags = new ArrayList<>();
             computeTags.add(offering.getHostTag());
 
-            List<String> rootDiskTags = new ArrayList<String>();
+            List<String> rootDiskTags = new ArrayList<>();
             DiskOfferingVO rootDiskOfferingVO = _diskOfferingDao.findById(rootDiskOfferingId);
             rootDiskTags.add(rootDiskOfferingVO.getTags());
 
@@ -5127,7 +5119,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     VirtualMachine.class.getName(), vm.getUuid(), isDisplay);
         }
         else {
-            Map<String, String> customParameters = new HashMap<String, String>();
+            Map<String, String> customParameters = new HashMap<>();
             customParameters.put(UsageEventVO.DynamicParameters.cpuNumber.name(), serviceOffering.getCpu().toString());
             customParameters.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), serviceOffering.getSpeed().toString());
             customParameters.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
@@ -5144,7 +5136,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         logger.debug("Collect vm network statistics from host before stopping Vm");
         long hostId = userVm.getHostId();
-        List<String> vmNames = new ArrayList<String>();
+        List<String> vmNames = new ArrayList<>();
         vmNames.add(userVm.getInstanceName());
         final HostVO host = _hostDao.findById(hostId);
         Account account = _accountMgr.getAccount(userVm.getAccountId());
@@ -5736,7 +5728,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             SecurityGroup defaultSecurityGroup = _securityGroupMgr.getDefaultSecurityGroup(vm.getAccountId());
             if (defaultSecurityGroup != null) {
-                List<Long> groupList = new ArrayList<Long>();
+                List<Long> groupList = new ArrayList<>();
                 groupList.add(defaultSecurityGroup.getId());
                 _securityGroupMgr.addInstanceToGroups(vm, groupList);
             }
@@ -6025,7 +6017,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return;
         }
         long hostId = userVm.getHostId();
-        List<String> vmNames = new ArrayList<String>();
+        List<String> vmNames = new ArrayList<>();
         vmNames.add(userVm.getInstanceName());
         final HostVO host = _hostDao.findById(hostId);
         Account account = _accountMgr.getAccount(userVm.getAccountId());
@@ -6433,7 +6425,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String userData = null;
         Long userDataId = null;
         String userDataDetails = null;
-        List<String> sshKeyPairNames = new ArrayList<String>();
+        List<String> sshKeyPairNames = new ArrayList<>();
         if (cmd instanceof CreateVMFromBackupCmd) {
             if (cmd.getUserData() != null) {
                 throw new InvalidParameterValueException("User data not supported for instance created from backup");
@@ -6890,7 +6882,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         //transform group names to ids here
         if (cmd.getSecurityGroupNameList() != null) {
-            List<Long> securityGroupIds = new ArrayList<Long>();
+            List<Long> securityGroupIds = new ArrayList<>();
             for (String groupName : cmd.getSecurityGroupNameList()) {
                 SecurityGroup sg = _securityGroupMgr.getSecurityGroup(groupName, cmd.getEntityOwnerId());
                 if (sg == null) {
@@ -7675,7 +7667,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private Map<Long, Long> getVolumePoolMappingForMigrateVmWithStorage(VMInstanceVO vm, Map<String, String> volumeToPool) {
-        Map<Long, Long> volToPoolObjectMap = new HashMap<Long, Long>();
+        Map<Long, Long> volToPoolObjectMap = new HashMap<>();
 
         List<VolumeVO> vmVolumes = getVmVolumesForMigrateVmWithStorage(vm);
 
@@ -9352,7 +9344,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return new ConfigKey<?>[] {EnableDynamicallyScaleVm, AllowDiskOfferingChangeDuringScaleVm, AllowUserExpungeRecoverVm, VmIpFetchWaitInterval, VmIpFetchTrialMax,
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
                 KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction,
-                EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm, VmDistinctHostNameScope};
+                EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm, VmDistinctHostNameScope,
+                VmwareAdditionalDetailsFromOvaEnabled, VmwareAllowedAdditionalDetailsFromOva};
     }
 
     @Override
@@ -9712,7 +9705,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Map<Long, IpAddresses> ipToNetworkMap = cmd.getIpToNetworkMap();
         if (networkIds == null && ipToNetworkMap == null) {
-            networkIds = new ArrayList<Long>();
+            networkIds = new ArrayList<>();
             ipToNetworkMap = backupManager.getIpToNetworkMapFromBackup(backup, cmd.getPreserveIp(), networkIds);
         }
 
