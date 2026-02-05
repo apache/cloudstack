@@ -18,6 +18,21 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
+      <a-alert
+         v-if="resource"
+         type="info"
+         style="margin-bottom: 16px">
+        <template #message>
+          <div style="display: block; width: 100%;">
+            <div style="display: block; margin-bottom: 8px;">
+              <strong>{{ $t('message.clone.offering.from') }}: {{ resource.name }}</strong>
+            </div>
+            <div style="display: block; font-size: 12px;">
+              {{ $t('message.clone.offering.edit.hint') }}
+            </div>
+          </div>
+        </template>
+      </a-alert>
       <ComputeOfferingForm
         :initialValues="form"
         :rules="rules"
@@ -26,6 +41,8 @@
         :isAdmin="isAdmin"
         :ref="formRef"
         @submit="handleSubmit">
+
+        <!-- form content is provided by ComputeOfferingForm component -->
         <template #form-actions>
           <br/>
           <div :span="24" class="action-button">
@@ -34,9 +51,9 @@
           </div>
         </template>
       </ComputeOfferingForm>
-    </a-spin>
-  </div>
-</template>
+     </a-spin>
+   </div>
+ </template>
 
 <script>
 import ComputeOfferingForm from '@/components/offering/ComputeOfferingForm'
@@ -51,7 +68,7 @@ import DetailsInput from '@/components/widgets/DetailsInput'
 import store from '@/store'
 
 export default {
-  name: 'AddServiceOffering',
+  name: 'CreateComputeOffering',
   mixins: [mixinForm],
   components: {
     ComputeOfferingForm,
@@ -59,6 +76,12 @@ export default {
     ResourceIcon,
     TooltipLabel,
     DetailsInput
+  },
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    }
   },
   data () {
     return {
@@ -121,7 +144,7 @@ export default {
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('createServiceOffering')
+    this.apiParams = this.$getApiParams('cloneServiceOffering')
   },
   created () {
     this.zones = [
@@ -239,13 +262,133 @@ export default {
         }
       }
       this.fetchDiskOfferings()
+      this.populateFormFromResource()
+    },
+    populateFormFromResource () {
+      if (!this.resource) return
+
+      // Pre-fill form with source offering values
+      const r = this.resource
+      this.form.name = r.name + ' - Clone'
+      this.form.displaytext = r.displaytext
+
+      if (r.iscustomized) {
+        if (r.cpunumber || r.cpuspeed || r.memory) {
+          this.offeringType = 'customconstrained'
+          this.form.offeringtype = 'customconstrained'
+        } else {
+          this.offeringType = 'customunconstrained'
+          this.form.offeringtype = 'customunconstrained'
+        }
+      } else {
+        this.offeringType = 'fixed'
+        this.form.offeringtype = 'fixed'
+      }
+
+      if (r.cpunumber) this.form.cpunumber = r.cpunumber
+      if (r.cpuspeed) this.form.cpuspeed = r.cpuspeed
+      if (r.memory) this.form.memory = r.memory
+
+      if (r.mincpunumber) this.form.mincpunumber = r.mincpunumber
+      if (r.maxcpunumber) this.form.maxcpunumber = r.maxcpunumber
+      if (r.minmemory) this.form.minmemory = r.minmemory
+      if (r.maxmemory) this.form.maxmemory = r.maxmemory
+
+      if (r.hosttags) this.form.hosttags = r.hosttags
+      if (r.networkrate) this.form.networkrate = r.networkrate
+      if (r.offerha !== undefined) this.form.offerha = r.offerha
+      if (r.dynamicscalingenabled !== undefined) {
+        this.form.dynamicscalingenabled = r.dynamicscalingenabled
+        this.dynamicscalingenabled = r.dynamicscalingenabled
+      }
+      if (r.limitcpuuse !== undefined) this.form.limitcpuuse = r.limitcpuuse
+      if (r.isvolatile !== undefined) this.form.isvolatile = r.isvolatile
+
+      if (r.storagetype) {
+        this.storageType = r.storagetype
+        this.form.storagetype = r.storagetype
+      }
+      if (r.provisioningtype) {
+        this.provisioningType = r.provisioningtype
+        this.form.provisioningtype = r.provisioningtype
+      }
+      if (r.cachemode) {
+        this.cacheMode = r.cachemode
+        this.form.cachemode = r.cachemode
+      }
+
+      if (r.diskofferingstrictness !== undefined) {
+        this.form.diskofferingstrictness = r.diskofferingstrictness
+        this.diskofferingstrictness = r.diskofferingstrictness
+      }
+      if (r.encryptroot !== undefined) {
+        this.form.encryptdisk = r.encryptroot
+        this.encryptdisk = r.encryptroot
+      }
+
+      if (r.diskBytesReadRate || r.diskBytesWriteRate || r.diskIopsReadRate || r.diskIopsWriteRate) {
+        this.qosType = 'hypervisor'
+        this.form.qostype = 'hypervisor'
+        if (r.diskBytesReadRate) this.form.diskbytesreadrate = r.diskBytesReadRate
+        if (r.diskBytesWriteRate) this.form.diskbyteswriterate = r.diskBytesWriteRate
+        if (r.diskIopsReadRate) this.form.diskiopsreadrate = r.diskIopsReadRate
+        if (r.diskIopsWriteRate) this.form.diskiopswriterate = r.diskIopsWriteRate
+      } else if (r.miniops || r.maxiops) {
+        this.qosType = 'storage'
+        this.form.qostype = 'storage'
+        if (r.miniops) this.form.diskiopsmin = r.miniops
+        if (r.maxiops) this.form.diskiopsmax = r.maxiops
+        if (r.hypervisorsnapshotreserve) this.form.hypervisorsnapshotreserve = r.hypervisorsnapshotreserve
+      }
+      if (r.iscustomizediops !== undefined) {
+        this.form.iscustomizeddiskiops = r.iscustomizediops
+        this.isCustomizedDiskIops = r.iscustomizediops
+      }
+
+      if (r.rootdisksize) this.form.rootdisksize = r.rootdisksize
+
+      if (r.tags) {
+        this.form.storagetags = r.tags.split(',')
+      }
+
+      if (r.gpucardid) {
+        this.form.gpucardid = r.gpucardid
+        this.selectedGpuCard = r.gpucardid
+        if (r.gpucardid) {
+          this.fetchVgpuProfiles(r.gpucardid)
+        }
+      }
+      if (r.vgpuprofileid) this.form.vgpuprofile = r.vgpuprofileid
+      if (r.gpucount) this.form.gpucount = r.gpucount
+      if (r.gpudisplay !== undefined) this.form.gpudisplay = r.gpudisplay
+
+      if (r.leaseduration) {
+        this.form.leaseduration = r.leaseduration
+        this.showLeaseOptions = true
+      }
+      if (r.leaseexpiryaction) this.form.leaseexpiryaction = r.leaseexpiryaction
+
+      if (r.purgeresources !== undefined) this.form.purgeresources = r.purgeresources
+
+      if (r.vspherestoragepolicy) this.form.storagepolicy = r.vspherestoragepolicy
+
+      if (r.systemvmtype) this.form.systemvmtype = r.systemvmtype
+
+      if (r.deploymentplanner) {
+        this.form.deploymentplanner = r.deploymentplanner
+        this.handleDeploymentPlannerChange(r.deploymentplanner)
+      }
+
+      if (r.serviceofferingdetails && Object.keys(r.serviceofferingdetails).length > 0) {
+        this.externalDetailsEnabled = true
+        this.form.externaldetails = r.serviceofferingdetails
+      }
     },
     fetchGPUCards () {
       this.gpuCardLoading = true
       getAPI('listGpuCards', {
       }).then(json => {
         this.gpuCards = json.listgpucardsresponse.gpucard || []
-        // Add a "None" option at the beginning
         this.gpuCards.unshift({
           id: '',
           name: this.$t('label.none')
@@ -375,10 +518,10 @@ export default {
           params.memory = values.memory
         } else {
           if (values.cpuspeed != null &&
-             values.mincpunumber != null &&
-             values.maxcpunumber != null &&
-             values.minmemory != null &&
-             values.maxmemory != null) {
+               values.mincpunumber != null &&
+               values.maxcpunumber != null &&
+               values.minmemory != null &&
+               values.maxmemory != null) {
             params.cpuspeed = values.cpuspeed
             params.mincpunumber = values.mincpunumber
             params.maxcpunumber = values.maxcpunumber
@@ -404,7 +547,7 @@ export default {
               params.maxiops = values.diskiopsmax
             }
             if (values.hypervisorsnapshotreserve !== undefined &&
-             values.hypervisorsnapshotreserve != null && values.hypervisorsnapshotreserve.length > 0) {
+               values.hypervisorsnapshotreserve != null && values.hypervisorsnapshotreserve.length > 0) {
               params.hypervisorsnapshotreserve = values.hypervisorsnapshotreserve
             }
           }
@@ -430,15 +573,15 @@ export default {
           params.hosttags = values.hosttags
         }
         if ('deploymentplanner' in values &&
-         values.deploymentplanner !== undefined &&
-         values.deploymentplanner != null && values.deploymentplanner.length > 0) {
+           values.deploymentplanner !== undefined &&
+           values.deploymentplanner != null && values.deploymentplanner.length > 0) {
           params.deploymentplanner = values.deploymentplanner
         }
         if ('deploymentplanner' in values &&
-         values.deploymentplanner !== undefined &&
-         values.deploymentplanner === 'ImplicitDedicationPlanner' &&
-         values.plannermode !== undefined &&
-         values.plannermode !== '') {
+           values.deploymentplanner !== undefined &&
+           values.deploymentplanner === 'ImplicitDedicationPlanner' &&
+           values.plannermode !== undefined &&
+           values.plannermode !== '') {
           params['serviceofferingdetails[0].key'] = 'ImplicitDedicationMode'
           params['serviceofferingdetails[0].value'] = values.plannermode
         }
@@ -492,10 +635,12 @@ export default {
           })
         }
 
-        postAPI('createServiceOffering', params).then(json => {
+        params.sourceofferingid = this.resource.id
+
+        postAPI('cloneServiceOffering', params).then(json => {
           const message = this.isSystem
-            ? `${this.$t('message.create.service.offering')}: `
-            : `${this.$t('message.create.compute.offering')}: `
+            ? `${this.$t('message.clone.service.offering')}: `
+            : `${this.$t('message.clone.compute.offering')}: `
           this.$message.success(message + values.name)
           this.$emit('refresh-data')
           this.closeAction()
@@ -519,7 +664,7 @@ export default {
 }
 </script>
 
-<style scoped lang="scss">
+ <style scoped lang="scss">
   .form-layout {
     width: 80vw;
     @media (min-width: 800px) {

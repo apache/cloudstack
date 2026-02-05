@@ -76,6 +76,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.backup.CloneBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
@@ -132,6 +133,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.atLeastOnce;
+import org.mockito.ArgumentCaptor;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BackupManagerTest {
@@ -2518,4 +2520,106 @@ public class BackupManagerTest {
         return offering;
     }
 
+    @Test
+    public void testCloneBackupOfferingUsesProvidedDomainIds() {
+        Long sourceOfferingId = 1L;
+        Long zoneId = 10L;
+        Long savedOfferingId = 2L;
+        List<Long> providedDomainIds = List.of(11L);
+
+        // command
+        CloneBackupOfferingCmd cmd = Mockito.mock(CloneBackupOfferingCmd.class);
+        when(cmd.getSourceOfferingId()).thenReturn(sourceOfferingId);
+        when(cmd.getName()).thenReturn("Cloned Offering");
+        when(cmd.getDescription()).thenReturn(null);
+        when(cmd.getExternalId()).thenReturn(null);
+        when(cmd.getUserDrivenBackups()).thenReturn(null);
+        when(cmd.getDomainIds()).thenReturn(providedDomainIds);
+
+        // source offering
+        BackupOfferingVO sourceOffering = Mockito.mock(BackupOfferingVO.class);
+        when(sourceOffering.getZoneId()).thenReturn(zoneId);
+        when(sourceOffering.getExternalId()).thenReturn("ext-src");
+        when(sourceOffering.getProvider()).thenReturn("testbackupprovider");
+        when(sourceOffering.getDescription()).thenReturn("src desc");
+        when(sourceOffering.isUserDrivenBackupAllowed()).thenReturn(true);
+        when(sourceOffering.getName()).thenReturn("Source Offering");
+
+        when(backupOfferingDao.findById(sourceOfferingId)).thenReturn(sourceOffering);
+        when(backupOfferingDao.findByName(cmd.getName(), zoneId)).thenReturn(null);
+
+        BackupOfferingVO savedOffering = Mockito.mock(BackupOfferingVO.class);
+        when(savedOffering.getId()).thenReturn(savedOfferingId);
+        when(backupOfferingDao.persist(any(BackupOfferingVO.class))).thenReturn(savedOffering);
+
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        when(domainDao.findById(11L)).thenReturn(domain);
+
+        overrideBackupFrameworkConfigValue();
+
+        BackupOffering result = backupManager.cloneBackupOffering(cmd);
+
+        assertEquals(savedOffering, result);
+
+        ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
+        verify(backupOfferingDetailsDao, times(1)).saveDetails(captor.capture());
+        List<BackupOfferingDetailsVO> savedDetails = captor.getValue();
+        assertEquals(1, savedDetails.size());
+        assertEquals(String.valueOf(11L), savedDetails.get(0).getValue());
+    }
+
+    @Test
+    public void testCloneBackupOfferingInheritsDomainIdsFromSource() {
+        Long sourceOfferingId = 3L;
+        Long zoneId = 20L;
+        Long savedOfferingId = 4L;
+        List<Long> sourceDomainIds = List.of(21L, 22L);
+
+        CloneBackupOfferingCmd cmd = Mockito.mock(CloneBackupOfferingCmd.class);
+        when(cmd.getSourceOfferingId()).thenReturn(sourceOfferingId);
+        when(cmd.getName()).thenReturn("Cloned Inherit Offering");
+        when(cmd.getDescription()).thenReturn(null);
+        when(cmd.getExternalId()).thenReturn(null);
+        when(cmd.getUserDrivenBackups()).thenReturn(null);
+        // Simulate resolver having provided the source offering domains (the real cmd#getDomainIds() would do this)
+        when(cmd.getDomainIds()).thenReturn(sourceDomainIds);
+
+        BackupOfferingVO sourceOffering = Mockito.mock(BackupOfferingVO.class);
+        when(sourceOffering.getZoneId()).thenReturn(zoneId);
+        when(sourceOffering.getExternalId()).thenReturn("ext-src-2");
+        when(sourceOffering.getProvider()).thenReturn("testbackupprovider");
+        when(sourceOffering.getDescription()).thenReturn("src desc 2");
+        when(sourceOffering.isUserDrivenBackupAllowed()).thenReturn(false);
+        when(sourceOffering.getName()).thenReturn("Source Offering 2");
+
+        when(backupOfferingDao.findById(sourceOfferingId)).thenReturn(sourceOffering);
+        when(backupOfferingDao.findByName(cmd.getName(), zoneId)).thenReturn(null);
+
+        BackupOfferingVO savedOffering = Mockito.mock(BackupOfferingVO.class);
+        when(savedOffering.getId()).thenReturn(savedOfferingId);
+        when(backupOfferingDao.persist(any(BackupOfferingVO.class))).thenReturn(savedOffering);
+
+        // domain handling
+        DomainVO domain21 = Mockito.mock(DomainVO.class);
+        DomainVO domain22 = Mockito.mock(DomainVO.class);
+        when(domainDao.findById(21L)).thenReturn(domain21);
+        when(domainDao.findById(22L)).thenReturn(domain22);
+        when(domainHelper.filterChildSubDomains(sourceDomainIds)).thenReturn(new ArrayList<>(sourceDomainIds));
+
+        overrideBackupFrameworkConfigValue();
+
+        BackupOffering result = backupManager.cloneBackupOffering(cmd);
+        assertEquals(savedOffering, result);
+
+        ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
+        verify(backupOfferingDetailsDao, times(1)).saveDetails(captor.capture());
+        List<BackupOfferingDetailsVO> savedDetails = captor.getValue();
+        assertEquals(2, savedDetails.size());
+        List<String> values = new ArrayList<>();
+        for (BackupOfferingDetailsVO d : savedDetails) {
+            values.add(d.getValue());
+        }
+        assertTrue(values.contains(String.valueOf(21L)));
+        assertTrue(values.contains(String.valueOf(22L)));
+    }
 }

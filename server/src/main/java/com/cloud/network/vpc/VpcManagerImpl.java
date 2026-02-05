@@ -71,6 +71,7 @@ import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.vpc.CloneVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayByAdminCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
@@ -634,6 +635,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                                          final String externalProvider, final NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, State state,
                                          NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber) {
 
+        boolean isExternalProvider = externalProvider != null &&
+                Arrays.asList("NSX", "Netris").stream().anyMatch(s -> s.equalsIgnoreCase(externalProvider));
+        if (!isExternalProvider && CollectionUtils.isEmpty(supportedServices)) {
+            throw new InvalidParameterValueException("Supported services needs to be provided");
+        }
+
         if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !(internetProtocol == null || NetUtils.InternetProtocol.IPv4.equals(internetProtocol))) {
             throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported VPC offering", Ipv6Service.Ipv6OfferingCreationEnabled.key()));
         }
@@ -809,6 +816,348 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
         }
+    }
+
+    @Override
+    public VpcOffering cloneVPCOffering(CloneVPCOfferingCmd cmd) {
+        Long sourceVpcOfferingId = cmd.getSourceOfferingId();
+
+        final VpcOffering sourceVpcOffering = _vpcOffDao.findById(sourceVpcOfferingId);
+        if (sourceVpcOffering == null) {
+            throw new InvalidParameterValueException("Unable to find source VPC offering by id " + sourceVpcOfferingId);
+        }
+
+        String name = cmd.getVpcOfferingName();
+        if (name == null || name.isEmpty()) {
+            throw new InvalidParameterValueException("Name is required when cloning a VPC offering");
+        }
+
+        VpcOfferingVO vpcOfferingVO = _vpcOffDao.findByUniqueName(name);
+        if (vpcOfferingVO != null) {
+            throw new InvalidParameterValueException(String.format("A VPC offering with name %s already exists", name));
+        }
+
+        logger.info("Cloning VPC offering {} (id: {}) to new offering with name: {}",
+                sourceVpcOffering.getName(), sourceVpcOfferingId, name);
+
+        Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap = getVpcOffSvcProvidersMap(sourceVpcOfferingId);
+        validateProvider(sourceVpcOffering, sourceServiceProviderMap, cmd.getProvider(), cmd.getNetworkMode());
+
+        applySourceOfferingValuesToCloneCmd(cmd, sourceServiceProviderMap, sourceVpcOffering);
+
+        return createVpcOffering(cmd);
+    }
+
+    private void validateProvider(VpcOffering sourceVpcOffering,
+                                  Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap,
+                                  String provider, String networkMode) {
+        provider = ConfigurationManagerImpl.getExternalNetworkProvider(provider, sourceServiceProviderMap);
+        if (provider != null && (provider.equals("NSX") || provider.equals("Netris"))) {
+            if (networkMode != null && sourceVpcOffering.getNetworkMode() != null) {
+                if (!networkMode.equalsIgnoreCase(sourceVpcOffering.getNetworkMode().toString())) {
+                    throw new InvalidParameterValueException(
+                            String.format("Cannot change network mode when cloning %s provider VPC offerings. " +
+                                            "Source offering has network mode '%s', but '%s' was specified. ",
+                                    provider, sourceVpcOffering.getNetworkMode(), networkMode));
+                }
+            }
+        }
+    }
+
+    private void applySourceOfferingValuesToCloneCmd(CloneVPCOfferingCmd cmd,
+                                                     Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap,
+                                                     VpcOffering sourceVpcOffering) {
+        Long sourceOfferingId = sourceVpcOffering.getId();
+
+        List<String> finalServices = resolveFinalServicesList(cmd, sourceServiceProviderMap);
+
+        Map finalServiceProviderMap = resolveServiceProviderMap(cmd, sourceServiceProviderMap, finalServices);
+
+        List<Long> sourceDomainIds = vpcOfferingDetailsDao.findDomainIds(sourceOfferingId);
+        List<Long> sourceZoneIds = vpcOfferingDetailsDao.findZoneIds(sourceOfferingId);
+
+        Map<String, String> sourceServiceCapabilityList = reconstructServiceCapabilityList(sourceVpcOffering);
+
+        applyResolvedValuesToCommand(cmd, (VpcOfferingVO)sourceVpcOffering, finalServices, finalServiceProviderMap,
+                sourceDomainIds, sourceZoneIds, sourceServiceCapabilityList);
+    }
+
+    /**
+     * Reconstructs the service capability list from the source VPC offering's stored capability flags.
+     * These capabilities were originally passed during creation and stored as boolean flags in the offering.
+     *
+     * Returns a Map in the format expected by CreateVPCOfferingCmd.serviceCapabilityList:
+     * Map<String, String> with keys like "0.service", "0.capabilitytype", "0.capabilityvalue"
+     */
+    private Map<String, String> reconstructServiceCapabilityList(VpcOffering sourceOffering) {
+        Map<String, String> capabilityList = new HashMap<>();
+        int index = 0;
+
+        if (sourceOffering.isOffersRegionLevelVPC()) {
+            capabilityList.put(index + ".service", Network.Service.Connectivity.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.RegionLevelVpc.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+        }
+
+        if (sourceOffering.isSupportsDistributedRouter()) {
+            capabilityList.put(index + ".service", Network.Service.Connectivity.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.DistributedRouter.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+        }
+
+        if (sourceOffering.isRedundantRouter()) {
+            Map<Network.Service, Set<Network.Provider>> serviceProviderMap = getVpcOffSvcProvidersMap(sourceOffering.getId());
+
+            // Check which service has VPCVirtualRouter provider - SourceNat takes precedence
+            Network.Service redundantRouterService = null;
+            for (Network.Service service : Arrays.asList(Network.Service.SourceNat, Network.Service.Gateway, Network.Service.StaticNat)) {
+                Set<Network.Provider> providers = serviceProviderMap.get(service);
+                if (providers != null && providers.contains(Network.Provider.VPCVirtualRouter)) {
+                    redundantRouterService = service;
+                    break;
+                }
+            }
+
+            if (redundantRouterService != null) {
+                capabilityList.put(index + ".service", redundantRouterService.getName());
+                capabilityList.put(index + ".capabilitytype", Network.Capability.RedundantRouter.getName());
+                capabilityList.put(index + ".capabilityvalue", "true");
+            }
+        }
+
+        return capabilityList;
+    }
+
+    private List<String> resolveFinalServicesList(CloneVPCOfferingCmd cmd,
+                                                  Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap) {
+
+        List<String> cmdServices = cmd.getSupportedServices();
+        List<String> addServices = cmd.getAddServices();
+        List<String> dropServices = cmd.getDropServices();
+
+        if (cmdServices != null && !cmdServices.isEmpty()) {
+            return cmdServices;
+        }
+
+        List<String> finalServices = new ArrayList<>();
+        for (Network.Service service : sourceServiceProviderMap.keySet()) {
+            finalServices.add(service.getName());
+        }
+
+        if (dropServices != null && !dropServices.isEmpty()) {
+            List<String> normalizedDropServices = new ArrayList<>();
+            for (String serviceName : dropServices) {
+                Network.Service service = Network.Service.getService(serviceName);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Service " + serviceName + " is not supported in VPC");
+                }
+                normalizedDropServices.add(service.getName());
+            }
+            finalServices.removeAll(dropServices);
+            logger.debug("Dropped services from clone: {}", dropServices);
+        }
+
+        if (addServices != null && !addServices.isEmpty()) {
+            List<String> normalizedAddServices = new ArrayList<>();
+            for (String serviceName : addServices) {
+                Network.Service service = Network.Service.getService(serviceName);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Service " + serviceName + " is not supported in VPC");
+                }
+                String canonicalName = service.getName();
+                if (!finalServices.contains(canonicalName)) {
+                    finalServices.add(canonicalName);
+                    normalizedAddServices.add(canonicalName);
+                }
+            }
+            logger.debug("Added services to clone: {}", addServices);
+        }
+
+        return finalServices;
+    }
+
+    private Map<String, List<String>> resolveServiceProviderMap(CloneVPCOfferingCmd cmd,
+                                                                Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap, List<String> finalServices) {
+
+        if (cmd.getServiceProviders() != null && !cmd.getServiceProviders().isEmpty()) {
+            return cmd.getServiceProviders();
+        }
+
+        Map<String, List<String>> finalMap = new HashMap<>();
+        for (Map.Entry<Network.Service, Set<Network.Provider>> entry : sourceServiceProviderMap.entrySet()) {
+            String serviceName = entry.getKey().getName();
+            if (finalServices.contains(serviceName)) {
+                List<String> providers = new ArrayList<>();
+                for (Network.Provider provider : entry.getValue()) {
+                    providers.add(provider.getName());
+                }
+                finalMap.put(serviceName, providers);
+            }
+        }
+
+        return finalMap;
+    }
+
+    /**
+     * Converts service provider map from Map<String, List<String>> to the indexed format
+     * expected by CreateVPCOfferingCmd.serviceProviderList parameter.
+     *
+     * Input: {"Dhcp": ["VpcVirtualRouter"], "Dns": ["VpcVirtualRouter"]}
+     * Output: {"0": {"service": "Dhcp", "provider": "VpcVirtualRouter"},
+     *          "1": {"service": "Dns", "provider": "VpcVirtualRouter"}}
+     */
+    private Map<String, Map<String, String>> convertToServiceProviderListFormat(Map<String, List<String>> serviceProviderMap) {
+        Map<String, Map<String, String>> result = new HashMap<>();
+        int index = 0;
+
+        for (Map.Entry<String, List<String>> entry : serviceProviderMap.entrySet()) {
+            String serviceName = entry.getKey();
+            List<String> providers = entry.getValue();
+
+            for (String providerName : providers) {
+                Map<String, String> serviceProviderEntry = new HashMap<>();
+                serviceProviderEntry.put("service", serviceName);
+                serviceProviderEntry.put("provider", providerName);
+                result.put(String.valueOf(index++), serviceProviderEntry);
+            }
+        }
+
+        return result;
+    }
+
+    private void applyResolvedValuesToCommand(CloneVPCOfferingCmd cmd, VpcOfferingVO sourceOffering,
+                                              List<String> finalServices, Map finalServiceProviderMap,
+                                              List<Long> sourceDomainIds, List<Long> sourceZoneIds,
+                                              Map<String, String> sourceServiceCapabilityList) {
+        try {
+            if (cmd.getSupportedServices() == null || cmd.getSupportedServices().isEmpty()) {
+                logger.debug("Setting supportedServices to {} services from source offering", finalServices.size());
+                ConfigurationManagerImpl.setField(cmd, "supportedServices", finalServices);
+            }
+
+            if (cmd.getServiceProviders() == null || cmd.getServiceProviders().isEmpty()) {
+                Map<String, Map<String, String>> convertedProviderMap = convertToServiceProviderListFormat(finalServiceProviderMap);
+                logger.debug("Setting serviceProviderList with {} provider mappings", convertedProviderMap.size());
+                ConfigurationManagerImpl.setField(cmd, "serviceProviderList", convertedProviderMap);
+            }
+
+            if ((cmd.getServiceCapabilityList() == null || cmd.getServiceCapabilityList().isEmpty())
+                    && sourceServiceCapabilityList != null && !sourceServiceCapabilityList.isEmpty()) {
+                Map<String, String> filteredCapabilities = filterServiceCapabilities(sourceServiceCapabilityList, finalServices);
+                if (!filteredCapabilities.isEmpty()) {
+                    ConfigurationManagerImpl.setField(cmd, "serviceCapabilityList", filteredCapabilities);
+                }
+            }
+
+            if (cmd.getDisplayText() == null && sourceOffering.getDisplayText() != null) {
+                ConfigurationManagerImpl.setField(cmd, "displayText", sourceOffering.getDisplayText());
+            }
+
+            if (cmd.getServiceOfferingId() == null && sourceOffering.getServiceOfferingId() != null) {
+                ConfigurationManagerImpl.setField(cmd, "serviceOfferingId", sourceOffering.getServiceOfferingId());
+            }
+
+            Boolean enableFieldValue = getRawFieldValue(cmd, "enable", Boolean.class);
+            if (enableFieldValue == null) {
+                Boolean enableState = sourceOffering.getState() == VpcOffering.State.Enabled;
+                ConfigurationManagerImpl.setField(cmd, "enable", enableState);
+            }
+
+            Boolean specifyAsNumberFieldValue = getRawFieldValue(cmd, "specifyAsNumber", Boolean.class);
+            if (specifyAsNumberFieldValue == null) {
+                ConfigurationManagerImpl.setField(cmd, "specifyAsNumber", sourceOffering.isSpecifyAsNumber());
+            }
+
+            if (cmd.getInternetProtocol() == null) {
+                String internetProtocol = vpcOfferingDetailsDao.getDetail(sourceOffering.getId(), ApiConstants.INTERNET_PROTOCOL);
+                if (internetProtocol != null) {
+                    ConfigurationManagerImpl.setField(cmd, "internetProtocol", internetProtocol);
+                }
+            }
+
+            if (cmd.getNetworkMode() == null && sourceOffering.getNetworkMode() != null) {
+                ConfigurationManagerImpl.setField(cmd, "networkMode", sourceOffering.getNetworkMode().toString());
+            }
+
+            if (cmd.getRoutingMode() == null && sourceOffering.getRoutingMode() != null) {
+                ConfigurationManagerImpl.setField(cmd, "routingMode", sourceOffering.getRoutingMode().toString());
+            }
+
+            if (cmd.getDomainIds() == null || cmd.getDomainIds().isEmpty()) {
+                if (sourceDomainIds != null && !sourceDomainIds.isEmpty()) {
+                    ConfigurationManagerImpl.setField(cmd, "domainIds", sourceDomainIds);
+                }
+            }
+
+            if (cmd.getZoneIds() == null || cmd.getZoneIds().isEmpty()) {
+                if (sourceZoneIds != null && !sourceZoneIds.isEmpty()) {
+                    ConfigurationManagerImpl.setField(cmd, "zoneIds", sourceZoneIds);
+                }
+            }
+
+        } catch (Exception e) {
+            logger.error("Failed to apply source offering parameters during clone: {}", e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to apply source offering parameters during VPC offering clone", e);
+        }
+    }
+
+    private <T> T getRawFieldValue(Object obj, String fieldName, Class<T> expectedType) {
+        try {
+            java.lang.reflect.Field field = ConfigurationManagerImpl.findField(obj.getClass(), fieldName);
+            if (field != null) {
+                field.setAccessible(true);
+                Object value = field.get(obj);
+                if (value == null || expectedType.isInstance(value)) {
+                    return expectedType.cast(value);
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Could not get raw field value for {}: {}", fieldName, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Filters service capabilities to only include those for services present in the final services list.
+     * This ensures that when services are dropped during cloning, their associated capabilities are also removed.
+     *
+     * @param sourceServiceCapabilityList The original capability list from the source VPC offering
+     *                                     in format: Map with keys like "0.service", "0.capabilitytype", "0.capabilityvalue"
+     * @param finalServices The list of service names that should be retained in the cloned offering
+     * @return Filtered map containing only capabilities for services in finalServices
+     */
+    private Map<String, String> filterServiceCapabilities(Map<String, String> sourceServiceCapabilityList,
+                                                          List<String> finalServices) {
+        Map<String, String> filteredCapabilities = new HashMap<>();
+
+        for (Map.Entry<String, String> entry : sourceServiceCapabilityList.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            // Check if this is a service key (e.g., "0.service", "1.service")
+            if (key.endsWith(".service")) {
+                String serviceName = value;
+                if (finalServices.contains(serviceName)) {
+                    // Include this service and its associated capability entries
+                    String prefix = key.substring(0, key.lastIndexOf('.'));
+                    filteredCapabilities.put(key, value);
+
+                    // Also include the capability type and value for this service
+                    String capabilityTypeKey = prefix + ".capabilitytype";
+                    String capabilityValueKey = prefix + ".capabilityvalue";
+                    if (sourceServiceCapabilityList.containsKey(capabilityTypeKey)) {
+                        filteredCapabilities.put(capabilityTypeKey, sourceServiceCapabilityList.get(capabilityTypeKey));
+                    }
+                    if (sourceServiceCapabilityList.containsKey(capabilityValueKey)) {
+                        filteredCapabilities.put(capabilityValueKey, sourceServiceCapabilityList.get(capabilityValueKey));
+                    }
+                }
+            }
+        }
+
+        return filteredCapabilities;
     }
 
     private void validateConnectivtyServiceCapabilities(final Set<Provider> providers, final Map serviceCapabilitystList) {

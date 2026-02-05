@@ -555,6 +555,7 @@ public class ApiConstants {
     public static final String USE_STORAGE_REPLICATION = "usestoragereplication";
 
     public static final String SOURCE_CIDR_LIST = "sourcecidrlist";
+    public static final String SOURCE_OFFERING_ID = "sourceofferingid";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String SSL_VERIFICATION = "sslverification";
     public static final String START_ASN = "startasn";

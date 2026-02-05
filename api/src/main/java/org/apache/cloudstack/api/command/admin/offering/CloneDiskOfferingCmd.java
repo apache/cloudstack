@@ -14,44 +14,43 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.network;
+package org.apache.cloudstack.api.command.admin.offering;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 
-import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.DiskOffering;
 
-@APICommand(name = "createNetworkOffering", description = "Creates a network offering.", responseObject = NetworkOfferingResponse.class, since = "3.0.0",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateNetworkOfferingCmd extends NetworkOfferingBaseCmd {
+@APICommand(name = "cloneDiskOffering",
+        description = "Clones a disk offering. All parameters from createDiskOffering are available. If not specified, values will be copied from the source offering.",
+        responseObject = DiskOfferingResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
+        since = "4.23.0")
+public class CloneDiskOfferingCmd extends CreateDiskOfferingCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE,
-            type = CommandType.STRING,
+    @Parameter(name = ApiConstants.SOURCE_OFFERING_ID,
+            type = BaseCmd.CommandType.UUID,
+            entityType = DiskOfferingResponse.class,
             required = true,
-            description = "The traffic type for the network offering. Supported type in current release is GUEST only")
-    private String traffictype;
-
-    @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, required = true, description = "Guest type of the network offering: Shared or Isolated")
-    private String guestIptype;
+            description = "The ID of the disk offering to clone")
+    private Long sourceOfferingId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getTraffictype() {
-        return traffictype;
-    }
-
-    public String getGuestIpType() {
-        return guestIptype;
+    public Long getSourceOfferingId() {
+        return sourceOfferingId;
     }
 
     /////////////////////////////////////////////////////
@@ -60,13 +59,13 @@ public class CreateNetworkOfferingCmd extends NetworkOfferingBaseCmd {
 
     @Override
     public void execute() {
-        NetworkOffering result = _configService.createNetworkOffering(this);
+        DiskOffering result = _configService.cloneDiskOffering(this);
         if (result != null) {
-            NetworkOfferingResponse response = _responseGenerator.createNetworkOfferingResponse(result);
+            DiskOfferingResponse response = _responseGenerator.createDiskOfferingResponse(result);
             response.setResponseName(getCommandName());
-            setResponseObject(response);
+            this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network offering");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to clone disk offering");
         }
     }
 }
