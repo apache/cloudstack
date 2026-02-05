@@ -429,7 +429,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
-    private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
+    private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged));
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     private static final String CUSTOM_DISK_OFFERING_UNIQUE_NAME = "Cloud.com-Custom";
@@ -1810,7 +1810,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *  <li> {code}Volume.State#Destroy{code};
      *  <li> {code}Volume.State#Expunging{code};
      *  <li> {code}Volume.State#Expunged{code};
-     *  <li> {code}Volume.State#Allocated{code}.
      * </ul>
      *
      * The volume is destroyed via {@link VolumeService#destroyVolume(long)} method.
@@ -1931,20 +1930,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         destroyVolumeIfPossible(volume);
 
         if (expunge) {
-            // Mark volume as removed if volume has not been created on primary or secondary
-            if (volume.getState() == Volume.State.Allocated) {
-                _volsDao.remove(volume.getId());
-                try {
-                    stateTransitTo(volume, Volume.Event.DestroyRequested);
-                    stateTransitTo(volume, Volume.Event.OperationSucceeded);
-                } catch (NoTransitionException e) {
-                    logger.debug("Failed to destroy volume {}", volume, e);
-                    return null;
-                }
-                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(),
-                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), enforceResourceLimitOnDisplayFalse);
-                return volume;
-            }
             if (!deleteVolumeFromStorage(volume, caller)) {
                 logger.warn("Failed to expunge volume: {}", volume);
                 return null;
