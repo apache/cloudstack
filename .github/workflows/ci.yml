@@ -216,7 +216,7 @@ jobs:
                   smoke/test_list_volumes"]
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
