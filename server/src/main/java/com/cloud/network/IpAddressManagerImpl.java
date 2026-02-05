@@ -33,9 +33,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.network.dao.PublicIpQuarantineDao;
-import com.cloud.network.vo.PublicIpQuarantineVO;
-import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -57,10 +54,7 @@ import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
@@ -75,18 +69,15 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
-import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
-import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -96,7 +87,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -107,21 +97,14 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDetailVO;
-import com.cloud.network.dao.NetworkDomainDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
-import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
-import com.cloud.network.dao.UserIpv6AddressDao;
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.IpDeployingRequester;
 import com.cloud.network.element.NetworkElement;
@@ -134,11 +117,10 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
@@ -146,9 +128,9 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
@@ -184,11 +166,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
-import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
 
@@ -205,19 +183,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     AccountDao _accountDao;
     @Inject
-    DomainDao _domainDao;
-    @Inject
     UserDao _userDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    UserVmDao _userVmDao;
-    @Inject
-    AlertManager _alertMgr;
-    @Inject
     AccountManager _accountMgr;
-    @Inject
-    ConfigurationManager _configMgr;
     @Inject
     AccountVlanMapDao _accountVlanMapDao;
     @Inject
@@ -229,8 +199,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     NetworkDetailsDao _networkDetailsDao;
     @Inject
-    NicDao _nicDao;
-    @Inject
     RulesManager _rulesMgr;
     @Inject
     LoadBalancingRulesManager _lbMgr;
@@ -239,21 +207,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     PodVlanMapDao _podVlanMapDao;
     @Inject
-    NetworkOfferingDetailsDao _ntwkOffDetailsDao;
-    @Inject
-    AccountGuestVlanMapDao _accountGuestVlanMapDao;
-    @Inject
-    DataCenterVnetDao _datacenterVnetDao;
-    @Inject
-    NetworkAccountDao _networkAccountDao;
-    @Inject
     protected NicIpAliasDao _nicIpAliasDao;
     @Inject
     protected IPAddressDao _publicIpAddressDao;
-    @Inject
-    NetworkDomainDao _networkDomainDao;
-    @Inject
-    VMInstanceDao _vmDao;
     @Inject
     FirewallManager _firewallMgr;
     @Inject
@@ -268,35 +224,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
-    PhysicalNetworkServiceProviderDao _pNSPDao;
-    @Inject
-    PortForwardingRulesDao _portForwardingRulesDao;
-    @Inject
-    LoadBalancerDao _lbDao;
-    @Inject
-    PhysicalNetworkTrafficTypeDao _pNTrafficTypeDao;
-    @Inject
-    AgentManager _agentMgr;
-    @Inject
-    HostDao _hostDao;
-    @Inject
-    NetworkServiceMapDao _ntwkSrvcDao;
-    @Inject
-    StorageNetworkManager _stnwMgr;
-    @Inject
     VpcManager _vpcMgr;
     @Inject
-    PrivateIpDao _privateIpDao;
-    @Inject
-    NetworkACLManager _networkACLMgr;
-    @Inject
-    UsageEventDao _usageEventDao;
-    @Inject
     NetworkModel _networkModel;
-    @Inject
-    NicSecondaryIpDao _nicSecondaryIpDao;
-    @Inject
-    UserIpv6AddressDao _ipv6Dao;
     @Inject
     Ipv6AddressManager _ipv6Mgr;
     @Inject
@@ -570,12 +500,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         for (PublicIp ip : publicIps) {
-            if (ip.isSourceNat()) {
-                continue;
-            } else if (ip.isOneToOneNat()) {
-                continue;
-            } else {
-                Long totalCount = null;
+            if ( ! (ip.isSourceNat() || ip.isOneToOneNat())) {
+                long totalCount;
                 Long revokeCount = null;
                 Long activeCount = null;
                 Long addCount = null;
@@ -588,13 +514,13 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     addCount = _firewallDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Add);
                 }
 
-                if (totalCount == null || totalCount.longValue() == 0L) {
+                if (totalCount == 0L) {
                     continue;
                 }
 
                 if (postApplyRules) {
 
-                    if (revokeCount != null && revokeCount.longValue() == totalCount.longValue()) {
+                    if (revokeCount != null && revokeCount.longValue() == totalCount) {
                         logger.trace("All rules are in Revoke state, have to dis-assiciate IP from the backend");
                         return true;
                     }
@@ -607,12 +533,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             // reboot the VR. So ipassoc is needed.
                             return true;
                         }
-                        continue;
-                    } else if (addCount != null && addCount.longValue() == totalCount.longValue()) {
+                    } else if (addCount != null && addCount.longValue() == totalCount) {
                         logger.trace("All rules are in Add state, have to assiciate IP with the backend");
                         return true;
-                    } else {
-                        continue;
                     }
                 }
             }
@@ -1105,10 +1028,25 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         if (sourceNatIp != null) {
             ipToReturn = PublicIp.createFromAddrAndVlan(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()));
         } else {
-            ipToReturn = assignDedicateIpAddress(owner, guestNetwork.getId(), null, dcId, true);
+            ipToReturn = assignDedicateIpAddress(owner, guestNetwork.getId(), null, dcId, ! isRouted(guestNetwork));
         }
 
         return ipToReturn;
+    }
+
+    private boolean isRouted(Network guestNetwork) {
+        VpcOffering vpcOffer = null;
+        NetworkOffering netOffer = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
+        if (netOffer == null) {
+            throw new CloudRuntimeException("network without offering found???");
+        }
+        if (netOffer.isForVpc() && guestNetwork.getVpcId() != null) {
+            VpcVO vpc = _vpcDao.findById(guestNetwork.getVpcId());
+            if (vpc != null) {
+                vpcOffer = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+            }
+        }
+        return netOffer.getRoutingMode() != null || (vpcOffer != null && vpcOffer.getRoutingMode() != null);
     }
 
     @DB
@@ -1633,7 +1571,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
      */
     protected boolean isSourceNatAvailableForNetwork(Account owner, IPAddressVO ipToAssoc, Network network) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        boolean sharedSourceNat = offering.isSharedSourceNat();
+        boolean sharedSourceNat = offering.isSharedSourceNat() || offering.getRoutingMode() != null;
         boolean isSourceNat = false;
         if (!sharedSourceNat) {
             if (getExistingSourceNatInNetwork(owner.getId(), network.getId()) == null) {
