@@ -16,8 +16,11 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
+import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vmware.nsx.model.TransportZone;
 import com.vmware.nsx.model.TransportZoneListResult;
 import com.vmware.nsx_policy.model.EnforcementPoint;
@@ -61,6 +64,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -247,8 +251,11 @@ public class NsxResourceTest {
     @Test
     public void testDeleteNsxNatRule() {
         DeleteNsxNatRuleCommand cmd = new DeleteNsxNatRuleCommand(domainId, accountId, zoneId, 3L, "VPC01", true, 2L, 5L, "22", "tcp");
+        Network.Service service = new Network.Service("PortForwarding");
+        cmd.setService(service);
         NsxAnswer answer = (NsxAnswer) nsxResource.executeRequest(cmd);
         assertTrue(answer.getResult());
+        verify(nsxApi).deleteNatRule(service, "22", "tcp", "VPC01", "D1-A2-Z1-V3", "D1-A2-Z1-V3-PF5");
     }
 
     @Test
