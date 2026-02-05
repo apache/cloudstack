@@ -139,6 +139,12 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
     }
 
     @Override
+    public void verifyServiceConnectivity(long storeId) {
+        // ideally just ping the storage using credentials. listBuckets() for now.
+        listBuckets(storeId);
+    }
+
+    @Override
     public boolean deleteBucket(BucketTO bucket, long storeId) {
         RgwAdmin rgwAdmin = getRgwAdminClient(storeId);
 

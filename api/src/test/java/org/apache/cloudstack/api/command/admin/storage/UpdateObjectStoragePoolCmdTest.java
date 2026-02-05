@@ -19,11 +19,13 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import com.cloud.storage.StorageService;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -31,6 +33,9 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 
@@ -83,4 +88,32 @@ public class UpdateObjectStoragePoolCmdTest {
                 .updateObjectStore(1L, updateObjectStoragePoolCmd);
     }
 
+    @Test
+    public void testGetDetailsNone() {
+        Assert.assertNull(updateObjectStoragePoolCmd.getDetails());
+    }
+
+    @Test
+    public void testGetDetails() {
+        // test setup
+        // Build the "details" Map which has the following format:
+        // {0={value=value0, key=key0}, 1={value=value1, key=key1}, ...}
+        Map<String, Object> details = new HashMap<>();
+        Map<String, String> map0 = new HashMap<>();
+        map0.put(ApiConstants.KEY, "key0");
+        map0.put(ApiConstants.VALUE, "value0");
+        details.put("0", map0);
+        Map<String, String> map1 = new HashMap<>();
+        map1.put(ApiConstants.KEY, "key1");
+        map1.put(ApiConstants.VALUE, "value1");
+        details.put("1", map1);
+        ReflectionTestUtils.setField(updateObjectStoragePoolCmd, "details", details);
+
+        // Test: getDetails() should return a simple map
+        Map<String, String> outDetails = updateObjectStoragePoolCmd.getDetails();
+        Assert.assertNotNull(outDetails);
+        Assert.assertEquals(2, outDetails.size());
+        Assert.assertEquals("value0", outDetails.get("key0"));
+        Assert.assertEquals("value1", outDetails.get("key1"));
+    }
 }

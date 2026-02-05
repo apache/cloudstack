@@ -160,6 +160,11 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
         return driver.listBuckets(objectStoreVO.getId());
     }
 
+    @Override
+    public void verifyServiceConnectivity() {
+        driver.verifyServiceConnectivity(objectStoreVO.getId());
+    }
+
     /*
     Create user if not exists
      */
