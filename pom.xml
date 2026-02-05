@@ -63,20 +63,20 @@
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
-        <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
+        <cs.checkstyle-plugin.version>3.6.0</cs.checkstyle-plugin.version>
         <cs.jacoco-plugin.version>0.8.11</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
-        <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
+        <cs.dependency-plugin.version>3.9.0</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
         <cs.spotbugs.version>3.1.12</cs.spotbugs.version>
         <cs.spotbugs-maven-plugin.version>3.1.12.2</cs.spotbugs-maven-plugin.version>
         <cs.jar-plugin.version>3.2.0</cs.jar-plugin.version>
-        <cs.pmd-plugin.version>3.12.0</cs.pmd-plugin.version>
+        <cs.pmd-plugin.version>3.28.0</cs.pmd-plugin.version>
         <cs.project-info-plugin.version>3.0.0</cs.project-info-plugin.version>
         <cs.owasp.dependency-checker-plugin.version>7.4.4</cs.owasp.dependency-checker-plugin.version>
         <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
         <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
-        <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
+        <cs.site-plugin.version>3.21.0</cs.site-plugin.version>
         <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
         <cs.exec-maven-plugin.version>3.2.0</cs.exec-maven-plugin.version>
