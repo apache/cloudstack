@@ -25,11 +25,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -663,7 +663,6 @@ import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
-import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -1991,23 +1990,78 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private List<StoragePool> findAllSuitableStoragePoolsForDetachedVolume(Volume volume, Long diskOfferingId, List<? extends StoragePool> allPools) {
         List<StoragePool> suitablePools = new ArrayList<>();
         if (CollectionUtils.isEmpty(allPools)) {
-            return  suitablePools;
+            return suitablePools;
         }
+
+        StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
+        if (srcPool == null) {
+            logger.warn("Source pool not found for volume {}: {}", volume.getName(), volume.getUuid());
+            return suitablePools;
+        }
+
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-        List<String> tags = new ArrayList<>();
         String[] tagsArray = diskOffering.getTagsArray();
-        if (tagsArray != null && tagsArray.length > 0) {
-            tags = Arrays.asList(tagsArray);
-        }
-        Long[] poolIds = allPools.stream().map(StoragePool::getId).toArray(Long[]::new);
-        List<StoragePoolJoinVO> pools = _poolJoinDao.searchByIds(poolIds);
-        for (StoragePoolJoinVO storagePool : pools) {
-            if (StoragePoolStatus.Up.equals(storagePool.getStatus()) &&
-                    (CollectionUtils.isEmpty(tags) || tags.contains(storagePool.getTag()))) {
-                Optional<? extends StoragePool> match = allPools.stream().filter(x -> x.getId() == storagePool.getId()).findFirst();
-                match.ifPresent(suitablePools::add);
+        List<String> tags = (tagsArray != null && tagsArray.length > 0) ? Arrays.asList(tagsArray) : new ArrayList<>();
+
+        HypervisorType hypervisorType = getHypervisorType(null, srcPool);
+        Long dcId = srcPool.getDataCenterId();
+
+        logger.debug("Finding suitable pools for detached volume {} with offering tags: {}, hypervisor: {}",
+                volume.getUuid(), tags, hypervisorType);
+
+        Set<Long> matchingPoolIds = new HashSet<>();
+
+        List<StoragePoolVO> zonePoolsStandard = _poolDao.findZoneWideStoragePoolsByTags(dcId,
+                tags.isEmpty() ? null : tags.toArray(new String[0]), true);
+        for (StoragePoolVO pool : zonePoolsStandard) {
+            if (pool.getHypervisor() == null || pool.getHypervisor().equals(HypervisorType.Any) ||
+                    pool.getHypervisor().equals(hypervisorType)) {
+                matchingPoolIds.add(pool.getId());
+                logger.debug("Found zone-wide pool with standard tags: {} ({})", pool.getName(), pool.getId());
             }
         }
+
+        List<StoragePoolVO> zonePoolsFlexible = _poolJoinDao.findStoragePoolByScopeAndRuleTags(dcId, null, null,
+                ScopeType.ZONE, tags);
+        for (StoragePoolVO pool : zonePoolsFlexible) {
+            StoragePoolVO poolVO = _poolDao.findById(pool.getId());
+            if (poolVO != null && (poolVO.getHypervisor() == null || poolVO.getHypervisor().equals(HypervisorType.Any) ||
+                    poolVO.getHypervisor().equals(hypervisorType))) {
+                matchingPoolIds.add(pool.getId());
+                logger.debug("Found zone-wide pool with flexible tags: {} ({})", pool.getName(), pool.getId());
+            }
+        }
+
+        List<ClusterVO> clusters = _clusterDao.listByDcHyType(dcId, hypervisorType.toString());
+        for (ClusterVO cluster : clusters) {
+            List<StoragePoolVO> clusterPoolsStandard = _poolDao.findPoolsByTags(dcId, cluster.getPodId(),
+                    cluster.getId(), tags.isEmpty() ? null : tags.toArray(new String[0]), true,
+                    VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value());
+            for (StoragePoolVO pool : clusterPoolsStandard) {
+                matchingPoolIds.add(pool.getId());
+                logger.debug("Found cluster-scoped pool with standard tags: {} ({}) in cluster {}",
+                        pool.getName(), pool.getId(), cluster.getName());
+            }
+
+            List<StoragePoolVO> clusterPoolsFlexible = _poolJoinDao.findStoragePoolByScopeAndRuleTags(dcId,
+                    cluster.getPodId(), cluster.getId(), ScopeType.CLUSTER, tags);
+            for (StoragePoolVO pool : clusterPoolsFlexible) {
+                matchingPoolIds.add(pool.getId());
+                logger.debug("Found cluster-scoped pool with flexible tags: {} ({}) in cluster {}",
+                        pool.getName(), pool.getId(), cluster.getName());
+            }
+        }
+
+        for (StoragePool pool : allPools) {
+            if (matchingPoolIds.contains(pool.getId()) && StoragePoolStatus.Up.equals(pool.getStatus())) {
+                suitablePools.add(pool);
+                logger.debug("Added pool {} to suitable pools", pool.getName());
+            }
+        }
+
+        logger.debug("Found {} suitable pools out of {} total pools for detached volume {}",
+                suitablePools.size(), allPools.size(), volume.getUuid());
+
         return suitablePools;
     }
 
