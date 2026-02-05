@@ -377,7 +377,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         final int port = cmd.getPort();
         final Long domainId = cmd.getDomainId();
         final boolean listAll = cmd.listAll();
-        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(hostname, port, domainId, listAll);
+        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(hostname, port, domainId, listAll, cmd.getStartIndex(), cmd.getPageSizeVal());
         return new Pair<List<? extends LdapConfigurationVO>, Integer>(result.first(), result.second());
     }
 
