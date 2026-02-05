@@ -1434,8 +1434,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private void validateVmForHostMigration(VirtualMachine vm) {
-        final Account caller = getCaller();
-        if (!_accountMgr.isRootAdmin(caller.getId())) {
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Caller is not a root admin, permission denied to migrate the Instance");
             }
@@ -1825,8 +1824,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(final Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool, boolean bypassStorageTypeCheck, boolean bypassAccountCheck, String keyword) {
         if (!bypassAccountCheck) {
-            final Account caller = getCaller();
-            if (!_accountMgr.isRootAdmin(caller.getId())) {
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Caller is not a root admin, permission denied to migrate the volume");
                 }
@@ -4790,7 +4788,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             _accountService.checkAccess(caller, domain);
         }
 
-        final boolean isCallerRootAdmin = _accountService.isRootAdmin(caller.getId());
+        final boolean isCallerRootAdmin = CallContext.current().isCallingAccountRootAdmin();
         final boolean isCallerAdmin = isCallerRootAdmin || _accountService.isAdmin(caller.getId());
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled;

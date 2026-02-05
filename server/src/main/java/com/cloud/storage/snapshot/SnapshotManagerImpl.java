@@ -17,7 +17,6 @@
 package com.cloud.storage.snapshot;
 
 
-import com.cloud.storage.StoragePoolStatus;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,11 +35,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.host.dao.HostDao;
-import com.cloud.storage.Upload;
-import com.cloud.storage.dao.SnapshotDetailsDao;
 import org.apache.cloudstack.acl.SecurityChecker;
-import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -88,8 +83,8 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.stereotype.Component;
@@ -98,6 +93,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.configuration.Config;
@@ -119,6 +115,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -139,12 +136,15 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.Upload;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.SnapshotZoneDao;
@@ -542,7 +542,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Long snapshotId = cmd.getId();
         Long zoneId = cmd.getZoneId();
 
-        if (!_accountMgr.isRootAdmin(caller.getId()) && ApiDBUtils.isExtractionDisabled()) {
+        if (!CallContext.current().isCallingAccountRootAdmin() && ApiDBUtils.isExtractionDisabled()) {
             logger.error("Extraction is disabled through [{}].", Config.DisableExtraction);
             throw new PermissionDeniedException("Extraction could not be completed.");
         }
@@ -1154,7 +1154,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (DataCenter.Type.Edge.equals(zone.getType())) {
             throw new InvalidParameterValueException("Backing up of snapshot is not supported by the zone of the volume. Snapshots can not be taken for multiple zones");
         }
-        boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller.getId());
+        boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller);
 
         if (hasZones) {
             for (Long zoneId : zoneIds) {
@@ -1257,7 +1257,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (display) {
             long accountLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(owner, ResourceType.snapshot, null);
             long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot, null);
-            if (!_accountMgr.isRootAdmin(owner.getId()) && ((accountLimit != -1 && maxSnaps > accountLimit) || (domainLimit != -1 && maxSnaps > domainLimit))) {
+            if (!_accountMgr.isRootAdmin(owner) && ((accountLimit != -1 && maxSnaps > accountLimit) || (domainLimit != -1 && maxSnaps > domainLimit))) {
                 String message = "domain/account";
                 if (owner.getType() == Account.Type.PROJECT) {
                     message = "domain/project";
@@ -2321,9 +2321,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         storagePoolIds = snapshotHelper.addStoragePoolsForCopyToPrimary(volume, destZoneIds, storagePoolIds, useStorageReplication);
         boolean canCopyBetweenStoragePools = CollectionUtils.isNotEmpty(storagePoolIds) && canCopyOnPrimary(storagePoolIds, snapshotVO);
         Map<Long, DataCenterVO> dataCenterVOs = new HashMap<>();
-        boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller.getId());
         for (Long destZoneId: destZoneIds) {
-            DataCenterVO dstZone = getCheckedDestinationZoneForSnapshotCopy(destZoneId, isRootAdminCaller);
+            DataCenterVO dstZone = getCheckedDestinationZoneForSnapshotCopy(destZoneId,
+                    CallContext.current().isCallingAccountRootAdmin());
             dataCenterVOs.put(destZoneId, dstZone);
         }
         _accountMgr.checkAccess(caller, SecurityChecker.AccessType.OperateEntry, true, snapshot);

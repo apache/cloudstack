@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 import java.util.Arrays;
@@ -120,8 +119,7 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
         Mockito.when(userVmMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
         Mockito.when(userVmMock.getTemplateFormat()).thenReturn(Storage.ImageFormat.OVA);
 
-        Mockito.when(caller.getId()).thenReturn(2L);
-        Mockito.when(accountMgr.isRootAdmin(nullable(Long.class))).thenReturn(true);
+        Mockito.when(accountMgr.isRootAdmin(Mockito.any(Account.class))).thenReturn(true);
 
         SearchBuilder<UserStatisticsVO> searchBuilderMock = Mockito.mock(SearchBuilder.class);
         Mockito.doReturn(searchBuilderMock).when(userStatsDao).createSearchBuilder();

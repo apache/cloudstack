@@ -1054,7 +1054,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         validateIpAddressRelatedConfigValues(name, value);
         validateConflictingConfigValue(name, value);
 
-        if (CATEGORY_SYSTEM.equals(category) && !_accountMgr.isRootAdmin(caller.getId())) {
+        if (CATEGORY_SYSTEM.equals(category) && !CallContext.current().isCallingAccountRootAdmin()) {
             logger.warn("Only Root Admin is allowed to edit the configuration {}", name);
             throw new CloudRuntimeException("Only Root Admin is allowed to edit this configuration.");
         }
@@ -1933,7 +1933,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final Account account = CallContext.current().getCallingAccount();
 
-        if(!_accountMgr.isRootAdmin(account.getId())) {
+        if(!_accountMgr.isRootAdmin(account)) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling Account is not root admin: %s", account));
         }
 
@@ -2576,7 +2576,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
-                && !_accountMgr.isRootAdmin(account.getId())) {
+                && !_accountMgr.isRootAdmin(account)) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone is currently disabled: %s", zone));
         }
 
@@ -4969,9 +4969,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Check if zone is enabled
-        final Account caller = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
-                && !_accountMgr.isRootAdmin(caller.getId())) {
+                && !CallContext.current().isCallingAccountRootAdmin()) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone is currently disabled: %s", zone));
         }
 

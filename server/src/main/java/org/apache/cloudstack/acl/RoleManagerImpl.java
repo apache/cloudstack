@@ -80,7 +80,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         if (!isEnabled()) {
             throw new PermissionDeniedException("Dynamic api checker is not enabled, aborting role operation");
         }
-        Account caller = getCurrentAccount();
+        Account caller = CallContext.current().getCallingAccount();
         if (caller == null || caller.getRoleId() == null) {
             throw new PermissionDeniedException("Restricted API called by an invalid user account");
         }
@@ -139,14 +139,6 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     @Override
     public Role findRole(Long id) {
         return findRole(id, false);
-    }
-
-    /**
-     * Simple call to {@link CallContext#current()} to retrieve the current calling account.
-     * This method facilitates unit testing, it avoids mocking static methods.
-     */
-    protected Account getCurrentAccount() {
-        return CallContext.current().getCallingAccount();
     }
 
     @Override
@@ -454,7 +446,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             return 0;
         }
 
-        Long callerRoleId = getCurrentAccount().getRoleId();
+        Long callerRoleId = CallContext.current().getCallingAccount().getRoleId();
         Map<String, Permission> callerRolePermissions = getRoleRulesAndPermissions(callerRoleId);
 
         int count = 0;
@@ -572,7 +564,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     private boolean isCallerRootAdmin() {
-        return accountManager.isRootAdmin(getCurrentAccount().getId());
+        return CallContext.current().isCallingAccountRootAdmin();
     }
 
     @Override

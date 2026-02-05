@@ -17,29 +17,32 @@
 
 package org.apache.cloudstack.acl;
 
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.acl.dao.RolePermissionsDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.utils.Pair;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RoleManagerImplTest {
@@ -78,11 +81,15 @@ public class RoleManagerImplTest {
 
     private Map<String, Permission> rolePermissions = new HashMap<>();
 
+    private MockedStatic<CallContext> callContextStaticMock;
+    @Mock
+    private CallContext callContextMock;
+
     public void setUpRoleVisibilityTests() {
         Mockito.doReturn(List.of("api1", "api2", "api3")).when(accountManagerMock).getApiNameList();
 
         Mockito.doReturn(1L).when(callerAccountRoleMock).getId();
-        Mockito.doReturn(callerAccountMock).when(roleManagerImpl).getCurrentAccount();
+        Mockito.doReturn(callerAccountMock).when(callContextMock).getCallingAccount();
         Mockito.doReturn(callerAccountRoleMock.getId()).when(callerAccountMock).getRoleId();
 
         Mockito.when(rolePermission1Mock.getRule()).thenReturn(new Rule("api1"));
@@ -105,10 +112,15 @@ public class RoleManagerImplTest {
 
     @Before
     public void beforeTest() {
-        Mockito.doReturn(accountMockId).when(accountMock).getId();
-        Mockito.doReturn(accountMock).when(roleManagerImpl).getCurrentAccount();
+        callContextStaticMock = Mockito.mockStatic(CallContext.class);
+        callContextStaticMock.when(CallContext::current).thenReturn(callContextMock);
 
         Mockito.doReturn(roleMockId).when(roleVoMock).getId();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        callContextStaticMock.close();
     }
 
     @Test
@@ -140,12 +152,12 @@ public class RoleManagerImplTest {
     public void findRoleTestNotRootAdminAndNotRoleAdminType() {
         Mockito.doReturn(RoleType.DomainAdmin).when(roleVoMock).getRoleType();
         Mockito.doReturn(roleVoMock).when(roleDaoMock).findById(roleMockId);
-        Mockito.doReturn(false).when(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
 
         Role returnedRole = roleManagerImpl.findRole(roleMockId);
 
         Assert.assertEquals(roleMockId, returnedRole.getId());
-        Mockito.verify(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.verify(callContextMock).isCallingAccountRootAdmin();
         Mockito.verify(roleVoMock, Mockito.times(1)).getRoleType();
     }
 
@@ -153,12 +165,12 @@ public class RoleManagerImplTest {
     public void findRoleTestRootAdminAndNotRoleAdminType() {
         Mockito.lenient().doReturn(RoleType.DomainAdmin).when(roleVoMock).getRoleType();
         Mockito.doReturn(roleVoMock).when(roleDaoMock).findById(roleMockId);
-        Mockito.doReturn(true).when(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.doReturn(true).when(callContextMock).isCallingAccountRootAdmin();
 
         Role returnedRole = roleManagerImpl.findRole(roleMockId);
 
         Assert.assertEquals(roleMockId, returnedRole.getId());
-        Mockito.verify(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.verify(callContextMock).isCallingAccountRootAdmin();
         Mockito.verify(roleVoMock, Mockito.times(0)).getRoleType();
     }
 
@@ -166,12 +178,12 @@ public class RoleManagerImplTest {
     public void findRoleTestRootAdminAndRoleAdminType() {
         Mockito.lenient().doReturn(RoleType.Admin).when(roleVoMock).getRoleType();
         Mockito.doReturn(roleVoMock).when(roleDaoMock).findById(roleMockId);
-        Mockito.doReturn(true).when(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.doReturn(true).when(callContextMock).isCallingAccountRootAdmin();
 
         Role returnedRole = roleManagerImpl.findRole(roleMockId);
 
         Assert.assertEquals(roleMockId, returnedRole.getId());
-        Mockito.verify(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.verify(callContextMock).isCallingAccountRootAdmin();
         Mockito.verify(roleVoMock, Mockito.times(0)).getRoleType();
     }
 
@@ -179,12 +191,12 @@ public class RoleManagerImplTest {
     public void findRoleTestNotRootAdminAndRoleAdminType() {
         Mockito.doReturn(RoleType.Admin).when(roleVoMock).getRoleType();
         Mockito.doReturn(roleVoMock).when(roleDaoMock).findById(roleMockId);
-        Mockito.doReturn(false).when(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
 
         Role returnedRole = roleManagerImpl.findRole(roleMockId);
 
         Assert.assertNull(returnedRole);
-        Mockito.verify(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.verify(callContextMock).isCallingAccountRootAdmin();
         Mockito.verify(roleVoMock, Mockito.times(1)).getRoleType();
     }
 
@@ -322,25 +334,23 @@ public class RoleManagerImplTest {
         List<Role> returnedRoles = roleManagerImpl.findRolesByType(null);
 
         Assert.assertEquals(0, returnedRoles.size());
-        Mockito.verify(accountManagerMock, Mockito.times(0)).isRootAdmin(Mockito.anyLong());
+        Mockito.verify(callContextMock, Mockito.times(0)).isCallingAccountRootAdmin();
     }
 
     @Test
     public void findRolesByTypeTestAdminRoleNonRootAdminUser() {
-        Mockito.doReturn(accountMock).when(roleManagerImpl).getCurrentAccount();
-        Mockito.doReturn(false).when(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
 
         List<Role> returnedRoles = roleManagerImpl.findRolesByType(RoleType.Admin);
 
         Assert.assertEquals(0, returnedRoles.size());
-        Mockito.verify(accountManagerMock, Mockito.times(1)).isRootAdmin(Mockito.anyLong());
+        Mockito.verify(callContextMock, Mockito.times(1)).isCallingAccountRootAdmin();
         Mockito.verify(roleDaoMock, Mockito.times(0)).findAllByRoleType(Mockito.any(RoleType.class), Mockito.anyBoolean());
     }
 
     @Test
     public void findRolesByTypeTestAdminRoleRootAdminUser() {
-        Mockito.doReturn(accountMock).when(roleManagerImpl).getCurrentAccount();
-        Mockito.doReturn(true).when(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.doReturn(true).when(callContextMock).isCallingAccountRootAdmin();
 
         List<Role> roles = new ArrayList<>();
         roles.add(Mockito.mock(Role.class));
@@ -349,13 +359,12 @@ public class RoleManagerImplTest {
         List<Role> returnedRoles = roleManagerImpl.findRolesByType(RoleType.Admin);
 
         Assert.assertEquals(1, returnedRoles.size());
-        Mockito.verify(accountManagerMock, Mockito.times(2)).isRootAdmin(Mockito.anyLong());
+        Mockito.verify(callContextMock, Mockito.times(2)).isCallingAccountRootAdmin();
     }
 
     @Test
     public void findRolesByTypeTestNonAdminRoleRootAdminUser() {
-        Mockito.lenient().doReturn(accountMock).when(roleManagerImpl).getCurrentAccount();
-        Mockito.lenient().doReturn(true).when(accountManagerMock).isRootAdmin(accountMockId);
+        Mockito.doReturn(true).when(callContextMock).isCallingAccountRootAdmin();
 
         List<Role> roles = new ArrayList<>();
         roles.add(Mockito.mock(Role.class));
@@ -364,7 +373,7 @@ public class RoleManagerImplTest {
         List<Role> returnedRoles = roleManagerImpl.findRolesByType(RoleType.User);
 
         Assert.assertEquals(1, returnedRoles.size());
-        Mockito.verify(accountManagerMock, Mockito.times(1)).isRootAdmin(Mockito.anyLong());
+        Mockito.verify(callContextMock, Mockito.times(1)).isCallingAccountRootAdmin();
     }
 
     @Test

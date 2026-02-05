@@ -18,15 +18,6 @@ package org.apache.cloudstack.api.command.user.storage.sharedfs;
 
 import javax.inject.Inject;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
-import com.cloud.utils.exception.CloudRuntimeException;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -40,15 +31,23 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.sharedfs.SharedFSProvider;
 import org.apache.cloudstack.storage.sharedfs.SharedFSService;
+
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "createSharedFileSystem",
         responseObject= SharedFSResponse.class,
@@ -289,8 +288,7 @@ public class CreateSharedFSCmd extends BaseAsyncCreateCmd implements UserCmd {
 
         if (sharedFS != null) {
             ResponseObject.ResponseView respView = getResponseView();
-            Account caller = CallContext.current().getCallingAccount();
-            if (_accountService.isRootAdmin(caller.getId())) {
+            if (CallContext.current().isCallingAccountRootAdmin()) {
                 respView = ResponseObject.ResponseView.Full;
             }
             SharedFSResponse response = _responseGenerator.createSharedFSResponse(respView, sharedFS);

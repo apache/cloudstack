@@ -68,9 +68,8 @@ public class DomainCheckerTest {
     @Test
     public void testRootAdminHasAccess() {
         Account rootAdmin = Mockito.mock(Account.class);
-        Mockito.when(rootAdmin.getId()).thenReturn(1L);
         ControlledEntity entity = getMockedEntity(2L);
-        Mockito.when(_accountService.isRootAdmin(rootAdmin.getId())).thenReturn(true);
+        Mockito.when(_accountService.isRootAdmin(rootAdmin)).thenReturn(true);
 
         domainChecker.validateCallerHasAccessToEntityOwner(rootAdmin, entity, SecurityChecker.AccessType.ModifyProject);
     }

@@ -92,7 +92,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         domainResponse.setNetworkDomain(domain.getNetworkDomain());
 
         domainResponse.setHasAnnotation(annotationDao.hasAnnotations(domain.getUuid(), AnnotationService.EntityType.DOMAIN.name(),
-                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         if (details.contains(DomainDetails.all) || details.contains(DomainDetails.resource)) {
             boolean fullView = (view == ResponseView.Full && domain.getId() == Domain.ROOT_DOMAIN);

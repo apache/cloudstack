@@ -635,17 +635,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     }
 
-    private boolean isRootAdmin(VirtualMachineProfile vmProfile) {
-        if (vmProfile != null) {
-            if (vmProfile.getOwner() != null) {
-                return accountMgr.isRootAdmin(vmProfile.getOwner().getId());
-            } else {
-                return false;
-            }
-        }
-        return false;
-    }
-
     @Override
     public boolean canHandle(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) {
         // check what the ServiceOffering says. If null, check the global config

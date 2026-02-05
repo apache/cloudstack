@@ -791,7 +791,7 @@ public class DeploymentPlanningManagerImplTest {
         Account account = Mockito.mock(Account.class);
         Mockito.when(account.getId()).thenReturn(1L);
         Mockito.when(vmProfile.getOwner()).thenReturn(account);
-        Mockito.when(_accountMgr.isRootAdmin(account.getId())).thenReturn(Boolean.FALSE);
+        Mockito.when(_accountMgr.isRootAdmin(account)).thenReturn(Boolean.FALSE);
 
         Mockito.when(_dcDao.findById(dataCenterId)).thenReturn(dc);
         Mockito.when(dc.getAllocationState()).thenReturn(AllocationState.Enabled);

@@ -515,8 +515,7 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
             return response;
         }
 
-        Account caller = CallContext.current().getCallingAccount();
-        if (accountMgr.isRootAdmin(caller.getId())) {
+        if (CallContext.current().isCallingAccountRootAdmin()) {
             respView = ResponseObject.ResponseView.Full;
         }
 

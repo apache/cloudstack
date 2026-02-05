@@ -90,7 +90,7 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
             osResponse.setDiskSizeUsed(secStorageStats.getByteUsed());
         }
         osResponse.setHasAnnotation(annotationDao.hasAnnotations(ids.getUuid(), AnnotationService.EntityType.SECONDARY_STORAGE.name(),
-                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         osResponse.setObjectName("imagestore");
         return osResponse;
@@ -100,7 +100,7 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
     public ImageStoreResponse setImageStoreResponse(ImageStoreResponse response, ImageStoreJoinVO ids) {
         if (response.hasAnnotation() == null) {
             response.setHasAnnotation(annotationDao.hasAnnotations(ids.getUuid(), AnnotationService.EntityType.SECONDARY_STORAGE.name(),
-                    accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                    CallContext.current().isCallingAccountRootAdmin()));
         }
         return response;
     }

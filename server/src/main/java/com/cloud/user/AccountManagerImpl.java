@@ -603,21 +603,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public boolean isRootAdmin(Long accountId) {
         if (accountId != null) {
-            AccountVO acct = _accountDao.findById(accountId);
-            if (acct == null) {
-                return false;  //account is deleted or does not exist
-            }
-            for (SecurityChecker checker : _securityCheckers) {
-                try {
-                    if (checker.checkAccess(acct, null, null, "SystemCapability")) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Root Access granted to " + acct + " by " + checker.getName());
-                        }
-                        return true;
+            return isRootAdmin(_accountDao.findById(accountId));
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isRootAdmin(Account account) {
+        if (account == null) {
+            return false;
+        }
+        for (SecurityChecker checker : _securityCheckers) {
+            try {
+                if (checker.checkAccess(account, null, null, "SystemCapability")) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Root Access granted to " + account + " by " + checker.getName());
                     }
-                } catch (PermissionDeniedException ex) {
-                    return false;
+                    return true;
                 }
+            } catch (PermissionDeniedException ex) {
+                return false;
             }
         }
         return false;
@@ -683,10 +688,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (account == null) {
             return false;  //account is deleted or does not exist
         }
-        if (isRootAdmin(accountId) || (account.getType() == Account.Type.ADMIN)) {
-            return true;
-        }
-        return false;
+        return isRootAdmin(account) || (account.getType() == Account.Type.ADMIN);
     }
 
     @Override
@@ -724,7 +726,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
-        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller.getId())) {
+        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller)) {
             // no need to make permission checks if the system/root admin makes the call
             if (logger.isTraceEnabled()) {
                 logger.trace("No need to make permission check for System/RootAdmin account, returning true");
@@ -1658,11 +1660,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     protected void checkCallerApiPermissionsForUserOrAccountOperations(Account userAccount) {
         Account callingAccount = getCurrentCallingAccount();
-        boolean isCallerRootAdmin = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
+        boolean isCallerRootAdmin = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM ||
+                CallContext.current().isCallingAccountRootAdmin();
 
         if (isCallerRootAdmin) {
             logger.trace(String.format("Admin account [%s, %s] performing this operation for user account [%s, %s] ", callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
-        } else if (isRootAdmin(userAccount.getAccountId())) {
+        } else if (isRootAdmin(userAccount)) {
             String errMsg = String.format("Account [%s, %s] cannot perform this operation for user account [%s, %s] ", callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid());
             logger.error(errMsg);
             throw new PermissionDeniedException(errMsg);
@@ -1704,7 +1707,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(newPassword, user.getUsername(), getAccount(user.getAccountId()).getDomainId());
 
         Account callingAccount = getCurrentCallingAccount();
-        boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
+        boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM ||
+                CallContext.current().isCallingAccountRootAdmin();
         boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
         boolean isAdmin = isDomainAdmin || isRootAdminExecutingPasswordUpdate;
         boolean skipValidation = isAdmin || skipCurrentPassValidation;
@@ -3091,19 +3095,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         return new Pair<>(apiKeyAccess, keys);
-    }
-
-    protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
-        if (isDomainAdminForRootDomain(caller) && isRootAdmin(account.getAccountId())) {
-            String msg = String.format("Caller Username %s does not have access to root admin keys", caller.getUsername());
-            logger.error(msg);
-            throw new PermissionDeniedException(msg);
-        }
-    }
-
-    protected boolean isDomainAdminForRootDomain(User callingUser) {
-        AccountVO caller = _accountDao.findById(callingUser.getAccountId());
-        return caller.getType() == Account.Type.DOMAIN_ADMIN && caller.getDomainId() == Domain.ROOT_DOMAIN;
     }
 
     @Override

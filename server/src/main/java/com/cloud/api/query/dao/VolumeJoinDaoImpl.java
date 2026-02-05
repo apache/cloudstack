@@ -261,7 +261,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         }
 
         volResponse.setHasAnnotation(annotationDao.hasAnnotations(volume.getUuid(), AnnotationService.EntityType.VOLUME.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         volResponse.setExtractable(isExtractable);
         volResponse.setDisplayVolume(volume.isDisplayVolume());
@@ -316,7 +316,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         }
         if (volData.hasAnnotation() == null) {
             volData.setHasAnnotation(annotationDao.hasAnnotations(vol.getUuid(), AnnotationService.EntityType.VOLUME.name(),
-                    _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                    CallContext.current().isCallingAccountRootAdmin()));
         }
         return volData;
     }

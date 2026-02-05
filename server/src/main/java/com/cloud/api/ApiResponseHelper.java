@@ -772,7 +772,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         snapshotResponse.setTags(new HashSet<>(tagResponses));
         snapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(snapshot.getUuid(), AnnotationService.EntityType.SNAPSHOT.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         snapshotResponse.setObjectName("snapshot");
         return snapshotResponse;
@@ -842,7 +842,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         vmSnapshotResponse.setTags(new HashSet<>(tagResponses));
         vmSnapshotResponse.setHasAnnotation(annotationDao.hasAnnotations(vmSnapshot.getUuid(), AnnotationService.EntityType.VM_SNAPSHOT.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
@@ -1210,7 +1210,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         ipResponse.setTags(tagResponses);
         ipResponse.setHasAnnotation(annotationDao.hasAnnotations(ipAddr.getUuid(), AnnotationService.EntityType.PUBLIC_IP_ADDRESS.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         ipResponse.setHasRules(firewallRulesDao.countRulesByIpId(ipAddr.getId()) > 0);
         ipResponse.setObjectName("ipaddress");
@@ -1444,7 +1444,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         podResponse.setHasAnnotation(annotationDao.hasAnnotations(pod.getUuid(), AnnotationService.EntityType.POD.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
         podResponse.setObjectName("pod");
         return podResponse;
     }
@@ -1637,7 +1637,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             clusterResponse.setCapacities(new ArrayList<CapacityResponse>(capacityResponses));
         }
         clusterResponse.setHasAnnotation(annotationDao.hasAnnotations(cluster.getUuid(), AnnotationService.EntityType.CLUSTER.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
         clusterResponse.setObjectName("cluster");
         return clusterResponse;
     }
@@ -1845,7 +1845,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             vmResponse.setHasAnnotation(annotationDao.hasAnnotations(vm.getUuid(), AnnotationService.EntityType.SYSTEM_VM.name(),
-                    _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                    CallContext.current().isCallingAccountRootAdmin()));
             List<NicProfile> nicProfiles = ApiDBUtils.getNics(vm);
             for (NicProfile singleNicProfile : nicProfiles) {
                 Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
@@ -2496,7 +2496,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setDetails(details);
         }
         response.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.NETWORK_OFFERING.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
         return response;
     }
 
@@ -2773,7 +2773,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setTags(tagResponses);
         response.setHasAnnotation(annotationDao.hasAnnotations(network.getUuid(), AnnotationService.EntityType.NETWORK.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         if (network.getNetworkACLId() != null) {
             NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
@@ -3580,7 +3580,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setTags(tagResponses);
         response.setHasAnnotation(annotationDao.hasAnnotations(vpc.getUuid(), AnnotationService.EntityType.VPC.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
         ipv6Service.updateIpv6RoutesForVpcResponse(vpc, response);
         response.setDns1(vpc.getIp4Dns1());
         response.setDns2(vpc.getIp4Dns2());
@@ -3819,7 +3819,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setHasAnnotation(annotationDao.hasAnnotations(vmGroup.getUuid(), AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         populateOwner(response, vmGroup);
         return response;
@@ -3916,7 +3916,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setObjectName("vpncustomergateway");
         response.setHasAnnotation(annotationDao.hasAnnotations(result.getUuid(), AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         populateAccount(response, result.getAccountId());
         populateDomain(response, result.getDomainId());
@@ -5061,7 +5061,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
         response.setHasAnnotation(annotationDao.hasAnnotations(sshkeyPair.getUuid(), AnnotationService.EntityType.SSH_KEYPAIR.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
         return response;
     }
 
@@ -5070,7 +5070,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserDataResponse response = new UserDataResponse(userData.getUuid(), userData.getName(), userData.getUserData(), userData.getParams());
         populateOwner(response, userData);
         response.setHasAnnotation(annotationDao.hasAnnotations(userData.getUuid(), AnnotationService.EntityType.USER_DATA.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
         return response;
     }
 
@@ -5620,8 +5620,8 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
     public GuiThemeResponse createGuiThemeResponse(GuiThemeJoin guiThemeJoin) {
         GuiThemeResponse guiThemeResponse = new GuiThemeResponse();
 
-        Long callerId = CallContext.current().getCallingAccount().getAccountId();
-        if (callerId != Account.ACCOUNT_ID_SYSTEM && _accountMgr.isRootAdmin(callerId)) {
+        long callerId = CallContext.current().getCallingAccount().getAccountId();
+        if (callerId != Account.ACCOUNT_ID_SYSTEM && CallContext.current().isCallingAccountRootAdmin()) {
             guiThemeResponse.setId(guiThemeJoin.getUuid());
             guiThemeResponse.setName(guiThemeJoin.getName());
             guiThemeResponse.setDescription(guiThemeJoin.getDescription());

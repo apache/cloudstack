@@ -1715,7 +1715,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public final void checkNetworkPermissions(Account caller, Network network) {
-        if (_accountMgr.isRootAdmin(caller.getAccountId()) && Boolean.TRUE.equals(AdminIsAllowedToDeployAnywhere.value())) {
+        if (_accountMgr.isRootAdmin(caller) && Boolean.TRUE.equals(AdminIsAllowedToDeployAnywhere.value())) {
             if (logger.isDebugEnabled()) {
                 logger.debug("root admin is permitted to do stuff on every network");
             }

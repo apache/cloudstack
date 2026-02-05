@@ -47,10 +47,8 @@ public class UUIDManagerImpl implements UUIDManager {
             return;
         }
 
-        Account caller = CallContext.current().getCallingAccount();
-
         // Only admin and system allowed to do this
-        if (!(caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId()))) {
+        if (!(CallContext.current().getCallingAccountId() == Account.ACCOUNT_ID_SYSTEM || CallContext.current().isCallingAccountRootAdmin())) {
             throw new PermissionDeniedException("Please check your permissions, you are not allowed to create/update custom id");
         }
 

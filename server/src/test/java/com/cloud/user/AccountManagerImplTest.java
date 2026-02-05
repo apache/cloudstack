@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -383,41 +385,19 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test
-    public void testPreventRootDomainAdminAccessToRootAdminKeysNormalUser() {
-        User user = Mockito.mock(User.class);
-        ControlledEntity entity = Mockito.mock(ControlledEntity.class);
-        Mockito.when(user.getAccountId()).thenReturn(1L);
-        AccountVO account = Mockito.mock(AccountVO.class);
-        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
-        Mockito.when(_accountDao.findById(1L)).thenReturn(account);
-        accountManagerImpl.preventRootDomainAdminAccessToRootAdminKeys(user, entity);
-        Mockito.verify(accountManagerImpl, Mockito.never()).isRootAdmin(Mockito.anyLong());
-    }
-
-    @Test(expected = PermissionDeniedException.class)
-    public void testPreventRootDomainAdminAccessToRootAdminKeysRootDomainAdminUser() {
-        User user = Mockito.mock(User.class);
-        ControlledEntity entity = Mockito.mock(ControlledEntity.class);
-        Mockito.when(user.getAccountId()).thenReturn(1L);
-        AccountVO account = Mockito.mock(AccountVO.class);
-        Mockito.when(account.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
-        Mockito.when(account.getDomainId()).thenReturn(Domain.ROOT_DOMAIN);
-        Mockito.when(_accountDao.findById(1L)).thenReturn(account);
-        Mockito.when(entity.getAccountId()).thenReturn(1L);
-        Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class),
-                Mockito.nullable(ControlledEntity.class), Mockito.nullable(AccessType.class), Mockito.anyString())).thenReturn(true);
-        accountManagerImpl.preventRootDomainAdminAccessToRootAdminKeys(user, entity);
-    }
-
-    @Test
     public void updateUserTestTimeZoneAndEmailNull() {
         Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
         Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(10L);
-        Mockito.when(accountMock.getAccountId()).thenReturn(10L);
-        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(10L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(accountMock);
         Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(accountMock))).thenReturn(RoleType.User);
 
-        prepareMockAndExecuteUpdateUserTest(0);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
+            Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+            prepareMockAndExecuteUpdateUserTest(0);
+        }
     }
 
     @Test
@@ -426,10 +406,16 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(UpdateUserCmdMock.getTimezone()).thenReturn("timezone");
         Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
         Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(10L);
-        Mockito.when(accountMock.getAccountId()).thenReturn(10L);
-        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(10L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(accountMock);
         Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(accountMock))).thenReturn(RoleType.User);
-        prepareMockAndExecuteUpdateUserTest(1);
+
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
+            Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+            prepareMockAndExecuteUpdateUserTest(1);
+        }
     }
 
     private void prepareMockAndExecuteUpdateUserTest(int numberOfExpectedCallsForSetEmailAndSetTimeZone) {
@@ -799,21 +785,23 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Test(expected = InvalidParameterValueException.class)
     public void valiateUserPasswordAndUpdateIfNeededTestNoAdminAndNoCurrentPasswordProvided() {
         Mockito.doReturn(accountMock).when(accountManagerImpl).getCurrentCallingAccount();
-        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(accountMockId);
         Mockito.doReturn(false).when(accountManagerImpl).isDomainAdmin(accountMockId);
         Mockito.lenient().doReturn(true).when(accountManagerImpl).isResourceDomainAdmin(accountMockId);
 
         Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(Mockito.anyLong());
 
         Mockito.lenient().doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
-
-        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded("newPassword", userVoMock, "  ", false);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
+            accountManagerImpl.validateUserPasswordAndUpdateIfNeeded("newPassword", userVoMock, "  ", false);
+        }
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void valiateUserPasswordAndUpdateIfNeededTestNoUserAuthenticatorsConfigured() {
         Mockito.doReturn(accountMock).when(accountManagerImpl).getCurrentCallingAccount();
-        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(accountMockId);
         Mockito.doReturn(false).when(accountManagerImpl).isDomainAdmin(accountMockId);
 
         Mockito.lenient().doNothing().when(accountManagerImpl).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
@@ -822,13 +810,17 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         Mockito.lenient().doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
 
-        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded("newPassword", userVoMock, null, false);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(true).when(callContextMock).isCallingAccountRootAdmin();
+            accountManagerImpl.validateUserPasswordAndUpdateIfNeeded("newPassword", userVoMock, null, false);
+        }
     }
 
     @Test
     public void validateUserPasswordAndUpdateIfNeededTestRootAdminUpdatingUserPassword() {
         Mockito.doReturn(accountMock).when(accountManagerImpl).getCurrentCallingAccount();
-        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(accountMockId);
         Mockito.doReturn(false).when(accountManagerImpl).isDomainAdmin(accountMockId);
 
         String newPassword = "newPassword";
@@ -841,16 +833,20 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         Mockito.lenient().doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
 
-        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, null, false);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(true).when(callContextMock).isCallingAccountRootAdmin();
+            accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, null, false);
 
-        Mockito.verify(accountManagerImpl, Mockito.times(0)).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
-        Mockito.verify(userVoMock, Mockito.times(1)).setPassword(expectedUserPasswordAfterEncoded);
+            Mockito.verify(accountManagerImpl, Mockito.times(0)).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
+            Mockito.verify(userVoMock, Mockito.times(1)).setPassword(expectedUserPasswordAfterEncoded);
+        }
     }
 
     @Test
     public void validateUserPasswordAndUpdateIfNeededTestDomainAdminUpdatingUserPassword() {
         Mockito.doReturn(accountMock).when(accountManagerImpl).getCurrentCallingAccount();
-        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(accountMockId);
         Mockito.doReturn(true).when(accountManagerImpl).isDomainAdmin(accountMockId);
 
         String newPassword = "newPassword";
@@ -862,17 +858,21 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(Mockito.anyLong());
 
         Mockito.lenient().doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
 
-        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, null, false);
+            accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, null, false);
 
-        Mockito.verify(accountManagerImpl, Mockito.times(0)).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
-        Mockito.verify(userVoMock, Mockito.times(1)).setPassword(expectedUserPasswordAfterEncoded);
+            Mockito.verify(accountManagerImpl, Mockito.times(0)).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
+            Mockito.verify(userVoMock, Mockito.times(1)).setPassword(expectedUserPasswordAfterEncoded);
+        }
     }
 
     @Test
     public void validateUserPasswordAndUpdateIfNeededTestUserUpdatingHisPassword() {
         Mockito.doReturn(accountMock).when(accountManagerImpl).getCurrentCallingAccount();
-        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(accountMockId);
         Mockito.doReturn(false).when(accountManagerImpl).isDomainAdmin(accountMockId);
 
         String newPassword = "newPassword";
@@ -885,11 +885,16 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(Mockito.anyLong());
 
         Mockito.lenient().doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
 
-        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword, false);
+            accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword, false);
 
-        Mockito.verify(accountManagerImpl, Mockito.times(1)).validateCurrentPassword(userVoMock, currentPassword);
-        Mockito.verify(userVoMock, Mockito.times(1)).setPassword(expectedUserPasswordAfterEncoded);
+            Mockito.verify(accountManagerImpl, Mockito.times(1)).validateCurrentPassword(userVoMock, currentPassword);
+            Mockito.verify(userVoMock, Mockito.times(1)).setPassword(expectedUserPasswordAfterEncoded);
+        }
     }
 
     @Test (expected = InvalidParameterValueException.class)
@@ -1546,8 +1551,12 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     public void testcheckCallerApiPermissionsForUserOperationsRootAdminSameCaller() {
         Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(accountMock);
         Mockito.when(accountMock.getId()).thenReturn(2L);
-        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(2L);
-        accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(true).when(callContextMock).isCallingAccountRootAdmin();
+            accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+        }
     }
 
     @Test(expected = PermissionDeniedException.class)
@@ -1555,12 +1564,15 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(callingAccount);
         Mockito.lenient().when(callingAccount.getAccountId()).thenReturn(3L);
         Mockito.lenient().doReturn(callingAccount).when(accountManagerImpl).getAccount(3L);
-        Mockito.lenient().doReturn(false).when(accountManagerImpl).isRootAdmin(3L);
 
-        Mockito.when(accountMock.getAccountId()).thenReturn(2L);
-        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(2L);
+        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(accountMock);
 
-        accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
+            accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+        }
     }
 
     @Test
@@ -1568,14 +1580,17 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(callingAccount);
         Mockito.lenient().when(callingAccount.getAccountId()).thenReturn(3L);
         Mockito.lenient().doReturn(callingAccount).when(accountManagerImpl).getAccount(3L);
-        Mockito.lenient().doReturn(false).when(accountManagerImpl).isRootAdmin(3L);
 
-        Mockito.when(accountMock.getAccountId()).thenReturn(2L);
-        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(2L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(accountMock);
 
         Mockito.lenient().doNothing().when(accountManagerImpl).checkRoleEscalation(callingAccount, accountMock);
 
-        accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
+            accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+        }
     }
 
     @Test(expected = PermissionDeniedException.class)
@@ -1583,13 +1598,83 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(callingAccount);
         Mockito.lenient().when(callingAccount.getAccountId()).thenReturn(3L);
         Mockito.lenient().doReturn(callingAccount).when(accountManagerImpl).getAccount(3L);
-        Mockito.lenient().doReturn(false).when(accountManagerImpl).isRootAdmin(3L);
 
-        Mockito.when(accountMock.getAccountId()).thenReturn(2L);
-        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(2L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(accountMock);
 
         Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManagerImpl).checkRoleEscalation(callingAccount, accountMock);
 
-        accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+        try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+            Mockito.doReturn(false).when(callContextMock).isCallingAccountRootAdmin();
+            accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+        }
+    }
+
+    @Test
+    public void isRootAdminReturnsTrueWhenCheckerGrantsAccess() {
+        Account account = Mockito.mock(Account.class);
+        SecurityChecker checker = Mockito.mock(SecurityChecker.class);
+        Mockito.when(checker.checkAccess(account, null, null, "SystemCapability")).thenReturn(true);
+        List<SecurityChecker> securityCheckers = List.of(checker);
+        accountManagerImpl.setSecurityCheckers(securityCheckers);
+        boolean result = accountManagerImpl.isRootAdmin(account);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isRootAdminReturnsFalseWhenCheckerDeniesAccess() {
+        Account account = Mockito.mock(Account.class);
+        SecurityChecker checker = Mockito.mock(SecurityChecker.class);
+        Mockito.when(checker.checkAccess(account, null, null, "SystemCapability")).thenThrow(PermissionDeniedException.class);
+        List<SecurityChecker> securityCheckers = List.of(checker);
+        accountManagerImpl.setSecurityCheckers(securityCheckers);
+        boolean result = accountManagerImpl.isRootAdmin(account);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isRootAdminReturnsFalseWhenAccountIsNull() {
+        Account account = null;
+        boolean result = accountManagerImpl.isRootAdmin(account);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isRootAdminReturnsFalseWhenNoCheckersExist() {
+        Account account = Mockito.mock(Account.class);
+        accountManagerImpl.setSecurityCheckers(Collections.emptyList());
+        boolean result = accountManagerImpl.isRootAdmin(account);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isRootAdminReturnsTrueWhenMultipleCheckersGrantAccess() {
+        Account account = Mockito.mock(Account.class);
+        SecurityChecker checker1 = Mockito.mock(SecurityChecker.class);
+        SecurityChecker checker2 = Mockito.mock(SecurityChecker.class);
+        Mockito.when(checker1.checkAccess(account, null, null, "SystemCapability")).thenReturn(false);
+        Mockito.when(checker2.checkAccess(account, null, null, "SystemCapability")).thenReturn(true);
+        List<SecurityChecker> securityCheckers = List.of(checker1, checker2);
+        accountManagerImpl.setSecurityCheckers(securityCheckers);
+        boolean result = accountManagerImpl.isRootAdmin(account);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isRootAdminReturnsFalseWhenSecondCheckerDenyAccess() {
+        Account account = Mockito.mock(Account.class);
+        SecurityChecker checker1 = Mockito.mock(SecurityChecker.class);
+        SecurityChecker checker2 = Mockito.mock(SecurityChecker.class);
+        Mockito.when(checker1.checkAccess(account, null, null, "SystemCapability")).thenReturn(false);
+        Mockito.when(checker2.checkAccess(account, null, null, "SystemCapability")).thenThrow(PermissionDeniedException.class);
+        List<SecurityChecker> securityCheckers = List.of(checker1, checker2);
+        accountManagerImpl.setSecurityCheckers(securityCheckers);
+        boolean result = accountManagerImpl.isRootAdmin(account);
+
+        Assert.assertFalse(result);
     }
 }

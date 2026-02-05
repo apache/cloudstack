@@ -27,11 +27,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -39,11 +42,15 @@ public class CallContextTest {
 
     @Mock
     EntityManager entityMgr;
+    @Mock
+    User user;
+    @Mock
+    Account account;
 
     @Before
     public void setUp() {
         CallContext.init(entityMgr);
-        CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
+        CallContext.register(user, account);
     }
 
     @After
@@ -78,6 +85,52 @@ public class CallContextTest {
         //since both object and string a present in the current context, it should return object value
         Assert.assertEquals("it should return objectUUID: " + objectUUID, objectUUID, currentContext.getContextParameter(Account.class));
         Assert.assertEquals("current context map should have exactly three entries", 3, currentContext.getContextParameters().size());
+    }
+
+
+    @Test
+    public void isCallingAccountRootAdminReturnsTrueWhenAccountIsRootAdminAccountServiceNotAvailable() {
+        Mockito.when(account.getType()).thenReturn(Account.Type.ADMIN);
+
+        CallContext context = CallContext.current();
+        Assert.assertTrue(context.isCallingAccountRootAdmin());
+    }
+
+    @Test
+    public void isCallingAccountRootAdminReturnsFalseWhenAccountIsNotRootAdminAccountServiceNotAvailable() {
+        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+
+        CallContext context = CallContext.current();
+        Assert.assertFalse(context.isCallingAccountRootAdmin());
+        Assert.assertFalse(context.isCallingAccountRootAdmin());
+    }
+
+    @Test
+    public void isCallingAccountRootAdminTrueWhenAccountServiceAvailable() {
+        try (MockedStatic<ComponentContext> componentContextMockedStatic = Mockito.mockStatic(ComponentContext.class)) {
+            AccountService accountService = Mockito.mock(AccountService.class);
+            Mockito.when(accountService.isRootAdmin(account)).thenReturn(true);
+            componentContextMockedStatic.when(() -> ComponentContext.getDelegateComponentOfType(AccountService.class)).thenReturn(accountService);
+            CallContext context = CallContext.current();
+            Assert.assertTrue(context.isCallingAccountRootAdmin());
+            // Verify isRootAdmin was called only once
+            Assert.assertTrue(context.isCallingAccountRootAdmin());
+            componentContextMockedStatic.verify(() -> ComponentContext.getDelegateComponentOfType(AccountService.class));
+        }
+    }
+
+    @Test
+    public void isCallingAccountRootAdminFalseWhenAccountServiceAvailable() {
+        try (MockedStatic<ComponentContext> componentContextMockedStatic = Mockito.mockStatic(ComponentContext.class)) {
+            AccountService accountService = Mockito.mock(AccountService.class);
+            Mockito.when(accountService.isRootAdmin(account)).thenReturn(false);
+            componentContextMockedStatic.when(() -> ComponentContext.getDelegateComponentOfType(AccountService.class)).thenReturn(accountService);
+            CallContext context = CallContext.current();
+            Assert.assertFalse(context.isCallingAccountRootAdmin());
+            // Verify isRootAdmin was called only once
+            Assert.assertFalse(context.isCallingAccountRootAdmin());
+            componentContextMockedStatic.verify(() -> ComponentContext.getDelegateComponentOfType(AccountService.class));
+        }
     }
 
 }

@@ -1406,7 +1406,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (NetworkOffering.NetworkMode.ROUTED.equals(networkOffering.getNetworkMode())
                 && routedIpv4Manager.isVirtualRouterGateway(networkOffering)) {
             if (cidr != null) {
-                if (!networkOffering.isForVpc() && !_accountMgr.isRootAdmin(caller.getId())) {
+                if (!networkOffering.isForVpc() && !_accountMgr.isRootAdmin(caller)) {
                     throw new InvalidParameterValueException("Only root admin can set the gateway/netmask of Isolated networks with ROUTED mode");
                 }
                 return;
@@ -1512,6 +1512,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();
         Account caller = CallContext.current().getCallingAccount();
+        boolean isCallerRootAdmin = CallContext.current().isCallingAccountRootAdmin();
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         Long domainId = cmd.getDomainId();
         Boolean subdomainAccess = cmd.getSubdomainAccess();
@@ -1689,7 +1690,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (StringUtils.isNotBlank(isolatedPvlan)) {
-            if (!_accountMgr.isRootAdmin(caller.getId())) {
+            if (!isCallerRootAdmin) {
                 throw new InvalidParameterValueException("Only ROOT admin is allowed to create Private VLAN network");
             }
             if (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated) {
@@ -1710,7 +1711,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         performBasicPrivateVlanChecks(vlanId, secondaryVlanId, privateVlanType);
 
-        if (!_accountMgr.isRootAdmin(caller.getId())) {
+        if (!isCallerRootAdmin) {
             validateNetworkOfferingForNonRootAdminUser(ntwkOff);
         }
 
@@ -1720,7 +1721,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         // Don't allow to specify vlan if the caller is not ROOT admin
-        if (!_accountMgr.isRootAdmin(caller.getId()) && (ntwkOff.isSpecifyVlan() || vlanId != null || bypassVlanOverlapCheck)) {
+        if (!isCallerRootAdmin && (ntwkOff.isSpecifyVlan() || vlanId != null || bypassVlanOverlapCheck)) {
             throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId or bypass vlan overlap check");
         }
 
@@ -1737,7 +1738,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (ipv4) {
             // For non-root admins check cidr limit - if it's allowed by global config value
-            if (!_accountMgr.isRootAdmin(caller.getId()) && cidr != null) {
+            if (!isCallerRootAdmin && cidr != null) {
 
                 String[] cidrPair = cidr.split("\\/");
                 int cidrSize = Integer.parseInt(cidrPair[1]);
@@ -1996,7 +1997,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2) {
             aclType = ACLType.Account;
         } else if (ntwkOff.getGuestType() == GuestType.Shared) {
-            if (_accountMgr.isRootAdmin(caller.getId())) {
+            if (_accountMgr.isRootAdmin(caller)) {
                 aclType = ACLType.Domain;
             } else if (_accountMgr.isNormalUser(caller.getId())) {
                 aclType = ACLType.Account;
@@ -2008,7 +2009,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     private void validateZoneAvailability(Account caller, DataCenter zone) {
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller)) {
             // See DataCenterVO.java
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
             ex.addProxyObject(zone.getUuid(), "zoneId");
@@ -2392,6 +2393,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String keyword = cmd.getKeyword();
         Long zoneId = cmd.getZoneId();
         Account caller = CallContext.current().getCallingAccount();
+        boolean isCallerRootAdmin = CallContext.current().isCallingAccountRootAdmin();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String guestIpType = cmd.getGuestIpType();
@@ -2426,7 +2428,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         // 1) default is system to false if not specified
         // 2) reset parameter to false if it's specified by a non-ROOT user
-        if (isSystem == null || !_accountMgr.isRootAdmin(caller.getId())) {
+        if (isSystem == null || !isCallerRootAdmin) {
             isSystem = false;
         }
 
@@ -2894,9 +2896,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_DELETE, eventDescription = "deleting network", async = true)
     public boolean deleteNetwork(long networkId, boolean forced) {
-
-        Account caller = CallContext.current().getCallingAccount();
-
         // Verify network id
         NetworkVO network = getNetworkVO(networkId, "Unable to find a network with the specified ID.");
 
@@ -2917,7 +2916,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Account owner = _accountMgr.getAccount(network.getAccountId());
 
-        if (forced && !_accountMgr.isRootAdmin(caller.getId())) {
+        if (forced && !CallContext.current().isCallingAccountRootAdmin()) {
             throw new InvalidParameterValueException("Delete network with 'forced' option can only be called by root admins");
         }
 

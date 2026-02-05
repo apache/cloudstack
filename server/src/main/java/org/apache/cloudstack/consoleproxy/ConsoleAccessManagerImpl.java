@@ -206,8 +206,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         ListResponse<ConsoleSessionResponse> response = new ListResponse<>();
 
         ResponseObject.ResponseView responseView = ResponseObject.ResponseView.Restricted;
-        Long callerId = CallContext.current().getCallingAccountId();
-        if (accountManager.isRootAdmin(callerId)) {
+        if (CallContext.current().isCallingAccountRootAdmin()) {
             responseView = ResponseObject.ResponseView.Full;
         }
 
@@ -344,7 +343,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     protected boolean checkSessionPermission(VirtualMachine vm, Account account) {
-        if (accountManager.isRootAdmin(account.getId())) {
+        if (accountManager.isRootAdmin(account)) {
             return true;
         }
 

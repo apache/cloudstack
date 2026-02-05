@@ -191,7 +191,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
             poolResponse.setJobStatus(pool.getJobStatus());
         }
         poolResponse.setHasAnnotation(annotationDao.hasAnnotations(pool.getUuid(), AnnotationService.EntityType.PRIMARY_STORAGE.name(),
-                accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                CallContext.current().isCallingAccountRootAdmin()));
 
         poolResponse.setObjectName("storagepool");
         return poolResponse;
@@ -225,7 +225,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         }
         if (response.hasAnnotation() == null) {
             response.setHasAnnotation(annotationDao.hasAnnotations(sp.getUuid(), AnnotationService.EntityType.PRIMARY_STORAGE.name(),
-                    accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+                    CallContext.current().isCallingAccountRootAdmin()));
         }
         return response;
     }

@@ -856,7 +856,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private Pair<List<Long>, Integer> searchForEventIdsAndCount(ListEventsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
-        boolean isRootAdmin = accountMgr.isRootAdmin(caller.getId());
+        boolean isRootAdmin = CallContext.current().isCallingAccountRootAdmin();
         List<Long> permittedAccounts = new ArrayList<>();
 
         Long id = cmd.getId();
@@ -950,7 +950,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         // For end users display only enabled events
-        if (!accountMgr.isRootAdmin(caller.getId())) {
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
             sc.setParameters("displayEvent", true);
         }
 
@@ -1185,8 +1185,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         ResponseView respView = ResponseView.Restricted;
-        Account caller = CallContext.current().getCallingAccount();
-        if (accountMgr.isRootAdmin(caller.getId())) {
+        if (CallContext.current().isCallingAccountRootAdmin()) {
             respView = ResponseView.Full;
         }
         List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(respView, "virtualmachine", cmd.getDetails(), cmd.getAccumulate(), cmd.getShowUserData(),
@@ -1315,7 +1314,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             isAdmin = true;
         }
 
-        if (accountMgr.isRootAdmin(caller.getId())) {
+        if (CallContext.current().isCallingAccountRootAdmin()) {
             isRootAdmin = true;
             podId = (Long) getObjectPossibleMethodValue(cmd, "getPodId");
             clusterId = (Long) getObjectPossibleMethodValue(cmd, "getClusterId");
@@ -2572,8 +2571,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         ResponseView respView = cmd.getResponseView();
-        Account account = CallContext.current().getCallingAccount();
-        if (accountMgr.isRootAdmin(account.getAccountId())) {
+        if (CallContext.current().isCallingAccountRootAdmin()) {
             respView = ResponseView.Full;
         }
 
@@ -2638,7 +2636,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long diskOfferingId = cmd.getDiskOfferingId();
         Boolean display = cmd.getDisplay();
         String state = cmd.getState();
-        boolean shouldListSystemVms = shouldListSystemVms(cmd, caller.getId());
+        boolean shouldListSystemVms = Boolean.TRUE.equals(cmd.getListSystemVms()) &&
+                CallContext.current().isCallingAccountRootAdmin();
 
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -2827,10 +2826,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer count = uniqueVolPair.second();
         List<Long> vmIds = uniqueVolPair.first().stream().map(VolumeVO::getId).collect(Collectors.toList());
         return new Pair<>(vmIds, count);
-    }
-
-    private boolean shouldListSystemVms(ListVolumesCmd cmd, Long callerId) {
-        return Boolean.TRUE.equals(cmd.getListSystemVms()) && accountMgr.isRootAdmin(callerId);
     }
 
     @Override
@@ -3731,11 +3726,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // root
 
         Account account = CallContext.current().getCallingAccount();
+        boolean isRootAdmin = CallContext.current().isCallingAccountRootAdmin();
         Object name = cmd.getDiskOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Long domainId = cmd.getDomainId();
-        boolean isRootAdmin = accountMgr.isRootAdmin(account.getAccountId());
         Long projectId = cmd.getProjectId();
         String accountName = cmd.getAccountName();
         boolean isRecursive = cmd.isRecursive();
@@ -3762,7 +3757,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
         if (domainId != null && accountName == null) {
-            if (accountMgr.isRootAdmin(account.getId()) || isPermissible(account.getDomainId(), domainId)) {
+            if (accountMgr.isRootAdmin(account) || isPermissible(account.getDomainId(), domainId)) {
                 // check if the user's domain == do's domain || user's domain is
                 // a child of so's domain for non-root users
                 SearchBuilder<DiskOfferingDetailVO> domainDetailsSearch = _diskOfferingDetailsDao.createSearchBuilder();
@@ -4051,14 +4046,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
-        if (!accountMgr.isRootAdmin(caller.getId()) && isSystem) {
+        if (!CallContext.current().isCallingAccountRootAdmin() && isSystem) {
             throw new InvalidParameterValueException("Only ROOT admins can access system offerings.");
         }
 
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the so associated with this
         // domain
-        if (domainId != null && !accountMgr.isRootAdmin(caller.getId())) {
+        if (domainId != null && !CallContext.current().isCallingAccountRootAdmin()) {
             // check if the user's domain == so's domain || user's domain is a
             // child of so's domain
             if (!isPermissible(owner.getDomainId(), domainId)) {

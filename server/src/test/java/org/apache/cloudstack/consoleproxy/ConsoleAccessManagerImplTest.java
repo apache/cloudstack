@@ -115,15 +115,13 @@ public class ConsoleAccessManagerImplTest {
 
     @Test
     public void testCheckSessionPermissionAdminAccount() {
-        Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(true);
         Assert.assertTrue(consoleAccessManager.checkSessionPermission(virtualMachine, account));
     }
 
     @Test
     public void testCheckSessionPermissionUserOwnedVm() {
-        Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(false);
         Mockito.when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.doNothing().when(accountManager).checkAccess(
                 Mockito.eq(account), Mockito.nullable(SecurityChecker.AccessType.class),
@@ -134,7 +132,7 @@ public class ConsoleAccessManagerImplTest {
     @Test
     public void testCheckSessionPermissionDifferentUserOwnedVm() {
         Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
+        Mockito.when(accountManager.isRootAdmin(account)).thenReturn(false);
         Mockito.when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(
                 Mockito.eq(account), Mockito.nullable(SecurityChecker.AccessType.class),
@@ -144,8 +142,6 @@ public class ConsoleAccessManagerImplTest {
 
     @Test
     public void testCheckSessionPermissionForUsersOnSystemVms() {
-        Mockito.when(account.getId()).thenReturn(1L);
-        Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
         List<VirtualMachine.Type> systemVmTypes = Arrays.asList(VirtualMachine.Type.DomainRouter,
                 VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         for (VirtualMachine.Type type : systemVmTypes) {
@@ -273,8 +269,7 @@ public class ConsoleAccessManagerImplTest {
 
         try (MockedStatic<CallContext> callContextStaticMock = Mockito.mockStatic(CallContext.class)) {
             callContextStaticMock.when(CallContext::current).thenReturn(callContextMock);
-            Mockito.when(callContextMock.getCallingAccountId()).thenReturn(2L);
-            Mockito.when(accountManager.isRootAdmin(2L)).thenReturn(true);
+            Mockito.when(callContextMock.isCallingAccountRootAdmin()).thenReturn(true);
             Mockito.when(responseGeneratorMock.createConsoleSessionResponse(consoleSessionMock, ResponseObject.ResponseView.Full)).thenReturn(consoleSessionResponseMock);
 
             consoleAccessManager.listConsoleSessions(listConsoleSessionsCmdMock);
@@ -290,8 +285,7 @@ public class ConsoleAccessManagerImplTest {
 
         try (MockedStatic<CallContext> callContextStaticMock = Mockito.mockStatic(CallContext.class)) {
             callContextStaticMock.when(CallContext::current).thenReturn(callContextMock);
-            Mockito.when(callContextMock.getCallingAccountId()).thenReturn(2L);
-            Mockito.when(accountManager.isRootAdmin(2L)).thenReturn(false);
+            Mockito.when(callContextMock.isCallingAccountRootAdmin()).thenReturn(false);
             Mockito.when(responseGeneratorMock.createConsoleSessionResponse(consoleSessionMock, ResponseObject.ResponseView.Restricted)).thenReturn(consoleSessionResponseMock);
 
             consoleAccessManager.listConsoleSessions(listConsoleSessionsCmdMock);
