@@ -3595,7 +3595,6 @@ public class UserVmManagerImplTest {
     @Test
     public void testRestoreVMFromBackup() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         Long backupId = 5L;
-        Long templateId = 6L;
 
         CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
         when(cmd.getBackupId()).thenReturn(backupId);
@@ -3605,7 +3604,6 @@ public class UserVmManagerImplTest {
         UserVmVO vm = mock(UserVmVO.class);
         when(vm.getId()).thenReturn(vmId);
         when(vm.getState()).thenReturn(VirtualMachine.State.Running);
-        when(vm.getTemplateId()).thenReturn(templateId);
 
         when(backupManager.restoreBackupToVM(backupId, vmId)).thenReturn(true);
 
@@ -3614,7 +3612,6 @@ public class UserVmManagerImplTest {
         doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), isNull(), anyMap(), isNull());
         doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), anyLong(), anyMap(), isNull());
         when(userVmDao.findById(vmId)).thenReturn(vm);
-        when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(mock(VMTemplateVO.class));
 
         UserVm result = userVmManagerImpl.restoreVMFromBackup(cmd);
 

@@ -5320,6 +5320,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             updateVmStateForFailedVmCreation(vm.getId(), hostId);
         }
 
+        Object backupId = CallContext.current().getContextParameter(ApiConstants.BACKUP_ID);
+        if (backupId != null) {
+            logger.debug("VM is restored from backup, skipping password setting");
+            return vm;
+        }
         // Check that the password was passed in and is valid
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
         if (template.isEnablePassword()) {
@@ -9786,6 +9791,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (cmd.getStartVm()) {
+            CallContext.current().putContextParameter(ApiConstants.BACKUP_ID, cmd.getBackupId());
             Long podId = null;
             Long clusterId = null;
             if (cmd instanceof CreateVMFromBackupCmdByAdmin) {
