@@ -54,6 +54,9 @@ public interface AgentManager {
             "This timeout overrides the wait global config. This holds a comma separated key value pairs containing timeout (in seconds) for specific commands. " +
                     "For example: DhcpEntryCommand=600, SavePasswordCommand=300, VmDataCommand=300", false);
 
+    ConfigKey<Integer> KVMHostDiscoverySshPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
+            "kvm.host.discovery.ssh.port", "22", "SSH port used for KVM host discovery and any other operations on host (using SSH). Please note that this is applicable for all the KVM hosts added to this CloudStack deployment, so ensure all hosts are accessible on this port", true);
+
     enum TapAgentsAction {
         Add, Del, Contains,
     }

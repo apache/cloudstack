@@ -272,7 +272,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 }
             }
 
-            sshConnection = new Connection(agentIp, 22);
+            sshConnection = new Connection(agentIp, AgentManager.KVMHostDiscoverySshPort.value());
 
             sshConnection.connect(null, 60000, 60000);
 

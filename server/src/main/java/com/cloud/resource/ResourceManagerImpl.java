@@ -2949,7 +2949,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      */
     protected void connectAndRestartAgentOnHost(HostVO host, String username, String password, String privateKey) {
         final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
-                host.getPrivateIpAddress(), 22, username, password, privateKey);
+                host.getPrivateIpAddress(), AgentManager.KVMHostDiscoverySshPort.value(), username, password, privateKey);
         if (connection == null) {
             throw new CloudRuntimeException(String.format("SSH to agent is enabled, but failed to connect to %s via IP address [%s].", host, host.getPrivateIpAddress()));
         }

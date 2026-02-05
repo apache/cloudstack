@@ -1977,7 +1977,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
                 GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections,
-                RemoteAgentNewConnectionsMonitorInterval };
+                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort };
     }
 
     protected class SetHostParamsListener implements Listener {
