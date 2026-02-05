@@ -1287,10 +1287,12 @@ class CsRemoteAccessVpn(CsDataBag):
             self.fw.append(["", "", "-A VPN_FORWARD -s  %s -j RETURN" % localcidr])
             self.fw.append(["", "", "-A VPN_FORWARD -i ppp+ -d %s -j RETURN" % localcidr])
             self.fw.append(["", "", "-A VPN_FORWARD -i ppp+  -o ppp+ -j RETURN"])
+            self.fw.append(["", "", "-A VPN_FORWARD -j ACCEPT"])
         else:
             self.fw.append(["", "", "-A FORWARD -i ppp+ -o  ppp+ -j ACCEPT"])
             self.fw.append(["", "", "-A FORWARD -s %s -o  ppp+ -j ACCEPT" % localcidr])
             self.fw.append(["", "", "-A FORWARD -i ppp+ -d %s  -j ACCEPT" % localcidr])
+            self.fw.append(["", "", "-A FORWARD -i ppp+ -j ACCEPT"])
 
         self.fw.append(["", "", "-A INPUT -i ppp+ -m udp -p udp --dport 53 -j ACCEPT"])
         self.fw.append(["", "", "-A INPUT -i ppp+ -m tcp -p tcp --dport 53 -j ACCEPT"])
