@@ -236,6 +236,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
         }
         final DataCenterDetailVO zoneDetails = dataCenterDetailsDao.findDetail(zoneId, OOBM_ENABLED_DETAIL);
         if (zoneDetails != null && StringUtils.isNotEmpty(zoneDetails.getValue()) && !Boolean.valueOf(zoneDetails.getValue())) {
+            logger.debug("Out-of-band management disabled for zone {}", zoneId);
             return false;
         }
         return true;
@@ -247,12 +248,13 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
         }
         final ClusterDetailsVO clusterDetails = clusterDetailsDao.findDetail(clusterId, OOBM_ENABLED_DETAIL);
         if (clusterDetails != null && StringUtils.isNotEmpty(clusterDetails.getValue()) && !Boolean.valueOf(clusterDetails.getValue())) {
+            logger.debug("Out-of-band management disabled for cluster {}", clusterId);
             return false;
         }
         return true;
     }
 
-    private boolean isOutOfBandManagementEnabledForHost(Long hostId) {
+    public boolean isOutOfBandManagementEnabledForHost(Long hostId) {
         if (hostId == null) {
             return false;
         }
@@ -266,6 +268,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
 
         final OutOfBandManagement outOfBandManagementConfig = outOfBandManagementDao.findByHost(hostId);
         if (outOfBandManagementConfig == null || !outOfBandManagementConfig.isEnabled()) {
+            logger.debug("Out-of-band management disabled for host {}", hostId);
             return false;
         }
         return true;
