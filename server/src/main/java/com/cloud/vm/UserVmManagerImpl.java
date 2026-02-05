@@ -7362,6 +7362,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Map<Long, Long> volToPoolObjectMap = getVolumePoolMappingForMigrateVmWithStorage(vm, volumeToPool);
 
+        // If volumeToPool is empty and there are local storage volumes, auto-populate the mapping
+        if (MapUtils.isEmpty(volToPoolObjectMap) && isAnyVmVolumeUsingLocalStorage(volumes)) {
+            // First, find a destination host if not provided
+            if (destinationHost == null) {
+                DeployDestination deployDestination = chooseVmMigrationDestination(vm, srcHost, null);
+                if (deployDestination == null || deployDestination.getHost() == null) {
+                    throw new CloudRuntimeException("Unable to find suitable destination host to migrate VM " + vm.getInstanceName());
+                }
+                destinationHost = deployDestination.getHost();
+            }
+
+            // Verify the destination host has local storage
+            if (!storageManager.isLocalStorageActiveOnHost(destinationHost.getId())) {
+                throw new CloudRuntimeException(String.format("Destination host %s (ID: %s) does not have local storage, but VM %s (ID: %s) has volumes using local storage",
+                        destinationHost.getName(), destinationHost.getUuid(), vm.getInstanceName(), vm.getUuid()));
+            }
+        }
+
         if (destinationHost == null) {
             destinationHost = chooseVmMigrationDestinationUsingVolumePoolMap(vm, srcHost, volToPoolObjectMap);
         }
