@@ -247,8 +247,9 @@ public class VMSchedulerImplTest {
 
     @Test
     public void testScheduleNextJobScheduleCurrentSchedule() {
-        Date now = DateUtils.setSeconds(new Date(), 0);
-        Date expectedScheduledTime = DateUtils.round(DateUtils.addMinutes(now, 1), Calendar.MINUTE);
+        Date now = DateUtils.round(new Date(), Calendar.MINUTE);
+        Date expectedScheduledTime = DateUtils.addMinutes(now, 1);
+
         UserVm vm = Mockito.mock(UserVm.class);
 
         VMScheduleVO vmSchedule = Mockito.mock(VMScheduleVO.class);
@@ -257,7 +258,8 @@ public class VMSchedulerImplTest {
         Mockito.when(vmSchedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
         Mockito.when(vmSchedule.getStartDate()).thenReturn(DateUtils.addDays(now, -1));
         Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
-        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule, new Date());
+
+        Date actualScheduledTime = vmScheduler.scheduleNextJob(vmSchedule, now);
 
         Assert.assertEquals(expectedScheduledTime, actualScheduledTime);
     }
