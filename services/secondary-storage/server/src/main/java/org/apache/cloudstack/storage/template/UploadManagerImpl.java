@@ -399,7 +399,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return;
         }
         logger.info("Deleting symlink root directory: {} for {}", rootDir, cmd.getExtractUrl());
-        Path rootDirPath = Path.of(BASE_EXTRACT_PATH + rootDir);
+        Path rootDirPath = Path.of(BASE_EXTRACT_PATH, rootDir);
         String failMsg = "Failed to delete symlink root directory: {} for {}";
         try {
             if (!FileUtil.deleteRecursively(rootDirPath)) {
