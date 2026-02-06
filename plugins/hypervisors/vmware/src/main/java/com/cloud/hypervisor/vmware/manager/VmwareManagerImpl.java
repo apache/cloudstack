@@ -690,8 +690,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         Instant start = Instant.ofEpochMilli(startTick);
         Instant end = start.plusSeconds(2 * (AsyncJobManagerImpl.JobExpireMinutes.value() + AsyncJobManagerImpl.JobCancelThresholdMinutes.value()) * SECONDS_PER_MINUTE);
         Instant now = Instant.now();
-        if(s_vmwareCleanOldWorderVMs.value() && now.isAfter(end)) {
-            if(logger.isInfoEnabled()) {
+        if (s_vmwareCleanOldWorderVMs.value() && now.isAfter(end)) {
+            if (logger.isInfoEnabled()) {
                 logger.info("Worker VM expired, seconds elapsed: " + Duration.between(start,now).getSeconds());
             }
             return true;

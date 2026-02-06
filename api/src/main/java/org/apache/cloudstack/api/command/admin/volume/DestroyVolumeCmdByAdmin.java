@@ -33,7 +33,8 @@ import com.cloud.storage.Volume;
             since = "4.14.0",
             authorized = {RoleType.Admin},
             requestHasSensitiveInfo = false,
-            responseHasSensitiveInfo = true)
+            responseHasSensitiveInfo = true,
+            cancellable = true)
 public class DestroyVolumeCmdByAdmin extends DestroyVolumeCmd implements AdminCmd {
 
 

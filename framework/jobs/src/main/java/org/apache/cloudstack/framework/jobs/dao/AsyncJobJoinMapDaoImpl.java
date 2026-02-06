@@ -144,7 +144,7 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
 
     @Override
     public List<Long> findJobsToWake(long joinedJobId) {
-        // TODO: We should fix this.  We shouldn't be crossing daos in a dao code.
+        // TODO: We should fix this. We shouldn't be crossing daos in a dao code.
         List<Long> standaloneList = new ArrayList<Long>();
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         String sql = "SELECT job_id FROM async_job_join_map WHERE join_job_id = ? AND job_id NOT IN (SELECT content_id FROM sync_queue_item)";
@@ -189,5 +189,4 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
             throw new CloudRuntimeException("Unable to handle SQL exception", e);
         }
     }
-
 }

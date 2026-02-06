@@ -27,8 +27,8 @@ import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
 
-    public static final String API_JOB_POOL_THREAD_PREFIX = "API-Job-Executor";
-    public static final String WORK_JOB_POOL_THREAD_PREFIX = "Work-Job-Executor";
+    String API_JOB_POOL_THREAD_PREFIX = "API-Job-Executor";
+    String WORK_JOB_POOL_THREAD_PREFIX = "Work-Job-Executor";
 
     AsyncJobVO getAsyncJob(long jobId);
 
@@ -45,6 +45,7 @@ public interface AsyncJobManager extends Manager {
     void updateAsyncJobStatus(long jobId, int processStatus, String resultObject);
 
     void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
+
     void logJobJournal(long jobId, AsyncJob.JournalType journalType, String
             journalText, String journalObjJson);
 
@@ -117,14 +118,14 @@ public interface AsyncJobManager extends Manager {
      * This method will be deprecated after all code has been migrated to fully-asynchronous mode
      * that uses async-feature of joinJob/disjoinJob
      *
-     * @param wakupTopicsOnMessageBus topic on message bus to wakeup the wait
+     * @param wakeupTopicsOnMessageBus topic on message bus to wake up the wait
      * @param checkIntervalInMilliSeconds time to break out wait for checking predicate condition
      * @param timeoutInMilliseconds time out to break out the whole wait process
      * @param predicate
      * @return true, predicate condition is satisfied
      *             false, wait is timed out
      */
-    boolean waitAndCheck(AsyncJob job, String[] wakupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMilliseconds, Predicate predicate);
+    boolean waitAndCheck(AsyncJob job, String[] wakeupTopicsOnMessageBus, long checkIntervalInMilliSeconds, long timeoutInMilliseconds, Predicate predicate);
 
     AsyncJob queryJob(long jobId, boolean updatePollTime);
 
