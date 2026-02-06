@@ -955,7 +955,7 @@ public class SystemVmTemplateRegistration {
                     public void doInTransactionWithoutResult(final TransactionStatus status) {
                         List<Long> zoneIds = getEligibleZoneIds();
                         if (zoneIds.isEmpty()) {
-                            updateTemplateUrlsForNonNfsStores(hypervisorsArchInUse);
+                            updateSystemVmTemplateUrlsForNonNfsStores();
                             return;
                         }
                         for (Long zoneId : zoneIds) {
@@ -983,8 +983,9 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    private void updateTemplateUrlsForNonNfsStores(List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsInUse) {
-        for (Pair<Hypervisor.HypervisorType, CPU.CPUArch> hypervisorArch : hypervisorsInUse) {
+    public void updateSystemVmTemplateUrlsForNonNfsStores() {
+        for (Pair<Hypervisor.HypervisorType, CPU.CPUArch> hypervisorArch :
+                clusterDao.listDistinctHypervisorsArchAcrossClusters(null)) {
             MetadataTemplateDetails templateDetails = getMetadataTemplateDetails(hypervisorArch.first(), hypervisorArch.second());
             if (templateDetails == null) {
                 continue;
