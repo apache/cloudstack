@@ -41,7 +41,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, cancellable = true)
 public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
-
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, required = true, entityType = UserVmResponse.class, description = "The ID of the Instance")
     private Long vmId;
