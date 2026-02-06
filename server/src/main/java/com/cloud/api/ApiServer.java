@@ -116,9 +116,11 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.user.UserPasswordResetManager;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -194,6 +196,7 @@ import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
 
 import static com.cloud.user.AccountManagerImpl.apiKeyAccess;
+import static org.apache.cloudstack.api.ApiConstants.PASSWORD_CHANGE_REQUIRED;
 import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
 
 @Component
@@ -1227,6 +1230,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.MANAGEMENT_SERVER_ID.equalsIgnoreCase(attrName)) {
                     response.setManagementServerId(attrObj.toString());
                 }
+                if (PASSWORD_CHANGE_REQUIRED.equalsIgnoreCase(attrName) && attrObj instanceof Boolean) {
+                    response.setPasswordChangeRequired((Boolean) attrObj);
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1327,6 +1333,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final String sessionKey = Base64.encodeBase64URLSafeString(sessionKeyBytes);
             session.setAttribute(ApiConstants.SESSIONKEY, sessionKey);
 
+            Map<String, String> userAccDetails = userAcct.getDetails();
+            if (MapUtils.isNotEmpty(userAccDetails)) {
+                String needPwdChangeStr = userAccDetails.get(UserDetailVO.PasswordChangeRequired);
+                if ("true".equalsIgnoreCase(needPwdChangeStr)) {
+                    session.setAttribute(PASSWORD_CHANGE_REQUIRED, true);
+                }
+            }
             return createLoginResponse(session);
         }
         throw new CloudAuthenticationException("Failed to authenticate user " + username + " in domain " + domainId + "; please provide valid credentials");

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.user;
 
+import static org.apache.cloudstack.resourcedetail.UserDetailVO.PasswordChangeRequired;
+
 import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
@@ -1509,10 +1511,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
     public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID,
-            User.Source source) {
+                             User.Source source) {
+        return createUser(userName, password, firstName, lastName, email, timeZone, accountName, domainId, userUUID, source, false);
+    }
+
+
+    @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID,
+            User.Source source, boolean isPasswordChangeRequired) {
         // default domain to ROOT if not specified
         if (domainId == null) {
             domainId = Domain.ROOT_DOMAIN;
+        }
+
+        if (isPasswordChangeRequired && (source == User.Source.SAML2 || source == User.Source.SAML2DISABLED || source == User.Source.LDAP)) {
+            logger.warn("Enforcing password change is not permitted for source [{}].", source);
+            throw new InvalidParameterValueException("CloudStack does not support enforcing password change for SAML or LDAP users.");
         }
 
         Domain domain = _domainMgr.getDomain(domainId);
@@ -1545,14 +1559,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         verifyCallerPrivilegeForUserOrAccountOperations(account);
         UserVO user;
         user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, source);
+        if (isPasswordChangeRequired) {
+            long callerAccountId = CallContext.current().getCallingAccountId();
+            if ((isRootAdmin(callerAccountId) || isDomainAdmin(callerAccountId))) {
+                _userDetailsDao.addDetail(user.getId(), PasswordChangeRequired, "true", false);
+            }
+        }
         return user;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
-    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID) {
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email,
+                             String timeZone, String accountName, Long domainId, String userUUID, boolean isPasswordChangeRequired) {
 
-        return createUser(userName, password, firstName, lastName, email, timeZone, accountName, domainId, userUUID, User.Source.UNKNOWN);
+        return createUser(userName, password, firstName, lastName, email, timeZone, accountName, domainId, userUUID, User.Source.UNKNOWN, isPasswordChangeRequired);
     }
 
     @Override
@@ -1586,8 +1607,39 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (mandate2FA != null && mandate2FA) {
             user.setUser2faEnabled(true);
         }
+        validateAndUpdatePasswordChangeRequired(caller, updateUserCmd, user, account);
         _userDao.update(user.getId(), user);
         return _userAccountDao.findById(user.getId());
+    }
+
+    private void validateAndUpdatePasswordChangeRequired(User caller, UpdateUserCmd updateUserCmd, UserVO user, Account account) {
+        if (updateUserCmd.isPasswordChangeRequired()) {
+            if (user.getState() != State.ENABLED || account.getState() != State.ENABLED) {
+                throw new CloudRuntimeException("CloudStack does not support enforcing password change for locked/disabled User or Account.");
+            }
+
+            User.Source userSource = user.getSource();
+            if (userSource == User.Source.SAML2 || userSource == User.Source.SAML2DISABLED || userSource == User.Source.LDAP) {
+                logger.warn("Enforcing password change is not permitted for source [{}].", user.getSource());
+                throw new InvalidParameterValueException("CloudStack does not support enforcing password change for SAML or LDAP users.");
+            }
+        }
+
+        boolean isCallerSameAsUser = user.getId() == caller.getId();
+        boolean isPasswordResetRequired = updateUserCmd.isPasswordChangeRequired() && !isCallerSameAsUser;
+        // Admins only can enforce passwordChangeRequired for user
+        if (isRootAdmin(caller.getAccountId()) || isDomainAdmin(caller.getAccountId())) {
+            if (isPasswordResetRequired) {
+                _userDetailsDao.addDetail(user.getId(), PasswordChangeRequired, "true", false);
+            }
+        }
+
+        if (StringUtils.isNotBlank(updateUserCmd.getPassword())) {
+            // Remove passwordChangeRequired if user updating own pwd or admin has not enforced it
+            if (isCallerSameAsUser || !isPasswordResetRequired) {
+                _userDetailsDao.removeDetail(user.getId(), PasswordChangeRequired);
+            }
+        }
     }
 
     @Override
@@ -2847,6 +2899,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("User: %s in domain %d has successfully logged in, auth time duration - %d ms", username, domainId, validUserLastAuthTimeDurationInMs));
             }
+
+            user.setDetails(_userDetailsDao.listDetailsKeyPairs(user.getId()));
 
             return user;
         } else {

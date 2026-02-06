@@ -59,7 +59,8 @@ public interface AccountService {
 
     User getSystemUser();
 
-    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
+    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone,
+                    String accountName, Long domainId, String userUUID, boolean isPasswordChangeRequired);
 
     User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID,
                     User.Source source);

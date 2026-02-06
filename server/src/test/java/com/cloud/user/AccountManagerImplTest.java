@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -430,6 +431,44 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(10L);
         Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(accountMock))).thenReturn(RoleType.User);
         prepareMockAndExecuteUpdateUserTest(1);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void updateUserTestPwdChangeDisabledUser() {
+        Mockito.when(userVoMock.getState()).thenReturn(State.DISABLED);
+        updateUserPwdChange();
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void updateUserTestPwdChangeLockedUser() {
+        Mockito.when(userVoMock.getState()).thenReturn(State.LOCKED);
+        updateUserPwdChange();
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void updateUserTestPwdChangeDisabledAccount() {
+        Mockito.when(userVoMock.getState()).thenReturn(State.ENABLED);
+        Mockito.when(accountMock.getState()).thenReturn(State.LOCKED);
+        updateUserPwdChange();
+    }
+
+    @Test
+    public void testUpdateUserTestPwdChange() {
+        Mockito.when(userVoMock.getState()).thenReturn(State.ENABLED);
+        Mockito.when(accountMock.getState()).thenReturn(State.ENABLED);
+        updateUserPwdChange();
+    }
+
+    private void updateUserPwdChange() {
+        Mockito.doReturn(true).when(UpdateUserCmdMock).isPasswordChangeRequired();
+        Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(10L);
+        Mockito.when(accountMock.getAccountId()).thenReturn(10L);
+        Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(10L);
+        Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(accountMock))).thenReturn(RoleType.User);
+        Mockito.when(callingUser.getAccountId()).thenReturn(1L);
+        Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(1L);
+        prepareMockAndExecuteUpdateUserTest(0);
     }
 
     private void prepareMockAndExecuteUpdateUserTest(int numberOfExpectedCallsForSetEmailAndSetTimeZone) {
@@ -1591,5 +1630,105 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManagerImpl).checkRoleEscalation(callingAccount, accountMock);
 
         accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testPasswordChangeRequiredWithSamlThrowsException() {
+        accountManagerImpl.createUser(
+                "user", "pass", "fn", "ln", "e@mail.com",
+                "UTC", "acct", 1L, null,
+                User.Source.SAML2, true
+        );
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testPasswordChangeRequiredWithLdapSourceThrows() {
+        accountManagerImpl.createUser(
+                "user", "pass", "fn", "ln", "e@mail.com",
+                "UTC", "acct", 1L, null,
+                User.Source.LDAP, true);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDomainNotFound() {
+        Mockito.when(_domainMgr.getDomain(1L)).thenReturn(null);
+        accountManagerImpl.createUser(
+                "user", "pass", "fn", "ln", "e@mail.com",
+                "UTC", "acct", 1L, null,
+                User.Source.UNKNOWN, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCreateUserInactiveDomain() {
+        Mockito.when(domainVoMock.getState()).thenReturn(Domain.State.Inactive);
+        Mockito.when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domainVoMock);
+        accountManagerImpl.createUser(
+                "user", "pass", "fn", "ln", "e@mail.com",
+                "UTC", "acct", 1L, null,
+                User.Source.NATIVE, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateUserCheckAccess() {
+        Mockito.when(domainVoMock.getState()).thenReturn(Domain.State.Active);
+        Mockito.when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domainVoMock);
+        Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
+        accountManagerImpl.createUser(
+                "user", "pass", "fn", "ln", "e@mail.com",
+                "UTC", "acct", 1L, null,
+                User.Source.NATIVE, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateUserMissingOrProjectAccount() {
+        Mockito.when(domainVoMock.getState()).thenReturn(Domain.State.Active);
+        Mockito.when(_accountDao.findEnabledAccount(Mockito.anyString(), Mockito.anyLong())).thenReturn(accountMock);
+        Mockito.when(accountMock.getType()).thenReturn(Account.Type.PROJECT);
+        Mockito.when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domainVoMock);
+        Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
+        accountManagerImpl.createUser(
+                "user", "pass", "fn", "ln", "e@mail.com",
+                "UTC", "acct", 1L, null,
+                User.Source.NATIVE, false);
+    }
+
+    @Test
+    public void testCreateUserSuccess() {
+        Account rootAdminAccount = Mockito.mock(Account.class);
+        Mockito.when(rootAdminAccount.getId()).thenReturn(1L);
+        Mockito.when(accountManagerImpl.isRootAdmin(1L)).thenReturn(true);
+        User callingUser = Mockito.mock(User.class);
+        CallContext.register(callingUser, rootAdminAccount);
+
+        String newPassword = "newPassword";
+        configureUserMockAuthenticators(newPassword);
+        Mockito.doNothing().when(accountManagerImpl).checkAccess(any(Account.class), any(Domain.class));
+        Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(Mockito.anyLong());
+        Mockito.doNothing().when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
+        Mockito.when(_domainMgr.getDomain(Mockito.anyLong())).thenReturn(domainVoMock);
+        Mockito.when(domainVoMock.getState()).thenReturn(Domain.State.Active);
+
+        Mockito.when(_accountDao.findEnabledAccount(Mockito.anyString(), Mockito.anyLong())).thenReturn(accountMock);
+        Mockito.when(accountMock.getId()).thenReturn(10L);
+        Mockito.when(accountMock.getType()).thenReturn(Account.Type.NORMAL);
+
+        Mockito.when(userAccountDaoMock.validateUsernameInDomain(Mockito.anyString(), Mockito.anyLong())).thenReturn(true);
+        Mockito.when(userDaoMock.findUsersByName(Mockito.anyString())).thenReturn(Collections.emptyList());
+        UserVO createdUser = new UserVO();
+        String userMockUUID = "userMockUUID";
+        createdUser.setUuid(userMockUUID);
+        Mockito.when(userDaoMock.persist(Mockito.any(UserVO.class))).thenReturn(createdUser);
+        UserVO userResultVO = accountManagerImpl.createUser(
+                "user", newPassword, "fn", "ln", "e@mail.com",
+                "UTC", "acct", 1L, null,
+                User.Source.NATIVE, false
+        );
+        Assert.assertNotNull(userResultVO);
+        UserVO userResultPasswordChangeVO = accountManagerImpl.createUser(
+                "user", newPassword, "fn", "ln", "e@mail.com",
+                "UTC", "acct", 1L, null,
+                User.Source.NATIVE, true
+        );
+        Assert.assertNotNull(userResultVO);
     }
 }

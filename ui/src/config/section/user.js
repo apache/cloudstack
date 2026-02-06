@@ -84,6 +84,24 @@ export default {
     },
     {
       api: 'updateUser',
+      icon: 'redo-outlined',
+      label: 'label.change.password.reset',
+      message: 'message.change.password.reset',
+      dataView: true,
+      args: ['passwordchangerequired'],
+      mapping: {
+        passwordchangerequired: {
+          value: (record) => { return true }
+        }
+      },
+      popup: true,
+      show: (record, store) => {
+        return ['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) && !record.isdefault &&
+          store.userInfo.id !== record.id && record.state === 'enabled' && record.usersource === 'native'
+      }
+    },
+    {
+      api: 'updateUser',
       icon: 'key-outlined',
       label: 'label.action.change.password',
       dataView: true,

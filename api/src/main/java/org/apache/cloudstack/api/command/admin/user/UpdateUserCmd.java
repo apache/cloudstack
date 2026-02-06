@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.region.RegionService;
+import org.apache.commons.lang.BooleanUtils;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
@@ -38,6 +39,8 @@ import com.cloud.user.UserAccount;
 requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class UpdateUserCmd extends BaseCmd {
 
+    @Inject
+    private RegionService _regionService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -85,8 +88,11 @@ public class UpdateUserCmd extends BaseCmd {
             "This parameter is only used to mandate 2FA, not to disable 2FA", since = "4.18.0.0")
     private Boolean mandate2FA;
 
-    @Inject
-    private RegionService _regionService;
+    @Parameter(name = ApiConstants.PASSWORD_CHANGE_REQUIRED,
+            type = CommandType.BOOLEAN,
+            description = "Provide true to mandate the User to reset password on next login.",
+            since = "4.23.0")
+    private Boolean passwordChangeRequired;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -192,5 +198,9 @@ public class UpdateUserCmd extends BaseCmd {
     @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.User;
+    }
+
+    public Boolean isPasswordChangeRequired() {
+        return BooleanUtils.isTrue(passwordChangeRequired);
     }
 }

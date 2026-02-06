@@ -1261,6 +1261,7 @@ public class ApiConstants {
     public static final String PROVIDER_FOR_2FA = "providerfor2fa";
     public static final String ISSUER_FOR_2FA = "issuerfor2fa";
     public static final String MANDATE_2FA = "mandate2fa";
+    public static final String PASSWORD_CHANGE_REQUIRED = "passwordchangerequired";
     public static final String SECRET_CODE = "secretcode";
     public static final String LOGIN = "login";
     public static final String LOGOUT = "logout";
