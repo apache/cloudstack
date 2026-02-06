@@ -1126,6 +1126,26 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 Long templateId = event.getTemplateId();
                 String hypervisorType = event.getResourceType();
 
+
+
+            SearchCriteria<UsageVMInstanceVO> runningSc =
+                _usageInstanceDao.createSearchCriteria();
+runningSc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, vmId);
+runningSc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.RUNNING_VM);
+runningSc.addAnd("endDate", SearchCriteria.Op.NULL);
+
+List<UsageVMInstanceVO> existingRunning =
+        _usageInstanceDao.search(runningSc, null);
+
+if (existingRunning != null && !existingRunning.isEmpty()) {
+    logger.warn(String.format(
+        "Duplicate VM.START event detected for VM [%d] at [%s], skipping helper record creation.",
+        vmId, event.getCreateDate()));
+    return;
+}
+
+
+
                 // add this VM to the usage helper table
                 UsageVMInstanceVO usageInstanceNew =
                         new UsageVMInstanceVO(UsageTypes.RUNNING_VM, zoneId, event.getAccountId(), vmId, vmName, soId, templateId, hypervisorType, event.getCreateDate(),
