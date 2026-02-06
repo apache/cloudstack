@@ -23,14 +23,14 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.vm.VirtualMachine;
 
-import java.util.List;
+import java.util.Map;
 
 public class RestoreBackupCommand extends Command  {
     private String vmName;
     private String backupPath;
     private String backupRepoType;
     private String backupRepoAddress;
-    private List<String> volumePaths;
+    private Map<String, String> volumePathsAndUuids;
     private String diskType;
     private Boolean vmExists;
     private String restoreVolumeUUID;
@@ -72,12 +72,12 @@ public class RestoreBackupCommand extends Command  {
         this.backupRepoAddress = backupRepoAddress;
     }
 
-    public List<String> getVolumePaths() {
-        return volumePaths;
+    public Map<String, String> getVolumePathsAndUuids() {
+        return volumePathsAndUuids;
     }
 
-    public void setVolumePaths(List<String> volumePaths) {
-        this.volumePaths = volumePaths;
+    public void setVolumePathsAndUuids(Map<String, String> volumePathsAndUuids) {
+        this.volumePathsAndUuids = volumePathsAndUuids;
     }
 
     public Boolean isVmExists() {
