@@ -113,11 +113,11 @@ public class VmWorkJobVO extends AsyncJobVO {
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("VmWorkJobVO : {").
-                append(", step: ").append(getStep()).
+                append("vmInstanceId: ").append(getVmInstanceId()).
                 append(", vmType: ").append(getVmType()).
-                append(", vmInstanceId: ").append(getVmInstanceId()).
+                append(", step: ").append(getStep()).
                 append(", secondaryObjectIdentifier: ").append(getSecondaryObjectIdentifier()).
-                append(super.toString()).
+                append(", ").append(super.toString()).
                 append("}");
         return sb.toString();
     }
