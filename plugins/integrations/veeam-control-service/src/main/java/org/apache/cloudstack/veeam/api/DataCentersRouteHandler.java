@@ -26,9 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
-import org.apache.cloudstack.veeam.api.converter.DataCenterJoinVOToDataCenterConverter;
-import org.apache.cloudstack.veeam.api.converter.NetworkVOToNetworkConverter;
-import org.apache.cloudstack.veeam.api.converter.StoreVOToStorageDomainConverter;
+import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.DataCenter;
 import org.apache.cloudstack.veeam.api.dto.DataCenters;
 import org.apache.cloudstack.veeam.api.dto.Network;
@@ -39,33 +37,14 @@ import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
 
-import com.cloud.api.query.dao.DataCenterJoinDao;
-import com.cloud.api.query.dao.ImageStoreJoinDao;
-import com.cloud.api.query.dao.StoragePoolJoinDao;
-import com.cloud.api.query.vo.DataCenterJoinVO;
-import com.cloud.api.query.vo.ImageStoreJoinVO;
-import com.cloud.api.query.vo.StoragePoolJoinVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
 
 public class DataCentersRouteHandler extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api/datacenters";
-    private static final int DEFAULT_MAX = 50;
-    private static final int HARD_CAP_MAX = 1000;
-    private static final int DEFAULT_PAGE = 1;
 
     @Inject
-    DataCenterJoinDao dataCenterJoinDao;
-
-    @Inject
-    StoragePoolJoinDao storagePoolJoinDao;
-
-    @Inject
-    ImageStoreJoinDao imageStoreJoinDao;
-
-    @Inject
-    NetworkDao networkDao;
+    ServerAdapter serverAdapter;
 
     @Override
     public boolean start() {
@@ -119,66 +98,41 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<DataCenter> result = DataCenterJoinVOToDataCenterConverter.toDCList(listDCs());
+        final List<DataCenter> result = serverAdapter.listAllDataCenters();
         final DataCenters response = new DataCenters(result);
 
-        io.getWriter().write(resp, 200, response, outFormat);
-    }
-
-    protected List<DataCenterJoinVO> listDCs() {
-        return dataCenterJoinDao.listAll();
+        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 
     protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
-        final DataCenterJoinVO dataCenterVO = dataCenterJoinDao.findByUuid(id);
-        if (dataCenterVO == null) {
-            io.notFound(resp, "DataCenter not found: " + id, outFormat);
-            return;
+        try {
+            DataCenter response = serverAdapter.getDataCenter(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
         }
-        DataCenter response = DataCenterJoinVOToDataCenterConverter.toDataCenter(dataCenterVO);
-
-        io.getWriter().write(resp, 200, response, outFormat);
-    }
-
-    protected List<StoragePoolJoinVO> listStoragePoolsByDcId(final long dcId) {
-        return storagePoolJoinDao.listAll();
-    }
-
-    protected List<ImageStoreJoinVO> listImageStoresByDcId(final long dcId) {
-        return imageStoreJoinDao.listAll();
-    }
-
-    protected List<NetworkVO> listNetworksByDcId(final long dcId) {
-        return networkDao.listAll();
     }
 
     protected void handleGetStorageDomainsByDcId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
               final VeeamControlServlet io) throws IOException {
-        final DataCenterJoinVO dataCenterVO = dataCenterJoinDao.findByUuid(id);
-        if (dataCenterVO == null) {
-            io.notFound(resp, "DataCenter not found: " + id, outFormat);
-            return;
+        try {
+            List<StorageDomain> storageDomains = serverAdapter.listStorageDomainsByDcId(id);
+            StorageDomains response = new StorageDomains(storageDomains);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
         }
-        List<StorageDomain> storageDomains = StoreVOToStorageDomainConverter.toStorageDomainListFromPools(listStoragePoolsByDcId(dataCenterVO.getId()));
-        storageDomains.addAll(StoreVOToStorageDomainConverter.toStorageDomainListFromStores(listImageStoresByDcId(dataCenterVO.getId())));
-
-        StorageDomains response = new StorageDomains(storageDomains);
-
-        io.getWriter().write(resp, 200, response, outFormat);
     }
 
     protected void handleGetNetworksByDcId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
               final VeeamControlServlet io) throws IOException {
-        final DataCenterJoinVO dataCenterVO = dataCenterJoinDao.findByUuid(id);
-        if (dataCenterVO == null) {
-            io.notFound(resp, "DataCenter not found: " + id, outFormat);
-            return;
+        try {
+            List<Network> networks = serverAdapter.listNetworksByDcId(id);
+            Networks response = new Networks(networks);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
         }
-        List<Network> networks = NetworkVOToNetworkConverter.toNetworkList(listNetworksByDcId(dataCenterVO.getId()), (dcId) -> dataCenterVO);
-
-        Networks response = new Networks(networks);
-
-        io.getWriter().write(resp, 200, response, outFormat);
     }
 }

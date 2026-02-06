@@ -1,7 +1,7 @@
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
+// regarding copyright ownershjob.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
@@ -17,37 +17,26 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "disk_attachment")
-public final class DiskAttachment {
+public class Jobs {
 
-    public String active;
-    public String bootable;
+    @JacksonXmlElementWrapper(useWrapping = false)
+    private List<Job> job;
 
-    @JsonProperty("interface")
-    public String iface; // virtio_scsi etc
+    public Jobs(final List<Job> job) {
+        this.job = job;
+    }
 
-    @JsonProperty("logical_name")
-    public String logicalName;
+    public List<Job> getJob() {
+        return job;
+    }
 
-    @JsonProperty("pass_discard")
-    public String passDiscard;
-
-    @JsonProperty("read_only")
-    public String readOnly;
-
-    @JsonProperty("uses_scsi_reservation")
-    public String usesScsiReservation;
-
-    public Disk disk;
-    public Ref vm;
-
-    public String href;
-    public String id;
-
-    public DiskAttachment() {}
+    public void setJob(List<Job> job) {
+        this.job = job;
+    }
 }

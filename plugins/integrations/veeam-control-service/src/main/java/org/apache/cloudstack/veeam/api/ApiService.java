@@ -32,13 +32,13 @@ import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.api.dto.Api;
+import org.apache.cloudstack.veeam.api.dto.ApiSummary;
 import org.apache.cloudstack.veeam.api.dto.EmptyElement;
 import org.apache.cloudstack.veeam.api.dto.Link;
 import org.apache.cloudstack.veeam.api.dto.ProductInfo;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.SpecialObjectRef;
 import org.apache.cloudstack.veeam.api.dto.SpecialObjects;
-import org.apache.cloudstack.veeam.api.dto.ApiSummary;
 import org.apache.cloudstack.veeam.api.dto.SummaryCount;
 import org.apache.cloudstack.veeam.api.dto.Version;
 import org.apache.cloudstack.veeam.utils.Negotiation;
@@ -65,7 +65,7 @@ public class ApiService extends ManagerBase implements RouteHandler {
     }
 
     private void handleRootApiRequest(HttpServletRequest req, HttpServletResponse resp, Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        io.getWriter().write(resp, 200,
+        io.getWriter().write(resp, HttpServletResponse.SC_OK,
                 createDummyApi(VeeamControlService.ContextPath.value() + BASE_ROUTE),
                 outFormat);
     }

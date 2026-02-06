@@ -26,22 +26,21 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
-import org.apache.cloudstack.veeam.api.converter.HostJoinVOToHostConverter;
+import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.Host;
 import org.apache.cloudstack.veeam.api.dto.Hosts;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
 
-import com.cloud.api.query.dao.HostJoinDao;
-import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
 
 public class HostsRouteHandler extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api/hosts";
 
     @Inject
-    HostJoinDao hostJoinDao;
+    ServerAdapter serverAdapter;
 
     @Override
     public boolean start() {
@@ -85,25 +84,19 @@ public class HostsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<Host> result = HostJoinVOToHostConverter.toHostList(listHosts());
+        final List<Host> result = serverAdapter.listAllHosts();
         final Hosts response = new Hosts(result);
 
-        io.getWriter().write(resp, 200, response, outFormat);
-    }
-
-    protected List<HostJoinVO> listHosts() {
-        return hostJoinDao.listAll();
+        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 
     protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
-        final HostJoinVO vo = hostJoinDao.findByUuid(id);
-        if (vo == null) {
-            io.notFound(resp, "DataCenter not found: " + id, outFormat);
-            return;
+        try {
+            Host response = serverAdapter.getHost(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
         }
-        Host response = HostJoinVOToHostConverter.toHost(vo);
-
-        io.getWriter().write(resp, 200, response, outFormat);
     }
 }

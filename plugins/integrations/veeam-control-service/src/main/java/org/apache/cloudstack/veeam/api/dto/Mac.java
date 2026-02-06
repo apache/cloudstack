@@ -15,20 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.veeam.api.response;
+package org.apache.cloudstack.veeam.api.dto;
 
-import org.apache.cloudstack.veeam.api.dto.Vm;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-/**
- * Required entity response:
- *   { "vm": { .. } }
- */
-public final class VmEntityResponse {
-    public Vm vm;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class Mac {
 
-    public VmEntityResponse() {}
+    private String address;
 
-    public VmEntityResponse(final Vm vm) {
-        this.vm = vm;
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 }

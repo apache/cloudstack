@@ -46,6 +46,7 @@ public final class Vm {
     @JsonProperty("stop_time")
     @JacksonXmlProperty(localName = "stop_time")
     public Long stopTime;       // epoch millis
+    private Long startTime;       // epoch millis
 
     public Ref template;
 
@@ -68,6 +69,43 @@ public final class Vm {
     public Actions actions;      // actions.link[]
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<Link> link;      // related resources
+    public EmptyElement tags; // empty <tags/>
+    private DiskAttachments diskAttachments;
+    private Nics nics;
+
+    private VmInitialization initialization;
 
     public Vm() {}
+
+    public Long getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Long startTime) {
+        this.startTime = startTime;
+    }
+
+    public DiskAttachments getDiskAttachments() {
+        return diskAttachments;
+    }
+
+    public void setDiskAttachments(DiskAttachments diskAttachments) {
+        this.diskAttachments = diskAttachments;
+    }
+
+    public Nics getNics() {
+        return nics;
+    }
+
+    public void setNics(Nics nics) {
+        this.nics = nics;
+    }
+
+    public VmInitialization getInitialization() {
+        return initialization;
+    }
+
+    public void setInitialization(VmInitialization initialization) {
+        this.initialization = initialization;
+    }
 }

@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
 import org.apache.cloudstack.veeam.api.DisksRouteHandler;
+import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
@@ -132,23 +133,20 @@ public class VolumeJoinVOToDiskConverter {
 
     public static  DiskAttachment toDiskAttachment(final VolumeJoinVO vol) {
         final DiskAttachment da = new DiskAttachment();
-        final String apiBase = VeeamControlService.ContextPath.value() + ApiService.BASE_ROUTE;
+        final String basePath = VeeamControlService.ContextPath.value();
+        final String apiBase = basePath + ApiService.BASE_ROUTE;
 
         final String diskAttachmentId = vol.getUuid();
-        final String diskAttachmentHref = apiBase + "/diskattachments/" + diskAttachmentId;
-
-        da.id = diskAttachmentId;
-        da.href = diskAttachmentHref;
-
-        // Links
-        da.disk = Ref.of(
-                apiBase + "/disks/" + vol.getUuid(),
-                vol.getUuid()
-        );
         da.vm = Ref.of(
-                apiBase + "/vms/" + vol.getVmUuid(),
+                basePath + VmsRouteHandler.BASE_ROUTE + "/" + vol.getVmUuid(),
                 vol.getVmUuid()
         );
+
+        da.id = diskAttachmentId;
+        da.href = da.vm.href + "/diskattachements/" + diskAttachmentId;;
+
+        // Links
+        da.disk = toDisk(vol);
 
         // Properties
         da.active = "true";

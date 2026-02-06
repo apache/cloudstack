@@ -18,36 +18,44 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "disk_attachment")
-public final class DiskAttachment {
+public class Ip {
 
-    public String active;
-    public String bootable;
+    private String address;
+    private String gateway;
+    private String netmask;
+    private String version;
 
-    @JsonProperty("interface")
-    public String iface; // virtio_scsi etc
+    public String getAddress() {
+        return address;
+    }
 
-    @JsonProperty("logical_name")
-    public String logicalName;
+    public void setAddress(String address) {
+        this.address = address;
+    }
 
-    @JsonProperty("pass_discard")
-    public String passDiscard;
+    public String getGateway() {
+        return gateway;
+    }
 
-    @JsonProperty("read_only")
-    public String readOnly;
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
 
-    @JsonProperty("uses_scsi_reservation")
-    public String usesScsiReservation;
+    public String getNetmask() {
+        return netmask;
+    }
 
-    public Disk disk;
-    public Ref vm;
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
 
-    public String href;
-    public String id;
+    public String getVersion() {
+        return version;
+    }
 
-    public DiskAttachment() {}
+    public void setVersion(String version) {
+        this.version = version;
+    }
 }

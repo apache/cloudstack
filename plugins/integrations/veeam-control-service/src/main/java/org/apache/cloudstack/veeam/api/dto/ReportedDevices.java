@@ -17,37 +17,26 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "disk_attachment")
-public final class DiskAttachment {
+public class ReportedDevices {
 
-    public String active;
-    public String bootable;
+    @JacksonXmlElementWrapper(useWrapping = false)
+    private List<ReportedDevice> reportedDevice;
 
-    @JsonProperty("interface")
-    public String iface; // virtio_scsi etc
+    public ReportedDevices(final List<ReportedDevice> reportedDevice) {
+        this.reportedDevice = reportedDevice;
+    }
 
-    @JsonProperty("logical_name")
-    public String logicalName;
+    public List<ReportedDevice> getReportedDevice() {
+        return reportedDevice;
+    }
 
-    @JsonProperty("pass_discard")
-    public String passDiscard;
-
-    @JsonProperty("read_only")
-    public String readOnly;
-
-    @JsonProperty("uses_scsi_reservation")
-    public String usesScsiReservation;
-
-    public Disk disk;
-    public Ref vm;
-
-    public String href;
-    public String id;
-
-    public DiskAttachment() {}
+    public void setReportedDevice(List<ReportedDevice> reportedDevice) {
+        this.reportedDevice = reportedDevice;
+    }
 }

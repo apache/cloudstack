@@ -25,14 +25,22 @@ import java.util.stream.Collectors;
 
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
+import org.apache.cloudstack.veeam.api.JobsRouteHandler;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
+import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.Bios;
 import org.apache.cloudstack.veeam.api.dto.Cpu;
+import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
+import org.apache.cloudstack.veeam.api.dto.DiskAttachments;
+import org.apache.cloudstack.veeam.api.dto.EmptyElement;
 import org.apache.cloudstack.veeam.api.dto.Link;
+import org.apache.cloudstack.veeam.api.dto.Nic;
+import org.apache.cloudstack.veeam.api.dto.Nics;
 import org.apache.cloudstack.veeam.api.dto.Os;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.Topology;
 import org.apache.cloudstack.veeam.api.dto.Vm;
+import org.apache.cloudstack.veeam.api.dto.VmAction;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.query.vo.HostJoinVO;
@@ -49,7 +57,8 @@ public final class UserVmJoinVOToVmConverter {
      *
      * @param src      UserVmJoinVO
      */
-    public static Vm toVm(final UserVmJoinVO src, final Function<Long, HostJoinVO> hostResolver) {
+    public static Vm toVm(final UserVmJoinVO src, final Function<Long, HostJoinVO> hostResolver,
+                          final Function<Long, List<DiskAttachment>> disksResolver, final Function<UserVmJoinVO, List<Nic>> nicsResolver) {
         if (src == null) {
             return null;
         }
@@ -62,9 +71,12 @@ public final class UserVmJoinVOToVmConverter {
         dst.description = src.getDisplayName();
         dst.href = basePath + VmsRouteHandler.BASE_ROUTE + "/" + src.getUuid();
         dst.status = mapStatus(src.getState());
-        final Date lastUpdated = src.getLastUpdated();
+        final Date lastUpdated = src.getLastUpdated() != null ? src.getLastUpdated() : src.getCreated();
         if ("down".equals(dst.status)) {
             dst.stopTime = lastUpdated.getTime();
+        }
+        if ("up".equals(dst.status)) {
+            dst.setStartTime(lastUpdated.getTime());
         }
         final Ref template = buildRef(
                 basePath + ApiService.BASE_ROUTE,
@@ -93,24 +105,35 @@ public final class UserVmJoinVOToVmConverter {
                         hostVo.getClusterUuid());
             }
         }
-        Long hostId = src.getHostId() != null ? src.getHostId() : src.getLastHostId();
-        if (hostId != null) {
-            // I want to get Host data from hostJoinDao but this is a static method without dao access.
-
-        }
 
         dst.memory = src.getRamSize() * 1024L * 1024L;
 
-        dst.cpu = new Cpu(src.getArch(), new Topology(src.getCpu(), src.getCpu(), 1));
+        dst.cpu = new Cpu(src.getArch(), new Topology(src.getCpu(), 1, 1));
         dst.os = new Os();
         dst.os.type = src.getGuestOsId() % 2 == 0
                 ? "windows"
                 : "linux";
         dst.bios = new Bios();
         dst.bios.type = "q35_secure_boot";
-        dst.type = "server";
+        dst.type = "desktop";
         dst.origin = "ovirt";
-        dst.actions = null;dst.link = List.of(
+
+        if (disksResolver != null) {
+            List<DiskAttachment> diskAttachments = disksResolver.apply(src.getId());
+            dst.setDiskAttachments(new DiskAttachments(diskAttachments));
+        }
+
+        if (disksResolver != null) {
+            List<Nic> nics = nicsResolver.apply(src);
+            dst.setNics(new Nics(nics));
+        }
+
+        dst.actions = new Actions(List.of(
+                new Link("start", dst.href + "/start"),
+                new Link("stop", dst.href + "/stop"),
+                new Link("shutdown", dst.href + "/shutdown")
+        ));
+        dst.link = List.of(
                 new Link("diskattachments",
                         dst.href + "/diskattachments"),
                 new Link("nics",
@@ -118,14 +141,24 @@ public final class UserVmJoinVOToVmConverter {
                 new Link("snapshots",
                         dst.href + "/snapshots")
         );
+        dst.tags = new EmptyElement();
 
         return dst;
     }
 
     public static List<Vm> toVmList(final List<UserVmJoinVO> srcList, final Function<Long, HostJoinVO> hostResolver) {
         return srcList.stream()
-                .map(v -> toVm(v, hostResolver))
+                .map(v -> toVm(v, hostResolver, null, null))
                 .collect(Collectors.toList());
+    }
+
+    public static VmAction toVmAction(final UserVmJoinVO vm) {
+        VmAction action = new VmAction();
+        final String basePath = VeeamControlService.ContextPath.value();
+        action.setVm(toVm(vm, null, null, null));
+        action.setJob(Ref.of(basePath + JobsRouteHandler.BASE_ROUTE + vm.getUuid(), vm.getUuid()));
+        action.setStatus("complete");
+        return action;
     }
 
     private static String mapStatus(final VirtualMachine.State state) {

@@ -100,6 +100,26 @@ public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
         return NetUtils.standardizeMacAddress(macaddr);
     }
 
+    public void setVmId(Long vmId) {
+        this.vmId = vmId;
+    }
+
+    public void setNetworkId(Long netId) {
+        this.netId = netId;
+    }
+
+    public void setIpaddr(String ipaddr) {
+        this.ipaddr = ipaddr;
+    }
+
+    public void setMacAddress(String macaddr) {
+        this.macaddr = macaddr;
+    }
+
+    public void setDhcpOptions(Map dhcpOptions) {
+        this.dhcpOptions = dhcpOptions;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

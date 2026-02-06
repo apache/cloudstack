@@ -19,6 +19,7 @@ package org.apache.cloudstack.veeam.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -38,6 +39,7 @@ public class Mapper {
     private static void configure(final ObjectMapper mapper) {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // If you ever add enums etc:
         // mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
         // mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);

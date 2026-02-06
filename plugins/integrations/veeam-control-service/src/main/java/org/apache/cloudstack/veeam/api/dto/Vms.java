@@ -17,37 +17,29 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
+/**
+ * Required list response:
+ *   { "vm": [ {..}, {..} ] }
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "disk_attachment")
-public final class DiskAttachment {
+@JsonPropertyOrder({ "vm" })
+@JacksonXmlRootElement(localName = "vms")
+public final class Vms {
+    @JsonProperty("vm")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    public List<Vm> vm;
 
-    public String active;
-    public String bootable;
+    public Vms() {}
 
-    @JsonProperty("interface")
-    public String iface; // virtio_scsi etc
-
-    @JsonProperty("logical_name")
-    public String logicalName;
-
-    @JsonProperty("pass_discard")
-    public String passDiscard;
-
-    @JsonProperty("read_only")
-    public String readOnly;
-
-    @JsonProperty("uses_scsi_reservation")
-    public String usesScsiReservation;
-
-    public Disk disk;
-    public Ref vm;
-
-    public String href;
-    public String id;
-
-    public DiskAttachment() {}
+    public Vms(final List<Vm> vm) {
+        this.vm = vm;
+    }
 }

@@ -15,33 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.veeam.api.response;
+package org.apache.cloudstack.veeam.api.dto;
 
 import java.util.List;
 
-import org.apache.cloudstack.veeam.api.dto.Vm;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-/**
- * Required list response:
- *   { "vm": [ {..}, {..} ] }
- */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "vm" })
-@JacksonXmlRootElement(localName = "vms")
-public final class VmCollectionResponse {
-    @JsonProperty("vm")
+public class Ips {
+
     @JacksonXmlElementWrapper(useWrapping = false)
-    public List<Vm> vm;
+    private List<Ip> ip;
 
-    public VmCollectionResponse() {}
+    public Ips(final List<Ip> ip) {
+        this.ip = ip;
+    }
 
-    public VmCollectionResponse(final List<Vm> vm) {
-        this.vm = vm;
+    public List<Ip> getIp() {
+        return ip;
+    }
+
+    public void setIp(List<Ip> ip) {
+        this.ip = ip;
     }
 }

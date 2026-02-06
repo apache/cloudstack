@@ -26,27 +26,21 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
-import org.apache.cloudstack.veeam.api.converter.NetworkVOToVnicProfileConverter;
+import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.VnicProfile;
 import org.apache.cloudstack.veeam.api.dto.VnicProfiles;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
 
-import com.cloud.api.query.dao.DataCenterJoinDao;
-import com.cloud.api.query.vo.DataCenterJoinVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
 
 public class VnicProfilesRouteHandler extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api/vnicprofiles";
 
     @Inject
-    NetworkDao networkDao;
-
-    @Inject
-    DataCenterJoinDao dataCenterJoinDao;
+    ServerAdapter serverAdapter;
 
     @Override
     public boolean start() {
@@ -90,32 +84,19 @@ public class VnicProfilesRouteHandler extends ManagerBase implements RouteHandle
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<VnicProfile> result = NetworkVOToVnicProfileConverter.toVnicProfileList(listNetworks(), this::getZoneById);
+        final List<VnicProfile> result = serverAdapter.listAllVnicProfiles();
         final VnicProfiles response = new VnicProfiles(result);
 
-        io.getWriter().write(resp, 200, response, outFormat);
-    }
-
-    protected List<NetworkVO> listNetworks() {
-        return networkDao.listAll();
+        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 
     protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
-        final NetworkVO vo = networkDao.findByUuid(id);
-        if (vo == null) {
-            io.notFound(resp, "DataCenter not found: " + id, outFormat);
-            return;
+        try {
+            VnicProfile response = serverAdapter.getVnicProfile(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
         }
-        VnicProfile response = NetworkVOToVnicProfileConverter.toVnicProfile(vo, this::getZoneById);
-
-        io.getWriter().write(resp, 200, response, outFormat);
-    }
-
-    protected DataCenterJoinVO getZoneById(Long zoneId) {
-        if (zoneId == null) {
-            return null;
-        }
-        return dataCenterJoinDao.findById(zoneId);
     }
 }

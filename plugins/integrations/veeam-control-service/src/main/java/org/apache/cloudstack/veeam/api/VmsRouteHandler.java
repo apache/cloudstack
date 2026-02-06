@@ -27,27 +27,26 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
-import org.apache.cloudstack.veeam.api.converter.UserVmJoinVOToVmConverter;
-import org.apache.cloudstack.veeam.api.converter.VolumeJoinVOToDiskConverter;
+import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachments;
+import org.apache.cloudstack.veeam.api.dto.Nic;
+import org.apache.cloudstack.veeam.api.dto.Nics;
 import org.apache.cloudstack.veeam.api.dto.Vm;
+import org.apache.cloudstack.veeam.api.dto.VmAction;
+import org.apache.cloudstack.veeam.api.dto.Vms;
 import org.apache.cloudstack.veeam.api.request.VmListQuery;
 import org.apache.cloudstack.veeam.api.request.VmSearchExpr;
 import org.apache.cloudstack.veeam.api.request.VmSearchFilters;
 import org.apache.cloudstack.veeam.api.request.VmSearchParser;
-import org.apache.cloudstack.veeam.api.response.VmCollectionResponse;
-import org.apache.cloudstack.veeam.api.response.VmEntityResponse;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
 
-import com.cloud.api.query.dao.HostJoinDao;
-import com.cloud.api.query.dao.UserVmJoinDao;
-import com.cloud.api.query.dao.VolumeJoinDao;
-import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api/vms";
@@ -56,13 +55,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     private static final int DEFAULT_PAGE = 1;
 
     @Inject
-    UserVmJoinDao userVmJoinDao;
-
-    @Inject
-    HostJoinDao hostJoinDao;
-
-    @Inject
-    VolumeJoinDao volumeJoinDao;
+    ServerAdapter serverAdapter;
 
     private VmSearchParser searchParser;
 
@@ -90,24 +83,74 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         final String method = req.getMethod();
         final String sanitizedPath = getSanitizedPath(path);
         if (sanitizedPath.equals(BASE_ROUTE)) {
-            if (!"GET".equalsIgnoreCase(method)) {
-                io.methodNotAllowed(resp, "GET", outFormat);
+            if (!"GET".equalsIgnoreCase(method) && !"POST".equalsIgnoreCase(method) && !"DELETE".equalsIgnoreCase(method)) {
+                io.methodNotAllowed(resp, "GET, POST, DELETE", outFormat);
                 return;
             }
-            handleGet(req, resp, outFormat, io);
-            return;
+            if ("GET".equalsIgnoreCase(method)) {
+                handleGet(req, resp, outFormat, io);
+                return;
+            }
+            if ("POST".equalsIgnoreCase(method)) {
+                handlePost(req, resp, outFormat, io);
+                return;
+            }
         }
 
         List<String> idAndSubPath = PathUtil.extractIdAndSubPath(sanitizedPath, BASE_ROUTE);
         if (CollectionUtils.isNotEmpty(idAndSubPath)) {
             String id = idAndSubPath.get(0);
             if (idAndSubPath.size() == 1) {
-                handleGetById(id, resp, outFormat, io);
+                if (!"GET".equalsIgnoreCase(method) && !"PUT".equalsIgnoreCase(method) && !"DELETE".equalsIgnoreCase(method)) {
+                    io.methodNotAllowed(resp, "GET, PUT, DELETE", outFormat);
+                } else if ("GET".equalsIgnoreCase(method)) {
+                    handleGetById(id, resp, outFormat, io);
+                } else if ("DELETE".equalsIgnoreCase(method)) {
+                    handleUpdateById(id, req, resp, outFormat, io);
+                } else if ("DELETE".equalsIgnoreCase(method)) {
+                    handleDeleteById(id, resp, outFormat, io);
+                }
                 return;
             } else if (idAndSubPath.size() == 2) {
                 String subPath = idAndSubPath.get(1);
-                if ("diskattachments".equals(subPath)) {
-                    handleGetDisAttachmentsByVmId(id, resp, outFormat, io);
+                if ("start".equals(subPath)) {
+                    if ("POST".equalsIgnoreCase(method)) {
+                        handleStartVmById(id, req, resp, outFormat, io);
+                    } else {
+                         io.methodNotAllowed(resp, "POST", outFormat);
+                    }
+                    return;
+                } else if ("stop".equals(subPath)) {
+                    if ("POST".equalsIgnoreCase(method)) {
+                        handleStopVmById(id, req, resp, outFormat, io);
+                    } else {
+                        io.methodNotAllowed(resp, "POST", outFormat);
+                    }
+                    return;
+                } else if ("shutdown".equals(subPath)) {
+                    if ("POST".equalsIgnoreCase(method)) {
+                        handleShutdownVmById(id, req, resp, outFormat, io);
+                    } else {
+                        io.methodNotAllowed(resp, "POST", outFormat);
+                    }
+                    return;
+                } else if ("diskattachments".equals(subPath)) {
+                    if (!"GET".equalsIgnoreCase(method) && !"POST".equalsIgnoreCase(method)) {
+                        io.methodNotAllowed(resp, "GET, POST", outFormat);
+                    } else if ("GET".equalsIgnoreCase(method)) {
+                        handleGetDiskAttachmentsByVmId(id, resp, outFormat, io);
+                    } else if ("POST".equalsIgnoreCase(method)) {
+                        handlePostDiskAttachmentForVmId(id, req, resp, outFormat, io);
+                    }
+                    return;
+                } else if ("nics".equals(subPath)) {
+                    if (!"GET".equalsIgnoreCase(method) && !"POST".equalsIgnoreCase(method)) {
+                        io.methodNotAllowed(resp, "GET, POST", outFormat);
+                    } else if ("GET".equalsIgnoreCase(method)) {
+                        handleGetNicsByVmId(id, resp, outFormat, io);
+                    } else if ("POST".equalsIgnoreCase(method)) {
+                        handlePostNicForVmId(id, req, resp, outFormat, io);
+                    }
                     return;
                 }
             }
@@ -149,10 +192,10 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             return;
         }
 
-        final List<Vm> result = UserVmJoinVOToVmConverter.toVmList(listUserVms(), this::getHostById);
-        final VmCollectionResponse response = new VmCollectionResponse(result);
+        final List<Vm> result = serverAdapter.listAllUserVms();
+        final Vms response = new Vms(result);
 
-        io.getWriter().write(resp, 200, response, outFormat);
+        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 
     protected static VmListQuery fromRequest(final HttpServletRequest req) {
@@ -172,41 +215,123 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
     }
 
-    protected List<UserVmJoinVO> listUserVms() {
-        // Todo: add filtering, pagination
-        return userVmJoinDao.listAll();
+    protected void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
+                              Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
+        String data = RouteHandler.getRequestData(req);
+        logger.info("Received method: POST request. Request-data: {}", data);
+        try {
+            Vm request = io.getMapper().jsonMapper().readValue(data, Vm.class);
+            Vm response = serverAdapter.handleCreateVm(request);
+            io.getWriter().write(resp, HttpServletResponse.SC_CREATED, response, outFormat);
+        } catch (JsonProcessingException | CloudRuntimeException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_BAD_REQUEST, "Bad request", e.getMessage(), outFormat);
+        }
     }
 
     protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
           final VeeamControlServlet io) throws IOException {
-        final UserVmJoinVO userVmJoinVO = userVmJoinDao.findByUuid(id);
-        if (userVmJoinVO == null) {
-            io.notFound(resp, "VM not found: " + id, outFormat);
-            return;
+        try {
+            Vm response = serverAdapter.getVm(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
         }
-        VmEntityResponse response = new VmEntityResponse(UserVmJoinVOToVmConverter.toVm(userVmJoinVO, this::getHostById));
-
-        io.getWriter().write(resp, 200, response, outFormat);
     }
 
-    protected void handleGetDisAttachmentsByVmId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
-                                              final VeeamControlServlet io) throws IOException {
-        final UserVmJoinVO userVmJoinVO = userVmJoinDao.findByUuid(id);
-        if (userVmJoinVO == null) {
-            io.notFound(resp, "VM not found: " + id, outFormat);
-            return;
-        }
-        List<DiskAttachment> disks = VolumeJoinVOToDiskConverter.toDiskAttachmentList(
-              volumeJoinDao.listByInstanceId(userVmJoinVO.getId()));
-        DiskAttachments response = new DiskAttachments(disks);
-
-        io.getWriter().write(resp, 200, response, outFormat);
+    protected void handleUpdateById(final String id, final HttpServletRequest req, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+                                    final VeeamControlServlet io) throws IOException {
+        String data = RouteHandler.getRequestData(req);
+        logger.info("Received POST request, but method: POST is not supported atm. Request-data: {}", data);
+        io.getWriter().writeFault(resp, HttpServletResponse.SC_BAD_REQUEST, "Not implemented", "", outFormat);
     }
 
-    protected HostJoinVO getHostById(Long hostId) {
-        if (hostId == null) {
-            return null;
+    protected void handleDeleteById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+                                 final VeeamControlServlet io) throws IOException {
+        try {
+            serverAdapter.deleteVm(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, "", outFormat);
+        } catch (CloudRuntimeException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
         }
-        return hostJoinDao.findById(hostId);
+    }
+
+    protected void handleStartVmById(final String id, final HttpServletRequest req, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+            final VeeamControlServlet io) throws IOException {
+        try {
+            VmAction vm = serverAdapter.startVm(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, vm, outFormat);
+        } catch (CloudRuntimeException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleStopVmById(final String id, final HttpServletRequest req, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+                                     final VeeamControlServlet io) throws IOException {
+        try {
+            VmAction vm = serverAdapter.stopVm(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, vm, outFormat);
+        } catch (CloudRuntimeException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleShutdownVmById(final String id, final HttpServletRequest req, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+                                    final VeeamControlServlet io) throws IOException {
+        try {
+            VmAction vm = serverAdapter.shutdownVm(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, vm, outFormat);
+        } catch (CloudRuntimeException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleGetDiskAttachmentsByVmId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+                                                  final VeeamControlServlet io) throws IOException {
+        try {
+            List<DiskAttachment> disks = serverAdapter.listDiskAttachmentsByInstanceUuid(id);
+            DiskAttachments response = new DiskAttachments(disks);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handlePostDiskAttachmentForVmId(final String id, final HttpServletRequest req,
+             final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
+            throws IOException {
+        String data = RouteHandler.getRequestData(req);
+        logger.info("Received method: POST request. Request-data: {}", data);
+        try {
+            DiskAttachment request = io.getMapper().jsonMapper().readValue(data, DiskAttachment.class);
+            DiskAttachment response = serverAdapter.handleVmAttachDisk(id, request);
+            io.getWriter().write(resp, HttpServletResponse.SC_CREATED, response, outFormat);
+        } catch (JsonProcessingException | CloudRuntimeException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_BAD_REQUEST, "Bad request", e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleGetNicsByVmId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
+                                                  final VeeamControlServlet io) throws IOException {
+        try {
+            List<Nic> nics = serverAdapter.listNicsByInstanceId(id);
+            Nics response = new Nics(nics);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handlePostNicForVmId(final String id, final HttpServletRequest req,
+               final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
+            throws IOException {
+        String data = RouteHandler.getRequestData(req);
+        logger.info("Received method: POST request. Request-data: {}", data);
+        try {
+            Nic request = io.getMapper().jsonMapper().readValue(data, Nic.class);
+            Nic response = serverAdapter.handleVmAttachNic(id, request);
+            io.getWriter().write(resp, HttpServletResponse.SC_CREATED, response, outFormat);
+        } catch (JsonProcessingException | CloudRuntimeException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_BAD_REQUEST, "Bad request", e.getMessage(), outFormat);
+        }
     }
 }

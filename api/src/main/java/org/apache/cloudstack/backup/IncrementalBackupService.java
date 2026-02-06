@@ -64,11 +64,15 @@ public interface IncrementalBackupService extends Configurable, PluggableService
 
     ImageTransfer createImageTransfer(long volumeId, Long backupId, ImageTransfer.Direction direction);
 
+    boolean cancelImageTransfer(long imageTransferId);
+
     /**
      * Finalize an image transfer
      * Marks transfer as complete (NBD is closed globally in finalize backup)
      */
     boolean finalizeImageTransfer(FinalizeImageTransferCmd cmd);
+
+    boolean finalizeImageTransfer(long imageTransferId);
 
     /**
      * List image transfers for a backup

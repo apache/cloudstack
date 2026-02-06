@@ -18,36 +18,17 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "disk_attachment")
-public final class DiskAttachment {
+public class VmInitialization {
 
-    public String active;
-    public String bootable;
+    private String contentData;
 
-    @JsonProperty("interface")
-    public String iface; // virtio_scsi etc
+    public String getContentData() {
+        return contentData;
+    }
 
-    @JsonProperty("logical_name")
-    public String logicalName;
-
-    @JsonProperty("pass_discard")
-    public String passDiscard;
-
-    @JsonProperty("read_only")
-    public String readOnly;
-
-    @JsonProperty("uses_scsi_reservation")
-    public String usesScsiReservation;
-
-    public Disk disk;
-    public Ref vm;
-
-    public String href;
-    public String id;
-
-    public DiskAttachment() {}
+    public void setContentData(String contentData) {
+        this.contentData = contentData;
+    }
 }

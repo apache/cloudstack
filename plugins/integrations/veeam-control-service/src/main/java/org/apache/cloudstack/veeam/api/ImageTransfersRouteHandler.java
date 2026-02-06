@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
-import org.apache.cloudstack.veeam.adapter.UserResourceAdapter;
+import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.ImageTransfer;
 import org.apache.cloudstack.veeam.api.dto.ImageTransfers;
 import org.apache.cloudstack.veeam.utils.Negotiation;
@@ -42,7 +42,7 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
     public static final String BASE_ROUTE = "/api/imagetransfers";
 
     @Inject
-    UserResourceAdapter userResourceAdapter;
+    ServerAdapter serverAdapter;
 
     @Override
     public boolean start() {
@@ -105,11 +105,10 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<ImageTransfer> result = userResourceAdapter.listAllImageTransfers();
+        final List<ImageTransfer> result = serverAdapter.listAllImageTransfers();
         final ImageTransfers response = new ImageTransfers();
         response.setImageTransfer(result);
-
-        io.getWriter().write(resp, 400, response, outFormat);
+        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 
     protected void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
@@ -118,32 +117,40 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
         logger.info("Received POST request on /api/imagetransfers endpoint. Request-data: {}", data);
         try {
             ImageTransfer request = io.getMapper().jsonMapper().readValue(data, ImageTransfer.class);
-            ImageTransfer response = userResourceAdapter.handleCreateImageTransfer(request);
-            io.getWriter().write(resp, 201, response, outFormat);
+            ImageTransfer response = serverAdapter.handleCreateImageTransfer(request);
+            io.getWriter().write(resp, HttpServletResponse.SC_CREATED, response, outFormat);
         } catch (JsonProcessingException | CloudRuntimeException e) {
-            io.getWriter().write(resp, 400, e.getMessage(), outFormat);
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", e.getMessage(), outFormat);
         }
     }
 
     protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
         try {
-            ImageTransfer response = userResourceAdapter.getImageTransfer(id);
-            io.getWriter().write(resp, 200, response, outFormat);
+            ImageTransfer response = serverAdapter.getImageTransfer(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
-            io.getWriter().write(resp, 404, e.getMessage(), outFormat);
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
         }
     }
 
     protected void handleCancelById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
-        //ToDo: implement cancel logic
-        io.getWriter().write(resp, 200, "Image transfer cancelled successfully", outFormat);
+        try {
+            serverAdapter.handleCancelImageTransfer(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, "Image transfer cancelled successfully", outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+        }
     }
 
     protected void handleFinalizeById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                                     final VeeamControlServlet io) throws IOException {
-        //ToDo: implement finalize logic
-        io.getWriter().write(resp, 200, "Image transfer finalized successfully", outFormat);
+        try {
+            serverAdapter.handleFinalizeImageTransfer(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, "Image transfer finalized successfully", outFormat);
+        } catch (CloudRuntimeException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+        }
     }
 }

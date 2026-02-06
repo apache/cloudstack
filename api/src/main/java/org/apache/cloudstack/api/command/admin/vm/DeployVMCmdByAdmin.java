@@ -48,4 +48,12 @@ public class DeployVMCmdByAdmin extends DeployVMCmd implements AdminCmd {
     public Long getClusterId() {
         return clusterId;
     }
+
+    /////////////////////////////////////////////////////
+    ////////////////// Setters //////////////////////////
+    /////////////////////////////////////////////////////
+
+    public void setClusterId(Long clusterId) {
+        this.clusterId = clusterId;
+    }
 }

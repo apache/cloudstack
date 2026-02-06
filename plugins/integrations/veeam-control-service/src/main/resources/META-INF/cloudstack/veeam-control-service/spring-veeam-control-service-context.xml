@@ -42,11 +42,12 @@
     <bean id="vmsRouteHandler" class="org.apache.cloudstack.veeam.api.VmsRouteHandler"/>
     <bean id="disksRouteHandler" class="org.apache.cloudstack.veeam.api.DisksRouteHandler"/>
     <bean id="imageTransfersRouteHandler" class="org.apache.cloudstack.veeam.api.ImageTransfersRouteHandler"/>
+    <bean id="jobsRouteHandler" class="org.apache.cloudstack.veeam.api.JobsRouteHandler"/>
 
     <bean id="veeamControlService" class="org.apache.cloudstack.veeam.VeeamControlServiceImpl" >
         <property name="routeHandlers" value="#{routeHandlerRegistry.registered}" />
     </bean>
 
-    <bean id="userResourceAdapter" class="org.apache.cloudstack.veeam.adapter.UserResourceAdapter"/>
+    <bean id="serverAdapter" class="org.apache.cloudstack.veeam.adapter.ServerAdapter"/>
 
 </beans>

@@ -798,6 +798,218 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
         }
         return null;
     }
+
+    /////////////////////////////////////////////////////
+    ////////////////// Setters //////////////////////////
+    /////////////////////////////////////////////////////
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setNetworkIds(List<Long> networkIds) {
+        this.networkIds = networkIds;
+    }
+
+    public void setBootType(String bootType) {
+        this.bootType = bootType;
+    }
+
+    public void setBootMode(String bootMode) {
+        this.bootMode = bootMode;
+    }
+
+    public void setBootIntoSetup(Boolean bootIntoSetup) {
+        this.bootIntoSetup = bootIntoSetup;
+    }
+
+    public void setDiskOfferingId(Long diskOfferingId) {
+        this.diskOfferingId = diskOfferingId;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
+    public void setRootdisksize(Long rootdisksize) {
+        this.rootdisksize = rootdisksize;
+    }
+
+    public void setDataDisksDetails(Map dataDisksDetails) {
+        this.dataDisksDetails = dataDisksDetails;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
+    }
+
+    public void setUserdataId(Long userdataId) {
+        this.userdataId = userdataId;
+    }
+
+    public void setUserdataDetails(Map userdataDetails) {
+        this.userdataDetails = userdataDetails;
+    }
+
+    public void setSshKeyPairName(String sshKeyPairName) {
+        this.sshKeyPairName = sshKeyPairName;
+    }
+
+    public void setSshKeyPairNames(List<String> sshKeyPairNames) {
+        this.sshKeyPairNames = sshKeyPairNames;
+    }
+
+    public void setHostId(Long hostId) {
+        this.hostId = hostId;
+    }
+
+    public void setSecurityGroupIdList(List<Long> securityGroupIdList) {
+        this.securityGroupIdList = securityGroupIdList;
+    }
+
+    public void setSecurityGroupNameList(List<String> securityGroupNameList) {
+        this.securityGroupNameList = securityGroupNameList;
+    }
+
+    public void setIpToNetworkList(Map ipToNetworkList) {
+        this.ipToNetworkList = ipToNetworkList;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public void setIp6Address(String ip6Address) {
+        this.ip6Address = ip6Address;
+    }
+
+    public void setMacAddress(String macAddress) {
+        this.macAddress = macAddress;
+    }
+
+    public void setKeyboard(String keyboard) {
+        this.keyboard = keyboard;
+    }
+
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setStartVm(Boolean startVm) {
+        this.startVm = startVm;
+    }
+
+    public void setAffinityGroupIdList(List<Long> affinityGroupIdList) {
+        this.affinityGroupIdList = affinityGroupIdList;
+    }
+
+    public void setAffinityGroupNameList(List<String> affinityGroupNameList) {
+        this.affinityGroupNameList = affinityGroupNameList;
+    }
+
+    public void setDisplayVm(Boolean displayVm) {
+        this.displayVm = displayVm;
+    }
+
+    public void setDetails(Map details) {
+        this.details = details;
+    }
+
+    public void setDeploymentPlanner(String deploymentPlanner) {
+        this.deploymentPlanner = deploymentPlanner;
+    }
+
+    public void setDhcpOptionsNetworkList(Map dhcpOptionsNetworkList) {
+        this.dhcpOptionsNetworkList = dhcpOptionsNetworkList;
+    }
+
+    public void setDataDiskTemplateToDiskOfferingList(Map dataDiskTemplateToDiskOfferingList) {
+        this.dataDiskTemplateToDiskOfferingList = dataDiskTemplateToDiskOfferingList;
+    }
+
+    public void setExtraConfig(String extraConfig) {
+        this.extraConfig = extraConfig;
+    }
+
+    public void setCopyImageTags(Boolean copyImageTags) {
+        this.copyImageTags = copyImageTags;
+    }
+
+    public void setvAppProperties(Map vAppProperties) {
+        this.vAppProperties = vAppProperties;
+    }
+
+    public void setvAppNetworks(Map vAppNetworks) {
+        this.vAppNetworks = vAppNetworks;
+    }
+
+    public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
+        this.dynamicScalingEnabled = dynamicScalingEnabled;
+    }
+
+    public void setOverrideDiskOfferingId(Long overrideDiskOfferingId) {
+        this.overrideDiskOfferingId = overrideDiskOfferingId;
+    }
+
+    public void setIothreadsEnabled(Boolean iothreadsEnabled) {
+        this.iothreadsEnabled = iothreadsEnabled;
+    }
+
+    public void setIoDriverPolicy(String ioDriverPolicy) {
+        this.ioDriverPolicy = ioDriverPolicy;
+    }
+
+    public void setNicMultiqueueNumber(Integer nicMultiqueueNumber) {
+        this.nicMultiqueueNumber = nicMultiqueueNumber;
+    }
+
+    public void setNicPackedVirtQueues(Boolean nicPackedVirtQueues) {
+        this.nicPackedVirtQueues = nicPackedVirtQueues;
+    }
+
+    public void setLeaseDuration(Integer leaseDuration) {
+        this.leaseDuration = leaseDuration;
+    }
+
+    public void setLeaseExpiryAction(String leaseExpiryAction) {
+        this.leaseExpiryAction = leaseExpiryAction;
+    }
+
+    public void setExternalDetails(Map externalDetails) {
+        this.externalDetails = externalDetails;
+    }
+
+    public void setDataDiskInfoList(List<VmDiskInfo> dataDiskInfoList) {
+        this.dataDiskInfoList = dataDiskInfoList;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

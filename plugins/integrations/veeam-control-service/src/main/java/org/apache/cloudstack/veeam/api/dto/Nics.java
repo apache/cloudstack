@@ -17,37 +17,24 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "disk_attachment")
-public final class DiskAttachment {
+@JacksonXmlRootElement(localName = "nics")
+public final class Nics {
 
-    public String active;
-    public String bootable;
+    @JsonProperty("nic")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    public List<Nic> nic;
 
-    @JsonProperty("interface")
-    public String iface; // virtio_scsi etc
+    public Nics() {}
 
-    @JsonProperty("logical_name")
-    public String logicalName;
-
-    @JsonProperty("pass_discard")
-    public String passDiscard;
-
-    @JsonProperty("read_only")
-    public String readOnly;
-
-    @JsonProperty("uses_scsi_reservation")
-    public String usesScsiReservation;
-
-    public Disk disk;
-    public Ref vm;
-
-    public String href;
-    public String id;
-
-    public DiskAttachment() {}
+    public Nics(final List<Nic> nic) {
+        this.nic = nic;
+    }
 }

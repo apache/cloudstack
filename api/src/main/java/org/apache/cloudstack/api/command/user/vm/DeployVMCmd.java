@@ -64,8 +64,8 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.UUID, entityType = SnapshotResponse.class, since = "4.21")
     private Long snapshotId;
 
-    @Parameter(name = ApiConstants.DUMMY, type = CommandType.BOOLEAN, since = "4.23", description = "Deploy a dummy VM without any disk. False by default. This supports KVM only.")
-    private Boolean dummy;
+    @Parameter(name = "blank", type = CommandType.BOOLEAN, since = "4.22.1")
+    private Boolean blankInstance;
 
 
     /////////////////////////////////////////////////////
@@ -88,12 +88,36 @@ public class DeployVMCmd extends BaseDeployVMCmd {
         return snapshotId;
     }
 
-    public boolean getDummy() {
-        return dummy != null && dummy;
-    }
-
     public boolean isVolumeOrSnapshotProvided() {
         return volumeId != null || snapshotId != null;
+    }
+
+    public boolean isBlankInstance() {
+        return Boolean.TRUE.equals(blankInstance);
+    }
+
+    /////////////////////////////////////////////////////
+    ////////////////// Setters //////////////////////////
+    /////////////////////////////////////////////////////
+
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
+    }
+
+    public void setVolumeId(Long volumeId) {
+        this.volumeId = volumeId;
+    }
+
+    public void setSnapshotId(Long snapshotId) {
+        this.snapshotId = snapshotId;
+    }
+
+    public void setBlankInstance(boolean blankInstance) {
+        this.blankInstance = blankInstance;
     }
 
     @Override
@@ -140,7 +164,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        if (!getDummy() && Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
+        if (!isBlankInstance() && Stream.of(templateId, snapshotId, volumeId).filter(Objects::nonNull).count() != 1) {
             throw new CloudRuntimeException("Please provide only one of the following parameters - template ID, volume ID or snapshot ID");
         }
 

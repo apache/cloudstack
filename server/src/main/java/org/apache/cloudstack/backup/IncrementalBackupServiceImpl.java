@@ -478,6 +478,16 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         return imageTransferDao.findById(imageTransfer.getId());
     }
 
+    @Override
+    public boolean cancelImageTransfer(long imageTransferId) {
+        ImageTransferVO imageTransfer = imageTransferDao.findById(imageTransferId);
+        if (imageTransfer == null) {
+            throw new CloudRuntimeException("Image transfer not found: " + imageTransferId);
+        }
+        // ToDo: Implement cancel logic
+        return true;
+    }
+
     private void finalizeDownloadImageTransfer(ImageTransferVO imageTransfer) {
 
         String transferId = imageTransfer.getUuid();
@@ -552,8 +562,11 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     @Override
     public boolean finalizeImageTransfer(FinalizeImageTransferCmd cmd) {
-        Long imageTransferId = cmd.getImageTransferId();
+        return finalizeImageTransfer(cmd.getImageTransferId());
+    }
 
+    @Override
+    public boolean finalizeImageTransfer(final long imageTransferId) {
         ImageTransferVO imageTransfer = imageTransferDao.findById(imageTransferId);
         if (imageTransfer == null) {
             throw new CloudRuntimeException("Image transfer not found: " + imageTransferId);
@@ -566,6 +579,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         }
         imageTransfer.setPhase(ImageTransferVO.Phase.finished);
         imageTransferDao.update(imageTransfer.getId(), imageTransfer);
+// ToDo: check this
+//        imageTransferDao.remove(imageTransfer.getId());
         return true;
     }
 
@@ -656,7 +671,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             response.setBackupId(backup.getUuid());
         }
         Long volumeId = imageTransferVO.getDiskId();
-        Volume volume = volumeDao.findById(volumeId);
+        // ToDo: fix volume deletion leaving orphan image transfer record
+        Volume volume = volumeDao.findByIdIncludingRemoved(volumeId);
         response.setDiskId(volume.getUuid());
         response.setTransferUrl(imageTransferVO.getTransferUrl());
         response.setPhase(imageTransferVO.getPhase().toString());

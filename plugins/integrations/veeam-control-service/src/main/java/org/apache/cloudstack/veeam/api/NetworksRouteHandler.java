@@ -26,27 +26,21 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
-import org.apache.cloudstack.veeam.api.converter.NetworkVOToNetworkConverter;
+import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.Network;
 import org.apache.cloudstack.veeam.api.dto.Networks;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
 
-import com.cloud.api.query.dao.DataCenterJoinDao;
-import com.cloud.api.query.vo.DataCenterJoinVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
 
 public class NetworksRouteHandler extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api/networks";
 
     @Inject
-    NetworkDao networkDao;
-
-    @Inject
-    DataCenterJoinDao dataCenterJoinDao;
+    ServerAdapter serverAdapter;
 
     @Override
     public boolean start() {
@@ -90,32 +84,19 @@ public class NetworksRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<Network> result = NetworkVOToNetworkConverter.toNetworkList(listNetworks(), this::getZoneById);
+        final List<Network> result = serverAdapter.listAllNetworks();
         final Networks response = new Networks(result);
 
-        io.getWriter().write(resp, 200, response, outFormat);
-    }
-
-    protected List<NetworkVO> listNetworks() {
-        return networkDao.listAll();
+        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 
     protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
-        final NetworkVO vo = networkDao.findByUuid(id);
-        if (vo == null) {
-            io.notFound(resp, "DataCenter not found: " + id, outFormat);
-            return;
+        try {
+            Network response = serverAdapter.getNetwork(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
         }
-        Network response = NetworkVOToNetworkConverter.toNetwork(vo, this::getZoneById);
-
-        io.getWriter().write(resp, 200, response, outFormat);
-    }
-
-    protected DataCenterJoinVO getZoneById(Long zoneId) {
-        if (zoneId == null) {
-            return null;
-        }
-        return dataCenterJoinDao.findById(zoneId);
     }
 }

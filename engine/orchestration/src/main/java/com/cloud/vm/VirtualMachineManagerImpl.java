@@ -577,7 +577,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             logger.debug("Allocating disks for {}",  persistedVm);
 
-            if (_userVmMgr.isDummyTemplate(hyperType, template.getId())) {
+            if (_userVmMgr.isBlankInstanceTemplate(template)) {
                 logger.debug("Template is a dummy template for hypervisor {}, skipping volume allocation", hyperType);
                 return;
             } else {
