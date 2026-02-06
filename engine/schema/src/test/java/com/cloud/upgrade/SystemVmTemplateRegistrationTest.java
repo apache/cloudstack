@@ -54,7 +54,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.cpu.CPU;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
