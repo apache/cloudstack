@@ -363,14 +363,15 @@ public class SystemVmTemplateRegistrationTest {
         systemVmTemplateRegistration.validateTemplates(list);
     }
 
+    @Test
     public void testValidateTemplates_downloadableFileNotFound() {
-        CPU.CPUArch arch = SystemVmTemplateRegistration.DOWNLOADABLE_TEMPLATE_ARCH_TYPES.get(0);
+        Pair<Hypervisor.HypervisorType, CPU.CPUArch> hypervisorTypeCPUArchPair = SystemVmTemplateRegistration.DOWNLOADABLE_TEMPLATE_HYPERVISOR_ARCH_TYPES.get(0);
         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> list = new ArrayList<>();
-        list.add(new Pair<>(Hypervisor.HypervisorType.KVM, arch));
+        list.add(hypervisorTypeCPUArchPair);
         SystemVmTemplateRegistration.MetadataTemplateDetails details =
                 Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
         SystemVmTemplateRegistration.NewTemplateMap.put(SystemVmTemplateRegistration.getHypervisorArchKey(
-                Hypervisor.HypervisorType.KVM, arch), details);
+                hypervisorTypeCPUArchPair.first(), hypervisorTypeCPUArchPair.second()), details);
         doReturn(null).when(systemVmTemplateRegistration).getTemplateFile(details);
         systemVmTemplateRegistration.validateTemplates(list);
     }
