@@ -62,8 +62,9 @@ import com.cloud.utils.script.Script;
 
 public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
-    protected static final String BASE_EXTRACT_DIR = "/var/www/html/userdata/";
-    protected static final String BASE_MOUNT_DIR = "/mnt/SecStorage/";
+    protected static final String EXTRACT_USERDATA_DIR = "userdata";
+    protected static final String BASE_EXTRACT_PATH = String.format("/var/www/html/%s/", EXTRACT_USERDATA_DIR);
+    protected static final String BASE_MOUNT_PATH = "/mnt/SecStorage/";
 
     public class Completion implements UploadCompleteCallback {
         private final String jobId;
@@ -106,7 +107,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     private ExecutorService threadPool;
     private final Map<String, UploadJob> jobs = new ConcurrentHashMap<String, UploadJob>();
     private String parentDir;
-    private final String extractMountPoint = BASE_MOUNT_DIR + "extractmnt";
+    private final String extractMountPoint = BASE_MOUNT_PATH + "extractmnt";
     private StorageLayer _storage;
     private boolean hvm;
 
@@ -274,7 +275,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
         // Create the directory structure so that its visible under apache server root
-        String extractDir = BASE_EXTRACT_DIR + cmd.getFilepathInExtractURL() + File.separator;
+        String extractDir = BASE_EXTRACT_PATH + cmd.getFilepathInExtractURL() + File.separator;
         Script command = new Script("/bin/su", logger);
         command.add("-s");
         command.add("/bin/bash");
@@ -288,7 +289,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
 
-        File file = new File(BASE_MOUNT_DIR + cmd.getParent() + File.separator + cmd.getInstallPath());
+        File file = new File(BASE_MOUNT_PATH + cmd.getParent() + File.separator + cmd.getInstallPath());
         // Return error if the file does not exist or is a directory
         if (!file.exists() || file.isDirectory()) {
             String errorString = "Error in finding the file " + file.getAbsolutePath();
@@ -301,7 +302,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata/cmd.getInstallPath();
         command = new Script("/bin/bash", logger);
         command.add("-c");
-        command.add("ln -sf " + BASE_MOUNT_DIR + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + filename);
+        command.add("ln -sf " + BASE_MOUNT_PATH + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + filename);
         result = command.execute();
         if (result != null) {
             String errorString = "Error in linking  err=" + result;
@@ -339,24 +340,24 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         if (extractUrl != null) {
             URI uri = URI.create(extractUrl);
             String uriPath = uri.getPath();
-            String marker = "/userdata/";
+            String marker = String.format("/%s/", EXTRACT_USERDATA_DIR);
             String linkPath = uriPath.startsWith(marker)
                     ? uriPath.substring(marker.length())
                     : uriPath.substring(uriPath.indexOf(marker) + marker.length());
-            command.add("unlink " + BASE_EXTRACT_DIR + linkPath);
+            command.add("unlink " + BASE_EXTRACT_PATH + linkPath);
             result = command.execute();
             if (result != null) {
                 // FIXME - Ideally should bail out if you can't delete symlink. Not doing it right now.
                 // This is because the ssvm might already be destroyed and the symlinks do not exist.
-                logger.warn("Error in deleting symlink :" + result);
+                logger.warn("Error in deleting symlink :{}", result);
             } else {
-                deleteEntitySymlinkRootPathIfNeeded(cmd, linkPath);
+                deleteEntitySymlinkRootDirectoryIfNeeded(cmd, linkPath);
             }
         }
 
         // If its a volume or archive also delete the Hard link since it was created only for the purpose of download.
         if (cmd.getType() == Upload.Type.VOLUME || cmd.getType() == Upload.Type.ARCHIVE) {
-            String targetPath = BASE_MOUNT_DIR + cmd.getParentPath() + File.separator + path;
+            String targetPath = BASE_MOUNT_PATH + cmd.getParentPath() + File.separator + path;
             command = new Script("/bin/bash", logger);
             command.add("-c");
             command.add("rm -rf " + targetPath);
@@ -373,7 +374,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         if (Upload.Type.SNAPSHOT.equals(cmd.getType())) {
             try {
                 path = path.replace(ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME, "");
-                String fullPath = String.format("%s%s%s%s%s", BASE_EXTRACT_DIR, cmd.getParentPath(), File.separator, path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
+                String fullPath = String.format("%s%s%s%s%s", BASE_MOUNT_PATH, cmd.getParentPath(), File.separator, path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
                 Files.deleteIfExists(Path.of(fullPath));
             } catch (IOException e) {
                 String errorString = String.format("Error deleting temporary snapshot %s%s.", path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
@@ -385,7 +386,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         return new Answer(cmd, true, "");
     }
 
-    protected void deleteEntitySymlinkRootPathIfNeeded(DeleteEntityDownloadURLCommand cmd, String linkPath) {
+    protected void deleteEntitySymlinkRootDirectoryIfNeeded(DeleteEntityDownloadURLCommand cmd, String linkPath) {
         if (StringUtils.isEmpty(linkPath)) {
             return;
         }
@@ -398,7 +399,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return;
         }
         logger.info("Deleting symlink root directory: {} for {}", rootDir, cmd.getExtractUrl());
-        Path rootDirPath = Path.of(BASE_EXTRACT_DIR + rootDir);
+        Path rootDirPath = Path.of(BASE_EXTRACT_PATH + rootDir);
         String failMsg = "Failed to delete symlink root directory: {} for {}";
         try {
             if (!FileUtil.deleteRecursively(rootDirPath)) {
