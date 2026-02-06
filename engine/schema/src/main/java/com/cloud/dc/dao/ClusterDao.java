@@ -22,6 +22,7 @@ import java.util.Map;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface ClusterDao extends GenericDao<ClusterVO, Long> {
@@ -32,6 +33,8 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     List<ClusterVO> listByZoneId(long zoneId);
 
     List<HypervisorType> getAvailableHypervisorInZone(Long zoneId);
+
+    List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorsArchAcrossClusters(Long zoneId);
 
     List<ClusterVO> listByDcHyType(long dcId, String hyType);
 

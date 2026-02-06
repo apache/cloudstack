@@ -58,10 +58,10 @@ import org.ini4j.Ini;
 
 import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterDaoImpl;
-import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
@@ -108,12 +108,15 @@ public class SystemVmTemplateRegistration {
     private static Integer LINUX_12_ID = 363;
     private static final Integer SCRIPT_TIMEOUT = 1800000;
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
-    protected static final List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> BUNDLED_TEMPLATE_HYPERVISOR_ARCH_TYPES =
-            Arrays.asList(
-                    new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64),
-                    new Pair<>(Hypervisor.HypervisorType.VMware, CPU.CPUArch.amd64),
-                    new Pair<>(Hypervisor.HypervisorType.XenServer, CPU.CPUArch.amd64)
-            );
+    protected static final List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> AVAILABLE_SYSTEM_TEMPLATES_HYPERVISOR_ARCH_LIST = Arrays.asList(
+            new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64),
+            new Pair<>(Hypervisor.HypervisorType.VMware, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.XenServer, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.Hyperv, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.LXC, CPU.CPUArch.amd64),
+            new Pair<>(Hypervisor.HypervisorType.Ovm3, CPU.CPUArch.amd64)
+    );
     protected static final List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> DOWNLOADABLE_TEMPLATE_HYPERVISOR_ARCH_TYPES =
             Arrays.asList(
                     new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64)
@@ -137,7 +140,7 @@ public class SystemVmTemplateRegistration {
     @Inject
     ImageStoreDetailsDao imageStoreDetailsDao;
     @Inject
-    HostDao hostDao;
+    ClusterDao clusterDao;
     @Inject
     ConfigurationDao configurationDao;
     @Inject
@@ -157,7 +160,7 @@ public class SystemVmTemplateRegistration {
         imageStoreDetailsDao = new ImageStoreDetailsDaoImpl();
         configurationDao = new ConfigurationDaoImpl();
         guestOSDao = new GuestOSDaoImpl();
-        hostDao = new HostDaoImpl();
+        clusterDao = new ClusterDaoImpl();
         tempDownloadDir = new File(System.getProperty("java.io.tmpdir"));
     }
 
@@ -903,14 +906,14 @@ public class SystemVmTemplateRegistration {
                 templatesFound = false;
                 break;
             }
+            if (!AVAILABLE_SYSTEM_TEMPLATES_HYPERVISOR_ARCH_LIST.contains(hypervisorArch)) {
+                LOGGER.info("No system VM Template available for {}. Skipping validation.",
+                        getHypervisorArchLog(hypervisorArch.first(), hypervisorArch.second()));
+                continue;
+            }
             File tempFile = getTemplateFile(matchedTemplate);
             if (tempFile == null) {
                 LOGGER.warn("Failed to download template for {}, moving ahead",
-                        matchedTemplate.getHypervisorArchLog());
-                continue;
-            }
-            if (!tempFile.exists() && !BUNDLED_TEMPLATE_HYPERVISOR_ARCH_TYPES.contains(hypervisorArch)) {
-                LOGGER.warn("Template for {} not found locally, moving ahead",
                         matchedTemplate.getHypervisorArchLog());
                 continue;
             }
@@ -931,7 +934,7 @@ public class SystemVmTemplateRegistration {
         String nfsVersion = getNfsVersion(storeUrlAndId.second());
         mountStore(storeUrlAndId.first(), filePath, nfsVersion);
         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorArchList =
-                hostDao.listDistinctHypervisorArchTypes(zoneId);
+                clusterDao.listDistinctHypervisorsArchAcrossClusters(zoneId);
         for (Pair<Hypervisor.HypervisorType, CPU.CPUArch> hypervisorArch : hypervisorArchList) {
             Hypervisor.HypervisorType hypervisorType = hypervisorArch.first();
             MetadataTemplateDetails templateDetails = getMetadataTemplateDetails(hypervisorType,
@@ -1079,9 +1082,9 @@ public class SystemVmTemplateRegistration {
             public void doInTransactionWithoutResult(final TransactionStatus status) {
                 List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsInUse;
                 try {
-                    hypervisorsInUse = hostDao.listDistinctHypervisorArchTypes(null);
+                    hypervisorsInUse = clusterDao.listDistinctHypervisorsArchAcrossClusters(null);
                 } catch (final Exception e) {
-                    throw new CloudRuntimeException("Exception while getting hypervisor types from hosts", e);
+                    throw new CloudRuntimeException("Exception while getting hypervisor types from clusters", e);
                 }
                 Collection<MetadataTemplateDetails> templateEntries = NewTemplateMap.values();
                 for (MetadataTemplateDetails templateDetails : templateEntries) {

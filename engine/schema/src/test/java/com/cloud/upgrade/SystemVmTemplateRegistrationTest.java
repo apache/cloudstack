@@ -53,6 +53,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.cpu.CPU;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.VMTemplateVO;
@@ -67,7 +68,7 @@ import com.cloud.utils.script.Script;
 public class SystemVmTemplateRegistrationTest {
 
     @Mock
-    HostDao hostDao;
+    ClusterDao clusterDao;
 
     @Mock
     VMTemplateDao vmTemplateDao;
@@ -405,7 +406,7 @@ public class SystemVmTemplateRegistrationTest {
             Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
             CPU.CPUArch arch = CPU.CPUArch.getDefault();
             hypervisorArchList.add(new Pair<>(hypervisorType, arch));
-            doReturn(hypervisorArchList).when(hostDao).listDistinctHypervisorArchTypes(zoneId);
+            doReturn(hypervisorArchList).when(clusterDao).listDistinctHypervisorsArchAcrossClusters(zoneId);
             SystemVmTemplateRegistration.MetadataTemplateDetails details =
                     Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
             String name = "existing";
