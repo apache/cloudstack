@@ -60,7 +60,8 @@ import com.cloud.utils.script.Script;
 
 public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
-    protected static final String BASE_EXTRACT_DIR = "/var/www/html/userdata/";
+    protected static final String EXTRACT_USERDATA_DIR = "userdata";
+    protected static final String BASE_EXTRACT_PATH = String.format("/var/www/html/%s/", EXTRACT_USERDATA_DIR);
 
     public class Completion implements UploadCompleteCallback {
         private final String jobId;
@@ -271,7 +272,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
         // Create the directory structure so that its visible under apache server root
-        String extractDir = BASE_EXTRACT_DIR;
+        String extractDir = BASE_EXTRACT_PATH;
         extractDir = extractDir + cmd.getFilepathInExtractURL() + File.separator;
         Script command = new Script("/bin/su", logger);
         command.add("-s");
@@ -335,15 +336,20 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         String extractUrl = cmd.getExtractUrl();
         String result;
         if (extractUrl != null) {
-            String linkPath = extractUrl.substring(extractUrl.lastIndexOf(File.separator) + 1);
-            command.add("unlink " + BASE_EXTRACT_DIR + linkPath);
+            URI uri = URI.create(extractUrl);
+            String uriPath = uri.getPath();
+            String marker = String.format("/%s/", EXTRACT_USERDATA_DIR);
+            String linkPath = uriPath.startsWith(marker)
+                    ? uriPath.substring(marker.length())
+                    : uriPath.substring(uriPath.indexOf(marker) + marker.length());
+            command.add("unlink " + BASE_EXTRACT_PATH + linkPath);
             result = command.execute();
             if (result != null) {
                 // FIXME - Ideally should bail out if you can't delete symlink. Not doing it right now.
                 // This is because the ssvm might already be destroyed and the symlinks do not exist.
                 logger.warn("Error in deleting symlink :" + result);
             } else {
-                deleteEntitySymlinkRootPathIfNeeded(cmd, linkPath);
+                deleteEntitySymlinkRootDirectoryIfNeeded(cmd, linkPath);
             }
         }
 
@@ -364,7 +370,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         return new Answer(cmd, true, "");
     }
 
-    protected void deleteEntitySymlinkRootPathIfNeeded(DeleteEntityDownloadURLCommand cmd, String linkPath) {
+    protected void deleteEntitySymlinkRootDirectoryIfNeeded(DeleteEntityDownloadURLCommand cmd, String linkPath) {
         if (StringUtils.isEmpty(linkPath)) {
             return;
         }
@@ -377,7 +383,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return;
         }
         logger.info("Deleting symlink root directory: {} for {}", rootDir, cmd.getExtractUrl());
-        Path rootDirPath = Path.of(BASE_EXTRACT_DIR + rootDir);
+        Path rootDirPath = Path.of(BASE_EXTRACT_PATH + rootDir);
         String failMsg = "Failed to delete symlink root directory: {} for {}";
         try {
             if (!FileUtil.deleteRecursively(rootDirPath)) {

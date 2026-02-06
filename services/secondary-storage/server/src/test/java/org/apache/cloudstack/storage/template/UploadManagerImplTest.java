@@ -58,21 +58,21 @@ public class UploadManagerImplTest {
     @Test
     public void doesNotDeleteWhenLinkPathIsEmpty() {
         String emptyLinkPath = "";
-        uploadManager.deleteEntitySymlinkRootPathIfNeeded(mock(DeleteEntityDownloadURLCommand.class), emptyLinkPath);
+        uploadManager.deleteEntitySymlinkRootDirectoryIfNeeded(mock(DeleteEntityDownloadURLCommand.class), emptyLinkPath);
         fileUtilMock.verify(() -> FileUtil.deleteRecursively(any(Path.class)), never());
     }
 
     @Test
     public void doesNotDeleteWhenRootDirIsNotUuid() {
         String invalidLinkPath = "invalidRootDir/file";
-        uploadManager.deleteEntitySymlinkRootPathIfNeeded(mock(DeleteEntityDownloadURLCommand.class), invalidLinkPath);
+        uploadManager.deleteEntitySymlinkRootDirectoryIfNeeded(mock(DeleteEntityDownloadURLCommand.class), invalidLinkPath);
         fileUtilMock.verify(() -> FileUtil.deleteRecursively(any(Path.class)), never());
     }
 
     @Test
     public void deletesSymlinkRootDirectoryWhenValidUuid() {
         String validLinkPath = "123e4567-e89b-12d3-a456-426614174000/file";
-        uploadManager.deleteEntitySymlinkRootPathIfNeeded(mock(DeleteEntityDownloadURLCommand.class), validLinkPath);
+        uploadManager.deleteEntitySymlinkRootDirectoryIfNeeded(mock(DeleteEntityDownloadURLCommand.class), validLinkPath);
         fileUtilMock.verify(() -> FileUtil.deleteRecursively(any(Path.class)), times(1));
     }
 }
