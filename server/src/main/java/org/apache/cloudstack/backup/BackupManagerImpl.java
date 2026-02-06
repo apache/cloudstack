@@ -972,10 +972,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (StringUtils.isEmpty(name)) {
             throw new CloudRuntimeException("Invalid backup provider name provided");
         }
-        if (!backupProvidersMap.containsKey(name)) {
-            throw new CloudRuntimeException("Failed to find backup provider by the name: " + name);
-        }
-        return backupProvidersMap.get(name);
+       if (!backupProvidersMap.containsKey(name)) {
+           throw new CloudRuntimeException("Failed to find backup provider by the name: " + name);
+       }
+       return backupProvidersMap.get(name);
     }
 
     @Override
