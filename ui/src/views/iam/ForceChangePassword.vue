@@ -130,7 +130,10 @@ export default {
     rules () {
       return {
         currentpassword: [{ required: true, message: this.$t('message.error.current.password') }],
-        password: [{ required: true, message: this.$t('message.error.new.password') }],
+        password: [
+          { required: true, message: this.$t('message.error.new.password') },
+          { validator: this.validateNewPassword, trigger: 'change' }
+        ],
         confirmpassword: [
           { required: true, message: this.$t('message.error.confirm.password') },
           { validator: this.validateTwoPassword, trigger: 'change' }
@@ -139,6 +142,17 @@ export default {
     }
   },
   methods: {
+    async validateNewPassword (rule, value) {
+      const currentPassword = this.form.currentpassword
+      if (!value || value.length === 0) {
+        return Promise.resolve()
+      }
+      // Ensure new password is different from current password
+      if (currentPassword && value === currentPassword) {
+        return Promise.reject(this.$t('message.error.newpassword.sameascurrent'))
+      }
+      return Promise.resolve()
+    },
     async validateTwoPassword (rule, value) {
       if (!value || value.length === 0) {
         return Promise.resolve()

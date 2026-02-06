@@ -3481,6 +3481,7 @@
 "message.error.netmask": "Please enter Netmask.",
 "message.error.network.offering": "Please select Network offering.",
 "message.error.new.password": "Please enter new password.",
+"message.error.newpassword.sameascurrent": "New password cannot be the same as the current password.",
 "message.error.nexus1000v.ipaddress": "Please enter Nexus 1000v IP address.",
 "message.error.nexus1000v.password": "Please enter Nexus 1000v password.",
 "message.error.nexus1000v.username": "Please enter Nexus 1000v username.",

@@ -1607,17 +1607,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (mandate2FA != null && mandate2FA) {
             user.setUser2faEnabled(true);
         }
-        updatePasswordChangeRequired(caller, updateUserCmd, user);
+        validateAndUpdatePasswordChangeRequired(caller, updateUserCmd, user, account);
         _userDao.update(user.getId(), user);
         return _userAccountDao.findById(user.getId());
     }
 
-    private void updatePasswordChangeRequired(User caller, UpdateUserCmd updateUserCmd, UserVO user) {
-        User.Source userSource = user.getSource();
-        if ((userSource == User.Source.SAML2 || userSource == User.Source.SAML2DISABLED || userSource == User.Source.LDAP)
-                && updateUserCmd.isPasswordChangeRequired()) {
-            logger.warn("Enforcing password change is not permitted for source [{}].", user.getSource());
-            throw new InvalidParameterValueException("CloudStack does not support enforcing password change for SAML or LDAP users.");
+    private void validateAndUpdatePasswordChangeRequired(User caller, UpdateUserCmd updateUserCmd, UserVO user, Account account) {
+        if (updateUserCmd.isPasswordChangeRequired()) {
+            if (user.getState() != State.ENABLED || account.getState() != State.ENABLED) {
+                throw new CloudRuntimeException("CloudStack does not support enforcing password change for locked/disabled User or Account.");
+            }
+
+            User.Source userSource = user.getSource();
+            if (userSource == User.Source.SAML2 || userSource == User.Source.SAML2DISABLED || userSource == User.Source.LDAP) {
+                logger.warn("Enforcing password change is not permitted for source [{}].", user.getSource());
+                throw new InvalidParameterValueException("CloudStack does not support enforcing password change for SAML or LDAP users.");
+            }
         }
 
         boolean isCallerSameAsUser = user.getId() == caller.getId();

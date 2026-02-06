@@ -433,8 +433,33 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         prepareMockAndExecuteUpdateUserTest(1);
     }
 
+    @Test(expected = CloudRuntimeException.class)
+    public void updateUserTestPwdChangeDisabledUser() {
+        Mockito.when(userVoMock.getState()).thenReturn(State.DISABLED);
+        updateUserPwdChange();
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void updateUserTestPwdChangeLockedUser() {
+        Mockito.when(userVoMock.getState()).thenReturn(State.LOCKED);
+        updateUserPwdChange();
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void updateUserTestPwdChangeDisabledAccount() {
+        Mockito.when(userVoMock.getState()).thenReturn(State.ENABLED);
+        Mockito.when(accountMock.getState()).thenReturn(State.LOCKED);
+        updateUserPwdChange();
+    }
+
     @Test
-    public void updateUserTestPwdChange() {
+    public void testUpdateUserTestPwdChange() {
+        Mockito.when(userVoMock.getState()).thenReturn(State.ENABLED);
+        Mockito.when(accountMock.getState()).thenReturn(State.ENABLED);
+        updateUserPwdChange();
+    }
+
+    private void updateUserPwdChange() {
         Mockito.doReturn(true).when(UpdateUserCmdMock).isPasswordChangeRequired();
         Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
         Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(10L);
