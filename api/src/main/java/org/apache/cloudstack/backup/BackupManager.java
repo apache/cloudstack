@@ -156,7 +156,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             throw new IllegalArgumentException("Multiple backup provider plugins are not supported. Please provide a single plugin value.");
         }
         List<String> validPlugins = List.of("dummy", "veeam", "networker", "nas");
-        if (value != null && !validPlugins.contains(value.toLowerCase())) {
+        if (value != null && !validPlugins.contains(value)) {
             throw new IllegalArgumentException("Invalid backup provider plugin: " + value + ". Valid plugin values are: " + String.join(", ", validPlugins));
         }
     }
