@@ -21,8 +21,11 @@ import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
 
 public class ChecksumValue {
+    private static final String DEFAULT_ALGORITHM = "MD5";
+
     String checksum;
-    String algorithm = "MD5";
+    String algorithm = DEFAULT_ALGORITHM;
+
     public ChecksumValue(String algorithm, String checksum) {
         this.algorithm = algorithm;
         this.checksum = checksum;
@@ -79,8 +82,9 @@ public class ChecksumValue {
             int e = digest.indexOf('}');
             if (s == 0 && e > s+1) { // we have an algorithm name of at least 1 char
                 return digest.substring(s+1,e);
-            } // else if no algoritm
-            return "MD5";
+            }
+            return StringUtils.defaultIfBlank(DigestHelper.deduceAlgorithmFromChecksumLength(digest.length()),
+                    DEFAULT_ALGORITHM);
         } // or if no digest at all
         return "SHA-512";
     }

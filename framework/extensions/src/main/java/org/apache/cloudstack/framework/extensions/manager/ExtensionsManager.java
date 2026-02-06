@@ -35,13 +35,16 @@ import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.CreateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.DownloadExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.SyncExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.response.DownloadExtensionResponse;
 import org.apache.cloudstack.framework.extensions.command.ExtensionServerActionBaseCommand;
 
 import com.cloud.agent.api.Answer;
@@ -97,4 +100,8 @@ public interface ExtensionsManager extends Manager {
     void updateExtensionResourceMapDetails(final long extensionResourceMapId, final Map<String, String> details);
 
     Answer getInstanceConsole(VirtualMachine vm, Host host);
+
+    boolean syncExtension(SyncExtensionCmd cmd);
+
+    DownloadExtensionResponse downloadExtension(DownloadExtensionCmd cmd);
 }

@@ -28,8 +28,13 @@ import java.util.Map;
 
 import org.apache.commons.collections.MapUtils;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class CreateExtensionCmdTest {
+    @InjectMocks
     CreateExtensionCmd cmd = new CreateExtensionCmd();
 
     @Test

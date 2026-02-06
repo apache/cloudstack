@@ -35,18 +35,6 @@ import com.cloud.utils.component.Manager;
 
 public interface ExternalProvisioner extends Manager {
 
-    String getExtensionsPath();
-
-    String getExtensionPath(String relativePath);
-
-    String getChecksumForExtensionPath(String extensionName, String relativePath);
-
-    void prepareExtensionPath(String extensionName, boolean userDefined, String extensionRelativePath);
-
-    void cleanupExtensionPath(String extensionName, String extensionRelativePath);
-
-    void cleanupExtensionData(String extensionName, int olderThanDays, boolean cleanupDirectory);
-
     PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostGuid, String extensionName, String extensionRelativePath, PrepareExternalProvisioningCommand cmd);
 
     StartAnswer startInstance(String hostGuid, String extensionName, String extensionRelativePath, StartCommand cmd);

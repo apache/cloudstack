@@ -20,6 +20,7 @@
 package org.apache.cloudstack.storage.command;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.storage.to.DownloadableArchiveObjectTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -34,7 +35,26 @@ import com.cloud.storage.Storage.ImageFormat;
 public class DownloadCommand extends AbstractDownloadCommand implements InternalIdentity {
 
     public static enum ResourceType {
-        VOLUME, TEMPLATE, SNAPSHOT
+        VOLUME(true, true),
+        TEMPLATE(true, true),
+        SNAPSHOT(false, false),
+        ARCHIVE(false, false);
+
+        private final boolean requiresPostDownloadProcessing;
+        private final boolean verifyFormat;
+
+        ResourceType(boolean requiresPostDownloadProcessing, boolean verifyFormat) {
+            this.requiresPostDownloadProcessing = requiresPostDownloadProcessing;
+            this.verifyFormat = verifyFormat;
+        }
+
+        public boolean doesRequirePostDownloadProcessing() {
+            return requiresPostDownloadProcessing;
+        }
+
+        public boolean shouldVerifyFormat() {
+            return verifyFormat;
+        }
     }
 
     private boolean hvm;
@@ -112,6 +132,19 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         }
         this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
         this.resourceType = ResourceType.SNAPSHOT;
+    }
+
+    public DownloadCommand(DownloadableArchiveObjectTO archive, Long maxDownloadSizeInBytes, String url) {
+        super(archive.getName(), url, archive.getFormat(), archive.getAccountId());
+        _store = archive.getDataStore();
+        installPath = archive.getPath();
+        id = archive.getId();
+        checksum = archive.getChecksum();
+        if (_store instanceof NfsTO) {
+            setSecUrl(((NfsTO)_store).getUrl());
+        }
+        this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
+        this.resourceType = ResourceType.ARCHIVE;
     }
 
     @Override

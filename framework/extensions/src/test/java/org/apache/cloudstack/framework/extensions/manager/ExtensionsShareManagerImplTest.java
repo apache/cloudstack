@@ -1,0 +1,1452 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package org.apache.cloudstack.framework.extensions.manager;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileTime;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
+import org.apache.cloudstack.framework.extensions.ExtensionArchiveDataObject;
+import org.apache.cloudstack.framework.extensions.command.DownloadAndSyncExtensionFilesCommand;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.utils.filesystem.ArchiveUtil;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.cloudstack.utils.security.HMACSignUtil;
+import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Upload;
+import com.cloud.utils.FileUtil;
+import com.cloud.utils.HttpUtils;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
+
+@RunWith(MockitoJUnitRunner.class)
+public class ExtensionsShareManagerImplTest {
+
+    @Mock
+    ExtensionsFilesystemManager extensionsFilesystemManager;
+
+    @Mock
+    ClusterManager clusterManager;
+
+    @Mock
+    DataCenterDao dataCenterDao;
+
+    @Mock
+    SecondaryStorageVmDao secondaryStorageVmDao;
+
+    @Mock
+    DataStoreManager dataStoreManager;
+
+    @Mock
+    ExtensionDao extensionDao;
+
+    @Mock
+    ExtensionDetailsDao extensionDetailsDao;
+
+    @Mock
+    ManagementServerHostDao managementServerHostDao;
+
+
+    @Spy
+    @InjectMocks
+    ExtensionsShareManagerImpl extensionsShareManager = new ExtensionsShareManagerImpl();
+
+    @Test
+    public void getExtensionsSharePathReturnsCorrectPath() {
+        String baseDir = "/cloudstack";
+        String expectedPath = baseDir + File.separator + ExtensionsShareManagerImpl.EXTENSIONS_SHARE_SUBDIR;
+        try (MockedStatic<ServerPropertiesUtil> serverPropertiesUtilMock = mockStatic(ServerPropertiesUtil.class)) {
+            serverPropertiesUtilMock.when(ServerPropertiesUtil::getShareBaseDirectory).thenReturn(baseDir);
+            Path result = extensionsShareManager.getExtensionsSharePath();
+            assertEquals(expectedPath, result.toString());
+        }
+    }
+
+    @Test
+    public void getExtensionsSharePathHandlesEmptyBaseDirectory() {
+        try (MockedStatic<ServerPropertiesUtil> serverPropertiesUtilMock = mockStatic(ServerPropertiesUtil.class)) {
+            serverPropertiesUtilMock.when(ServerPropertiesUtil::getShareBaseDirectory).thenReturn("");
+            Path result = extensionsShareManager.getExtensionsSharePath();
+            assertNotNull(result);
+            assertEquals(File.separator + ExtensionsShareManagerImpl.EXTENSIONS_SHARE_SUBDIR,
+                    result.toString());
+        }
+    }
+
+    @Test
+    public void getManagementServerBaseUrlHandlesHttpPort() {
+        int port = 8181;
+        String ip = "192.168.1.1";
+        try (MockedStatic<ServerPropertiesUtil> serverPropertiesUtilMock = mockStatic(ServerPropertiesUtil.class)) {
+            serverPropertiesUtilMock.when(() -> ServerPropertiesUtil.getProperty(
+                    "https.enable", "false")).thenReturn("false");
+            serverPropertiesUtilMock.when(() -> ServerPropertiesUtil.getProperty(
+                    "http.port", "8080")).thenReturn(String.valueOf(port));
+            ManagementServerHost managementHost = mock(ManagementServerHost.class);
+            when(managementHost.getServiceIP()).thenReturn(ip);
+            assertEquals(String.format("http://%s:%d", ip, port),
+                    extensionsShareManager.getManagementServerBaseUrl(managementHost));
+        }
+    }
+
+    @Test
+    public void getManagementServerBaseUrlHandlesHttpsPort() {
+        int port = 8433;
+        String ip = "192.168.1.1";
+        try (MockedStatic<ServerPropertiesUtil> serverPropertiesUtilMock = mockStatic(ServerPropertiesUtil.class)) {
+            serverPropertiesUtilMock.when(() -> ServerPropertiesUtil.getProperty(
+                    "https.enable", "false")).thenReturn("true");
+            serverPropertiesUtilMock.when(() -> ServerPropertiesUtil.getProperty(
+                    "https.port", "8443")).thenReturn(String.valueOf(port));
+            ManagementServerHost managementHost = mock(ManagementServerHost.class);
+            when(managementHost.getServiceIP()).thenReturn(ip);
+            assertEquals(String.format("https://%s:%d", ip, port), extensionsShareManager.getManagementServerBaseUrl(managementHost));
+        }
+    }
+
+    @Test
+    public void getResultFromAnswersStringParsesValidJsonAndReturnsSuccess() {
+        Answer[] answers = new Answer[]{new Answer(mock(DownloadAndSyncExtensionFilesCommand.class),
+                true, "Operation successful")};
+        String json = GsonHelper.getGson().toJson(answers);
+        Extension extension = mock(Extension.class);
+        ManagementServerHost msHost = mock(ManagementServerHost.class);
+        Pair<Boolean, String> result = extensionsShareManager.getResultFromAnswersString(json, extension, msHost,
+                "operation");
+        assertTrue(result.first());
+        assertEquals("Operation successful", result.second());
+    }
+
+    @Test
+    public void getResultFromAnswersStringHandlesEmptyJsonArray() {
+        String answersStr = "[]";
+        Extension extension = mock(Extension.class);
+        ManagementServerHost msHost = mock(ManagementServerHost.class);
+        Pair<Boolean, String> result = extensionsShareManager.getResultFromAnswersString(answersStr, extension,
+                msHost, "operation");
+        assertFalse(result.first());
+        assertEquals("Unknown error", result.second());
+    }
+
+    @Test
+    public void getResultFromAnswersStringHandlesNullAnswer() {
+        String answersStr = "null";
+        Extension extension = mock(Extension.class);
+        ManagementServerHost msHost = mock(ManagementServerHost.class);
+        Pair<Boolean, String> result = extensionsShareManager.getResultFromAnswersString(answersStr, extension,
+                msHost, "operation");
+        assertFalse(result.first());
+        assertEquals("Unknown error", result.second());
+    }
+
+    @Test
+    public void getResultFromAnswersStringHandlesJsonParsingError() {
+        String answersStr = "invalid-json";
+        Extension extension = mock(Extension.class);
+        ManagementServerHost msHost = mock(ManagementServerHost.class);
+        Pair<Boolean, String> result = extensionsShareManager.getResultFromAnswersString(answersStr, extension,
+                msHost, "operation");
+        assertFalse(result.first());
+        assertNotNull(result.second());
+    }
+
+    @Test
+    public void getResultFromAnswersStringHandlesFailedOperation() {
+        Answer[] answers = new Answer[]{new Answer(mock(DownloadAndSyncExtensionFilesCommand.class), false,
+                "Operation failed")};
+        String json = GsonHelper.getGson().toJson(answers);
+        Extension extension = mock(Extension.class);
+        ManagementServerHost msHost = mock(ManagementServerHost.class);
+        Pair<Boolean, String> result = extensionsShareManager.getResultFromAnswersString(json, extension, msHost,
+                "operation");
+        assertFalse(result.first());
+        assertEquals("Operation failed", result.second());
+    }
+
+    @Test
+    public void createArchiveCreatesCompleteArchiveForSyncSuccessfully() throws IOException {
+        Extension extension = mock(Extension.class);
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
+        when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
+        try (MockedStatic<DigestHelper> ignored = mockStatic(DigestHelper.class);
+             MockedStatic<Files> ignored1 = mockStatic(Files.class)) {
+            doReturn(true).when(extensionsShareManager).packArchiveForSync(eq(extension),
+                    eq(extensionRootPath), Mockito.anyList(), Mockito.any());
+            String sharePath = "/share/extensions";
+            doReturn(Path.of(sharePath)).when(extensionsShareManager).getExtensionsSharePath();
+            when(DigestHelper.calculateChecksum(Mockito.any())).thenReturn("checksum123");
+            when(Files.size(Mockito.any())).thenReturn(100L);
+            ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = extensionsShareManager.createArchiveForSync(
+                    extension, List.of());
+            assertNotNull(archiveInfo);
+            System.out.println(archiveInfo.getPath().toString());
+            assertTrue(archiveInfo.getPath().toString().matches(sharePath + File.separator +
+                    Extension.getDirectoryName(name) + "-\\d+\\.tgz"));
+            assertEquals("checksum123", archiveInfo.getChecksum());
+            assertEquals(100L, archiveInfo.getSize());
+            assertEquals(DownloadAndSyncExtensionFilesCommand.SyncType.Complete, archiveInfo.getSyncType());
+        }
+    }
+
+    @Test
+    public void createArchiveCreatesPartialArchiveForSyncSuccessfully() throws IOException {
+        Extension extension = mock(Extension.class);
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
+        when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
+        try (MockedStatic<DigestHelper> ignored = mockStatic(DigestHelper.class);
+             MockedStatic<Files> ignored1 = mockStatic(Files.class)) {
+            when(Files.exists(any())).thenReturn(true);
+            doReturn(true).when(extensionsShareManager).packArchiveForSync(eq(extension),
+                    eq(extensionRootPath), Mockito.anyList(), Mockito.any());
+            String sharePath = "/share/extensions";
+            doReturn(Path.of(sharePath)).when(extensionsShareManager).getExtensionsSharePath();
+            when(DigestHelper.calculateChecksum(Mockito.any())).thenReturn("checksum123");
+            when(Files.size(Mockito.any())).thenReturn(200L);
+            ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = extensionsShareManager.createArchiveForSync(extension,
+                    List.of("file1.sh", "file2.sh"));
+            assertNotNull(archiveInfo);
+            assertTrue(archiveInfo.getPath().toString().matches(sharePath + File.separator + "partial-" +
+                    Extension.getDirectoryName(name) + "-\\d+\\.tgz"));
+            assertEquals("checksum123", archiveInfo.getChecksum());
+            assertEquals(200L, archiveInfo.getSize());
+            assertEquals(DownloadAndSyncExtensionFilesCommand.SyncType.Partial, archiveInfo.getSyncType());
+        }
+    }
+
+    @Test(expected = IOException.class)
+    public void createArchiveForSyncThrowsExceptionForInvalidExtensionPath() throws IOException {
+        Extension extension = mock(Extension.class);
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(null);
+        extensionsShareManager.createArchiveForSync(extension, Collections.emptyList());
+    }
+
+    @Test
+    public void createArchiveForSyncThrowsExceptionForInvalidFilePath() {
+        Extension extension = mock(Extension.class);
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
+        when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
+        assertThrows(SecurityException.class, () -> extensionsShareManager.createArchiveForSync(extension,
+                List.of("../invalid.txt")));
+    }
+
+    @Test
+    public void createArchiveForSyncThrowsExceptionForMissingFile() {
+        Extension extension = mock(Extension.class);
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
+        when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
+        assertThrows(NoSuchFileException.class, () -> extensionsShareManager.createArchiveForSync(extension,
+                List.of("missing.txt")));
+    }
+
+    @Test
+    public void createArchiveForSyncThrowsIOExceptionWhenPackingFails() throws IOException {
+        Extension extension = mock(Extension.class);
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
+        when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
+        doReturn(false).when(extensionsShareManager).packArchiveForSync(eq(extension),
+                eq(extensionRootPath), Mockito.anyList(), Mockito.any());
+        assertThrows(IOException.class, () -> extensionsShareManager.createArchiveForSync(extension, List.of()));
+    }
+
+    @Test
+    public void createArchiveForDownloadCreatesArchiveSuccessfully() throws IOException {
+        Extension extension = mock(Extension.class);
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
+        when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
+        try (MockedStatic<DigestHelper> digestHelperMock = mockStatic(DigestHelper.class);
+             MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            filesMock.when(() -> Files.size(any(Path.class))).thenReturn(1024L);
+            digestHelperMock.when(() -> DigestHelper.calculateChecksum(any(File.class))).thenReturn("checksum123");
+            doReturn(true).when(extensionsShareManager).packArchiveForDownload(eq(extension),
+                    eq(extensionRootPath), any(Path.class));
+            ExtensionsShareManagerImpl.ArchiveInfo archiveInfo =
+                    extensionsShareManager.createArchiveForDownload(extension);
+            assertNotNull(archiveInfo);
+            assertEquals(1024L, archiveInfo.getSize());
+            assertEquals("checksum123", archiveInfo.getChecksum());
+            assertEquals(DownloadAndSyncExtensionFilesCommand.SyncType.Complete, archiveInfo.getSyncType());
+        }
+    }
+
+    @Test
+    public void createArchiveForDownloadThrowsExceptionWhenPathNotFound() {
+        Extension extension = mock(Extension.class);
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(null);
+        IOException exception = assertThrows(IOException.class, () -> extensionsShareManager.createArchiveForDownload(
+                extension));
+        assertEquals(String.format("Path not found %s", path), exception.getMessage());
+    }
+
+    @Test
+    public void createArchiveForDownloadThrowsExceptionWhenPackingFails() throws IOException {
+        Extension extension = mock(Extension.class);
+        String name = "testExtension";
+        String path = "extensions" + File.separator + name;
+        when(extension.getName()).thenReturn(name);
+        when(extension.getRelativePath()).thenReturn(path);
+        Path extensionRootPath = Path.of(path);
+        when(extensionsFilesystemManager.getExtensionCheckedPath(name, path)).thenReturn(path);
+        when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(extensionRootPath);
+        doReturn(false).when(extensionsShareManager).packArchiveForDownload(eq(extension),
+                eq(extensionRootPath), any(Path.class));
+        IOException exception = assertThrows(IOException.class, () -> extensionsShareManager.createArchiveForDownload(
+                extension));
+        assertTrue(exception.getMessage().contains("Failed to create archive"));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void generateSignedArchiveUrlThrowsExceptionONSHareContextDisabled() throws Exception {
+        ReflectionTestUtils.setField(extensionsShareManager, "serverShareEnabled", false);
+        extensionsShareManager.generateSignedArchiveUrl(mock(ManagementServerHost.class),
+                Path.of("/share/extensions/test-archive.tgz"));
+    }
+
+    @Test
+    public void generateSignedArchiveUrlReturnsValidUrlWithSignature() throws Exception {
+        ManagementServerHost managementServer = mock(ManagementServerHost.class);
+        Path archivePath = Path.of("/share/extensions/test-archive.tgz");
+        String baseUrl = "http://abc";
+        doReturn(baseUrl).when(extensionsShareManager).getManagementServerBaseUrl(managementServer);
+        try (MockedStatic<ServerPropertiesUtil> serverPropertiesUtilMock = mockStatic(ServerPropertiesUtil.class, Mockito.CALLS_REAL_METHODS);
+             MockedStatic<HMACSignUtil> hmacSignUtilMock = mockStatic(HMACSignUtil.class)) {
+            serverPropertiesUtilMock.when(() -> ServerPropertiesUtil.getShareSecret()).thenReturn("secretKey");
+            hmacSignUtilMock.when(() -> HMACSignUtil.generateSignature(anyString(), anyString()))
+                    .thenReturn("signature123");
+            String result = extensionsShareManager.generateSignedArchiveUrl(managementServer, archivePath);
+            assertTrue(result.startsWith(baseUrl + archivePath));
+            assertTrue(result.contains("exp="));
+            assertTrue(result.contains("sig=signature123"));
+        }
+    }
+
+    @Test
+    public void generateSignedArchiveUrlReturnsUrlWithoutSignatureWhenSecretKeyIsBlank() throws Exception {
+        ManagementServerHost managementServer = mock(ManagementServerHost.class);
+        Path archivePath = Path.of("/share/extensions/test-archive.tgz");
+        String baseUrl = "http://abc";
+        doReturn(baseUrl).when(extensionsShareManager).getManagementServerBaseUrl(managementServer);
+        String result = extensionsShareManager.generateSignedArchiveUrl(managementServer, archivePath);
+        assertTrue(result.startsWith(baseUrl + archivePath));
+        assertTrue(result.contains("exp="));
+        assertFalse(result.contains("sig="));
+    }
+
+    @Test
+    public void buildCommandCreatesCommandWithCorrectParameters() {
+        long msId = 12345L;
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(100L);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        when(archiveInfo.getSize()).thenReturn(1024L);
+        when(archiveInfo.getChecksum()).thenReturn("checksum123");
+        when(archiveInfo.getSyncType()).thenReturn(DownloadAndSyncExtensionFilesCommand.SyncType.Complete);
+        String signedUrl = "http://example.com/archive.tgz";
+
+        DownloadAndSyncExtensionFilesCommand command = extensionsShareManager.buildCommand(msId, extension,
+                archiveInfo, signedUrl);
+
+        assertNotNull(command);
+        assertEquals(msId, command.getMsId());
+        assertEquals(100L, command.getExtensionId());
+        assertEquals(signedUrl, command.getDownloadUrl());
+        assertEquals(1024L, command.getSize());
+        assertEquals("checksum123", command.getChecksum());
+        assertEquals(DownloadAndSyncExtensionFilesCommand.SyncType.Complete, command.getSyncType());
+    }
+
+    @Test
+    public void buildCommandHandlesNullArchiveInfo() {
+        long msId = 12345L;
+        Extension extension = mock(Extension.class);
+        String signedUrl = "http://example.com/archive.tgz";
+
+        assertThrows(NullPointerException.class, () -> extensionsShareManager.buildCommand(msId, extension,
+                null, signedUrl));
+    }
+
+    @Test
+    public void packArchiveForSyncCreatesArchiveForSingleDirectory() throws IOException {
+        Path extensionRootPath = Files.createTempDirectory("extensionRoot");
+        Path archivePath = Files.createTempFile("archive", ".tgz");
+        Extension extension = mock(Extension.class);
+        try (MockedStatic<ArchiveUtil> mockedStatic = mockStatic(ArchiveUtil.class)) {
+            mockedStatic.when(() -> ArchiveUtil.packPath(ArchiveUtil.ArchiveFormat.TGZ, extensionRootPath,
+                            archivePath, 60))
+                    .thenReturn(true);
+            boolean result = extensionsShareManager.packArchiveForSync(extension, extensionRootPath,
+                    List.of(extensionRootPath), archivePath);
+            assertTrue(result);
+            assertFalse(Files.exists(archivePath));
+        } finally {
+            FileUtil.deleteRecursively(extensionRootPath);
+            Files.deleteIfExists(archivePath);
+        }
+    }
+
+    @Test
+    public void packArchiveForSyncCreatesArchiveForSingleDirectoryReturnsFalse() throws IOException {
+        Path extensionRootPath = Files.createTempDirectory("extensionRoot");
+        Path archivePath = Files.createTempFile("archive", ".tgz");
+        Extension extension = mock(Extension.class);
+        try (MockedStatic<ArchiveUtil> mockedStatic = mockStatic(ArchiveUtil.class)) {
+            mockedStatic.when(() -> ArchiveUtil.packPath(ArchiveUtil.ArchiveFormat.TGZ, extensionRootPath,
+                            archivePath, 60))
+                    .thenReturn(false);
+            boolean result = extensionsShareManager.packArchiveForSync(extension, extensionRootPath,
+                    List.of(extensionRootPath), archivePath);
+            assertFalse(result);
+            assertFalse(Files.exists(archivePath));
+        } finally {
+            FileUtil.deleteRecursively(extensionRootPath);
+            Files.deleteIfExists(archivePath);
+        }
+    }
+
+    @Test
+    public void packArchiveForSyncCreatesArchiveForMultipleFiles() throws IOException {
+        Path extensionRootPath = Files.createTempDirectory("extensionRoot");
+        Path archivePath = Files.createTempFile("archive", ".tgz");
+        Path file1 = Files.createFile(extensionRootPath.resolve("file1.txt"));
+        Path file2 = Files.createFile(extensionRootPath.resolve("file2.txt"));
+        Extension extension = mock(Extension.class);
+        try (MockedStatic<ArchiveUtil> mockedStatic = mockStatic(ArchiveUtil.class)) {
+            mockedStatic.when(() -> ArchiveUtil.packPath(eq(ArchiveUtil.ArchiveFormat.TGZ), any(Path.class),
+                            eq(archivePath), eq(60)))
+                    .thenReturn(true);
+            boolean result = extensionsShareManager.packArchiveForSync(extension, extensionRootPath,
+                    List.of(file1, file2), archivePath);
+            assertTrue(result);
+            assertFalse(Files.exists(archivePath));
+        } finally {
+            FileUtil.deleteRecursively(extensionRootPath);
+            Files.deleteIfExists(archivePath);
+            Files.deleteIfExists(file1);
+            Files.deleteIfExists(file2);
+        }
+    }
+
+    @Test
+    public void packArchiveForDownloadCreatesArchiveSuccessfully() throws IOException {
+        Extension extension = mock(Extension.class);
+        Path extensionRootPath = Files.createTempDirectory("extensionRoot");
+        Path archivePath = Files.createTempFile("archive", ".zip");
+        try (MockedStatic<ArchiveUtil> archiveUtilMock = mockStatic(ArchiveUtil.class)) {
+            archiveUtilMock.when(() -> ArchiveUtil.packPath(ArchiveUtil.ArchiveFormat.ZIP, extensionRootPath,
+                            archivePath, 60))
+                    .thenReturn(true);
+            boolean result = extensionsShareManager.packArchiveForDownload(extension, extensionRootPath, archivePath);
+            assertTrue(result);
+        } finally {
+            FileUtil.deleteRecursively(extensionRootPath);
+            Files.deleteIfExists(archivePath);
+        }
+    }
+
+    @Test
+    public void packArchiveForDownloadFailsWhenPackingFails() throws IOException {
+        Extension extension = mock(Extension.class);
+        Path extensionRootPath = Files.createTempDirectory("extensionRoot");
+        Path archivePath = Files.createTempFile("archive", ".zip");
+        try (MockedStatic<ArchiveUtil> archiveUtilMock = mockStatic(ArchiveUtil.class)) {
+            archiveUtilMock.when(() -> ArchiveUtil.packPath(ArchiveUtil.ArchiveFormat.ZIP, extensionRootPath,
+                            archivePath, 60))
+                    .thenReturn(false);
+            boolean result = extensionsShareManager.packArchiveForDownload(extension, extensionRootPath, archivePath);
+            assertFalse(result);
+        } finally {
+            FileUtil.deleteRecursively(extensionRootPath);
+            Files.deleteIfExists(archivePath);
+        }
+    }
+
+    @Test
+    public void packArchiveForDownloadHandlesMissingParentDirectory() throws IOException {
+        Extension extension = mock(Extension.class);
+        Path extensionRootPath = Files.createTempDirectory("extensionRoot");
+        Path archivePath = extensionRootPath.resolve("nonexistentDir/archive.zip");
+        try (MockedStatic<ArchiveUtil> archiveUtilMock = mockStatic(ArchiveUtil.class)) {
+            archiveUtilMock.when(() -> ArchiveUtil.packPath(ArchiveUtil.ArchiveFormat.ZIP, extensionRootPath,
+                            archivePath, 60))
+                    .thenReturn(true);
+            boolean result = extensionsShareManager.packArchiveForDownload(extension, extensionRootPath, archivePath);
+            assertTrue(result);
+        } finally {
+            FileUtil.deleteRecursively(extensionRootPath);
+        }
+    }
+
+    @Test
+    public void downloadToSuccessfullyDownloadsFile() throws IOException {
+        Path dest = Files.createTempFile("download", ".tmp");
+        try (MockedStatic<HttpUtils> httpUtilsMock = mockStatic(HttpUtils.class)) {
+            httpUtilsMock.when(() -> HttpUtils.downloadFileWithProgress(Mockito.anyString(), Mockito.anyString(),
+                            Mockito.any()))
+                    .thenReturn(true);
+            long size = extensionsShareManager.downloadTo("http://example.com/file", dest);
+            assertTrue(Files.exists(dest));
+            assertEquals(Files.size(dest), size);
+        } finally {
+            Files.deleteIfExists(dest);
+        }
+    }
+
+    @Test
+    public void downloadToThrowsExceptionWhenDownloadFails() throws IOException {
+        Path dest = Files.createTempFile("download", ".tmp");
+        try (MockedStatic<HttpUtils> httpUtilsMock = mockStatic(HttpUtils.class)) {
+            httpUtilsMock.when(() -> HttpUtils.downloadFileWithProgress(Mockito.anyString(), Mockito.anyString(),
+                            Mockito.any()))
+                    .thenReturn(false);
+
+            assertThrows(IOException.class, () -> extensionsShareManager.downloadTo("http://example.com/file",
+                    dest));
+        } finally {
+            Files.deleteIfExists(dest);
+        }
+    }
+
+    @Test
+    public void downloadToThrowsExceptionWhenFileNotFound() throws IOException {
+        Path dest = Files.createTempFile("download", ".tmp");
+        try (MockedStatic<HttpUtils> httpUtilsMock = mockStatic(HttpUtils.class)) {
+            httpUtilsMock.when(() -> HttpUtils.downloadFileWithProgress(Mockito.anyString(),
+                            Mockito.anyString(), Mockito.any()))
+                    .thenReturn(true);
+            Files.deleteIfExists(dest);
+            assertThrows(IOException.class, () -> extensionsShareManager.downloadTo("http://example.com/file",
+                    dest));
+        }
+    }
+
+    @Test
+    public void atomicReplaceDirReplacesTargetDirectorySuccessfully() throws IOException {
+        Path source = Files.createTempDirectory("sourceDir");
+        Path target = Files.createTempDirectory("targetDir");
+        try {
+            Files.createFile(source.resolve("file.txt"));
+            Files.createFile(target.resolve("oldFile.txt"));
+            ExtensionsShareManagerImpl.atomicReplaceDir(source, target);
+            assertTrue(Files.exists(target.resolve("file.txt")));
+            assertFalse(Files.exists(target.resolve("oldFile.txt")));
+        } finally {
+            FileUtil.deleteRecursively(source);
+            FileUtil.deleteRecursively(target);
+        }
+    }
+
+    @Test
+    public void atomicReplaceDirCreatesTargetDirectoryWhenMissing() throws IOException {
+        Path source = Files.createTempDirectory("sourceDir");
+        Path target = source.getParent().resolve("nonexistentTarget");
+        try {
+            Files.createFile(source.resolve("file.txt"));
+            ExtensionsShareManagerImpl.atomicReplaceDir(source, target);
+            assertTrue(Files.exists(target.resolve("file.txt")));
+        } finally {
+            FileUtil.deleteRecursively(source);
+            FileUtil.deleteRecursively(target);
+        }
+    }
+
+    @Test
+    public void atomicReplaceDirRestoresBackupOnFailure() throws IOException {
+        Path source = Files.createTempDirectory("sourceDir");
+        Path target = Files.createTempDirectory("targetDir");
+        Path backup = target.getParent().resolve(target.getFileName().toString() + ".bak-" +
+                System.currentTimeMillis());
+        Files.createFile(source.resolve("file.txt"));
+        Files.createFile(target.resolve("oldFile.txt"));
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
+            filesMock.when(() -> Files.move(source, target, StandardCopyOption.ATOMIC_MOVE)).thenThrow(IOException.class);
+            assertThrows(IOException.class, () -> ExtensionsShareManagerImpl.atomicReplaceDir(source, target));
+            assertTrue(Files.exists(source.resolve("file.txt")));
+            assertTrue(Files.exists(target.resolve("oldFile.txt")));
+        } finally {
+            FileUtil.deleteRecursively(source);
+            FileUtil.deleteRecursively(target);
+            FileUtil.deleteRecursively(backup);
+        }
+    }
+
+    @Test
+    public void atomicReplaceDirHandlesNonAtomicBackupMove() throws IOException {
+        Path source = Files.createTempDirectory("sourceDir");
+        Path target = Files.createTempDirectory("targetDir");
+        Path backup = target.getParent().resolve(target.getFileName().toString() + ".bak-" +
+                System.currentTimeMillis());
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
+            Files.createFile(source.resolve("file.txt"));
+            Files.createFile(target.resolve("oldFile.txt"));
+            filesMock.when(() -> Files.move(target, backup, StandardCopyOption.ATOMIC_MOVE))
+                    .thenThrow(IOException.class);
+            ExtensionsShareManagerImpl.atomicReplaceDir(source, target);
+            assertTrue(Files.exists(target.resolve("file.txt")));
+            assertFalse(Files.exists(target.resolve("oldFile.txt")));
+        } finally {
+            FileUtil.deleteRecursively(source);
+            FileUtil.deleteRecursively(target);
+            FileUtil.deleteRecursively(backup);
+        }
+    }
+
+    @Test
+    public void overlayIntoOverlaysFilesSuccessfully() throws IOException {
+        Path source = Files.createTempDirectory("sourceDir");
+        Path target = Files.createTempDirectory("targetDir");
+        try {
+            Files.createDirectories(source.resolve("subdir"));
+            Files.createFile(source.resolve("subdir/file1.txt"));
+            Files.createFile(source.resolve("file2.txt"));
+            ExtensionsShareManagerImpl.overlayInto(source, target);
+            assertTrue(Files.exists(target.resolve("subdir/file1.txt")));
+            assertTrue(Files.exists(target.resolve("file2.txt")));
+        } finally {
+            FileUtil.deleteRecursively(source);
+            FileUtil.deleteRecursively(target);
+        }
+    }
+
+    @Test
+    public void overlayIntoHandlesEmptySourceDirectory() throws IOException {
+        Path source = Files.createTempDirectory("sourceDir");
+        Path target = Files.createTempDirectory("targetDir");
+        try {
+            ExtensionsShareManagerImpl.overlayInto(source, target);
+            assertTrue(Files.exists(target));
+            assertEquals(0, Files.list(target).count());
+        } finally {
+            FileUtil.deleteRecursively(source);
+            FileUtil.deleteRecursively(target);
+        }
+    }
+
+    @Test
+    public void overlayIntoReplacesExistingFilesInTarget() throws IOException {
+        Path source = Files.createTempDirectory("sourceDir");
+        Path target = Files.createTempDirectory("targetDir");
+        try {
+            Files.createFile(source.resolve("file.txt"));
+            Files.createFile(target.resolve("file.txt"));
+            ExtensionsShareManagerImpl.overlayInto(source, target);
+            assertTrue(Files.exists(target.resolve("file.txt")));
+            assertEquals(Files.size(source.resolve("file.txt")), Files.size(target.resolve("file.txt")));
+        } finally {
+            FileUtil.deleteRecursively(source);
+            FileUtil.deleteRecursively(target);
+        }
+    }
+
+    @Test
+    public void applyExtensionSyncExtractsAndReplacesDirectoryForCompleteSync() throws IOException {
+        Extension extension = mock(Extension.class);
+        when(extension.getName()).thenReturn("testExtension");
+        Path tmpArchive = Files.createTempFile("archive", ".tgz");
+        Path extensionRootPath = Files.createTempDirectory("extensionRoot");
+        Path stagingDir = Files.createTempDirectory("stagingDir");
+        when(extensionsFilesystemManager.getExtensionsStagingPath()).thenReturn(stagingDir);
+        try (MockedStatic<ArchiveUtil> mockedStatic = mockStatic(ArchiveUtil.class);
+             MockedStatic<ExtensionsShareManagerImpl> extensionsShareManagerMockedStatic =
+                     mockStatic(ExtensionsShareManagerImpl.class)) {
+            mockedStatic.when(() -> ArchiveUtil.extractToPath(eq(ArchiveUtil.ArchiveFormat.TGZ), eq(tmpArchive),
+                            any(Path.class), eq(60)))
+                    .thenReturn(true);
+            extensionsShareManager.applyExtensionSync(extension,
+                    DownloadAndSyncExtensionFilesCommand.SyncType.Complete, tmpArchive, extensionRootPath);
+            extensionsShareManagerMockedStatic.verify(() -> ExtensionsShareManagerImpl.atomicReplaceDir(
+                    any(Path.class), eq(extensionRootPath)));
+        } finally {
+            FileUtil.deleteRecursively(tmpArchive);
+            FileUtil.deleteRecursively(extensionRootPath);
+            FileUtil.deleteRecursively(stagingDir);
+        }
+    }
+
+    @Test
+    public void applyExtensionSyncExtractsAndOverlaysFilesForPartialSync() throws IOException {
+        Extension extension = mock(Extension.class);
+        when(extension.getName()).thenReturn("testExtension");
+        Path tmpArchive = Files.createTempFile("archive", ".tgz");
+        Path extensionRootPath = Files.createTempDirectory("extensionRoot");
+        Path stagingDir = Files.createTempDirectory("stagingDir");
+        when(extensionsFilesystemManager.getExtensionsStagingPath()).thenReturn(stagingDir);
+        try (MockedStatic<ArchiveUtil> mockedStatic = mockStatic(ArchiveUtil.class);
+             MockedStatic<ExtensionsShareManagerImpl> extensionsShareManagerMockedStatic =
+                     mockStatic(ExtensionsShareManagerImpl.class)) {
+            mockedStatic.when(() -> ArchiveUtil.extractToPath(eq(ArchiveUtil.ArchiveFormat.TGZ), eq(tmpArchive),
+                            any(Path.class), eq(60)))
+                    .thenReturn(true);
+            extensionsShareManager.applyExtensionSync(extension, DownloadAndSyncExtensionFilesCommand.SyncType.Partial,
+                    tmpArchive, extensionRootPath);
+            extensionsShareManagerMockedStatic.verify(() -> ExtensionsShareManagerImpl.overlayInto(
+                    any(Path.class), eq(extensionRootPath)));
+            assertEquals(0, Files.list(stagingDir).count());
+        } finally {
+            FileUtil.deleteRecursively(tmpArchive);
+            FileUtil.deleteRecursively(extensionRootPath);
+            FileUtil.deleteRecursively(stagingDir);
+        }
+    }
+
+    @Test
+    public void applyExtensionSyncThrowsIOExceptionWhenExtractionFails() throws IOException {
+        Extension extension = mock(Extension.class);
+        when(extension.getName()).thenReturn("testExtension");
+        Path tmpArchive = Files.createTempFile("archive", ".tgz");
+        Path stagingDir = Files.createTempDirectory("stagingDir");
+        when(extensionsFilesystemManager.getExtensionsStagingPath()).thenReturn(stagingDir);
+        try (MockedStatic<ArchiveUtil> mockedStatic = mockStatic(ArchiveUtil.class)) {
+            mockedStatic.when(() -> ArchiveUtil.extractToPath(eq(ArchiveUtil.ArchiveFormat.TGZ), eq(tmpArchive), any(Path.class), eq(60)))
+                    .thenReturn(false);
+            assertThrows(IOException.class, () -> extensionsShareManager.applyExtensionSync(
+                    extension, DownloadAndSyncExtensionFilesCommand.SyncType.Complete, tmpArchive, stagingDir));
+        } finally {
+            FileUtil.deleteRecursively(tmpArchive);
+            FileUtil.deleteRecursively(stagingDir);
+        }
+    }
+
+    @Test
+    public void cleanupExtensionsShareFilesDeletesExpiredArchives() throws IOException {
+        long cutoffDiff = 1000000L;
+        Path sharePath = Files.createTempDirectory("sharePath");
+        Path expiredFile = Files.createFile(sharePath.resolve("expired.tgz"));
+        Files.setLastModifiedTime(expiredFile, FileTime.fromMillis(System.currentTimeMillis() - 2 * cutoffDiff));
+        Path validFile = Files.createFile(sharePath.resolve("valid.tgz"));
+        Files.setLastModifiedTime(validFile, FileTime.fromMillis(System.currentTimeMillis() + (cutoffDiff / 2)));
+        try {
+            doReturn(sharePath).when(extensionsShareManager).getExtensionsSharePath();
+            extensionsShareManager.cleanupExtensionsShareFilesOnMS(System.currentTimeMillis() - cutoffDiff);
+            assertFalse(Files.exists(expiredFile));
+            assertTrue(Files.exists(validFile));
+        } finally {
+            FileUtil.deleteRecursively(sharePath);
+        }
+    }
+
+    @Test
+    public void cleanupExtensionsShareFilesHandlesNonTgzFilesGracefully() throws IOException {
+        Path sharePath = Files.createTempDirectory("sharePath");
+        Path nonTgzFile = Files.createFile(sharePath.resolve("file.txt"));
+        try {
+            doReturn(sharePath).when(extensionsShareManager).getExtensionsSharePath();
+            extensionsShareManager.cleanupExtensionsShareFilesOnMS(System.currentTimeMillis());
+            assertTrue(Files.exists(nonTgzFile));
+        } finally {
+            FileUtil.deleteRecursively(sharePath);
+        }
+    }
+
+    @Test
+    public void cleanupExtensionsShareFilesSkipsNonExistentSharePath() throws IOException {
+        Path nonExistentPath = Path.of("/nonexistent/sharePath");
+        doReturn(nonExistentPath).when(extensionsShareManager).getExtensionsSharePath();
+        extensionsShareManager.cleanupExtensionsShareFilesOnMS(System.currentTimeMillis());
+        // No exception should be thrown
+    }
+
+    @Test
+    public void syncExtensionReturnsSuccessWhenAllTargetsSucceed() throws Exception {
+        Extension extension = mock(Extension.class);
+        ManagementServerHost sourceManagementServer = mock(ManagementServerHost.class);
+        ManagementServerHost targetManagementServer1 = mock(ManagementServerHost.class);
+        when(targetManagementServer1.getUuid()).thenReturn("uuid123");
+        when(targetManagementServer1.getMsid()).thenReturn(12345L);
+        ManagementServerHost targetManagementServer2 = mock(ManagementServerHost.class);
+        when(targetManagementServer2.getUuid()).thenReturn("uuid234");
+        when(targetManagementServer2.getMsid()).thenReturn(23456L);
+        List<ManagementServerHost> targetManagementServers = List.of(targetManagementServer1,
+                targetManagementServer2);
+        List<String> files = List.of("file1.txt", "file2.txt");
+
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        doReturn(archiveInfo).when(extensionsShareManager).createArchiveForSync(extension, files);
+        when(archiveInfo.getPath()).thenReturn(Path.of("/path/to/archive.tgz"));
+        when(extensionsShareManager.generateSignedArchiveUrl(sourceManagementServer, archiveInfo.getPath()))
+                .thenReturn("http://example.com/archive.tgz");
+        when(clusterManager.execute(anyString(), anyLong(), anyString(), eq(true)))
+                .thenReturn("Something");
+        doReturn(new Pair<>(true, "success")).when(extensionsShareManager)
+                .getResultFromAnswersString(anyString(), eq(extension), any(ManagementServerHost.class), anyString());
+
+        Pair<Boolean, String> result =
+                extensionsShareManager.syncExtension(extension, sourceManagementServer, targetManagementServers, files);
+
+        assertTrue(result.first());
+        assertEquals("", result.second());
+    }
+
+    @Test
+    public void syncExtensionReturnsFailureWhenArchiveCreationFails() throws Exception {
+        Extension extension = mock(Extension.class);
+        ManagementServerHost sourceManagementServer = mock(ManagementServerHost.class);
+        List<ManagementServerHost> targetManagementServers = List.of();
+        List<String> files = List.of("file1.txt");
+        doThrow(new IOException("Archive creation failed")).when(extensionsShareManager)
+                .createArchiveForSync(extension, files);
+        Pair<Boolean, String> result = extensionsShareManager.syncExtension(extension, sourceManagementServer,
+                targetManagementServers, files);
+        assertFalse(result.first());
+        assertEquals("Archive creation failed", result.second());
+    }
+
+    @Test
+    public void syncExtensionReturnsFailureWhenSignedUrlGenerationFails() throws Exception {
+        Extension extension = mock(Extension.class);
+        ManagementServerHost sourceManagementServer = mock(ManagementServerHost.class);
+        List<ManagementServerHost> targetManagementServers = List.of();
+        List<String> files = List.of("file1.txt");
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        doReturn(archiveInfo).when(extensionsShareManager).createArchiveForSync(extension, files);
+        when(archiveInfo.getPath()).thenReturn(Path.of("/path/to/archive.tgz"));
+        when(extensionsShareManager.generateSignedArchiveUrl(sourceManagementServer, archiveInfo.getPath()))
+                .thenThrow(new NoSuchAlgorithmException("HMAC error"));
+        Pair<Boolean, String> result = extensionsShareManager.syncExtension(extension, sourceManagementServer,
+                targetManagementServers, files);
+        assertFalse(result.first());
+        assertEquals("Signed URL generation failed", result.second());
+    }
+
+    @Test
+    public void syncExtensionReturnsFailureWhenTargetSyncFails() throws Exception {
+        Extension extension = mock(Extension.class);
+        ManagementServerHost sourceManagementServer = mock(ManagementServerHost.class);
+        ManagementServerHost targetManagementServer = mock(ManagementServerHost.class);
+        when(targetManagementServer.getUuid()).thenReturn("uuid123");
+        when(targetManagementServer.getMsid()).thenReturn(12345L);
+        when(targetManagementServer.getName()).thenReturn("targetServer");
+        List<ManagementServerHost> targetManagementServers = List.of(targetManagementServer);
+        List<String> files = List.of("file1.txt");
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        doReturn(archiveInfo).when(extensionsShareManager).createArchiveForSync(extension, files);
+        when(archiveInfo.getPath()).thenReturn(Path.of("/path/to/archive.tgz"));
+        when(extensionsShareManager.generateSignedArchiveUrl(sourceManagementServer, archiveInfo.getPath()))
+                .thenReturn("http://example.com/archive.tgz");
+        when(clusterManager.execute(anyString(), anyLong(), anyString(), eq(true)))
+                .thenReturn("error");
+        doReturn(new Pair<>(false, "error")).when(extensionsShareManager)
+                .getResultFromAnswersString(anyString(), eq(extension), any(ManagementServerHost.class), anyString());
+        Pair<Boolean, String> result = extensionsShareManager.syncExtension(extension, sourceManagementServer,
+                targetManagementServers, files);
+        assertFalse(result.first());
+        assertEquals("Sync failed on management server: targetServer", result.second());
+    }
+
+    @Test
+    public void downloadAndApplyExtensionSyncSucceeds() throws IOException {
+        Extension extension = mock(Extension.class);
+        DownloadAndSyncExtensionFilesCommand cmd = mock(DownloadAndSyncExtensionFilesCommand.class);
+        when(cmd.getDownloadUrl()).thenReturn("http://example.com/archive.tgz");
+        when(cmd.getSize()).thenReturn(1024L);
+        when(cmd.getChecksum()).thenReturn("checksum123");
+        when(cmd.getSyncType()).thenReturn(DownloadAndSyncExtensionFilesCommand.SyncType.Complete);
+        when(extensionsFilesystemManager.getExtensionRootPath(extension)).thenReturn(mock(Path.class));
+
+        Path tmpArchive = Path.of("tmp-dl.tgz");
+        doNothing().when(extensionsShareManager).applyExtensionSync(eq(extension),
+                any(DownloadAndSyncExtensionFilesCommand.SyncType.class), eq(tmpArchive), any(Path.class));
+        try (MockedStatic<DigestHelper> digestHelperMock = mockStatic(DigestHelper.class);
+             MockedStatic<Files> filesMock = mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
+            filesMock.when(() -> Files.createTempFile(anyString(), anyString())).thenReturn(tmpArchive);
+            doReturn(1024L).when(extensionsShareManager)
+                    .downloadTo(eq("http://example.com/archive.tgz"), eq(tmpArchive));
+            digestHelperMock.when(() -> DigestHelper.calculateChecksum(tmpArchive.toFile()))
+                    .thenReturn("checksum123");
+            Pair<Boolean, String> result = extensionsShareManager.downloadAndApplyExtensionSync(extension, cmd);
+
+            assertTrue(result.first());
+            assertEquals("", result.second());
+        } finally {
+            Files.deleteIfExists(tmpArchive);
+        }
+    }
+
+    @Test
+    public void downloadAndApplyExtensionSyncFailsForSizeMismatch() throws IOException {
+        Extension extension = mock(Extension.class);
+        DownloadAndSyncExtensionFilesCommand cmd = mock(DownloadAndSyncExtensionFilesCommand.class);
+        when(cmd.getDownloadUrl()).thenReturn("http://example.com/archive.tgz");
+        when(cmd.getSize()).thenReturn(1024L);
+
+        Path tmpArchive = Path.of("tmp-dl.tgz");
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
+            filesMock.when(() -> Files.createTempFile(anyString(), anyString())).thenReturn(tmpArchive);
+            doReturn(tmpArchive).when(extensionsFilesystemManager).getExtensionRootPath(extension);
+            doReturn(512L).when(extensionsShareManager).downloadTo(
+                    eq("http://example.com/archive.tgz"), eq(tmpArchive));
+            Pair<Boolean, String> result = extensionsShareManager.downloadAndApplyExtensionSync(extension, cmd);
+            assertFalse(result.first());
+            assertEquals("Size mismatch: expected 1024 got 512", result.second());
+        } finally {
+            Files.deleteIfExists(tmpArchive);
+        }
+    }
+
+    @Test
+    public void downloadAndApplyExtensionSyncFailsForChecksumMismatch() throws IOException {
+        Extension extension = mock(Extension.class);
+        DownloadAndSyncExtensionFilesCommand cmd = mock(DownloadAndSyncExtensionFilesCommand.class);
+        when(cmd.getDownloadUrl()).thenReturn("http://example.com/archive.tgz");
+        when(cmd.getChecksum()).thenReturn("expectedChecksum");
+        Path tmpArchive = Path.of("tmp-dl.tgz");
+        try (MockedStatic<DigestHelper> digestHelperMock = mockStatic(DigestHelper.class);
+             MockedStatic<Files> filesMock = mockStatic(Files.class, Mockito.CALLS_REAL_METHODS)) {
+            filesMock.when(() -> Files.createTempFile(anyString(), anyString())).thenReturn(tmpArchive);
+            doReturn(tmpArchive).when(extensionsFilesystemManager).getExtensionRootPath(extension);
+            doReturn(1024L).when(extensionsShareManager).downloadTo(
+                    eq("http://example.com/archive.tgz"), any(Path.class));
+            digestHelperMock.when(() -> DigestHelper.calculateChecksum(any(File.class))).thenReturn("actualChecksum");
+            Pair<Boolean, String> result = extensionsShareManager.downloadAndApplyExtensionSync(extension, cmd);
+            assertFalse(result.first());
+            assertEquals("Checksum mismatch for archive. expected=expectedChecksum got=actualChecksum",
+                    result.second());
+        }
+    }
+
+    @Test
+    public void downloadAndApplyExtensionSyncHandlesIOExceptionDuringDownload() throws IOException {
+        Extension extension = mock(Extension.class);
+        DownloadAndSyncExtensionFilesCommand cmd = mock(DownloadAndSyncExtensionFilesCommand.class);
+        when(cmd.getDownloadUrl()).thenReturn("http://example.com/archive.tgz");
+        Path tmpArchive = Path.of("tmp-dl.tgz");
+        try {
+            doReturn(tmpArchive).when(extensionsFilesystemManager).getExtensionRootPath(extension);
+            Pair<Boolean, String> result = extensionsShareManager.downloadAndApplyExtensionSync(extension, cmd);
+            assertFalse(result.first());
+            assertTrue(result.second().startsWith("Download/apply sync for "));
+        } finally {
+            Files.deleteIfExists(tmpArchive);
+        }
+    }
+
+    @Test
+    public void downloadAndApplyExtensionSyncHandlesIOExceptionDuringApplication() throws IOException {
+        Extension extension = mock(Extension.class);
+        DownloadAndSyncExtensionFilesCommand cmd = mock(DownloadAndSyncExtensionFilesCommand.class);
+        when(cmd.getSyncType()).thenReturn(DownloadAndSyncExtensionFilesCommand.SyncType.Complete);
+        when(cmd.getDownloadUrl()).thenReturn("http://example.com/archive.tgz");
+        when(cmd.getChecksum()).thenReturn("checksum123");
+        Path tmpArchive = Path.of("tmp-dl.tgz");
+        try (MockedStatic<DigestHelper> digestHelperMock = mockStatic(DigestHelper.class);
+             MockedStatic<Files> filesMock = mockStatic(Files.class, Mockito.CALLS_REAL_METHODS);) {
+            filesMock.when(() -> Files.createTempFile(anyString(), anyString())).thenReturn(tmpArchive);
+            doReturn(tmpArchive).when(extensionsFilesystemManager).getExtensionRootPath(extension);
+            doReturn(1024L).when(extensionsShareManager).downloadTo(
+                    eq("http://example.com/archive.tgz"), eq(tmpArchive));
+            digestHelperMock.when(() -> DigestHelper.calculateChecksum(tmpArchive.toFile()))
+                    .thenReturn("checksum123");
+            doThrow(new IOException("Application failed")).when(extensionsShareManager).applyExtensionSync(
+                    eq(extension), eq(DownloadAndSyncExtensionFilesCommand.SyncType.Complete), eq(tmpArchive),
+                    any(Path.class));
+            Pair<Boolean, String> result = extensionsShareManager.downloadAndApplyExtensionSync(extension, cmd);
+            assertFalse(result.first());
+            assertTrue(result.second().startsWith("Download/apply sync for "));
+        } finally {
+            Files.deleteIfExists(tmpArchive);
+        }
+    }
+
+    @Test
+    public void prepareExtensionDownloadReturnsSignedUrlSuccessfully() throws Exception {
+        Extension extension = mock(Extension.class);
+        ManagementServerHost managementServer = mock(ManagementServerHost.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        Path archivePath = Path.of("/path/to/archive.zip");
+        doReturn(archiveInfo).when(extensionsShareManager).createArchiveForDownload(extension);
+        when(archiveInfo.getPath()).thenReturn(archivePath);
+        doReturn("http://example.com/archive.zip").when(extensionsShareManager)
+                .generateSignedArchiveUrl(managementServer, archivePath);
+        Pair<Boolean, String> result = extensionsShareManager.prepareExtensionDownload(extension, managementServer);
+        assertTrue(result.first());
+        assertEquals("http://example.com/archive.zip", result.second());
+    }
+
+    @Test
+    public void prepareExtensionDownloadFailsWhenArchiveCreationThrowsIOException() throws Exception {
+        Extension extension = mock(Extension.class);
+        ManagementServerHost managementServer = mock(ManagementServerHost.class);
+        doThrow(new IOException("Archive creation failed")).when(extensionsShareManager)
+                .createArchiveForDownload(extension);
+        Pair<Boolean, String> result = extensionsShareManager.prepareExtensionDownload(extension, managementServer);
+        assertFalse(result.first());
+        assertEquals("Archive creation failed", result.second());
+    }
+
+    @Test
+    public void prepareExtensionDownloadFailsWhenSignedUrlGenerationThrowsException() throws Exception {
+        Extension extension = mock(Extension.class);
+        ManagementServerHost managementServer = mock(ManagementServerHost.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        Path archivePath = Path.of("/path/to/archive.zip");
+        doReturn(archiveInfo).when(extensionsShareManager).createArchiveForDownload(extension);
+        when(archiveInfo.getPath()).thenReturn(archivePath);
+        doThrow(new NoSuchAlgorithmException("HMAC error")).when(extensionsShareManager)
+                .generateSignedArchiveUrl(managementServer, archivePath);
+        Pair<Boolean, String> result = extensionsShareManager.prepareExtensionDownload(extension, managementServer);
+        assertFalse(result.first());
+        assertEquals("Signed URL generation failed", result.second());
+    }
+
+    @Test
+    public void prepareExtensionDownloadViaSecondaryStorageReturnsSuccessWhenZoneAndStorageAvailable()
+            throws ExecutionException, InterruptedException {
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        when(archiveInfo.getSize()).thenReturn(1024L);
+        when(archiveInfo.getChecksum()).thenReturn("checksum123");
+        String downloadUrl = "http://example.com/archive.zip";
+
+        List<Long> zoneIds = List.of(1L, 2L);
+        when(dataCenterDao.listEnabledNonEdgeZoneIds()).thenReturn(zoneIds);
+
+        SecondaryStorageVmVO ssvm = mock(SecondaryStorageVmVO.class);
+        when(secondaryStorageVmDao.getSecStorageVmListInStates(null, 1L, VirtualMachine.State.Running))
+                .thenReturn(List.of(ssvm));
+
+        ImageStoreEntity imageStore = mock(ImageStoreEntity.class);
+        when(dataStoreManager.getImageStoreWithFreeCapacity(1L)).thenReturn(imageStore);
+
+        AsyncCallFuture<DataObject> future = mock(AsyncCallFuture.class);
+        DataObject dataObject = mock(DataObject.class);
+        DataTO dataTO = mock(DataTO.class);
+        when(dataObject.getTO()).thenReturn(dataTO);
+        when(dataTO.getPath()).thenReturn("path/to/archive.zip");
+        when(future.get()).thenReturn(dataObject);
+        doReturn(future).when(extensionsShareManager)
+                .downloadExtensionArchiveOnSecondaryStorage(eq(imageStore), any(DataObject.class), eq(extension),
+                        eq(archiveInfo));
+        doNothing().when(extensionsShareManager).cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+        when(imageStore.createEntityExtractUrl(anyString(), any(), any())).thenReturn(downloadUrl);
+
+        Pair<Boolean, String> result = extensionsShareManager.downloadExtensionViaSecondaryStorage(extension,
+                archiveInfo, downloadUrl);
+
+        assertTrue(result.first());
+        assertEquals(downloadUrl, result.second());
+    }
+
+    @Test
+    public void prepareExtensionDownloadViaSecondaryStorageReturnsFailureWhenNoZonesAvailable() {
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        String downloadUrl = "http://example.com/archive.zip";
+
+        when(dataCenterDao.listEnabledNonEdgeZoneIds()).thenReturn(Collections.emptyList());
+
+        Pair<Boolean, String> result = extensionsShareManager.downloadExtensionViaSecondaryStorage(extension,
+                archiveInfo, downloadUrl);
+
+        assertFalse(result.first());
+        assertEquals("No enabled zone found for extension download via secondary storage", result.second());
+    }
+
+    @Test
+    public void prepareExtensionDownloadViaSecondaryStorageReturnsFailureWhenNoStorageAvailable() {
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        String downloadUrl = "http://example.com/archive.zip";
+
+        List<Long> zoneIds = List.of(1L);
+        when(dataCenterDao.listEnabledNonEdgeZoneIds()).thenReturn(zoneIds);
+
+        when(secondaryStorageVmDao.getSecStorageVmListInStates(null, 1L, VirtualMachine.State.Running))
+                .thenReturn(Collections.emptyList());
+
+        Pair<Boolean, String> result = extensionsShareManager.downloadExtensionViaSecondaryStorage(extension,
+                archiveInfo, downloadUrl);
+
+        assertFalse(result.first());
+        assertEquals("No secondary storage with sufficient capacity found for extension download", result.second());
+    }
+
+    @Test
+    public void downloadExtensionViaSecondaryStorageReturnsFailureWhenPrepareFailsDownload() throws Exception {
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+        when(archiveInfo.getSize()).thenReturn(1024L);
+        when(archiveInfo.getChecksum()).thenReturn("checksum123");
+        String downloadUrl = "http://example.com/archive.zip";
+
+        List<Long> zoneIds = List.of(1L);
+        when(dataCenterDao.listEnabledNonEdgeZoneIds()).thenReturn(zoneIds);
+
+        SecondaryStorageVmVO ssvm = mock(SecondaryStorageVmVO.class);
+        when(secondaryStorageVmDao.getSecStorageVmListInStates(null, 1L, VirtualMachine.State.Running))
+                .thenReturn(List.of(ssvm));
+
+        ImageStoreEntity imageStore = mock(ImageStoreEntity.class);
+        when(dataStoreManager.getImageStoreWithFreeCapacity(1L)).thenReturn(imageStore);
+
+        AsyncCallFuture<DataObject> future = mock(AsyncCallFuture.class);
+        when(future.get()).thenReturn(null);
+        doReturn(future).when(extensionsShareManager)
+                .downloadExtensionArchiveOnSecondaryStorage(eq(imageStore), any(DataObject.class), eq(extension),
+                        eq(archiveInfo));
+
+        Pair<Boolean, String> result = extensionsShareManager.downloadExtensionViaSecondaryStorage(extension,
+                archiveInfo, downloadUrl);
+
+        assertFalse(result.first());
+        assertEquals("Failed to download extension archive to secondary storage", result.second());
+    }
+
+    @Test
+    public void cleanupExistingExtensionDownloadArchiveAndDetailsRemovesDetailsWhenUrlExists() {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+
+        Map<String, String> details = Map.of(
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY, "http://example.com/archive.zip",
+                ApiConstants.IMAGE_STORE_ID, "123",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY, "1000",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY, "/path/to/archive.zip"
+        );
+        when(extensionDetailsDao.listDetailsKeyPairs(1L, false)).thenReturn(details);
+
+        ImageStoreEntity store = mock(ImageStoreEntity.class);
+        when(dataStoreManager.getDataStore(123L, DataStoreRole.Image)).thenReturn(store);
+
+        extensionsShareManager.cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+
+        verify(store).deleteExtractUrl("/path/to/archive.zip", "http://example.com/archive.zip", Upload.Type.ARCHIVE);
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY);
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY);
+        verify(extensionDetailsDao).removeDetail(1L, ApiConstants.IMAGE_STORE_ID);
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY);
+    }
+
+    @Test
+    public void cleanupExistingExtensionDownloadArchiveAndDetailsSkipsWhenNoUrlExists() {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+
+        Map<String, String> details = Map.of();
+        when(extensionDetailsDao.listDetailsKeyPairs(1L, false)).thenReturn(details);
+
+        extensionsShareManager.cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+
+        verifyNoInteractions(dataStoreManager);
+        verify(extensionDetailsDao, never()).removeDetail(anyLong(), anyString());
+    }
+
+    @Test
+    public void cleanupExistingExtensionDownloadArchiveAndDetailsSkipsWhenCutoffNotMet() {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+
+        Map<String, String> details = Map.of(
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY, "http://example.com/archive.zip",
+                ApiConstants.IMAGE_STORE_ID, "123",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY, "2000",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY, "/path/to/archive.zip"
+        );
+        when(extensionDetailsDao.listDetailsKeyPairs(1L, false)).thenReturn(details);
+
+        extensionsShareManager.cleanupExistingExtensionDownloadArchiveAndDetails(extension, 1500L);
+
+        verifyNoInteractions(dataStoreManager);
+        verify(extensionDetailsDao, never()).removeDetail(anyLong(), anyString());
+    }
+
+    @Test
+    public void cleanupExistingExtensionDownloadArchiveAndDetailsHandlesMissingStoreGracefully() {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+
+        Map<String, String> details = Map.of(
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY, "http://example.com/archive.zip",
+                ApiConstants.IMAGE_STORE_ID, "123",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY, "1000",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY, "/path/to/archive.zip"
+        );
+        when(extensionDetailsDao.listDetailsKeyPairs(1L, false)).thenReturn(details);
+
+        when(dataStoreManager.getDataStore(123L, DataStoreRole.Image)).thenReturn(null);
+
+        extensionsShareManager.cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY);
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY);
+        verify(extensionDetailsDao).removeDetail(1L, ApiConstants.IMAGE_STORE_ID);
+        verify(extensionDetailsDao).removeDetail(1L, ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY);
+    }
+
+    @Test
+    public void cleanupExistingExtensionDownloadArchiveAndDetailsHandlesCloudRuntimeException() {
+        Extension extension = mock(Extension.class);
+        when(extension.getId()).thenReturn(1L);
+
+        Map<String, String> details = Map.of(
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_URL_DETAIL_KEY, "http://example.com/archive.zip",
+                ApiConstants.IMAGE_STORE_ID, "123",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_TIMESTAMP_DETAIL_KEY, "1000",
+                ExtensionsShareManagerImpl.IMAGE_STORE_DOWNLOAD_PATH_DETAIL_KEY, "/path/to/archive.zip"
+        );
+        when(extensionDetailsDao.listDetailsKeyPairs(1L, false)).thenReturn(details);
+
+        DataStore store = mock(ImageStoreEntity.class);
+        when(dataStoreManager.getDataStore(123L, DataStoreRole.Image)).thenReturn(store);
+        doThrow(new CloudRuntimeException("Error")).when((ImageStoreEntity) store).deleteExtractUrl(
+                anyString(), anyString(), any());
+
+        extensionsShareManager.cleanupExistingExtensionDownloadArchiveAndDetails(extension, null);
+
+        verify(extensionDetailsDao, never()).removeDetail(anyLong(), anyString());
+    }
+
+    @Test
+    public void prepareExtensionDownloadArchiveOnSecondaryStorageCompletesSuccessfully() {
+        DataStore imageStore = mock(DataStore.class);
+        DataStoreDriver imageStoreDriver = mock(DataStoreDriver.class);
+        when(imageStore.getDriver()).thenReturn(imageStoreDriver);
+        DataObject archiveOnStore = mock(DataObject.class);
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+
+        doNothing().when(imageStoreDriver).createAsync(eq(imageStore), eq(archiveOnStore), any());
+
+        AsyncCallFuture<DataObject> result = extensionsShareManager.downloadExtensionArchiveOnSecondaryStorage(
+                imageStore, archiveOnStore, extension, archiveInfo);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    public void prepareExtensionDownloadArchiveOnSecondaryStorageHandlesCloudRuntimeException()
+            throws ExecutionException, InterruptedException {
+        DataStore imageStore = mock(DataStore.class);
+        DataObject archiveOnStore = mock(DataObject.class);
+        Extension extension = mock(Extension.class);
+        ExtensionsShareManagerImpl.ArchiveInfo archiveInfo = mock(ExtensionsShareManagerImpl.ArchiveInfo.class);
+
+        when(imageStore.getDriver()).thenThrow(new CloudRuntimeException("Error"));
+
+        AsyncCallFuture<DataObject> result = extensionsShareManager.downloadExtensionArchiveOnSecondaryStorage(
+                imageStore, archiveOnStore, extension, archiveInfo);
+
+        assertNotNull(result);
+        assertNull(result.get());
+    }
+
+    @Test
+    public void prepareExtensionDownloadArchiveAsyncCallbackCompletesSuccessfully()
+            throws ExecutionException, InterruptedException {
+        CreateCmdResult result = mock(CreateCmdResult.class);
+        when(result.isSuccess()).thenReturn(true);
+        when(result.getPath()).thenReturn("path/to/archive");
+
+        ExtensionArchiveDataObject dataObject = mock(ExtensionArchiveDataObject.class);
+        AsyncCallFuture<DataObject> future = new AsyncCallFuture<>();
+        ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<CommandResult> context =
+                new ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<>(
+                        null, null, null, dataObject, future);
+
+        AsyncCallbackDispatcher<ExtensionsShareManagerImpl, CreateCmdResult> callback =
+                mock(AsyncCallbackDispatcher.class);
+        when(callback.getResult()).thenReturn(result);
+
+        extensionsShareManager.downloadExtensionArchiveOnSecondaryStorageAsyncCallback(callback, context);
+
+        assertNotNull(future.get());
+        verify(dataObject).setPath("path/to/archive");
+        verify(dataObject).processEvent(ObjectInDataStoreStateMachine.Event.OperationSucceeded);
+    }
+
+    @Test
+    public void prepareExtensionDownloadArchiveAsyncCallbackHandlesNullResult()
+            throws ExecutionException, InterruptedException {
+        AsyncCallFuture<DataObject> future = new AsyncCallFuture<>();
+        ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<CommandResult> context =
+                new ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<>(
+                        null, null, null, mock(DataObject.class), future);
+
+        AsyncCallbackDispatcher<ExtensionsShareManagerImpl, CreateCmdResult> callback =
+                mock(AsyncCallbackDispatcher.class);
+        when(callback.getResult()).thenReturn(null);
+
+        extensionsShareManager.downloadExtensionArchiveOnSecondaryStorageAsyncCallback(callback, context);
+
+        assertNull(future.get());
+    }
+
+    @Test
+    public void prepareExtensionDownloadArchiveAsyncCallbackHandlesFailedResult()
+            throws ExecutionException, InterruptedException {
+        CreateCmdResult result = mock(CreateCmdResult.class);
+        when(result.isSuccess()).thenReturn(false);
+        when(result.getResult()).thenReturn("Error");
+
+        AsyncCallFuture<DataObject> future = new AsyncCallFuture<>();
+        ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<CommandResult> context =
+                new ExtensionsShareManagerImpl.DownloadExtensionArchiveOnSecondaryStorageContext<>(
+                        null, null, null, mock(DataObject.class), future);
+
+        AsyncCallbackDispatcher<ExtensionsShareManagerImpl, CreateCmdResult> callback = mock(AsyncCallbackDispatcher.class);
+        when(callback.getResult()).thenReturn(result);
+
+        extensionsShareManager.downloadExtensionArchiveOnSecondaryStorageAsyncCallback(callback, context);
+
+        assertNull(future.get());
+    }
+
+    @Test
+    public void cleanupExtensionsShareFilesOnSecondaryStorageSkipsWhenNoManagementServerHost() {
+        when(managementServerHostDao.findOneByLongestRuntime()).thenReturn(null);
+
+        extensionsShareManager.cleanupExtensionsShareFilesOnSecondaryStorage(1000L);
+
+        verifyNoInteractions(extensionDao);
+    }
+
+    @Test
+    public void cleanupExtensionsShareFilesOnSecondaryStorageSkipsWhenNotCurrentManagementServer() {
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        when(msHost.getMsid()).thenReturn(12345L);
+        when(managementServerHostDao.findOneByLongestRuntime()).thenReturn(msHost);
+        try (MockedStatic<ManagementServerNode> managementServerNodeMock = mockStatic(ManagementServerNode.class)) {
+            managementServerNodeMock.when(ManagementServerNode::getManagementServerId).thenReturn(67890L);
+
+            extensionsShareManager.cleanupExtensionsShareFilesOnSecondaryStorage(1000L);
+
+            verifyNoInteractions(extensionDao);
+        }
+    }
+
+    @Test
+    public void cleanupExtensionsShareFilesOnSecondaryStorageProcessesAllExtensions() {
+        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+        when(msHost.getMsid()).thenReturn(12345L);
+        when(managementServerHostDao.findOneByLongestRuntime()).thenReturn(msHost);
+        try (MockedStatic<ManagementServerNode> managementServerNodeMock = mockStatic(ManagementServerNode.class)) {
+            managementServerNodeMock.when(ManagementServerNode::getManagementServerId).thenReturn(12345L);
+
+            ExtensionVO extension1 = mock(ExtensionVO.class);
+            ExtensionVO extension2 = mock(ExtensionVO.class);
+            when(extensionDao.listAll()).thenReturn(List.of(extension1, extension2));
+
+            extensionsShareManager.cleanupExtensionsShareFilesOnSecondaryStorage(1000L);
+
+            verify(extensionDao).listAll();
+            verify(extensionsShareManager).cleanupExistingExtensionDownloadArchiveAndDetails(extension1, 1000L);
+            verify(extensionsShareManager).cleanupExistingExtensionDownloadArchiveAndDetails(extension2, 1000L);
+        }
+    }
+}

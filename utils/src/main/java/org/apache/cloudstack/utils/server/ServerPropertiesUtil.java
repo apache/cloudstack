@@ -20,9 +20,11 @@ package org.apache.cloudstack.utils.server;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +32,14 @@ import com.cloud.utils.PropertiesUtil;
 
 public class ServerPropertiesUtil {
     private static final Logger logger = LoggerFactory.getLogger(ServerPropertiesUtil.class);
+
+    public static final String SHARE_DIR = "share";
+    private static final String CONTEXT_PATH = "context.path";
+    private static final String SHARE_ENABLED = "share.enabled";
+    private static final String SHARE_BASE_DIR = "share.base.dir";
+    private static final String SHARE_CACHE_CONTROL = "share.cache.control";
+    private static final String SHARE_SECRET = "share.secret";
+
     protected static final String PROPERTIES_FILE = "server.properties";
     protected static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
 
@@ -54,5 +64,67 @@ public class ServerPropertiesUtil {
             tempProps = propertiesRef.get();
         }
         return tempProps.getProperty(name);
+    }
+
+    public static String getProperty(String name, String defaultValue) {
+        String value = getProperty(name);
+        if (value == null) {
+            value = defaultValue;
+        }
+        return value;
+    }
+
+    public static boolean getShareEnabled() {
+        return Boolean.parseBoolean(getProperty(SHARE_ENABLED, "true"));
+    }
+
+    protected static boolean isMavenRun() {
+        String args = ManagementFactory.getRuntimeMXBean().getInputArguments().toString();
+        String sunCmd = System.getProperty("sun.java.command", "");
+        String combined = args + " " + sunCmd;
+
+        String[] mavenMarkers = new String[]{
+                "org.codehaus.plexus.classworlds.launcher.Launcher",
+                "org.apache.maven.wrapper.MavenWrapperMain",
+                "org.apache.maven.cli.MavenCli",
+                "org.apache.maven.surefire.booter.ForkedBooter",
+                "org.apache.maven.surefire.booter.SurefireBooter"
+        };
+        for (String marker : mavenMarkers) {
+            if (combined.contains(marker)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static String getShareBaseDirectory() {
+        String shareBaseDir = getProperty(SHARE_BASE_DIR);
+        if (StringUtils.isNotBlank(shareBaseDir)) {
+            return shareBaseDir;
+        }
+        if (isMavenRun()) {
+            // when running from maven, use a share directory from client/target in the current working directory
+            return String.format("%1$s%2$sclient%2$starget%2$s%3$s", System.getProperty("user.dir"), File.separator,
+                    SHARE_DIR);
+        }
+        return System.getProperty("user.home") + File.separator + SHARE_DIR;
+    }
+
+    public static String getShareCacheControl() {
+        return getProperty(SHARE_CACHE_CONTROL, "public,max-age=86400,immutable");
+    }
+
+    public static String getShareSecret() {
+        return getProperty(SHARE_SECRET);
+    }
+
+    public static String getShareUriPath() {
+        String sharePath = String.format("/%s", SHARE_DIR);
+        if (isMavenRun()) {
+            // when running from maven, share context is under root context - /client/share
+            return String.format("%s%s", getProperty(CONTEXT_PATH, ""), sharePath);
+        }
+        return sharePath;
     }
 }

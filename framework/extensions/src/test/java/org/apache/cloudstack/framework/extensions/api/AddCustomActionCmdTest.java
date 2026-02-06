@@ -40,9 +40,10 @@ import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.commons.collections.MapUtils;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -51,15 +52,11 @@ import com.cloud.user.Account;
 @RunWith(MockitoJUnitRunner.class)
 public class AddCustomActionCmdTest {
 
-    private AddCustomActionCmd cmd;
+    @Mock
     private ExtensionsManager extensionsManager;
 
-    @Before
-    public void setUp() throws Exception {
-        cmd = new AddCustomActionCmd();
-        extensionsManager = mock(ExtensionsManager.class);
-        cmd.extensionsManager = extensionsManager;
-    }
+    @InjectMocks
+    private AddCustomActionCmd cmd = new AddCustomActionCmd();
 
     private void setField(String fieldName, Object value) {
         ReflectionTestUtils.setField(cmd, fieldName, value);
