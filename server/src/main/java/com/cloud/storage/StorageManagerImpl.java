@@ -3596,6 +3596,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (((ImageStoreProvider)storeProvider).needDownloadSysTemplate()) {
             // trigger system vm template download
+            new SystemVmTemplateRegistration().updateSystemVmTemplateUrlsForNonNfsStores();
             _imageSrv.downloadBootstrapSysTemplate(store);
         } else {
             // populate template_store_ref table
