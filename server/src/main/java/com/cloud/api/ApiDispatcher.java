@@ -121,7 +121,7 @@ public class ApiDispatcher {
 
         final CallContext ctx = CallContext.current();
         ctx.setEventDisplayEnabled(cmd.isDisplay());
-        if(params.get(ApiConstants.PROJECT_ID) != null) {
+        if (params.get(ApiConstants.PROJECT_ID) != null) {
             Project project = _entityMgr.findByUuidIncludingRemoved(Project.class, params.get(ApiConstants.PROJECT_ID));
             ctx.setProject(project);
         }
@@ -135,7 +135,6 @@ public class ApiDispatcher {
 
         // TODO This if shouldn't be here. Use polymorphism and move it to validateSpecificParameters
         if (cmd instanceof BaseAsyncCmd) {
-
             final BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
             final String startEventId = params.get(ApiConstants.CTX_START_EVENT_ID);
             ctx.setStartEventId(Long.parseLong(startEventId));

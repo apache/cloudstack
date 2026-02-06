@@ -50,18 +50,19 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                 public SyncQueueVO doInTransaction(TransactionStatus status) {
                     _syncQueueDao.ensureQueue(syncObjType, syncObjId);
                     SyncQueueVO queueVO = _syncQueueDao.find(syncObjType, syncObjId);
-                    if (queueVO == null)
+                    if (queueVO == null) {
                         throw new CloudRuntimeException("Unable to queue item into DB, DB is full?");
+                    }
 
                     queueVO.setQueueSizeLimit(queueSizeLimit);
                     _syncQueueDao.update(queueVO.getId(), queueVO);
 
-                    Date dt = DateUtil.currentGMTTime();
+                    Date date = DateUtil.currentGMTTime();
                     SyncQueueItemVO item = new SyncQueueItemVO();
                     item.setQueueId(queueVO.getId());
                     item.setContentType(itemType);
                     item.setContentId(itemId);
-                    item.setCreated(dt);
+                    item.setCreated(date);
 
                     _syncQueueItemDao.persist(item);
                     return queueVO;
@@ -181,9 +182,8 @@ public class SyncQueueManagerImpl extends ManagerBase implements SyncQueueManage
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     SyncQueueItemVO itemVO = _syncQueueItemDao.findById(queueItemId);
-                    if(itemVO != null) {
+                    if (itemVO != null) {
                         SyncQueueVO queueVO = _syncQueueDao.findById(itemVO.getQueueId());
-
                         _syncQueueItemDao.expunge(itemVO.getId());
 
                         // if item is active, reset queue information

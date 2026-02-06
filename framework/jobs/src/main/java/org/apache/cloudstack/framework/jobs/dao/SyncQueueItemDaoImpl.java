@@ -162,14 +162,14 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
         sbItem.and("lastProcessNumber", sbItem.entity().getLastProcessNumber(), SearchCriteria.Op.NNULL);
         sbItem.and("lastProcessTime", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.NNULL);
         sbItem.and("lastProcessTime2", sbItem.entity().getLastProcessTime(), SearchCriteria.Op.LT);
-
         sbItem.done();
 
         SearchCriteria<SyncQueueItemVO> sc = sbItem.create();
         sc.setParameters("lastProcessTime2", new Date(cutTime.getTime() - thresholdMs));
 
-        if(exclusive)
+        if (exclusive) {
             return lockRows(sc, null, true);
+        }
         return listBy(sc, null);
     }
 
