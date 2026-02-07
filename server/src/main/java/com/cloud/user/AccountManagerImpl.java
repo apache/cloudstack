@@ -2118,15 +2118,30 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return deleteAccount(account, callerUserId, caller);
     }
 
-    protected void checkIfAccountManagesProjects(long accountId) {
-        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
-        if (!CollectionUtils.isEmpty(managedProjectIds)) {
-            throw new InvalidParameterValueException(String.format(
-                    "Unable to delete account [%s], because it manages the following project(s): %s. Please, remove the account from these projects or demote it to a regular project role first.",
-                    accountId, managedProjectIds
-            ));
+protected void checkIfAccountManagesProjects(long accountId) {
+    List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
+
+    if (CollectionUtils.isEmpty(managedProjectIds)) {
+        return;
+    }
+
+    List<Long> activeManagedProjects = new ArrayList<>();
+
+    for (Long projectId : managedProjectIds) {
+        ProjectVO project = _projectDao.findById(projectId);
+        if (project != null && project.getRemoved() == null) {
+            activeManagedProjects.add(projectId);
         }
     }
+
+    if (!activeManagedProjects.isEmpty()) {
+        throw new InvalidParameterValueException(String.format(
+                "Unable to delete account [%s], because it manages the following project(s): %s. Please, remove the account from these projects or demote it to a regular project role first.",
+                accountId, activeManagedProjects
+        ));
+    }
+}
+
 
     protected boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
         if (account == null) {
