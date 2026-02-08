@@ -57,6 +57,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.backup.CreateImageTransferAnswer;
 import org.apache.cloudstack.backup.CreateImageTransferCommand;
 import org.apache.cloudstack.backup.FinalizeImageTransferCommand;
+import org.apache.cloudstack.backup.ImageTransfer;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -3839,10 +3840,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         final String transferId = cmd.getTransferId();
-
         final String hostIp = cmd.getHostIpAddress();
-        final String exportName = cmd.getExportName();
-        final int nbdPort = cmd.getNbdPort();
+        final ImageTransfer.Backend backend = cmd.getBackend();
 
         if (StringUtils.isBlank(transferId)) {
             return new CreateImageTransferAnswer(cmd, false, "transferId is empty.");
@@ -3850,18 +3849,25 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (StringUtils.isBlank(hostIp)) {
             return new CreateImageTransferAnswer(cmd, false, "hostIpAddress is empty.");
         }
-        if (StringUtils.isBlank(exportName)) {
-            return new CreateImageTransferAnswer(cmd, false, "exportName is empty.");
-        }
-        if (nbdPort <= 0) {
-            return new CreateImageTransferAnswer(cmd, false, "Invalid nbdPort: " + nbdPort);
-        }
 
-        final int imageServerPort = 54323;
+        final Map<String, Object> payload = new HashMap<>();
+        payload.put("backend", backend.toString());
 
-        try {
-            // 1) Write /tmp/<transferId> with NBD endpoint details.
-            final Map<String, Object> payload = new HashMap<>();
+        if (backend == ImageTransfer.Backend.file) {
+            final String filePath = cmd.getFile();
+            if (StringUtils.isBlank(filePath)) {
+                return new CreateImageTransferAnswer(cmd, false, "file path is empty for file backend.");
+            }
+            payload.put("file", filePath);
+        } else {
+            final String exportName = cmd.getExportName();
+            final int nbdPort = cmd.getNbdPort();
+            if (StringUtils.isBlank(exportName)) {
+                return new CreateImageTransferAnswer(cmd, false, "exportName is empty.");
+            }
+            if (nbdPort <= 0) {
+                return new CreateImageTransferAnswer(cmd, false, "Invalid nbdPort: " + nbdPort);
+            }
             payload.put("host", hostIp);
             payload.put("port", nbdPort);
             payload.put("export", exportName);
@@ -3869,7 +3875,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if (checkpointId != null) {
                 payload.put("export_bitmap", exportName + "-" + checkpointId.substring(0, 4));
             }
+        }
 
+        try {
             final String json = new GsonBuilder().create().toJson(payload);
             File dir = new File("/tmp/imagetransfer");
             if (!dir.exists()) {
@@ -3883,6 +3891,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new CreateImageTransferAnswer(cmd, false, "Failed to prepare image transfer on SSVM: " + e.getMessage());
         }
 
+        final int imageServerPort = 54323;
         startImageServerIfNotRunning(imageServerPort);
 
         final String transferUrl = String.format("http://%s:%d/images/%s", _publicIp, imageServerPort, transferId);
