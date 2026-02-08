@@ -54,6 +54,9 @@ public class ImageTransferVO implements ImageTransfer {
     @Column(name = "nbd_port")
     private int nbdPort;
 
+    @Column(name = "file")
+    private String file;
+
     @Column(name = "transfer_url")
     private String transferUrl;
 
@@ -64,6 +67,10 @@ public class ImageTransferVO implements ImageTransfer {
     @Enumerated(value = EnumType.STRING)
     @Column(name = "direction")
     private Direction direction;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "backend")
+    private Backend backend;
 
     @Column(name = "signed_ticket_id")
     private String signedTicketId;
@@ -95,18 +102,29 @@ public class ImageTransferVO implements ImageTransfer {
     public ImageTransferVO() {
     }
 
-    public ImageTransferVO(String uuid, Long backupId, long diskId, long hostId, int nbdPort, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
+    private ImageTransferVO(String uuid, long diskId, long hostId, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
         this.uuid = uuid;
-        this.backupId = backupId;
         this.diskId = diskId;
         this.hostId = hostId;
-        this.nbdPort = nbdPort;
         this.phase = phase;
         this.direction = direction;
         this.accountId = accountId;
         this.domainId = domainId;
         this.dataCenterId = dataCenterId;
         this.created = new Date();
+    }
+
+    public ImageTransferVO(String uuid, Long backupId, long diskId, long hostId, int nbdPort, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
+        this(uuid, diskId, hostId, phase, direction, accountId, domainId, dataCenterId);
+        this.backupId = backupId;
+        this.nbdPort = nbdPort;
+        this.backend = Backend.nbd;
+    }
+
+    public ImageTransferVO(String uuid, long diskId, long hostId, String file, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
+        this(uuid, diskId, hostId, phase, direction, accountId, domainId, dataCenterId);
+        this.file = file;
+        this.backend = Backend.file;
     }
 
     @Override
@@ -181,6 +199,11 @@ public class ImageTransferVO implements ImageTransfer {
 
     public void setDirection(Direction direction) {
         this.direction = direction;
+    }
+
+    @Override
+    public Backend getBackend() {
+        return backend;
     }
 
     @Override

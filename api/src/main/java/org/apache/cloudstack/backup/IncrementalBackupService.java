@@ -62,7 +62,7 @@ public interface IncrementalBackupService extends Configurable, PluggableService
      */
     ImageTransferResponse createImageTransfer(CreateImageTransferCmd cmd);
 
-    ImageTransfer createImageTransfer(long volumeId, Long backupId, ImageTransfer.Direction direction);
+    ImageTransfer createImageTransfer(long volumeId, Long backupId, ImageTransfer.Direction direction, ImageTransfer.Format format);
 
     boolean cancelImageTransfer(long imageTransferId);
 

@@ -53,6 +53,7 @@ import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.backup.ImageTransfer.Direction;
+import org.apache.cloudstack.backup.ImageTransfer.Format;
 import org.apache.cloudstack.backup.ImageTransferVO;
 import org.apache.cloudstack.backup.IncrementalBackupService;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
@@ -753,7 +754,8 @@ public class ServerAdapter extends ManagerBase {
         if (direction == null) {
             throw new InvalidParameterValueException("Invalid or missing direction");
         }
-        return createImageTransfer(null, volumeVO.getId(), direction);
+        Format format = EnumUtils.fromString(Format.class, request.getFormat());
+        return createImageTransfer(null, volumeVO.getId(), direction, format);
     }
 
     public boolean handleCancelImageTransfer(String uuid) {
@@ -772,12 +774,12 @@ public class ServerAdapter extends ManagerBase {
         return incrementalBackupService.finalizeImageTransfer(vo.getId());
     }
 
-    private ImageTransfer createImageTransfer(Long backupId, Long volumeId, Direction direction) {
+    private ImageTransfer createImageTransfer(Long backupId, Long volumeId, Direction direction, Format format) {
         Account serviceAccount = createServiceAccountIfNeeded();
         CallContext.register(serviceAccount.getId(), serviceAccount.getId());
         try {
             org.apache.cloudstack.backup.ImageTransfer imageTransfer =
-                    incrementalBackupService.createImageTransfer(volumeId, null, direction);
+                    incrementalBackupService.createImageTransfer(volumeId, null, direction, format);
             ImageTransferVO imageTransferVO = imageTransferDao.findById(imageTransfer.getId());
             return ImageTransferVOToImageTransferConverter.toImageTransfer(imageTransferVO, this::getHostById, this::getVolumeById);
         } finally {

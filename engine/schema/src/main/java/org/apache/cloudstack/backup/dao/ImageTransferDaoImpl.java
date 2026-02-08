@@ -36,6 +36,7 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
     private SearchBuilder<ImageTransferVO> uuidSearch;
     private SearchBuilder<ImageTransferVO> nbdPortSearch;
     private SearchBuilder<ImageTransferVO> volumeSearch;
+    private SearchBuilder<ImageTransferVO> volumeUnfinishedSearch;
     private SearchBuilder<ImageTransferVO> phaseDirectionSearch;
 
     public ImageTransferDaoImpl() {
@@ -58,6 +59,11 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
         volumeSearch = createSearchBuilder();
         volumeSearch.and("volumeId", volumeSearch.entity().getDiskId(), SearchCriteria.Op.EQ);
         volumeSearch.done();
+
+        volumeUnfinishedSearch = createSearchBuilder();
+        volumeUnfinishedSearch.and("volumeId", volumeUnfinishedSearch.entity().getDiskId(), SearchCriteria.Op.EQ);
+        volumeUnfinishedSearch.and("phase", volumeUnfinishedSearch.entity().getPhase(), SearchCriteria.Op.NEQ);
+        volumeUnfinishedSearch.done();
 
         phaseDirectionSearch = createSearchBuilder();
         phaseDirectionSearch.and("phase", phaseDirectionSearch.entity().getPhase(), SearchCriteria.Op.EQ);
@@ -90,6 +96,14 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
     public ImageTransferVO findByVolume(Long volumeId) {
         SearchCriteria<ImageTransferVO> sc = volumeSearch.create();
         sc.setParameters("volumeId", volumeId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public ImageTransferVO findUnfinishedByVolume(Long volumeId) {
+        SearchCriteria<ImageTransferVO> sc = volumeUnfinishedSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        sc.setParameters("phase", ImageTransferVO.Phase.finished.toString());
         return findOneBy(sc);
     }
 

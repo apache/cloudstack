@@ -26,17 +26,33 @@ public class CreateImageTransferCommand extends Command {
     private int nbdPort;
     private String direction;
     private String checkpointId;
+    private String file;
+    private ImageTransfer.Backend backend;
 
     public CreateImageTransferCommand() {
     }
 
-    public CreateImageTransferCommand(String transferId, String hostIpAddress, String exportName, int nbdPort, String direction, String checkpointId) {
+    private CreateImageTransferCommand(String transferId, String hostIpAddress, String direction) {
         this.transferId = transferId;
         this.hostIpAddress = hostIpAddress;
+        this.direction = direction;
+    }
+
+    public CreateImageTransferCommand(String transferId, String hostIpAddress, String direction, String exportName, int nbdPort, String checkpointId) {
+        this(transferId, hostIpAddress, direction);
+        this.backend = ImageTransfer.Backend.nbd;
         this.exportName = exportName;
         this.nbdPort = nbdPort;
-        this.direction = direction;
         this.checkpointId = checkpointId;
+    }
+
+    public CreateImageTransferCommand(String transferId, String hostIpAddress, String direction, String file) {
+        this(transferId, hostIpAddress, direction);
+        if (direction == ImageTransfer.Direction.download.toString()) {
+            throw new IllegalArgumentException("File backend is only supported for upload");
+        }
+        this.backend = ImageTransfer.Backend.file;
+        this.file = file;
     }
 
     public String getExportName() {
@@ -45,6 +61,14 @@ public class CreateImageTransferCommand extends Command {
 
     public int getNbdPort() {
         return nbdPort;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public ImageTransfer.Backend getBackend() {
+        return backend;
     }
 
     public String getHostIpAddress() {

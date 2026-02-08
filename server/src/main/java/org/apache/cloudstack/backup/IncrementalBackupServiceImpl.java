@@ -50,7 +50,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Component;
@@ -251,8 +250,11 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
 
         List<ImageTransferVO> transfers = imageTransferDao.listByBackupId(backupId);
-        if (CollectionUtils.isNotEmpty(transfers)) {
-            throw new CloudRuntimeException("Image transfers not finalized for backup: " + backupId);
+        for (ImageTransferVO transfer : transfers) {
+            if (transfer.getPhase() != ImageTransferVO.Phase.finished) {
+                throw new CloudRuntimeException(String.format("Image transfer %s not finalized for backup: %s", transfer.getUuid(), backup.getUuid()));
+            }
+            imageTransferDao.remove(transfer.getId());
         }
 
         if (vm.getState() == State.Running) {
@@ -294,13 +296,16 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     }
 
-    private ImageTransferVO createDownloadImageTransfer(Long backupId, VolumeVO volume) {
+    private ImageTransferVO createDownloadImageTransfer(Long backupId, VolumeVO volume, ImageTransfer.Backend backend) {
         final String direction = ImageTransfer.Direction.download.toString();
         BackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup not found: " + backupId);
         }
         boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
+        if (ImageTransfer.Backend.file.equals(backend)) {
+            throw new CloudRuntimeException("File backend is not supported for download");
+        }
 
         String transferId = UUID.randomUUID().toString();
         Host host = hostDao.findById(backup.getHostId());
@@ -314,11 +319,10 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         CreateImageTransferCommand transferCmd = new CreateImageTransferCommand(
                 transferId,
                 host.getPrivateIpAddress(),
+                direction,
                 volume.getUuid(),
                 backup.getNbdPort(),
-                direction,
-                backup.getFromCheckpointId()
-        );
+                backup.getFromCheckpointId());
 
         try {
             CreateImageTransferAnswer answer;
@@ -396,49 +400,69 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         return volumePath;
     }
 
-    private ImageTransferVO createUploadImageTransfer(VolumeVO volume) {
+    private ImageTransferVO createUploadImageTransfer(VolumeVO volume, ImageTransfer.Backend backend) {
         final String direction = ImageTransfer.Direction.upload.toString();
         String transferId = UUID.randomUUID().toString();
-        int nbdPort = allocateNbdPort();
 
         Long poolId = volume.getPoolId();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
         Host host = getFirstHostFromStoragePool(storagePoolVO);
         String volumePath = getVolumePathForFileBasedBackend(volume);
 
-        startNBDServer(transferId, direction, host, volume.getUuid(), volumePath, nbdPort);
+        ImageTransferVO imageTransfer;
+        CreateImageTransferCommand transferCmd;
+        if (backend.equals(ImageTransfer.Backend.file)) {
+            imageTransfer = new ImageTransferVO(
+                    transferId,
+                    volume.getId(),
+                    host.getId(),
+                    volumePath,
+                    ImageTransferVO.Phase.transferring,
+                    ImageTransfer.Direction.upload,
+                    volume.getAccountId(),
+                    volume.getDomainId(),
+                    volume.getDataCenterId());
 
-        ImageTransferVO imageTransfer = new ImageTransferVO(
-                transferId,
-                null,
-                volume.getId(),
-                host.getId(),
-                nbdPort,
-                ImageTransferVO.Phase.transferring,
-                ImageTransfer.Direction.upload,
-                volume.getAccountId(),
-                volume.getDomainId(),
-                volume.getDataCenterId()
-        );
+            transferCmd = new CreateImageTransferCommand(
+                    transferId,
+                    host.getPrivateIpAddress(),
+                    direction,
+                    volumePath);
 
-        CreateImageTransferAnswer transferAnswer;
-        CreateImageTransferCommand transferCmd = new CreateImageTransferCommand(
-                transferId,
-                host.getPrivateIpAddress(),
-                volume.getUuid(),
-                nbdPort,
-                direction,
-                null
-        );
+        } else {
+            int nbdPort = allocateNbdPort();
+            startNBDServer(transferId, direction, host, volume.getUuid(), volumePath, nbdPort);
+            imageTransfer = new ImageTransferVO(
+                    transferId,
+                    null,
+                    volume.getId(),
+                    host.getId(),
+                    nbdPort,
+                    ImageTransferVO.Phase.transferring,
+                    ImageTransfer.Direction.upload,
+                    volume.getAccountId(),
+                    volume.getDomainId(),
+                    volume.getDataCenterId());
 
-        EndPoint ssvm = _epSelector.findSsvm(volume.getDataCenterId());
-        transferAnswer = (CreateImageTransferAnswer) ssvm.sendMessage(transferCmd);
-
-        if (!transferAnswer.getResult()) {
-            stopNbdServer(imageTransfer);
-            throw new CloudRuntimeException("Failed to create image transfer: " + transferAnswer.getDetails());
+            transferCmd = new CreateImageTransferCommand(
+                    transferId,
+                    host.getPrivateIpAddress(),
+                    direction,
+                    volume.getUuid(),
+                    nbdPort,
+                    null);
         }
 
+
+        EndPoint ssvm = _epSelector.findSsvm(volume.getDataCenterId());
+        CreateImageTransferAnswer transferAnswer = (CreateImageTransferAnswer) ssvm.sendMessage(transferCmd);
+
+        if (!transferAnswer.getResult()) {
+            if (!backend.equals(ImageTransfer.Backend.file)) {
+                stopNbdServer(imageTransfer);
+            }
+            throw new CloudRuntimeException("Failed to create image transfer: " + transferAnswer.getDetails());
+        }
 
         imageTransfer.setTransferUrl(transferAnswer.getTransferUrl());
         imageTransfer.setSignedTicketId(transferAnswer.getImageTransferId());
@@ -447,9 +471,21 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     }
 
+    private ImageTransfer.Backend getImageTransferBackend(ImageTransfer.Format format, ImageTransfer.Direction direction) {
+        if (ImageTransfer.Format.cow.equals(format)) {
+            if (ImageTransfer.Direction.download.equals(direction)) {
+                logger.debug("Using NBD backend for download");
+                return ImageTransfer.Backend.nbd;
+            }
+            return ImageTransfer.Backend.file;
+        } else {
+            return ImageTransfer.Backend.nbd;
+        }
+    }
+
     @Override
     public ImageTransferResponse createImageTransfer(CreateImageTransferCmd cmd) {
-        ImageTransfer imageTransfer = createImageTransfer(cmd.getVolumeId(), cmd.getBackupId(), cmd.getDirection());
+        ImageTransfer imageTransfer = createImageTransfer(cmd.getVolumeId(), cmd.getBackupId(), cmd.getDirection(), cmd.getFormat());
         if (imageTransfer instanceof ImageTransferVO) {
             ImageTransferVO imageTransferVO = (ImageTransferVO) imageTransfer;
             return toImageTransferResponse(imageTransferVO);
@@ -458,19 +494,20 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
     }
 
     @Override
-    public ImageTransfer createImageTransfer(long volumeId, Long backupId, ImageTransfer.Direction direction) {
+    public ImageTransfer createImageTransfer(long volumeId, Long backupId, ImageTransfer.Direction direction, ImageTransfer.Format format) {
         ImageTransfer imageTransfer;
         VolumeVO volume = volumeDao.findById(volumeId);
 
-        ImageTransferVO existingTransfer = imageTransferDao.findByVolume(volume.getId());
+        ImageTransferVO existingTransfer = imageTransferDao.findUnfinishedByVolume(volume.getId());
         if (existingTransfer != null) {
             throw new CloudRuntimeException("Image transfer already in progress for volume: " + volume.getUuid());
         }
 
+        ImageTransfer.Backend backend = getImageTransferBackend(format, direction);
         if (ImageTransfer.Direction.upload.equals(direction)) {
-            imageTransfer = createUploadImageTransfer(volume);
+            imageTransfer = createUploadImageTransfer(volume, backend);
         } else if (ImageTransfer.Direction.download.equals(direction)) {
-            imageTransfer = createDownloadImageTransfer(backupId, volume);
+            imageTransfer = createDownloadImageTransfer(backupId, volume, backend);
         } else {
             throw new CloudRuntimeException("Invalid direction: " + direction);
         }

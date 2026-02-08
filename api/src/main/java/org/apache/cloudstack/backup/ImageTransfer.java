@@ -27,6 +27,16 @@ public interface ImageTransfer extends ControlledEntity, InternalIdentity {
         upload, download
     }
 
+    public enum Format {
+        raw,
+        cow
+    }
+
+    public enum Backend {
+        nbd,
+        file
+    }
+
     public enum Phase {
         initializing, transferring, finished, failed
     }
@@ -46,6 +56,8 @@ public interface ImageTransfer extends ControlledEntity, InternalIdentity {
     Phase getPhase();
 
     Direction getDirection();
+
+    Backend getBackend();
 
     String getSignedTicketId();
 }

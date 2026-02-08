@@ -32,6 +32,8 @@ import org.apache.cloudstack.backup.ImageTransfer;
 import org.apache.cloudstack.backup.IncrementalBackupService;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.utils.EnumUtils;
+
 @APICommand(name = "createImageTransfer",
         description = "Create image transfer for a disk in backup",
         responseObject = ImageTransferResponse.class,
@@ -61,6 +63,11 @@ public class CreateImageTransferCmd extends BaseCmd implements AdminCmd {
             description = "Direction of the transfer: upload, download")
     private String direction;
 
+    @Parameter(name = ApiConstants.FORMAT,
+            type = CommandType.STRING,
+            description = "Format of the image: cow/raw. Currently only raw is supported for download. Defaults to raw if not provided")
+    private String format;
+
     public Long getBackupId() {
         return backupId;
     }
@@ -73,7 +80,11 @@ public class CreateImageTransferCmd extends BaseCmd implements AdminCmd {
         return ImageTransfer.Direction.valueOf(direction);
     }
 
-    @Override
+    public ImageTransfer.Format getFormat() {
+        return EnumUtils.fromString(ImageTransfer.Format.class, format);
+    }
+
+   @Override
     public void execute() {
         ImageTransferResponse response = incrementalBackupService.createImageTransfer(this);
         response.setResponseName(getCommandName());

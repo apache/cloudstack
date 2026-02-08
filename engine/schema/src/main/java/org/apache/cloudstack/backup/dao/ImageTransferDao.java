@@ -29,5 +29,6 @@ public interface ImageTransferDao extends GenericDao<ImageTransferVO, Long> {
     ImageTransferVO findByUuid(String uuid);
     ImageTransferVO findByNbdPort(int port);
     ImageTransferVO findByVolume(Long volumeId);
+    ImageTransferVO findUnfinishedByVolume(Long volumeId);
     List<ImageTransferVO> listByPhaseAndDirection(ImageTransfer.Phase phase, ImageTransfer.Direction direction);
 }
