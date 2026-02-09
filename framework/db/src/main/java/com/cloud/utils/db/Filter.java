@@ -57,7 +57,7 @@ public class Filter {
     }
 
     public Filter(long limit) {
-        this(limit, true);
+        this(limit, false);
     }
 
     /**
@@ -68,10 +68,8 @@ public class Filter {
     public Filter(long limit, boolean randomize) {
         if (randomize) {
             _orderBy = " ORDER BY RAND()" ;
-            _limit = limit;
-        } else {
-            _limit = limit;
         }
+        _limit = limit;
     }
 
     public Filter(Long offset, Long limit) {

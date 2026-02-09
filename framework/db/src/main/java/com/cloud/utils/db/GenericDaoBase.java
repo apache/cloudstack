@@ -1324,7 +1324,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         Filter filter = null;
         final long batchSizeFinal = ObjectUtils.defaultIfNull(batchSize, 0L);
         if (batchSizeFinal > 0) {
-            filter = new Filter(null, batchSizeFinal);
+            filter = new Filter(batchSizeFinal);
         }
         int expunged = 0;
         int currentExpunged = 0;
