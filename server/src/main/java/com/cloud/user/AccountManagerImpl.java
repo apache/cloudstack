@@ -2115,10 +2115,12 @@ protected void checkIfAccountManagesProjects(long accountId) {
     }
 
     if (!activeManagedProjects.isEmpty()) {
-        throw new InvalidParameterValueException(String.format(
+        throw new InvalidParameterValueException(
+            String.format(
                 "Unable to delete account [%s], because it manages the following project(s): %s. Please, remove the account from these projects or demote it to a regular project role first.",
                 accountId, activeManagedProjects
-        ));
+        )
+    );
     }
 }
 
