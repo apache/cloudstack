@@ -420,7 +420,7 @@ export default {
       }
     },
     handleWriteCacheTypeChange (val) {
-      this.form.writeCacheType = val
+      this.form.writecachetype = val
     },
     isDomainAdmin () {
       return ['DomainAdmin'].includes(this.$store.getters.userInfo.roletype)

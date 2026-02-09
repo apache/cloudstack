@@ -68,7 +68,7 @@ import DetailsInput from '@/components/widgets/DetailsInput'
 import store from '@/store'
 
 export default {
-  name: 'CreateComputeOffering',
+  name: 'CloneComputeOffering',
   mixins: [mixinForm],
   components: {
     ComputeOfferingForm,
@@ -404,7 +404,7 @@ export default {
       }).then(json => {
         this.diskOfferings = json.listdiskofferingsresponse.diskoffering || []
         if (this.selectedDiskOfferingId === '') {
-          this.selectedDiskOfferingId = this.diskOfferings[0].id || ''
+          this.selectedDiskOfferingId = this.diskOfferings?.[0]?.id || ''
         }
       }).finally(() => {
         this.diskOfferingLoading = false
@@ -636,7 +636,7 @@ export default {
         }
 
         params.sourceofferingid = this.resource.id
-
+        this.loading = true
         postAPI('cloneServiceOffering', params).then(json => {
           const message = this.isSystem
             ? `${this.$t('message.clone.service.offering')}: `

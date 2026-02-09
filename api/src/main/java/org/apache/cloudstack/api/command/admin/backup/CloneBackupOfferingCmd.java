@@ -48,7 +48,7 @@ import java.util.function.LongFunction;
 
 @APICommand(name = "cloneBackupOffering",
         description = "Clones a backup offering from an existing offering",
-        responseObject = BackupOfferingResponse.class, since = "4.14.0",
+        responseObject = BackupOfferingResponse.class, since = "4.23.0",
         authorized = {RoleType.Admin})
 public class CloneBackupOfferingCmd extends BaseAsyncCmd implements DomainAndZoneIdResolver {
 
@@ -63,7 +63,7 @@ public class CloneBackupOfferingCmd extends BaseAsyncCmd implements DomainAndZon
             required = true, description = "The ID of the source backup offering to clone from")
     private Long sourceOfferingId;
 
-    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, required = false,
+    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, required = true,
             description = "The name of the cloned offering")
     private String name;
 

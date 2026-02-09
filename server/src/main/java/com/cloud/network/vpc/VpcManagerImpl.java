@@ -955,7 +955,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
                 normalizedDropServices.add(service.getName());
             }
-            finalServices.removeAll(dropServices);
+            finalServices.removeAll(normalizedDropServices);
             logger.debug("Dropped services from clone: {}", dropServices);
         }
 
