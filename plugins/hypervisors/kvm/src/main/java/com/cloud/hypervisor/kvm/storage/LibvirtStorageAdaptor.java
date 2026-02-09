@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.utils.script.OutputInterpreter;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuImageOptions;
@@ -254,9 +255,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             try {
                 vol = pool.storageVolLookupByName(volName);
-                logger.debug("Found volume " + volName + " in storage pool " + pool.getName() + " after refreshing the pool");
+                if (vol != null) {
+                    logger.debug("Found volume " + volName + " in storage pool " + pool.getName() + " after refreshing the pool");
+                }
             } catch (LibvirtException e) {
-                throw new CloudRuntimeException("Could not find volume " + volName + ": " + e.getMessage());
+                logger.debug("Volume " + volName + " still not found after pool refresh: " + e.getMessage());
+                return null;
             }
         }
 
@@ -663,6 +667,17 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         try {
             StorageVol vol = getVolume(libvirtPool.getPool(), volumeUuid);
+
+            // Check if volume was found - if null, treat as not found and trigger fallback for CLVM
+            if (vol == null) {
+                logger.debug("Volume " + volumeUuid + " not found in libvirt, will check for CLVM fallback");
+                if (pool.getType() == StoragePoolType.CLVM) {
+                    return getPhysicalDisk(volumeUuid, pool, libvirtPool);
+                }
+
+                throw new CloudRuntimeException("Volume " + volumeUuid + " not found in libvirt pool");
+            }
+
             KVMPhysicalDisk disk;
             LibvirtStorageVolumeDef voldef = getStorageVolumeDef(libvirtPool.getPool().getConnect(), vol);
             disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
@@ -693,8 +708,150 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
             return disk;
         } catch (LibvirtException e) {
-            logger.debug("Failed to get physical disk:", e);
+            logger.debug("Failed to get volume from libvirt: " + e.getMessage());
+            // For CLVM, try direct block device access as fallback
+            if (pool.getType() == StoragePoolType.CLVM) {
+                return getPhysicalDisk(volumeUuid, pool, libvirtPool);
+            }
+
             throw new CloudRuntimeException(e.toString());
+        }
+    }
+
+    private KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool, LibvirtStoragePool libvirtPool) {
+        logger.info("CLVM volume not visible to libvirt, attempting direct block device access for volume: {}", volumeUuid);
+
+        try {
+            logger.debug("Refreshing libvirt storage pool: {}", pool.getUuid());
+            libvirtPool.getPool().refresh(0);
+
+            StorageVol vol = getVolume(libvirtPool.getPool(), volumeUuid);
+            if (vol != null) {
+                logger.info("Volume found after pool refresh: {}", volumeUuid);
+                KVMPhysicalDisk disk;
+                LibvirtStorageVolumeDef voldef = getStorageVolumeDef(libvirtPool.getPool().getConnect(), vol);
+                disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
+                disk.setSize(vol.getInfo().allocation);
+                disk.setVirtualSize(vol.getInfo().capacity);
+                disk.setFormat(voldef.getFormat() == LibvirtStorageVolumeDef.VolumeFormat.QCOW2 ?
+                        PhysicalDiskFormat.QCOW2 : PhysicalDiskFormat.RAW);
+                return disk;
+            }
+        } catch (LibvirtException refreshEx) {
+            logger.debug("Pool refresh failed or volume still not found: {}", refreshEx.getMessage());
+        }
+
+        // Still not found after refresh, try direct block device access
+        return getPhysicalDiskViaDirectBlockDevice(volumeUuid, pool);
+    }
+
+    /**
+     * For CLVM volumes that exist in LVM but are not visible to libvirt,
+     * access them directly via block device path.
+     */
+    private KVMPhysicalDisk getPhysicalDiskViaDirectBlockDevice(String volumeUuid, KVMStoragePool pool) {
+        try {
+            // For CLVM, pool sourceDir contains the VG path (e.g., "/dev/acsvg")
+            // Extract the VG name
+            String sourceDir = pool.getLocalPath();
+            if (sourceDir == null || sourceDir.isEmpty()) {
+                throw new CloudRuntimeException("CLVM pool sourceDir is not set, cannot determine VG name");
+            }
+
+            String vgName = sourceDir;
+            if (vgName.startsWith("/")) {
+                String[] parts = vgName.split("/");
+                List<String> tokens = Arrays.stream(parts)
+                        .filter(s -> !s.isEmpty()).collect(Collectors.toList());
+
+                vgName = tokens.size() > 1 ? tokens.get(1)
+                        : tokens.size() == 1 ? tokens.get(0)
+                          : "";
+            }
+
+            logger.debug("Using VG name: {} (from sourceDir: {}) ", vgName, sourceDir);
+
+            // Check if the LV exists in LVM using lvs command
+            logger.debug("Checking if volume {} exsits in VG {}", volumeUuid, vgName);
+            Script checkLvCmd = new Script("/usr/sbin/lvs", 5000, logger);
+            checkLvCmd.add("--noheadings");
+            checkLvCmd.add("--unbuffered");
+            checkLvCmd.add(vgName + "/" + volumeUuid);
+
+            String checkResult = checkLvCmd.execute();
+            if (checkResult != null) {
+                logger.debug("Volume {} does not exist in VG {}: {}", volumeUuid, vgName, checkResult);
+                throw new CloudRuntimeException(String.format("Storage volume not found: no storage vol with matching name '%s'", volumeUuid));
+            }
+
+            logger.info("Volume {} exists in LVM but not visible to libvirt, accessing directly",  volumeUuid);
+
+            // Try standard device path first
+            String lvPath = "/dev/" + vgName + "/" + volumeUuid;
+            File lvDevice = new File(lvPath);
+
+            if (!lvDevice.exists()) {
+                // Try device-mapper path with escaped hyphens
+                String vgNameEscaped = vgName.replace("-", "--");
+                String volumeUuidEscaped = volumeUuid.replace("-", "--");
+                lvPath = "/dev/mapper/" + vgNameEscaped + "-" + volumeUuidEscaped;
+                lvDevice = new File(lvPath);
+
+                if (!lvDevice.exists()) {
+                    logger.warn("Volume exists in LVM but device node not found: {}", volumeUuid);
+                    throw new CloudRuntimeException(String.format("Could not find volume %s " +
+                            "in VG %s - volume exists in LVM but device node not accessible", volumeUuid, vgName));
+                }
+            }
+
+            long size = 0;
+            try {
+                Script lvsCmd = new Script("/usr/sbin/lvs", 5000, logger);
+                lvsCmd.add("--noheadings");
+                lvsCmd.add("--units");
+                lvsCmd.add("b");
+                lvsCmd.add("-o");
+                lvsCmd.add("lv_size");
+                lvsCmd.add(lvPath);
+
+                OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+                String result = lvsCmd.execute(parser);
+
+                String output = null;
+                if (result == null) {
+                    output = parser.getLines();
+                } else {
+                    output = result;
+                }
+
+                if (output != null && !output.isEmpty()) {
+                    String sizeStr = output.trim().replaceAll("[^0-9]", "");
+                    if (!sizeStr.isEmpty()) {
+                        size = Long.parseLong(sizeStr);
+                    }
+                }
+            } catch (Exception sizeEx) {
+                logger.warn("Failed to get size for CLVM volume via lvs: {}", sizeEx.getMessage());
+                if (lvDevice.isFile()) {
+                    size = lvDevice.length();
+                }
+            }
+
+            KVMPhysicalDisk disk = new KVMPhysicalDisk(lvPath, volumeUuid, pool);
+            disk.setFormat(PhysicalDiskFormat.RAW);
+            disk.setSize(size);
+            disk.setVirtualSize(size);
+
+            logger.info("Successfully accessed CLVM volume via direct block device: {} " +
+                    "with size: {} bytes",lvPath, size);
+
+            return disk;
+
+        } catch (CloudRuntimeException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            logger.error("Failed to access CLVM volume via direct block device: {}",volumeUuid, ex);
+            throw new CloudRuntimeException(String.format("Could not find volume %s: %s ",volumeUuid, ex.getMessage()));
         }
     }
 
@@ -1227,7 +1384,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
         try {
             StorageVol vol = getVolume(libvirtPool.getPool(), uuid);
-            logger.debug("Instructing libvirt to remove volume " + uuid + " from pool " + pool.getUuid());
+            if (vol == null) {
+                logger.warn("Volume %s not found in libvirt pool %s, it may have been already deleted", uuid, pool.getUuid());
+                return true;
+            }
+            logger.debug("Instructing libvirt to remove volume %s from pool %s", uuid, pool.getUuid());
             if(Storage.ImageFormat.DIR.equals(format)){
                 deleteDirVol(libvirtPool, vol);
             } else {

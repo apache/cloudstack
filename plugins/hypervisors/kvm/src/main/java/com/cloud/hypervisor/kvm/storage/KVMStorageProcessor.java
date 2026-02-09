@@ -1115,7 +1115,14 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 final Script command = new Script(_manageSnapshotPath, cmd.getWaitInMillSeconds(), logger);
-                command.add("-b", isCreatedFromVmSnapshot ? snapshotDisk.getPath() : snapshot.getPath());
+                String backupPath;
+                if (primaryPool.getType() == StoragePoolType.CLVM) {
+                    backupPath = snapshotDisk.getPath();
+                    logger.debug("Using snapshotDisk path for CLVM backup: " + backupPath);
+                } else {
+                    backupPath = isCreatedFromVmSnapshot ? snapshotDisk.getPath() : snapshot.getPath();
+                }
+                command.add("-b", backupPath);
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
 
@@ -1172,12 +1179,91 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         if ((backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) && deleteSnapshotOnPrimary) {
             try {
-                Files.deleteIfExists(Paths.get(snapshotPath));
+                if (primaryPool.getType() == StoragePoolType.CLVM) {
+                    deleteClvmSnapshot(snapshotPath);
+                } else {
+                    Files.deleteIfExists(Paths.get(snapshotPath));
+                }
             } catch (IOException ex) {
                 logger.error("Failed to delete snapshot [{}] on primary storage [{}].", snapshot.getId(), snapshot.getName(), ex);
             }
         } else {
             logger.debug("This backup is temporary, not deleting snapshot [{}] on primary storage [{}]", snapshot.getId(), snapshot.getName());
+        }
+    }
+
+    /**
+     * Delete a CLVM snapshot using lvremove command.
+     * For CLVM, the snapshot path stored in DB is: /dev/vgname/volumeuuid/snapshotuuid
+     * However, managesnapshot.sh creates the actual snapshot using MD5 hash of the snapshot UUID.
+     * The actual device is at: /dev/mapper/vgname-MD5(snapshotuuid)
+     * We need to compute the MD5 hash and remove both the snapshot LV and its COW volume.
+     */
+    private void deleteClvmSnapshot(String snapshotPath) {
+        try {
+            // Parse the snapshot path: /dev/acsvg/volume-uuid/snapshot-uuid
+            // Extract VG name and snapshot UUID
+            String[] pathParts = snapshotPath.split("/");
+            if (pathParts.length < 5) {
+                logger.warn("Invalid CLVM snapshot path format: " + snapshotPath + ", skipping deletion");
+                return;
+            }
+
+            String vgName = pathParts[2];
+            String snapshotUuid = pathParts[4];
+
+            // Compute MD5 hash of snapshot UUID (same as managesnapshot.sh does)
+            String md5Hash = computeMd5Hash(snapshotUuid);
+
+            logger.debug("Deleting CLVM snapshot for UUID: " + snapshotUuid + " (MD5: " + md5Hash + ")");
+
+            // Remove the snapshot device mapper entry
+            // The snapshot device is at: /dev/mapper/vgname-md5hash
+            String vgNameEscaped = vgName.replace("-", "--");
+            String snapshotDevice = vgNameEscaped + "-" + md5Hash;
+
+            Script dmRemoveCmd = new Script("/usr/sbin/dmsetup", 30000, logger);
+            dmRemoveCmd.add("remove");
+            dmRemoveCmd.add(snapshotDevice);
+            String dmResult = dmRemoveCmd.execute();
+            if (dmResult != null) {
+                logger.debug("dmsetup remove returned: {} (may already be removed)", dmResult);
+            }
+
+            // Remove the COW (copy-on-write) volume: /dev/vgname/md5hash-cow
+            String cowLvPath = "/dev/" + vgName + "/" + md5Hash + "-cow";
+            Script removeCowCmd = new Script("/usr/sbin/lvremove", 30000, logger);
+            removeCowCmd.add("-f");
+            removeCowCmd.add(cowLvPath);
+
+            String cowResult = removeCowCmd.execute();
+            if (cowResult != null) {
+                logger.warn("Failed to remove CLVM COW volume {} : {}",cowLvPath, cowResult);
+            } else {
+                logger.debug("Successfully deleted CLVM snapshot COW volume: {}", cowLvPath);
+            }
+
+        } catch (Exception ex) {
+            logger.error("Exception while deleting CLVM snapshot {}", snapshotPath, ex);
+        }
+    }
+
+    /**
+     * Compute MD5 hash of a string, matching what managesnapshot.sh does:
+     * echo "${snapshot}" | md5sum -t | awk '{ print $1 }'
+     */
+    private String computeMd5Hash(String input) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            byte[] array = md.digest((input + "\n").getBytes("UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : array) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            logger.error("Failed to compute MD5 hash for: {}", input, e);
+            return input;
         }
     }
 
@@ -1842,8 +1928,14 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
 
-            if (DomainInfo.DomainState.VIR_DOMAIN_RUNNING.equals(state) && volume.requiresEncryption()) {
-                throw new CloudRuntimeException("VM is running, encrypted volume snapshots aren't supported");
+            if (DomainInfo.DomainState.VIR_DOMAIN_RUNNING.equals(state)) {
+                if (volume.requiresEncryption()) {
+                    throw new CloudRuntimeException("VM is running, encrypted volume snapshots aren't supported");
+                }
+
+                if (StoragePoolType.CLVM.name().equals(primaryStore.getType())) {
+                    throw new CloudRuntimeException("VM is running, live snapshots aren't supported with CLVM primary storage");
+                }
             }
 
             KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());

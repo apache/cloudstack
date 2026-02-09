@@ -212,12 +212,12 @@ backup_snapshot() {
       return 1
     fi
 
-    qemuimg_ret=$($qemu_img $forceShareFlag -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}")
+    qemuimg_ret=$($qemu_img convert $forceShareFlag -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}" 2>&1)
     ret_code=$?
-    if [ $ret_code -gt 0 ] && [[ $qemuimg_ret == *"snapshot: invalid option -- 'U'"* ]]
+    if [ $ret_code -gt 0 ] && ([[ $qemuimg_ret == *"invalid option"*"'U'"* ]] || [[ $qemuimg_ret == *"unrecognized option"*"'-U'"* ]])
     then
       forceShareFlag=""
-      $qemu_img $forceShareFlag -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}"
+      $qemu_img convert $forceShareFlag -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}"
       ret_code=$?
     fi
     if [ $ret_code -gt 0 ]
@@ -240,9 +240,9 @@ backup_snapshot() {
       # Backup VM snapshot
       qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk 2>&1)
       ret_code=$?
-      if [ $ret_code -gt 0 ] && [[ $qemuimg_ret == *"snapshot: invalid option -- 'U'"* ]]; then
+      if [ $ret_code -gt 0 ] && ([[ $qemuimg_ret == *"invalid option"*"'U'"* ]] || [[ $qemuimg_ret == *"unrecognized option"*"'-U'"* ]]); then
         forceShareFlag=""
-        qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk)
+        qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk 2>&1)
         ret_code=$?
       fi
 
@@ -251,11 +251,11 @@ backup_snapshot() {
         return 1
       fi
 
-      qemuimg_ret=$($qemu_img convert $forceShareFlag -f qcow2 -O qcow2 -l snapshot.name=$snapshotname $disk $destPath/$destName 2>&1 > /dev/null)
+      qemuimg_ret=$($qemu_img convert $forceShareFlag -f qcow2 -O qcow2 -l snapshot.name=$snapshotname $disk $destPath/$destName 2>&1)
       ret_code=$?
-      if [ $ret_code -gt 0 ] && [[ $qemuimg_ret == *"convert: invalid option -- 'U'"* ]]; then
+      if [ $ret_code -gt 0 ] && ([[ $qemuimg_ret == *"invalid option"*"'U'"* ]] || [[ $qemuimg_ret == *"unrecognized option"*"'-U'"* ]]); then
         forceShareFlag=""
-        qemuimg_ret=$($qemu_img convert $forceShareFlag -f qcow2 -O qcow2 -l snapshot.name=$snapshotname $disk $destPath/$destName 2>&1 > /dev/null)
+        qemuimg_ret=$($qemu_img convert $forceShareFlag -f qcow2 -O qcow2 -l snapshot.name=$snapshotname $disk $destPath/$destName 2>&1)
         ret_code=$?
       fi
 
