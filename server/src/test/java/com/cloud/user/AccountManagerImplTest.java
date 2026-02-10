@@ -79,6 +79,9 @@ import com.cloud.projects.ProjectVO;
 
 public class AccountManagerImplTest extends AccountManagentImplTestBase {
 
+    @InjectMocks
+    private AccountManagerImpl accountManagerImpl;
+
     @Mock
     private UserVmManagerImpl _vmMgr;
     @Mock
@@ -117,8 +120,15 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
 
     @Mock
     private ProjectAccountVO projectAccountVO;
+
     @Mock
     private Project project;
+
+    @Mock
+    private ProjectAccountDao _projectAccountDao;
+
+    @Mock
+    private ProjectDao _projectDao;
 
     @Mock
     PasswordPolicyImpl passwordPolicyMock;
@@ -1590,16 +1600,17 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         long accountId = 42L;
         long projectId = 100L;
 
-        Mockito.when(projectAccountDao.listAdministratedProjectIds(accountId))
+        Mockito.when(_projectAccountDao.listAdministratedProjectIds(accountId))
                 .thenReturn(List.of(projectId));
 
         ProjectVO deletedProject = Mockito.mock(ProjectVO.class);
         Mockito.when(deletedProject.getRemoved()).thenReturn(new Date());
 
-        Mockito.when(projectDao.findById(projectId))
+        Mockito.when(_projectDao.findById(projectId))
                 .thenReturn(deletedProject);
 
-        accountManager.checkIfAccountManagesProjects(accountId);
+        accountManagerImpl.checkIfAccountManagesProjects(accountId);
+
     }
 
 }
