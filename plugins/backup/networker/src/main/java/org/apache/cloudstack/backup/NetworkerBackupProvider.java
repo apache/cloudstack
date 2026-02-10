@@ -18,7 +18,6 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.dc.dao.ClusterDao;
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -29,7 +28,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
@@ -119,6 +117,9 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Inject
     private VMInstanceDao vmInstanceDao;
+
+    @Inject
+    private AgentManager agentMgr;
 
     private static String getUrlDomain(String url) throws URISyntaxException {
         URI uri;
@@ -238,7 +239,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         }
 
         try {
-            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), getHostSshPort(host),
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), agentMgr.getHostSshPort(host),
                     username, null, password, command, 120000, 120000, 3600000);
             if (!response.first()) {
                 LOG.error(String.format("Backup Script failed on HYPERVISOR %s due to: %s", host, response.second()));
@@ -263,7 +264,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         }
 
         try {
-            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), getHostSshPort(host),
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), agentMgr.getHostSshPort(host),
                 username, null, password, command, 120000, 120000, 3600000);
 
             if (!response.first()) {
@@ -276,23 +277,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             throw new CloudRuntimeException(String.format("Failed to restore backup on host %s due to: %s", host.getName(), e.getMessage()));
         }
         return false;
-    }
-
-    private int getHostSshPort(HostVO host) {
-        if (host == null) {
-            return AgentManager.KVMHostDiscoverySshPort.value();
-        }
-
-        hostDao.loadDetails(host);
-        String hostPort = host.getDetail(Host.HOST_SSH_POST);
-        int sshPort;
-        if (StringUtils.isBlank(hostPort)) {
-            sshPort = AgentManager.KVMHostDiscoverySshPort.valueIn(host.getClusterId());
-        } else {
-            sshPort = Integer.parseInt(hostPort);
-        }
-
-        return sshPort;
     }
 
     private NetworkerClient getClient(final Long zoneId) {
