@@ -279,8 +279,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final StoragePoolHostVO dataStore = storagePoolHostDao.findByUuid(dataStoreUuid);
         final HostVO hostVO = hostDao.findByIp(hostIp);
 
-        Backup.VolumeInfo matchingVolume = getBackedUpVolumeInfo(backupSourceVm.getBackupVolumeList(), volumeUuid);
-        Long backedUpVolumeSize = matchingVolume.getSize() != null ? matchingVolume.getSize() : 0L;
+        Backup.VolumeInfo matchingVolume = getBackedUpVolumeInfo(backup.getBackedUpVolumes(), volumeUuid);
+        if (matchingVolume == null) {
+            throw new CloudRuntimeException(String.format("Unable to find volume %s in the list of backed up volumes for backup %s, cannot proceed with restore", volumeUuid, backup));
+        }
+        Long backedUpVolumeSize = matchingVolume.getSize();
 
         LOG.debug("Restoring vm volume {} from backup {} on the NAS Backup Provider", volume, backup);
         BackupRepository backupRepository = getBackupRepository(backupSourceVm, backup);
