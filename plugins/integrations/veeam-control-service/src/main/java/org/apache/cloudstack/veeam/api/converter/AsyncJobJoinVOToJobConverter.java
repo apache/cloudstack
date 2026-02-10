@@ -19,11 +19,16 @@ package org.apache.cloudstack.veeam.api.converter;
 
 import java.util.Collections;
 
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.JobsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.Job;
 import org.apache.cloudstack.veeam.api.dto.Ref;
+import org.apache.cloudstack.veeam.api.dto.VmAction;
+
+import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.api.query.vo.UserVmJoinVO;
 
 public class AsyncJobJoinVOToJobConverter {
 
@@ -46,5 +51,41 @@ public class AsyncJobJoinVOToJobConverter {
         job.setDescription("Something");
         job.setLink(Collections.emptyList());
         return job;
+    }
+
+    public static Job toJob(AsyncJobJoinVO vo) {
+        Job job = new Job();
+        final String basePath = VeeamControlService.ContextPath.value();
+        job.setId(vo.getUuid());
+        job.setHref(basePath + JobsRouteHandler.BASE_ROUTE + "/" + vo.getUuid());
+        job.setAutoCleared(Boolean.TRUE.toString());
+        job.setExternal(Boolean.TRUE.toString());
+        job.setLastUpdated(System.currentTimeMillis());
+        job.setStartTime(vo.getCreated().getTime());
+        JobInfo.Status status = JobInfo.Status.values()[vo.getStatus()];
+        if (status == JobInfo.Status.SUCCEEDED) {
+            job.setStatus("finished");
+            job.setEndTime(System.currentTimeMillis());
+        } else if (status == JobInfo.Status.FAILED) {
+            job.setStatus(status.name().toLowerCase());
+        } else if (status == JobInfo.Status.CANCELLED) {
+            job.setStatus("aborted");
+        } else {
+            job.setStatus("started");
+        }
+        job.setOwner(Ref.of(basePath + "/api/users/" + vo.getUserUuid(), vo.getUserUuid()));
+        job.setActions(new Actions());
+        job.setDescription("Something");
+        job.setLink(Collections.emptyList());
+        return job;
+    }
+
+    public static VmAction toVmAction(final AsyncJobJoinVO vo, final UserVmJoinVO vm) {
+        VmAction action = new VmAction();
+        final String basePath = VeeamControlService.ContextPath.value();
+        action.setVm(UserVmJoinVOToVmConverter.toVm(vm, null, null, null));
+        action.setJob(Ref.of(basePath + JobsRouteHandler.BASE_ROUTE + vo.getUuid(), vo.getUuid()));
+        action.setStatus("complete");
+        return action;
     }
 }

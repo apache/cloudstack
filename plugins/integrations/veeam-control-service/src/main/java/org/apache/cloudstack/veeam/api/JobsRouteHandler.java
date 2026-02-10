@@ -93,7 +93,7 @@ public class JobsRouteHandler  extends ManagerBase implements RouteHandler {
     protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                                  final VeeamControlServlet io) throws IOException {
         try {
-            Job response = serverAdapter.getJob(id);
+            Job response = serverAdapter.getTempJob(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);

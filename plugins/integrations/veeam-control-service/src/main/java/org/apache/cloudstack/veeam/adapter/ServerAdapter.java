@@ -20,6 +20,7 @@ package org.apache.cloudstack.veeam.adapter;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,6 +34,7 @@ import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
@@ -90,12 +92,14 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
+import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
@@ -108,7 +112,6 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
@@ -124,12 +127,12 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
-import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserAccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -167,7 +170,7 @@ public class ServerAdapter extends ManagerBase {
     AccountService accountService;
 
     @Inject
-    AccountDao accountDao;
+    UserAccountDao userAccountDao;
 
     @Inject
     DataCenterDao dataCenterDao;
@@ -229,6 +232,12 @@ public class ServerAdapter extends ManagerBase {
     @Inject
     NicDao nicDao;
 
+    @Inject
+    ApiServerService apiServerService;
+
+    @Inject
+    AsyncJobJoinDao asyncJobJoinDao;
+
     private Map<String, Long> jobsMap = new ConcurrentHashMap<>();
 
     protected Role createServiceAccountRole() {
@@ -255,7 +264,7 @@ public class ServerAdapter extends ManagerBase {
         return createServiceAccountRole();
     }
 
-    protected Account createServiceAccount() {
+    protected UserAccount createServiceAccount() {
         CallContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM);
         try {
             Role role = getServiceAccountRole();
@@ -263,23 +272,22 @@ public class ServerAdapter extends ManagerBase {
                     UUID.randomUUID().toString(), SERVICE_ACCOUNT_FIRST_NAME,
                     SERVICE_ACCOUNT_LAST_NAME, null, null, SERVICE_ACCOUNT_NAME, Account.Type.NORMAL, role.getId(),
                     1L, null, null, null, null, User.Source.NATIVE);
-            Account account = accountService.getAccount(userAccount.getAccountId());
-            logger.debug("Created Veeam service account: {}", account);
-            return account;
+            logger.debug("Created Veeam service account: {}", userAccount);
+            return userAccount;
         } finally {
             CallContext.unregister();
         }
     }
 
-    protected Account createServiceAccountIfNeeded() {
-        List<AccountVO> accounts = accountDao.findAccountsByName(SERVICE_ACCOUNT_NAME);
-        for (AccountVO account : accounts) {
-            if (Account.State.ENABLED.equals(account.getState())) {
-                logger.debug("Veeam service account found: {}", account);
-                return account;
-            }
+    protected Pair<User, Account> createServiceAccountIfNeeded() {
+        UserAccount userAccount = accountService.getActiveUserAccount(SERVICE_ACCOUNT_NAME, 1L);
+        if (userAccount == null) {
+            userAccount =  createServiceAccount();
+        } else {
+            logger.debug("Veeam service user account found: {}", userAccount);
         }
-        return createServiceAccount();
+        return new Pair<>(accountService.getActiveUser(userAccount.getId()),
+                accountService.getActiveAccountById(userAccount.getAccountId()));
     }
 
     @Override
@@ -431,8 +439,8 @@ public class ServerAdapter extends ManagerBase {
             bootType = ApiConstants.BootType.UEFI;
             bootMode = ApiConstants.BootMode.SECURE;
         }
-        Account serviceAccount = createServiceAccountIfNeeded();
-        CallContext.register(serviceAccount.getId(), serviceAccount.getId());
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             return createVm(zoneId, clusterId, name, cpu, memory, userdata, bootType, bootMode);
         } finally {
@@ -507,11 +515,22 @@ public class ServerAdapter extends ManagerBase {
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
         }
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
-            userVmService.startVirtualMachine(vo, null);
-            return UserVmJoinVOToVmConverter.toVmAction(userVmJoinDao.findById(vo.getId()));
-        } catch (ResourceUnavailableException | OperationTimedoutException | InsufficientCapacityException | CloudRuntimeException e) {
+            StartVMCmd cmd = new StartVMCmd();
+            ComponentContext.inject(cmd);
+            Map<String, String> params = new HashMap<>();
+            params.put(ApiConstants.ID, vo.getUuid());
+            ApiServerService.AsyncCmdResult result =
+                    apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
+                            serviceUserAccount.second());
+            AsyncJobJoinVO asyncJobJoinVO = asyncJobJoinDao.findById(result.jobId);
+            return AsyncJobJoinVOToJobConverter.toVmAction(asyncJobJoinVO, userVmJoinDao.findById(vo.getId()));
+        } catch (Exception e) {
             throw new CloudRuntimeException("Failed to start VM: " + e.getMessage(), e);
+        } finally {
+            CallContext.unregister();
         }
     }
 
@@ -520,11 +539,23 @@ public class ServerAdapter extends ManagerBase {
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
         }
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
-            userVmService.stopVirtualMachine(vo.getId(), true);
-            return UserVmJoinVOToVmConverter.toVmAction(userVmJoinDao.findById(vo.getId()));
-        } catch (CloudRuntimeException e) {
+            StopVMCmd cmd = new StopVMCmd();
+            ComponentContext.inject(cmd);
+            Map<String, String> params = new HashMap<>();
+            params.put(ApiConstants.ID, vo.getUuid());
+            params.put(ApiConstants.FORCED, Boolean.TRUE.toString());
+            ApiServerService.AsyncCmdResult result =
+                    apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
+                            serviceUserAccount.second());
+            AsyncJobJoinVO asyncJobJoinVO = asyncJobJoinDao.findById(result.jobId);
+            return AsyncJobJoinVOToJobConverter.toVmAction(asyncJobJoinVO, userVmJoinDao.findById(vo.getId()));
+        } catch (Exception e) {
             throw new CloudRuntimeException("Failed to stop VM: " + e.getMessage(), e);
+        } finally {
+            CallContext.unregister();
         }
     }
 
@@ -533,11 +564,23 @@ public class ServerAdapter extends ManagerBase {
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
         }
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
-            userVmService.stopVirtualMachine(vo.getId(), false);
-            return UserVmJoinVOToVmConverter.toVmAction(userVmJoinDao.findById(vo.getId()));
-        } catch (CloudRuntimeException e) {
+            StopVMCmd cmd = new StopVMCmd();
+            ComponentContext.inject(cmd);
+            Map<String, String> params = new HashMap<>();
+            params.put(ApiConstants.ID, vo.getUuid());
+            params.put(ApiConstants.FORCED, Boolean.FALSE.toString());
+            ApiServerService.AsyncCmdResult result =
+                    apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
+                            serviceUserAccount.second());
+            AsyncJobJoinVO asyncJobJoinVO = asyncJobJoinDao.findById(result.jobId);
+            return AsyncJobJoinVOToJobConverter.toVmAction(asyncJobJoinVO, userVmJoinDao.findById(vo.getId()));
+        } catch (Exception e) {
             throw new CloudRuntimeException("Failed to shutdown VM: " + e.getMessage(), e);
+        } finally {
+            CallContext.unregister();
         }
     }
 
@@ -579,8 +622,8 @@ public class ServerAdapter extends ManagerBase {
         if (volumeVO == null) {
             throw new InvalidParameterValueException("Disk with ID " + request.disk.id + " not found");
         }
-        Account serviceAccount = createServiceAccountIfNeeded();
-        CallContext.register(serviceAccount.getId(), serviceAccount.getId());
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             Volume volume = volumeApiService.attachVolumeToVM(vmVo.getId(), volumeVO.getId(), 0L, false);
             VolumeJoinVO attachedVolumeVO = volumeJoinDao.findById(volume.getId());
@@ -638,7 +681,8 @@ public class ServerAdapter extends ManagerBase {
                 initialSize = Long.parseLong(request.initialSize);
             } catch (NumberFormatException ignored) {}
         }
-        Account serviceAccount = createServiceAccountIfNeeded();
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        Account serviceAccount = serviceUserAccount.second();
         DataCenterVO zone = dataCenterDao.findById(pool.getDataCenterId());
         if (zone == null || !Grouping.AllocationState.Enabled.equals(zone.getAllocationState())) {
             throw new InvalidParameterValueException("Datacenter for the specified storage domain is not found or not active");
@@ -647,7 +691,7 @@ public class ServerAdapter extends ManagerBase {
         if (diskOfferingId == null) {
             throw new CloudRuntimeException("Failed to find custom offering for disk" + zone.getName());
         }
-        CallContext.register(serviceAccount.getId(), serviceAccount.getId());
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             return createDisk(serviceAccount, pool, name, diskOfferingId, provisionedSizeInGb, initialSize);
         } finally {
@@ -705,8 +749,8 @@ public class ServerAdapter extends ManagerBase {
         if (networkVO == null) {
             throw new InvalidParameterValueException("VNic profile " + request.getVnicProfile().id+ " not found");
         }
-        Account serviceAccount = createServiceAccountIfNeeded();
-        CallContext.register(serviceAccount.getId(), serviceAccount.getId());
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             AddNicToVMCmd cmd = new AddNicToVMCmd();
             ComponentContext.inject(cmd);
@@ -775,8 +819,8 @@ public class ServerAdapter extends ManagerBase {
     }
 
     private ImageTransfer createImageTransfer(Long backupId, Long volumeId, Direction direction, Format format) {
-        Account serviceAccount = createServiceAccountIfNeeded();
-        CallContext.register(serviceAccount.getId(), serviceAccount.getId());
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             org.apache.cloudstack.backup.ImageTransfer imageTransfer =
                     incrementalBackupService.createImageTransfer(volumeId, null, direction, format);
@@ -819,7 +863,7 @@ public class ServerAdapter extends ManagerBase {
         return Collections.emptyList();
     }
 
-    public Job getJob(String uuid) {
+    public Job getTempJob(String uuid) {
 //        final ClusterVO vo = clusterDao.findByUuid(uuid);
 //        if (vo == null) {
 //            throw new InvalidParameterValueException("Cluster with ID " + uuid + " not found");
@@ -831,5 +875,13 @@ public class ServerAdapter extends ManagerBase {
         } else {
             return AsyncJobJoinVOToJobConverter.toJob(uuid, "started", startTime);
         }
+    }
+
+    public Job getJob(String uuid) {
+        final AsyncJobJoinVO vo = asyncJobJoinDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("Job with ID " + uuid + " not found");
+        }
+        return AsyncJobJoinVOToJobConverter.toJob(vo);
     }
 }
