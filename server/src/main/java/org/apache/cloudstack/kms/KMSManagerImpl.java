@@ -147,49 +147,45 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     /**
      * Internal method to rotate a KEK (create new version and update KMS key state)
      */
-    String rotateKek(Long zoneId, KeyPurpose purpose, String oldKekLabel,
-            String newKekLabel, int keyBits, Long newProfileId) throws KMSException {
-        validateKmsEnabled(zoneId);
+    String rotateKek(KMSKeyVO kmsKey, String oldKekLabel,
+            String newKekLabel, int keyBits, HSMProfileVO newHSMProfile) throws KMSException {
+
+        validateKmsEnabled(kmsKey.getZoneId());
 
         if (StringUtils.isEmpty(oldKekLabel)) {
             throw KMSException.invalidParameter("oldKekLabel must be specified");
         }
 
-        KMSProvider provider = getKMSProviderForZone(zoneId);
+        if (newHSMProfile == null) {
+            newHSMProfile = hsmProfileDao.findById(kmsKey.getHsmProfileId());
+        }
+
+
+        KMSProvider provider = getKMSProvider(newHSMProfile.getProtocol());
 
         try {
-            logger.info("Starting KEK rotation from {} to {} for zone {} and purpose {}",
-                    oldKekLabel, newKekLabel, zoneId, purpose);
+            logger.info("Starting KEK rotation from {} to {} for kms key {}", oldKekLabel, newKekLabel, kmsKey);
 
             // Find KMS key by old KEK label
-            KMSKeyVO kmsKey = kmsKeyDao.findByKekLabel(oldKekLabel, provider.getProviderName());
-            if (kmsKey == null) {
-                throw KMSException.kekNotFound("KMS key not found for KEK label: " + oldKekLabel);
-            }
 
             // Generate new KEK label if not provided
             if (StringUtils.isEmpty(newKekLabel)) {
-                newKekLabel = purpose.getName() + "-kek-" + UUID.randomUUID().toString().substring(0, 8);
-            }
-
-            // Resolve profile ID if not provided (use current profile from key)
-            if (newProfileId == null) {
-                newProfileId = kmsKey.getHsmProfileId();
+                newKekLabel = kmsKey.getPurpose().getName() + "-kek-" + UUID.randomUUID().toString().substring(0, 8);
             }
 
             // Create new KEK in provider
             String finalNewKekLabel = newKekLabel;
-            Long finalProfileId = newProfileId;
-            String newKekId = retryOperation(() -> provider.createKek(purpose, finalNewKekLabel, keyBits, finalProfileId));
+            Long newProfileId = newHSMProfile.getId();
+            String newKekId = retryOperation(() -> provider.createKek(kmsKey.getPurpose(), finalNewKekLabel, keyBits, newProfileId));
 
             // Create new KEK version (marks old as Previous, new as Active)
-            KMSKekVersionVO newVersion = createKekVersion(kmsKey.getId(), newKekId, finalProfileId);
+            KMSKekVersionVO newVersion = createKekVersion(kmsKey.getId(), newKekId, newProfileId);
 
             // Update KMS Key with new profile if different
-            if (finalProfileId != null && !finalProfileId.equals(kmsKey.getHsmProfileId())) {
-                kmsKey.setHsmProfileId(finalProfileId);
+            if (!newProfileId.equals(kmsKey.getHsmProfileId())) {
+                kmsKey.setHsmProfileId(newProfileId);
                 kmsKeyDao.update(kmsKey.getId(), kmsKey);
-                logger.info("Updated KMS key {} to use HSM profile ID {}", kmsKey.getUuid(), finalProfileId);
+                logger.info("Updated KMS key {} to use HSM profile {}", kmsKey, newHSMProfile);
             }
 
             logger.info("KEK rotation: KMS key {} now has {} versions (active: v{}, previous: v{})",
@@ -201,7 +197,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             return newKekId;
 
         } catch (Exception e) {
-            logger.error("KEK rotation failed for zone {}: {}", zoneId, e.getMessage());
+            logger.error("KEK rotation failed for kmsKey {}: {}", kmsKey, e.getMessage());
             throw handleKmsException(e);
         }
     }
@@ -693,9 +689,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         }
 
         // Validate and resolve target HSM profile if provided
-        Long targetProfileId = null;
+        HSMProfileVO profile = null;
         if (hsmProfileName != null) {
-            HSMProfileVO profile = hsmProfileDao.findByName(hsmProfileName);
+            profile = hsmProfileDao.findByName(hsmProfileName);
             if (profile == null) {
                 throw KMSException.invalidParameter("Target HSM Profile not found: " + hsmProfileName);
             }
@@ -704,7 +700,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                  // Warn or fail - admin can migrate to any profile really, but key owner should have access ideally.
                  // For now allow admin to do anything.
             }
-            targetProfileId = profile.getId();
         }
 
         // Get current active version to determine key bits if not provided
@@ -712,12 +707,11 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         KMSKekVersionVO currentActive = getActiveKekVersion(kmsKey.getId());
 
         rotateKek(
-                kmsKey.getZoneId(),
-                kmsKey.getPurpose(),
+                kmsKey,
                 currentActive.getKekLabel(),
                 null, // auto-generate new label
                 newKeyBits,
-                targetProfileId
+                profile
         );
 
         KMSKekVersionVO newVersion = getActiveKekVersion(kmsKey.getId());
