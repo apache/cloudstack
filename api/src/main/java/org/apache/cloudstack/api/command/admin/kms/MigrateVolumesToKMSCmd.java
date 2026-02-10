@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.kms;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -127,7 +128,7 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Migrating volumes to KMS for zone: " + _uuidMgr.getUuid(ZoneResponse.class, zoneId);
+        return "Migrating volumes to KMS for zone: " + _uuidMgr.getUuid(DataCenter.class, zoneId);
     }
 
     @Override

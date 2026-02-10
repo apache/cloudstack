@@ -39,7 +39,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import java.io.Closeable;
@@ -564,9 +564,10 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
      * {@link KMSException.ErrorType} values for proper retry logic and error reporting.
      */
     private static class PKCS11Session {
-        private static final String ALGORITHM = "AES/GCM/NoPadding";
-        private static final int GCM_IV_LENGTH = 12; // 96 bits
-        private static final int GCM_TAG_LENGTH = 16; // 128 bits
+        // Use AES-CBC with PKCS5Padding for key wrapping
+        // This is FIPS-compliant (NIST SP 800-38A) and has universal PKCS#11 support
+        private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
+        private static final int IV_LENGTH = 16; // 128 bits for CBC
         private static final String PROVIDER_PREFIX = "CloudStackPKCS11-";
 
         private final Map<String, String> config;
@@ -658,7 +659,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 // Zeroize PIN from memory
                 Arrays.fill(pinChars, '\0');
 
-                logger.debug("Successfully connected to PKCS#11 HSM at {}", config.get("library"));
+                logger.debug("aSuccessfully connected to PKCS#11 HSM at {}", config.get("library"));
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
                 handlePKCS11Exception(e, "Failed to initialize PKCS#11 connection");
             } catch (IOException e) {
@@ -937,19 +938,18 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         /**
          * Wraps (encrypts) a plaintext DEK using a KEK stored in the HSM.
          *
-         * <p>Uses AES-GCM for authenticated encryption:
+         * <p>Uses AES-CBC with PKCS5Padding (FIPS 197 + NIST SP 800-38A):
          * <ul>
-         *   <li>Generates a random 96-bit IV</li>
-         *   <li>Encrypts the DEK using the KEK from HSM</li>
-         *   <li>Appends a 128-bit authentication tag</li>
-         *   <li>Returns format: [IV (12 bytes)][ciphertext+tag]</li>
+         *   <li>Generates a random 128-bit IV</li>
+         *   <li>Encrypts the DEK using AES-CBC with the KEK from HSM</li>
+         *   <li>Returns format: [IV (16 bytes)][ciphertext]</li>
          * </ul>
          *
          * <p>Security: The plaintext DEK should be zeroized by the caller after wrapping.
          *
          * @param plainDek Plaintext DEK to wrap (will be encrypted)
          * @param kekLabel Label of the KEK stored in the HSM
-         * @return Wrapped blob: [IV][ciphertext+tag]
+         * @return Wrapped key blob: [IV][ciphertext]
          * @throws KMSException with appropriate ErrorType:
          *                      <ul>
          *                        <li>{@code INVALID_PARAMETER} if plainDek is null or empty</li>
@@ -966,23 +966,30 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             try {
                 kek = getKekFromKeyStore(kekLabel);
 
-                // Generate random IV for GCM
-                byte[] iv = new byte[GCM_IV_LENGTH];
+                // Generate random IV for CBC
+                byte[] iv = new byte[IV_LENGTH];
                 new SecureRandom().nextBytes(iv);
 
-                // Create and initialize AES-GCM cipher in ENCRYPT_MODE
-                Cipher cipher = createGCMCipher(kek, iv, Cipher.ENCRYPT_MODE);
+                // Create cipher with AES-CBC
+                Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM, provider);
+                cipher.init(Cipher.ENCRYPT_MODE, kek, new IvParameterSpec(iv));
 
-                // Encrypt the plaintext DEK using doFinal (GCM includes authentication tag)
-                byte[] wrappedBlob = cipher.doFinal(plainDek);
+                // Encrypt the plaintext DEK
+                byte[] ciphertext = cipher.doFinal(plainDek);
 
-                // Prepend IV to wrapped blob: [IV][ciphertext+tag]
-                byte[] result = prependIV(iv, wrappedBlob);
+                // Prepend IV to ciphertext: [IV][ciphertext]
+                byte[] result = new byte[IV_LENGTH + ciphertext.length];
+                System.arraycopy(iv, 0, result, 0, IV_LENGTH);
+                System.arraycopy(ciphertext, 0, result, IV_LENGTH, ciphertext.length);
 
-                logger.debug("Wrapped key with KEK '{}'", kekLabel);
+                logger.debug("Wrapped key with KEK '{}' using AES-CBC", kekLabel);
                 return result;
-            } catch (IllegalBlockSizeException e) {
-                handlePKCS11Exception(e, "Invalid block size for wrapping");
+            } catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException e) {
+                handlePKCS11Exception(e, "Invalid key or data for wrapping");
+            } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+                handlePKCS11Exception(e, "AES-CBC not supported by HSM");
+            } catch (InvalidAlgorithmParameterException e) {
+                handlePKCS11Exception(e, "Invalid IV for CBC mode");
             } catch (Exception e) {
                 handlePKCS11Exception(e, "Failed to wrap key with HSM");
             } finally {
@@ -1019,71 +1026,30 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             return null; // Unreachable
         }
 
-        /**
-         * Prepends IV to data, creating a new byte array.
-         *
-         * @param iv   Initialization vector
-         * @param data Data to prepend IV to
-         * @return Combined array: [IV][data]
-         */
-        private byte[] prependIV(byte[] iv, byte[] data) {
-            byte[] result = new byte[GCM_IV_LENGTH + data.length];
-            System.arraycopy(iv, 0, result, 0, GCM_IV_LENGTH);
-            System.arraycopy(data, 0, result, GCM_IV_LENGTH, data.length);
-            return result;
-        }
-
-        /**
-         * Creates and initializes an AES-GCM cipher.
-         *
-         * @param kek  Key Encryption Key
-         * @param iv   Initialization vector
-         * @param mode Cipher mode (ENCRYPT_MODE or DECRYPT_MODE)
-         * @return Initialized Cipher instance
-         * @throws KMSException if cipher creation or initialization fails
-         */
-        private Cipher createGCMCipher(SecretKey kek, byte[] iv, int mode) throws KMSException {
-            try {
-                Cipher cipher = Cipher.getInstance(ALGORITHM, provider);
-                GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
-                cipher.init(mode, kek, gcmSpec);
-                return cipher;
-            } catch (NoSuchPaddingException e) {
-                handlePKCS11Exception(e, "GCM padding not supported");
-            } catch (InvalidKeyException e) {
-                handlePKCS11Exception(e, "Invalid KEK");
-            } catch (InvalidAlgorithmParameterException e) {
-                handlePKCS11Exception(e, "Invalid GCM parameters");
-            } catch (NoSuchAlgorithmException e) {
-                handlePKCS11Exception(e, String.format("Algorithm %s not supported.", ALGORITHM));
-            }
-            return null; // Unreachable
-        }
 
         /**
          * Unwraps (decrypts) a wrapped DEK using a KEK stored in the HSM.
          *
-         * <p>Process:
+         * <p>Uses AES-CBC with PKCS5Padding (FIPS 197 + NIST SP 800-38A):
          * <ol>
          *   <li>Extracts IV from the wrapped blob</li>
          *   <li>Retrieves KEK from HSM using the label</li>
-         *   <li>Decrypts using AES-GCM (verifies authentication tag)</li>
+         *   <li>Decrypts using AES-CBC</li>
          *   <li>Returns plaintext DEK</li>
          * </ol>
          *
          * <p>Security: The returned plaintext DEK must be zeroized by the caller after use.
          *
-         * <p>Expected format: [IV (12 bytes)][ciphertext+tag]
+         * <p>Expected format: [IV (16 bytes)][ciphertext]
          *
-         * @param wrappedBlob Wrapped DEK blob (IV + ciphertext + tag)
+         * @param wrappedBlob Wrapped DEK blob (IV + ciphertext)
          * @param kekLabel    Label of the KEK stored in the HSM
          * @return Plaintext DEK
          * @throws KMSException with appropriate ErrorType:
          *                      <ul>
          *                        <li>{@code INVALID_PARAMETER} if wrappedBlob is null, empty, or too short</li>
          *                        <li>{@code KEK_NOT_FOUND} if KEK with label doesn't exist or is not accessible</li>
-         *                        <li>{@code WRAP_UNWRAP_FAILED} if unwrapping fails (e.g., authentication tag
-         *                        verification fails)</li>
+         *                        <li>{@code WRAP_UNWRAP_FAILED} if unwrapping fails</li>
          *                      </ul>
          */
         byte[] unwrapKey(byte[] wrappedBlob, String kekLabel) throws KMSException {
@@ -1091,9 +1057,10 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 throw KMSException.invalidParameter("Wrapped blob cannot be null or empty");
             }
 
-            if (wrappedBlob.length < GCM_IV_LENGTH + GCM_TAG_LENGTH) {
+            // Minimum size: IV (16) + at least one block of ciphertext (16)
+            if (wrappedBlob.length < IV_LENGTH + 16) {
                 throw KMSException.invalidParameter("Wrapped blob too short: expected at least " +
-                                                    (GCM_IV_LENGTH + GCM_TAG_LENGTH) + " bytes");
+                        (IV_LENGTH + 16) + " bytes");
             }
 
             SecretKey kek = null;
@@ -1101,22 +1068,29 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 kek = getKekFromKeyStore(kekLabel);
 
                 // Extract IV and ciphertext from wrapped blob
-                IVAndCiphertext extracted = extractIVAndCiphertext(wrappedBlob);
+                byte[] iv = new byte[IV_LENGTH];
+                System.arraycopy(wrappedBlob, 0, iv, 0, IV_LENGTH);
+                byte[] ciphertext = new byte[wrappedBlob.length - IV_LENGTH];
+                System.arraycopy(wrappedBlob, IV_LENGTH, ciphertext, 0, ciphertext.length);
 
-                // Create and initialize AES-GCM cipher in DECRYPT_MODE
-                Cipher cipher = createGCMCipher(kek, extracted.iv, Cipher.DECRYPT_MODE);
+                // Create cipher with AES-CBC
+                Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM, provider);
+                cipher.init(Cipher.DECRYPT_MODE, kek, new IvParameterSpec(iv));
 
-                // Decrypt the ciphertext to get plaintext DEK (GCM verifies authentication tag)
-                byte[] plainDek = cipher.doFinal(extracted.ciphertextWithTag);
+                // Decrypt the ciphertext to get plaintext DEK
+                byte[] plainDek = cipher.doFinal(ciphertext);
 
-                logger.debug("Unwrapped key with KEK '{}'", kekLabel);
+                logger.debug("Unwrapped key with KEK '{}' using AES-CBC", kekLabel);
                 return plainDek;
             } catch (BadPaddingException e) {
-                // GCM authentication tag verification failed
                 throw KMSException.wrapUnwrapFailed(
-                        "Authentication failed: wrapped key may be corrupted or KEK is incorrect", e);
-            } catch (IllegalBlockSizeException e) {
-                handlePKCS11Exception(e, "Invalid block size for unwrapping");
+                        "Decryption failed: wrapped key may be corrupted or KEK is incorrect", e);
+            } catch (IllegalBlockSizeException | InvalidKeyException e) {
+                handlePKCS11Exception(e, "Invalid key or data for unwrapping");
+            } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+                handlePKCS11Exception(e, "AES-CBC not supported by HSM");
+            } catch (InvalidAlgorithmParameterException e) {
+                handlePKCS11Exception(e, "Invalid IV for CBC mode");
             } catch (Exception e) {
                 handlePKCS11Exception(e, "Failed to unwrap key with HSM");
             } finally {
@@ -1126,24 +1100,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             return null; // Unreachable
         }
 
-        /**
-         * Extracts IV and ciphertext from a wrapped blob.
-         *
-         * @param wrappedBlob Wrapped blob containing IV and ciphertext
-         * @return IVAndCiphertext containing extracted IV and ciphertext
-         * @throws KMSException if wrapped blob is too short
-         */
-        private IVAndCiphertext extractIVAndCiphertext(byte[] wrappedBlob) throws KMSException {
-            if (wrappedBlob.length < GCM_IV_LENGTH + GCM_TAG_LENGTH) {
-                throw KMSException.invalidParameter("Wrapped blob too short: expected at least " +
-                                                    (GCM_IV_LENGTH + GCM_TAG_LENGTH) + " bytes");
-            }
-            byte[] iv = new byte[GCM_IV_LENGTH];
-            System.arraycopy(wrappedBlob, 0, iv, 0, GCM_IV_LENGTH);
-            byte[] ciphertextWithTag = new byte[wrappedBlob.length - GCM_IV_LENGTH];
-            System.arraycopy(wrappedBlob, GCM_IV_LENGTH, ciphertextWithTag, 0, ciphertextWithTag.length);
-            return new IVAndCiphertext(iv, ciphertextWithTag);
-        }
 
         /**
          * Deletes a key from the HSM.
@@ -1210,19 +1166,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             } catch (Exception e) {
                 logger.debug("Unexpected error while checking key existence: {}", e.getMessage());
                 return false;
-            }
-        }
-
-        /**
-         * Helper class to hold IV and ciphertext extracted from wrapped blob.
-         */
-        private static class IVAndCiphertext {
-            final byte[] iv;
-            final byte[] ciphertextWithTag;
-
-            IVAndCiphertext(byte[] iv, byte[] ciphertextWithTag) {
-                this.iv = iv;
-                this.ciphertextWithTag = ciphertextWithTag;
             }
         }
     }

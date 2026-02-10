@@ -17,20 +17,6 @@
 
 package org.apache.cloudstack.kms;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.framework.kms.KMSProvider;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
@@ -47,6 +33,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for KMS key rotation logic in KMSManagerImpl
@@ -79,7 +79,6 @@ public class KMSManagerImplKeyRotationTest {
 
     @Before
     public void setUp() {
-        when(kmsProvider.getProviderName()).thenReturn(testProviderName);
     }
 
     /**
@@ -95,8 +94,14 @@ public class KMSManagerImplKeyRotationTest {
 
         KMSKeyVO kmsKey = mock(KMSKeyVO.class);
         when(kmsKey.getId()).thenReturn(kmsKeyId);
+        when(kmsKey.getZoneId()).thenReturn(testZoneId);
         when(kmsKey.getHsmProfileId()).thenReturn(oldProfileId);
-        when(kmsKeyDao.findByKekLabel(oldKekLabel, testProviderName)).thenReturn(kmsKey);
+        when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+
+        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+        when(hsmProfile.getId()).thenReturn(oldProfileId);
+        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+        when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
 
         // Old version should be marked as Previous
         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
@@ -107,17 +112,16 @@ public class KMSManagerImplKeyRotationTest {
 
         // Provider creates new KEK
         when(kmsProvider.createKek(any(KeyPurpose.class), eq(newKekLabel), anyInt(), eq(oldProfileId)))
-            .thenReturn("new-kek-id");
+                .thenReturn("new-kek-id");
 
         KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
         when(newVersion.getVersionNumber()).thenReturn(2);
         when(kmsKekVersionDao.persist(any(KMSKekVersionVO.class))).thenReturn(newVersion);
 
-        doReturn(kmsProvider).when(kmsManager).getKMSProviderForZone(testZoneId);
+        doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
         doReturn(true).when(kmsManager).isKmsEnabled(testZoneId);
 
-        String result = kmsManager.rotateKek(testZoneId, KeyPurpose.VOLUME_ENCRYPTION,
-            oldKekLabel, newKekLabel, 256, null);
+        String result = kmsManager.rotateKek(kmsKey, oldKekLabel, newKekLabel, 256, null);
 
         // Verify new KEK was created in same HSM
         assertNotNull(result);
@@ -149,8 +153,13 @@ public class KMSManagerImplKeyRotationTest {
 
         KMSKeyVO kmsKey = mock(KMSKeyVO.class);
         when(kmsKey.getId()).thenReturn(kmsKeyId);
+        when(kmsKey.getZoneId()).thenReturn(testZoneId);
         when(kmsKey.getHsmProfileId()).thenReturn(oldProfileId);
-        when(kmsKeyDao.findByKekLabel(oldKekLabel, testProviderName)).thenReturn(kmsKey);
+        when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+
+        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+        when(hsmProfile.getId()).thenReturn(newProfileId);
+        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
 
         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
         when(oldVersion.getVersionNumber()).thenReturn(1);
@@ -160,17 +169,16 @@ public class KMSManagerImplKeyRotationTest {
 
         // Provider creates new KEK in different HSM
         when(kmsProvider.createKek(any(KeyPurpose.class), eq(newKekLabel), anyInt(), eq(newProfileId)))
-            .thenReturn("new-kek-id");
+                .thenReturn("new-kek-id");
 
         KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
         when(newVersion.getVersionNumber()).thenReturn(2);
         when(kmsKekVersionDao.persist(any(KMSKekVersionVO.class))).thenReturn(newVersion);
 
-        doReturn(kmsProvider).when(kmsManager).getKMSProviderForZone(testZoneId);
+        doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
         doReturn(true).when(kmsManager).isKmsEnabled(testZoneId);
 
-        String result = kmsManager.rotateKek(testZoneId, KeyPurpose.VOLUME_ENCRYPTION,
-            oldKekLabel, newKekLabel, 256, newProfileId);
+        String result = kmsManager.rotateKek(kmsKey, oldKekLabel, newKekLabel, 256, hsmProfile);
 
         // Verify new KEK was created in new HSM
         assertNotNull(result);
@@ -219,7 +227,7 @@ public class KMSManagerImplKeyRotationTest {
         WrappedKey newWrappedKey = mock(WrappedKey.class);
         when(newWrappedKey.getWrappedKeyMaterial()).thenReturn("new-wrapped-blob".getBytes());
         when(kmsProvider.wrapKey(plainDek, KeyPurpose.VOLUME_ENCRYPTION, "new-kek-label", newProfileId))
-            .thenReturn(newWrappedKey);
+                .thenReturn(newWrappedKey);
 
         kmsManager.rewrapSingleKey(wrappedKeyVO, kmsKey, newVersion, kmsProvider);
 
@@ -248,7 +256,13 @@ public class KMSManagerImplKeyRotationTest {
         KMSKeyVO kmsKey = mock(KMSKeyVO.class);
         when(kmsKey.getId()).thenReturn(kmsKeyId);
         when(kmsKey.getHsmProfileId()).thenReturn(oldProfileId);
-        when(kmsKeyDao.findByKekLabel(oldKekLabel, testProviderName)).thenReturn(kmsKey);
+        when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+        when(kmsKey.getZoneId()).thenReturn(testZoneId);
+
+        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+        when(hsmProfile.getId()).thenReturn(oldProfileId);
+        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+        when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
 
         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
         when(oldVersion.getVersionNumber()).thenReturn(1);
@@ -256,24 +270,24 @@ public class KMSManagerImplKeyRotationTest {
         when(kmsKekVersionDao.getActiveVersion(kmsKeyId)).thenReturn(oldVersion);
         when(kmsKekVersionDao.listByKmsKeyId(kmsKeyId)).thenReturn(Arrays.asList(oldVersion));
 
-        // Provider creates new KEK - capture the generated label
-        ArgumentCaptor<String> labelCaptor = ArgumentCaptor.forClass(String.class);
-        when(kmsProvider.createKek(any(KeyPurpose.class), labelCaptor.capture(), anyInt(), eq(oldProfileId)))
-            .thenReturn("new-kek-id");
+        // Provider creates new KEK - will accept any label
+        when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(oldProfileId)))
+                .thenReturn("new-kek-id");
 
         KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
+        when(newVersion.getVersionNumber()).thenReturn(2);
         when(kmsKekVersionDao.persist(any(KMSKekVersionVO.class))).thenReturn(newVersion);
 
-        doReturn(kmsProvider).when(kmsManager).getKMSProviderForZone(testZoneId);
+        doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
         doReturn(true).when(kmsManager).isKmsEnabled(testZoneId);
 
-        kmsManager.rotateKek(testZoneId, KeyPurpose.VOLUME_ENCRYPTION,
-            oldKekLabel, null, 256, null);
+        kmsManager.rotateKek(kmsKey, oldKekLabel, null, 256, null);
 
-        // Verify a label was generated
+        // Verify a label was generated and passed to createKek
+        ArgumentCaptor<String> labelCaptor = ArgumentCaptor.forClass(String.class);
+        verify(kmsProvider).createKek(any(KeyPurpose.class), labelCaptor.capture(), eq(256), eq(oldProfileId));
         String generatedLabel = labelCaptor.getValue();
         assertNotNull("Label should be generated", generatedLabel);
-        verify(kmsProvider).createKek(any(KeyPurpose.class), eq(generatedLabel), eq(256), eq(oldProfileId));
     }
 
     /**
@@ -282,13 +296,23 @@ public class KMSManagerImplKeyRotationTest {
     @Test(expected = KMSException.class)
     public void testRotateKek_ThrowsExceptionWhenOldKekNotFound() throws KMSException {
         // Setup: Old KEK doesn't exist
-        when(kmsKeyDao.findByKekLabel("non-existent-label", testProviderName)).thenReturn(null);
+        Long oldProfileId = 10L;
 
-        doReturn(kmsProvider).when(kmsManager).getKMSProviderForZone(testZoneId);
+        KMSKeyVO kmsKey = mock(KMSKeyVO.class);
+        when(kmsKey.getZoneId()).thenReturn(testZoneId);
+        when(kmsKey.getHsmProfileId()).thenReturn(oldProfileId);
+        when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+
+        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+        when(hsmProfile.getId()).thenReturn(oldProfileId);
+        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+        when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
+
+        doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
         doReturn(true).when(kmsManager).isKmsEnabled(testZoneId);
 
-        kmsManager.rotateKek(testZoneId, KeyPurpose.VOLUME_ENCRYPTION,
-            "non-existent-label", "new-label", 256, null);
+        kmsManager.rotateKek(kmsKey,
+                "non-existent-label", "new-label", 256, null);
     }
 
     /**
@@ -303,8 +327,14 @@ public class KMSManagerImplKeyRotationTest {
 
         KMSKeyVO kmsKey = mock(KMSKeyVO.class);
         when(kmsKey.getId()).thenReturn(kmsKeyId);
+        when(kmsKey.getZoneId()).thenReturn(testZoneId);
         when(kmsKey.getHsmProfileId()).thenReturn(currentProfileId);
-        when(kmsKeyDao.findByKekLabel(oldKekLabel, testProviderName)).thenReturn(kmsKey);
+        when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+
+        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+        when(hsmProfile.getId()).thenReturn(currentProfileId);
+        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+        when(hsmProfileDao.findById(currentProfileId)).thenReturn(hsmProfile);
 
         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
         when(oldVersion.getVersionNumber()).thenReturn(1);
@@ -313,16 +343,16 @@ public class KMSManagerImplKeyRotationTest {
         when(kmsKekVersionDao.listByKmsKeyId(kmsKeyId)).thenReturn(Arrays.asList(oldVersion));
 
         when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(currentProfileId)))
-            .thenReturn("new-kek-id");
+                .thenReturn("new-kek-id");
 
         KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
+        when(newVersion.getVersionNumber()).thenReturn(2);
         when(kmsKekVersionDao.persist(any(KMSKekVersionVO.class))).thenReturn(newVersion);
 
-        doReturn(kmsProvider).when(kmsManager).getKMSProviderForZone(testZoneId);
+        doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
         doReturn(true).when(kmsManager).isKmsEnabled(testZoneId);
 
-        kmsManager.rotateKek(testZoneId, KeyPurpose.VOLUME_ENCRYPTION,
-            oldKekLabel, "new-label", 256, null);
+        kmsManager.rotateKek(kmsKey, oldKekLabel, "new-label", 256, null);
 
         // Verify current profile was used (not a different one)
         verify(kmsProvider).createKek(any(KeyPurpose.class), anyString(), eq(256), eq(currentProfileId));

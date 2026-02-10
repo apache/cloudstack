@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.framework.kms.KMSException;
+import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.kms.KMSManager;
 
 import javax.inject.Inject;
@@ -103,7 +104,7 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Rotating KMS key: " + _uuidMgr.getUuid(KMSKeyResponse.class, id);
+        return "Rotating KMS key: " + _uuidMgr.getUuid(KMSKey.class, id);
     }
 
     @Override
