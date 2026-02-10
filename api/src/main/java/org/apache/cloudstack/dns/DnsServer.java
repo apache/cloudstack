@@ -17,23 +17,29 @@
 
 package org.apache.cloudstack.dns;
 
+import java.util.Date;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface DnsServer extends InternalIdentity, Identity {
-    enum ProviderType {
-        PowerDNS
-    }
+    enum State {
+        Enabled, Disabled;
+    };
 
     String getName();
 
     String getUrl();
 
-    ProviderType getProviderType();
+    DnsProviderType getProviderType();
 
-    String getKey();
-
-    long getDomainId();
+    String getAPIKey();
 
     long getAccountId();
+
+    boolean isPublic();
+
+    Date getCreated();
+
+    Date getRemoved();
 }

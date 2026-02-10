@@ -19,9 +19,10 @@ package org.apache.cloudstack.dns;
 
 import java.util.List;
 
-public interface DnsProvider {
-    // Returns the provider type string (e.g., "PowerDNS")
-    String getProviderType();
+import com.cloud.utils.component.Adapter;
+
+public interface DnsProvider extends Adapter {
+    DnsProviderType getProviderType();
 
     // Validates connectivity to the server
     boolean validate(DnsServer server);

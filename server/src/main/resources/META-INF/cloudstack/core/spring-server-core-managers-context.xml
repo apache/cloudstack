@@ -398,4 +398,10 @@
     <bean id="ExternalOrchestratorDetailDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailDaoImpl" />
     <bean id="ExtensionResourceMapDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDaoImpl" />
     <bean id="ExtensionResourceMapDetailsDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDetailsDaoImpl" />
+
+    <bean id="dnsServerDao" class="org.apache.cloudstack.dns.dao.DnsServerDaoImpl" />
+    <bean id="dnsZoneDao" class="org.apache.cloudstack.dns.dao.DnsZoneDaoImpl" />
+    <bean id="dnsZoneNetworkMapDao" class="org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDaoImpl" />
+
+    <bean id="dnsProviderManager" class="org.apache.cloudstack.dns.DnsProviderManagerImpl" />
 </beans>

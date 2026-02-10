@@ -15,28 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.dns;
+package org.apache.cloudstack.dns.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.dns.vo.DnsServerVO;
 
-public interface DnsZone extends InternalIdentity, Identity {
-    enum ZoneType {
-        Public, Private
-    }
-    enum State {
-        Active, Inactive
-    }
+import com.cloud.utils.db.GenericDao;
 
-    String getName();
+public interface DnsServerDao extends GenericDao<DnsServerVO, Long> {
 
-    long getDnsServerId();
+    List<DnsServerVO> listByProviderType(String providerType);
 
-    long getAccountId();
-
-    ZoneType getType();
-
-    List<Long> getAssociatedNetworks();
 }

@@ -34,8 +34,10 @@ import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.PluggableService;
 
-public interface DnsProviderManager extends Manager {
+public interface DnsProviderManager extends Manager, PluggableService {
+
     DnsServer addDnsServer(AddDnsServerCmd cmd);
     ListResponse<DnsServerResponse> listDnsServers(ListDnsServersCmd cmd);
     boolean deleteDnsServer(DeleteDnsServerCmd cmd);

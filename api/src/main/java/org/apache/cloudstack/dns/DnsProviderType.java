@@ -17,26 +17,18 @@
 
 package org.apache.cloudstack.dns;
 
-import java.util.List;
+public enum DnsProviderType {
+    PowerDNS;
+//    Cloudflare
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
-public interface DnsZone extends InternalIdentity, Identity {
-    enum ZoneType {
-        Public, Private
+    // Helper to validate and return Enum from String safely
+    public static DnsProviderType fromString(String type) {
+        if (type == null) return null;
+        for (DnsProviderType t : DnsProviderType.values()) {
+            if (t.name().equalsIgnoreCase(type)) {
+                return t;
+            }
+        }
+        throw new IllegalArgumentException("Invalid DNS Provider type: " + type);
     }
-    enum State {
-        Active, Inactive
-    }
-
-    String getName();
-
-    long getDnsServerId();
-
-    long getAccountId();
-
-    ZoneType getType();
-
-    List<Long> getAssociatedNetworks();
 }
