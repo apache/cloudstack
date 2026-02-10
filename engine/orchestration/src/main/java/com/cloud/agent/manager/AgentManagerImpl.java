@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -55,7 +56,6 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.agent.AgentManager;
@@ -2102,7 +2102,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _hostDao.loadDetails(host);
         String hostPort = host.getDetail(Host.HOST_SSH_POST);
         int sshPort;
-        if (com.cloud.utils.StringUtils.isBlank(hostPort)) {
+        if (StringUtils.isBlank(hostPort)) {
             sshPort = KVMHostDiscoverySshPort.valueIn(host.getClusterId());
         } else {
             sshPort = Integer.parseInt(hostPort);
