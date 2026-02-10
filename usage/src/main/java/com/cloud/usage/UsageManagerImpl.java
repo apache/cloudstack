@@ -193,7 +193,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private final List<UsageVmDiskVO> usageVmDisks = new ArrayList<UsageVmDiskVO>();
 
     private final ScheduledExecutorService _executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
-    private final AtomicBoolean _parseJobRunning = new AtomicBoolean(false);
+    private final AtomicBoolean isParsingJobRunning = new AtomicBoolean(false);
     private final ScheduledExecutorService _heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-HB"));
     private final ScheduledExecutorService _sanityExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Sanity"));
     private Future _scheduledFuture = null;
@@ -369,11 +369,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         (new ManagedContextRunnable() {
             @Override
             protected void runInContext() {
-                _parseJobRunning.set(true);
+                isParsingJobRunning.set(true);
                 try {
                     runInContextInternal();
                 } finally {
-                    _parseJobRunning.set(false);
+                    isParsingJobRunning.set(false);
                 }
             }
         }).run();
@@ -2276,7 +2276,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                             if (timeToJob > (aggregationDurationMillis / 2)) {
                                 logger.debug("it's been {} ms since last usage job and {} ms until next job, scheduling an immediate job to catch up (aggregation duration is {} minutes)"
                                     , timeSinceLastSuccessJob, timeToJob, _aggregationDuration);
-                                if (!_parseJobRunning.get()) {
+                                if (!isParsingJobRunning.get()) {
                                     scheduleParse();
                                 }
                             }
