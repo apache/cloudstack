@@ -776,7 +776,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 _clusterDetailsDao.persist(cluster_cpu_detail);
                 _clusterDetailsDao.persist(cluster_memory_detail);
             }
-
         }
 
         try {
@@ -871,7 +870,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         hosts.add(host);
                     }
                     discoverer.postDiscovery(hosts, _nodeId);
-
                 }
                 logger.info("server resources successfully discovered by " + discoverer.getName());
                 return hosts;
@@ -2949,7 +2947,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      */
     protected void connectAndRestartAgentOnHost(HostVO host, String username, String password, String privateKey) {
         final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
-                host.getPrivateIpAddress(), AgentManager.KVMHostDiscoverySshPort.value(), username, password, privateKey);
+                host.getPrivateIpAddress(), getHostSshPort(host), username, password, privateKey);
         if (connection == null) {
             throw new CloudRuntimeException(String.format("SSH to agent is enabled, but failed to connect to %s via IP address [%s].", host, host.getPrivateIpAddress()));
         }
@@ -2963,6 +2961,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         } catch (final SshException e) {
             throw new CloudRuntimeException("SSH to agent is enabled, but agent restart failed", e);
         }
+    }
+
+    private int getHostSshPort(HostVO host) {
+        if (host == null) {
+            return AgentManager.KVMHostDiscoverySshPort.value();
+        }
+
+        _hostDao.loadDetails(host);
+        String hostPort = host.getDetail(Host.HOST_SSH_POST);
+        int sshPort;
+        if (StringUtils.isBlank(hostPort)) {
+            sshPort = AgentManager.KVMHostDiscoverySshPort.valueIn(host.getClusterId());
+        } else {
+            sshPort = Integer.parseInt(hostPort);
+        }
+
+        return sshPort;
     }
 
     public boolean cancelMaintenance(final long hostId) {

@@ -18,6 +18,7 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -28,6 +29,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.Transaction;
@@ -230,8 +232,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         String nstRegex = "\\bcompleted savetime=([0-9]{10})";
         Pattern saveTimePattern = Pattern.compile(nstRegex);
 
+        if (host == null) {
+            LOG.warn("Unable to take backup, host is null");
+            return null;
+        }
+
         try {
-            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), AgentManager.KVMHostDiscoverySshPort.value(),
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), getHostSshPort(host),
                     username, null, password, command, 120000, 120000, 3600000);
             if (!response.first()) {
                 LOG.error(String.format("Backup Script failed on HYPERVISOR %s due to: %s", host, response.second()));
@@ -250,9 +257,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         return null;
     }
     private boolean executeRestoreCommand(HostVO host, String username, String password, String command) {
+        if (host == null) {
+            LOG.warn("Unable to restore backup, host is null");
+            return false;
+        }
 
         try {
-            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), AgentManager.KVMHostDiscoverySshPort.value(),
+            Pair<Boolean, String> response = SshHelper.sshExecute(host.getPrivateIpAddress(), getHostSshPort(host),
                 username, null, password, command, 120000, 120000, 3600000);
 
             if (!response.first()) {
@@ -265,6 +276,23 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             throw new CloudRuntimeException(String.format("Failed to restore backup on host %s due to: %s", host.getName(), e.getMessage()));
         }
         return false;
+    }
+
+    private int getHostSshPort(HostVO host) {
+        if (host == null) {
+            return AgentManager.KVMHostDiscoverySshPort.value();
+        }
+
+        hostDao.loadDetails(host);
+        String hostPort = host.getDetail(Host.HOST_SSH_POST);
+        int sshPort;
+        if (StringUtils.isBlank(hostPort)) {
+            sshPort = AgentManager.KVMHostDiscoverySshPort.valueIn(host.getClusterId());
+        } else {
+            sshPort = Integer.parseInt(hostPort);
+        }
+
+        return sshPort;
     }
 
     private NetworkerClient getClient(final Long zoneId) {
