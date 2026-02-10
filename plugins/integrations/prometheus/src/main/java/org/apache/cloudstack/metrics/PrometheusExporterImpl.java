@@ -221,14 +221,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
             metricsList.add(new ItemHostVM(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), vmDao.listByHostId(host.getId()).size()));
 
-            // Add SSL certificate expiration metric
-            if (caManager != null && caManager.getActiveCertificatesMap() != null) {
-                X509Certificate cert = caManager.getActiveCertificatesMap().getOrDefault(host.getPrivateIpAddress(), null);
-                if (cert != null) {
-                    long certExpiryEpoch = cert.getNotAfter().getTime() / 1000; // Convert to epoch seconds
-                    metricsList.add(new ItemHostCertExpiry(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), certExpiryEpoch));
-                }
-            }
+            addSSLCertificateExpirationMetrics(metricsList, zoneName, zoneUuid, host);
 
             final CapacityVO coreCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU_CORE);
 
@@ -265,6 +258,18 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         metricsList.add(new ItemHost(zoneName, zoneUuid, TOTAL, total, null));
 
         addHostTagsMetrics(metricsList, dcId, zoneName, zoneUuid, totalHosts, upHosts, downHosts, total, up, down);
+    }
+
+    private void addSSLCertificateExpirationMetrics(List<Item> metricsList, String zoneName, String zoneUuid, HostVO host) {
+        if (caManager == null || caManager.getActiveCertificatesMap() == null) {
+            return;
+        }
+        X509Certificate cert = caManager.getActiveCertificatesMap().getOrDefault(host.getPrivateIpAddress(), null);
+        if (cert == null) {
+            return;
+        }
+        long certExpiryEpoch = cert.getNotAfter().getTime() / 1000; // Convert to epoch seconds
+        metricsList.add(new ItemHostCertExpiry(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), certExpiryEpoch));
     }
 
     private String markTagMaps(HostVO host, Map<String, Integer> totalHosts, Map<String, Integer> upHosts, Map<String, Integer> downHosts) {
