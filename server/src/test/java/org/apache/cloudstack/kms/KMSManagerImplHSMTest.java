@@ -19,16 +19,11 @@ package org.apache.cloudstack.kms;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.cloudstack.api.response.HSMProfileResponse;
@@ -41,9 +36,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Unit tests for HSM-related business logic in KMSManagerImpl

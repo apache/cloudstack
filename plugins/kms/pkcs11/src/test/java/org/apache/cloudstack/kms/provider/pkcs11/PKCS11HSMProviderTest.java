@@ -120,7 +120,7 @@ public class PKCS11HSMProviderTest {
     public void testLoadProfileConfig_DecryptsSensitiveValues() {
         // Setup: Profile details with encrypted pin
         HSMProfileDetailsVO detail1 = mock(HSMProfileDetailsVO.class);
-        when(detail1.getName()).thenReturn("library_path");
+        when(detail1.getName()).thenReturn("library");
         when(detail1.getValue()).thenReturn("/path/to/lib.so");
 
         HSMProfileDetailsVO detail2 = mock(HSMProfileDetailsVO.class);
@@ -140,7 +140,7 @@ public class PKCS11HSMProviderTest {
         // Verify
         assertNotNull("Config should not be null", config);
         assertEquals(3, config.size());
-        assertEquals("/path/to/lib.so", config.get("library_path"));
+        assertEquals("/path/to/lib.so", config.get("library"));
         // Note: In real code, DBEncryptionUtil.decrypt would be called
         // Here we just verify the structure is correct
         assertTrue("Config should contain pin", config.containsKey("pin"));
@@ -184,7 +184,7 @@ public class PKCS11HSMProviderTest {
     @Test
     public void testIsSensitiveKey_IdentifiesNonSensitiveKeys() {
         // Test
-        assertFalse(provider.isSensitiveKey("library_path"));
+        assertFalse(provider.isSensitiveKey("library"));
         assertFalse(provider.isSensitiveKey("slot_id"));
         assertFalse(provider.isSensitiveKey("endpoint"));
         assertFalse(provider.isSensitiveKey("max_sessions"));
@@ -232,7 +232,7 @@ public class PKCS11HSMProviderTest {
     public void testLoadProfileConfig_CachesConfiguration() {
         // Setup
         HSMProfileDetailsVO detail = mock(HSMProfileDetailsVO.class);
-        when(detail.getName()).thenReturn("library_path");
+        when(detail.getName()).thenReturn("library");
         when(detail.getValue()).thenReturn("/path/to/lib.so");
         when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(Arrays.asList(detail));
 
@@ -251,7 +251,7 @@ public class PKCS11HSMProviderTest {
     public void testGetSessionPool_CreatesPoolForNewProfile() {
         // Setup
         HSMProfileDetailsVO detail = mock(HSMProfileDetailsVO.class);
-        when(detail.getName()).thenReturn("library_path");
+        when(detail.getName()).thenReturn("library");
         when(detail.getValue()).thenReturn("/path/to/lib.so");
         when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(Arrays.asList(detail));
 
@@ -270,7 +270,7 @@ public class PKCS11HSMProviderTest {
     public void testGetSessionPool_ReusesPoolForSameProfile() {
         // Setup
         HSMProfileDetailsVO detail = mock(HSMProfileDetailsVO.class);
-        when(detail.getName()).thenReturn("library_path");
+        when(detail.getName()).thenReturn("library");
         when(detail.getValue()).thenReturn("/path/to/lib.so");
         when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(Arrays.asList(detail));
 

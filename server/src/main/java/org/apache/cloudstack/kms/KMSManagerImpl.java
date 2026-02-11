@@ -130,13 +130,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
-    public KMSProvider getKMSProviderForZone(Long zoneId) throws KMSException {
-        // Default to database provider for backward compatibility
-        // HSM-based keys will use provider from HSM profile's protocol field
-        return getKMSProvider("database");
-    }
-
-    @Override
     public boolean isKmsEnabled(Long zoneId) {
         if (zoneId == null) {
             return false;
@@ -147,8 +140,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     /**
      * Internal method to rotate a KEK (create new version and update KMS key state)
      */
-    String rotateKek(KMSKeyVO kmsKey, String oldKekLabel,
-            String newKekLabel, int keyBits, HSMProfileVO newHSMProfile) throws KMSException {
+    String rotateKek(KMSKeyVO kmsKey, String oldKekLabel, String newKekLabel, int keyBits, HSMProfileVO newHSMProfile) throws KMSException {
 
         validateKmsEnabled(kmsKey.getZoneId());
 
@@ -240,7 +232,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw KMSException.invalidParameter("HSM Profile not found");
         }
 
-        // Determine provider from HSM profile or default to database
+        // Determine provider from HSM profile
         KMSProvider provider = getKMSProvider(profile.getProtocol());
 
         // Generate unique KEK label
@@ -373,16 +365,17 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw KMSException.kekNotFound("KMS key not found for wrapped key: " + wrappedKeyId);
         }
 
-        KMSProvider provider = getKMSProvider(kmsKey.getProviderName());
-
         // Try the specific version first if available
         if (wrappedVO.getKekVersionId() != null) {
             KMSKekVersionVO version = kmsKekVersionDao.findById(wrappedVO.getKekVersionId());
             if (version != null && version.getStatus() != KMSKekVersionVO.Status.Archived) {
                 try {
+                    HSMProfileVO hsmProfile = hsmProfileDao.findById(version.getHsmProfileId());
+                    KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
+
                     WrappedKey wrapped = new WrappedKey(version.getKekLabel(), kmsKey.getPurpose(),
                             kmsKey.getAlgorithm(), wrappedVO.getWrappedBlob(),
-                            kmsKey.getProviderName(), wrappedVO.getCreated(), kmsKey.getZoneId());
+                            hsmProfile.getProtocol(), wrappedVO.getCreated(), kmsKey.getZoneId());
                     // Pass HSM profile ID from version
                     byte[] dek = retryOperation(() -> provider.unwrapKey(wrapped, version.getHsmProfileId()));
                     logger.debug("Successfully unwrapped key {} with KEK version {}", wrappedKeyId,
@@ -398,6 +391,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         List<KMSKekVersionVO> versions = kmsKekVersionDao.getVersionsForDecryption(kmsKey.getId());
         for (KMSKekVersionVO version : versions) {
             try {
+                HSMProfileVO hsmProfile = hsmProfileDao.findById(version.getHsmProfileId());
+                KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
+
                 WrappedKey wrapped = new WrappedKey(version.getKekLabel(), kmsKey.getPurpose(),
                         kmsKey.getAlgorithm(), wrappedVO.getWrappedBlob(),
                         kmsKey.getProviderName(), wrappedVO.getCreated(), kmsKey.getZoneId());
@@ -433,15 +429,14 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw KMSException.invalidParameter("KMS key purpose is not VOLUME_ENCRYPTION: " + kmsKey);
         }
 
-        HSMProfileVO hsmProfile = hsmProfileDao.findById(kmsKey.getHsmProfileId());
-        if (hsmProfile == null) {
-            throw KMSException.invalidParameter("HSM profile not found: " + kmsKey.getHsmProfileId());
-        }
-
-        KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
-
         // Get active KEK version
         KMSKekVersionVO activeVersion = getActiveKekVersion(kmsKey.getId());
+
+        HSMProfileVO hsmProfile = hsmProfileDao.findById(activeVersion.getHsmProfileId());
+        if (hsmProfile == null) {
+            throw KMSException.invalidParameter("HSM profile not found: " + activeVersion.getHsmProfileId());
+        }
+        KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
 
         // Generate and wrap DEK using active KEK version
         int dekSize = KMSDekSizeBits.value();
@@ -1081,7 +1076,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         }
 
         // Get active version for this KMS key
-        KMSKekVersionVO activeVersion = kmsKekVersionDao.getActiveVersion(oldVersion.getKmsKeyId());
+            KMSKekVersionVO activeVersion = kmsKekVersionDao.getActiveVersion(oldVersion.getKmsKeyId());
         if (activeVersion == null) {
             logger.warn("No active KEK version found for KMS key {}, skipping", kmsKey);
             return;
@@ -1102,7 +1097,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         }
 
         // Get provider
-        KMSProvider provider = getKMSProviderForZone(kmsKey.getZoneId());
+        HSMProfileVO hsmProfile = hsmProfileDao.findById(activeVersion.getHsmProfileId());
+        KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
 
         // Rewrap this batch using the common helper
         int successCount = 0;
@@ -1146,15 +1142,15 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             boolean allDeleted = true;
             for (KMSKeyVO key : accountKeys) {
                 try {
-                    KMSProvider provider = getKMSProviderForZone(key.getZoneId());
-
                     // Step 1: Delete all KEKs from the provider first
                     List<KMSKekVersionVO> kekVersions = kmsKekVersionDao.listByKmsKeyId(key.getId());
                     if (kekVersions != null && !kekVersions.isEmpty()) {
                         logger.debug("Deleting {} KEK version(s) from provider for KMS key {}",
                                 kekVersions.size(), key.getUuid());
                         for (KMSKekVersionVO kekVersion : kekVersions) {
+                            HSMProfileVO hsmProfile = hsmProfileDao.findById(kekVersion.getHsmProfileId());
                             try {
+                                KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
                                 provider.deleteKek(kekVersion.getKekLabel());
                                 logger.debug("Deleted KEK {} (v{}) from provider",
                                         kekVersion.getKekLabel(), kekVersion.getVersionNumber());
