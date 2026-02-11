@@ -34,7 +34,6 @@ import org.apache.cloudstack.api.response.DnsRecordResponse;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ManagerBase;
@@ -43,7 +42,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderManager, PluggableService {
-    @Autowired(required = false)
     List<DnsProvider> dnsProviders;
 
     private DnsProvider getProvider(DnsProviderType type) {
@@ -173,5 +171,13 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         cmdList.add(ListDnsRecordsCmd.class);
         cmdList.add(DeleteDnsRecordCmd.class);
         return cmdList;
+    }
+
+    public List<DnsProvider> getDnsProviders() {
+        return dnsProviders;
+    }
+
+    public void setDnsProviders(List<DnsProvider> dnsProviders) {
+        this.dnsProviders = dnsProviders;
     }
 }

@@ -403,5 +403,7 @@
     <bean id="dnsZoneDao" class="org.apache.cloudstack.dns.dao.DnsZoneDaoImpl" />
     <bean id="dnsZoneNetworkMapDao" class="org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDaoImpl" />
 
-    <bean id="dnsProviderManager" class="org.apache.cloudstack.dns.DnsProviderManagerImpl" />
+    <bean id="dnsProviderManager" class="org.apache.cloudstack.dns.DnsProviderManagerImpl" >
+        <property name="dnsProviders" value="#{dnsProvidersRegistry.registered}" />
+    </bean>
 </beans>
