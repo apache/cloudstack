@@ -228,24 +228,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return getQuotaSummaryResponse(accountId, keyword, domainId, domainPath, cmd);
     }
 
-
-    protected Long getAccountIdByAccountName(String accountName, Long domainId, Account caller) {
-        if (ObjectUtils.anyNull(accountName, domainId)) {
-            return null;
-        }
-
-        Domain domain = domainDao.findByIdIncludingRemoved(domainId);
-        _accountMgr.checkAccess(caller, domain);
-
-        Account account = _accountDao.findAccountIncludingRemoved(accountName, domainId);
-
-        if (account == null) {
-            throw new InvalidParameterValueException(String.format("Account name [%s] or domain id [%s] is invalid.", accountName, domainId));
-        }
-
-        return account.getAccountId();
-    }
-
     /**
      * Retrieves the domain path of the caller's domain (if the caller is Domain Admin) for filtering in the quota summary query.
      * @return null if the caller is an Admin or the domain path of the caller's domain if the caller is a Domain Admin.

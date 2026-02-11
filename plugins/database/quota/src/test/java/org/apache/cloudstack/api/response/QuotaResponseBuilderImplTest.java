@@ -554,7 +554,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
             for (Account.Type type : Account.Type.values()) {
                 Mockito.doReturn(type).when(accountMock).getType();
-                Mockito.doReturn("ROOT").when(quotaResponseBuilderSpy).getDomainPathByDomainIdForDomainAdmin(accountMock);
 
                 Pair<List<QuotaSummaryResponse>, Integer> result = quotaResponseBuilderSpy.createQuotaSummaryResponse(cmd);
                 Assert.assertEquals(quotaSummaryResponseMock1, result);
@@ -648,37 +647,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         assertEquals(1, result.getAccountId());
         assertEquals(2, result.getEmailTemplateId());
         assertFalse(result.isEnabled());
-    }
-
-    @Test
-    public void getAccountIdByAccountNameTestAccountNameIsNullReturnsNull() {
-        Assert.assertNull(quotaResponseBuilderSpy.getAccountIdByAccountName(null, 1l, accountMock));
-    }
-
-    @Test
-    public void getAccountIdByAccountNameTestDomainIdIsNullReturnsNull() {
-        Assert.assertNull(quotaResponseBuilderSpy.getAccountIdByAccountName("test", null, accountMock));
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void getAccountIdByAccountNameTestAccountIsNullThrowsInvalidParameterValueException() {
-        Mockito.lenient().doNothing().when(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
-        Mockito.doReturn(null).when(accountDaoMock).findAccountIncludingRemoved(Mockito.anyString(), Mockito.anyLong());
-
-        quotaResponseBuilderSpy.getAccountIdByAccountName("test", 1l, accountMock);
-    }
-
-    @Test
-    public void getAccountIdByAccountNameTestAccountIsNotNullReturnsAccountId() {
-        Long expected = 61l;
-
-        Mockito.lenient().doNothing().when(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
-        Mockito.doReturn(accountMock).when(accountDaoMock).findAccountIncludingRemoved(Mockito.anyString(), Mockito.anyLong());
-        Mockito.doReturn(expected).when(accountMock).getAccountId();
-
-        Long result = quotaResponseBuilderSpy.getAccountIdByAccountName("test", 1l, accountMock);
-
-        Assert.assertEquals(expected, result);
     }
 
     @Test
