@@ -55,7 +55,7 @@ public interface AgentManager {
                     "For example: DhcpEntryCommand=600, SavePasswordCommand=300, VmDataCommand=300", false);
 
     ConfigKey<Integer> KVMHostDiscoverySshPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
-            "kvm.host.discovery.ssh.port", "22", "SSH port used for KVM host discovery and any other operations on host (using SSH)." +
+            "kvm.host.discovery.ssh.port", String.valueOf(Host.DEFAULT_SSH_PORT), "SSH port used for KVM host discovery and any other operations on host (using SSH)." +
                 " Please note that this is applicable when port is not defined through host url while adding the KVM host.", true, ConfigKey.Scope.Cluster);
 
     enum TapAgentsAction {

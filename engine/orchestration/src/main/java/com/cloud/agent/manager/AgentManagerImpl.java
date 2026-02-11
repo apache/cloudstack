@@ -2099,6 +2099,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return KVMHostDiscoverySshPort.value();
         }
 
+        if (host.getHypervisorType() != HypervisorType.KVM) {
+            return Host.DEFAULT_SSH_PORT;
+        }
+
         _hostDao.loadDetails(host);
         String hostPort = host.getDetail(Host.HOST_SSH_POST);
         int sshPort;
