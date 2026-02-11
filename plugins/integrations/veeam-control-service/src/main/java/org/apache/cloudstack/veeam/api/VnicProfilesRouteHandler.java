@@ -79,7 +79,7 @@ public class VnicProfilesRouteHandler extends ManagerBase implements RouteHandle
             }
         }
 
-        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
+        io.notFound(resp, null, outFormat);
     }
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
@@ -96,7 +96,7 @@ public class VnicProfilesRouteHandler extends ManagerBase implements RouteHandle
             VnicProfile response = serverAdapter.getVnicProfile(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+            io.notFound(resp, e.getMessage(), outFormat);
         }
     }
 }

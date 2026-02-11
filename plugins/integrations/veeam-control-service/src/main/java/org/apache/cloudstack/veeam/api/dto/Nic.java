@@ -34,6 +34,7 @@ public class Nic {
     private String linked;
     private Mac mac;
     private String plugged;
+    public String synced;
     private Ref vnicProfile;
     private Ref vm;
     private ReportedDevices reportedDevices;
@@ -81,12 +82,12 @@ public class Nic {
         this.interfaceType = interfaceType;
     }
 
-    public boolean isLinked() {
-        return Boolean.parseBoolean(linked);
+    public String getLinked() {
+        return linked;
     }
 
-    public void setLinked(boolean linked) {
-        this.linked = Boolean.toString(linked);
+    public void setLinked(String linked) {
+        this.linked = linked;
     }
 
     public Mac getMac() {
@@ -97,12 +98,20 @@ public class Nic {
         this.mac = mac;
     }
 
-    public boolean isPlugged() {
-        return Boolean.parseBoolean(plugged);
+    public String getPlugged() {
+        return plugged;
     }
 
-    public void setPlugged(boolean plugged) {
-        this.plugged = Boolean.toString(plugged);
+    public void setPlugged(String plugged) {
+        this.plugged = plugged;
+    }
+
+    public String getSynced() {
+        return synced;
+    }
+
+    public void setSynced(String synced) {
+        this.synced = synced;
     }
 
     public Ref getVnicProfile() {

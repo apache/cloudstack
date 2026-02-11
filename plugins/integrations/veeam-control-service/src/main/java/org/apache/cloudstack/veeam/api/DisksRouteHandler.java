@@ -93,7 +93,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
             }
         }
 
-        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
+        io.notFound(resp, null, outFormat);
     }
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
@@ -113,7 +113,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
             Disk response = serverAdapter.handleCreateDisk(request);
             io.getWriter().write(resp, HttpServletResponse.SC_CREATED, response, outFormat);
         } catch (JsonProcessingException | CloudRuntimeException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_BAD_REQUEST, "Bad request", e.getMessage(), outFormat);
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -123,7 +123,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
             Disk response = serverAdapter.getDisk(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+            io.notFound(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -133,7 +133,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
             serverAdapter.deleteDisk(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, "Deleted disk ID: " + id, outFormat);
         } catch (InvalidParameterValueException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_BAD_REQUEST, "Bad request", e.getMessage(), outFormat);
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 }

@@ -17,18 +17,25 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class VmInitialization {
+@JacksonXmlRootElement(localName = "snapshots")
+public final class Snapshots {
 
-    private String customScript;
+    @JsonProperty("snapshot")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    public List<Snapshot> snapshot;
 
-    public String getCustomScript() {
-        return customScript;
-    }
+    public Snapshots() {}
 
-    public void setCustomScript(String customScript) {
-        this.customScript = customScript;
+    public Snapshots(final List<Snapshot> snapshot) {
+        this.snapshot = snapshot;
     }
 }
+

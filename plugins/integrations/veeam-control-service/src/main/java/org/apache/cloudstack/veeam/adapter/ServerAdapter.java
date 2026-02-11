@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.veeam.adapter;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -24,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 
@@ -46,6 +46,8 @@ import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
+import org.apache.cloudstack.api.command.user.vmsnapshot.CreateVMSnapshotCmd;
+import org.apache.cloudstack.api.command.user.vmsnapshot.DeleteVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
@@ -73,6 +75,7 @@ import org.apache.cloudstack.veeam.api.converter.NetworkVOToVnicProfileConverter
 import org.apache.cloudstack.veeam.api.converter.NicVOToNicConverter;
 import org.apache.cloudstack.veeam.api.converter.StoreVOToStorageDomainConverter;
 import org.apache.cloudstack.veeam.api.converter.UserVmJoinVOToVmConverter;
+import org.apache.cloudstack.veeam.api.converter.VmSnapshotVOToSnapshotConverter;
 import org.apache.cloudstack.veeam.api.converter.VolumeJoinVOToDiskConverter;
 import org.apache.cloudstack.veeam.api.dto.Cluster;
 import org.apache.cloudstack.veeam.api.dto.DataCenter;
@@ -84,6 +87,7 @@ import org.apache.cloudstack.veeam.api.dto.Job;
 import org.apache.cloudstack.veeam.api.dto.Network;
 import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.Ref;
+import org.apache.cloudstack.veeam.api.dto.Snapshot;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.cloudstack.veeam.api.dto.VmAction;
@@ -139,8 +143,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshotService;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class ServerAdapter extends ManagerBase {
     private static final String SERVICE_ACCOUNT_NAME = "veemserviceuser";
@@ -162,6 +170,7 @@ public class ServerAdapter extends ManagerBase {
             ResizeVolumeCmd.class,
             ListNetworksCmd.class
     );
+    public static final String GUEST_CPU_MODE = "host-passthrough";
 
     @Inject
     RoleService roleService;
@@ -238,7 +247,13 @@ public class ServerAdapter extends ManagerBase {
     @Inject
     AsyncJobJoinDao asyncJobJoinDao;
 
-    private Map<String, Long> jobsMap = new ConcurrentHashMap<>();
+    @Inject
+    VMSnapshotDao vmSnapshotDao;
+
+    @Inject
+    VMSnapshotService vmSnapshotService;
+
+    //ToDo: check access on objects
 
     protected Role createServiceAccountRole() {
         Role role = roleService.createRole(SERVICE_ACCOUNT_ROLE_NAME, RoleType.User,
@@ -383,13 +398,13 @@ public class ServerAdapter extends ManagerBase {
         return NetworkVOToVnicProfileConverter.toVnicProfile(vo, this::getZoneById);
     }
 
-    public List<Vm> listAllUserVms() {
+    public List<Vm> listAllInstances() {
         // Todo: add filtering, pagination
         List<UserVmJoinVO> vms = userVmJoinDao.listAll();
         return UserVmJoinVOToVmConverter.toVmList(vms, this::getHostById);
     }
 
-    public Vm getVm(String uuid) {
+    public Vm getInstance(String uuid) {
         UserVmJoinVO vo = userVmJoinDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -398,7 +413,7 @@ public class ServerAdapter extends ManagerBase {
                 this::listNicsByInstance);
     }
 
-    public Vm handleCreateVm(Vm request) {
+    public Vm createInstance(Vm request) {
         if (request == null) {
             throw new InvalidParameterValueException("Request disk data is empty");
         }
@@ -424,14 +439,14 @@ public class ServerAdapter extends ManagerBase {
         }
         Long memory = null;
         try {
-            memory = request.memory;
+            memory = Long.valueOf(request.memory);
         } catch (Exception ignored) {}
         if (memory == null) {
             throw new InvalidParameterValueException("Memory must be specified");
         }
         String userdata = null;
         if (request.getInitialization() != null) {
-            userdata = request.getInitialization().getContentData();
+            userdata = request.getInitialization().getCustomScript();
         }
         ApiConstants.BootType bootType = ApiConstants.BootType.BIOS;
         ApiConstants.BootMode bootMode = ApiConstants.BootMode.LEGACY;
@@ -442,7 +457,7 @@ public class ServerAdapter extends ManagerBase {
         Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
         CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
-            return createVm(zoneId, clusterId, name, cpu, memory, userdata, bootType, bootMode);
+            return createInstance(zoneId, clusterId, name, cpu, memory, userdata, bootType, bootMode);
         } finally {
             CallContext.unregister();
         }
@@ -463,20 +478,21 @@ public class ServerAdapter extends ManagerBase {
         return serviceOfferingDao.findByUuid(uuid);
     }
 
-    protected Vm createVm(Long zoneId, Long clusterId, String name, int cpu, long memory, String userdata,
-                          ApiConstants.BootType bootType, ApiConstants.BootMode bootMode) {
+    protected Vm createInstance(Long zoneId, Long clusterId, String name, int cpu, long memory, String userdata,
+                                ApiConstants.BootType bootType, ApiConstants.BootMode bootMode) {
         ServiceOffering serviceOffering = getServiceOfferingIdForVmCreation(zoneId, cpu, memory);
         if (serviceOffering == null) {
             throw new CloudRuntimeException("No service offering found for VM creation with specified CPU and memory");
         }
         DeployVMCmdByAdmin cmd = new DeployVMCmdByAdmin();
+        cmd.setHttpMethod(BaseCmd.HTTPMethod.POST.name());
         ComponentContext.inject(cmd);
         cmd.setZoneId(zoneId);
         cmd.setClusterId(clusterId);
         cmd.setName(name);
         cmd.setServiceOfferingId(serviceOffering.getId());
         if (StringUtils.isNotEmpty(userdata)) {
-            cmd.setUserData(Base64.getEncoder().encodeToString(userdata.getBytes()));
+            cmd.setUserData(Base64.getEncoder().encodeToString(userdata.getBytes(StandardCharsets.UTF_8)));
         }
         if (bootType != null) {
             cmd.setBootType(bootType.toString());
@@ -487,6 +503,11 @@ public class ServerAdapter extends ManagerBase {
         // ToDo: handle other.
         cmd.setHypervisor(Hypervisor.HypervisorType.KVM.name());
         cmd.setBlankInstance(true);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.GUEST_CPU_MODE, GUEST_CPU_MODE);
+        Map<Integer, Map<String, String>> map = new HashMap<>();
+        map.put(0, details);
+        cmd.setDetails(map);
         try {
             UserVm vm = userVmService.createVirtualMachine(cmd);
             vm = userVmService.finalizeCreateVirtualMachine(vm.getId());
@@ -498,7 +519,11 @@ public class ServerAdapter extends ManagerBase {
         }
     }
 
-    public void deleteVm(String uuid) {
+    public Vm updateInstance(String uuid, Vm request) {
+        return getInstance(uuid);
+    }
+
+    public void deleteInstance(String uuid) {
         UserVmVO vo = userVmDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -510,7 +535,7 @@ public class ServerAdapter extends ManagerBase {
         }
     }
 
-    public VmAction startVm(String uuid) {
+    public VmAction startInstance(String uuid) {
         UserVmVO vo = userVmDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -519,6 +544,7 @@ public class ServerAdapter extends ManagerBase {
         CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             StartVMCmd cmd = new StartVMCmd();
+            cmd.setHttpMethod(BaseCmd.HTTPMethod.POST.name());
             ComponentContext.inject(cmd);
             Map<String, String> params = new HashMap<>();
             params.put(ApiConstants.ID, vo.getUuid());
@@ -534,7 +560,7 @@ public class ServerAdapter extends ManagerBase {
         }
     }
 
-    public VmAction stopVm(String uuid) {
+    public VmAction stopInstance(String uuid) {
         UserVmVO vo = userVmDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -543,6 +569,7 @@ public class ServerAdapter extends ManagerBase {
         CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             StopVMCmd cmd = new StopVMCmd();
+            cmd.setHttpMethod(BaseCmd.HTTPMethod.POST.name());
             ComponentContext.inject(cmd);
             Map<String, String> params = new HashMap<>();
             params.put(ApiConstants.ID, vo.getUuid());
@@ -559,7 +586,7 @@ public class ServerAdapter extends ManagerBase {
         }
     }
 
-    public VmAction shutdownVm(String uuid) {
+    public VmAction shutdownInstance(String uuid) {
         UserVmVO vo = userVmDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -568,6 +595,7 @@ public class ServerAdapter extends ManagerBase {
         CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             StopVMCmd cmd = new StopVMCmd();
+            cmd.setHttpMethod(BaseCmd.HTTPMethod.POST.name());
             ComponentContext.inject(cmd);
             Map<String, String> params = new HashMap<>();
             params.put(ApiConstants.ID, vo.getUuid());
@@ -610,7 +638,7 @@ public class ServerAdapter extends ManagerBase {
         return listDiskAttachmentsByInstanceId(vo.getId());
     }
 
-    public DiskAttachment handleVmAttachDisk(final String vmUuid, final DiskAttachment request) {
+    public DiskAttachment handleInstanceAttachDisk(final String vmUuid, final DiskAttachment request) {
         UserVmVO vmVo = userVmDao.findByUuid(vmUuid);
         if (vmVo == null) {
             throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
@@ -729,7 +757,7 @@ public class ServerAdapter extends ManagerBase {
         return listNicsByInstance(vo.getId(), vo.getUuid());
     }
 
-    public List<Nic> listNicsByInstanceId(final String uuid) {
+    public List<Nic> listNicsByInstanceUuid(final String uuid) {
         UserVmVO vo = userVmDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -737,7 +765,7 @@ public class ServerAdapter extends ManagerBase {
         return listNicsByInstance(vo.getId(), vo.getUuid());
     }
 
-    public Nic handleVmAttachNic(final String vmUuid, final Nic request) {
+    public Nic handleAttachInstanceNic(final String vmUuid, final Nic request) {
         UserVmVO vmVo = userVmDao.findByUuid(vmUuid);
         if (vmVo == null) {
             throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
@@ -860,28 +888,98 @@ public class ServerAdapter extends ManagerBase {
     }
 
     public List<Job> listAllJobs() {
+        // ToDo: find active jobs for service account
         return Collections.emptyList();
     }
 
-    public Job getTempJob(String uuid) {
-//        final ClusterVO vo = clusterDao.findByUuid(uuid);
-//        if (vo == null) {
-//            throw new InvalidParameterValueException("Cluster with ID " + uuid + " not found");
-//        }
-        long startTime = jobsMap.computeIfAbsent(uuid, k -> System.currentTimeMillis());
-        long elapsed = System.currentTimeMillis() - startTime;
-        if (elapsed > 10000L) {
-            return AsyncJobJoinVOToJobConverter.toJob(uuid, "finished", startTime);
-        } else {
-            return AsyncJobJoinVOToJobConverter.toJob(uuid, "started", startTime);
-        }
-    }
-
     public Job getJob(String uuid) {
-        final AsyncJobJoinVO vo = asyncJobJoinDao.findByUuid(uuid);
+        final AsyncJobJoinVO vo = asyncJobJoinDao.findByUuidIncludingRemoved(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("Job with ID " + uuid + " not found");
         }
         return AsyncJobJoinVOToJobConverter.toJob(vo);
+    }
+
+    public List<Snapshot> listSnapshotsByInstanceUuid(final String uuid) {
+        UserVmVO vo = userVmDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
+        }
+        List<VMSnapshotVO> snapshots = vmSnapshotDao.findByVm(vo.getId());
+        return VmSnapshotVOToSnapshotConverter.toSnapshotList(snapshots, vo.getUuid());
+    }
+
+    public Snapshot handleCreateInstanceSnapshot(final String vmUuid, final Snapshot request) {
+        UserVmVO vmVo = userVmDao.findByUuid(vmUuid);
+        if (vmVo == null) {
+            throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
+        }
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
+        try {
+            CreateVMSnapshotCmd cmd = new CreateVMSnapshotCmd();
+            ComponentContext.inject(cmd);
+            Map<String, String> params = new HashMap<>();
+            params.put(ApiConstants.VIRTUAL_MACHINE_ID, vmVo.getUuid());
+            params.put(ApiConstants.VM_SNAPSHOT_DESCRIPTION, request.getDescription());
+            params.put(ApiConstants.VM_SNAPSHOT_MEMORY, String.valueOf(Boolean.parseBoolean(request.getPersistMemorystate())));
+            ApiServerService.AsyncCmdResult result =
+                    apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
+                            serviceUserAccount.second());
+            if (result.objectId == null) {
+                throw new CloudRuntimeException("No snapshot ID returned");
+            }
+            VMSnapshotVO vo = vmSnapshotDao.findById(result.objectId);
+            if (vo == null) {
+                throw new CloudRuntimeException("Snapshot not found");
+            }
+            return VmSnapshotVOToSnapshotConverter.toSnapshot(vo, vmVo.getUuid());
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to create snapshot: " + e.getMessage(), e);
+        } finally {
+            CallContext.unregister();
+        }
+    }
+
+    public Snapshot getSnapshot(String uuid) {
+        VMSnapshotVO vo = vmSnapshotDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("Snapshot with ID " + uuid + " not found");
+        }
+        UserVmVO vm = userVmDao.findById(vo.getVmId());
+        return VmSnapshotVOToSnapshotConverter.toSnapshot(vo, vm.getUuid());
+    }
+
+    public Snapshot deleteSnapshot(String uuid, boolean async) {
+        Snapshot snapshot = null;
+        VMSnapshotVO vo = vmSnapshotDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("Snapshot with ID " + uuid + " not found");
+        }
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
+        try {
+            if (async) {
+                DeleteVMSnapshotCmd cmd = new DeleteVMSnapshotCmd();
+                ComponentContext.inject(cmd);
+                Map<String, String> params = new HashMap<>();
+                params.put(ApiConstants.ID, vo.getUuid());
+                apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
+                        serviceUserAccount.second());
+                vo = vmSnapshotDao.findById(vo.getId());
+                if (vo == null) {
+                    throw new CloudRuntimeException("Snapshot not found");
+                }
+                UserVmVO vm = userVmDao.findById(vo.getVmId());
+                snapshot = VmSnapshotVOToSnapshotConverter.toSnapshot(vo, vm.getUuid());
+            } else {
+                vmSnapshotService.deleteVMSnapshot(vo.getId());
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to delete snapshot: " + e.getMessage(), e);
+        } finally {
+            CallContext.unregister();
+        }
+        return snapshot;
     }
 }

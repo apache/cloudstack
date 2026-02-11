@@ -27,8 +27,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.Mapper;
+import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.ResponseWriter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +36,7 @@ import org.apache.logging.log4j.Logger;
 
 public class VeeamControlServlet extends HttpServlet {
     private static final Logger LOGGER = LogManager.getLogger(VeeamControlServlet.class);
+    private static final boolean LOG_REQUESTS = false;
 
     private final ResponseWriter writer;
     private final Mapper mapper;
@@ -63,6 +64,32 @@ public class VeeamControlServlet extends HttpServlet {
 
         LOGGER.info("Received {} request for {} with out format: {}", method, path, outFormat);
 
+        logRequest(req, method, path);
+
+        try {
+            if ("/".equals(path)) {
+                handleRoot(req, resp, outFormat);
+                return;
+            }
+
+            if (CollectionUtils.isNotEmpty(this.routeHandlers)) {
+                for (RouteHandler handler : this.routeHandlers) {
+                    if (handler.canHandle(method, path)) {
+                        handler.handle(req, resp, path, outFormat, this);
+                        return;
+                    }
+                }
+            }
+            notFound(resp, null, outFormat);
+        } catch (Error e) {
+            writer.writeFault(resp, e.status, e.message, null, outFormat);
+        }
+    }
+
+    private static void logRequest(HttpServletRequest req, String method, String path) {
+        if (!LOG_REQUESTS) {
+            return;
+        }
         // Add a log to give all info about the request
         try {
             StringBuilder details = new StringBuilder();
@@ -91,25 +118,6 @@ public class VeeamControlServlet extends HttpServlet {
         } catch (Exception e) {
             LOGGER.debug("Failed to capture request details", e);
         }
-
-        try {
-            if ("/".equals(path)) {
-                handleRoot(req, resp, outFormat);
-                return;
-            }
-
-            if (CollectionUtils.isNotEmpty(this.routeHandlers)) {
-                for (RouteHandler handler : this.routeHandlers) {
-                    if (handler.canHandle(method, path)) {
-                        handler.handle(req, resp, path, outFormat, this);
-                        return;
-                    }
-                }
-            }
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
-        } catch (Error e) {
-            writer.writeFault(resp, e.status, e.message, null, outFormat);
-        }
     }
 
     private String normalize(String pathInfo) {
@@ -133,16 +141,16 @@ public class VeeamControlServlet extends HttpServlet {
 
     public void methodNotAllowed(final HttpServletResponse resp, final String allow, final Negotiation.OutFormat outFormat) throws IOException {
         resp.setHeader("Allow", allow);
-        writer.writeFault(resp, 405, "Method Not Allowed", "Allowed methods: " + allow, outFormat);
+        writer.writeFault(resp, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed", "Allowed methods: " + allow, outFormat);
     }
 
     public void badRequest(final HttpServletResponse resp, String detail, Negotiation.OutFormat outFormat) throws IOException {
-        writer.writeFault(resp, 400, "Bad request", detail, outFormat);
+        writer.writeFault(resp, HttpServletResponse.SC_BAD_REQUEST, "Bad request", detail, outFormat);
     }
 
 
     public void notFound(final HttpServletResponse resp, String detail, Negotiation.OutFormat outFormat) throws IOException {
-        writer.writeFault(resp, 404, "Not found", detail, outFormat);
+        writer.writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", detail, outFormat);
     }
 
     public static class Error extends RuntimeException {

@@ -43,6 +43,8 @@ public final class Vm {
     @JacksonXmlProperty(localName = "stop_reason")
     public String stopReason;   // empty string allowed
 
+    private Long creationTime;
+
     @JsonProperty("stop_time")
     @JacksonXmlProperty(localName = "stop_time")
     public Long stopTime;       // epoch millis
@@ -57,7 +59,7 @@ public final class Vm {
     public Ref cluster;
     public Ref host;
 
-    public Long memory;          // bytes
+    public String memory;          // bytes
     public Cpu cpu;
     public Os os;
     public Bios bios;
@@ -76,6 +78,14 @@ public final class Vm {
     private VmInitialization initialization;
 
     public Vm() {}
+
+    public Long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(Long creationTime) {
+        this.creationTime = creationTime;
+    }
 
     public Long getStartTime() {
         return startTime;

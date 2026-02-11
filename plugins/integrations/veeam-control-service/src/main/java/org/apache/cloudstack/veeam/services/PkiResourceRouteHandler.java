@@ -65,7 +65,7 @@ public class PkiResourceRouteHandler extends ManagerBase implements RouteHandler
             return;
         }
 
-        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
+        io.notFound(resp, null, outFormat);
     }
 
     protected void handleGet(HttpServletRequest req, HttpServletResponse resp,

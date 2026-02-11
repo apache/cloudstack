@@ -28,6 +28,8 @@ import java.util.List;
 @JacksonXmlRootElement(localName = "disk")
 public final class Disk {
 
+    private String bootable;
+
     @JsonProperty("actual_size")
     public String actualSize;
 
@@ -87,6 +89,14 @@ public final class Disk {
     public String id;
 
     public Disk() {}
+
+    public String getBootable() {
+        return bootable;
+    }
+
+    public void setBootable(String bootable) {
+        this.bootable = bootable;
+    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JacksonXmlRootElement(localName = "storage_domains")

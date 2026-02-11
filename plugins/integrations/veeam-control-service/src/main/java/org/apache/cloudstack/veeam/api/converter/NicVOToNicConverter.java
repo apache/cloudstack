@@ -22,6 +22,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.veeam.VeeamControlService;
+import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.VnicProfilesRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Ip;
 import org.apache.cloudstack.veeam.api.dto.Ips;
@@ -46,10 +47,11 @@ public class NicVOToNicConverter {
         Mac mac = new Mac();
         mac.setAddress(vo.getMacAddress());
         nic.setMac(mac);
-        nic.setLinked(true);
-        nic.setPlugged(true);
-        if (StringUtils.isBlank(vmUuid)) {
-            nic.setVm(Ref.of(basePath + "/vms/" + vmUuid, vmUuid));
+        nic.setLinked(Boolean.TRUE.toString());
+        nic.setPlugged(Boolean.TRUE.toString());
+        nic.setSynced(Boolean.TRUE.toString());
+        if (StringUtils.isNotBlank(vmUuid)) {
+            nic.setVm(Ref.of(basePath + VmsRouteHandler.BASE_ROUTE + "/" + vmUuid, vmUuid));
             nic.setHref(nic.getVm().href + "/nics/" + vo.getUuid());
         }
         nic.setInterfaceType("virtio");
@@ -70,6 +72,7 @@ public class NicVOToNicConverter {
         device.setType("network");
         device.setId(vo.getUuid());
         device.setName("eth0");
+        device.setDescription(String.format("%s device", vo.getReserver()));
         device.setMac(mac);
         Ip ip = new Ip();
         if (vo.getIPv4Address() != null) {
@@ -82,6 +85,7 @@ public class NicVOToNicConverter {
             ip.setVersion("v6");
         }
         device.setIps(new Ips(List.of(ip)));
+        device.setHref(vm.href + "/reporteddevices/" + vo.getUuid());
         device.setVm(vm);
         return device;
     }

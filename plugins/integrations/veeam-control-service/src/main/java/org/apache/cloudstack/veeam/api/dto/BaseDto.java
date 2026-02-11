@@ -20,15 +20,28 @@ package org.apache.cloudstack.veeam.api.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class VmInitialization {
+public class BaseDto {
 
-    private String customScript;
+    private String href;
+    private String id;
 
-    public String getCustomScript() {
-        return customScript;
+    public String getHref() {
+        return href;
     }
 
-    public void setCustomScript(String customScript) {
-        this.customScript = customScript;
+    public void setHref(String href) {
+        this.href = href;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public static Link getActionLink(final String action, final String baseHref) {
+        return new Link(action, baseHref + "/" + action);
     }
 }

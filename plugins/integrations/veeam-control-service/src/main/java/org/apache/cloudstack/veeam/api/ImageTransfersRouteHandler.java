@@ -100,7 +100,7 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
             }
         }
 
-        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
+        io.notFound(resp, null, outFormat);
     }
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
@@ -120,7 +120,7 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
             ImageTransfer response = serverAdapter.handleCreateImageTransfer(request);
             io.getWriter().write(resp, HttpServletResponse.SC_CREATED, response, outFormat);
         } catch (JsonProcessingException | CloudRuntimeException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_BAD_REQUEST, "Bad Request", e.getMessage(), outFormat);
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -130,7 +130,7 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
             ImageTransfer response = serverAdapter.getImageTransfer(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+            io.notFound(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -140,7 +140,7 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
             serverAdapter.handleCancelImageTransfer(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, "Image transfer cancelled successfully", outFormat);
         } catch (InvalidParameterValueException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+            io.notFound(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -150,7 +150,7 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
             serverAdapter.handleFinalizeImageTransfer(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, "Image transfer finalized successfully", outFormat);
         } catch (CloudRuntimeException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+            io.notFound(resp, e.getMessage(), outFormat);
         }
     }
 }

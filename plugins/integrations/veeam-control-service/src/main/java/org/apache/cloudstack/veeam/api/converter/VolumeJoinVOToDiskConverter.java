@@ -40,13 +40,14 @@ import com.cloud.storage.VolumeStats;
 public class VolumeJoinVOToDiskConverter {
     public static Disk toDisk(final VolumeJoinVO vol) {
         final Disk disk = new Disk();
-        final String basePath = VeeamControlService.ContextPath.value() + ApiService.BASE_ROUTE;
-
+        final String basePath = VeeamControlService.ContextPath.value();
+        final String apiBasePath = basePath + ApiService.BASE_ROUTE;
         final String diskId = vol.getUuid();
         final String diskHref = basePath + DisksRouteHandler.BASE_ROUTE + "/" + diskId;
 
         disk.id = diskId;
         disk.href = diskHref;
+        disk.setBootable(String.valueOf(Volume.Type.ROOT.equals(vol.getVolumeType())));
 
         // Names
         disk.name = vol.getName();
@@ -98,7 +99,7 @@ public class VolumeJoinVOToDiskConverter {
 
         // Disk profile (optional)
         disk.diskProfile = Ref.of(
-                basePath + "/diskprofiles/" + vol.getDiskOfferingUuid(),
+                apiBasePath + "/diskprofiles/" + vol.getDiskOfferingUuid(),
                 String.valueOf(vol.getDiskOfferingUuid())
         );
 
@@ -107,7 +108,7 @@ public class VolumeJoinVOToDiskConverter {
             Disk.StorageDomains sds = new Disk.StorageDomains();
             sds.storageDomain = List.of(
                     Ref.of(
-                            basePath + "/storagedomains/" + vol.getPoolUuid(),
+                            apiBasePath + "/storagedomains/" + vol.getPoolUuid(),
                             vol.getPoolUuid()
                     )
             );
@@ -134,7 +135,6 @@ public class VolumeJoinVOToDiskConverter {
     public static  DiskAttachment toDiskAttachment(final VolumeJoinVO vol) {
         final DiskAttachment da = new DiskAttachment();
         final String basePath = VeeamControlService.ContextPath.value();
-        final String apiBase = basePath + ApiService.BASE_ROUTE;
 
         final String diskAttachmentId = vol.getUuid();
         da.vm = Ref.of(
@@ -143,7 +143,7 @@ public class VolumeJoinVOToDiskConverter {
         );
 
         da.id = diskAttachmentId;
-        da.href = da.vm.href + "/diskattachements/" + diskAttachmentId;;
+        da.href = da.vm.href + "/diskattachments/" + diskAttachmentId;;
 
         // Links
         da.disk = toDisk(vol);

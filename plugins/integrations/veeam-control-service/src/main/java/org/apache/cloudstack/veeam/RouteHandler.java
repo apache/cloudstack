@@ -19,6 +19,7 @@ package org.apache.cloudstack.veeam;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -63,5 +64,11 @@ public interface RouteHandler extends Adapter {
         } catch (IOException ignored) {
             return null;
         }
+    }
+
+    static Map<String, String> getRequestParams(HttpServletRequest req) {
+        return req.getParameterMap().entrySet().stream()
+                .filter(e -> e.getValue() != null && e.getValue().length > 0)
+                .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, e -> e.getValue()[0]));
     }
 }

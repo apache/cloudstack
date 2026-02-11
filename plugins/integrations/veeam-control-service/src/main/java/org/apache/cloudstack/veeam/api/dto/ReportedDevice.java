@@ -25,6 +25,7 @@ public class ReportedDevice {
     private Mac Mac;
     private String name;
     private String type;
+    private String href;
     private Ref vm;
 
     public String getComment() {
@@ -81,6 +82,14 @@ public class ReportedDevice {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getHref() {
+        return href;
+    }
+
+    public void setHref(String href) {
+        this.href = href;
     }
 
     public Ref getVm() {

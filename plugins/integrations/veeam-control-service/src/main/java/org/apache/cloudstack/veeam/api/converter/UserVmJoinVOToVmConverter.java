@@ -28,12 +28,12 @@ import org.apache.cloudstack.veeam.api.ApiService;
 import org.apache.cloudstack.veeam.api.JobsRouteHandler;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Actions;
+import org.apache.cloudstack.veeam.api.dto.BaseDto;
 import org.apache.cloudstack.veeam.api.dto.Bios;
 import org.apache.cloudstack.veeam.api.dto.Cpu;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachments;
 import org.apache.cloudstack.veeam.api.dto.EmptyElement;
-import org.apache.cloudstack.veeam.api.dto.Link;
 import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.Nics;
 import org.apache.cloudstack.veeam.api.dto.Os;
@@ -71,6 +71,7 @@ public final class UserVmJoinVOToVmConverter {
         dst.description = src.getDisplayName();
         dst.href = basePath + VmsRouteHandler.BASE_ROUTE + "/" + src.getUuid();
         dst.status = mapStatus(src.getState());
+        dst.setCreationTime(src.getCreated().getTime());
         final Date lastUpdated = src.getLastUpdated() != null ? src.getLastUpdated() : src.getCreated();
         if ("down".equals(dst.status)) {
             dst.stopTime = lastUpdated.getTime();
@@ -106,7 +107,7 @@ public final class UserVmJoinVOToVmConverter {
             }
         }
 
-        dst.memory = src.getRamSize() * 1024L * 1024L;
+        dst.memory = String.valueOf(src.getRamSize() * 1024L * 1024L);
 
         dst.cpu = new Cpu(src.getArch(), new Topology(src.getCpu(), 1, 1));
         dst.os = new Os();
@@ -129,17 +130,15 @@ public final class UserVmJoinVOToVmConverter {
         }
 
         dst.actions = new Actions(List.of(
-                new Link("start", dst.href + "/start"),
-                new Link("stop", dst.href + "/stop"),
-                new Link("shutdown", dst.href + "/shutdown")
+                BaseDto.getActionLink("start", dst.href),
+                BaseDto.getActionLink("stop", dst.href),
+                BaseDto.getActionLink("shutdown", dst.href)
         ));
         dst.link = List.of(
-                new Link("diskattachments",
-                        dst.href + "/diskattachments"),
-                new Link("nics",
-                        dst.href + "/nics"),
-                new Link("snapshots",
-                        dst.href + "/snapshots")
+                BaseDto.getActionLink("diskattachments", dst.href),
+                BaseDto.getActionLink("nics", dst.href),
+                BaseDto.getActionLink("reporteddevices", dst.href),
+                BaseDto.getActionLink("snapshots", dst.href)
         );
         dst.tags = new EmptyElement();
 
@@ -162,21 +161,12 @@ public final class UserVmJoinVOToVmConverter {
     }
 
     private static String mapStatus(final VirtualMachine.State state) {
-        if (state == null) {
-            return null;
-        }
-
         // CloudStack-ish states -> oVirt-ish up/down
         if (Arrays.asList(VirtualMachine.State.Running, VirtualMachine.State.Starting,
                 VirtualMachine.State.Migrating, VirtualMachine.State.Restoring).contains(state)) {
             return "up";
         }
-        if (Arrays.asList(VirtualMachine.State.Stopped, VirtualMachine.State.Stopping,
-                VirtualMachine.State.Shutdown, VirtualMachine.State.Error,
-                VirtualMachine.State.Expunging).contains(state)) {
-            return "down";
-        }
-        return null;
+        return "down";
     }
 
     private static Ref buildRef(final String baseHref, final String suffix, final String id) {

@@ -93,7 +93,7 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
             }
         }
 
-        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
+        io.notFound(resp, null, outFormat);
     }
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
@@ -110,7 +110,7 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
             DataCenter response = serverAdapter.getDataCenter(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+            io.notFound(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -121,7 +121,7 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
             StorageDomains response = new StorageDomains(storageDomains);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+            io.notFound(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -132,7 +132,7 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
             Networks response = new Networks(networks);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
-            io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", e.getMessage(), outFormat);
+            io.notFound(resp, e.getMessage(), outFormat);
         }
     }
 }

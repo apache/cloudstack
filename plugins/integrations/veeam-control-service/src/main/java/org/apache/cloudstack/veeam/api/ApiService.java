@@ -61,7 +61,7 @@ public class ApiService extends ManagerBase implements RouteHandler {
             handleRootApiRequest(req, resp, outFormat, io);
             return;
         }
-        io.getWriter().writeFault(resp, HttpServletResponse.SC_NOT_FOUND, "Not found", null, outFormat);
+        io.notFound(resp, null, outFormat);
     }
 
     private void handleRootApiRequest(HttpServletRequest req, HttpServletResponse resp, Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {

@@ -55,7 +55,7 @@ public class SsoService extends ManagerBase implements RouteHandler {
             return;
         }
 
-        resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
+        io.notFound(resp, null, outFormat);
     }
 
     protected void handleToken(HttpServletRequest req, HttpServletResponse resp,
