@@ -1353,7 +1353,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             logger.info("Successfully cleaned up CLVM snapshot artifacts");
 
-        } catch (Exception ex) {kvmstoragep
+        } catch (Exception ex) {
             logger.error("Exception during CLVM snapshot artifact cleanup: {}", ex.getMessage(), ex);
         }
     }
@@ -2175,10 +2175,6 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (DomainInfo.DomainState.VIR_DOMAIN_RUNNING.equals(state)) {
                 if (volume.requiresEncryption()) {
                     throw new CloudRuntimeException("VM is running, encrypted volume snapshots aren't supported");
-                }
-
-                if (StoragePoolType.CLVM == primaryStore.getPoolType()) {
-                    throw new CloudRuntimeException("VM is running, live snapshots aren't supported with CLVM primary storage");
                 }
             }
 
