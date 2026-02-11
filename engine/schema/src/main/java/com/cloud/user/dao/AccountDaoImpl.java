@@ -42,7 +42,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
-    private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.username, u.account_id, u.secret_key, u.state, u.api_key_access, "
+    private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.uuid u.username, u.account_id, u.secret_key, u.state, u.api_key_access, "
         + "a.id, a.account_name, a.type, a.role_id, a.domain_id, a.state, a.api_key_access " + "FROM `cloud`.`user` u, `cloud`.`account` a "
         + "WHERE u.account_id = a.id AND u.api_key = ? and u.removed IS NULL";
 
@@ -145,24 +145,25 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
             // TODO:  make sure we don't have more than 1 result?  ApiKey had better be unique
             if (rs.next()) {
                 User u = new UserVO(rs.getLong(1));
-                u.setUsername(rs.getString(2));
-                u.setAccountId(rs.getLong(3));
-                u.setSecretKey(DBEncryptionUtil.decrypt(rs.getString(4)));
-                u.setState(State.getValueOf(rs.getString(5)));
-                boolean apiKeyAccess = rs.getBoolean(6);
+                u.setUuid(rs.getString(2));
+                u.setUsername(rs.getString(3));
+                u.setAccountId(rs.getLong(4));
+                u.setSecretKey(DBEncryptionUtil.decrypt(rs.getString(5)));
+                u.setState(State.getValueOf(rs.getString(6)));
+                boolean apiKeyAccess = rs.getBoolean(7);
                 if (rs.wasNull()) {
                     u.setApiKeyAccess(null);
                 } else {
                     u.setApiKeyAccess(apiKeyAccess);
                 }
 
-                AccountVO a = new AccountVO(rs.getLong(7));
-                a.setAccountName(rs.getString(8));
-                a.setType(Account.Type.getFromValue(rs.getInt(9)));
-                a.setRoleId(rs.getLong(10));
-                a.setDomainId(rs.getLong(11));
-                a.setState(State.getValueOf(rs.getString(12)));
-                apiKeyAccess = rs.getBoolean(13);
+                AccountVO a = new AccountVO(rs.getLong(8));
+                a.setAccountName(rs.getString(9));
+                a.setType(Account.Type.getFromValue(rs.getInt(10)));
+                a.setRoleId(rs.getLong(11));
+                a.setDomainId(rs.getLong(12));
+                a.setState(State.getValueOf(rs.getString(13)));
+                apiKeyAccess = rs.getBoolean(14);
                 if (rs.wasNull()) {
                     a.setApiKeyAccess(null);
                 } else {
