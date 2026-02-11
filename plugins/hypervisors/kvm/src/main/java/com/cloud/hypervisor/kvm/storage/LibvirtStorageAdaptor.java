@@ -745,6 +745,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return getPhysicalDiskViaDirectBlockDevice(volumeUuid, pool);
     }
 
+    private String getVgName(KVMStoragePool pool, String sourceDir) {
+        String vgName = sourceDir;
+        if (vgName.startsWith("/")) {
+            String[] parts = vgName.split("/");
+            List<String> tokens = Arrays.stream(parts)
+                    .filter(s -> !s.isEmpty()).collect(Collectors.toList());
+
+            vgName = tokens.size() > 1 ? tokens.get(1)
+                    : tokens.size() == 1 ? tokens.get(0)
+                      : "";
+        }
+        return vgName;
+    }
+
     /**
      * For CLVM volumes that exist in LVM but are not visible to libvirt,
      * access them directly via block device path.
@@ -757,18 +771,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             if (sourceDir == null || sourceDir.isEmpty()) {
                 throw new CloudRuntimeException("CLVM pool sourceDir is not set, cannot determine VG name");
             }
-
-            String vgName = sourceDir;
-            if (vgName.startsWith("/")) {
-                String[] parts = vgName.split("/");
-                List<String> tokens = Arrays.stream(parts)
-                        .filter(s -> !s.isEmpty()).collect(Collectors.toList());
-
-                vgName = tokens.size() > 1 ? tokens.get(1)
-                        : tokens.size() == 1 ? tokens.get(0)
-                          : "";
-            }
-
+            String vgName = getVgName(pool, sourceDir);
             logger.debug("Using VG name: {} (from sourceDir: {}) ", vgName, sourceDir);
 
             // Check if the LV exists in LVM using lvs command
@@ -1385,10 +1388,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         try {
             StorageVol vol = getVolume(libvirtPool.getPool(), uuid);
             if (vol == null) {
-                logger.warn("Volume %s not found in libvirt pool %s, it may have been already deleted", uuid, pool.getUuid());
+                logger.warn("Volume {} not found in libvirt pool {}, it may have been already deleted", uuid, pool.getUuid());
+
+                // For CLVM, attempt direct LVM cleanup in case the volume exists but libvirt can't see it
+                if (pool.getType() == StoragePoolType.CLVM) {
+                    return cleanupCLVMVolume(uuid, pool);
+                }
                 return true;
             }
-            logger.debug("Instructing libvirt to remove volume %s from pool %s", uuid, pool.getUuid());
+            logger.debug("Instructing libvirt to remove volume {} from pool {}", uuid, pool.getUuid());
             if(Storage.ImageFormat.DIR.equals(format)){
                 deleteDirVol(libvirtPool, vol);
             } else {
@@ -1397,7 +1405,80 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             vol.free();
             return true;
         } catch (LibvirtException e) {
+            // For CLVM, if libvirt fails, try direct LVM cleanup
+            if (pool.getType() == StoragePoolType.CLVM) {
+                logger.warn("Libvirt failed to delete CLVM volume {}, attempting direct LVM cleanup: {}", uuid, e.getMessage());
+                return cleanupCLVMVolume(uuid, pool);
+            }
             throw new CloudRuntimeException(e.toString());
+        }
+    }
+
+    /**
+     * Clean up CLVM volume and its snapshots directly using LVM commands.
+     * This is used as a fallback when libvirt cannot find or delete the volume.
+     */
+    private boolean cleanupCLVMVolume(String uuid, KVMStoragePool pool) {
+        logger.info("Starting direct LVM cleanup for CLVM volume: {} in pool: {}", uuid, pool.getUuid());
+
+        try {
+            String sourceDir = pool.getLocalPath();
+            if (sourceDir == null || sourceDir.isEmpty()) {
+                logger.debug("Source directory is null or empty, cannot determine VG name for CLVM pool {}, skipping direct cleanup", pool.getUuid());
+                return true;
+            }
+            String vgName = getVgName(pool, sourceDir);
+            logger.info("Determined VG name: {} for pool: {}", vgName, pool.getUuid());
+
+            if (vgName == null || vgName.isEmpty()) {
+                logger.warn("Cannot determine VG name for CLVM pool {}, skipping direct cleanup", pool.getUuid());
+                return true;
+            }
+
+            String lvPath = "/dev/" + vgName + "/" + uuid;
+            logger.debug("Volume path: {}", lvPath);
+
+            // Check if the LV exists
+            Script checkLvs = new Script("lvs", 5000, logger);
+            checkLvs.add("--noheadings");
+            checkLvs.add("--unbuffered");
+            checkLvs.add(lvPath);
+
+            logger.info("Checking if volume exists: lvs --noheadings --unbuffered {}", lvPath);
+            String checkResult = checkLvs.execute();
+
+            if (checkResult != null) {
+                logger.info("CLVM volume {} does not exist in LVM (check returned: {}), considering it as already deleted", uuid, checkResult);
+                return true;
+            }
+
+            logger.info("Volume {} exists, proceeding with cleanup", uuid);
+
+            logger.info("Step 1: Zero-filling volume {} for security", uuid);
+            secureZeroFillVolume(lvPath, uuid);
+
+            logger.info("Step 2: Removing volume {}", uuid);
+            Script removeLv = new Script("lvremove", 10000, logger);
+            removeLv.add("-f");
+            removeLv.add(lvPath);
+
+            logger.info("Executing command: lvremove -f {}", lvPath);
+            String removeResult = removeLv.execute();
+
+            if (removeResult == null) {
+                logger.info("Successfully removed CLVM volume {} using direct LVM cleanup", uuid);
+                return true;
+            } else {
+                logger.warn("Command 'lvremove -f {}' returned error: {}", lvPath, removeResult);
+                if (removeResult.contains("not found") || removeResult.contains("Failed to find")) {
+                    logger.info("CLVM volume {} not found during cleanup, considering it as already deleted", uuid);
+                    return true;
+                }
+                return false;
+            }
+        } catch (Exception ex) {
+            logger.error("Exception during CLVM volume cleanup for {}: {}", uuid, ex.getMessage(), ex);
+            return true;
         }
     }
 
@@ -1896,6 +1977,80 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     private void deleteVol(LibvirtStoragePool pool, StorageVol vol) throws LibvirtException {
         vol.delete(0);
+    }
+
+    /**
+     * Securely zero-fill a volume before deletion to prevent data leakage.
+     * Uses blkdiscard (fast TRIM) as primary method, with dd zero-fill as fallback.
+     *
+     * @param lvPath The full path to the logical volume (e.g., /dev/vgname/lvname)
+     * @param volumeUuid The UUID of the volume for logging purposes
+     */
+    private void secureZeroFillVolume(String lvPath, String volumeUuid) {
+        logger.info("Starting secure zero-fill for CLVM volume: {} at path: {}", volumeUuid, lvPath);
+
+        boolean blkdiscardSuccess = false;
+
+        // Try blkdiscard first (fast - sends TRIM commands)
+        try {
+            Script blkdiscard = new Script("blkdiscard", 300000, logger); // 5 minute timeout
+            blkdiscard.add("-f"); // Force flag to suppress confirmation prompts
+            blkdiscard.add(lvPath);
+
+            String result = blkdiscard.execute();
+            if (result == null) {
+                logger.info("Successfully zero-filled CLVM volume {} using blkdiscard (TRIM)", volumeUuid);
+                blkdiscardSuccess = true;
+            } else {
+                // Check if the error is "Operation not supported" - common with thick LVM without TRIM support
+                if (result.contains("Operation not supported") || result.contains("BLKDISCARD ioctl failed")) {
+                    logger.info("blkdiscard not supported for volume {} (device doesn't support TRIM/DISCARD), using dd fallback", volumeUuid);
+                } else {
+                    logger.warn("blkdiscard failed for volume {}: {}, will try dd fallback", volumeUuid, result);
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Exception during blkdiscard for volume {}: {}, will try dd fallback", volumeUuid, e.getMessage());
+        }
+
+        // Fallback to dd zero-fill (slow but thorough)
+        if (!blkdiscardSuccess) {
+            logger.info("Attempting zero-fill using dd for CLVM volume: {}", volumeUuid);
+            try {
+                // Use bash to chain commands with proper error handling
+                // nice -n 19: lowest CPU priority
+                // ionice -c 2 -n 7: best-effort I/O scheduling with lowest priority
+                // oflag=direct: bypass cache for more predictable performance
+                // || true at the end ensures the command doesn't fail even if dd returns error (which it does when disk is full - expected)
+                String command = String.format(
+                    "nice -n 19 ionice -c 2 -n 7 dd if=/dev/zero of=%s bs=1M oflag=direct 2>&1 || true",
+                    lvPath
+                );
+
+                Script ddZeroFill = new Script("/bin/bash", 3600000, logger); // 60 minute timeout for large volumes
+                ddZeroFill.add("-c");
+                ddZeroFill.add(command);
+
+                OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+                String ddResult = ddZeroFill.execute(parser);
+                String output = parser.getLines();
+
+                // dd writes to stderr even on success, check for completion indicators
+                if (output != null && (output.contains("copied") || output.contains("records in") ||
+                    output.contains("No space left on device"))) {
+                    logger.info("Successfully zero-filled CLVM volume {} using dd", volumeUuid);
+                } else if (ddResult == null) {
+                    logger.info("Zero-fill completed for CLVM volume {}", volumeUuid);
+                } else {
+                    logger.warn("dd zero-fill for volume {} completed with output: {}", volumeUuid,
+                        output != null ? output : ddResult);
+                }
+            } catch (Exception e) {
+                // Log warning but don't fail the deletion - zero-fill is a best-effort security measure
+                logger.warn("Failed to zero-fill CLVM volume {} before deletion: {}. Proceeding with deletion anyway.",
+                        volumeUuid, e.getMessage());
+            }
+        }
     }
 
     private void deleteDirVol(LibvirtStoragePool pool, StorageVol vol) throws LibvirtException {

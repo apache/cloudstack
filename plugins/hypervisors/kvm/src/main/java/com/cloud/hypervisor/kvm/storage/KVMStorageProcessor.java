@@ -58,6 +58,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cloud.utils.script.OutputInterpreter;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.direct.download.DirectDownloadHelper;
@@ -1193,61 +1194,304 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     /**
-     * Delete a CLVM snapshot using lvremove command.
+     * Delete a CLVM snapshot using comprehensive cleanup.
      * For CLVM, the snapshot path stored in DB is: /dev/vgname/volumeuuid/snapshotuuid
-     * However, managesnapshot.sh creates the actual snapshot using MD5 hash of the snapshot UUID.
-     * The actual device is at: /dev/mapper/vgname-MD5(snapshotuuid)
-     * We need to compute the MD5 hash and remove both the snapshot LV and its COW volume.
+     * This method handles:
+     * 1. Checking if snapshot artifacts still exist
+     * 2. Device-mapper snapshot entry removal
+     * 3. COW volume removal
+     * 4. -real device restoration if this is the last snapshot
+     *
+     * @param snapshotPath The snapshot path from database
+     * @param checkExistence If true, checks if snapshot exists before cleanup (for explicit deletion)
+     *                       If false, always performs cleanup (for post-backup cleanup)
+     * @return true if cleanup was performed, false if snapshot didn't exist (when checkExistence=true)
      */
-    private void deleteClvmSnapshot(String snapshotPath) {
+    private boolean deleteClvmSnapshot(String snapshotPath, boolean checkExistence) {
+        logger.info("Starting CLVM snapshot deletion for path: {}, checkExistence: {}", snapshotPath, checkExistence);
+
         try {
             // Parse the snapshot path: /dev/acsvg/volume-uuid/snapshot-uuid
-            // Extract VG name and snapshot UUID
             String[] pathParts = snapshotPath.split("/");
             if (pathParts.length < 5) {
-                logger.warn("Invalid CLVM snapshot path format: " + snapshotPath + ", skipping deletion");
-                return;
+                logger.warn("Invalid CLVM snapshot path format: {}, expected format: /dev/vgname/volume-uuid/snapshot-uuid", snapshotPath);
+                return false;
             }
 
             String vgName = pathParts[2];
+            String volumeUuid = pathParts[3];
             String snapshotUuid = pathParts[4];
+
+            logger.info("Parsed snapshot path - VG: {}, Volume: {}, Snapshot: {}", vgName, volumeUuid, snapshotUuid);
 
             // Compute MD5 hash of snapshot UUID (same as managesnapshot.sh does)
             String md5Hash = computeMd5Hash(snapshotUuid);
+            logger.debug("Computed MD5 hash for snapshot UUID {}: {}", snapshotUuid, md5Hash);
 
-            logger.debug("Deleting CLVM snapshot for UUID: " + snapshotUuid + " (MD5: " + md5Hash + ")");
+            // Check if snapshot exists (if requested)
+            if (checkExistence) {
+                String cowLvPath = "/dev/" + vgName + "/" + md5Hash + "-cow";
+                Script checkCow = new Script("/usr/sbin/lvs", 5000, logger);
+                checkCow.add("--noheadings");
+                checkCow.add(cowLvPath);
+                String checkResult = checkCow.execute();
 
-            // Remove the snapshot device mapper entry
-            // The snapshot device is at: /dev/mapper/vgname-md5hash
-            String vgNameEscaped = vgName.replace("-", "--");
-            String snapshotDevice = vgNameEscaped + "-" + md5Hash;
-
-            Script dmRemoveCmd = new Script("/usr/sbin/dmsetup", 30000, logger);
-            dmRemoveCmd.add("remove");
-            dmRemoveCmd.add(snapshotDevice);
-            String dmResult = dmRemoveCmd.execute();
-            if (dmResult != null) {
-                logger.debug("dmsetup remove returned: {} (may already be removed)", dmResult);
+                if (checkResult != null) {
+                    // COW volume doesn't exist - snapshot was already cleaned up
+                    logger.info("CLVM snapshot {} was already deleted, no cleanup needed", snapshotUuid);
+                    return false;
+                }
+                logger.info("CLVM snapshot artifacts still exist for {}, performing cleanup", snapshotUuid);
             }
 
-            // Remove the COW (copy-on-write) volume: /dev/vgname/md5hash-cow
-            String cowLvPath = "/dev/" + vgName + "/" + md5Hash + "-cow";
-            Script removeCowCmd = new Script("/usr/sbin/lvremove", 30000, logger);
-            removeCowCmd.add("-f");
-            removeCowCmd.add(cowLvPath);
+            // Check if this is the last snapshot for the volume
+            boolean isLastSnapshot = isLastSnapshotForVolume(vgName, volumeUuid);
+            logger.info("Is last snapshot for volume {}: {}", volumeUuid, isLastSnapshot);
 
-            String cowResult = removeCowCmd.execute();
-            if (cowResult != null) {
-                logger.warn("Failed to remove CLVM COW volume {} : {}",cowLvPath, cowResult);
-            } else {
-                logger.debug("Successfully deleted CLVM snapshot COW volume: {}", cowLvPath);
-            }
+            // Perform clean-up
+            cleanupClvmSnapshotArtifacts(vgName, volumeUuid, md5Hash, isLastSnapshot);
+
+            logger.info("Successfully deleted CLVM snapshot: {}", snapshotPath);
+            return true;
 
         } catch (Exception ex) {
             logger.error("Exception while deleting CLVM snapshot {}", snapshotPath, ex);
+            return false;
         }
     }
 
+    /**
+     * Delete a CLVM snapshot after backup (always performs cleanup without checking existence).
+     * Convenience method for backward compatibility.
+     */
+    private void deleteClvmSnapshot(String snapshotPath) {
+        deleteClvmSnapshot(snapshotPath, false);
+    }
+
+    /**
+     * Check if this is the last snapshot for a given volume in the VG.
+     *
+     * @param vgName The volume group name
+     * @param volumeUuid The origin volume UUID
+     * @return true if this is the last (or only) snapshot for the volume
+     */
+    private boolean isLastSnapshotForVolume(String vgName, String volumeUuid) {
+        try {
+            Script listSnapshots = new Script("/usr/sbin/lvs", 10000, logger);
+            listSnapshots.add("--noheadings");
+            listSnapshots.add("-o");
+            listSnapshots.add("lv_name,origin");
+            listSnapshots.add(vgName);
+
+            logger.debug("Checking snapshot count for volume {} in VG {}", volumeUuid, vgName);
+
+            final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+            String result = listSnapshots.execute(parser);
+
+            if (result == null) {
+                String output = parser.getLines();
+                if (output != null && !output.isEmpty()) {
+                    int snapshotCount = 0;
+                    String[] lines = output.split("\n");
+                    String escapedUuid = volumeUuid.replace("-", "--");
+
+                    for (String line : lines) {
+                        String trimmedLine = line.trim();
+                        if (!trimmedLine.isEmpty()) {
+                            String[] parts = trimmedLine.split("\\s+");
+                            if (parts.length >= 2) {
+                                String origin = parts[1];
+                                if (origin.equals(volumeUuid) || origin.equals(escapedUuid)) {
+                                    snapshotCount++;
+                                }
+                            }
+                        }
+                    }
+
+                    logger.debug("Found {} snapshot(s) for volume {}", snapshotCount, volumeUuid);
+                    return snapshotCount <= 1;
+                }
+            }
+            logger.debug("Could not determine snapshot count, assuming not last snapshot");
+            return false;
+
+        } catch (Exception e) {
+            logger.warn("Exception while checking if last snapshot: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Clean up CLVM snapshot artifacts including device-mapper entries, COW volumes,
+     * and potentially restore the -real device if this is the last snapshot.
+     *
+     * @param vgName The volume group name
+     * @param originVolumeUuid The UUID of the origin volume
+     * @param snapshotMd5Hash The MD5 hash of the snapshot UUID
+     * @param isLastSnapshot Whether this is the last snapshot of the origin volume
+     */
+    private void cleanupClvmSnapshotArtifacts(String vgName, String originVolumeUuid, String snapshotMd5Hash, boolean isLastSnapshot) {
+        logger.info("Cleaning up CLVM snapshot artifacts: VG={}, Origin={}, SnapshotHash={}, IsLastSnapshot={}",
+                    vgName, originVolumeUuid, snapshotMd5Hash, isLastSnapshot);
+
+        try {
+            String vgNameEscaped = vgName.replace("-", "--");
+            String originEscaped = originVolumeUuid.replace("-", "--");
+
+            String snapshotDevice = vgNameEscaped + "-" + snapshotMd5Hash;
+
+            removeSnapshotDeviceMapperEntry(snapshotDevice);
+
+            removeCowVolume(vgName, snapshotMd5Hash);
+
+            if (isLastSnapshot) {
+                logger.info("Step 3: This is the last snapshot, restoring origin volume {} from snapshot-origin state", originVolumeUuid);
+                restoreOriginVolumeFromSnapshotState(vgName, originVolumeUuid, vgNameEscaped, originEscaped);
+            } else {
+                logger.info("Step 3: Skipped - other snapshots still exist for volume {}", originVolumeUuid);
+            }
+
+            logger.info("Successfully cleaned up CLVM snapshot artifacts");
+
+        } catch (Exception ex) {kvmstoragep
+            logger.error("Exception during CLVM snapshot artifact cleanup: {}", ex.getMessage(), ex);
+        }
+    }
+
+    private void removeSnapshotDeviceMapperEntry(String snapshotDevice) {
+        logger.info("Step 1: Removing snapshot device-mapper entry: {}", snapshotDevice);
+
+        Script dmRemoveSnapshot = new Script("/usr/sbin/dmsetup", 10000, logger);
+        dmRemoveSnapshot.add("remove");
+        dmRemoveSnapshot.add(snapshotDevice);
+
+        logger.debug("Executing: dmsetup remove {}", snapshotDevice);
+        String dmResult = dmRemoveSnapshot.execute();
+        if (dmResult == null) {
+            logger.info("Successfully removed device-mapper entry: {}", snapshotDevice);
+        } else {
+            logger.debug("dmsetup remove returned: {} (may already be removed)", dmResult);
+        }
+    }
+
+    private void removeCowVolume(String vgName, String snapshotMd5Hash) {
+        String cowLvName = snapshotMd5Hash + "-cow";
+        String cowLvPath = "/dev/" + vgName + "/" + cowLvName;
+        logger.info("Step 2: Removing COW volume: {}", cowLvPath);
+
+        Script removeCow = new Script("/usr/sbin/lvremove", 10000, logger);
+        removeCow.add("-f");
+        removeCow.add(cowLvPath);
+
+        logger.debug("Executing: lvremove -f {}", cowLvPath);
+        String cowResult = removeCow.execute();
+        if (cowResult == null) {
+            logger.info("Successfully removed COW volume: {}", cowLvPath);
+        } else {
+            logger.warn("Failed to remove COW volume {}: {}", cowLvPath, cowResult);
+        }
+    }
+
+    /**
+     * Restore an origin volume from snapshot-origin state back to normal state.
+     * This removes the -real device and reconfigures the volume device-mapper entry.
+     * Should only be called when deleting the last snapshot of a volume.
+     *
+     * @param vgName The volume group name
+     * @param volumeUuid The volume UUID
+     * @param vgNameEscaped The VG name with hyphens doubled for device-mapper
+     * @param volumeEscaped The volume UUID with hyphens doubled for device-mapper
+     */
+    private void restoreOriginVolumeFromSnapshotState(String vgName, String volumeUuid, String vgNameEscaped, String volumeEscaped) {
+        try {
+            String originDevice = vgNameEscaped + "-" + volumeEscaped;
+            String realDevice = originDevice + "-real";
+
+            logger.info("Restoring volume {} from snapshot-origin state", volumeUuid);
+
+            // Check if -real device exists
+            Script checkReal = new Script("/usr/sbin/dmsetup", 5000, logger);
+            checkReal.add("info");
+            checkReal.add(realDevice);
+
+            logger.debug("Checking if -real device exists: dmsetup info {}", realDevice);
+            String checkResult = checkReal.execute();
+            if (checkResult != null) {
+                logger.debug("No -real device found for {}, volume may already be in normal state", volumeUuid);
+                return;
+            }
+
+            logger.info("Found -real device, proceeding with restoration");
+
+            suspendOriginDevice(originDevice);
+
+            logger.debug("Getting device-mapper table from -real device");
+            Script getTable = new Script("/usr/sbin/dmsetup", 5000, logger);
+            getTable.add("table");
+            getTable.add(realDevice);
+
+            OutputInterpreter.AllLinesParser tableParser = new OutputInterpreter.AllLinesParser();
+            String tableResult = getTable.execute(tableParser);
+            String realTable = tableParser.getLines();
+
+            resumeAndRemoveRealDevice(originDevice, realDevice, tableResult, realTable, volumeUuid);
+
+        } catch (Exception ex) {
+            logger.error("Exception during volume restoration from snapshot-origin state: {}", ex.getMessage(), ex);
+        }
+    }
+
+    private void suspendOriginDevice(String originDevice) {
+        logger.debug("Suspending origin device: {}", originDevice);
+        Script suspendOrigin = new Script("/usr/sbin/dmsetup", 5000, logger);
+        suspendOrigin.add("suspend");
+        suspendOrigin.add(originDevice);
+        String suspendResult = suspendOrigin.execute();
+        if (suspendResult != null) {
+            logger.warn("Failed to suspend origin device {}: {}", originDevice, suspendResult);
+        }
+    }
+
+    private void resumeAndRemoveRealDevice(String originDevice, String realDevice, String tableResult, String realTable, String volumeUuid) {
+        if (tableResult == null && realTable != null && !realTable.isEmpty()) {
+            logger.debug("Restoring original table to origin device: {}", realTable);
+
+            Script loadTable = new Script("/bin/bash", 10000, logger);
+            loadTable.add("-c");
+            loadTable.add("echo '" + realTable + "' | /usr/sbin/dmsetup load " + originDevice);
+
+            String loadResult = loadTable.execute();
+            if (loadResult != null) {
+                logger.warn("Failed to load table to origin device: {}", loadResult);
+            }
+
+            logger.debug("Resuming origin device");
+            Script resumeOrigin = new Script("/usr/sbin/dmsetup", 5000, logger);
+            resumeOrigin.add("resume");
+            resumeOrigin.add(originDevice);
+            String resumeResult = resumeOrigin.execute();
+            if (resumeResult != null) {
+                logger.warn("Failed to resume origin device: {}", resumeResult);
+            }
+
+            logger.debug("Removing -real device");
+            Script removeReal = new Script("/usr/sbin/dmsetup", 5000, logger);
+            removeReal.add("remove");
+            removeReal.add(realDevice);
+            String removeResult = removeReal.execute();
+            if (removeResult == null) {
+                logger.info("Successfully removed -real device and restored origin volume {}", volumeUuid);
+            } else {
+                logger.warn("Failed to remove -real device: {}", removeResult);
+            }
+        } else {
+            logger.warn("Failed to get table from -real device, aborting restoration");
+            Script resumeOrigin = new Script("/usr/sbin/dmsetup", 5000, logger);
+            resumeOrigin.add("resume");
+            resumeOrigin.add(originDevice);
+            resumeOrigin.execute();
+        }
+    }
     /**
      * Compute MD5 hash of a string, matching what managesnapshot.sh does:
      * echo "${snapshot}" | md5sum -t | awk '{ print $1 }'
@@ -1933,7 +2177,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     throw new CloudRuntimeException("VM is running, encrypted volume snapshots aren't supported");
                 }
 
-                if (StoragePoolType.CLVM.name().equals(primaryStore.getType())) {
+                if (StoragePoolType.CLVM == primaryStore.getPoolType()) {
                     throw new CloudRuntimeException("VM is running, live snapshots aren't supported with CLVM primary storage");
                 }
             }
@@ -2971,6 +3215,25 @@ public class KVMStorageProcessor implements StorageProcessor {
                 deleteSnapshotFile(snapshotTO);
                 if (snapshotTO.isKvmIncrementalSnapshot()) {
                     deleteCheckpoint(snapshotTO);
+                }
+            } else if (primaryPool.getType() == StoragePoolType.CLVM) {
+                // For CLVM, snapshots are typically already deleted from primary storage during backup
+                // via deleteSnapshotOnPrimary in the backupSnapshot finally block.
+                // This is called when the user explicitly deletes the snapshot via UI/API.
+                // We check if the snapshot still exists and clean it up if needed.
+                logger.info("Processing CLVM snapshot deletion (id={}, name={}, path={}) on primary storage",
+                        snapshotTO.getId(), snapshotTO.getName(), snapshotTO.getPath());
+
+                String snapshotPath = snapshotTO.getPath();
+                if (snapshotPath != null && !snapshotPath.isEmpty()) {
+                    boolean wasDeleted = deleteClvmSnapshot(snapshotPath, true);
+                    if (wasDeleted) {
+                        logger.info("Successfully cleaned up CLVM snapshot {} from primary storage", snapshotName);
+                    } else {
+                        logger.info("CLVM snapshot {} was already deleted from primary storage during backup, no cleanup needed", snapshotName);
+                    }
+                } else {
+                    logger.debug("CLVM snapshot path is null or empty, assuming already cleaned up");
                 }
             } else {
                 logger.warn("Operation not implemented for storage pool type of " + primaryPool.getType().toString());
