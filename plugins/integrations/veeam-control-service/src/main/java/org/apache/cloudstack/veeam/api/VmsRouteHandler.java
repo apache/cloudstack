@@ -32,6 +32,7 @@ import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachments;
 import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.Nics;
+import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
 import org.apache.cloudstack.veeam.api.dto.Snapshots;
 import org.apache.cloudstack.veeam.api.dto.Vm;
@@ -417,13 +418,14 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleDeleteSnapshotById(final String id, final HttpServletRequest req,
                 final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
-        boolean async = Boolean.parseBoolean(req.getParameter("async"));
+        String asyncStr = req.getParameter("async");
+        boolean async = !Boolean.FALSE.toString().equals(asyncStr);
         try {
-            Snapshot snapshot = serverAdapter.deleteSnapshot(id, async);
-            if (snapshot != null) {
-                io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, null, outFormat);
+            ResourceAction action = serverAdapter.deleteSnapshot(id, async);
+            if (action != null) {
+                io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, action, outFormat);
             } else {
-                io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, null, outFormat);
+                io.getWriter().write(resp, HttpServletResponse.SC_OK, null, outFormat);
             }
         } catch (CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);

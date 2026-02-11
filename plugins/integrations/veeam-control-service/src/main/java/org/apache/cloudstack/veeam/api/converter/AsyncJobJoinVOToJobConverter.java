@@ -25,6 +25,7 @@ import org.apache.cloudstack.veeam.api.JobsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.Job;
 import org.apache.cloudstack.veeam.api.dto.Ref;
+import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.VmAction;
 
 import com.cloud.api.query.vo.AsyncJobJoinVO;
@@ -80,12 +81,22 @@ public class AsyncJobJoinVOToJobConverter {
         return job;
     }
 
-    public static VmAction toVmAction(final AsyncJobJoinVO vo, final UserVmJoinVO vm) {
-        VmAction action = new VmAction();
+    protected static void fillAction(final ResourceAction action, final AsyncJobJoinVO vo) {
         final String basePath = VeeamControlService.ContextPath.value();
-        action.setVm(UserVmJoinVOToVmConverter.toVm(vm, null, null, null));
         action.setJob(Ref.of(basePath + JobsRouteHandler.BASE_ROUTE + vo.getUuid(), vo.getUuid()));
         action.setStatus("complete");
+    }
+
+    public static VmAction toVmAction(final AsyncJobJoinVO vo, final UserVmJoinVO vm) {
+        VmAction action = new VmAction();
+        fillAction(action, vo);
+        action.setVm(UserVmJoinVOToVmConverter.toVm(vm, null, null, null));
+        return action;
+    }
+
+    public static ResourceAction toAction(final AsyncJobJoinVO vo) {
+        VmAction action = new VmAction();
+        fillAction(action, vo);
         return action;
     }
 }

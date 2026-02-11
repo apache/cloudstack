@@ -17,14 +17,23 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
-public class VmAction extends ResourceAction {
-    private Vm vm;
+public class ResourceAction extends BaseDto {
+    private Ref job;
+    private String status;
 
-    public Vm getVm() {
-        return vm;
+    public Ref getJob() {
+        return job;
     }
 
-    public void setVm(Vm vm) {
-        this.vm = vm;
+    public void setJob(Ref job) {
+        this.job = job;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

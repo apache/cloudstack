@@ -87,6 +87,7 @@ import org.apache.cloudstack.veeam.api.dto.Job;
 import org.apache.cloudstack.veeam.api.dto.Network;
 import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.Ref;
+import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
 import org.apache.cloudstack.veeam.api.dto.Vm;
@@ -950,8 +951,8 @@ public class ServerAdapter extends ManagerBase {
         return VmSnapshotVOToSnapshotConverter.toSnapshot(vo, vm.getUuid());
     }
 
-    public Snapshot deleteSnapshot(String uuid, boolean async) {
-        Snapshot snapshot = null;
+    public ResourceAction deleteSnapshot(String uuid, boolean async) {
+        ResourceAction action = null;
         VMSnapshotVO vo = vmSnapshotDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("Snapshot with ID " + uuid + " not found");
@@ -963,15 +964,15 @@ public class ServerAdapter extends ManagerBase {
                 DeleteVMSnapshotCmd cmd = new DeleteVMSnapshotCmd();
                 ComponentContext.inject(cmd);
                 Map<String, String> params = new HashMap<>();
-                params.put(ApiConstants.ID, vo.getUuid());
-                apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
-                        serviceUserAccount.second());
-                vo = vmSnapshotDao.findById(vo.getId());
-                if (vo == null) {
-                    throw new CloudRuntimeException("Snapshot not found");
+                params.put(ApiConstants.VM_SNAPSHOT_ID, vo.getUuid());
+                ApiServerService.AsyncCmdResult result =
+                        apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
+                                serviceUserAccount.second());
+                AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
+                if (jobVo == null) {
+                    throw new CloudRuntimeException("Failed to find job for snapshot deletion");
                 }
-                UserVmVO vm = userVmDao.findById(vo.getVmId());
-                snapshot = VmSnapshotVOToSnapshotConverter.toSnapshot(vo, vm.getUuid());
+                action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
             } else {
                 vmSnapshotService.deleteVMSnapshot(vo.getId());
             }
@@ -980,6 +981,6 @@ public class ServerAdapter extends ManagerBase {
         } finally {
             CallContext.unregister();
         }
-        return snapshot;
+        return action;
     }
 }
