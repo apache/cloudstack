@@ -35,8 +35,6 @@ public interface User extends OwnedBy, InternalIdentity {
 
     public String getUuid();
 
-    public void setUuid(String uuid);
-
     public Date getCreated();
 
     public Date getRemoved();

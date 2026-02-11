@@ -138,13 +138,12 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         PreparedStatement pstmt = null;
         Pair<User, Account> userAcctPair = null;
         try {
-            String sql = FIND_USER_ACCOUNT_BY_API_KEY;
-            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt = txn.prepareAutoCloseStatement(FIND_USER_ACCOUNT_BY_API_KEY);
             pstmt.setString(1, apiKey);
             ResultSet rs = pstmt.executeQuery();
             // TODO:  make sure we don't have more than 1 result?  ApiKey had better be unique
             if (rs.next()) {
-                User u = new UserVO(rs.getLong(1));
+                UserVO u = new UserVO(rs.getLong(1));
                 u.setUuid(rs.getString(2));
                 u.setUsername(rs.getString(3));
                 u.setAccountId(rs.getLong(4));
@@ -170,10 +169,10 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
                     a.setApiKeyAccess(apiKeyAccess);
                 }
 
-                userAcctPair = new Pair<User, Account>(u, a);
+                userAcctPair = new Pair<>(u, a);
             }
         } catch (Exception e) {
-            logger.warn("Exception finding user/acct by api key: " + apiKey, e);
+            logger.warn("Exception finding user/acct by api key: {}", apiKey, e);
         }
         return userAcctPair;
     }
@@ -342,11 +341,9 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
             domain_id = account_vo.getDomainId();
         }
         catch (Exception e) {
-            logger.warn("getDomainIdForGivenAccountId: Exception :" + e.getMessage());
+            logger.warn("Can not get DomainId for the given AccountId; exception message : {}", e.getMessage());
         }
-        finally {
-            return domain_id;
-        }
+        return domain_id;
     }
 
     @Override
