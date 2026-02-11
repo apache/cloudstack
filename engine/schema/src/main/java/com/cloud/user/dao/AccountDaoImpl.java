@@ -42,7 +42,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
-    private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.uuid u.username, u.account_id, u.secret_key, u.state, u.api_key_access, "
+    private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.uuid, u.username, u.account_id, u.secret_key, u.state, u.api_key_access, "
         + "a.id, a.account_name, a.type, a.role_id, a.domain_id, a.state, a.api_key_access " + "FROM `cloud`.`user` u, `cloud`.`account` a "
         + "WHERE u.account_id = a.id AND u.api_key = ? and u.removed IS NULL";
 
