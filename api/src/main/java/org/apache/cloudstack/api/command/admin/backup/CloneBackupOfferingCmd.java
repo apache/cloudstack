@@ -82,7 +82,6 @@ public class CloneBackupOfferingCmd extends BaseAsyncCmd implements DomainAndZon
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
             description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
-            since = "4.23.0",
             length = 4096)
     private String domainIds;
 
@@ -157,7 +156,7 @@ public class CloneBackupOfferingCmd extends BaseAsyncCmd implements DomainAndZon
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VM_BACKUP_CLONE_OFFERING;
+        return EventTypes.EVENT_VM_BACKUP_OFFERING_CLONE;
     }
 
     @Override

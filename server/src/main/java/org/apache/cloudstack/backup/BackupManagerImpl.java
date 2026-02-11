@@ -326,7 +326,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return savedOffering;
     }
 
-    @Override
     public List<Long> getBackupOfferingDomains(Long offeringId) {
         final BackupOffering backupOffering = backupOfferingDao.findById(offeringId);
         if (backupOffering == null) {
@@ -335,7 +334,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return backupOfferingDetailsDao.findDomainIds(offeringId);
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_CLONE_OFFERING, eventDescription = "cloning backup offering", create = true)
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_OFFERING_CLONE, eventDescription = "cloning backup offering")
     public BackupOffering cloneBackupOffering(final CloneBackupOfferingCmd cmd) {
         final BackupOfferingVO sourceOffering = backupOfferingDao.findById(cmd.getSourceOfferingId());
         if (sourceOffering == null) {
@@ -351,15 +351,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final String description = cmd.getDescription() != null ? cmd.getDescription() : sourceOffering.getDescription();
         final String externalId = cmd.getExternalId() != null ? cmd.getExternalId() : sourceOffering.getExternalId();
         final boolean userDrivenBackups = cmd.getUserDrivenBackups() != null ? cmd.getUserDrivenBackups() : sourceOffering.isUserDrivenBackupAllowed();
+        final Long zoneId = cmd.getZoneId() != null ? cmd.getZoneId() : sourceOffering.getZoneId();
 
-        if (!externalId.equals(sourceOffering.getExternalId())) {
+        if (!Objects.equals(sourceOffering.getExternalId(), externalId)) {
             final BackupProvider provider = getBackupProvider(sourceOffering.getZoneId());
             if (!provider.isValidProviderOffering(sourceOffering.getZoneId(), externalId)) {
                 throw new CloudRuntimeException("Backup offering '" + externalId + "' does not exist on provider " + provider.getName() + " on zone " + sourceOffering.getZoneId());
             }
         }
 
-        if (!externalId.equals(sourceOffering.getExternalId())) {
+        if (!Objects.equals(sourceOffering.getExternalId(), externalId)) {
             final BackupOffering existingOffering = backupOfferingDao.findByExternalId(externalId, sourceOffering.getZoneId());
             if (existingOffering != null) {
                 throw new CloudRuntimeException("A backup offering with external ID '" + externalId + "' already exists in this zone");
@@ -367,7 +368,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         final BackupOfferingVO clonedOffering = new BackupOfferingVO(
-                sourceOffering.getZoneId(),
+                zoneId,
                 externalId,
                 sourceOffering.getProvider(),
                 cmd.getName(),

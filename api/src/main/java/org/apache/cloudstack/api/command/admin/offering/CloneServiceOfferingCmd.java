@@ -41,7 +41,7 @@ public class CloneServiceOfferingCmd extends CreateServiceOfferingCmd {
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
             required = true,
-            description = "The ID of the service offering to clone")
+            description = "The ID of the source service offering to clone from")
     private Long sourceOfferingId;
 
     /////////////////////////////////////////////////////

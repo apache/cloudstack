@@ -42,7 +42,7 @@ public class CloneDiskOfferingCmd extends CreateDiskOfferingCmd {
             type = BaseCmd.CommandType.UUID,
             entityType = DiskOfferingResponse.class,
             required = true,
-            description = "The ID of the disk offering to clone")
+            description = "The ID of the source disk offering to clone from")
     private Long sourceOfferingId;
 
     /////////////////////////////////////////////////////

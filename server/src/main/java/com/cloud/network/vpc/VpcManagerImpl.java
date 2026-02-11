@@ -819,6 +819,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CLONE, eventDescription = "cloning VPC offering")
     public VpcOffering cloneVPCOffering(CloneVPCOfferingCmd cmd) {
         Long sourceVpcOfferingId = cmd.getSourceOfferingId();
 

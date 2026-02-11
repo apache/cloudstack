@@ -4141,6 +4141,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_CLONE, eventDescription = "cloning disk offering")
     public DiskOffering cloneDiskOffering(final CloneDiskOfferingCmd cmd) {
         final long userId = CallContext.current().getCallingUserId();
         final DiskOfferingVO sourceOffering = getAndValidateSourceDiskOffering(cmd.getSourceOfferingId());
@@ -8284,7 +8285,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_CREATE, eventDescription = "cloning network offering")
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_CLONE, eventDescription = "cloning network offering")
     public NetworkOffering cloneNetworkOffering(final CloneNetworkOfferingCmd cmd) {
         final Long sourceOfferingId = cmd.getSourceOfferingId();
 

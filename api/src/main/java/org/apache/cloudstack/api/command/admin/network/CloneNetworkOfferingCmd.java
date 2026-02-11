@@ -45,7 +45,7 @@ public class CloneNetworkOfferingCmd extends NetworkOfferingBaseCmd {
             type = BaseCmd.CommandType.UUID,
             entityType = NetworkOfferingResponse.class,
             required = true,
-            description = "The ID of the network offering to clone")
+            description = "The ID of the source network offering to clone from")
     private Long sourceOfferingId;
 
     @Parameter(name = "addservices",

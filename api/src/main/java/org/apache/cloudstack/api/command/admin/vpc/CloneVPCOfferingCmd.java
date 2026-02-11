@@ -45,7 +45,7 @@ public class CloneVPCOfferingCmd extends CreateVPCOfferingCmd {
             type = BaseCmd.CommandType.UUID,
             entityType = VpcOfferingResponse.class,
             required = true,
-            description = "The ID of the VPC offering to clone")
+            description = "The ID of the source VPC offering to clone from")
     private Long sourceOfferingId;
 
     @Parameter(name = "addservices",
