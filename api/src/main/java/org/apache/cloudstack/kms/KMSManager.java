@@ -162,15 +162,6 @@ public interface KMSManager extends Manager, Configurable {
     KMSProvider getKMSProvider(String name);
 
     /**
-     * Get the configured provider for a zone
-     *
-     * @param zoneId the zone ID (null for global default)
-     * @return the configured provider
-     * @throws KMSException if no provider configured
-     */
-    KMSProvider getKMSProviderForZone(Long zoneId) throws KMSException;
-
-    /**
      * Check if KMS is enabled for a zone
      *
      * @param zoneId the zone ID

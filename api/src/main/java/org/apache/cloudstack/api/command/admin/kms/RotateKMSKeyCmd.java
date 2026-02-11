@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.kms.KMSManager;
@@ -81,6 +82,9 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
     public void execute() {
         try {
             kmsManager.rotateKMSKey(this);
+            SuccessResponse response = new SuccessResponse();
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
         } catch (KMSException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
                     "Failed to rotate KMS key: " + e.getMessage());
