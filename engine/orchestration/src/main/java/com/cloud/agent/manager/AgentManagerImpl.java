@@ -2104,15 +2104,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         _hostDao.loadDetails(host);
-        String hostPort = host.getDetail(Host.HOST_SSH_POST);
-        int sshPort;
+        String hostPort = host.getDetail(Host.HOST_SSH_PORT);
         if (StringUtils.isBlank(hostPort)) {
-            sshPort = KVMHostDiscoverySshPort.valueIn(host.getClusterId());
-        } else {
-            sshPort = Integer.parseInt(hostPort);
+            return KVMHostDiscoverySshPort.valueIn(host.getClusterId());
         }
 
-        return sshPort;
+        return Integer.parseInt(hostPort);
     }
 
     private GlobalLock getHostJoinLock(Long hostId) {

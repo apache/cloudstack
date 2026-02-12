@@ -386,7 +386,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             hostDetails.put("password", password);
             hostDetails.put("username", username);
             if (uri.getPort() > 0) {
-                hostDetails.put(Host.HOST_SSH_POST, String.valueOf(uri.getPort()));
+                hostDetails.put(Host.HOST_SSH_PORT, String.valueOf(uri.getPort()));
             }
             _hostDao.saveDetails(connectedHost);
             return resources;
