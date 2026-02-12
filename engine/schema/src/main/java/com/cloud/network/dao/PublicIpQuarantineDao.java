@@ -31,9 +31,9 @@ public interface PublicIpQuarantineDao extends GenericDao<PublicIpQuarantineVO, 
     /**
      * Returns a list of public IP addresses that are actively quarantined at the specified date and the previous owner differs from the specified user.
      *
-     * @param userId used to check against the IP's previous owner.
+     * @param userId used to check against the IP's previous owner;
      * @param date used to check if the quarantine is active;
-     * @return a list of PublicIpQuarantineVOs
+     * @return a list of PublicIpQuarantineVOs.
      */
     List<PublicIpQuarantineVO> listQuarantinedIpAddressesToUser(Long userId, Date date);
 }

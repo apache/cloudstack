@@ -960,7 +960,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             List<PublicIpQuarantineVO> quarantinedAddresses = publicIpQuarantineDao.listQuarantinedIpAddressesToUser(owner.getId(), new Date());
             List<Long> quarantinedAddressesIDs = quarantinedAddresses.stream().map(PublicIpQuarantineVO::getPublicIpAddressId).collect(Collectors.toList());
 
-            logger.debug("Found addresses with the following IDs: {}.", quarantinedAddressesIDs);
+            logger.debug("Found addresses with the following IDs: [{}] that will be ignored when searching for available public IPs.", quarantinedAddressesIDs);
 
             if (CollectionUtils.isNotEmpty(quarantinedAddressesIDs)) {
                 sc.setParameters("id", quarantinedAddressesIDs.toArray());

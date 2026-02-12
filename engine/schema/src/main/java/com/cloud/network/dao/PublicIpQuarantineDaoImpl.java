@@ -56,8 +56,6 @@ public class PublicIpQuarantineDaoImpl extends GenericDaoBase<PublicIpQuarantine
         quarantinedIpAddressesSearch.and();
         quarantinedIpAddressesSearch.op("removedIsNull", quarantinedIpAddressesSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         quarantinedIpAddressesSearch.and("endDate", quarantinedIpAddressesSearch.entity().getEndDate(), SearchCriteria.Op.GT);
-        quarantinedIpAddressesSearch.or("removedIsNotNull", quarantinedIpAddressesSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
-        quarantinedIpAddressesSearch.and("removedDateGt", quarantinedIpAddressesSearch.entity().getRemoved(), SearchCriteria.Op.GT);
         quarantinedIpAddressesSearch.cp();
 
         ipAddressSearchBuilder.done();
@@ -89,7 +87,6 @@ public class PublicIpQuarantineDaoImpl extends GenericDaoBase<PublicIpQuarantine
 
         sc.setParameters("previousOwnerId", userId);
         sc.setParameters("endDate", date);
-        sc.setParameters("removedDateGt", date);
 
         return searchIncludingRemoved(sc, null, false, false);
     }
