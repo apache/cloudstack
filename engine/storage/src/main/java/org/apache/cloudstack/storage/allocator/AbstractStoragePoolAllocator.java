@@ -270,7 +270,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                     reorderedPools.add(preferredIndex++, pool);
                 }
             }
-            logger.debug("Reordered list of pools by disk provisioning type [{}]: [{}]", diskProfile.getProvisioningType(), pools);
+            logger.debug("Reordered list of pools by disk provisioning type [{}]: [{}]", diskProfile.getProvisioningType(), reorderedPools);
             return reorderedPools;
         } else {
             if (diskProfile == null) {
