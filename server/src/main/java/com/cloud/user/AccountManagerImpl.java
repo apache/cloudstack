@@ -1861,10 +1861,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (isApiKeyBlank && isSecretKeyBlank) {
             return;
         }
-        Pair<User, Account> apiKeyOwner = _accountDao.findUserAccountByApiKey(apiKey);
+        UserAccount apiKeyOwner = _userAccountDao.getUserByApiKey(apiKey);
         if (apiKeyOwner != null) {
-            User userThatHasTheProvidedApiKey = apiKeyOwner.first();
-            if (userThatHasTheProvidedApiKey.getId() != user.getId()) {
+            if (apiKeyOwner.getId() != user.getId()) {
                 throw new InvalidParameterValueException(String.format("The API key [%s] already exists in the system. Please provide a unique key.", apiKey));
             }
         }
@@ -3184,14 +3183,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             UserVO updatedUser = _userDao.createForUpdate();
 
             String encodedKey;
-            Pair<User, Account> userAcct;
+            UserAccount userAcct;
             int retryLimit = 10;
             do {
                 // FIXME: what algorithm should we use for API keys?
                 KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
                 SecretKey key = generator.generateKey();
                 encodedKey = Base64.encodeBase64URLSafeString(key.getEncoded());
-                userAcct = _accountDao.findUserAccountByApiKey(encodedKey);
+                userAcct = _userAccountDao.getUserByApiKey(encodedKey);
                 retryLimit--;
             } while ((userAcct != null) && (retryLimit >= 0));
 
