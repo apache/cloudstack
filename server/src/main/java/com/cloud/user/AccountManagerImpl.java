@@ -3049,7 +3049,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public Pair<User, Account> findUserByApiKey(String apiKey) {
-        return _accountDao.findUserAccountByApiKey(apiKey);
+        UserAccount userAccount = _userAccountDao.getUserByApiKey(apiKey);
+        if (userAccount != null) {
+            User user = _userDao.getUser(userAccount.getId());
+            Account account = _accountDao.findById(userAccount.getAccountId());
+            return new Pair<>(user, account);
+        } else {
+            return null;
+        }
     }
 
     @Override
