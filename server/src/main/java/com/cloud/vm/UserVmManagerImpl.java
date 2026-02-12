@@ -1305,8 +1305,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Invalid CPU speed value, specify a value between 1 and " + Integer.MAX_VALUE);
                 }
             } else if (!serviceOffering.isCustomCpuSpeedSupported() && customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
-                throw new InvalidParameterValueException("The CPU speed of this offering id:" + serviceOffering.getUuid()
-                + " is not customizable. This is predefined in the Template.");
+                throw new InvalidParameterValueException(String.format("The CPU speed of this offering id:%s"
+                        + " is not customizable. This is predefined as %d MHz.",
+                        serviceOffering.getUuid(), serviceOffering.getSpeed()));
             }
 
             if (serviceOffering.getRamSize() == null) {
@@ -2765,10 +2766,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Map<String, String> customParameters = new HashMap<>();
             customParameters.put(VmDetailConstants.CPU_NUMBER, String.valueOf(newCpu));
             customParameters.put(VmDetailConstants.MEMORY, String.valueOf(newMemory));
-            if (svcOffering.isCustomCpuSpeedSupported()) {
+            if (details.containsKey(VmDetailConstants.CPU_SPEED)) {
                 customParameters.put(VmDetailConstants.CPU_SPEED, details.get(VmDetailConstants.CPU_SPEED));
             }
             validateCustomParameters(svcOffering, customParameters);
+        } else {
+            if (details.containsKey(VmDetailConstants.CPU_NUMBER) || details.containsKey(VmDetailConstants.MEMORY) ||
+                    details.containsKey(VmDetailConstants.CPU_SPEED)) {
+                throw new InvalidParameterValueException("CPU number, Memory and CPU speed cannot be updated for a " +
+                        "non-dynamic offering");
+            }
         }
         if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             return;
