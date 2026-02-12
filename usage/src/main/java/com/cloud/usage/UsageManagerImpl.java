@@ -2274,9 +2274,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
                         if ((timeSinceLastSuccessJob > 0) && (timeSinceLastSuccessJob > (aggregationDurationMillis - 100))) {
                             if (timeToJob > (aggregationDurationMillis / 2)) {
-                                logger.debug("it's been {} ms since last usage job and {} ms until next job, scheduling an immediate job to catch up (aggregation duration is {} minutes)"
-                                    , timeSinceLastSuccessJob, timeToJob, _aggregationDuration);
-                                if (!isParsingJobRunning.get()) {
+                                logger.debug("Hearbeat: it's been {} ms since last finished usage job and {} ms until next job (aggregation duration is {} minutes)",
+                                        timeSinceLastSuccessJob, timeToJob, _aggregationDuration);
+                                if (isParsingJobRunning.get()) {
+                                    logger.debug("Heartbeat: A parsing job is already running");
+                                } else {
+                                    logger.debug("Heartbeat: Scheduling an immediate job to catch up");
                                     scheduleParse();
                                 }
                             }
