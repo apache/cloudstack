@@ -368,14 +368,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_CREATE, eventDescription = "Creating Template")
     public VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException {
-        Account account = CallContext.current().getCallingAccount();
         if (cmd.getTemplateTag() != null) {
-            if (!_accountService.isRootAdmin(account.getId())) {
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
                 throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
             }
         }
         if (cmd.isRoutingType() != null) {
-            if (!_accountService.isRootAdmin(account.getId())) {
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
                 throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
             }
         }
@@ -556,7 +555,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isISO) {
             desc = Upload.Type.ISO.toString();
         }
-        if (!_accountMgr.isRootAdmin(caller.getId()) && ApiDBUtils.isExtractionDisabled()) {
+        boolean isRootAdmin = _accountMgr.isRootAdmin(caller);
+        if (!isRootAdmin && ApiDBUtils.isExtractionDisabled()) {
             throw new PermissionDeniedException("Extraction has been disabled by admin");
         }
 
@@ -583,7 +583,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new IllegalArgumentException("Please specify a valid zone.");
         }
 
-        if (!_accountMgr.isRootAdmin(caller.getId()) && !template.isExtractable()) {
+        if (!isRootAdmin && !template.isExtractable()) {
             throw new InvalidParameterValueException(String.format("Unable to extract Template %s as it's not extractable", template));
         }
 
@@ -1868,7 +1868,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (cmd.getTemplateTag() != null) {
-            if (!_accountService.isRootAdmin(caller.getId())) {
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
                 throw new PermissionDeniedException("Parameter templatetag can only be specified by a Root Admin, permission denied");
             }
         }
@@ -2216,7 +2216,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // do a permission check
         _accountMgr.checkAccess(account, AccessType.OperateEntry, true, template);
         if (cmd.isRoutingType() != null) {
-            if (!_accountService.isRootAdmin(account.getId())) {
+            if (!CallContext.current().isCallingAccountRootAdmin()) {
                 throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
             }
         }

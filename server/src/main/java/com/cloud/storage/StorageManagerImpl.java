@@ -242,7 +242,6 @@ import com.cloud.storage.listener.VolumeStateListener;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.UserDao;
@@ -941,11 +940,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         checkNfsMountOptions(details.get(ApiConstants.NFS_MOUNT_OPTIONS));
     }
 
-    protected void checkNFSMountOptionsForUpdate(Map<String, String> details, StoragePoolVO pool, Long accountId) throws InvalidParameterValueException {
+    protected void checkNFSMountOptionsForUpdate(Map<String, String> details, StoragePoolVO pool) throws InvalidParameterValueException {
         if (!details.containsKey(ApiConstants.NFS_MOUNT_OPTIONS)) {
             return;
         }
-        if (!_accountMgr.isRootAdmin(accountId)) {
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
             throw new PermissionDeniedException("Only root admin can modify nfs options");
         }
         if (!pool.getHypervisor().equals(HypervisorType.KVM) && !pool.getHypervisor().equals((HypervisorType.Simulator))) {
@@ -1029,8 +1028,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
         }
         // Check if zone is disabled
-        Account account = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !CallContext.current().isCallingAccountRootAdmin()) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone is currently disabled: %s", zone));
         }
 
@@ -1229,7 +1227,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         Map<String, String> inputDetails = extractApiParamAsMap(cmd.getDetails());
-        checkNFSMountOptionsForUpdate(inputDetails, pool, cmd.getEntityOwnerId());
+        checkNFSMountOptionsForUpdate(inputDetails, pool);
 
         String name = cmd.getName();
         if(StringUtils.isNotBlank(name)) {
@@ -1365,8 +1363,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public void changeStoragePoolScope(ChangeStoragePoolScopeCmd cmd) throws IllegalArgumentException, InvalidParameterValueException, PermissionDeniedException {
         Long id = cmd.getId();
 
-        Long accountId = cmd.getEntityOwnerId();
-        if (!_accountMgr.isRootAdmin(accountId)) {
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
             throw new PermissionDeniedException("Only root admin can perform this operation");
         }
 
@@ -3961,8 +3958,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 throw new InvalidParameterValueException("Can't find zone by id " + zoneId);
             }
 
-            Account account = CallContext.current().getCallingAccount();
-            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
+            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !CallContext.current().isCallingAccountRootAdmin()) {
                 PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
                 ex.addProxyObject(zone.getUuid(), "dcId");
                 throw ex;
@@ -4345,8 +4341,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException("Can't find zone by id " + dcId);
         }
 
-        Account account = CallContext.current().getCallingAccount();
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
+        if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !CallContext.current().isCallingAccountRootAdmin()) {
             PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
             ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;

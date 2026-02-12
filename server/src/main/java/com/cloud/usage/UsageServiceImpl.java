@@ -205,7 +205,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             accountId = caller.getId();
             //List records for all the accounts if the caller account is of type admin.
             //If account_id or account_name is explicitly mentioned, list records for the specified account only even if the caller is of type admin
-            ignoreAccountId = _accountService.isRootAdmin(caller.getId());
+            ignoreAccountId = CallContext.current().isCallingAccountRootAdmin();
             logger.debug("Account details not available. Using userContext account: {}", caller);
         }
 

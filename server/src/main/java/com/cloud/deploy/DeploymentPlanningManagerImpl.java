@@ -829,7 +829,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         // check if zone is dedicated. if yes check if vm owner has access to it.
         DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(dc.getId());
-        if (dedicatedZone != null && !_accountMgr.isRootAdmin(vmProfile.getOwner().getId())) {
+        if (dedicatedZone != null && !_accountMgr.isRootAdmin(vmProfile.getOwner())) {
             long accountDomainId = vmProfile.getOwner().getDomainId();
             long accountId = vmProfile.getOwner().getAccountId();
             logger.debug("Zone [{}] is dedicated. Checking if account [{}] in domain [{}] can use this zone to deploy VM [{}].",
@@ -1972,7 +1972,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     private boolean isRootAdmin(VirtualMachineProfile vmProfile) {
         if (vmProfile != null) {
             if (vmProfile.getOwner() != null) {
-                return _accountMgr.isRootAdmin(vmProfile.getOwner().getId());
+                return _accountMgr.isRootAdmin(vmProfile.getOwner());
             } else {
                 return false;
             }

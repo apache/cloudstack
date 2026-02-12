@@ -179,7 +179,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             Account owner = _accountDao.findById(template.getAccountId());
             // validate that the template is usable by the account
             if (!template.isPublicTemplate()) {
-                if (_accountService.isRootAdmin(caller.getId()) || (owner.getId() == caller.getId())) {
+                if (_accountService.isRootAdmin(caller) || (owner.getId() == caller.getId())) {
                     return true;
                 }
                 //special handling for the project case
@@ -196,7 +196,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             } else {
                 // Domain admin and regular user can delete/modify only templates created by them
                 if (accessType != null && accessType == AccessType.OperateEntry) {
-                    if (!_accountService.isRootAdmin(caller.getId()) && owner.getId() != caller.getId()) {
+                    if (!_accountService.isRootAdmin(caller) && owner.getId() != caller.getId()) {
                         // For projects check if the caller account can access the project account
                         if (owner.getType() != Account.Type.PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
                             throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public Templates");
@@ -225,7 +225,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     protected void validateCallerHasAccessToEntityOwner(Account caller, ControlledEntity entity, AccessType accessType) {
         PermissionDeniedException exception = new PermissionDeniedException("Caller does not have permission to operate with provided resource.");
 
-        if (_accountService.isRootAdmin(caller.getId())) {
+        if (_accountService.isRootAdmin(caller)) {
             return;
         }
 
@@ -276,7 +276,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         ProjectAccount projectUser = _projectAccountDao.findByProjectIdUserId(project.getId(), user.getAccountId(), user.getId());
         String apiCommandName = CallContext.current().getApiName();
 
-        if (accountService.isRootAdmin(caller.getId()) || accountService.isDomainAdmin(caller.getAccountId())) {
+        if (accountService.isRootAdmin(caller) || accountService.isDomainAdmin(caller.getAccountId())) {
             return true;
         }
 
@@ -334,7 +334,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             hasAccess = true;
         } else {
             //admin has all permissions
-            if (_accountService.isRootAdmin(account.getId())) {
+            if (_accountService.isRootAdmin(account)) {
                 hasAccess = true;
             }
             //if account is normal user or domain admin
@@ -372,7 +372,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             hasAccess = true;
         } else {
             //admin has all permissions
-            if (_accountService.isRootAdmin(account.getId())) {
+            if (_accountService.isRootAdmin(account)) {
                 hasAccess = true;
             }
             //if account is normal user or domain admin
@@ -410,7 +410,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             hasAccess = true;
         } else {
             //admin has all permissions
-            if (_accountService.isRootAdmin(account.getId())) {
+            if (_accountService.isRootAdmin(account)) {
                 hasAccess = true;
             }
             //if account is normal user or domain admin
@@ -448,7 +448,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             hasAccess = true;
         } else {
             //admin has all permissions
-            if (_accountService.isRootAdmin(account.getId())) {
+            if (_accountService.isRootAdmin(account)) {
                 hasAccess = true;
             }
             //if account is normal user or domain admin
@@ -513,7 +513,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             return true;
         } else {
             //admin has all permissions
-            if (_accountService.isRootAdmin(account.getId())) {
+            if (_accountService.isRootAdmin(account)) {
                 return true;
             }
             //if account is normal user

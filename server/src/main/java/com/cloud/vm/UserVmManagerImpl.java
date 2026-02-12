@@ -4159,7 +4159,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         assert !(requestedIps != null && (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null)) : "requestedIp list and defaultNetworkIp should never be specified together";
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState()
-                && !_accountMgr.isRootAdmin(caller.getId())) {
+                && !_accountMgr.isRootAdmin(caller)) {
             throw new PermissionDeniedException(
                     String.format("Cannot perform this operation, Zone is currently disabled: %s", zone));
         }
@@ -4366,7 +4366,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             // Root admin has access to both VM and AG by default,
                             // but
                             // make sure the owner of these entities is same
-                            if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
+                            if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller)) {
                                 if (!_affinityGroupService.isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
                                     throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's domain");
                                 }
@@ -4376,7 +4376,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             // Root admin has access to both VM and AG by default,
                             // but
                             // make sure the owner of these entities is same
-                            if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
+                            if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller)) {
                                 if (ag.getAccountId() != owner.getAccountId()) {
                                     throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's account");
                                 }
@@ -5736,7 +5736,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Choose deployment planner
         // Host takes 1st preference, Cluster takes 2nd preference and Pod takes 3rd
         // Default behaviour is invoked when host, cluster or pod are not specified
-        boolean isRootAdmin = _accountService.isRootAdmin(callerAccount.getId());
+        boolean isRootAdmin = CallContext.current().isCallingAccountRootAdmin();
         Pod destinationPod = getDestinationPod(podId, isRootAdmin);
         Cluster destinationCluster = getDestinationCluster(clusterId, isRootAdmin);
         HostVO destinationHost = getDestinationHost(hostId, isRootAdmin, isExplicitHost);
@@ -6444,9 +6444,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         Account caller = CallContext.current().getCallingAccount();
-        Long callerId = caller.getId();
-
-        boolean isRootAdmin = _accountService.isRootAdmin(callerId);
+        boolean isRootAdmin = CallContext.current().isCallingAccountRootAdmin();
 
         Long hostId = cmd.getHostId();
         getDestinationHost(hostId, isRootAdmin, true);
@@ -6506,7 +6504,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Add extraConfig to vm_instance_details table
         String extraConfig = cmd.getExtraConfig();
         if (StringUtils.isNotBlank(extraConfig)) {
-            if (EnableAdditionalVmConfig.valueIn(callerId)) {
+            if (EnableAdditionalVmConfig.valueIn(caller.getId())) {
                 logger.info("Adding extra configuration to user vm: {}", vm);
                 addExtraConfig(vm, extraConfig);
             } else {
@@ -6988,8 +6986,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private VMInstanceVO preVmStorageMigrationCheck(Long vmId) {
         // access check - only root admin can migrate VM
-        Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller.getId())) {
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
@@ -7130,8 +7127,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
     VirtualMachineMigrationException {
         // access check - only root admin can migrate VM
-        Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller.getId())) {
+        if (!CallContext.current().isCallingAccountRootAdmin()) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
@@ -7746,7 +7742,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
         // Access check - only root administrator can migrate VM.
         Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller.getId())) {
+        if (!_accountMgr.isRootAdmin(caller)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Caller is not a root admin, permission denied to migrate the VM");
             }
@@ -7853,7 +7849,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Account caller = CallContext.current().getCallingAccount();
         Long callerId = caller.getId();
         logger.trace("Verifying if caller [{}] is root or domain admin.", caller);
-        if (!_accountMgr.isRootAdmin(callerId) && !_accountMgr.isDomainAdmin(callerId)) {
+        if (!CallContext.current().isCallingAccountRootAdmin() && !_accountMgr.isDomainAdmin(callerId)) {
             throw new InvalidParameterValueException(String.format("Only root or domain admins are allowed to assign VMs. Caller [%s] is of type [%s].", caller, caller.getType()));
         }
 
