@@ -353,7 +353,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final boolean userDrivenBackups = cmd.getUserDrivenBackups() != null ? cmd.getUserDrivenBackups() : sourceOffering.isUserDrivenBackupAllowed();
         final Long zoneId = cmd.getZoneId() != null ? cmd.getZoneId() : sourceOffering.getZoneId();
 
-        if (!Objects.equals(sourceOffering.getExternalId(), externalId)) {
+        if (!Objects.equals(sourceOffering.getExternalId(), externalId) || !Objects.equals(sourceOffering.getZoneId(), zoneId)) {
             final BackupProvider provider = getBackupProvider(zoneId);
             if (!provider.isValidProviderOffering(zoneId, externalId)) {
                 throw new CloudRuntimeException("Backup offering '" + externalId + "' does not exist on provider " + provider.getName() + " on zone " + zoneId);
