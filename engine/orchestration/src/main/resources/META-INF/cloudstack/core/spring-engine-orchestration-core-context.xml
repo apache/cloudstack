@@ -63,7 +63,9 @@
         <property name="dhcpProviders" value="#{dhcpProvidersRegistry.registered}" />
     </bean>
 
-    <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl" />
+    <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl">
+        <property name="commandProcessors" value="#{clusterCommandProcessorRegistry.registered}" />
+    </bean>
     <bean id="managementServiceConfigurationImpl" class="com.cloud.configuration.ManagementServiceConfigurationImpl" />
 
     <bean id="cloudOrchestrator"

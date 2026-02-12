@@ -23,16 +23,16 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -84,6 +84,13 @@ public class ResetCfgCmd extends BaseCmd {
             description = "The ID of the Image Store to reset the parameter value for corresponding image store")
     private Long imageStoreId;
 
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID,
+            type = CommandType.UUID,
+            entityType = ManagementServerResponse.class,
+            description = "the ID of the Management Server to update the parameter value for corresponding management server",
+            since = "4.21.0")
+    private Long managementServerId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -114,6 +121,10 @@ public class ResetCfgCmd extends BaseCmd {
 
     public Long getImageStoreId() {
         return imageStoreId;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     /////////////////////////////////////////////////////
@@ -148,6 +159,9 @@ public class ResetCfgCmd extends BaseCmd {
             }
             if (getImageStoreId() != null) {
                 response.setScope(ConfigKey.Scope.ImageStore.name());
+            }
+            if (getManagementServerId() != null) {
+                response.setScope(ConfigKey.Scope.ManagementServer.name());
             }
             response.setValue(cfg.second());
             this.setResponseObject(response);
