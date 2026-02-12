@@ -401,7 +401,8 @@ public class ConfigKey<T> {
     }
 
     /**
-     * Use {@link ConfigKey#valueInScope(Scope, Long)} instead.
+     * @deprecated
+     * Still used by some external code, but use {@link ConfigKey#valueInScope(Scope, Long)} instead.
      */
     public T valueInDomain(Long domainId) {
         return valueInScope(Scope.Domain, domainId);

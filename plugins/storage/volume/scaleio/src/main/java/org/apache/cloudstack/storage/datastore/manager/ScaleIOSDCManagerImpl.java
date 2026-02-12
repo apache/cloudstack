@@ -439,9 +439,9 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         }
         boolean isConnected = isHostSdcConnected(sdcId, poolId);
         if (isConnected) {
-            logger.debug("Final attempt succeeded the SDC {} of the pool {} to connect", sdcId, dataStore);
+            logger.debug("Final attempt to connect the SDC {} of the pool {} succeeded", sdcId, dataStore);
         } else {
-            logger.debug("Final attempt failed the SDC {} of the pool {} to connect", sdcId, dataStore);
+            logger.debug("Final attempt to connect the SDC {} of the pool {} failed", sdcId, dataStore);
         }
         return isConnected;
     }

@@ -125,9 +125,6 @@ public class ScaleIOGatewayClientImplTest {
                         .withBody("")));
 
         client.listStoragePools();
-
-        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
-                .withBasicAuth(new BasicCredentials(username, password)));
     }
 
     @Test(expected = ServerApiException.class)
@@ -142,9 +139,6 @@ public class ScaleIOGatewayClientImplTest {
                         .withBody("")));
 
         client.listStoragePools();
-
-        wireMockRule.verify(getRequestedFor(urlEqualTo("/api/login"))
-                .withBasicAuth(new BasicCredentials(username, password)));
     }
 
     @Test
