@@ -125,6 +125,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -2525,6 +2527,7 @@ public class BackupManagerTest {
         Long sourceOfferingId = 1L;
         Long zoneId = 10L;
         Long savedOfferingId = 2L;
+        String externalId = UUID.randomUUID().toString();
         List<Long> providedDomainIds = List.of(11L);
 
         // command
@@ -2534,12 +2537,13 @@ public class BackupManagerTest {
         when(cmd.getDescription()).thenReturn(null);
         when(cmd.getExternalId()).thenReturn(null);
         when(cmd.getUserDrivenBackups()).thenReturn(null);
+        when(cmd.getZoneId()).thenReturn(null);
         when(cmd.getDomainIds()).thenReturn(providedDomainIds);
 
         // source offering
         BackupOfferingVO sourceOffering = Mockito.mock(BackupOfferingVO.class);
         when(sourceOffering.getZoneId()).thenReturn(zoneId);
-        when(sourceOffering.getExternalId()).thenReturn("ext-src");
+        when(sourceOffering.getExternalId()).thenReturn(externalId);
         when(sourceOffering.getProvider()).thenReturn("testbackupprovider");
         when(sourceOffering.getDescription()).thenReturn("src desc");
         when(sourceOffering.isUserDrivenBackupAllowed()).thenReturn(true);
@@ -2581,6 +2585,7 @@ public class BackupManagerTest {
         when(cmd.getDescription()).thenReturn(null);
         when(cmd.getExternalId()).thenReturn(null);
         when(cmd.getUserDrivenBackups()).thenReturn(null);
+        when(cmd.getZoneId()).thenReturn(null);
         // Simulate resolver having provided the source offering domains (the real cmd#getDomainIds() would do this)
         when(cmd.getDomainIds()).thenReturn(sourceDomainIds);
 
