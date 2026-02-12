@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.command.user.dns.DeleteDnsZoneCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsRecordsCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsServersCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsZonesCmd;
+import org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd;
 import org.apache.cloudstack.api.response.DnsRecordResponse;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
@@ -40,6 +41,7 @@ public interface DnsProviderManager extends Manager, PluggableService {
 
     DnsServer addDnsServer(AddDnsServerCmd cmd);
     ListResponse<DnsServerResponse> listDnsServers(ListDnsServersCmd cmd);
+    DnsServer updateDnsServer(UpdateDnsServerCmd cmd);
     boolean deleteDnsServer(DeleteDnsServerCmd cmd);
     DnsServerResponse createDnsServerResponse(DnsServer server);
 

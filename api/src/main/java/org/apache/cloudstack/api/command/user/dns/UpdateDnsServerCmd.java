@@ -31,9 +31,9 @@ import org.apache.cloudstack.dns.DnsProviderManager;
 import org.apache.cloudstack.dns.DnsServer;
 import org.apache.commons.lang3.BooleanUtils;
 
-@APICommand(name = "addDnsServer", description = "Adds a new external DNS server",
+@APICommand(name = "updateDnsServer", description = "Update DNS server",
         responseObject = DnsServerResponse.class, requestHasSensitiveInfo = true)
-public class AddDnsServerCmd extends BaseCmd {
+public class UpdateDnsServerCmd extends BaseCmd {
 
     @Inject
     DnsProviderManager dnsProviderManager;
@@ -41,15 +41,16 @@ public class AddDnsServerCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    ///
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the DNS server")
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsServerResponse.class,
+            required = true, description = "The ID of the DNS server to update")
+    private Long id;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the DNS server")
     private String name;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "API URL of the provider")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "API URL of the provider")
     private String url;
-
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "Provider type (e.g., PowerDNS)")
-    private String provider;
 
     @Parameter(name = ApiConstants.CREDENTIALS, type = CommandType.STRING, required = false, description = "API Key or Credentials for the external provider")
     private String credentials;
@@ -70,28 +71,22 @@ public class AddDnsServerCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public Long getId() { return id; }
     public String getName() { return name; }
     public String getUrl() { return url; }
-    public String getProvider() { return provider; }
     public String getCredentials() {
         return credentials;
     }
-
     public Integer getPort() {
         return port;
     }
-
     public Boolean isPublic() {
         return BooleanUtils.isTrue(isPublic);
     }
-
     public String getPublicDomainSuffix() {
         return publicDomainSuffix;
     }
-
-    public String getNameServers() {
-        return nameServers;
-    }
+    public String getNameServers() { return nameServers; }
 
     @Override
     public long getEntityOwnerId() {
@@ -101,16 +96,16 @@ public class AddDnsServerCmd extends BaseCmd {
     @Override
     public void execute() {
         try {
-            DnsServer server = dnsProviderManager.addDnsServer(this);
+            DnsServer server = dnsProviderManager.updateDnsServer(this);
             if (server != null) {
                 DnsServerResponse response = dnsProviderManager.createDnsServerResponse(server);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add DNS server");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update DNS server");
             }
         } catch (Exception ex) {
-            logger.error("Failed to add DNS server", ex);
+            logger.error("Failed to add update server", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
     }

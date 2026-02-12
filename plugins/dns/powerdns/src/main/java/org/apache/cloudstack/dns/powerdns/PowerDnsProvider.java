@@ -18,6 +18,7 @@
 package org.apache.cloudstack.dns.powerdns;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.dns.DnsProvider;
 import org.apache.cloudstack.dns.DnsProviderType;
@@ -25,17 +26,28 @@ import org.apache.cloudstack.dns.DnsRecord;
 import org.apache.cloudstack.dns.DnsServer;
 import org.apache.cloudstack.dns.DnsZone;
 
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 
 public class PowerDnsProvider extends AdapterBase implements DnsProvider {
+
+    private PowerDnsClient client;
+
     @Override
     public DnsProviderType getProviderType() {
         return DnsProviderType.PowerDNS;
     }
 
-    @Override
     public boolean validate(DnsServer server) {
-        return false;
+        if (StringUtils.isBlank(server.getUrl())) {
+            throw new IllegalArgumentException("PowerDNS API URL cannot be empty");
+        }
+        if (StringUtils.isBlank(server.getApiKey())) {
+            throw new IllegalArgumentException("PowerDNS API key cannot be empty");
+        }
+        client.validate(server.getUrl(), server.getApiKey());
+        logger.debug("PowerDNS credentials validated for {}", server.getUrl());
+        return true;
     }
 
     @Override
@@ -66,5 +78,21 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     @Override
     public List<DnsRecord> listRecords(DnsServer server, DnsZone zone) {
         return List.of();
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) {
+        if (client == null) {
+            client = new PowerDnsClient();
+        }
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        if (client != null) {
+           client.close();
+        }
+        return true;
     }
 }

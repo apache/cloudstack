@@ -25,7 +25,7 @@ public interface DnsProvider extends Adapter {
     DnsProviderType getProviderType();
 
     // Validates connectivity to the server
-    boolean validate(DnsServer server);
+    boolean validate(DnsServer server) throws Exception;
 
     // Zone Operations
     boolean createZone(DnsServer server, DnsZone zone);

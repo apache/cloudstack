@@ -51,6 +51,7 @@ public class ListDnsServersCmd  extends BaseListAccountResourcesCmd {
     public void execute() {
         ListResponse<DnsServerResponse> response = dnsProviderManager.listDnsServers(this);
         response.setResponseName(getCommandName());
+        response.setObjectName("dnsserver");
         setResponseObject(response);
     }
 

@@ -1333,6 +1333,11 @@ public class ApiConstants {
     public static final String OBJECT_STORAGE_LIMIT = "objectstoragelimit";
     public static final String OBJECT_STORAGE_TOTAL = "objectstoragetotal";
 
+    // DNS provider related
+    public static final String NAME_SERVERS = "nameservers";
+    public static final String CREDENTIALS = "credentials";
+    public static final String PUBLIC_DOMAIN_SUFFIX = "publicdomainsuffix";
+
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
             "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +

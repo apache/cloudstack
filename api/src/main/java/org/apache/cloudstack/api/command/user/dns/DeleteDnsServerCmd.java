@@ -76,5 +76,5 @@ public class DeleteDnsServerCmd extends BaseAsyncCmd {
     public String getEventType() { return EventTypes.EVENT_DNS_SERVER_DELETE; }
 
     @Override
-    public String getEventDescription() { return "Deleting DNS Server ID: " + getId(); }
+    public String getEventDescription() { return "Deleting DNS server ID: " + getId(); }
 }

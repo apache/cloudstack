@@ -54,6 +54,9 @@ public class DnsServerVO implements DnsServer {
     @Column(name = "url")
     private String url;
 
+    @Column(name = "port")
+    private Integer port;
+
     @Column(name = "provider_type")
     @Enumerated(EnumType.STRING)
     private DnsProviderType providerType;
@@ -75,6 +78,9 @@ public class DnsServerVO implements DnsServer {
     @Column(name = "account_id")
     private long accountId;
 
+    @Column(name = "name_servers")
+    private String nameServers;
+
     @Column(name = GenericDao.CREATED_COLUMN)
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created = null;
@@ -83,19 +89,25 @@ public class DnsServerVO implements DnsServer {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date removed = null;
 
-    public DnsServerVO() {
+    DnsServerVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
     }
 
-    public DnsServerVO(String name, String url, DnsProviderType providerType, String apiKey, long accountId, boolean isPublic) {
+    public DnsServerVO(String name, String url, DnsProviderType providerType, String apiKey,
+                       Integer port, boolean isPublic, String publicDomainSuffix, String nameServers,
+                       long accountId) {
         this();
         this.name = name;
         this.url = url;
+        this.port = port;
         this.providerType = providerType;
         this.apiKey = apiKey;
         this.accountId = accountId;
+        this.publicDomainSuffix = publicDomainSuffix;
+        this.nameServers = nameServers;
         this.isPublic = isPublic;
+        this.state = State.Enabled;
     }
 
     @Override
@@ -119,7 +131,7 @@ public class DnsServerVO implements DnsServer {
     }
 
     @Override
-    public String getAPIKey() {
+    public String getApiKey() {
         return apiKey;
     }
 
@@ -153,5 +165,43 @@ public class DnsServerVO implements DnsServer {
 
     public void setState(State state) {
         this.state = state;
+    }
+
+    @Override
+    public String toString() {
+        return "DnsServerVO {" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", url='" + url + '\'' +
+                ", apiKey='*****'" +
+                "}";
+    }
+
+    public void setNameServers(String nameServers) {
+        this.nameServers = nameServers;
+    }
+
+    public void setIsPublic(boolean value) {
+        isPublic = value;
+    }
+
+    public void setPublicDomainSuffix(String publicDomainSuffix) {
+        this.publicDomainSuffix = publicDomainSuffix;
+    }
+
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
+    }
+
+    public void setPort(Integer port) {
+        this.port = port;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

@@ -19,29 +19,74 @@ package org.apache.cloudstack.dns.dao;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.dns.DnsServer;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implements DnsServerDao {
-    static final String PROVIDER_TYPE = "providerType";
+    SearchBuilder<DnsServerVO> AllFieldsSearch;
     SearchBuilder<DnsServerVO> ProviderSearch;
+    SearchBuilder<DnsServerVO> AccountUrlSearch;
+
 
     public DnsServerDaoImpl() {
         super();
         ProviderSearch = createSearchBuilder();
-        ProviderSearch.and(PROVIDER_TYPE, ProviderSearch.entity().getProviderType(), SearchCriteria.Op.EQ);
+        ProviderSearch.and(ApiConstants.PROVIDER_TYPE, ProviderSearch.entity().getProviderType(), SearchCriteria.Op.EQ);
         ProviderSearch.done();
+
+        AccountUrlSearch = createSearchBuilder();
+        AccountUrlSearch.and(ApiConstants.URL, AccountUrlSearch.entity().getUrl(), SearchCriteria.Op.EQ);
+        AccountUrlSearch.and(ApiConstants.ACCOUNT_ID, AccountUrlSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountUrlSearch.done();
+
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and(ApiConstants.ID, AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and(ApiConstants.NAME, AllFieldsSearch.entity().getName(), SearchCriteria.Op.LIKE);
+        AllFieldsSearch.and(ApiConstants.PROVIDER_TYPE, AllFieldsSearch.entity().getProviderType(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and(ApiConstants.ACCOUNT_ID, AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
+
     }
 
     @Override
-    public List<DnsServerVO> listByProviderType(String providerType) {
+    public List<DnsServerVO> listByProvider(String providerType) {
         SearchCriteria<DnsServerVO> sc = ProviderSearch.create();
-        sc.setParameters(PROVIDER_TYPE, providerType);
+        sc.setParameters(ApiConstants.PROVIDER_TYPE, providerType);
         return listBy(sc);
+    }
+
+    @Override
+    public DnsServer findByUrlAndAccount(String url, long accountId) {
+        SearchCriteria<DnsServerVO> sc = AccountUrlSearch.create();
+        sc.setParameters(ApiConstants.URL, url);
+        sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public Pair<List<DnsServerVO>, Integer> searchDnsServers(Long id, String keyword, String provider, Long accountId, Filter filter) {
+        SearchCriteria<DnsServerVO> sc = AllFieldsSearch.create();
+        if (id != null) {
+            sc.setParameters(ApiConstants.ID, id);
+        }
+        if (keyword != null) {
+            sc.setParameters(ApiConstants.NAME, "%" + keyword + "%");
+        }
+        if (provider != null) {
+            sc.setParameters(ApiConstants.PROVIDER_TYPE, provider);
+        }
+        if (accountId != null) {
+            sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
+        }
+        return searchAndCount(sc, filter);
     }
 }

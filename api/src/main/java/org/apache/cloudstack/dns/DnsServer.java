@@ -33,7 +33,7 @@ public interface DnsServer extends InternalIdentity, Identity {
 
     DnsProviderType getProviderType();
 
-    String getAPIKey();
+    String getApiKey();
 
     long getAccountId();
 
