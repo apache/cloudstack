@@ -134,7 +134,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-import com.cloud.user.dao.UserAccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
@@ -147,7 +146,6 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.snapshot.VMSnapshotService;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
@@ -178,9 +176,6 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     AccountService accountService;
-
-    @Inject
-    UserAccountDao userAccountDao;
 
     @Inject
     DataCenterDao dataCenterDao;
@@ -250,9 +245,6 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     VMSnapshotDao vmSnapshotDao;
-
-    @Inject
-    VMSnapshotService vmSnapshotService;
 
     //ToDo: check access on objects
 
@@ -960,21 +952,20 @@ public class ServerAdapter extends ManagerBase {
         Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
         CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
+            DeleteVMSnapshotCmd cmd = new DeleteVMSnapshotCmd();
+            ComponentContext.inject(cmd);
+            Map<String, String> params = new HashMap<>();
+            params.put(ApiConstants.VM_SNAPSHOT_ID, vo.getUuid());
+            ApiServerService.AsyncCmdResult result =
+                    apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
+                            serviceUserAccount.second());
+            AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
+            if (jobVo == null) {
+                throw new CloudRuntimeException("Failed to find job for snapshot deletion");
+            }
+            action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
             if (async) {
-                DeleteVMSnapshotCmd cmd = new DeleteVMSnapshotCmd();
-                ComponentContext.inject(cmd);
-                Map<String, String> params = new HashMap<>();
-                params.put(ApiConstants.VM_SNAPSHOT_ID, vo.getUuid());
-                ApiServerService.AsyncCmdResult result =
-                        apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
-                                serviceUserAccount.second());
-                AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
-                if (jobVo == null) {
-                    throw new CloudRuntimeException("Failed to find job for snapshot deletion");
-                }
-                action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
-            } else {
-                vmSnapshotService.deleteVMSnapshot(vo.getId());
+                // ToDo: wait for job completion?
             }
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to delete snapshot: " + e.getMessage(), e);
