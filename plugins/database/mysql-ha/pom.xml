@@ -31,6 +31,7 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
+            <version>${cs.mysql.connector.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

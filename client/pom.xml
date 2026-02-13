@@ -55,6 +55,7 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
+            <version>${cs.mysql.connector.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -706,7 +707,7 @@
                     <dependency>
                         <groupId>com.mysql</groupId>
                         <artifactId>mysql-connector-j</artifactId>
-                        <version>${cs.mysql.version}</version>
+                        <version>${cs.mysql.connector.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>org.bouncycastle</groupId>
@@ -895,6 +896,7 @@
                                 <artifactItem>
                                     <groupId>com.mysql</groupId>
                                     <artifactId>mysql-connector-j</artifactId>
+                                    <version>${cs.mysql.connector.version}</version>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
