@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.user.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.Date;
 import java.util.List;
 
@@ -27,10 +25,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.user.Account;
 import com.cloud.user.Account.State;
 import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -38,13 +33,9 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
-    private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.uuid, u.username, u.account_id, u.secret_key, u.state, u.api_key_access, "
-        + "a.id, a.account_name, a.type, a.role_id, a.domain_id, a.state, a.api_key_access " + "FROM `cloud`.`user` u, `cloud`.`account` a "
-        + "WHERE u.account_id = a.id AND u.api_key = ? and u.removed IS NULL";
 
     protected final SearchBuilder<AccountVO> AllFieldsSearch;
     protected final SearchBuilder<AccountVO> AccountTypeSearch;
@@ -130,51 +121,6 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         sc.setParameters("state", State.DISABLED);
 
         return listBy(sc);
-    }
-
-    @Override
-    public Pair<User, Account> findUserAccountByApiKey(String apiKey) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        Pair<User, Account> userAcctPair = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(FIND_USER_ACCOUNT_BY_API_KEY);
-            pstmt.setString(1, apiKey);
-            ResultSet rs = pstmt.executeQuery();
-            // TODO:  make sure we don't have more than 1 result?  ApiKey had better be unique
-            if (rs.next()) {
-                UserVO u = new UserVO(rs.getLong(1));
-                u.setUuid(rs.getString(2));
-                u.setUsername(rs.getString(3));
-                u.setAccountId(rs.getLong(4));
-                u.setSecretKey(DBEncryptionUtil.decrypt(rs.getString(5)));
-                u.setState(State.getValueOf(rs.getString(6)));
-                boolean apiKeyAccess = rs.getBoolean(7);
-                if (rs.wasNull()) {
-                    u.setApiKeyAccess(null);
-                } else {
-                    u.setApiKeyAccess(apiKeyAccess);
-                }
-
-                AccountVO a = new AccountVO(rs.getLong(8));
-                a.setAccountName(rs.getString(9));
-                a.setType(Account.Type.getFromValue(rs.getInt(10)));
-                a.setRoleId(rs.getLong(11));
-                a.setDomainId(rs.getLong(12));
-                a.setState(State.getValueOf(rs.getString(13)));
-                apiKeyAccess = rs.getBoolean(14);
-                if (rs.wasNull()) {
-                    a.setApiKeyAccess(null);
-                } else {
-                    a.setApiKeyAccess(apiKeyAccess);
-                }
-
-                userAcctPair = new Pair<>(u, a);
-            }
-        } catch (Exception e) {
-            logger.warn("Exception finding user/acct by api key: {}", apiKey, e);
-        }
-        return userAcctPair;
     }
 
     @Override
