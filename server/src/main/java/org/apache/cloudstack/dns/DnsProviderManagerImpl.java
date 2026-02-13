@@ -39,7 +39,9 @@ import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dns.dao.DnsServerDao;
+import org.apache.cloudstack.dns.dao.DnsZoneDao;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
+import org.apache.cloudstack.dns.vo.DnsZoneVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -59,6 +61,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     AccountManager accountMgr;
     @Inject
     DnsServerDao dnsServerDao;
+    @Inject
+    DnsZoneDao dnsZoneDao;
 
     private DnsProvider getProvider(DnsProviderType type) {
         if (type == null) {
@@ -272,18 +276,67 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
-    public DnsZone allocDnsZone(CreateDnsZoneCmd cmd) {
-        return null;
+    public DnsZone allocateDnsZone(CreateDnsZoneCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        DnsServerVO server = dnsServerDao.findById(cmd.getDnsServerId());
+        if (server == null) {
+            throw new InvalidParameterValueException("DNS Server not found");
+        }
+        boolean isOwner = (server.getAccountId() == caller.getId());
+        if (!server.isPublic() && !isOwner) {
+            throw new PermissionDeniedException("You do not have permission to use this DNS Server.");
+        }
+        DnsZone.ZoneType type = DnsZone.ZoneType.Public;
+        if (cmd.getType() != null) {
+            try {
+                type = DnsZone.ZoneType.valueOf(cmd.getType());
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException("Invalid Zone Type");
+            }
+        }
+        DnsZoneVO existing = dnsZoneDao.findByNameServerAndType(cmd.getName(), server.getId(), type);
+        if (existing != null) {
+            throw new InvalidParameterValueException("Zone already exists on this server.");
+        }
+        DnsZoneVO dnsZoneVO = new DnsZoneVO(cmd.getName(), type, server.getId(), caller.getId(), caller.getDomainId(), cmd.getDescription());
+        return dnsZoneDao.persist(dnsZoneVO);
     }
 
     @Override
     public DnsZone provisionDnsZone(long zoneId) {
-        return null;
+        DnsZoneVO dnsZone = dnsZoneDao.findById(zoneId);
+        if (dnsZone == null) {
+            throw new CloudRuntimeException("DNS Zone not found during provisioning");
+        }
+        DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
+
+        try {
+            DnsProvider provider = getProvider(server.getProviderType());
+            logger.debug("Provision DNS zone: {} on DNS server: {}", dnsZone.getName(), server.getName());
+            boolean success = provider.provisionZone(server, dnsZone);
+            if (success) {
+                dnsZone.setState(DnsZone.State.Active);
+                dnsZoneDao.update(dnsZone.getId(), dnsZone);
+                return dnsZone;
+            } else {
+                logger.error("DNS provider failed to provision zone: {}", dnsZone.getName());
+                throw new CloudRuntimeException("DNS provider failed to provision zone");
+            }
+        } catch (Exception ex) {
+            logger.error("Failed to provision zone: {} on server: {}", dnsZone.getName(), server.getName(), ex);
+            dnsZoneDao.remove(zoneId);
+            throw new CloudRuntimeException("Failed to provision zone: " + dnsZone.getName());
+        }
     }
 
     @Override
     public DnsZoneResponse createDnsZoneResponse(DnsZone zone) {
-        return null;
+        DnsZoneResponse res = new DnsZoneResponse();
+        res.setName(zone.getName());
+        res.setDnsServerId(zone.getDnsServerId());
+        res.setType(zone.getType());
+        res.setState(zone.getState());
+        return res;
     }
 
     @Override

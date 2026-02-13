@@ -28,9 +28,8 @@ public interface DnsProvider extends Adapter {
     boolean validate(DnsServer server) throws Exception;
 
     // Zone Operations
-    boolean createZone(DnsServer server, DnsZone zone);
+    boolean provisionZone(DnsServer server, DnsZone zone) throws Exception;
     boolean deleteZone(DnsServer server, DnsZone zone);
-
 
     DnsRecord createRecord(DnsServer server, DnsZone zone, DnsRecord record);
     boolean updateRecord(DnsServer server, DnsZone zone, DnsRecord record);

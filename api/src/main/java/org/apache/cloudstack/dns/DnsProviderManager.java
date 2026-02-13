@@ -60,10 +60,10 @@ public interface DnsProviderManager extends Manager, PluggableService {
 
     List<String> listProviderNames();
 
-    // Allocates the DB row (State: Allocating)
-    DnsZone allocDnsZone(CreateDnsZoneCmd cmd);
+    // Allocates the DB row (State: Inactive)
+    DnsZone allocateDnsZone(CreateDnsZoneCmd cmd);
 
-    // Calls the Plugin (State: Allocating -> Ready/Error)
+    // Calls the Plugin (State: Inactive -> Active)
     DnsZone provisionDnsZone(long zoneId);
 
     // Helper to create the response object

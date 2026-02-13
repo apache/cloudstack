@@ -51,8 +51,20 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     }
 
     @Override
-    public boolean createZone(DnsServer server, DnsZone zone) {
-        return false;
+    public boolean provisionZone(DnsServer server, DnsZone zone) throws Exception {
+        if (StringUtils.isBlank(zone.getName())) {
+            throw new IllegalArgumentException("Zone name cannot be empty");
+        }
+
+        if (StringUtils.isBlank(server.getUrl())) {
+            throw new IllegalArgumentException("PowerDNS API URL cannot be empty");
+        }
+
+        if (StringUtils.isBlank(server.getApiKey())) {
+            throw new IllegalArgumentException("PowerDNS API key cannot be empty");
+        }
+        client.createZone(server.getUrl(), server.getApiKey(), zone.getName(), null);
+        return true;
     }
 
     @Override

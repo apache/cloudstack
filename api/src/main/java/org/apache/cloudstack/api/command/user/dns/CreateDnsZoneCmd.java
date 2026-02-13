@@ -23,7 +23,7 @@ import com.cloud.exception.ResourceAllocationException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
 
-    private static final String s_name = "creatednszoneresponse";
+    private static final String COMMAND_RESPONSE_NAME = "creatednszoneresponse";
 
     @Inject
     DnsProviderManager dnsProviderManager;
@@ -48,8 +48,8 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
             description = "The type of zone (Public, Private). Defaults to Public.")
     private String type;
 
-    // Standard CloudStack ownership parameters (account/domain) are handled
-    // automatically by the BaseCmd parent if we access them via getEntityOwnerId()
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Display text for the zone")
+    private String description;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -71,16 +71,18 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
         return type;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// Implementation //////////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public void create() throws ResourceAllocationException {
-        // Phase 1: DB Persist
-        // The manager should create the DnsZoneVO in 'Allocating' state
         try {
-            DnsZone zone = dnsProviderManager.allocDnsZone(this);
+            DnsZone zone = dnsProviderManager.allocateDnsZone(this);
             if (zone != null) {
                 setEntityId(zone.getId());
                 setEntityUuid(zone.getUuid());
@@ -94,12 +96,8 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        // Phase 2: Action (Call Plugin)
-        // The manager should retrieve the zone by ID, call the plugin, and update state to 'Ready'
         try {
-            // Note: We use getEntityId() which was set in the create() phase
             DnsZone result = dnsProviderManager.provisionDnsZone(getEntityId());
-
             if (result != null) {
                 DnsZoneResponse response = dnsProviderManager.createDnsZoneResponse(result);
                 response.setResponseName(getCommandName());
@@ -114,7 +112,7 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return COMMAND_RESPONSE_NAME;
     }
 
     @Override
@@ -124,7 +122,7 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_DNS_ZONE_CREATE; // You must add this constant to EventTypes.java
+        return EventTypes.EVENT_DNS_ZONE_CREATE;
     }
 
     @Override

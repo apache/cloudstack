@@ -19,6 +19,8 @@ package org.apache.cloudstack.dns.dao;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
 import org.springframework.stereotype.Component;
 
@@ -30,12 +32,24 @@ import com.cloud.utils.db.SearchCriteria;
 public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements DnsZoneDao {
     static final String DNS_SERVER_ID = "dnsServerId";
     SearchBuilder<DnsZoneVO> ServerSearch;
+    SearchBuilder<DnsZoneVO> AccountSearch;
+    SearchBuilder<DnsZoneVO> NameServerTypeSearch;
 
     public DnsZoneDaoImpl() {
         super();
         ServerSearch = createSearchBuilder();
         ServerSearch.and(DNS_SERVER_ID, ServerSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
         ServerSearch.done();
+
+        AccountSearch = createSearchBuilder();
+        AccountSearch.and(ApiConstants.ACCOUNT_ID, AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountSearch.done();
+
+        NameServerTypeSearch = createSearchBuilder();
+        NameServerTypeSearch.and(ApiConstants.NAME, NameServerTypeSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameServerTypeSearch.and(DNS_SERVER_ID, NameServerTypeSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
+        NameServerTypeSearch.and(ApiConstants.TYPE, NameServerTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
+        NameServerTypeSearch.done();
     }
 
     @Override
@@ -43,5 +57,21 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
         SearchCriteria<DnsZoneVO> sc = ServerSearch.create();
         sc.setParameters(DNS_SERVER_ID, serverId);
         return listBy(sc);
+    }
+
+    @Override
+    public List<DnsZoneVO> listByAccount(long accountId) {
+        SearchCriteria<DnsZoneVO> sc = AccountSearch.create();
+        sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
+        return listBy(sc);
+    }
+
+    @Override
+    public DnsZoneVO findByNameServerAndType(String name, long dnsServerId, DnsZone.ZoneType type) {
+        SearchCriteria<DnsZoneVO> sc = NameServerTypeSearch.create();
+        sc.setParameters(ApiConstants.NAME, name);
+        sc.setParameters(DNS_SERVER_ID, dnsServerId);
+        sc.setParameters(ApiConstants.TYPE, type);
+        return findOneBy(sc);
     }
 }

@@ -19,10 +19,11 @@ package org.apache.cloudstack.dns;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface DnsZone extends InternalIdentity, Identity {
+public interface DnsZone extends InternalIdentity, Identity, ControlledEntity {
     enum ZoneType {
         Public, Private
     }
@@ -38,5 +39,9 @@ public interface DnsZone extends InternalIdentity, Identity {
 
     ZoneType getType();
 
+    String getDescription();
+
     List<Long> getAssociatedNetworks();
+
+    State getState();
 }

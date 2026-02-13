@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
 -- 1. DNS Server Table (Stores DNS Server Configurations)
 CREATE TABLE `cloud`.`dns_server` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns server',
-    `uuid` varchar(255) COMMENT 'uuid of the dns server',
+    `uuid` varchar(40) COMMENT 'uuid of the dns server',
     `name` varchar(255) NOT NULL COMMENT 'display name of the dns server',
     `provider_type` varchar(255) NOT NULL COMMENT 'Provider type such as PowerDns',
     `url` varchar(1024) NOT NULL COMMENT 'dns server url',
@@ -79,16 +79,25 @@ CREATE TABLE `cloud`.`dns_server` (
 -- 2. DNS Zone Table (Stores DNS Zone Metadata)
 CREATE TABLE `cloud`.`dns_zone` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns zone',
-    `uuid` varchar(255) COMMENT 'uuid of the dns zone',
+    `uuid` varchar(40) COMMENT 'uuid of the dns zone',
     `name` varchar(255) NOT NULL COMMENT 'dns zone name (e.g. example.com)',
     `dns_server_id` bigint unsigned NOT NULL COMMENT 'fk to dns_server.id',
     `external_reference` VARCHAR(255) COMMENT 'id of external provider resource',
+    `domain_id` bigint unsigned COMMENT 'for domain-specific ownership',
+    `account_id` bigint unsigned COMMENT 'account id. foreign key to account table',
+    `description` varchar(1024) DEFAULT NULL,
+    `type` ENUM('Private', 'Public') NOT NULL DEFAULT 'Public',
     `state` ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Inactive',
     `created` datetime NOT NULL COMMENT 'date created',
     `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',
     PRIMARY KEY (`id`),
+    CONSTRAINT `uc_dns_zone__uuid` UNIQUE (`uuid`),
+    CONSTRAINT `uc_dns_zone__name_server_type` UNIQUE (`name`, `dns_server_id`, `type`),
     KEY `i_dns_zone__dns_server` (`dns_server_id`),
-    CONSTRAINT `fk_dns_zone__dns_server_id` FOREIGN KEY (`dns_server_id`) REFERENCES `dns_server` (`id`) ON DELETE CASCADE
+    KEY `i_dns_zone__account_id` (`account_id`),
+    CONSTRAINT `fk_dns_zone__dns_server_id` FOREIGN KEY (`dns_server_id`) REFERENCES `dns_server` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_dns_zone__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_dns_zone__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 3. DNS Zone Network Map (One-to-Many Link)

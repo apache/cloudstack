@@ -53,6 +53,15 @@ public class DnsZoneVO implements DnsZone {
     @Column(name = "dns_server_id")
     private long dnsServerId;
 
+    @Column(name = "account_id")
+    private long accountId;
+
+    @Column(name = "domain_id")
+    private long domainId;
+
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "external_reference")
     private String externalReference;
 
@@ -63,9 +72,6 @@ public class DnsZoneVO implements DnsZone {
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     private State state;
-
-    @Column(name = "account_id")
-    private long accountId;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     @Temporal(value = TemporalType.TIMESTAMP)
@@ -78,14 +84,22 @@ public class DnsZoneVO implements DnsZone {
     public DnsZoneVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
+        this.state = State.Inactive;
     }
 
-    public DnsZoneVO(String name, long dnsServerId, long accountId) {
+    public DnsZoneVO(String name, ZoneType type, long dnsServerId, long accountId, long domainId, String description) {
         this();
         this.name = name;
+        this.type = (type != null) ? type : ZoneType.Public;
         this.dnsServerId = dnsServerId;
         this.accountId = accountId;
-        this.type = ZoneType.Public;
+        this.domainId = domainId;
+        this.description = description;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return DnsZone.class;
     }
 
     @Override
@@ -109,8 +123,18 @@ public class DnsZoneVO implements DnsZone {
     }
 
     @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
     public List<Long> getAssociatedNetworks() {
         return List.of();
+    }
+
+    @Override
+    public State getState() {
+        return state;
     }
 
     @Override
@@ -122,4 +146,11 @@ public class DnsZoneVO implements DnsZone {
     public long getId() {
         return id;
     }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    public void setState(State state) { this.state = state; }
 }

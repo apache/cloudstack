@@ -28,35 +28,67 @@ import com.google.gson.annotations.SerializedName;
 @EntityReference(value = DnsZone.class)
 public class DnsZoneResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the DNS zone")
+    @Param(description = "ID of the DNS zone")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the DNS zone")
+    @Param(description = "Name of the DNS zone")
     private String name;
 
     @SerializedName("dnsserverid")
-    @Param(description = "the ID of the DNS server this zone belongs to")
-    private String dnsServerId;
+    @Param(description = "ID of the DNS server this zone belongs to")
+    private Long dnsServerId;
 
     @SerializedName("dnsservername")
-    @Param(description = "the name of the DNS server this zone belongs to")
+    @Param(description = "Name of the DNS server this zone belongs to")
     private String dnsServerName;
 
     @SerializedName(ApiConstants.NETWORK_ID)
-    @Param(description = "the ID of the network this zone is associated with")
+    @Param(description = "ID of the network this zone is associated with")
     private String networkId;
 
     @SerializedName(ApiConstants.NETWORK_NAME)
-    @Param(description = "the name of the network this zone is associated with")
+    @Param(description = "Name of the network this zone is associated with")
     private String networkName;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the zone (Public/Private)")
-    private String type;
+    @Param(description = "The type of the zone (Public/Private)")
+    private DnsZone.ZoneType type;
+
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "The state of the zone (Active/Inactive)")
+    private DnsZone.State state;
 
     public DnsZoneResponse() {
         super();
         setObjectName("dnszone");
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDnsServerId(Long dnsServerId) {
+        this.dnsServerId = dnsServerId;
+    }
+
+    public void setDnsServerName(String dnsServerName) {
+        this.dnsServerName = dnsServerName;
+    }
+
+    public void setNetworkId(String networkId) {
+        this.networkId = networkId;
+    }
+
+    public void setNetworkName(String networkName) {
+        this.networkName = networkName;
+    }
+
+    public void setType(DnsZone.ZoneType type) {
+        this.type = type;
+    }
+
+    public void setState(DnsZone.State state) {
+        this.state = state;
     }
 }

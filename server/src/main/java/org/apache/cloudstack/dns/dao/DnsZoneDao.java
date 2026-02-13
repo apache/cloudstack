@@ -19,10 +19,13 @@ package org.apache.cloudstack.dns.dao;
 
 import java.util.List;
 
+import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
 
 import com.cloud.utils.db.GenericDao;
 
 public interface DnsZoneDao extends GenericDao<DnsZoneVO, Long> {
     List<DnsZoneVO> listByServerId(long serverId);
+    List<DnsZoneVO> listByAccount(long accountId);
+    DnsZoneVO findByNameServerAndType(String name, long dnsServerId, DnsZone.ZoneType type);
 }
