@@ -1375,7 +1375,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             vmInstanceVOList = _vmInstanceDao.listNonExpungedByTemplate(templateId);
         }
         if(!cmd.isForced() && CollectionUtils.isNotEmpty(vmInstanceVOList)) {
-            String message = String.format("Unable to delete template with ID %s, because there are VM instances using it.", template);
+            String message = String.format("Unable to delete template [%s] because there are VM [%d] instances using it.", template, vmInstanceVOList.size());
             String instancesListMessage = String.format(" Instances list: [%s].", StringUtils.join(vmInstanceVOList, ","));
 
             logger.warn("{}{}", message, instancesListMessage);
