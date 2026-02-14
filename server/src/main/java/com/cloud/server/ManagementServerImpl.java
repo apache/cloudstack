@@ -2612,13 +2612,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
             if (associatedNetworkId != null) {
                 NetworkVO guestNetwork = networkDao.findById(associatedNetworkId);
-                if (zoneId == null) {
-                    zoneId = guestNetwork.getDataCenterId();
-                } else if (zoneId != guestNetwork.getDataCenterId()) {
-                    InvalidParameterValueException ex = new InvalidParameterValueException("Please specify a valid associated network id in the specified zone.");
-                    throw ex;
+
+                if (guestNetwork != null) {
+                    if (zoneId == null) {
+                        zoneId = guestNetwork.getDataCenterId();
+                    } else if (zoneId != guestNetwork.getDataCenterId()) {
+                        InvalidParameterValueException ex = new InvalidParameterValueException("Please specify a valid associated network id in the specified zone.");
+                        throw ex;
+                    }
+                    owner = _accountDao.findById(guestNetwork.getAccountId());
                 }
-                owner = _accountDao.findById(guestNetwork.getAccountId());
             }
             List<DataCenterVO> dcList = new ArrayList<>();
             if (zoneId == null){
