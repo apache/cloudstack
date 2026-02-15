@@ -476,7 +476,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (imageStore == null) {
-            throw new CloudRuntimeException(String.format("Cannot find an image store for zone [%s].", zoneId));
+            logger.error("Cannot find an image store for zone [{}].", zoneId);
+            throw new CloudRuntimeException("Failed to create template. Please contact the cloud administrator.");
         }
 
         return imageStore;
@@ -1702,7 +1703,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
             DataStore store = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
             if (store == null) {
-                throw new CloudRuntimeException("cannot find an image store for zone " + zoneId);
+                logger.error("Cannot find an image store for zone [{}].", zoneId);
+                throw new CloudRuntimeException("Failed to create template. Please contact the cloud administrator.");
             }
             AsyncCallFuture<TemplateApiResult> future = null;
 
