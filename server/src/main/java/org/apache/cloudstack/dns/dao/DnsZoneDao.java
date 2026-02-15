@@ -22,10 +22,13 @@ import java.util.List;
 import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface DnsZoneDao extends GenericDao<DnsZoneVO, Long> {
     List<DnsZoneVO> listByServerId(long serverId);
     List<DnsZoneVO> listByAccount(long accountId);
     DnsZoneVO findByNameServerAndType(String name, long dnsServerId, DnsZone.ZoneType type);
+    Pair<List<DnsZoneVO>, Integer> searchZones(Long id, Long dnsServerId, String keyword, Long accountId, Filter filter);
 }

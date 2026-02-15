@@ -38,38 +38,21 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
         return DnsProviderType.PowerDNS;
     }
 
-    public boolean validate(DnsServer server) {
-        if (StringUtils.isBlank(server.getUrl())) {
-            throw new IllegalArgumentException("PowerDNS API URL cannot be empty");
-        }
-        if (StringUtils.isBlank(server.getApiKey())) {
-            throw new IllegalArgumentException("PowerDNS API key cannot be empty");
-        }
+    public void validate(DnsServer server) {
+        validateServerParams(server);
         client.validate(server.getUrl(), server.getApiKey());
-        logger.debug("PowerDNS credentials validated for {}", server.getUrl());
-        return true;
     }
 
     @Override
-    public boolean provisionZone(DnsServer server, DnsZone zone) throws Exception {
-        if (StringUtils.isBlank(zone.getName())) {
-            throw new IllegalArgumentException("Zone name cannot be empty");
-        }
-
-        if (StringUtils.isBlank(server.getUrl())) {
-            throw new IllegalArgumentException("PowerDNS API URL cannot be empty");
-        }
-
-        if (StringUtils.isBlank(server.getApiKey())) {
-            throw new IllegalArgumentException("PowerDNS API key cannot be empty");
-        }
+    public void provisionZone(DnsServer server, DnsZone zone) {
+        validateServerZoneParams(server, zone);
         client.createZone(server.getUrl(), server.getApiKey(), zone.getName(), null);
-        return true;
     }
 
     @Override
-    public boolean deleteZone(DnsServer server, DnsZone zone) {
-        return false;
+    public void deleteZone(DnsServer server, DnsZone zone) {
+        validateServerZoneParams(server, zone);
+        client.deleteZone(server.getUrl(), server.getApiKey(), zone.getName());
     }
 
     @Override
@@ -91,6 +74,24 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     public List<DnsRecord> listRecords(DnsServer server, DnsZone zone) {
         return List.of();
     }
+
+    void validateServerZoneParams(DnsServer server, DnsZone zone) {
+        validateServerParams(server);
+        if (StringUtils.isBlank(zone.getName())) {
+            throw new IllegalArgumentException("Zone name cannot be empty");
+        }
+    }
+
+    void validateServerParams(DnsServer server) {
+        if (StringUtils.isBlank(server.getUrl())) {
+            throw new IllegalArgumentException("PowerDNS API URL cannot be empty");
+        }
+        if (StringUtils.isBlank(server.getApiKey())) {
+            throw new IllegalArgumentException("PowerDNS API key cannot be empty");
+        }
+    }
+
+
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {

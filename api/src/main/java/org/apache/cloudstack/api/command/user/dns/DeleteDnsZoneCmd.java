@@ -23,8 +23,7 @@ public class DeleteDnsZoneCmd extends BaseAsyncCmd {
     //////////////// API Parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsZoneResponse.class,
-            required = true, description = "the ID of the DNS zone")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsZoneResponse.class, required = true, description = "The ID of the DNS zone")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -42,9 +41,7 @@ public class DeleteDnsZoneCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         try {
-            // The Manager handles both DB removal and Plugin execution
-            boolean result = dnsProviderManager.deleteDnsZone(this);
-
+            boolean result = dnsProviderManager.deleteDnsZone(getId());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 setResponseObject(response);
@@ -74,7 +71,7 @@ public class DeleteDnsZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_DNS_ZONE_DELETE; // Ensure this constant is added to EventTypes
+        return EventTypes.EVENT_DNS_ZONE_DELETE;
     }
 
     @Override

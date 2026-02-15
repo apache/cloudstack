@@ -18,11 +18,14 @@
 package org.apache.cloudstack.dns.powerdns;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -45,16 +48,15 @@ public class PowerDnsClient implements AutoCloseable {
     private final CloseableHttpClient httpClient;
 
     public void validate(String baseUrl, String apiKey) {
-        String checkUrl = buildApiUrl(baseUrl, "/api/v1/servers");
+        String checkUrl = buildApiUrl(baseUrl, "/servers");
         HttpGet request = new HttpGet(checkUrl);
         request.addHeader("X-API-Key", apiKey);
+        request.addHeader("Content-Type", "application/json");
         request.addHeader("Accept", "application/json");
 
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             int statusCode = response.getStatusLine().getStatusCode();
-            String body = response.getEntity() != null
-                    ? EntityUtils.toString(response.getEntity())
-                    : null;
+            String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
 
             if (statusCode == HttpStatus.SC_OK) {
                 JsonNode root = MAPPER.readTree(body);
@@ -88,27 +90,25 @@ public class PowerDnsClient implements AutoCloseable {
     }
 
     public void createZone(String baseUrl, String apiKey, String zoneName, List<String> nameservers) {
-        String url = buildApiUrl(baseUrl, "/servers/localhost/zones");
-        ObjectNode json = MAPPER.createObjectNode();
-        json.put("name", zoneName.endsWith(".") ? zoneName : zoneName + ".");
-        json.put("kind", "Native");
-        json.put("dnssec", false);
-
-        if (nameservers != null && !nameservers.isEmpty()) {
-            ArrayNode nsArray = json.putArray("nameservers");
-            for (String ns : nameservers) {
-                nsArray.add(ns.endsWith(".") ? ns : ns + ".");
-            }
-        }
-
-        logger.debug("Creating PowerDNS zone: {} using URL: {}", zoneName, url);
-
-        HttpPost request = new HttpPost(url);
-        request.addHeader("X-API-Key", apiKey);
-        request.addHeader("Content-Type", "application/json");
-        request.addHeader("Accept", "application/json");
-
+        String normalizedZone = zoneName.endsWith(".") ? zoneName : zoneName + ".";
         try {
+            String url = buildApiUrl(baseUrl, "/servers/localhost/zones");
+            ObjectNode json = MAPPER.createObjectNode();
+            json.put("name", normalizedZone);
+            json.put("kind", "Native");
+            json.put("dnssec", false);
+
+            if (nameservers != null && !nameservers.isEmpty()) {
+                ArrayNode nsArray = json.putArray("nameservers");
+                for (String ns : nameservers) {
+                    nsArray.add(ns.endsWith(".") ? ns : ns + ".");
+                }
+            }
+
+            HttpPost request = new HttpPost(url);
+            request.addHeader("X-API-Key", apiKey);
+            request.addHeader("Content-Type", "application/json");
+            request.addHeader("Accept", "application/json");
             request.setEntity(new StringEntity(json.toString()));
 
             try (CloseableHttpResponse response = httpClient.execute(request)) {
@@ -127,18 +127,52 @@ public class PowerDnsClient implements AutoCloseable {
                     throw new CloudRuntimeException("Zone already exists: " + zoneName);
                 }
 
-                if (statusCode == HttpStatus.SC_UNAUTHORIZED ||
-                        statusCode == HttpStatus.SC_FORBIDDEN) {
+                if (statusCode == HttpStatus.SC_UNAUTHORIZED || statusCode == HttpStatus.SC_FORBIDDEN) {
                     throw new CloudRuntimeException("Invalid PowerDNS API key");
                 }
 
                 logger.debug("Unexpected PowerDNS response: HTTP {} Body: {}", statusCode, body);
-
                 throw new CloudRuntimeException(String.format("Failed to create zone %s (HTTP %d)", zoneName, statusCode));
             }
-
         } catch (IOException e) {
             throw new CloudRuntimeException("Error while creating PowerDNS zone " + zoneName, e);
+        }
+    }
+
+    public void deleteZone(String baseUrl, String apiKey, String zoneName) {
+        String normalizedZone = zoneName.endsWith(".") ? zoneName : zoneName + ".";
+        try {
+            String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
+            String url = buildApiUrl(baseUrl, "/servers/localhost/zones/" + encodedZone);
+            HttpDelete request = new HttpDelete(url);
+            request.addHeader("X-API-Key", apiKey);
+            request.addHeader("Content-Type", "application/json");
+            request.addHeader("Accept", "application/json");
+
+            try (CloseableHttpResponse response = httpClient.execute(request)) {
+
+                int statusCode = response.getStatusLine().getStatusCode();
+                String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
+
+                if (statusCode == HttpStatus.SC_NO_CONTENT) {
+                    logger.debug("Zone {} deleted successfully", normalizedZone);
+                    return;
+                }
+
+                if (statusCode == HttpStatus.SC_NOT_FOUND) {
+                    logger.debug("Zone {} not found in PowerDNS", normalizedZone);
+                    return;
+                }
+
+                if (statusCode == HttpStatus.SC_UNAUTHORIZED || statusCode == HttpStatus.SC_FORBIDDEN) {
+                    throw new CloudRuntimeException("Invalid PowerDNS API key");
+                }
+
+                logger.debug("Unexpected PowerDNS response while deleting zone: HTTP {} Body: {}", statusCode, body);
+                throw new CloudRuntimeException(String.format("Failed to delete zone %s (HTTP %d)", normalizedZone, statusCode));
+            }
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Error while deleting PowerDNS zone " + zoneName, e);
         }
     }
 

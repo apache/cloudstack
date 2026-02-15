@@ -59,6 +59,10 @@ public class DnsZoneResponse extends BaseResponse {
     @Param(description = "The state of the zone (Active/Inactive)")
     private DnsZone.State state;
 
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "Description for the DNS zone")
+    private String description;
+
     public DnsZoneResponse() {
         super();
         setObjectName("dnszone");
@@ -90,5 +94,13 @@ public class DnsZoneResponse extends BaseResponse {
 
     public void setState(DnsZone.State state) {
         this.state = state;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

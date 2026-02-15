@@ -24,11 +24,11 @@ import org.apache.cloudstack.api.command.user.dns.CreateDnsRecordCmd;
 import org.apache.cloudstack.api.command.user.dns.CreateDnsZoneCmd;
 import org.apache.cloudstack.api.command.user.dns.DeleteDnsRecordCmd;
 import org.apache.cloudstack.api.command.user.dns.DeleteDnsServerCmd;
-import org.apache.cloudstack.api.command.user.dns.DeleteDnsZoneCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsRecordsCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsServersCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsZonesCmd;
 import org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd;
+import org.apache.cloudstack.api.command.user.dns.UpdateDnsZoneCmd;
 import org.apache.cloudstack.api.response.DnsRecordResponse;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
@@ -47,8 +47,14 @@ public interface DnsProviderManager extends Manager, PluggableService {
 
     DnsServer getDnsServer(Long id);
 
-    DnsZone createDnsZone(CreateDnsZoneCmd cmd);
-    boolean deleteDnsZone(DeleteDnsZoneCmd cmd);
+    // Allocates the DB row (State: Inactive)
+    DnsZone allocateDnsZone(CreateDnsZoneCmd cmd);
+    // Calls the Plugin (State: Inactive -> Active)
+    DnsZone provisionDnsZone(long zoneId);
+
+    DnsZone getDnsZone(Long id);
+    DnsZone updateDnsZone(UpdateDnsZoneCmd cmd);
+    boolean deleteDnsZone(Long id);
     ListResponse<DnsZoneResponse> listDnsZones(ListDnsZonesCmd cmd);
 
     DnsZone getDnsZone(long id);
@@ -60,11 +66,6 @@ public interface DnsProviderManager extends Manager, PluggableService {
 
     List<String> listProviderNames();
 
-    // Allocates the DB row (State: Inactive)
-    DnsZone allocateDnsZone(CreateDnsZoneCmd cmd);
-
-    // Calls the Plugin (State: Inactive -> Active)
-    DnsZone provisionDnsZone(long zoneId);
 
     // Helper to create the response object
     DnsZoneResponse createDnsZoneResponse(DnsZone zone);

@@ -92,7 +92,6 @@ CREATE TABLE `cloud`.`dns_zone` (
     `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',
     PRIMARY KEY (`id`),
     CONSTRAINT `uc_dns_zone__uuid` UNIQUE (`uuid`),
-    CONSTRAINT `uc_dns_zone__name_server_type` UNIQUE (`name`, `dns_server_id`, `type`),
     KEY `i_dns_zone__dns_server` (`dns_server_id`),
     KEY `i_dns_zone__account_id` (`account_id`),
     CONSTRAINT `fk_dns_zone__dns_server_id` FOREIGN KEY (`dns_server_id`) REFERENCES `dns_server` (`id`) ON DELETE CASCADE,

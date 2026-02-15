@@ -153,4 +153,8 @@ public class DnsZoneVO implements DnsZone {
     }
 
     public void setState(State state) { this.state = state; }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 }

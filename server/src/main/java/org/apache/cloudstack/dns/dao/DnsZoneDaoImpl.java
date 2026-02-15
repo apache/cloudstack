@@ -24,6 +24,8 @@ import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -34,6 +36,7 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
     SearchBuilder<DnsZoneVO> ServerSearch;
     SearchBuilder<DnsZoneVO> AccountSearch;
     SearchBuilder<DnsZoneVO> NameServerTypeSearch;
+    SearchBuilder<DnsZoneVO> AllFieldsSearch;
 
     public DnsZoneDaoImpl() {
         super();
@@ -50,6 +53,13 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
         NameServerTypeSearch.and(DNS_SERVER_ID, NameServerTypeSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
         NameServerTypeSearch.and(ApiConstants.TYPE, NameServerTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
         NameServerTypeSearch.done();
+
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and(ApiConstants.ID, AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and(DNS_SERVER_ID, AllFieldsSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and(ApiConstants.NAME, AllFieldsSearch.entity().getName(), SearchCriteria.Op.LIKE);
+        AllFieldsSearch.and(ApiConstants.ACCOUNT_ID, AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
     }
 
     @Override
@@ -73,5 +83,23 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
         sc.setParameters(DNS_SERVER_ID, dnsServerId);
         sc.setParameters(ApiConstants.TYPE, type);
         return findOneBy(sc);
+    }
+
+    @Override
+    public Pair<List<DnsZoneVO>, Integer> searchZones(Long id, Long dnsServerId, String keyword, Long accountId, Filter filter) {
+        SearchCriteria<DnsZoneVO> sc = AllFieldsSearch.create();
+        if (id != null) {
+            sc.setParameters(ApiConstants.ID, id);
+        }
+        if (dnsServerId != null) {
+            sc.setParameters(DNS_SERVER_ID, dnsServerId);
+        }
+        if (keyword != null) {
+            sc.setParameters(ApiConstants.NAME, "%" + keyword + "%");
+        }
+        if (accountId != null) {
+            sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
+        }
+        return searchAndCount(sc, filter);
     }
 }
