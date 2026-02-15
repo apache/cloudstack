@@ -24,27 +24,31 @@ public class StartNBDServerCommand extends Command {
     private String hostIpAddress;
     private String exportName;
     private String volumePath;
-    private int nbdPort;
+    private String socket;
     private String direction;
 
     public StartNBDServerCommand() {
     }
 
-    public StartNBDServerCommand(String transferId, String hostIpAddress, String exportName, String volumePath, int nbdPort, String direction) {
+    protected StartNBDServerCommand(String transferId, String hostIpAddress, String exportName, String volumePath, String direction) {
         this.transferId = transferId;
         this.hostIpAddress = hostIpAddress;
         this.exportName = exportName;
         this.volumePath = volumePath;
-        this.nbdPort = nbdPort;
         this.direction = direction;
+    }
+
+    public StartNBDServerCommand(String transferId, String hostIpAddress, String exportName, String volumePath, String socket, String direction) {
+        this(transferId, hostIpAddress, exportName, volumePath, direction);
+        this.socket = socket;
     }
 
     public String getExportName() {
         return exportName;
     }
 
-    public int getNbdPort() {
-        return nbdPort;
+    public String getSocket() {
+        return socket;
     }
 
     public String getHostIpAddress() {

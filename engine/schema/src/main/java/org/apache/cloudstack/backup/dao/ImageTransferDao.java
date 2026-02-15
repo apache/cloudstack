@@ -27,7 +27,6 @@ import com.cloud.utils.db.GenericDao;
 public interface ImageTransferDao extends GenericDao<ImageTransferVO, Long> {
     List<ImageTransferVO> listByBackupId(Long backupId);
     ImageTransferVO findByUuid(String uuid);
-    ImageTransferVO findByNbdPort(int port);
     ImageTransferVO findByVolume(Long volumeId);
     ImageTransferVO findUnfinishedByVolume(Long volumeId);
     List<ImageTransferVO> listByPhaseAndDirection(ImageTransfer.Phase phase, ImageTransfer.Direction direction);

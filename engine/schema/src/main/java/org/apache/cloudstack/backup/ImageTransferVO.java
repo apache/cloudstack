@@ -51,8 +51,8 @@ public class ImageTransferVO implements ImageTransfer {
     @Column(name = "host_id")
     private long hostId;
 
-    @Column(name = "nbd_port")
-    private int nbdPort;
+    @Column(name = "socket")
+    private String socket;
 
     @Column(name = "file")
     private String file;
@@ -114,10 +114,10 @@ public class ImageTransferVO implements ImageTransfer {
         this.created = new Date();
     }
 
-    public ImageTransferVO(String uuid, Long backupId, long diskId, long hostId, int nbdPort, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
+    public ImageTransferVO(String uuid, Long backupId, long diskId, long hostId, String socket, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
         this(uuid, diskId, hostId, phase, direction, accountId, domainId, dataCenterId);
         this.backupId = backupId;
-        this.nbdPort = nbdPort;
+        this.socket = socket;
         this.backend = Backend.nbd;
     }
 
@@ -164,13 +164,8 @@ public class ImageTransferVO implements ImageTransfer {
         this.hostId = hostId;
     }
 
-    @Override
-    public int getNbdPort() {
-        return nbdPort;
-    }
-
-    public void setNbdPort(int nbdPort) {
-        this.nbdPort = nbdPort;
+    public void setSocket(String socket) {
+        this.socket = socket;
     }
 
     @Override

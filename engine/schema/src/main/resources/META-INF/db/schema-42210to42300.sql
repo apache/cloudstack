@@ -123,7 +123,6 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'from_checkpoint_id', 'VAR
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'to_checkpoint_id', 'VARCHAR(255) DEFAULT NULL COMMENT "New checkpoint id created for this backup session"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'checkpoint_create_time', 'BIGINT DEFAULT NULL COMMENT "Checkpoint creation timestamp from libvirt"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'host_id', 'BIGINT UNSIGNED DEFAULT NULL COMMENT "Host where backup is running"');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'nbd_port', 'INT DEFAULT NULL COMMENT "NBD server port for backup"');
 
 -- Add checkpoint tracking fields to vm_instance table for domain recreation
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'active_checkpoint_id', 'VARCHAR(255) DEFAULT NULL COMMENT "Active checkpoint id tracked for incremental backups"');
@@ -139,10 +138,10 @@ CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
     `backup_id` bigint unsigned COMMENT 'Backup ID',
     `disk_id` bigint unsigned NOT NULL COMMENT 'Disk/Volume ID',
     `host_id` bigint unsigned NOT NULL COMMENT 'Host ID',
-    `nbd_port` int NOT NULL COMMENT 'NBD port',
     `transfer_url` varchar(255) COMMENT 'ImageIO transfer URL',
     `file` varchar(255) COMMENT 'File for the file backend',
     `phase` varchar(20) NOT NULL COMMENT 'Transfer phase: initializing, transferring, finished, failed',
+    `socket` varchar(255) COMMENT 'Unix socket for nbd backend',
     `direction` varchar(20) NOT NULL COMMENT 'Direction: upload, download',
     `backend` varchar(20) NOT NULL COMMENT 'Backend: nbd, file',
     `progress` int COMMENT 'Transfer progress percentage (0-100)',

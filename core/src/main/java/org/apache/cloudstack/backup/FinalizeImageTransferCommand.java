@@ -21,28 +21,16 @@ import com.cloud.agent.api.Command;
 
 public class FinalizeImageTransferCommand extends Command {
     private String transferId;
-    private String direction;
-    private int nbdPort;
 
     public FinalizeImageTransferCommand() {
     }
 
-    public FinalizeImageTransferCommand(String transferId, String direction, int nbdPort) {
+    public FinalizeImageTransferCommand(String transferId) {
         this.transferId = transferId;
-        this.direction = direction;
-        this.nbdPort = nbdPort;
     }
 
     public String getTransferId() {
         return transferId;
-    }
-
-    public int getNbdPort() {
-        return nbdPort;
-    }
-
-    public String getDirection() {
-        return direction;
     }
 
     @Override

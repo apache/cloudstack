@@ -22,23 +22,17 @@ import com.cloud.agent.api.Command;
 public class StopNBDServerCommand extends Command {
     private String transferId;
     private String direction;
-    private int nbdPort;
 
     public StopNBDServerCommand() {
     }
 
-    public StopNBDServerCommand(String transferId, String direction, int nbdPort) {
+    public StopNBDServerCommand(String transferId, String direction) {
         this.transferId = transferId;
         this.direction = direction;
-        this.nbdPort = nbdPort;
     }
 
     public String getTransferId() {
         return transferId;
-    }
-
-    public int getNbdPort() {
-        return nbdPort;
     }
 
     public String getDirection() {

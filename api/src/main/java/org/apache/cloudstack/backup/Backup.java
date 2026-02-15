@@ -38,8 +38,6 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 
     Long getHostId();
 
-    Integer getNbdPort();
-
     enum Status {
         Allocated, Queued, BackingUp, ReadyForTransfer, FinalizingTransfer, BackedUp, Error, Failed, Restoring, Removed, Expunged
     }

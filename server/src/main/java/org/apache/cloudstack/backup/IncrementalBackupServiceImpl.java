@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -108,14 +107,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
 
-    @Inject
-    EndPointSelector _epSelector;
-
     private Timer imageTransferTimer;
-
-    private static final int NBD_PORT_RANGE_START = 10809;
-    private static final int NBD_PORT_RANGE_END = 10909;
-    private static final boolean DATAPLANE_PROXY_MODE = true;
 
     private boolean isDummyOffering(Long backupOfferingId) {
         if (backupOfferingId == null) {
@@ -174,9 +166,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         backup.setToCheckpointId(toCheckpointId);
         backup.setFromCheckpointId(fromCheckpointId);
 
-        int nbdPort = allocateNbdPort();
         Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
-        backup.setNbdPort(nbdPort);
         backup.setHostId(hostId);
         // Will be changed later if incremental was done
         backup.setType("FULL");
@@ -206,9 +196,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             backup.getToCheckpointId(),
             backup.getFromCheckpointId(),
             vm.getActiveCheckpointCreateTime(),
-            backup.getNbdPort(),
+            backup.getUuid(),
             diskPathUuidMap,
-            host.getPrivateIpAddress(),
             vm.getState() == State.Stopped
         );
 
@@ -334,29 +323,26 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         }
 
         String transferId = UUID.randomUUID().toString();
-        Host host = hostDao.findById(backup.getHostId());
 
+        String socket = backup.getUuid();
         VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
         if (vm.getState() == State.Stopped) {
             String volumePath = getVolumePathForFileBasedBackend(volume);
-            startNBDServer(transferId, direction, host, volume.getUuid(), volumePath, backup.getNbdPort());
+            startNBDServer(transferId, direction, backup.getHostId(), volume.getUuid(), volumePath);
+            socket = transferId;
         }
 
         CreateImageTransferCommand transferCmd = new CreateImageTransferCommand(
                 transferId,
-                host.getPrivateIpAddress(),
                 direction,
                 volume.getUuid(),
-                backup.getNbdPort(),
+                socket,
                 backup.getFromCheckpointId());
 
         try {
             CreateImageTransferAnswer answer;
             if (dummyOffering) {
                 answer = new CreateImageTransferAnswer(transferCmd, true, "Dummy answer", "image-transfer-id", "nbd://127.0.0.1:10809/vda");
-            } else if (DATAPLANE_PROXY_MODE) {
-                EndPoint ssvm = _epSelector.findSsvm(backup.getZoneId());
-                answer = (CreateImageTransferAnswer) ssvm.sendMessage(transferCmd);
             } else {
                 answer = (CreateImageTransferAnswer) agentManager.send(backup.getHostId(), transferCmd);
             }
@@ -370,7 +356,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                     backupId,
                     volume.getId(),
                     backup.getHostId(),
-                    backup.getNbdPort(),
+                    socket,
                     ImageTransferVO.Phase.transferring,
                     ImageTransfer.Direction.download,
                     backup.getAccountId(),
@@ -398,18 +384,17 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         return hosts.get(0);
     }
 
-    private void startNBDServer(String transferId, String direction, Host host, String exportName, String volumePath, int nbdPort) {
+    private void startNBDServer(String transferId, String direction, Long hostId, String exportName, String volumePath) {
         StartNBDServerAnswer nbdServerAnswer;
         StartNBDServerCommand nbdServerCmd = new StartNBDServerCommand(
                 transferId,
-                host.getPrivateIpAddress(),
                 exportName,
                 volumePath,
-                nbdPort,
+                transferId,
                 direction
         );
         try {
-            nbdServerAnswer = (StartNBDServerAnswer) agentManager.send(host.getId(), nbdServerCmd);
+            nbdServerAnswer = (StartNBDServerAnswer) agentManager.send(hostId, nbdServerCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
@@ -451,19 +436,18 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
             transferCmd = new CreateImageTransferCommand(
                     transferId,
-                    host.getPrivateIpAddress(),
                     direction,
+                    transferId,
                     volumePath);
 
         } else {
-            int nbdPort = allocateNbdPort();
-            startNBDServer(transferId, direction, host, volume.getUuid(), volumePath, nbdPort);
+            startNBDServer(transferId, direction, host.getId(), volume.getUuid(), volumePath);
             imageTransfer = new ImageTransferVO(
                     transferId,
                     null,
                     volume.getId(),
                     host.getId(),
-                    nbdPort,
+                    transferId,
                     ImageTransferVO.Phase.transferring,
                     ImageTransfer.Direction.upload,
                     volume.getAccountId(),
@@ -472,16 +456,17 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
             transferCmd = new CreateImageTransferCommand(
                     transferId,
-                    host.getPrivateIpAddress(),
                     direction,
                     volume.getUuid(),
-                    nbdPort,
+                    transferId,
                     null);
         }
-
-
-        EndPoint ssvm = _epSelector.findSsvm(volume.getDataCenterId());
-        CreateImageTransferAnswer transferAnswer = (CreateImageTransferAnswer) ssvm.sendMessage(transferCmd);
+        CreateImageTransferAnswer transferAnswer;
+        try {
+            transferAnswer = (CreateImageTransferAnswer) agentManager.send(imageTransfer.getHostId(), transferCmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            throw new CloudRuntimeException("Failed to communicate with agent", e);
+        }
 
         if (!transferAnswer.getResult()) {
             if (!backend.equals(ImageTransfer.Backend.file)) {
@@ -554,30 +539,25 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
     private void finalizeDownloadImageTransfer(ImageTransferVO imageTransfer) {
 
         String transferId = imageTransfer.getUuid();
-        int nbdPort = imageTransfer.getNbdPort();
-        String direction = imageTransfer.getDirection().toString();
-        FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId, direction, nbdPort);
+        FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId);
 
         BackupVO backup = backupDao.findById(imageTransfer.getBackupId());
         boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
 
+        Answer answer;
         try {
-            Answer answer;
             if (dummyOffering) {
                 answer = new Answer(finalizeCmd, true, "Image transfer finalized.");
-            } else if (DATAPLANE_PROXY_MODE) {
-                EndPoint ssvm = _epSelector.findSsvm(backup.getZoneId());
-                answer = ssvm.sendMessage(finalizeCmd);
             } else {
                 answer = agentManager.send(backup.getHostId(), finalizeCmd);
             }
 
-            if (!answer.getResult()) {
-                throw new CloudRuntimeException("Failed to finalize image transfer: " + answer.getDetails());
-            }
-
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent", e);
+        }
+
+        if (!answer.getResult()) {
+            throw new CloudRuntimeException("Failed to finalize image transfer: " + answer.getDetails());
         }
 
         VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
@@ -591,9 +571,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     private boolean stopNbdServer(ImageTransferVO imageTransfer) {
         String transferId = imageTransfer.getUuid();
-        int nbdPort = imageTransfer.getNbdPort();
         String direction = imageTransfer.getDirection().toString();
-        StopNBDServerCommand stopNbdServerCommand = new StopNBDServerCommand(transferId, direction, nbdPort);
+        StopNBDServerCommand stopNbdServerCommand = new StopNBDServerCommand(transferId, direction);
         Answer answer;
         try {
             answer = agentManager.send(imageTransfer.getHostId(), stopNbdServerCommand);
@@ -606,17 +585,19 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     private void finalizeUploadImageTransfer(ImageTransferVO imageTransfer) {
         String transferId = imageTransfer.getUuid();
-        int nbdPort = imageTransfer.getNbdPort();
-        String direction = imageTransfer.getDirection().toString();
 
         boolean stopNbdServerResult = stopNbdServer(imageTransfer);
         if (!stopNbdServerResult) {
             throw new CloudRuntimeException("Failed to stop the nbd server");
         }
 
-        FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId, direction, nbdPort);
-        EndPoint ssvm = _epSelector.findSsvm(imageTransfer.getDataCenterId());
-        Answer answer = ssvm.sendMessage(finalizeCmd);
+        FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId);
+        Answer answer;
+        try {
+            answer = agentManager.send(imageTransfer.getHostId(), finalizeCmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            throw new CloudRuntimeException("Failed to communicate with agent", e);
+        }
 
         if (!answer.getResult()) {
             throw new CloudRuntimeException("Failed to finalize image transfer: " + answer.getDetails());
@@ -715,19 +696,6 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         cmdList.add(ListVmCheckpointsCmd.class);
         cmdList.add(DeleteVmCheckpointCmd.class);
         return cmdList;
-    }
-
-    private int getRandomNbdPort() {
-        Random random = new Random();
-        return NBD_PORT_RANGE_START + random.nextInt(NBD_PORT_RANGE_END - NBD_PORT_RANGE_START);
-    }
-
-    private int allocateNbdPort() {
-        int port = getRandomNbdPort();
-        while (imageTransferDao.findByNbdPort(port) != null) {
-            port = getRandomNbdPort();
-        }
-        return port;
     }
 
     private ImageTransferResponse toImageTransferResponse(ImageTransferVO imageTransferVO) {

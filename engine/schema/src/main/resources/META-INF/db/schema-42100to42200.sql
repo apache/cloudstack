@@ -92,7 +92,3 @@ CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider_
 UPDATE `cloud`.`configuration` SET `scope` = 2 WHERE `name` = 'use.https.to.upload';
 -- Delete the configuration for 'use.https.to.upload' from StoragePool
 DELETE FROM `cloud`.`storage_pool_details` WHERE `name` = 'use.https.to.upload';
-
-<<<<<<< HEAD
-=======
->>>>>>> 1ec4e52fa6 (Support file backend for cow format: api and server)

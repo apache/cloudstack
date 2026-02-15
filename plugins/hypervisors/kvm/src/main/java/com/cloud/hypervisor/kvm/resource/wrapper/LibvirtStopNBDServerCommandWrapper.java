@@ -40,8 +40,7 @@ public class LibvirtStopNBDServerCommandWrapper extends CommandWrapper<StopNBDSe
 
     private Answer handleUpload(StopNBDServerCommand cmd) {
         try {
-            int nbdPort = cmd.getNbdPort();
-            String unitName = String.format("qemu-nbd-%d", nbdPort);
+            String unitName = "qemu-nbd-" + cmd.getTransferId().hashCode();
 
             // Check if the service is running
             Script checkScript = new Script("/bin/bash", logger);
@@ -81,6 +80,5 @@ public class LibvirtStopNBDServerCommandWrapper extends CommandWrapper<StopNBDSe
         } else {
             return handleUpload(cmd);
         }
-
     }
 }

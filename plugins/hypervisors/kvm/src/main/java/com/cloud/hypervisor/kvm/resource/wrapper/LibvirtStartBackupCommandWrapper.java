@@ -39,7 +39,7 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
     @Override
     public Answer execute(StartBackupCommand cmd, LibvirtComputingResource resource) {
         if (cmd.isStoppedVM()) {
-            return handleStoppedVmBackup(cmd, resource, cmd.getToCheckpointId());
+            return handleStoppedVmBackup(cmd, cmd.getToCheckpointId());
         }
         return handleRunningVmBackup(cmd, resource);
     }
@@ -49,7 +49,7 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         String toCheckpointId = cmd.getToCheckpointId();
         String fromCheckpointId = cmd.getFromCheckpointId();
         Long fromCheckpointCreateTime = cmd.getFromCheckpointCreateTime();
-        int nbdPort = cmd.getNbdPort();
+        String socket = cmd.getSocket();
 
         try {
             if (StringUtils.isNotBlank(fromCheckpointId)) {
@@ -59,8 +59,13 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
                 }
             }
 
+            File dir = new File("/tmp/imagetransfer");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
             // Create backup XML
-            String backupXml = createBackupXml(cmd, fromCheckpointId, nbdPort, resource);
+            String backupXml = createBackupXml(cmd, fromCheckpointId, socket, resource);
             String checkpointXml = createCheckpointXml(toCheckpointId);
 
             // Write XMLs to temp files
@@ -141,7 +146,7 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         return xml.toString();
     }
 
-    private String createBackupXml(StartBackupCommand cmd, String fromCheckpointId, int nbdPort, LibvirtComputingResource resource) {
+    private String createBackupXml(StartBackupCommand cmd, String fromCheckpointId, String socket, LibvirtComputingResource resource) {
         StringBuilder xml = new StringBuilder();
         xml.append("<domainbackup mode=\"pull\">\n");
 
@@ -149,7 +154,8 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             xml.append("  <incremental>").append(fromCheckpointId).append("</incremental>\n");
         }
 
-        xml.append(String.format("  <server transport=\"tcp\" name=\"%s\" port=\"%d\"/>\n", cmd.getHostIpAddress(), nbdPort));
+        xml.append(String.format("  <server transport=\"unix\" socket=\"/tmp/imagetransfer/%s.sock\"/>\n", socket));
+
         xml.append("  <disks>\n");
 
         Map<String, String> diskPathUuidMap = cmd.getDiskPathUuidMap();
@@ -185,7 +191,7 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
                "</domaincheckpoint>";
     }
 
-    private Answer handleStoppedVmBackup(StartBackupCommand cmd, LibvirtComputingResource resource, String toCheckpointId) {
+    private Answer handleStoppedVmBackup(StartBackupCommand cmd, String toCheckpointId) {
         String vmName = cmd.getVmName();
         Map<String, String> diskPathUuidMap = cmd.getDiskPathUuidMap();
         for (Map.Entry<String, String> entry : diskPathUuidMap.entrySet()) {

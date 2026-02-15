@@ -21,9 +21,8 @@ import com.cloud.agent.api.Command;
 
 public class CreateImageTransferCommand extends Command {
     private String transferId;
-    private String hostIpAddress;
     private String exportName;
-    private int nbdPort;
+    private String socket;
     private String direction;
     private String checkpointId;
     private String file;
@@ -32,22 +31,21 @@ public class CreateImageTransferCommand extends Command {
     public CreateImageTransferCommand() {
     }
 
-    private CreateImageTransferCommand(String transferId, String hostIpAddress, String direction) {
+    private CreateImageTransferCommand(String transferId, String direction, String socket) {
         this.transferId = transferId;
-        this.hostIpAddress = hostIpAddress;
         this.direction = direction;
+        this.socket = socket;
     }
 
-    public CreateImageTransferCommand(String transferId, String hostIpAddress, String direction, String exportName, int nbdPort, String checkpointId) {
-        this(transferId, hostIpAddress, direction);
+    public CreateImageTransferCommand(String transferId, String direction, String exportName, String socket, String checkpointId) {
+        this(transferId, direction, socket);
         this.backend = ImageTransfer.Backend.nbd;
         this.exportName = exportName;
-        this.nbdPort = nbdPort;
         this.checkpointId = checkpointId;
     }
 
-    public CreateImageTransferCommand(String transferId, String hostIpAddress, String direction, String file) {
-        this(transferId, hostIpAddress, direction);
+    public CreateImageTransferCommand(String transferId, String direction, String socket, String file) {
+        this(transferId, direction, socket);
         if (direction == ImageTransfer.Direction.download.toString()) {
             throw new IllegalArgumentException("File backend is only supported for upload");
         }
@@ -59,8 +57,8 @@ public class CreateImageTransferCommand extends Command {
         return exportName;
     }
 
-    public int getNbdPort() {
-        return nbdPort;
+    public String getSocket() {
+        return socket;
     }
 
     public String getFile() {
@@ -69,10 +67,6 @@ public class CreateImageTransferCommand extends Command {
 
     public ImageTransfer.Backend getBackend() {
         return backend;
-    }
-
-    public String getHostIpAddress() {
-        return hostIpAddress;
     }
 
     public String getTransferId() {

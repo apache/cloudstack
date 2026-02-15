@@ -115,9 +115,6 @@ public class BackupVO implements Backup {
     @Column(name = "host_id")
     private Long hostId;
 
-    @Column(name = "nbd_port")
-    private Integer nbdPort;
-
     @Transient
     Map<String, String> details;
 
@@ -338,14 +335,5 @@ public class BackupVO implements Backup {
 
     public void setHostId(Long hostId) {
         this.hostId = hostId;
-    }
-
-    @Override
-    public Integer getNbdPort() {
-        return nbdPort;
-    }
-
-    public void setNbdPort(Integer nbdPort) {
-        this.nbdPort = nbdPort;
     }
 }

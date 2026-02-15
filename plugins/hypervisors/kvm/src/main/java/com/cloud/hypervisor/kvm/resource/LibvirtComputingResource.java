@@ -395,6 +395,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String heartBeatPath;
     private String vmActivityCheckPath;
     private String nasBackupPath;
+    private String imageServerPath;
     private String securityGroupPath;
     private String ovsPvlanDhcpHostPath;
     private String ovsPvlanVmPath;
@@ -809,6 +810,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return nasBackupPath;
     }
 
+    public String getImageServerPath() {
+        return imageServerPath;
+    }
+
     public String getOvsPvlanDhcpHostPath() {
         return ovsPvlanDhcpHostPath;
     }
@@ -1093,6 +1098,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         nasBackupPath = Script.findScript(kvmScriptsDir, "nasbackup.sh");
         if (nasBackupPath == null) {
             throw new ConfigurationException("Unable to find nasbackup.sh");
+        }
+
+        imageServerPath = Script.findScript(kvmScriptsDir, "image_server.py");
+        if (imageServerPath == null) {
+            throw new ConfigurationException("Unable to find image_server.py");
         }
 
         createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");

@@ -17,6 +17,8 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.File;
+
 import org.apache.cloudstack.backup.StartNBDServerAnswer;
 import org.apache.cloudstack.backup.StartNBDServerCommand;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +28,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles = StartNBDServerCommand.class)
@@ -35,22 +38,25 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
     @Override
     public Answer execute(StartNBDServerCommand cmd, LibvirtComputingResource resource) {
         String volumePath = cmd.getVolumePath();
-        int nbdPort = cmd.getNbdPort();
+        String socket = cmd.getSocket();
         String hostIpAddress = cmd.getHostIpAddress();
         String exportName = cmd.getExportName();
         String transferId = cmd.getTransferId();
 
-        if (volumePath == null || volumePath.isEmpty()) {
-            return new StartNBDServerAnswer(cmd, false, "Volume path is required for upload");
+        if (StringUtils.isBlank(volumePath)) {
+            return new StartNBDServerAnswer(cmd, false, "Volume path is required for the nbd server");
         }
-        if (exportName == null || exportName.isEmpty()) {
-            return new StartNBDServerAnswer(cmd, false, "Export name is required for upload");
+        if (StringUtils.isBlank(exportName)) {
+            return new StartNBDServerAnswer(cmd, false, "Export name is required for the nbd server");
         }
-        if (hostIpAddress == null || hostIpAddress.isEmpty()) {
-            return new StartNBDServerAnswer(cmd, false, "Host IP address is required for upload");
+        if (StringUtils.isBlank(hostIpAddress)) {
+            return new StartNBDServerAnswer(cmd, false, "Host IP address is required for the nbd server");
+        }
+        if (StringUtils.isBlank(socket)) {
+            return new StartNBDServerAnswer(cmd, false, "Socket is required for the nbd server");
         }
 
-        String unitName = String.format("qemu-nbd-%d", nbdPort);
+        String unitName = "qemu-nbd-" + transferId.hashCode();
 
         Script checkScript = new Script("/bin/bash", logger);
         checkScript.add("-c");
@@ -60,16 +66,21 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
             return new StartNBDServerAnswer(cmd, false, "A qemu-nbd service is already running on the port.");
         }
 
+        File dir = new File("/tmp/imagetransfer");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        String socketName = "/tmp/imagetransfer/" + socket + ".sock";
         String systemdRunCmd = String.format(
-                "systemd-run --unit=%s --property=Restart=no " +
-                        "qemu-nbd --export-name %s --bind %s --port %d --persistent %s %s",
+                "systemd-run --unit=%s --property=Restart=no qemu-nbd --export-name %s --socket %s --persistent %s %s",
                 unitName,
                 exportName,
-                hostIpAddress,
-                nbdPort,
+                socketName,
                 cmd.getDirection().equals("download") ? "--read-only" : "",
                 volumePath
         );
+
 
         Script startScript = new Script("/bin/bash", logger);
         startScript.add("-c");
@@ -111,7 +122,7 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
                     String.format("qemu-nbd service failed to start within %d seconds", maxWaitSeconds));
         }
 
-        String transferUrl = String.format("nbd://%s:%d/%s", hostIpAddress, nbdPort, exportName);
+        String transferUrl = String.format("nbd+unix:///%s", cmd.getSocket());
         return new StartNBDServerAnswer(cmd, true, "qemu-nbd service started for upload",
                     transferId, transferUrl);
     }

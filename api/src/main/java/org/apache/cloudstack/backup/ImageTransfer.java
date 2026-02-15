@@ -49,8 +49,6 @@ public interface ImageTransfer extends ControlledEntity, InternalIdentity {
 
     long getHostId();
 
-    int getNbdPort();
-
     String getTransferUrl();
 
     Phase getPhase();

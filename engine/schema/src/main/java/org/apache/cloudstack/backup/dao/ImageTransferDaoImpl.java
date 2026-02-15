@@ -34,7 +34,6 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
 
     private SearchBuilder<ImageTransferVO> backupIdSearch;
     private SearchBuilder<ImageTransferVO> uuidSearch;
-    private SearchBuilder<ImageTransferVO> nbdPortSearch;
     private SearchBuilder<ImageTransferVO> volumeSearch;
     private SearchBuilder<ImageTransferVO> volumeUnfinishedSearch;
     private SearchBuilder<ImageTransferVO> phaseDirectionSearch;
@@ -51,10 +50,6 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
         uuidSearch = createSearchBuilder();
         uuidSearch.and("uuid", uuidSearch.entity().getUuid(), SearchCriteria.Op.EQ);
         uuidSearch.done();
-
-        nbdPortSearch = createSearchBuilder();
-        nbdPortSearch.and("nbdPort", nbdPortSearch.entity().getNbdPort(), SearchCriteria.Op.EQ);
-        nbdPortSearch.done();
 
         volumeSearch = createSearchBuilder();
         volumeSearch.and("volumeId", volumeSearch.entity().getDiskId(), SearchCriteria.Op.EQ);
@@ -82,13 +77,6 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
     public ImageTransferVO findByUuid(String uuid) {
         SearchCriteria<ImageTransferVO> sc = uuidSearch.create();
         sc.setParameters("uuid", uuid);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public ImageTransferVO findByNbdPort(int port) {
-        SearchCriteria<ImageTransferVO> sc = nbdPortSearch.create();
-        sc.setParameters("nbdPort", port);
         return findOneBy(sc);
     }
 
