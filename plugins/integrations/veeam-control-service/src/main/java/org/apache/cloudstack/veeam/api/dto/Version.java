@@ -24,9 +24,9 @@ public final class Version {
 
     private String build;
     private String fullVersion;
-    private Integer major;
-    private Integer minor;
-    private Integer revision;
+    private String major;
+    private String minor;
+    private String revision;
 
     public Version() {}
 
@@ -46,27 +46,27 @@ public final class Version {
         this.fullVersion = fullVersion;
     }
 
-    public Integer getMajor() {
+    public String getMajor() {
         return major;
     }
 
-    public void setMajor(Integer major) {
+    public void setMajor(String major) {
         this.major = major;
     }
 
-    public Integer getMinor() {
+    public String getMinor() {
         return minor;
     }
 
-    public void setMinor(Integer minor) {
+    public void setMinor(String minor) {
         this.minor = minor;
     }
 
-    public Integer getRevision() {
+    public String getRevision() {
         return revision;
     }
 
-    public void setRevision(Integer revision) {
+    public void setRevision(String revision) {
         this.revision = revision;
     }
 }

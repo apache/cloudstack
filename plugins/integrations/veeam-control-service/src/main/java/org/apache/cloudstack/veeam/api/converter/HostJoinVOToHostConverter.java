@@ -66,13 +66,14 @@ public class HostJoinVOToHostConverter {
 
         // --- CPU ---
         final Cpu cpu = new Cpu();
-
-
+        cpu.setSpeed(Math.toIntExact(vo.getSpeed()));
         final Topology topo = new Topology(vo.getCpuSockets(), vo.getCpus(), 1);
+        cpu.setTopology(topo);
+        h.setCpu(cpu);
 
         // --- Memory ---
         h.setMemory(String.valueOf(vo.getTotalMemory()));
-        h.setMaxSchedulingMemory(String.valueOf(vo.getTotalMemory()));
+        h.setMaxSchedulingMemory(String.valueOf(vo.getTotalMemory() - vo.getMemUsedCapacity())); // ToDo: check
 
         // --- OS / versions (optional placeholders) ---
         // If you want, you can set conservative defaults to match oVirt shape.
@@ -82,6 +83,7 @@ public class HostJoinVOToHostConverter {
         h.setNumaSupported("false");
         h.setReinstallationRequired("false");
         h.setUpdateAvailable("false");
+
 
         // --- links/actions ---
         // Start minimal (empty). Add actions only if Veeam tries to follow them.

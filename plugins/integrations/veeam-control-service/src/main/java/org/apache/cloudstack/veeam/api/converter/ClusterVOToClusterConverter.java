@@ -76,8 +76,8 @@ public class ClusterVOToClusterConverter {
 
         // --- version (ovirt engine version; keep fixed unless you want to expose something else)
         final Version ver = new Version();
-        ver.setMajor(4);
-        ver.setMinor(8);
+        ver.setMajor("4");
+        ver.setMinor("8");
         c.setVersion(ver);
 
         // --- ksm / memory policy (defaults)

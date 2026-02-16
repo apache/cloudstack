@@ -105,9 +105,9 @@ public class ApiService extends ManagerBase implements RouteHandler {
         Version version = new Version();
         version.setBuild("8");
         version.setFullVersion("4.5.8-0.master.fake.el9");
-        version.setMajor(4);
-        version.setMinor(5);
-        version.setRevision(0);
+        version.setMajor("4");
+        version.setMinor("5");
+        version.setRevision("0");
 
         productInfo.version = version;
         api.setProductInfo(productInfo);

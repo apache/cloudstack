@@ -167,7 +167,7 @@ public final class UserVmJoinVOToVmConverter {
 
     private static String mapStatus(final VirtualMachine.State state) {
         // CloudStack-ish states -> oVirt-ish up/down
-        if (Arrays.asList(VirtualMachine.State.Running, VirtualMachine.State.Starting,
+        if (Arrays.asList(VirtualMachine.State.Running,
                 VirtualMachine.State.Migrating, VirtualMachine.State.Restoring).contains(state)) {
             return "up";
         }

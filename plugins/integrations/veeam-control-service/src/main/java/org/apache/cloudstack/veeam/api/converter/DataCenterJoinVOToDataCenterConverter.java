@@ -54,8 +54,8 @@ public class DataCenterJoinVOToDataCenterConverter {
 
         // ---- Versions (static but valid) ----
         final Version v48 = new Version();
-        v48.setMajor(4);
-        v48.setMinor(8);
+        v48.setMajor("4");
+        v48.setMinor("8");
         dc.setVersion(v48);
         dc.setSupportedVersions(new SupportedVersions(List.of(v48)));
 
