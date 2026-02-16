@@ -64,19 +64,25 @@ RELEASE="v${2}"
 VAL="1.18.0"
 output_dir="${1}"
 start_dir="$PWD"
-iso_dir="/tmp/iso"
+iso_dir=$(mktemp -d)
+trap 'rm -rf "${iso_dir}"' EXIT
 working_dir="${iso_dir}/"
-mkdir -p "${working_dir}"
-build_name="${5}-${ARCH_SUFFIX}.iso"
-[ -z "${build_name}" ] && build_name="setup-${RELEASE}-${ARCH_SUFFIX}.iso"
+if [ -n "${5}" ]; then
+  build_name="${5}-${ARCH_SUFFIX}.iso"
+else
+  build_name="setup-${RELEASE}-${ARCH_SUFFIX}.iso"
+fi
 
 CNI_VERSION="v${3}"
 echo "Downloading CNI ${CNI_VERSION}..."
 cni_dir="${working_dir}/cni/"
 mkdir -p "${cni_dir}"
-cni_status_code=$(curl -sS -L --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-${ARCH}.tgz")
-if [[ ${cni_status_code} -eq 404 ]]; then
-  curl -sS -L --write-out "%{http_code}\n" "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${ARCH}-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-${ARCH}.tgz"
+if ! curl -sSf -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-${ARCH}.tgz" 2>/dev/null; then
+  echo "Primary CNI URL failed, trying legacy URL format..."
+  if ! curl -sSf -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-${ARCH}-${CNI_VERSION}.tgz" -o "${cni_dir}/cni-plugins-${ARCH}.tgz"; then
+    echo "ERROR: Failed to download CNI plugins ${CNI_VERSION} for ${ARCH} from both URL formats."
+    exit 1
+  fi
 fi
 
 CRICTL_VERSION="v${4}"
@@ -89,7 +95,7 @@ echo "Downloading Kubernetes tools ${RELEASE}..."
 k8s_dir="${working_dir}/k8s"
 mkdir -p "${k8s_dir}"
 cd "${k8s_dir}"
-curl -sS -L --remote-name-all https://dl.k8s.io/release/${RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet,kubectl}
+curl -sS -L --remote-name-all https://dl.k8s.io/release/"${RELEASE}"/bin/linux/${ARCH}/{kubeadm,kubelet,kubectl}
 kubeadm_file_permissions=$(stat --format '%a' kubeadm)
 chmod +x kubeadm
 
@@ -98,29 +104,29 @@ cd "${start_dir}"
 kubelet_service_file="${working_dir}/kubelet.service"
 touch "${kubelet_service_file}"
 if [[ $(echo "${2} $VAL" | awk '{print ($1 < $2)}') == 1 ]]; then
-  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
+  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > "${kubelet_service_file}"
 else
-  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
+  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > "${kubelet_service_file}"
 fi
 
 echo "Downloading 10-kubeadm.conf ${RELEASE}..."
 kubeadm_conf_file="${working_dir}/10-kubeadm.conf"
 touch "${kubeadm_conf_file}"
 if [[ $(echo "${2} $VAL" | awk '{print ($1 < $2)}') == 1 ]]; then
-  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
+  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > "${kubeadm_conf_file}"
 else
-  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
+  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > "${kubeadm_conf_file}"
 fi
 
 AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
 echo "Downloading kubernetes cluster autoscaler ${AUTOSCALER_URL}"
 autoscaler_conf_file="${working_dir}/autoscaler.yaml"
-curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
+curl -sSL "${AUTOSCALER_URL}" -o "${autoscaler_conf_file}"
 
 PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/main/deployment.yaml"
 echo "Downloading kubernetes cluster provider ${PROVIDER_URL}"
 provider_conf_file="${working_dir}/provider.yaml"
-curl -sSL ${PROVIDER_URL} -o ${provider_conf_file}
+curl -sSL "${PROVIDER_URL}" -o "${provider_conf_file}"
 
 CILIUM_VERSION="${8}"
 echo "Generating Cilium ${CILIUM_VERSION} manifest..."
@@ -157,7 +163,7 @@ if ! helm template cilium cilium/cilium --version "${CILIUM_VERSION}" \
   --set ipam.operator.clusterPoolIPv4PodCIDRList={10.168.0.0/16} \
   --set ipam.operator.clusterPoolIPv4MaskSize=24 \
   --set hubble.relay.enabled=false \
-  --set hubble.ui.enabled=false > ${network_conf_file}; then
+  --set hubble.ui.enabled=false > "${network_conf_file}"; then
   echo "ERROR: Failed to generate Cilium manifest with Helm"
   echo "Check if Cilium version ${CILIUM_VERSION} exists in the Helm repository"
   exit 1
@@ -167,12 +173,12 @@ echo "Cilium manifest generated successfully"
 DASHBOARD_VERSION="2.7.0"
 echo "Downloading Kubernetes Dashboard v${DASHBOARD_VERSION}..."
 dashboard_conf_file="${working_dir}/dashboard.yaml"
-curl -sSl "https://raw.githubusercontent.com/kubernetes/dashboard/v${DASHBOARD_VERSION}/aio/deploy/recommended.yaml" -o ${dashboard_conf_file}
+curl -sSL "https://raw.githubusercontent.com/kubernetes/dashboard/v${DASHBOARD_VERSION}/aio/deploy/recommended.yaml" -o "${dashboard_conf_file}"
 
 csi_conf_file="${working_dir}/manifest.yaml"
 echo "Including CloudStack CSI Driver manifest"
-wget https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml -O ${working_dir}/snapshot-crds.yaml
-wget https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml -O ${csi_conf_file}
+wget https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/snapshot-crds.yaml -O "${working_dir}/snapshot-crds.yaml"
+wget https://github.com/cloudstack/cloudstack-csi-driver/releases/download/v3.0.0/manifest.yaml -O "${csi_conf_file}"
 
 echo "Fetching k8s docker images..."
 if ! ctr -v > /dev/null 2>&1; then
@@ -184,22 +190,20 @@ if ! ctr -v > /dev/null 2>&1; then
         PKG_MGR="yum"
       fi
       sudo $PKG_MGR --assumeyes remove docker-common docker container-selinux docker-selinux docker-engine
-      sudo $PKG_MGR --assumeyes install lvm2 device-mapper device-mapper-persistent-data device-mapper-event device-mapper-libs device-mapper-event-libs
-      sudo $PKG_MGR --assumeyes install http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.107-3.el7.noarch.rpm
-      sudo $PKG_MGR --assumeyes install containerd.io
+      sudo $PKG_MGR --assumeyes install lvm2 device-mapper device-mapper-persistent-data device-mapper-event device-mapper-libs device-mapper-event-libs container-selinux containerd.io
     elif [ -f /etc/debian_version ] || command -v apt-get > /dev/null 2>&1; then
       sudo apt-get update && sudo apt-get install containerd.io --yes
     fi
     sudo systemctl enable --now containerd
 fi
 mkdir -p "${working_dir}/docker"
-output=$(${k8s_dir}/kubeadm config images list --kubernetes-version="${RELEASE}")
+output=$("${k8s_dir}/kubeadm" config images list --kubernetes-version="${RELEASE}")
 
 # Don't forget about the other image !
-autoscaler_image=$(grep "image:" ${autoscaler_conf_file} | cut -d ':' -f2- | tr -d ' ')
+autoscaler_image=$(grep "image:" "${autoscaler_conf_file}" | cut -d ':' -f2- | tr -d ' ')
 output=$(printf "%s\n" "${output}" "${autoscaler_image}")
 
-provider_image=$(grep "image:" ${provider_conf_file} | cut -d ':' -f2- | tr -d ' ')
+provider_image=$(grep "image:" "${provider_conf_file}" | cut -d ':' -f2- | tr -d ' ')
 output=$(printf "%s\n" "${output}" "${provider_image}")
 
 # Extract images from manifest.yaml and add to output
@@ -208,7 +212,7 @@ output=$(printf "%s\n%s" "${output}" "${csi_images}")
 
 # Extract all images from yaml manifests (including Cilium network.yaml and Dashboard)
 echo "Extracting images from manifest files..."
-for i in ${network_conf_file} ${dashboard_conf_file}; do
+for i in "${network_conf_file}" "${dashboard_conf_file}"; do
   images=$(grep "image:" "$i" | cut -d ':' -f2- | tr -d ' ' | tr -d "'" | tr -d '"')
   output=$(printf "%s\n" "${output}" "${images}")
 done
@@ -250,14 +254,12 @@ fi
 chmod "${kubeadm_file_permissions}" "${working_dir}/k8s/kubeadm"
 
 echo "Updating imagePullPolicy to IfNotPresent in yaml files..."
-sed -i "s/imagePullPolicy:.*/imagePullPolicy: IfNotPresent/g" ${working_dir}/*.yaml
+sed -i "s/imagePullPolicy:.*/imagePullPolicy: IfNotPresent/g" "${working_dir}"/*.yaml
 
 etcd_dir="${working_dir}/etcd"
 mkdir -p "${etcd_dir}"
 ETCD_VERSION=v${7}
 echo "Downloading etcd ${ETCD_VERSION}..."
-curl -sS -L "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz" -o ${etcd_dir}/etcd-linux-amd64.tar.gz
+curl -sS -L "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-${ARCH}.tar.gz" -o "${etcd_dir}/etcd-linux-${ARCH}.tar.gz"
 
 mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
-
-rm -rf "${iso_dir}"
