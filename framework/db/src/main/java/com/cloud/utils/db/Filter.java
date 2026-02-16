@@ -57,7 +57,8 @@ public class Filter {
     }
 
     public Filter(long limit) {
-        _orderBy = " ORDER BY RAND() LIMIT " + limit;
+        _orderBy = " ORDER BY RAND()";
+        _limit = limit;
     }
 
     public Filter(Long offset, Long limit) {

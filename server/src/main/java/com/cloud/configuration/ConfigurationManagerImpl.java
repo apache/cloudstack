@@ -102,6 +102,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.ValidatedConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
@@ -538,7 +539,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Long> DELETE_QUERY_BATCH_SIZE = new ConfigKey<>("Advanced", Long.class, "delete.query.batch.size", "0",
             "Indicates the limit applied while deleting entries in bulk. With this, the delete query will apply the limit as many times as necessary," +
                     " to delete all the entries. This is advised when retaining several days of records, which can lead to slowness. <= 0 means that no limit will " +
-                    "be applied. Default value is 0. For now, this is used for deletion of vm & volume stats only.", true);
+                    "be applied. Default value is 0. For now, this is used for deletion of VM stats, volume stats, and usage records.", true);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -759,6 +760,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (validationMsg != null) {
             logger.error("Invalid value [{}] for configuration [{}] due to [{}].", value, name, validationMsg);
             throw new InvalidParameterValueException(validationMsg);
+        }
+
+        ConfigKey<?> configKey = _configDepot.get(name);
+        if (configKey instanceof ValidatedConfigKey) {
+            ValidatedConfigKey<?> validatedConfigKey = (ValidatedConfigKey<?>) configKey;
+            validatedConfigKey.validateValue(value);
         }
 
         // If scope of the parameter is given then it needs to be updated in the

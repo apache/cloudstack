@@ -288,7 +288,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
 
         for (long zoneId : zonesIds) {
-            DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);
+            DataStore imageStore = templateMgr.verifyHeuristicRulesForZone(template, zoneId);
 
             if (imageStore == null) {
                 List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
@@ -297,6 +297,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 validateSecondaryStorageAndCreateTemplate(List.of(imageStore), template, null);
             }
         }
+    }
+
+    protected List<DataStore> getImageStoresThrowsExceptionIfNotFound(long zoneId, TemplateProfile profile) {
+        List<DataStore> imageStores = storeMgr.getImageStoresByZoneIds(zoneId);
+        if (imageStores == null || imageStores.size() == 0) {
+            throw new CloudRuntimeException(String.format("Unable to find image store to download the template [%s].", profile.getTemplate()));
+        }
+        return imageStores;
     }
 
     protected void standardImageStoreAllocation(List<DataStore> imageStores, VMTemplateVO template) {
@@ -356,7 +364,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 }
 
                 Long zoneId = zoneIdList.get(0);
-                DataStore imageStore = verifyHeuristicRulesForZone(template, zoneId);
+                DataStore imageStore = templateMgr.verifyHeuristicRulesForZone(template, zoneId);
                 List<TemplateOrVolumePostUploadCommand> payloads = new LinkedList<>();
 
                 if (imageStore == null) {

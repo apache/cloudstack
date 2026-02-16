@@ -2137,7 +2137,9 @@ export default {
         this.owner.domainid = null
         this.owner.projectid = OwnerOptions.selectedProject
       }
-      this.resetData()
+      if (OwnerOptions.initialized) {
+        this.resetData()
+      }
     },
     fetchZones (zoneId, listZoneAllow) {
       this.zones = []

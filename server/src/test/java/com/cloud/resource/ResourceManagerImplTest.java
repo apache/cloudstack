@@ -57,6 +57,7 @@ import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -75,6 +76,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -179,6 +181,12 @@ public class ResourceManagerImplTest {
     private MockedConstruction<GetVncPortCommand> getVncPortCommandMockedConstruction;
     private AutoCloseable closeable;
 
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
+
     @Before
     public void setup() throws Exception {
         closeable = MockitoAnnotations.openMocks(this);
@@ -221,12 +229,12 @@ public class ResourceManagerImplTest {
                 eq("service cloudstack-agent restart"))).
                 willReturn(new SSHCmdHelper.SSHCmdResult(0,"",""));
 
-        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("true");
+        overrideDefaultConfigValue(ResourceManager.KvmSshToAgentEnabled, "_defaultValue", "true");
 
         rootDisks = Arrays.asList(rootDisk1, rootDisk2);
         dataDisks = Collections.singletonList(dataDisk);
-        when(volumeDao.findByPoolId(poolId)).thenReturn(rootDisks);
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(dataDisks);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(rootDisks);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(dataDisks);
     }
 
     @After
@@ -399,9 +407,9 @@ public class ResourceManagerImplTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testHandleAgentSSHDisabledNotConnectedAgent() {
+    public void testHandleAgentSSHDisabledNotConnectedAgent() throws NoSuchFieldException, IllegalAccessException {
         when(host.getStatus()).thenReturn(Status.Disconnected);
-        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
+        overrideDefaultConfigValue(ResourceManager.KvmSshToAgentEnabled, "_defaultValue", "false");
         resourceManager.handleAgentIfNotConnected(host, false);
     }
 
@@ -591,22 +599,22 @@ public class ResourceManagerImplTest {
 
     @Test
     public void testDestroyLocalStoragePoolVolumesOnlyRootDisks() {
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, times(rootDisks.size())).updateAndRemoveVolume(any(VolumeVO.class));
     }
 
     @Test
     public void testDestroyLocalStoragePoolVolumesOnlyDataDisks() {
-        when(volumeDao.findByPoolId(poolId)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, times(dataDisks.size())).updateAndRemoveVolume(any(VolumeVO.class));
     }
 
     @Test
     public void testDestroyLocalStoragePoolVolumesNoDisks() {
-        when(volumeDao.findByPoolId(poolId)).thenReturn(null);
-        when(volumeDao.findByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId)).thenReturn(null);
+        when(volumeDao.findNonDestroyedVolumesByPoolId(poolId, Volume.Type.DATADISK)).thenReturn(null);
         resourceManager.destroyLocalStoragePoolVolumes(poolId);
         verify(volumeDao, never()).updateAndRemoveVolume(any(VolumeVO.class));
     }
@@ -944,7 +952,7 @@ public class ResourceManagerImplTest {
         Mockito.when(volume2.getInstanceId()).thenReturn(101L);
 
         List<VolumeVO> volumesInPool = Arrays.asList(volume1, volume2);
-        Mockito.doReturn(volumesInPool).when(volumeDao).findByPoolId(poolId);
+        Mockito.doReturn(volumesInPool).when(volumeDao).findNonDestroyedVolumesByPoolId(poolId);
 
         VMInstanceVO vmInstance1 = Mockito.mock(VMInstanceVO.class);
         VMInstanceVO vmInstance2 = Mockito.mock(VMInstanceVO.class);

@@ -80,4 +80,6 @@ public interface TemplateService {
     List<DatadiskTO> getTemplateDatadisksOnImageStore(TemplateInfo templateInfo, String configurationId);
 
     AsyncCallFuture<TemplateApiResult> copyTemplateToImageStore(DataObject source, DataStore destStore);
-}
+
+    void handleTemplateCopyFromSecondaryStores(long templateId, DataStore destStore);
+ }

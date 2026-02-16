@@ -1886,6 +1886,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 null, null, null, null, null, null, null, null, null, null);
     }
 
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_CREATE, eventDescription = "creating network")
+    public Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+                                      PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Pair<Integer, Integer> vrIfaceMTUs) throws
+            InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
+        return _networkMgr.createGuestNetwork(networkOfferingId, name, displayText,
+                null, null, null, false, null, owner, null, physicalNetwork, zoneId,
+                aclType, null, null, null, null, true, null,
+                null, null, null, null, null, null, null, null, vrIfaceMTUs, null);
+    }
+
     void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
         String sourceNatIp = cmd.getSourceNatIP();
         if (sourceNatIp == null) {

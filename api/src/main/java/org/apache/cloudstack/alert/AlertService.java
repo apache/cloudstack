@@ -71,8 +71,8 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_HA_ACTION = new AlertType((short)30, "ALERT.HA.ACTION", true);
         public static final AlertType ALERT_TYPE_CA_CERT = new AlertType((short)31, "ALERT.CA.CERT", true);
         public static final AlertType ALERT_TYPE_VM_SNAPSHOT = new AlertType((short)32, "ALERT.VM.SNAPSHOT", true);
-        public static final AlertType ALERT_TYPE_VR_PUBLIC_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PUBLIC.IFACE.MTU", true);
-        public static final AlertType ALERT_TYPE_VR_PRIVATE_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PRIVATE.IFACE.MTU", true);
+        public static final AlertType ALERT_TYPE_VR_PUBLIC_IFACE_MTU = new AlertType((short)33, "ALERT.VR.PUBLIC.IFACE.MTU", true);
+        public static final AlertType ALERT_TYPE_VR_PRIVATE_IFACE_MTU = new AlertType((short)34, "ALERT.VR.PRIVATE.IFACE.MTU", true);
         public static final AlertType ALERT_TYPE_EXTENSION_PATH_NOT_READY = new AlertType((short)33, "ALERT.TYPE.EXTENSION.PATH.NOT.READY", true);
         public static final AlertType ALERT_TYPE_BACKUP_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_BACKUP_STORAGE, "ALERT.STORAGE.BACKUP", true);
         public static final AlertType ALERT_TYPE_OBJECT_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, "ALERT.STORAGE.OBJECT", true);

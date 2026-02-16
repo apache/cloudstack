@@ -1163,7 +1163,7 @@ public class UserVmManagerImplTest {
         when(templateMock.isDeployAsIs()).thenReturn(false);
         when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateMock.getUserDataId()).thenReturn(null);
-        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), nullable(Map.class));
 
         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
         when(serviceOfferingJoinDao.findById(anyLong())).thenReturn(svcOfferingMock);
@@ -1175,7 +1175,7 @@ public class UserVmManagerImplTest {
 
         UserVm result = userVmManagerImpl.createVirtualMachine(deployVMCmd);
         assertEquals(userVmVoMock, result);
-        Mockito.verify(vnfTemplateManager).validateVnfApplianceNics(templateMock, null);
+        Mockito.verify(vnfTemplateManager).validateVnfApplianceNics(templateMock, null, Collections.emptyMap());
         Mockito.verify(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any(), any());
@@ -1419,7 +1419,7 @@ public class UserVmManagerImplTest {
         when(templateMock.isDeployAsIs()).thenReturn(false);
         when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateMock.getUserDataId()).thenReturn(null);
-        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), nullable(Map.class));
 
         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
         when(serviceOfferingJoinDao.findById(anyLong())).thenReturn(svcOfferingMock);
@@ -3879,7 +3879,7 @@ public class UserVmManagerImplTest {
         when(templateMock.isDeployAsIs()).thenReturn(false);
         when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateMock.getUserDataId()).thenReturn(null);
-        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), any());
         when(_dcMock.isLocalStorageEnabled()).thenReturn(false);
         when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
@@ -3917,7 +3917,7 @@ public class UserVmManagerImplTest {
         when(templateMock.isDeployAsIs()).thenReturn(false);
         when(templateMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateMock.getUserDataId()).thenReturn(null);
-        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class));
+        Mockito.doNothing().when(vnfTemplateManager).validateVnfApplianceNics(any(), nullable(List.class), any());
         when(_dcMock.isLocalStorageEnabled()).thenReturn(false);
         when(_dcMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),

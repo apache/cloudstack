@@ -155,6 +155,14 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "download progress of a snapshot", since = "4.19.0")
     private Map<String, String> downloadDetails;
 
+    @SerializedName("parent")
+    @Param(description = "The parent ID of the Snapshot", since = "4.22.1")
+    private String parent;
+
+    @SerializedName("parentname")
+    @Param(description = "The parent name of the Snapshot", since = "4.22.1")
+    private String parentName;
+
     public SnapshotResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -312,5 +320,13 @@ public class SnapshotResponse extends BaseResponseWithTagInformation implements 
 
     public void setDownloadDetails(Map<String, String> downloadDetails) {
         this.downloadDetails = downloadDetails;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
+    }
+
+    public void setParentName(String parentName) {
+        this.parentName = parentName;
     }
 }

@@ -136,7 +136,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> findByPoolId(long poolId) {
+    public List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
         sc.setParameters("notDestroyed", Volume.State.Destroy, Volume.State.Expunged);
@@ -145,7 +145,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> findByInstanceIdAndPoolId(long instanceId, long poolId) {
+    public List<VolumeVO> findNonDestroyedVolumesByInstanceIdAndPoolId(long instanceId, long poolId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", instanceId);
         sc.setParameters("poolId", poolId);
@@ -162,7 +162,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType) {
+    public List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId, Volume.Type volumeType) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
         sc.setParameters("notDestroyed", Volume.State.Destroy, Volume.State.Expunged);
