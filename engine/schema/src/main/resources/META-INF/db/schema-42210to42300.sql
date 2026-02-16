@@ -102,10 +102,14 @@ CREATE TABLE `cloud`.`dns_zone` (
 -- 3. DNS Zone Network Map (One-to-Many Link)
 CREATE TABLE `cloud`.`dns_zone_network_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns zone to network mapping',
+  `uuid` varchar(40),
   `dns_zone_id` bigint(20) unsigned NOT NULL,
   `network_id` bigint(20) unsigned NOT NULL COMMENT 'network to which dns zone is associated to',
   `sub_domain` varchar(255) DEFAULT NULL COMMENT 'Subdomain for auto-registration',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',
   PRIMARY KEY (`id`),
+  CONSTRAINT `uc_dns_zone__uuid` UNIQUE (`uuid`),
   KEY `fk_dns_map__zone_id` (`dns_zone_id`),
   KEY `fk_dns_map__network_id` (`network_id`),
   CONSTRAINT `fk_dns_map__zone_id` FOREIGN KEY (`dns_zone_id`) REFERENCES `dns_zone` (`id`) ON DELETE CASCADE,

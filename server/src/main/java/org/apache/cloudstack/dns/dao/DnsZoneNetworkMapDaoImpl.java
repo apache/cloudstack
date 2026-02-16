@@ -25,4 +25,14 @@ public class DnsZoneNetworkMapDaoImpl extends GenericDaoBase<DnsZoneNetworkMapVO
         sc.setParameters("dnsZoneId", dnsZoneId);
         return listBy(sc);
     }
+
+    @Override
+    public DnsZoneNetworkMapVO findByZoneAndNetwork(long zoneId, long networkId) {
+        return null;
+    }
+
+    @Override
+    public List<DnsZoneNetworkMapVO> listByNetworkId(long networkId) {
+        return List.of();
+    }
 }

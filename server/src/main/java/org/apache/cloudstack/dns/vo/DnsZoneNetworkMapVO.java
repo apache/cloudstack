@@ -18,6 +18,7 @@
 package org.apache.cloudstack.dns.vo;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -41,6 +42,9 @@ public class DnsZoneNetworkMapVO implements InternalIdentity {
     @Column(name = "id")
     private long id;
 
+    @Column(name = "uuid")
+    private String uuid;
+
     @Column(name = "dns_zone_id")
     private long dnsZoneId;
 
@@ -59,6 +63,7 @@ public class DnsZoneNetworkMapVO implements InternalIdentity {
     private Date removed = null;
 
     public DnsZoneNetworkMapVO() {
+        this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
     }
 
@@ -92,5 +97,9 @@ public class DnsZoneNetworkMapVO implements InternalIdentity {
 
     public Date getRemoved() {
         return removed;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 }

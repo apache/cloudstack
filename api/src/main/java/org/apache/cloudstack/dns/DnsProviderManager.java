@@ -20,10 +20,12 @@ package org.apache.cloudstack.dns;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd;
+import org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd;
 import org.apache.cloudstack.api.command.user.dns.CreateDnsRecordCmd;
 import org.apache.cloudstack.api.command.user.dns.CreateDnsZoneCmd;
 import org.apache.cloudstack.api.command.user.dns.DeleteDnsRecordCmd;
 import org.apache.cloudstack.api.command.user.dns.DeleteDnsServerCmd;
+import org.apache.cloudstack.api.command.user.dns.DisassociateDnsZoneFromNetworkCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsRecordsCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsServersCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsZonesCmd;
@@ -31,6 +33,7 @@ import org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd;
 import org.apache.cloudstack.api.command.user.dns.UpdateDnsZoneCmd;
 import org.apache.cloudstack.api.response.DnsRecordResponse;
 import org.apache.cloudstack.api.response.DnsServerResponse;
+import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
@@ -64,8 +67,11 @@ public interface DnsProviderManager extends Manager, PluggableService {
 
     List<String> listProviderNames();
 
-
     // Helper to create the response object
     DnsZoneResponse createDnsZoneResponse(DnsZone zone);
     DnsRecordResponse createDnsRecordResponse(DnsRecord record);
+
+    DnsZoneNetworkMapResponse associateZoneToNetwork(AssociateDnsZoneToNetworkCmd cmd);
+
+    boolean disassociateZoneFromNetwork(DisassociateDnsZoneFromNetworkCmd cmd);
 }

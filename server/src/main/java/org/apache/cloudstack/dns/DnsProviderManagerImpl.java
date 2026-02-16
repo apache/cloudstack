@@ -24,11 +24,13 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd;
+import org.apache.cloudstack.api.command.user.dns.AssociateDnsZoneToNetworkCmd;
 import org.apache.cloudstack.api.command.user.dns.CreateDnsRecordCmd;
 import org.apache.cloudstack.api.command.user.dns.CreateDnsZoneCmd;
 import org.apache.cloudstack.api.command.user.dns.DeleteDnsRecordCmd;
 import org.apache.cloudstack.api.command.user.dns.DeleteDnsServerCmd;
 import org.apache.cloudstack.api.command.user.dns.DeleteDnsZoneCmd;
+import org.apache.cloudstack.api.command.user.dns.DisassociateDnsZoneFromNetworkCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsProvidersCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsRecordsCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsServersCmd;
@@ -37,17 +39,22 @@ import org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd;
 import org.apache.cloudstack.api.command.user.dns.UpdateDnsZoneCmd;
 import org.apache.cloudstack.api.response.DnsRecordResponse;
 import org.apache.cloudstack.api.response.DnsServerResponse;
+import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dns.dao.DnsServerDao;
 import org.apache.cloudstack.dns.dao.DnsZoneDao;
+import org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDao;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
+import org.apache.cloudstack.dns.vo.DnsZoneNetworkMapVO;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
@@ -65,6 +72,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     DnsServerDao dnsServerDao;
     @Inject
     DnsZoneDao dnsZoneDao;
+    @Inject
+    NetworkDao networkDao;
+    @Inject
+    DnsZoneNetworkMapDao dnsZoneNetworkMapDao;
 
     private DnsProvider getProvider(DnsProviderType type) {
         if (type == null) {
@@ -470,6 +481,51 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
+    public DnsZoneNetworkMapResponse associateZoneToNetwork(AssociateDnsZoneToNetworkCmd cmd) {
+        Account caller = CallContext.current().getCallingAccount();
+        DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
+        if (zone == null) {
+            throw new InvalidParameterValueException("DNS Zone not found.");
+        }
+        accountMgr.checkAccess(caller, null, true, zone);
+
+        NetworkVO network = networkDao.findById(cmd.getNetworkId());
+        if (network == null) {
+            throw new InvalidParameterValueException("Network not found.");
+        }
+        accountMgr.checkAccess(caller, null, true, network);
+        DnsZoneNetworkMapVO existing = dnsZoneNetworkMapDao.findByZoneAndNetwork(zone.getId(), network.getId());
+        if (existing != null) {
+            throw new InvalidParameterValueException("This DNS Zone is already associated with this Network.");
+        }
+        DnsZoneNetworkMapVO mapping = new DnsZoneNetworkMapVO(zone.getId(), network.getId(), cmd.getSubDomain());
+        dnsZoneNetworkMapDao.persist(mapping);
+        DnsZoneNetworkMapResponse response = new DnsZoneNetworkMapResponse();
+        response.setId(mapping.getUuid());
+        response.setDnsZoneId(zone.getUuid());
+        response.setNetworkId(network.getUuid());
+        response.setSubDomain(mapping.getSubDomain());
+        return response;
+    }
+
+    @Override
+    public boolean disassociateZoneFromNetwork(DisassociateDnsZoneFromNetworkCmd cmd) {
+        DnsZoneNetworkMapVO mapping = dnsZoneNetworkMapDao.findById(cmd.getId());
+        if (mapping == null) {
+            throw new InvalidParameterValueException("The specified DNS zone to network mapping does not exist.");
+        }
+        DnsZoneVO zone = dnsZoneDao.findById(mapping.getDnsZoneId());
+        if (zone == null) {
+            // If the zone is missing but the mapping exists (shouldn't happen due to CASCADE DELETE),
+            // clean up the orphaned mapping.
+            return dnsZoneNetworkMapDao.remove(mapping.getId());
+        }
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, true, zone);
+        return dnsZoneNetworkMapDao.remove(mapping.getId());
+    }
+
+    @Override
     public boolean start() {
         if (dnsProviders == null || dnsProviders.isEmpty()) {
             logger.warn("DNS Framework started but no provider plugins were found!");
@@ -495,6 +551,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         cmdList.add(ListDnsZonesCmd.class);
         cmdList.add(DeleteDnsZoneCmd.class);
         cmdList.add(UpdateDnsZoneCmd.class);
+        cmdList.add(AssociateDnsZoneToNetworkCmd.class);
 
         // DNS Record Commands
         cmdList.add(CreateDnsRecordCmd.class);

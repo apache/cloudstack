@@ -8,4 +8,6 @@ import com.cloud.utils.db.GenericDao;
 
 public interface DnsZoneNetworkMapDao extends GenericDao<DnsZoneNetworkMapVO, Long> {
     List<DnsZoneNetworkMapVO> listByDnsZoneId(long dnsZoneId);
+    DnsZoneNetworkMapVO findByZoneAndNetwork(long zoneId, long networkId);
+    List<DnsZoneNetworkMapVO> listByNetworkId(long networkId);
 }

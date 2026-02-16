@@ -22,7 +22,6 @@ import com.cloud.exception.ResourceAllocationException;
         responseObject = DnsZoneResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
-
     private static final String COMMAND_RESPONSE_NAME = "creatednszoneresponse";
 
     @Inject
