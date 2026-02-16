@@ -259,7 +259,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 break;
             }
             offset = writeBlock(bytesRead, out, buffer, offset);
-            if (!ResourceType.SNAPSHOT.equals(resourceType)
+            if (resourceType.shouldVerifyFormat()
                     && !verifyFormat.isVerifiedFormat()
                     && (offset >= MIN_FORMAT_VERIFICATION_SIZE || offset >= remoteSize)) {
                 verifyFormat.invoke();

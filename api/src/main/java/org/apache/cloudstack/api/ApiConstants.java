@@ -556,6 +556,7 @@ public class ApiConstants {
 
     public static final String SOURCE_CIDR_LIST = "sourcecidrlist";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
+    public static final String SOURCE_MANAGEMENT_SERVER_ID = "sourcemanagementserverid";
     public static final String SSL_VERIFICATION = "sslverification";
     public static final String START_ASN = "startasn";
     public static final String START_DATE = "startdate";
@@ -576,6 +577,7 @@ public class ApiConstants {
     public static final String SWAP_OWNER = "swapowner";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
+    public static final String TARGET_MANAGEMENT_SERVER_IDS = "targetmanagementserverids";
     public static final String STORAGE_TAGS = "storagetags";
     public static final String STORAGE_ACCESS_GROUPS = "storageaccessgroups";
     public static final String STORAGE_ACCESS_GROUP = "storageaccessgroup";

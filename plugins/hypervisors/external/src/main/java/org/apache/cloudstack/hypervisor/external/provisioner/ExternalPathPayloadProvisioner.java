@@ -19,39 +19,23 @@
 package org.apache.cloudstack.hypervisor.external.provisioner;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsFilesystemManager;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
-import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -79,15 +63,11 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.json.JsonMergeUtil;
-import com.cloud.utils.script.Script;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -97,19 +77,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-public class ExternalPathPayloadProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
-
-    public static final String BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR = "scripts/vm/hypervisor/external/provisioner";
-    public static final String BASE_EXTERNAL_PROVISIONER_SHELL_SCRIPT =
-            BASE_EXTERNAL_PROVISIONER_SCRIPTS_DIR + "/provisioner.sh";
-
-    private static final String PROPERTIES_FILE = "server.properties";
-    private static final String EXTENSIONS = "extensions";
-    private static final String EXTENSIONS_DEPLOYMENT_MODE_NAME = "extensions.deployment.mode";
-    private static final String EXTENSIONS_DIRECTORY_PROD = "/usr/share/cloudstack-management/extensions";
-    private static final String EXTENSIONS_DATA_DIRECTORY_PROD = System.getProperty("user.home") + File.separator + EXTENSIONS;
-    private static final String EXTENSIONS_DIRECTORY_DEV = EXTENSIONS;
-    private static final String EXTENSIONS_DATA_DIRECTORY_DEV = "client/target/extensions-data";
+public class ExternalPathPayloadProvisioner extends ManagerBase implements ExternalProvisioner {
 
     @Inject
     UserVmDao _uservmDao;
@@ -123,11 +91,9 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     @Inject
     ExtensionsManager extensionsManager;
 
-    private static final AtomicReference<Properties> propertiesRef = new AtomicReference<>();
-    private String extensionsDirectory;
-    private String extensionsDataDirectory;
-    private ExecutorService payloadCleanupExecutor;
-    private ScheduledExecutorService payloadCleanupScheduler;
+    @Inject
+    ExtensionsFilesystemManager extensionsFilesystemManager;
+
     private static final List<String> TRIVIAL_ACTIONS = Arrays.asList(
             "status", "statuses"
     );
@@ -155,63 +121,6 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         return modifiedDetails;
     }
 
-    protected String getExtensionCheckedPath(String extensionName, String extensionRelativePath) {
-        String path = getExtensionPath(extensionRelativePath);
-        File file = new File(path);
-        String errorSuffix = String.format("Entry point [%s] for extension: %s", path, extensionName);
-        if (!file.exists()) {
-            logger.error("{} does not exist", errorSuffix);
-            return null;
-        }
-        if (!file.isFile()) {
-            logger.error("{} is not a file", errorSuffix);
-            return null;
-        }
-        if (!file.canRead()) {
-            logger.error("{} is not readable", errorSuffix);
-            return null;
-        }
-        if (!file.canExecute()) {
-            logger.error("{} is not executable", errorSuffix);
-            return null;
-        }
-        return path;
-
-    }
-
-    protected boolean checkExtensionsDirectory() {
-        File dir = new File(extensionsDirectory);
-        if (!dir.exists() || !dir.isDirectory() || !dir.canWrite()) {
-            logger.error("Extension directory [{}] is not properly set up. It must exist, be a directory, and be writeable",
-                    dir.getAbsolutePath());
-            return false;
-        }
-        if (!extensionsDirectory.equals(dir.getAbsolutePath())) {
-            extensionsDirectory = dir.getAbsolutePath();
-        }
-        logger.info("Extensions directory path: {}", extensionsDirectory);
-        return true;
-    }
-
-    protected void createOrCheckExtensionsDataDirectory() throws ConfigurationException {
-        File dir = new File(extensionsDataDirectory);
-        if (!dir.exists()) {
-            try {
-                Files.createDirectories(dir.toPath());
-            } catch (IOException e) {
-                logger.error("Unable to create extensions data directory [{}]", dir.getAbsolutePath(), e);
-                throw new ConfigurationException("Unable to create extensions data directory path");
-            }
-        }
-        if (!dir.isDirectory() || !dir.canWrite()) {
-            logger.error("Extensions data directory [{}] is not properly set up. It must exist, be a directory, and be writeable",
-                    dir.getAbsolutePath());
-            throw new ConfigurationException("Extensions data directory path is not accessible");
-        }
-        extensionsDataDirectory = dir.getAbsolutePath();
-        logger.info("Extensions data directory path: {}", extensionsDataDirectory);
-    }
-
     protected VirtualMachineTO getVirtualMachineTO(VirtualMachine vm) {
         if (vm == null) {
             return null;
@@ -228,87 +137,6 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         return json.replaceAll("(\"password\"\\s*:\\s*\")([^\"]*)(\")", "$1****$3");
     }
 
-    private String getServerProperty(String name) {
-        Properties props = propertiesRef.get();
-        if (props == null) {
-            File propsFile = PropertiesUtil.findConfigFile(PROPERTIES_FILE);
-            if (propsFile == null) {
-                logger.error("{} file not found", PROPERTIES_FILE);
-                return null;
-            }
-            Properties tempProps = new Properties();
-            try (FileInputStream is = new FileInputStream(propsFile)) {
-                tempProps.load(is);
-            } catch (IOException e) {
-                logger.error("Error loading {}: {}", PROPERTIES_FILE, e.getMessage(), e);
-                return null;
-            }
-            if (!propertiesRef.compareAndSet(null, tempProps)) {
-                tempProps = propertiesRef.get();
-            }
-            props = tempProps;
-        }
-        return props.getProperty(name);
-    }
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        super.configure(name, params);
-
-        initializeExtensionDirectories();
-        checkExtensionsDirectory();
-        createOrCheckExtensionsDataDirectory();
-        return true;
-    }
-
-    private void initializeExtensionDirectories() {
-        String deploymentMode = getServerProperty(EXTENSIONS_DEPLOYMENT_MODE_NAME);
-        if ("developer".equals(deploymentMode)) {
-            extensionsDirectory = EXTENSIONS_DIRECTORY_DEV;
-            extensionsDataDirectory = EXTENSIONS_DATA_DIRECTORY_DEV;
-        } else {
-            extensionsDirectory = EXTENSIONS_DIRECTORY_PROD;
-            extensionsDataDirectory = EXTENSIONS_DATA_DIRECTORY_PROD;
-        }
-    }
-
-    @Override
-    public boolean start() {
-        payloadCleanupExecutor = Executors.newSingleThreadExecutor();
-        payloadCleanupScheduler = Executors.newSingleThreadScheduledExecutor();
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        payloadCleanupExecutor.shutdown();
-        payloadCleanupScheduler.shutdown();
-        return true;
-    }
-
-    @Override
-    public String getExtensionsPath() {
-        return extensionsDirectory;
-    }
-
-    @Override
-    public String getExtensionPath(String relativePath) {
-        return String.format("%s%s%s", extensionsDirectory, File.separator, relativePath);
-    }
-
-    @Override
-    public String getChecksumForExtensionPath(String extensionName, String relativePath) {
-        String path = getExtensionCheckedPath(extensionName, relativePath);
-        if (StringUtils.isBlank(path)) {
-            return null;
-        }
-        try {
-            return DigestHelper.calculateChecksum(new File(path));
-        } catch (CloudRuntimeException ignored) {
-            return null;
-        }
-    }
-
     protected String getExtensionConfigureError(String extensionName, String hostName) {
         StringBuilder sb = new StringBuilder("Extension: ").append(extensionName).append(" not configured");
         if (StringUtils.isNotBlank(hostName)) {
@@ -320,7 +148,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     @Override
     public PrepareExternalProvisioningAnswer prepareExternalProvisioning(String hostName,
                  String extensionName, String extensionRelativePath, PrepareExternalProvisioningCommand cmd) {
-        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
+        String extensionPath = extensionsFilesystemManager.getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new PrepareExternalProvisioningAnswer(cmd, false, getExtensionConfigureError(extensionName, hostName));
         }
@@ -352,7 +180,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     @Override
     public StartAnswer startInstance(String hostName, String extensionName, String extensionRelativePath,
                              StartCommand cmd) {
-        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
+        String extensionPath = extensionsFilesystemManager.getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StartAnswer(cmd, getExtensionConfigureError(extensionName, hostName));
         }
@@ -396,7 +224,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     @Override
     public StopAnswer stopInstance(String hostName, String extensionName, String extensionRelativePath,
                            StopCommand cmd) {
-        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
+        String extensionPath = extensionsFilesystemManager.getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StopAnswer(cmd, getExtensionConfigureError(extensionName, hostName), false);
         }
@@ -417,7 +245,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     @Override
     public RebootAnswer rebootInstance(String hostName, String extensionName, String extensionRelativePath,
                            RebootCommand cmd) {
-        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
+        String extensionPath = extensionsFilesystemManager.getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new RebootAnswer(cmd, getExtensionConfigureError(extensionName, hostName), false);
         }
@@ -437,7 +265,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     @Override
     public StopAnswer expungeInstance(String hostName, String extensionName, String extensionRelativePath,
                           StopCommand cmd) {
-        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
+        String extensionPath = extensionsFilesystemManager.getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StopAnswer(cmd, getExtensionConfigureError(extensionName, hostName), false);
         }
@@ -458,7 +286,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     public Map<String, HostVmStateReportEntry> getHostVmStateReport(long hostId, String extensionName,
                             String extensionRelativePath) {
         Map<String, HostVmStateReportEntry> vmStates = new HashMap<>();
-        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
+        String extensionPath = extensionsFilesystemManager.getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return vmStates;
         }
@@ -491,7 +319,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     @Override
     public GetExternalConsoleAnswer getInstanceConsole(String hostName, String extensionName,
                            String extensionRelativePath, GetExternalConsoleCommand cmd) {
-        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
+        String extensionPath = extensionsFilesystemManager.getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new GetExternalConsoleAnswer(cmd, getExtensionConfigureError(extensionName, hostName));
         }
@@ -540,7 +368,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
     @Override
     public RunCustomActionAnswer runCustomAction(String hostName, String extensionName,
                          String extensionRelativePath, RunCustomActionCommand cmd) {
-        String extensionPath = getExtensionCheckedPath(extensionName, extensionRelativePath);
+        String extensionPath = extensionsFilesystemManager.getExtensionCheckedPath(extensionName, extensionRelativePath);
         if (StringUtils.isEmpty(extensionPath)) {
             return new RunCustomActionAnswer(cmd, false, getExtensionConfigureError(extensionName, hostName));
         }
@@ -557,143 +385,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
         return new RunCustomActionAnswer(cmd, result.first(), result.second());
     }
 
-    protected boolean createExtensionPath(String extensionName, Path destinationPathObj) throws IOException {
-        String sourceScriptPath = Script.findScript("", BASE_EXTERNAL_PROVISIONER_SHELL_SCRIPT);
-        if(sourceScriptPath == null) {
-            logger.error("Failed to find base script for preparing extension: {}",
-                    extensionName);
-            return false;
-        }
-        Path sourcePath = Paths.get(sourceScriptPath);
-        Files.copy(sourcePath, destinationPathObj, StandardCopyOption.REPLACE_EXISTING);
-        return true;
-    }
-
-    @Override
-    public void prepareExtensionPath(String extensionName, boolean userDefined,
-                           String extensionRelativePath) {
-        logger.debug("Preparing entry point for Extension [name: {}, user-defined: {}]", extensionName, userDefined);
-        if (!userDefined) {
-            logger.debug("Skipping preparing entry point for inbuilt extension: {}", extensionName);
-            return;
-        }
-        String destinationPath = getExtensionPath(extensionRelativePath);
-        if (!destinationPath.endsWith(".sh")) {
-            logger.info("File {} for extension: {} is not a bash script, skipping copy.", destinationPath,
-                    extensionName);
-            return;
-        }
-        File destinationFile = new File(destinationPath);
-        if (destinationFile.exists()) {
-            logger.info("File already exists at {} for extension: {}, skipping copy.", destinationPath,
-                    extensionName);
-            return;
-        }
-        CloudRuntimeException exception =
-                new CloudRuntimeException(String.format("Failed to prepare scripts for extension: %s", extensionName));
-        if (!checkExtensionsDirectory()) {
-            throw exception;
-        }
-        Path destinationPathObj = Paths.get(destinationPath);
-        Path destinationDirPath = destinationPathObj.getParent();
-        if (destinationDirPath == null) {
-            logger.error("Failed to find parent directory for extension: {} script path {}",
-                    extensionName, destinationPath);
-            throw exception;
-        }
-        try {
-            Files.createDirectories(destinationDirPath);
-        } catch (IOException e) {
-            logger.error("Failed to create directory: {} for extension: {}", destinationDirPath,
-                    extensionName, e);
-            throw exception;
-        }
-        try {
-            if (!createExtensionPath(extensionName, destinationPathObj)) {
-                throw exception;
-            }
-        } catch (IOException e) {
-            logger.error("Failed to copy entry point file to [{}] for extension: {}",
-                    destinationPath, extensionName, e);
-            throw exception;
-        }
-        logger.debug("Successfully prepared entry point [{}] for extension: {}", destinationPath,
-                extensionName);
-    }
-
-    @Override
-    public void cleanupExtensionPath(String extensionName, String extensionRelativePath) {
-        String normalizedPath = extensionRelativePath;
-        if (normalizedPath.startsWith("/")) {
-            normalizedPath = normalizedPath.substring(1);
-        }
-        try {
-            Path rootPath = Paths.get(extensionsDirectory).toAbsolutePath().normalize();
-            String extensionDirName = Extension.getDirectoryName(extensionName);
-            Path filePath = rootPath
-                    .resolve(normalizedPath.startsWith(extensionDirName) ? extensionDirName : normalizedPath)
-                    .normalize();
-            if (!Files.exists(filePath)) {
-                return;
-            }
-            if (!Files.isDirectory(filePath) && !Files.isRegularFile(filePath)) {
-                throw new CloudRuntimeException(
-                        String.format("Failed to cleanup path: %s for extension: %s as it either " +
-                                        "does not exist or is not a regular file/directory",
-                                extensionName, extensionRelativePath));
-            }
-            if (!FileUtil.deleteRecursively(filePath)) {
-                throw new CloudRuntimeException(
-                        String.format("Failed to delete path: %s for extension: %s",
-                                extensionName, filePath));
-            }
-        } catch (IOException e) {
-            throw new CloudRuntimeException(
-                    String.format("Failed to cleanup path: %s for extension: %s due to: %s",
-                            extensionName, normalizedPath, e.getMessage()), e);
-        }
-    }
-
-    @Override
-    public void cleanupExtensionData(String extensionName, int olderThanDays, boolean cleanupDirectory) {
-        String extensionPayloadDirPath = extensionsDataDirectory + File.separator + extensionName;
-        Path dirPath = Paths.get(extensionPayloadDirPath);
-        if (!Files.exists(dirPath)) {
-            return;
-        }
-        try {
-            if (cleanupDirectory) {
-                try (Stream<Path> paths = Files.walk(dirPath)) {
-                    paths.sorted(Comparator.reverseOrder())
-                            .map(Path::toFile)
-                            .forEach(File::delete);
-                }
-                return;
-            }
-            long cutoffMillis = System.currentTimeMillis() - (olderThanDays * 24L * 60 * 60 * 1000);
-            long lastModified = Files.getLastModifiedTime(dirPath).toMillis();
-            if (lastModified < cutoffMillis) {
-                return;
-            }
-            try (Stream<Path> paths = Files.walk(dirPath)) {
-                paths.filter(path -> !path.equals(dirPath))
-                        .filter(path -> {
-                            try {
-                                return Files.getLastModifiedTime(path).toMillis() < cutoffMillis;
-                            } catch (IOException e) {
-                                return false;
-                            }
-                        })
-                        .sorted(Comparator.reverseOrder())
-                        .map(Path::toFile)
-                        .forEach(File::delete);
-            }
-        } catch (IOException e) {
-            logger.warn("Failed to clean up extension payloads for {}: {}", extensionName, e.getMessage());
-        }
-    }
-
-    public Pair<Boolean, String> runCustomActionOnExternalSystem(String extensionName, String filename,
+    protected Pair<Boolean, String> runCustomActionOnExternalSystem(String extensionName, String filename,
                  String actionName, Map<String, Object> accessDetails, int wait) {
         return executeExternalCommand(extensionName, actionName, accessDetails, wait,
                 String.format("Failed to execute custom action '%s' on external system", actionName), filename);
@@ -856,7 +548,7 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
             List<String> command = new ArrayList<>();
             command.add(executablePath.toString());
             command.add(action);
-            String dataFile = prepareExternalPayload(extensionName, accessDetails);
+            String dataFile = extensionsFilesystemManager.prepareExternalPayload(extensionName, accessDetails);
             command.add(dataFile);
             command.add(Integer.toString(wait));
             ProcessBuilder builder = new ProcessBuilder(command);
@@ -895,62 +587,10 @@ public class ExternalPathPayloadProvisioner extends ManagerBase implements Exter
 
     protected void deleteExtensionPayloadFile(String extensionName, String action, String payloadFileName) {
         if (!TRIVIAL_ACTIONS.contains(action)) {
+            logger.trace("Skipping deletion of payload file: {} for extension: {}, action: {}",
+                    payloadFileName, extensionName, action);
             return;
         }
-        logger.trace("Deleting payload file: {} for extension: {}, action: {}, file: {}",
-                payloadFileName, extensionName, action);
-        FileUtil.deletePath(payloadFileName);
-    }
-
-    protected void scheduleExtensionPayloadDirectoryCleanup(String extensionName) {
-        try {
-            Future<?> future = payloadCleanupExecutor.submit(() -> {
-                try {
-                    cleanupExtensionData(extensionName, 1, false);
-                    logger.trace("Cleaned up payload directory for extension: {}", extensionName);
-                } catch (Exception e) {
-                    logger.warn("Exception during payload cleanup for extension: {} due to {}", extensionName,
-                            e.getMessage());
-                    logger.trace(e);
-                }
-            });
-            payloadCleanupScheduler.schedule(() -> {
-                try {
-                    if (!future.isDone()) {
-                        future.cancel(true);
-                        logger.trace("Cancelled cleaning up payload directory for extension: {} as it " +
-                                "running for more than 3 seconds", extensionName);
-                    }
-                } catch (Exception e) {
-                    logger.warn("Failed to cancel payload cleanup task for extension: {} due to {}",
-                            extensionName, e.getMessage());
-                    logger.trace(e);
-                }
-            }, 3, TimeUnit.SECONDS);
-        } catch (RejectedExecutionException e) {
-            logger.warn("Payload cleanup task for extension: {} was rejected due to: {}", extensionName,
-                    e.getMessage());
-            logger.trace(e);
-        }
-    }
-
-    protected String prepareExternalPayload(String extensionName, Map<String, Object> details) throws IOException {
-        String json = GsonHelper.getGson().toJson(details);
-        String fileName = UUID.randomUUID() + ".json";
-        String extensionPayloadDir = extensionsDataDirectory + File.separator + extensionName;
-        Path payloadDirPath = Paths.get(extensionPayloadDir);
-        if (!Files.exists(payloadDirPath)) {
-            Files.createDirectories(payloadDirPath);
-        } else {
-            scheduleExtensionPayloadDirectoryCleanup(extensionName);
-        }
-        Path payloadFile = payloadDirPath.resolve(fileName);
-        Files.writeString(payloadFile, json, StandardOpenOption.CREATE_NEW);
-        return payloadFile.toAbsolutePath().toString();
-    }
-
-    @Override
-    public List<Class<?>> getCommands() {
-        return new ArrayList<>();
+        extensionsFilesystemManager.deleteExtensionPayload(extensionName, payloadFileName);
     }
 }

@@ -30,16 +30,12 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.utils.security.HMACSignUtil;
 import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
@@ -127,7 +123,7 @@ public class WebhookDeliveryThread implements Runnable {
         request.setHeader(HttpHeaders.USER_AGENT, String.format("%s%s", PREFIX_HEADER_USER_AGENT,
                 event.getResourceAccountUuid()));
         if (StringUtils.isNotBlank(webhook.getSecretKey())) {
-            request.addHeader(HEADER_X_CS_SIGNATURE, generateHMACSignature(payload, webhook.getSecretKey()));
+            request.addHeader(HEADER_X_CS_SIGNATURE, HMACSignUtil.generateSignature(payload, webhook.getSecretKey()));
         }
         List<Header> headers = new ArrayList<>(Arrays.asList(request.getAllHeaders()));
         HttpEntity entity = request.getEntity();
@@ -221,16 +217,6 @@ public class WebhookDeliveryThread implements Runnable {
             response = String.format("Failed due to : %s", e.getMessage());
         }
         return false;
-    }
-
-    public static String generateHMACSignature(String data,  String key)
-            throws InvalidKeyException, NoSuchAlgorithmException, DecoderException {
-        Mac mac = Mac.getInstance("HMACSHA256");
-        SecretKey secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), mac.getAlgorithm());
-        mac.init(secretKey);
-        byte[] dataAsBytes = data.getBytes(StandardCharsets.UTF_8);
-        byte[] encodedText = mac.doFinal(dataAsBytes);
-        return new String(Base64.encodeBase64(encodedText)).trim();
     }
 
     public static class WebhookDeliveryContext<T> extends AsyncRpcContext<T> {
