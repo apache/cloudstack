@@ -54,6 +54,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.junit.After;
 
 import com.cloud.acl.DomainChecker;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
