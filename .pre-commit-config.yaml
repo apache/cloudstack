@@ -71,7 +71,7 @@ repos:
           - --license-filepath
           - .github/workflows/license-templates/LICENSE.txt
           - --fuzzy-match-generates-todo
-        exclude: ^(CHANGES|ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE)\.md$|^ui/docs/(full|smoke)-test-plan\.template\.md$|^.github/workflows/daily-repo-status.md$
+        exclude: ^(CHANGES|ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE)\.md$|^ui/docs/(full|smoke)-test-plan\.template\.md$|^.github/workflows/*.md$
       - id: insert-license
         name: add license for all properties files
         description: automatically adds a licence header to all properties files that don't have a license header
@@ -196,4 +196,4 @@ repos:
         args: [--config-file=.github/linters/.yamllint.yml]
         types: [yaml]
         files: \.ya?ml$
-        exclude: ^.*k8s-.*\.ya?ml$|^.github/workflows/daily-repo-status\.lock\.ya?ml$
+        exclude: ^.*k8s-.*\.ya?ml$|^.github/workflows/daily-repo-status\.lock\.ya?ml$|^.github/workflows/issue-triage-agent.lock.yml$
