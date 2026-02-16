@@ -31,7 +31,7 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
 
     ManagementServerHostVO findByMsid(long msid);
 
-    ManagementServerHostVO findByName(String name);
+    List<ManagementServerHostVO> findAllByName(String name);
 
     int increaseAlertCount(long id);
 

@@ -22,7 +22,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertNull;
+import java.util.List;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for ManagementServerHostDaoImpl focusing on the new findByName method added in PR #641.
@@ -39,26 +40,26 @@ public class ManagementServerHostDaoImplTest {
 
     @Test
     public void testFindByName_ReturnsNullForNullHostname() {
-        ManagementServerHostVO result = dao.findByName(null);
-        assertNull("Result should be null for null hostname", result);
+        List<ManagementServerHostVO> result = dao.findAllByName(null);
+        assertEquals(0, result.size());
     }
 
     @Test
     public void testFindByName_ReturnsNullForEmptyHostname() {
-        ManagementServerHostVO result = dao.findByName("");
-        assertNull("Result should be null for empty hostname", result);
+        List<ManagementServerHostVO> result = dao.findAllByName("");
+        assertEquals(0, result.size());
     }
 
     @Test
     public void testFindByName_ReturnsNullForWhitespaceHostname() {
-        ManagementServerHostVO result = dao.findByName("   ");
-        assertNull("Result should be null for whitespace-only hostname", result);
+        List<ManagementServerHostVO> result = dao.findAllByName("   ");
+        assertEquals(0, result.size());
     }
 
     @Test
     public void testFindByName_ReturnsNullForTabAndSpaceHostname() {
-        ManagementServerHostVO result = dao.findByName(" \t  ");
-        assertNull("Result should be null for tab/space-only hostname", result);
+        List<ManagementServerHostVO> result = dao.findAllByName(" \t  ");
+        assertEquals(0, result.size());
     }
 
     /**

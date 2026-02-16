@@ -26,6 +26,7 @@ import java.util.TimeZone;
 
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.cluster.ClusterInvalidSessionException;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -77,29 +78,13 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     }
 
     @Override
-    public ManagementServerHostVO findByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return null;
+    public List<ManagementServerHostVO> findAllByName(String name) {
+        if (StringUtils.isBlank(name)) {
+            return List.of();
         }
-
         SearchCriteria<ManagementServerHostVO> sc = NameSearch.create();
         sc.setParameters("name", name);
-        // Only search for active (non-removed) entries to avoid non-deterministic results
-        // when multiple removed entries exist for the same hostname
-        sc.addAnd("removed", SearchCriteria.Op.NULL);
-
-        List<ManagementServerHostVO> l = listBy(sc);
-        if (l != null && l.size() > 0) {
-            if (l.size() > 1) {
-                s_logger.error(String.format(
-                    "Data corruption detected: Found %d active entries for hostname '%s'. " +
-                    "This should never happen and indicates duplicate mshost records.",
-                    l.size(), name));
-            }
-            return l.get(0);
-        }
-
-        return null;
+        return listBy(sc);
     }
 
     @Override

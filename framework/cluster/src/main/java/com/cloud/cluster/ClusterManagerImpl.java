@@ -1050,8 +1050,8 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
                 // Look for duplicate hostname in the case of kubernetes setup where ip/mac changes but hostname is constant.
                 if (mshost == null && StringUtils.isNotBlank(currentHostname)) {
-                    ManagementServerHostVO activeEntry = _mshostDao.findByName(currentHostname);
-                    if (activeEntry != null) {
+                    List<ManagementServerHostVO> activeEntries = _mshostDao.findAllByName(currentHostname);
+                    for (ManagementServerHostVO activeEntry : activeEntries) {
                         // Found an active entry with this hostname but different MSID
                         // This happens when a pod restarts with a new MAC address (new MSID)
                         if (activeEntry.getMsid() != _msId) {
