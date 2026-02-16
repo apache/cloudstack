@@ -101,6 +101,8 @@ public class SsoService extends ManagerBase implements RouteHandler {
         final String effectiveScope = (scope == null) ? "ovirt-app-api" : scope;
 
         final long ttl = DEFAULT_TTL_SECONDS;
+        long nowMillis = Instant.now().toEpochMilli();
+        long expMillis = nowMillis + ttl * 1000L;
         final String token;
         try {
             token = JwtUtil.issueHs256Jwt(BearerOrBasicAuthFilter.ISSUER, username, effectiveScope, ttl,
@@ -115,6 +117,7 @@ public class SsoService extends ManagerBase implements RouteHandler {
         payload.put("access_token", token);
         payload.put("token_type", "bearer");
         payload.put("expires_in", ttl);
+        payload.put("exp", expMillis);
         payload.put("scope", effectiveScope);
 
         io.getWriter().write(resp, HttpServletResponse.SC_OK, payload, outFormat);

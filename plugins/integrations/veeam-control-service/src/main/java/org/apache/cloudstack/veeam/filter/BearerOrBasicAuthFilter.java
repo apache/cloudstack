@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -36,12 +37,18 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.VeeamControlService;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class BearerOrBasicAuthFilter implements Filter {
 
     // Keep these aligned with SsoService (move to ConfigKeys later)
     public static final List<String> REQUIRED_SCOPES = List.of("ovirt-app-admin", "ovirt-app-portal");
     public static final String ISSUER = "veeam-control";
     public static final String HMAC_SECRET = "change-this-super-secret-key-change-this";
+
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     @Override public void init(FilterConfig filterConfig) {}
     @Override public void destroy() {}
@@ -136,20 +143,35 @@ public class BearerOrBasicAuthFilter implements Filter {
 
         if (!constantTimeEquals(expectedSig, providedSig)) return false;
 
-        final String payloadJson;
+        Map<String, Object> payloadMap;
         try {
-            payloadJson = new String(Base64.getUrlDecoder().decode(payloadB64), StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException e) {
+            String payloadJson = new String(Base64.getUrlDecoder().decode(payloadB64), StandardCharsets.UTF_8);
+            payloadMap = JSON_MAPPER.readValue(
+                    payloadJson,
+                    new TypeReference<>() {}
+            );
+        } catch (IllegalArgumentException | JsonProcessingException e) {
             return false;
         }
 
-        // Super small “claims” extraction (good enough for our minting format)
-        final String iss = JsonMini.getString(payloadJson, "iss");
-        final String scope = JsonMini.getString(payloadJson, "scope");
-        final Long exp = JsonMini.getLong(payloadJson, "exp");
+        final String iss = (String)payloadMap.get("iss");
+        final String scope = (String)payloadMap.get("scope");
+        final Object expObj = payloadMap.get("exp");
+        Long exp = null;
+        if (expObj instanceof Number) {
+            exp = ((Number) expObj).longValue();
+        } else if (expObj instanceof String) {
+            try {
+                exp = Long.parseLong((String) expObj);
+            } catch (NumberFormatException ignored) {}
+        }
 
-        if (!ISSUER.equals(iss)) return false;
-        if (exp == null || Instant.now().getEpochSecond() >= exp) return false;
+        if (!ISSUER.equals(iss)) {
+            return false;
+        }
+        if (exp == null || Instant.now().getEpochSecond() >= exp) {
+            return false;
+        }
         return scope != null && hasRequiredScopes(scope);
     }
 
@@ -215,33 +237,5 @@ public class BearerOrBasicAuthFilter implements Filter {
         int r = 0;
         for (int i = 0; i < x.length; i++) r |= x[i] ^ y[i];
         return r == 0;
-    }
-
-    // Tiny JSON extractor for flat string/number claims. Good enough for tokens you mint.
-    static final class JsonMini {
-        static String getString(String json, String key) {
-            final String needle = "\"" + key + "\":";
-            int i = json.indexOf(needle);
-            if (i < 0) return null;
-            i += needle.length();
-            while (i < json.length() && Character.isWhitespace(json.charAt(i))) i++;
-            if (i >= json.length() || json.charAt(i) != '"') return null;
-            i++;
-            int j = json.indexOf('"', i);
-            if (j < 0) return null;
-            return json.substring(i, j);
-        }
-
-        static Long getLong(String json, String key) {
-            final String needle = "\"" + key + "\":";
-            int i = json.indexOf(needle);
-            if (i < 0) return null;
-            i += needle.length();
-            while (i < json.length() && Character.isWhitespace(json.charAt(i))) i++;
-            int j = i;
-            while (j < json.length() && (Character.isDigit(json.charAt(j)))) j++;
-            if (j == i) return null;
-            return Long.parseLong(json.substring(i, j));
-        }
     }
 }
