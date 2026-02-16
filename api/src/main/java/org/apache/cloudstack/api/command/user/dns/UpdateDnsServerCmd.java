@@ -30,6 +30,9 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dns.DnsProviderManager;
 import org.apache.cloudstack.dns.DnsServer;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.cloud.utils.EnumUtils;
 
 @APICommand(name = "updateDnsServer", description = "Update DNS server",
         responseObject = DnsServerResponse.class, requestHasSensitiveInfo = true)
@@ -66,6 +69,9 @@ public class UpdateDnsServerCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.NAME_SERVERS, type = CommandType.STRING, description = "Comma separated list of name servers")
     private String nameServers;
+
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Update state for the DNS server (Enabled, Disabled)")
+    private String state;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -108,5 +114,16 @@ public class UpdateDnsServerCmd extends BaseCmd {
             logger.error("Failed to add update server", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
+    }
+
+    public DnsServer.State getState() {
+        if (StringUtils.isBlank(state)) {
+            return null;
+        }
+        DnsServer.State dnsState = EnumUtils.getEnumIgnoreCase(DnsServer.State.class, state);
+        if (dnsState == null) {
+            throw new IllegalArgumentException("Invalid state value: " + state);
+        }
+        return dnsState;
     }
 }

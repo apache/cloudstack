@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.api.response;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.dns.DnsRecord;
@@ -27,28 +29,20 @@ import com.google.gson.annotations.SerializedName;
 public class DnsRecordResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the DNS record")
+    @Param(description = "The record name (e.g., www.example.com.)")
     private String name;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "the type of the DNS record (A, CNAME, etc)")
-    private String type;
+    @Param(description = "The record type (e.g., A, CNAME, TXT)")
+    private DnsRecord.RecordType type;
 
-    @SerializedName("content")
-    @Param(description = "the content of the record (IP address or target)")
-    private String content;
+    @SerializedName("contents")
+    @Param(description = "The contents of the record (IP address or target)")
+    private List<String> contents;
 
     @SerializedName("ttl")
-    @Param(description = "the time to live (TTL) in seconds")
+    @Param(description = "Time to live (TTL) in seconds")
     private Integer ttl;
-
-    @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the ID of the zone this record belongs to")
-    private String zoneId;
-
-    @SerializedName("sourceid")
-    @Param(description = "the external ID of the record on the provider")
-    private String sourceId;
 
     public DnsRecordResponse() {
         super();
@@ -57,15 +51,7 @@ public class DnsRecordResponse extends BaseResponse {
 
     // Setters
     public void setName(String name) { this.name = name; }
-
-    // Accepts String or Enum.toString()
-    public void setType(String type) { this.type = type; }
-    public void setType(DnsRecord.RecordType type) {
-        this.type = (type != null) ? type.name() : null;
-    }
-
-    public void setContent(String content) { this.content = content; }
+    public void setType(DnsRecord.RecordType type) { this.type = type; }
+    public void setContent(List<String> contents) { this.contents = contents; }
     public void setTtl(Integer ttl) { this.ttl = ttl; }
-    public void setZoneId(String zoneId) { this.zoneId = zoneId; }
-    public void setSourceId(String sourceId) { this.sourceId = sourceId; }
 }

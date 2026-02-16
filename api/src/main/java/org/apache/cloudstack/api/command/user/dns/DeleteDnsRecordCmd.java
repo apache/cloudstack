@@ -9,16 +9,19 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsRecord;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.EnumUtils;
 
 @APICommand(name = "deleteDnsRecord", description = "Deletes a DNS record from the external provider",
            responseObject = SuccessResponse.class)
 public class DeleteDnsRecordCmd extends BaseAsyncCmd {
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class,
+    @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class,
             required = true, description = "The ID of the DNS zone")
-    private Long zoneId;
+    private Long dnsZoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true)
     private String name;
@@ -27,9 +30,15 @@ public class DeleteDnsRecordCmd extends BaseAsyncCmd {
     private String type;
 
     // Getters
-    public Long getZoneId() { return zoneId; }
+    public DnsRecord.RecordType getType() {
+        DnsRecord.RecordType dnsRecordType = EnumUtils.getEnumIgnoreCase(DnsRecord.RecordType.class, type);
+        if (dnsRecordType == null) {
+            throw new InvalidParameterValueException("Invalid value passed for record type, valid values are: " + EnumUtils.listValues(DnsRecord.RecordType.values()));
+        }
+        return dnsRecordType;
+    }
+    public Long getDnsZoneId() { return dnsZoneId; }
     public String getName() { return name; }
-    public String getType() { return type; }
 
     @Override
     public void execute() {

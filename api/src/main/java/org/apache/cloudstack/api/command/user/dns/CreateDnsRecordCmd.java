@@ -1,5 +1,7 @@
 package org.apache.cloudstack.api.command.user.dns;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -9,15 +11,19 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsRecordResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsRecord;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.EnumUtils;
 
 @APICommand(name = "createDnsRecord", description = "Creates a DNS record directly on the provider",
         responseObject = DnsRecordResponse.class)
 public class CreateDnsRecordCmd extends BaseAsyncCmd {
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class, required = true)
-    private Long zoneId;
+    @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class, required = true,
+            description = "ID of the DNS zone")
+    private Long dnsZoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Record name")
     private String name;
@@ -25,18 +31,27 @@ public class CreateDnsRecordCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Record type (A, CNAME)")
     private String type;
 
-    @Parameter(name = "content", type = CommandType.STRING, required = true, description = "IP or target")
-    private String content;
+    @Parameter(name = ApiConstants.CONTENTS, type = CommandType.LIST, collectionType = CommandType.STRING, required = true,
+            description = "The content of the record (IP address for A/AAAA, FQDN for CNAME/NS, quoted string for TXT, etc.)")
+    private List<String> contents;
 
     @Parameter(name = "ttl", type = CommandType.INTEGER, description = "Time to live")
     private Integer ttl;
 
     // Getters
-    public Long getZoneId() { return zoneId; }
+    public Long getDnsZoneId() { return dnsZoneId; }
     public String getName() { return name; }
-    public String getType() { return type; }
-    public String getContent() { return content; }
+
+    public List<String> getContents() { return contents; }
     public Integer getTtl() { return (ttl == null) ? 3600 : ttl; }
+
+    public DnsRecord.RecordType getType() {
+        DnsRecord.RecordType dnsRecordType = EnumUtils.getEnumIgnoreCase(DnsRecord.RecordType.class, type);
+        if (dnsRecordType == null) {
+            throw new InvalidParameterValueException("Invalid value passed for record type, valid values are: " + EnumUtils.listValues(DnsRecord.RecordType.values()));
+        }
+        return dnsRecordType;
+    }
 
     @Override
     public void execute() {

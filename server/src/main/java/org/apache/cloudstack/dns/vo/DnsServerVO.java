@@ -18,6 +18,7 @@
 package org.apache.cloudstack.dns.vo;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -95,7 +96,7 @@ public class DnsServerVO implements DnsServer {
     }
 
     public DnsServerVO(String name, String url, DnsProviderType providerType, String apiKey,
-                       Integer port, boolean isPublic, String publicDomainSuffix, String nameServers,
+                       Integer port, boolean isPublic, String publicDomainSuffix, List<String> nameServers,
                        long accountId) {
         this();
         this.name = name;
@@ -105,9 +106,9 @@ public class DnsServerVO implements DnsServer {
         this.apiKey = apiKey;
         this.accountId = accountId;
         this.publicDomainSuffix = publicDomainSuffix;
-        this.nameServers = nameServers;
         this.isPublic = isPublic;
         this.state = State.Enabled;
+        this.nameServers = String.join(",", nameServers);;
     }
 
     @Override
@@ -203,5 +204,9 @@ public class DnsServerVO implements DnsServer {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getNameServers() {
+        return nameServers;
     }
 }

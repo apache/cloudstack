@@ -1336,6 +1336,8 @@ public class ApiConstants {
     // DNS provider related
     public static final String NAME_SERVERS = "nameservers";
     public static final String CREDENTIALS = "credentials";
+    public static final String DNS_ZONE_ID = "dnszoneid";
+    public static final String CONTENTS = "contents";
     public static final String PUBLIC_DOMAIN_SUFFIX = "publicdomainsuffix";
 
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +

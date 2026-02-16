@@ -12,12 +12,13 @@ import org.apache.cloudstack.api.response.ListResponse;
         responseObject = DnsRecordResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDnsRecordsCmd extends BaseListCmd {
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class,
-            required = true, description = "the ID of the DNS zone to list records from")
-    private Long zoneId;
 
-    public Long getZoneId() {
-        return zoneId;
+    @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class, required = true,
+            description = "ID of the DNS zone to list records from")
+    private Long dnsZoneId;
+
+    public Long getDnsZoneId() {
+        return dnsZoneId;
     }
 
     @Override

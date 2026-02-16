@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface DnsServer extends InternalIdentity, Identity {
     enum State {
-        Enabled, Disabled;
+        Enabled, Disabled
     };
 
     String getName();
@@ -32,6 +32,8 @@ public interface DnsServer extends InternalIdentity, Identity {
     String getUrl();
 
     DnsProviderType getProviderType();
+
+    String getNameServers();
 
     String getApiKey();
 

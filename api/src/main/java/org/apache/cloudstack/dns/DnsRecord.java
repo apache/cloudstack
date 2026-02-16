@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.dns;
 
+import java.util.List;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DnsRecord {
@@ -36,16 +38,16 @@ public class DnsRecord {
     }
 
     private String name;
-    private RecordType type; // Enforced Enum here
-    private String content;
+    private RecordType type;
+    private List<String> contents;
     private int ttl;
 
     public DnsRecord() {}
 
-    public DnsRecord(String name, RecordType type, String content, int ttl) {
+    public DnsRecord(String name, RecordType type, List<String> contents, int ttl) {
         this.name = name;
         this.type = type;
-        this.content = content;
+        this.contents = contents;
         this.ttl = ttl;
     }
 
@@ -56,8 +58,8 @@ public class DnsRecord {
     public RecordType getType() { return type; }
     public void setType(RecordType type) { this.type = type; }
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
+    public List<String> getContents() { return contents; }
+    public void setContents(List<String> contents) { this.contents = contents; }
 
     public int getTtl() { return ttl; }
     public void setTtl(int ttl) { this.ttl = ttl; }

@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.dns;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
@@ -51,7 +53,7 @@ public class AddDnsServerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "Provider type (e.g., PowerDNS)")
     private String provider;
 
-    @Parameter(name = ApiConstants.CREDENTIALS, type = CommandType.STRING, required = false, description = "API Key or Credentials for the external provider")
+    @Parameter(name = ApiConstants.CREDENTIALS, type = CommandType.STRING, description = "API Key or Credentials for the external provider")
     private String credentials;
 
     @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, description = "Port number of the external DNS server")
@@ -63,8 +65,9 @@ public class AddDnsServerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PUBLIC_DOMAIN_SUFFIX, type = CommandType.STRING, description = "The domain suffix used for public access (e.g. public.example.com)")
     private String publicDomainSuffix;
 
-    @Parameter(name = ApiConstants.NAME_SERVERS, type = CommandType.STRING, description = "Comma separated list of name servers")
-    private String nameServers;
+    @Parameter(name = ApiConstants.NAME_SERVERS, type = CommandType.LIST, collectionType = CommandType.STRING,
+            required = true, description = "Comma separated list of name servers")
+    private List<String> nameServers;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -89,7 +92,7 @@ public class AddDnsServerCmd extends BaseCmd {
         return publicDomainSuffix;
     }
 
-    public String getNameServers() {
+    public List<String> getNameServers() {
         return nameServers;
     }
 

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.dns.powerdns;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,7 @@ import org.apache.cloudstack.dns.DnsZone;
 
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class PowerDnsProvider extends AdapterBase implements DnsProvider {
 
@@ -46,7 +48,7 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     @Override
     public void provisionZone(DnsServer server, DnsZone zone) {
         validateServerZoneParams(server, zone);
-        client.createZone(server.getUrl(), server.getApiKey(), zone.getName(), null);
+        client.createZone(server.getUrl(), server.getApiKey(), zone.getName(), server.getNameServers());
     }
 
     @Override
@@ -55,24 +57,61 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
         client.deleteZone(server.getUrl(), server.getApiKey(), zone.getName());
     }
 
-    @Override
-    public DnsRecord createRecord(DnsServer server, DnsZone zone, DnsRecord record) {
-        return null;
+    public enum ChangeType {
+        REPLACE, DELETE
     }
 
     @Override
-    public boolean updateRecord(DnsServer server, DnsZone zone, DnsRecord record) {
-        return false;
+    public void addRecord(DnsServer server, DnsZone zone, DnsRecord record) {
+        validateServerZoneParams(server, zone);
+        applyRecord(server.getUrl(), server.getApiKey(), zone.getName(), record, ChangeType.REPLACE);
     }
 
     @Override
-    public boolean deleteRecord(DnsServer server, DnsZone zone, DnsRecord record) {
-        return false;
+    public void updateRecord(DnsServer server, DnsZone zone, DnsRecord record) {
+        addRecord(server, zone, record);
     }
+
+
+    @Override
+    public void deleteRecord(DnsServer server, DnsZone zone, DnsRecord record) {
+        validateServerZoneParams(server, zone);
+        applyRecord(server.getUrl(), server.getApiKey(), zone.getName(), record, ChangeType.DELETE);
+    }
+
+    public void applyRecord(String serverUrl, String apiKey, String zoneName, DnsRecord record, ChangeType changeType) {
+        client.modifyRecord(serverUrl, apiKey, zoneName, record.getName(), record.getType().name(),
+                record.getTtl(), record.getContents(), changeType.name());
+    }
+
+
 
     @Override
     public List<DnsRecord> listRecords(DnsServer server, DnsZone zone) {
-        return List.of();
+        List<DnsRecord> records = new ArrayList<>();
+        for (JsonNode rrset: client.listRecords(server.getUrl(), server.getApiKey(), zone.getName())) {
+            String name = rrset.path("name").asText();
+            String typeStr = rrset.path("type").asText();
+            int ttl = rrset.path("ttl").asInt(0);
+            if (!"SOA".equalsIgnoreCase(typeStr)) {
+                try {
+                    List<String> contents = new ArrayList<>();
+                    JsonNode recordsNode = rrset.path("records");
+                    if (recordsNode.isArray()) {
+                        for (JsonNode rec : recordsNode) {
+                            String content = rec.path("content").asText();
+                            if (!content.isEmpty()) {
+                                contents.add(content);
+                            }
+                        }
+                    }
+                    records.add(new DnsRecord(name, DnsRecord.RecordType.valueOf(typeStr), contents, ttl));
+                } catch (Exception ignored) {
+                    // Skip unsupported record types
+                }
+            }
+        }
+        return records;
     }
 
     void validateServerZoneParams(DnsServer server, DnsZone zone) {

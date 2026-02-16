@@ -181,6 +181,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (cmd.getNameServers() != null) {
             dnsServer.setNameServers(cmd.getNameServers());
         }
+        if (cmd.getState() != null) {
+            dnsServer.setState(cmd.getState());
+        }
+
         if (validationRequired) {
             DnsProvider provider = getProvider(dnsServer.getProviderType());
             try {
@@ -190,6 +194,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 throw new InvalidParameterValueException("Validation failed for DNS server");
             }
         }
+
         boolean updateStatus = dnsServerDao.update(dnsServerId, dnsServer);
 
         if (updateStatus) {
@@ -308,17 +313,79 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
     @Override
     public DnsRecordResponse createDnsRecord(CreateDnsRecordCmd cmd) {
-        return null;
+        DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
+        if (zone == null) {
+            throw new InvalidParameterValueException("DNS Zone not found.");
+        }
+
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, true, zone);
+        DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
+        try {
+            DnsRecord record = new DnsRecord(cmd.getName(), cmd.getType(), cmd.getContents(), cmd.getTtl());
+            DnsProvider provider = getProvider(server.getProviderType());
+            // Add Record via Provider
+            provider.addRecord(server, zone, record);
+            return createDnsRecordResponse(record);
+        } catch (Exception ex) {
+            logger.error("Failed to add DNS record via provider", ex);
+            throw new CloudRuntimeException(String.format("Failed to add DNS record: %s", cmd.getName()));
+        }
     }
 
     @Override
     public boolean deleteDnsRecord(DeleteDnsRecordCmd cmd) {
-        return false;
+        DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
+        if (zone == null) {
+            throw new InvalidParameterValueException("DNS Zone not found.");
+        }
+
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, true, zone);
+
+        DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
+
+        try {
+            // Reconstruct the record DTO just for deletion criteria
+            DnsRecord record = new DnsRecord();
+            record.setName(cmd.getName());
+            record.setType(cmd.getType());
+            DnsProvider provider = getProvider(server.getProviderType());
+            provider.deleteRecord(server, zone, record);
+            return true;
+        } catch (Exception ex) {
+            logger.error("Failed to delete DNS record via provider", ex);
+            throw new CloudRuntimeException(String.format("Failed to delete record: %s", cmd.getName()));
+        }
     }
 
     @Override
     public ListResponse<DnsRecordResponse> listDnsRecords(ListDnsRecordsCmd cmd) {
-        return null;
+        DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
+        if (zone == null) {
+            throw new InvalidParameterValueException(String.format("DNS Zone with ID %s not found.", cmd.getDnsZoneId()));
+        }
+        Account caller = CallContext.current().getCallingAccount();
+        accountMgr.checkAccess(caller, null, true, zone);
+        DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
+        if (server == null) {
+            throw new CloudRuntimeException("The underlying DNS Server for this zone is missing.");
+        }
+        try {
+            DnsProvider provider = getProvider(server.getProviderType());
+            List<DnsRecord> records = provider.listRecords(server, zone);
+            List<DnsRecordResponse> responses = new ArrayList<>();
+            for (DnsRecord record : records) {
+                responses.add(createDnsRecordResponse(record));
+            }
+
+            ListResponse<DnsRecordResponse> listResponse = new ListResponse<>();
+            listResponse.setResponses(responses, responses.size());
+            return listResponse;
+        } catch (Exception ex) {
+            logger.error("Failed to list DNS records from provider", ex);
+            throw new CloudRuntimeException("Failed to fetch DNS records");
+        }
     }
 
     @Override
@@ -390,6 +457,15 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         res.setState(zone.getState());
         res.setId(zone.getUuid());
         res.setDescription(zone.getDescription());
+        return res;
+    }
+
+    @Override
+    public DnsRecordResponse createDnsRecordResponse(DnsRecord record) {
+        DnsRecordResponse res = new DnsRecordResponse();
+        res.setName(record.getName());
+        res.setType(record.getType());
+        res.setContent(record.getContents());
         return res;
     }
 

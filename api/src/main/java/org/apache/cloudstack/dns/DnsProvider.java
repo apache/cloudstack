@@ -31,9 +31,8 @@ public interface DnsProvider extends Adapter {
     void provisionZone(DnsServer server, DnsZone zone);
     void deleteZone(DnsServer server, DnsZone zone) ;
 
-    DnsRecord createRecord(DnsServer server, DnsZone zone, DnsRecord record);
-    boolean updateRecord(DnsServer server, DnsZone zone, DnsRecord record);
-    boolean deleteRecord(DnsServer server, DnsZone zone, DnsRecord record);
-
+    void addRecord(DnsServer server, DnsZone zone, DnsRecord record);
     List<DnsRecord> listRecords(DnsServer server, DnsZone zone);
+    void updateRecord(DnsServer server, DnsZone zone, DnsRecord record);
+    void deleteRecord(DnsServer server, DnsZone zone, DnsRecord record);
 }
