@@ -413,4 +413,16 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         return decimalFormat.format(((float)resource / resourceWithOverProvision * 100.0f)) + "%";
     }
 
+    @Override
+    public List<HostJoinVO> listRoutingHostsByHypervisor(Hypervisor.HypervisorType hypervisorType) {
+        SearchBuilder<HostJoinVO> sb = createSearchBuilder();
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.done();
+
+        SearchCriteria<HostJoinVO> sc = sb.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("hypervisorType", hypervisorType);
+        return listBy(sc);
+    }
 }

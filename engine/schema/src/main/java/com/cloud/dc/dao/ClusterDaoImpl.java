@@ -413,4 +413,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         }
         return customSearch(sc, null);
     }
+
+    @Override
+    public List<ClusterVO> listByHypervisorType(HypervisorType hypervisorType) {
+        SearchCriteria<ClusterVO> sc = ZoneHyTypeSearch.create();
+        sc.setParameters("hypervisorType", hypervisorType.toString());
+        return listBy(sc);
+    }
 }

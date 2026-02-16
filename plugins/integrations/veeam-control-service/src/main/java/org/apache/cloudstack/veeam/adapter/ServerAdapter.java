@@ -349,7 +349,7 @@ public class ServerAdapter extends ManagerBase {
     }
 
     public List<Cluster> listAllClusters() {
-        final List<ClusterVO> clusters = clusterDao.listAll();
+        final List<ClusterVO> clusters = clusterDao.listByHypervisorType(Hypervisor.HypervisorType.KVM);
         return ClusterVOToClusterConverter.toClusterList(clusters, this::getZoneById);
     }
 
