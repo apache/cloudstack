@@ -21,13 +21,23 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Bios {
-    public String type; // "uefi" or "bios" or whatever mapping you choose
 
-    public BootMenu bootMenu = new BootMenu();
+    private String type; // "uefi" or "bios" or whatever mapping you choose
+    private BootMenu bootMenu = new BootMenu();
 
-    public Bios() {}
+    public String getType() {
+        return type;
+    }
 
-    public Bios(final String type) {
+    public void setType(String type) {
         this.type = type;
+    }
+
+    public BootMenu getBootMenu() {
+        return bootMenu;
+    }
+
+    public void setBootMenu(BootMenu bootMenu) {
+        this.bootMenu = bootMenu;
     }
 }

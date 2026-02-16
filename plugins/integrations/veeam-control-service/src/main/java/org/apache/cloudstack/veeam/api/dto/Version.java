@@ -18,25 +18,55 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Version {
 
-    @JacksonXmlProperty(localName = "build")
-    public String build;
-
-    @JacksonXmlProperty(localName = "full_version")
-    public String fullVersion;
-
-    @JacksonXmlProperty(localName = "major")
-    public Integer major;
-
-    @JacksonXmlProperty(localName = "minor")
-    public Integer minor;
-
-    @JacksonXmlProperty(localName = "revision")
-    public Integer revision;
+    private String build;
+    private String fullVersion;
+    private Integer major;
+    private Integer minor;
+    private Integer revision;
 
     public Version() {}
+
+    public String getBuild() {
+        return build;
+    }
+
+    public void setBuild(String build) {
+        this.build = build;
+    }
+
+    public String getFullVersion() {
+        return fullVersion;
+    }
+
+    public void setFullVersion(String fullVersion) {
+        this.fullVersion = fullVersion;
+    }
+
+    public Integer getMajor() {
+        return major;
+    }
+
+    public void setMajor(Integer major) {
+        this.major = major;
+    }
+
+    public Integer getMinor() {
+        return minor;
+    }
+
+    public void setMinor(Integer minor) {
+        this.minor = minor;
+    }
+
+    public Integer getRevision() {
+        return revision;
+    }
+
+    public void setRevision(Integer revision) {
+        this.revision = revision;
+    }
 }

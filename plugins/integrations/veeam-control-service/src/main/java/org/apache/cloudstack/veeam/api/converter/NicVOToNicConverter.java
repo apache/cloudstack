@@ -31,6 +31,7 @@ import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.ReportedDevice;
 import org.apache.cloudstack.veeam.api.dto.ReportedDevices;
+import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -51,8 +52,9 @@ public class NicVOToNicConverter {
         nic.setPlugged(Boolean.TRUE.toString());
         nic.setSynced(Boolean.TRUE.toString());
         if (StringUtils.isNotBlank(vmUuid)) {
-            nic.setVm(Ref.of(basePath + VmsRouteHandler.BASE_ROUTE + "/" + vmUuid, vmUuid));
-            nic.setHref(nic.getVm().href + "/nics/" + vo.getUuid());
+            Vm vm = Vm.of(basePath + VmsRouteHandler.BASE_ROUTE + "/" + vmUuid, vmUuid);
+            nic.setVm(vm);
+            nic.setHref(vm.getHref() + "/nics/" + vo.getUuid());
         }
         nic.setInterfaceType("virtio");
         ReportedDevice device = getReportedDevice(vo, mac, nic.getVm());
@@ -67,7 +69,7 @@ public class NicVOToNicConverter {
     }
 
     @NotNull
-    private static ReportedDevice getReportedDevice(NicVO vo, Mac mac, Ref vm) {
+    private static ReportedDevice getReportedDevice(NicVO vo, Mac mac, Vm vm) {
         ReportedDevice device = new ReportedDevice();
         device.setType("network");
         device.setId(vo.getUuid());
@@ -85,7 +87,7 @@ public class NicVOToNicConverter {
             ip.setVersion("v6");
         }
         device.setIps(new Ips(List.of(ip)));
-        device.setHref(vm.href + "/reporteddevices/" + vo.getUuid());
+        device.setHref(vm.getHref() + "/reporteddevices/" + vo.getUuid());
         device.setVm(vm);
         return device;
     }

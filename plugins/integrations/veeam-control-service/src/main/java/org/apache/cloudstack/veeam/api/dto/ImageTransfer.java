@@ -21,41 +21,22 @@ package org.apache.cloudstack.veeam.api.dto;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "image_transfer")
-public class ImageTransfer {
-
-    private String id;
-    private String href;
+public class ImageTransfer extends BaseDto {
 
     private String active;
     private String direction;
     private String format;
-
-    @JsonProperty("inactivity_timeout")
     private String inactivityTimeout;
-
     private String phase;
-
-    @JsonProperty("proxy_url")
     private String proxyUrl;
-
     private String shallow;
-
-    @JsonProperty("timeout_policy")
     private String timeoutPolicy;
-
-    @JsonProperty("transfer_url")
     private String transferUrl;
-
     private String transferred;
-
     private Backup backup;
-
     private Ref host;
     private Ref image;
     private Ref disk;
@@ -63,22 +44,6 @@ public class ImageTransfer {
 
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<Link> link;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getHref() {
-        return href;
-    }
-
-    public void setHref(String href) {
-        this.href = href;
-    }
 
     public String getActive() {
         return active;

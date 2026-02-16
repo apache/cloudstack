@@ -34,7 +34,7 @@ public class Snapshot extends BaseDto {
     private String description;
     @JacksonXmlElementWrapper(useWrapping = false)
     private List<Link> link;
-    private Ref vm;
+    private Vm vm;
 
     public Snapshot() {}
 
@@ -94,11 +94,11 @@ public class Snapshot extends BaseDto {
         this.link = link;
     }
 
-    public Ref getVm() {
+    public Vm getVm() {
         return vm;
     }
 
-    public void setVm(Ref vm) {
+    public void setVm(Vm vm) {
         this.vm = vm;
     }
 }

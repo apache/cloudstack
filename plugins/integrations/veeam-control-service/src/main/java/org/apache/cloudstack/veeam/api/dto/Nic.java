@@ -22,10 +22,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Nic {
+public class Nic extends BaseDto {
 
-    private String href;
-    private String id;
     private String name;
     private String description;
     @JacksonXmlProperty(localName = "interface")
@@ -36,26 +34,10 @@ public class Nic {
     private String plugged;
     public String synced;
     private Ref vnicProfile;
-    private Ref vm;
+    private Vm vm;
     private ReportedDevices reportedDevices;
 
     public Nic() {
-    }
-
-    public String getHref() {
-        return href;
-    }
-
-    public void setHref(final String href) {
-        this.href = href;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
     }
 
     public String getName() {
@@ -122,11 +104,11 @@ public class Nic {
         this.vnicProfile = vnicProfile;
     }
 
-    public Ref getVm() {
+    public Vm getVm() {
         return vm;
     }
 
-    public void setVm(Ref vm) {
+    public void setVm(Vm vm) {
         this.vm = vm;
     }
 

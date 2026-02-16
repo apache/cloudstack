@@ -64,6 +64,7 @@ public class AsyncJobJoinVOToJobConverter {
         job.setLastUpdated(System.currentTimeMillis());
         job.setStartTime(vo.getCreated().getTime());
         JobInfo.Status status = JobInfo.Status.values()[vo.getStatus()];
+        Long endTime = System.currentTimeMillis();
         if (status == JobInfo.Status.SUCCEEDED) {
             job.setStatus("finished");
             job.setEndTime(System.currentTimeMillis());
@@ -73,6 +74,10 @@ public class AsyncJobJoinVOToJobConverter {
             job.setStatus("aborted");
         } else {
             job.setStatus("started");
+            endTime = null;
+        }
+        if (endTime != null) {
+            job.setEndTime(endTime);
         }
         job.setOwner(Ref.of(basePath + "/api/users/" + vo.getUserUuid(), vo.getUserUuid()));
         job.setActions(new Actions());

@@ -17,24 +17,26 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class OsVersion {
-    @JsonProperty("full_version")
-    private String fullVersion;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 
-    @JsonProperty("major")
-    private String major;
+public class Checkpoints {
 
-    @JsonProperty("minor")
-    private String minor;
+    @JacksonXmlElementWrapper(useWrapping = false)
+    private List<Checkpoint> checkpoint;
 
-    public String getFullVersion() { return fullVersion; }
-    public void setFullVersion(String fullVersion) { this.fullVersion = fullVersion; }
-    public String getMajor() { return major; }
-    public void setMajor(String major) { this.major = major; }
-    public String getMinor() { return minor; }
-    public void setMinor(String minor) { this.minor = minor; }
+    public Checkpoints() {}
+
+    public Checkpoints(final List<Checkpoint> checkpoint) {
+        this.checkpoint = checkpoint;
+    }
+
+    public List<Checkpoint> getCheckpoint() {
+        return checkpoint;
+    }
+
+    public void setCheckpoint(List<Checkpoint> checkpoint) {
+        this.checkpoint = checkpoint;
+    }
 }

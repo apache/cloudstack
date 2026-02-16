@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Network {
+public class Network extends BaseDto {
     private String mtu;           // oVirt prints as string
     private String portIsolation; // "false"
     private String stp;           // "false"
@@ -38,9 +38,6 @@ public class Network {
 
     @JsonProperty("link")
     private List<Link> link;
-
-    private String href;
-    private String id;
 
     public Network() {}
 
@@ -75,10 +72,4 @@ public class Network {
 
     public List<Link> getLink() { return link; }
     public void setLink(final List<Link> link) { this.link = link; }
-
-    public String getHref() { return href; }
-    public void setHref(final String href) { this.href = href; }
-
-    public String getId() { return id; }
-    public void setId(final String id) { this.id = id; }
 }

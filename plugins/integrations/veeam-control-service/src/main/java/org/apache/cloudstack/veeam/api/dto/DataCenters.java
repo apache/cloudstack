@@ -20,10 +20,7 @@ package org.apache.cloudstack.veeam.api.dto;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 /**
  * Root collection wrapper:
@@ -32,16 +29,21 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
  * }
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "data_centers")
-@JsonPropertyOrder({ "data_center" })
 public final class DataCenters {
 
-    @JsonProperty("data_center")
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<DataCenter> dataCenter;
 
     public DataCenters() {}
     public DataCenters(final List<DataCenter> dataCenter) {
+        this.dataCenter = dataCenter;
+    }
+
+    public List<DataCenter> getDataCenter() {
+        return dataCenter;
+    }
+
+    public void setDataCenter(List<DataCenter> dataCenter) {
         this.dataCenter = dataCenter;
     }
 }

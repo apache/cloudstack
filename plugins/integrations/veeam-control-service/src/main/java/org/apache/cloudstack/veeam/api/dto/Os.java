@@ -21,11 +21,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Os {
-    public String type; // "rhel_9", "windows_2022", etc.
+    private String type;
 
-    public Os() {}
+    public String getType() {
+        return type;
+    }
 
-    public Os(final String type) {
+    public void setType(String type) {
         this.type = type;
     }
 }

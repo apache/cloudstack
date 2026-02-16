@@ -41,32 +41,32 @@ public class DataCenterJoinVOToDataCenterConverter {
         final DataCenter dc = new DataCenter();
 
         // ---- Identity ----
-        dc.id = id;
-        dc.href = href;
-        dc.name = zone.getName();
-        dc.description = zone.getDescription();
+        dc.setId(id);
+        dc.setHref(href);
+        dc.setName(zone.getName());
+        dc.setDescription(zone.getDescription());
 
         // ---- State ----
-        dc.status = Grouping.AllocationState.Enabled.equals(zone.getAllocationState()) ? "up" : "down";
-        dc.local = "false";
-        dc.quotaMode = "disabled";
-        dc.storageFormat = "v5";
+        dc.setStatus(Grouping.AllocationState.Enabled.equals(zone.getAllocationState()) ? "up" : "down");
+        dc.setLocal("false");
+        dc.setQuotaMode("disabled");
+        dc.setStorageFormat("v5");
 
         // ---- Versions (static but valid) ----
         final Version v48 = new Version();
-        v48.major = 4;
-        v48.minor = 8;
-        dc.version = v48;
-        dc.supportedVersions = new SupportedVersions(List.of(v48));
+        v48.setMajor(4);
+        v48.setMinor(8);
+        dc.setVersion(v48);
+        dc.setSupportedVersions(new SupportedVersions(List.of(v48)));
 
         // ---- mac_pool (static placeholder) ----
-        dc.macPool = Ref.of(basePath + "/macpools/default","default");
+        dc.setMacPool(Ref.of(basePath + "/macpools/default", "default"));
 
         // ---- Related links ----
         dc.link = Arrays.asList(
-                new Link(href + "/clusters", "clusters"),
-                new Link(href + "/networks", "networks"),
-                new Link(href + "/storagedomains", "storagedomains")
+                Link.of(href + "/clusters", "clusters"),
+                Link.of(href + "/networks", "networks"),
+                Link.of(href + "/storagedomains", "storagedomains")
         );
 
         return dc;

@@ -20,9 +20,7 @@ package org.apache.cloudstack.veeam.api.dto;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 /**
@@ -31,53 +29,64 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JacksonXmlRootElement(localName = "vm")
-public final class Vm {
-    public String href;
-    public String id;
-    public String name;
-    public String description;
-
-    public String status;        // "up", "down", ...
-
-    @JsonProperty("stop_reason")
-    @JacksonXmlProperty(localName = "stop_reason")
-    public String stopReason;   // empty string allowed
-
+public final class Vm extends BaseDto {
+    private String name;
+    private String description;
+    private String status;        // "up", "down", ...
+    private String stopReason;   // empty string allowed
     private Long creationTime;
-
-    @JsonProperty("stop_time")
-    @JacksonXmlProperty(localName = "stop_time")
-    public Long stopTime;       // epoch millis
+    private Long stopTime;       // epoch millis
     private Long startTime;       // epoch millis
-
-    public Ref template;
-
-    @JsonProperty("original_template")
-    @JacksonXmlProperty(localName = "original_template")
-    public Ref originalTemplate;
-
-    public Ref cluster;
-    public Ref host;
-
-    public String memory;          // bytes
-    public Cpu cpu;
-    public Os os;
-    public Bios bios;
-
-    public String stateless = "false";  // true|false
-    public String type;    // "server"
-    public String origin;  // "ovirt"
-
-    public Actions actions;      // actions.link[]
+    private Ref template;
+    private Ref originalTemplate;
+    private Ref cluster;
+    private Ref host;
+    private String memory;          // bytes
+    private Cpu cpu;
+    private Os os;
+    private Bios bios;
+    private String stateless;  // true|false
+    private String type;    // "server"
+    private String origin;  // "ovirt"
+    private Actions actions;      // actions.link[]
     @JacksonXmlElementWrapper(useWrapping = false)
-    public List<Link> link;      // related resources
-    public EmptyElement tags; // empty <tags/>
+    private List<Link> link;      // related resources
+    private EmptyElement tags; // empty <tags/>
     private DiskAttachments diskAttachments;
     private Nics nics;
-
     private VmInitialization initialization;
 
-    public Vm() {}
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getStopReason() {
+        return stopReason;
+    }
+
+    public void setStopReason(String stopReason) {
+        this.stopReason = stopReason;
+    }
 
     public Long getCreationTime() {
         return creationTime;
@@ -87,12 +96,132 @@ public final class Vm {
         this.creationTime = creationTime;
     }
 
+    public Long getStopTime() {
+        return stopTime;
+    }
+
+    public void setStopTime(Long stopTime) {
+        this.stopTime = stopTime;
+    }
+
     public Long getStartTime() {
         return startTime;
     }
 
     public void setStartTime(Long startTime) {
         this.startTime = startTime;
+    }
+
+    public Ref getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(Ref template) {
+        this.template = template;
+    }
+
+    public Ref getOriginalTemplate() {
+        return originalTemplate;
+    }
+
+    public void setOriginalTemplate(Ref originalTemplate) {
+        this.originalTemplate = originalTemplate;
+    }
+
+    public Ref getCluster() {
+        return cluster;
+    }
+
+    public void setCluster(Ref cluster) {
+        this.cluster = cluster;
+    }
+
+    public Ref getHost() {
+        return host;
+    }
+
+    public void setHost(Ref host) {
+        this.host = host;
+    }
+
+    public String getMemory() {
+        return memory;
+    }
+
+    public void setMemory(String memory) {
+        this.memory = memory;
+    }
+
+    public Cpu getCpu() {
+        return cpu;
+    }
+
+    public void setCpu(Cpu cpu) {
+        this.cpu = cpu;
+    }
+
+    public Os getOs() {
+        return os;
+    }
+
+    public void setOs(Os os) {
+        this.os = os;
+    }
+
+    public Bios getBios() {
+        return bios;
+    }
+
+    public void setBios(Bios bios) {
+        this.bios = bios;
+    }
+
+    public String getStateless() {
+        return stateless;
+    }
+
+    public void setStateless(String stateless) {
+        this.stateless = stateless;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
+    public Actions getActions() {
+        return actions;
+    }
+
+    public void setActions(Actions actions) {
+        this.actions = actions;
+    }
+
+    public List<Link> getLink() {
+        return link;
+    }
+
+    public void setLink(List<Link> link) {
+        this.link = link;
+    }
+
+    public EmptyElement getTags() {
+        return tags;
+    }
+
+    public void setTags(EmptyElement tags) {
+        this.tags = tags;
     }
 
     public DiskAttachments getDiskAttachments() {
@@ -117,5 +246,12 @@ public final class Vm {
 
     public void setInitialization(VmInitialization initialization) {
         this.initialization = initialization;
+    }
+
+    public static Vm of(String href, String id) {
+        Vm vm = new Vm();
+        vm.setHref(href);
+        vm.setId(id);
+        return vm;
     }
 }

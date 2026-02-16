@@ -18,27 +18,23 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Cpu {
-    @JsonProperty("name")
     private String name;
-
-    @JsonProperty("speed")
     private Integer speed;
-    public String architecture;
-    public Topology topology;
-
-    public Cpu() {}
-
-    public Cpu(final String architecture, final Topology topology) {
-        this.architecture = architecture;
-        this.topology = topology;
-    }
+    private String architecture;
+    private String type;
+    private Topology topology;
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public Integer getSpeed() { return speed; }
     public void setSpeed(Integer speed) { this.speed = speed; }
+    public String getArchitecture() { return architecture; }
+    public void setArchitecture(String architecture) { this.architecture = architecture; }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+    public Topology getTopology() { return topology; }
+    public void setTopology(Topology topology) { this.topology = topology; }
 }

@@ -22,19 +22,25 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "clusters")
 public final class Clusters {
 
     @JsonProperty("cluster")
     @JacksonXmlElementWrapper(useWrapping = false)
-    public List<Cluster> cluster;
+    private List<Cluster> cluster;
 
     public Clusters() {}
 
     public Clusters(final List<Cluster> cluster) {
+        this.cluster = cluster;
+    }
+
+    public List<Cluster> getCluster() {
+        return cluster;
+    }
+
+    public void setCluster(List<Cluster> cluster) {
         this.cluster = cluster;
     }
 }

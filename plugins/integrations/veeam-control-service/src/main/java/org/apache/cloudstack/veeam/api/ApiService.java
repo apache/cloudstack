@@ -19,8 +19,6 @@ package org.apache.cloudstack.veeam.api;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -37,7 +35,6 @@ import org.apache.cloudstack.veeam.api.dto.EmptyElement;
 import org.apache.cloudstack.veeam.api.dto.Link;
 import org.apache.cloudstack.veeam.api.dto.ProductInfo;
 import org.apache.cloudstack.veeam.api.dto.Ref;
-import org.apache.cloudstack.veeam.api.dto.SpecialObjectRef;
 import org.apache.cloudstack.veeam.api.dto.SpecialObjects;
 import org.apache.cloudstack.veeam.api.dto.SummaryCount;
 import org.apache.cloudstack.veeam.api.dto.Version;
@@ -94,58 +91,59 @@ public class ApiService extends ManagerBase implements RouteHandler {
         add(links, basePath + "/disks", "disks");
         add(links, basePath + "/disks?search={query}", "disks/search");
 
-        api.link = links;
+        api.setLink(links);
 
         /* ---------------- Engine backup ---------------- */
-        api.engineBackup = new EmptyElement();
+        api.setEngineBackup(new EmptyElement());
 
         /* ---------------- Product info ---------------- */
         ProductInfo productInfo = new ProductInfo();
-        productInfo.instanceId = UuidUtils.nameUUIDFromBytes(VeeamControlService.BindAddress.value().getBytes(StandardCharsets.UTF_8)).toString();
+        productInfo.setInstanceId(UuidUtils.nameUUIDFromBytes(
+                VeeamControlService.BindAddress.value().getBytes(StandardCharsets.UTF_8)).toString());
         productInfo.name = "oVirt Engine";
 
         Version version = new Version();
-        version.build = "8";
-        version.fullVersion = "4.5.8-0.master.fake.el9";
-        version.major = 4;
-        version.minor = 5;
-        version.revision = 0;
+        version.setBuild("8");
+        version.setFullVersion("4.5.8-0.master.fake.el9");
+        version.setMajor(4);
+        version.setMinor(5);
+        version.setRevision(0);
 
         productInfo.version = version;
-        api.productInfo = productInfo;
+        api.setProductInfo(productInfo);
 
         /* ---------------- Special objects ---------------- */
         SpecialObjects specialObjects = new SpecialObjects();
-        specialObjects.blankTemplate = new SpecialObjectRef(
+        specialObjects.setBlankTemplate(Ref.of(
                 basePath + "/templates/00000000-0000-0000-0000-000000000000",
                 "00000000-0000-0000-0000-000000000000"
-        );
-        specialObjects.rootTag = new SpecialObjectRef(
+        ));
+        specialObjects.setRootTag(Ref.of(
                 basePath + "/tags/00000000-0000-0000-0000-000000000000",
                 "00000000-0000-0000-0000-000000000000"
-        );
-        api.specialObjects = specialObjects;
+        ));
+        api.setSpecialObjects(specialObjects);
 
         /* ---------------- Summary ---------------- */
         ApiSummary summary = new ApiSummary();
-        summary.hosts = new SummaryCount(1, 1);
-        summary.storageDomains = new SummaryCount(1, 2);
-        summary.users = new SummaryCount(1, 1);
-        summary.vms = new SummaryCount(1, 8);
-        api.summary = summary;
+        summary.setHosts(new SummaryCount(1, 1));
+        summary.setStorageDomains(new SummaryCount(1, 2));
+        summary.setUsers(new SummaryCount(1, 1));
+        summary.setVms(new SummaryCount(1, 8));
+        api.setSummary(summary);
 
         /* ---------------- Time ---------------- */
-        api.time = OffsetDateTime.now(ZoneOffset.ofHours(2)).toInstant().toEpochMilli();
+        api.setTime(System.currentTimeMillis());
 
         /* ---------------- Users ---------------- */
         String userId = UUID.randomUUID().toString();
-        api.authenticatedUser = Ref.of(basePath + "/users/" + userId, userId);
-        api.effectiveUser = Ref.of(basePath + "/users/" + userId, userId);
+        api.setAuthenticatedUser(Ref.of(basePath + "/users/" + userId, userId));
+        api.setEffectiveUser(Ref.of(basePath + "/users/" + userId, userId));
 
         return api;
     }
 
     private static void add(List<Link> links, String href, String rel) {
-        links.add(new Link(href, rel));
+        links.add(Link.of(href, rel));
     }
 }

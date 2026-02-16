@@ -17,22 +17,16 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import java.util.List;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public final class SpecialObjectRef {
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 
-    @JacksonXmlProperty(isAttribute = true, localName = "href")
-    public String href;
+public class Backups {
 
-    @JacksonXmlProperty(isAttribute = true, localName = "id")
-    public String id;
+    @JacksonXmlElementWrapper(useWrapping = false)
+    public List<Backup> backup;
 
-    public SpecialObjectRef() {}
-
-    public SpecialObjectRef(String href, String id) {
-        this.href = href;
-        this.id = id;
+    public Backups(final List<Backup> backup) {
+        this.backup = backup;
     }
 }

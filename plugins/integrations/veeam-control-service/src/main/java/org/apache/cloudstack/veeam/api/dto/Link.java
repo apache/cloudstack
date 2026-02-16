@@ -21,13 +21,29 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Link {
-    public String rel;
-    public String href;
+    private String rel;
+    private String href;
 
-    public Link() {}
+    public static Link of(final String rel, final String href) {
+        Link link = new Link();
+        link.setRel(rel);
+        link.setHref(href);
+        return link;
+    }
 
-    public Link(final String rel, final String href) {
+    public String getRel() {
+        return rel;
+    }
+
+    public void setRel(String rel) {
         this.rel = rel;
+    }
+
+    public String getHref() {
+        return href;
+    }
+
+    public void setHref(String href) {
         this.href = href;
     }
 }

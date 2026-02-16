@@ -20,43 +20,110 @@ package org.apache.cloudstack.veeam.api.dto;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JacksonXmlRootElement(localName = "data_center")
-public final class DataCenter {
-
-    // keep strings to match oVirt JSON ("false", "disabled", "up", "v5", etc.)
-    public String local;
-
-    @JsonProperty("quota_mode")
-    public String quotaMode;
-
-    public String status;
-
-    @JsonProperty("storage_format")
-    public String storageFormat;
-
-    @JsonProperty("supported_versions")
-    public SupportedVersions supportedVersions;
-
-    public Version version;
-
-    @JsonProperty("mac_pool")
-    public Ref macPool;
-
-    public Actions actions;
-
-    public String name;
-    public String description;
-
+public final class DataCenter extends BaseDto {
+    private String local;
+    private String quotaMode;
+    private String status;
+    private String storageFormat;
+    private SupportedVersions supportedVersions;
+    private Version version;
+    private Ref macPool;
+    private Actions actions;
+    private String name;
+    private String description;
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<Link> link;
 
-    public String href;
-    public String id;
+    public String getLocal() {
+        return local;
+    }
 
-    public DataCenter() {}
+    public void setLocal(String local) {
+        this.local = local;
+    }
+
+    public String getQuotaMode() {
+        return quotaMode;
+    }
+
+    public void setQuotaMode(String quotaMode) {
+        this.quotaMode = quotaMode;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getStorageFormat() {
+        return storageFormat;
+    }
+
+    public void setStorageFormat(String storageFormat) {
+        this.storageFormat = storageFormat;
+    }
+
+    public SupportedVersions getSupportedVersions() {
+        return supportedVersions;
+    }
+
+    public void setSupportedVersions(SupportedVersions supportedVersions) {
+        this.supportedVersions = supportedVersions;
+    }
+
+    public Version getVersion() {
+        return version;
+    }
+
+    public void setVersion(Version version) {
+        this.version = version;
+    }
+
+    public Ref getMacPool() {
+        return macPool;
+    }
+
+    public void setMacPool(Ref macPool) {
+        this.macPool = macPool;
+    }
+
+    public Actions getActions() {
+        return actions;
+    }
+
+    public void setActions(Actions actions) {
+        this.actions = actions;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public List<Link> getLink() {
+        return link;
+    }
+
+    public void setLink(List<Link> link) {
+        this.link = link;
+    }
 }

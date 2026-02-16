@@ -18,18 +18,22 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "fault")
 public final class Fault {
-    public String reason; // "Not Found", "Bad Request", "Unauthorized"
-    public String detail; // full message
-
-    public Fault() {}
+    private String reason; // "Not Found", "Bad Request", "Unauthorized"
+    private String detail; // full message
 
     public Fault(final String reason, final String detail) {
         this.reason = reason;
         this.detail = detail;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public String getDetail() {
+        return detail;
     }
 }

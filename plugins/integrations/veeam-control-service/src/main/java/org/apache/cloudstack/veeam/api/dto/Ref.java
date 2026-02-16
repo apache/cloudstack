@@ -20,20 +20,12 @@ package org.apache.cloudstack.veeam.api.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public final class Ref {
-    public String href;
-    public String id;
-    public String name; // optional
-
-    public Ref() {}
-
-    public Ref(final String href, final String id, final String name) {
-        this.href = href;
-        this.id = id;
-        this.name = name;
-    }
+public final class Ref extends BaseDto {
 
     public static Ref of(final String href, final String id) {
-        return new Ref(href, id, null);
+        Ref ref = new Ref();
+        ref.setHref(href);
+        ref.setId(id);
+        return ref;
     }
 }

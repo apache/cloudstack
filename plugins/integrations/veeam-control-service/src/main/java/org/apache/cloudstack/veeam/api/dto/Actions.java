@@ -23,11 +23,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Actions {
-    public List<Link> link;
+    private List<Link> link;
 
     public Actions() {}
 
     public Actions(final List<Link> link) {
+        this.link = link;
+    }
+
+    public List<Link> getLink() {
+        return link;
+    }
+
+    public void setLink(List<Link> link) {
         this.link = link;
     }
 }

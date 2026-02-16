@@ -19,35 +19,92 @@ package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "disk_attachment")
-public final class DiskAttachment {
+public final class DiskAttachment extends BaseDto {
 
-    public String active;
-    public String bootable;
-
+    private String active;
+    private String bootable;
     @JsonProperty("interface")
-    public String iface; // virtio_scsi etc
-
-    @JsonProperty("logical_name")
-    public String logicalName;
-
-    @JsonProperty("pass_discard")
-    public String passDiscard;
-
-    @JsonProperty("read_only")
-    public String readOnly;
-
-    @JsonProperty("uses_scsi_reservation")
-    public String usesScsiReservation;
-
-    public Disk disk;
-    public Ref vm;
-
-    public String href;
-    public String id;
+    private String iface; // virtio_scsi etc
+    private String logicalName;
+    private String passDiscard;
+    private String readOnly;
+    private String usesScsiReservation;
+    private Disk disk;
+    private Vm vm;
 
     public DiskAttachment() {}
+
+    public String getActive() {
+        return active;
+    }
+
+    public void setActive(String active) {
+        this.active = active;
+    }
+
+    public String getBootable() {
+        return bootable;
+    }
+
+    public void setBootable(String bootable) {
+        this.bootable = bootable;
+    }
+
+    public String getIface() {
+        return iface;
+    }
+
+    public void setIface(String iface) {
+        this.iface = iface;
+    }
+
+    public String getLogicalName() {
+        return logicalName;
+    }
+
+    public void setLogicalName(String logicalName) {
+        this.logicalName = logicalName;
+    }
+
+    public String getPassDiscard() {
+        return passDiscard;
+    }
+
+    public void setPassDiscard(String passDiscard) {
+        this.passDiscard = passDiscard;
+    }
+
+    public String getReadOnly() {
+        return readOnly;
+    }
+
+    public void setReadOnly(String readOnly) {
+        this.readOnly = readOnly;
+    }
+
+    public String getUsesScsiReservation() {
+        return usesScsiReservation;
+    }
+
+    public void setUsesScsiReservation(String usesScsiReservation) {
+        this.usesScsiReservation = usesScsiReservation;
+    }
+
+    public Disk getDisk() {
+        return disk;
+    }
+
+    public void setDisk(Disk disk) {
+        this.disk = disk;
+    }
+
+    public Vm getVm() {
+        return vm;
+    }
+
+    public void setVm(Vm vm) {
+        this.vm = vm;
+    }
 }

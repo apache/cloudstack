@@ -25,11 +25,36 @@ public final class Topology {
     public Integer cores;
     public Integer threads;
 
-    public Topology() {}
+    public Topology() {
+    }
 
     public Topology(final Integer sockets, final Integer cores, final Integer threads) {
         this.sockets = sockets;
         this.cores = cores;
+        this.threads = threads;
+    }
+
+    public Integer getSockets() {
+        return sockets;
+    }
+
+    public void setSockets(Integer sockets) {
+        this.sockets = sockets;
+    }
+
+    public Integer getCores() {
+        return cores;
+    }
+
+    public void setCores(Integer cores) {
+        this.cores = cores;
+    }
+
+    public Integer getThreads() {
+        return threads;
+    }
+
+    public void setThreads(Integer threads) {
         this.threads = threads;
     }
 }

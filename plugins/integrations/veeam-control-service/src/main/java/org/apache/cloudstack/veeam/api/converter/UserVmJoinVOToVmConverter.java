@@ -65,18 +65,18 @@ public final class UserVmJoinVOToVmConverter {
         final String basePath = VeeamControlService.ContextPath.value();
         final Vm dst = new Vm();
 
-        dst.id = src.getUuid();
-        dst.name = StringUtils.firstNonBlank(src.getName(), src.getInstanceName());
+        dst.setId(src.getUuid());
+        dst.setName(StringUtils.firstNonBlank(src.getName(), src.getInstanceName()));
         // CloudStack doesn't really have "description" for VM; displayName is closest
-        dst.description = src.getDisplayName();
-        dst.href = basePath + VmsRouteHandler.BASE_ROUTE + "/" + src.getUuid();
-        dst.status = mapStatus(src.getState());
+        dst.setDescription(src.getDisplayName());
+        dst.setHref(basePath + VmsRouteHandler.BASE_ROUTE + "/" + src.getUuid());
+        dst.setStatus(mapStatus(src.getState()));
         dst.setCreationTime(src.getCreated().getTime());
         final Date lastUpdated = src.getLastUpdated() != null ? src.getLastUpdated() : src.getCreated();
-        if ("down".equals(dst.status)) {
-            dst.stopTime = lastUpdated.getTime();
+        if ("down".equals(dst.getStatus())) {
+            dst.setStopTime(lastUpdated.getTime());
         }
-        if ("up".equals(dst.status)) {
+        if ("up".equals(dst.getStatus())) {
             dst.setStartTime(lastUpdated.getTime());
         }
         final Ref template = buildRef(
@@ -84,40 +84,45 @@ public final class UserVmJoinVOToVmConverter {
                 "templates",
                 src.getTemplateUuid()
         );
-        dst.template = template;
-        dst.originalTemplate = template;
+        dst.setTemplate(template);
+        dst.setOriginalTemplate(template);
         if (StringUtils.isNotBlank(src.getHostUuid())) {
-            dst.host = buildRef(
+            dst.setHost(buildRef(
                     basePath + ApiService.BASE_ROUTE,
                     "hosts",
-                    src.getHostUuid());
+                    src.getHostUuid()));
 
         }
         if (hostResolver != null) {
             HostJoinVO hostVo = hostResolver.apply(src.getHostId() == null ? src.getLastHostId() : src.getHostId());
             if (hostVo != null) {
-                dst.host = buildRef(
+                dst.setHost(buildRef(
                         basePath + ApiService.BASE_ROUTE,
                         "hosts",
-                        hostVo.getUuid());
-                dst.cluster = buildRef(
+                        hostVo.getUuid()));
+                dst.setCluster(buildRef(
                         basePath + ApiService.BASE_ROUTE,
                         "clusters",
-                        hostVo.getClusterUuid());
+                        hostVo.getClusterUuid()));
             }
         }
 
-        dst.memory = String.valueOf(src.getRamSize() * 1024L * 1024L);
-
-        dst.cpu = new Cpu(src.getArch(), new Topology(src.getCpu(), 1, 1));
-        dst.os = new Os();
-        dst.os.type = src.getGuestOsId() % 2 == 0
+        dst.setMemory(String.valueOf(src.getRamSize() * 1024L * 1024L));
+        Cpu cpu = new Cpu();
+        cpu.setArchitecture(src.getArch());
+        cpu.setTopology(new Topology(src.getCpu(), 1, 1));
+        dst.setCpu(cpu);
+        Os os = new Os();
+        os.setType(src.getGuestOsId() % 2 == 0
                 ? "windows"
-                : "linux";
-        dst.bios = new Bios();
-        dst.bios.type = "q35_secure_boot";
-        dst.type = "desktop";
-        dst.origin = "ovirt";
+                : "linux");
+        dst.setOs(os);
+        Bios bios = new Bios();
+        bios.setType("q35_secure_boot");
+        dst.setBios(bios);
+        dst.setType("desktop");
+        dst.setOrigin("ovirt");
+        dst.setStateless("false");
 
         if (disksResolver != null) {
             List<DiskAttachment> diskAttachments = disksResolver.apply(src.getId());
@@ -129,18 +134,18 @@ public final class UserVmJoinVOToVmConverter {
             dst.setNics(new Nics(nics));
         }
 
-        dst.actions = new Actions(List.of(
-                BaseDto.getActionLink("start", dst.href),
-                BaseDto.getActionLink("stop", dst.href),
-                BaseDto.getActionLink("shutdown", dst.href)
+        dst.setActions(new Actions(List.of(
+                BaseDto.getActionLink("start", dst.getHref()),
+                BaseDto.getActionLink("stop", dst.getHref()),
+                BaseDto.getActionLink("shutdown", dst.getHref())
+        )));
+        dst.setLink(List.of(
+                BaseDto.getActionLink("diskattachments", dst.getHref()),
+                BaseDto.getActionLink("nics", dst.getHref()),
+                BaseDto.getActionLink("reporteddevices", dst.getHref()),
+                BaseDto.getActionLink("snapshots", dst.getHref())
         ));
-        dst.link = List.of(
-                BaseDto.getActionLink("diskattachments", dst.href),
-                BaseDto.getActionLink("nics", dst.href),
-                BaseDto.getActionLink("reporteddevices", dst.href),
-                BaseDto.getActionLink("snapshots", dst.href)
-        );
-        dst.tags = new EmptyElement();
+        dst.setTags(new EmptyElement());
 
         return dst;
     }
@@ -173,9 +178,6 @@ public final class UserVmJoinVOToVmConverter {
         if (StringUtils.isBlank(id)) {
             return null;
         }
-        final Ref r = new Ref();
-        r.id = id;
-        r.href = (baseHref != null) ? (baseHref + "/" + suffix + "/" + id) : null;
-        return r;
+        return Ref.of((baseHref != null) ? (baseHref + "/" + suffix + "/" + id) : null, id);
     }
 }

@@ -20,18 +20,19 @@ package org.apache.cloudstack.veeam.api.dto;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class SupportedVersions {
 
-    @JsonProperty("version")
     @JacksonXmlElementWrapper(useWrapping = false)
-    public List<Version> version;
+    private List<Version> version;
 
-    public SupportedVersions() {}
     public SupportedVersions(final List<Version> version) {
         this.version = version;
+    }
+
+    public List<Version> getVersion() {
+        return version;
     }
 }

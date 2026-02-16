@@ -22,7 +22,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Job {
+public class Job extends BaseDto {
     private String autoCleared;
     private String external;
     private Long lastUpdated;
@@ -33,8 +33,6 @@ public class Job {
     private Actions actions;
     private String description;
     private List<Link> link;
-    private String href;
-    private String id;
 
     // getters and setters
     public String getAutoCleared() { return autoCleared; }
@@ -66,10 +64,4 @@ public class Job {
 
     public List<Link> getLink() { return link; }
     public void setLink(List<Link> link) { this.link = link; }
-
-    public String getHref() { return href; }
-    public void setHref(String href) { this.href = href; }
-
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
 }

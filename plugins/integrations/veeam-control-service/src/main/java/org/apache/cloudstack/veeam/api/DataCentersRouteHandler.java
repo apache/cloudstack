@@ -118,7 +118,8 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
               final VeeamControlServlet io) throws IOException {
         try {
             List<StorageDomain> storageDomains = serverAdapter.listStorageDomainsByDcId(id);
-            StorageDomains response = new StorageDomains(storageDomains);
+            StorageDomains response = new StorageDomains();
+            response.setStorageDomain(storageDomains);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);

@@ -41,47 +41,45 @@ public class StoreVOToStorageDomainConverter {
         final String id = pool.getUuid();
 
         StorageDomain sd = new StorageDomain();
-        sd.id = id;
+        sd.setId(id);
         final String href = href(basePath, ApiService.BASE_ROUTE + "/storagedomains/" + id);
-        sd.href = href;
+        sd.setHref(href);
 
-        sd.name = pool.getName();
-        sd.description = ""; // oVirt often returns empty string
-        sd.comment = "";
+        sd.setName(pool.getName());
 
         // oVirt sample returns numbers as strings
-        sd.available = Long.toString(pool.getCapacityBytes() - pool.getUsedBytes());
-        sd.used = Long.toString(pool.getUsedBytes());
-        sd.committed = Long.toString(pool.getCapacityBytes());
+        sd.setAvailable(Long.toString(pool.getCapacityBytes() - pool.getUsedBytes()));
+        sd.setUsed(Long.toString(pool.getUsedBytes()));
+        sd.setCommitted(Long.toString(pool.getCapacityBytes()));
 
-        sd.type = "data";
-        sd.status = mapPoolStatus(pool);   // "active"/"inactive"/"maintenance" (approx)
-        sd.master = "true";                // if you don’t have a concept, choose stable default
-        sd.backup = "false";
+        sd.setType("data");
+        sd.setStatus(mapPoolStatus(pool));   // "active"/"inactive"/"maintenance" (approx)
+        sd.setMaster("true");                // if you don’t have a concept, choose stable default
+        sd.setBackup("false");
 
-        sd.blockSize = "512";              // stable default unless you can compute it
-        sd.externalStatus = "ok";
-        sd.storageFormat = "v5";
+        sd.setBlockSize("512");              // stable default unless you can compute it
+        sd.setExternalStatus("ok");
+        sd.setStorageFormat("v5");
 
-        sd.discardAfterDelete = "false";
-        sd.wipeAfterDelete = "false";
-        sd.supportsDiscard = "false";
-        sd.supportsDiscardZeroesData = "false";
+        sd.setDiscardAfterDelete("false");
+        sd.setWipeAfterDelete("false");
+        sd.setSupportsDiscard("false");
+        sd.setSupportsDiscardZeroesData("false");
 
-        sd.warningLowSpaceIndicator = "10";
-        sd.criticalSpaceActionBlocker = "5";
+        sd.setWarningLowSpaceIndicator("10");
+        sd.setCriticalSpaceActionBlocker("5");
 
         // Nested storage (try to extract if available)
-        sd.storage = buildPrimaryStorage(pool);
+        sd.setStorage(buildPrimaryStorage(pool));
 
         // dc attachment
         String dcId = pool.getZoneUuid();
         DataCenter dc = new DataCenter();
-        dc.href = href(basePath, DataCentersRouteHandler.BASE_ROUTE + "/" + dcId);
-        dc.id = dcId;
-        sd.dataCenters = new DataCenters(List.of(dc));
+        dc.setHref(href(basePath, DataCentersRouteHandler.BASE_ROUTE + "/" + dcId));
+        dc.setId(dcId);
+        sd.setDataCenters(new DataCenters(List.of(dc)));
 
-        sd.link = defaultStorageDomainLinks(href, true, /*includeTemplates*/ true);
+        sd.setLink(defaultStorageDomainLinks(href, true, /*includeTemplates*/ true));
 
         return sd;
     }
@@ -97,46 +95,44 @@ public class StoreVOToStorageDomainConverter {
         final String id = store.getUuid();
 
         StorageDomain sd = new StorageDomain();
-        sd.id = id;
+        sd.setId(id);
         final String href = href(basePath, ApiService.BASE_ROUTE + "/storagedomains/" + id);
-        sd.href = href;
+        sd.setHref(href);
 
-        sd.name = store.getName();
-        sd.description = "";
-        sd.comment = "";
+        sd.setName(store.getName());
 
         // Many image repos don’t have these values readily; keep as "0" or omit (null)
-        sd.committed = "0";
-        sd.available = null; // oVirt’s glance example omitted available/used
-        sd.used = null;
+        sd.setCommitted("0");
+        sd.setAvailable(null); // oVirt’s glance example omitted available/used
+        sd.setUsed(null);
 
-        sd.type = "image";
-        sd.status = "unattached"; // matches your sample for glance-like repo
-        sd.master = "false";
-        sd.backup = "false";
+        sd.setType("image");
+        sd.setStatus("unattached"); // matches your sample for glance-like repo
+        sd.setMaster("false");
+        sd.setBackup("false");
 
-        sd.blockSize = "512";
-        sd.externalStatus = "ok";
-        sd.storageFormat = "v1";
+        sd.setBlockSize("512");
+        sd.setExternalStatus("ok");
+        sd.setStorageFormat("v1");
 
-        sd.discardAfterDelete = "false";
-        sd.wipeAfterDelete = "false";
-        sd.supportsDiscard = "false";
-        sd.supportsDiscardZeroesData = "false";
+        sd.setDiscardAfterDelete("false");
+        sd.setWipeAfterDelete("false");
+        sd.setSupportsDiscard("false");
+        sd.setSupportsDiscardZeroesData("false");
 
-        sd.warningLowSpaceIndicator = "0";
-        sd.criticalSpaceActionBlocker = "0";
+        sd.setWarningLowSpaceIndicator("0");
+        sd.setCriticalSpaceActionBlocker("0");
 
-        sd.storage = buildImageStoreStorage(store);
+        sd.setStorage(buildImageStoreStorage(store));
 
         // Optionally include dc attachment (your first object had it; second didn’t)
         String dcId = store.getZoneUuid();
         DataCenter dc = new DataCenter();
-        dc.href = href(basePath, DataCentersRouteHandler.BASE_ROUTE + "/" + dcId);
-        dc.id = dcId;
-        sd.dataCenters = new DataCenters(List.of(dc));
+        dc.setHref(href(basePath, DataCentersRouteHandler.BASE_ROUTE + "/" + dcId));
+        dc.setId(dcId);
+        sd.setDataCenters(new DataCenters(List.of(dc)));
 
-        sd.link = defaultStorageDomainLinks(href, false, /*includeTemplates*/ false);
+        sd.setLink(defaultStorageDomainLinks(href, false, /*includeTemplates*/ false));
 
         return sd;
     }
@@ -149,7 +145,7 @@ public class StoreVOToStorageDomainConverter {
 
     private static Storage buildPrimaryStorage(StoragePoolJoinVO pool) {
         Storage st = new Storage();
-        st.type = mapPrimaryStorageType(pool);
+        st.setType(mapPrimaryStorageType(pool));
 
         // If you can parse details/url, fill these. If not, keep empty strings like oVirt.
         // For NFS pools in CloudStack, URL is often like: nfs://10.0.32.4/path or 10.0.32.4:/path
@@ -158,12 +154,12 @@ public class StoreVOToStorageDomainConverter {
             url = pool.getHostAddress(); // sometimes exists in VO; if not, ignore
         } catch (Exception ignored) { }
 
-        if ("nfs".equals(st.type)) {
+        if ("nfs".equals(st.getType())) {
             // best-effort placeholders
-            st.address = "";        // fill if you can parse
-            st.path = "";           // fill if you can parse
-            st.mountOptions = "";
-            st.nfsVersion = "auto";
+            st.setAddress("");        // fill if you can parse
+            st.setPath("");           // fill if you can parse
+            st.setMountOptions("");
+            st.setNfsVersion("auto");
         }
         return st;
     }
@@ -173,13 +169,13 @@ public class StoreVOToStorageDomainConverter {
 
         // Match your sample: glance store => type=glance
         // If you want "nfs" for secondary, map based on provider/protocol instead.
-        st.type = mapImageStorageType(store);
+        st.setType(mapImageStorageType(store));
 
-        if ("nfs".equals(st.type)) {
-            st.address = "";
-            st.path = "";
-            st.mountOptions = "";
-            st.nfsVersion = "auto";
+        if ("nfs".equals(st.getType())) {
+            st.setAddress("");
+            st.setPath("");
+            st.setMountOptions("");
+            st.setNfsVersion("auto");
         }
         return st;
     }
@@ -188,19 +184,19 @@ public class StoreVOToStorageDomainConverter {
         // Mirrors the rels you pasted; keep stable order.
         // You can add/remove based on what endpoints you actually implement.
         List<Link> common = new java.util.ArrayList<>();
-        common.add(new Link("diskprofiles", href(basePath, "/diskprofiles")));
+        common.add(Link.of("diskprofiles", href(basePath, "/diskprofiles")));
         if (includeDisks) {
-            common.add(new Link("disks", href(basePath, "/disks")));
-            common.add(new Link("storageconnections", href(basePath, "/storageconnections")));
+            common.add(Link.of("disks", href(basePath, "/disks")));
+            common.add(Link.of("storageconnections", href(basePath, "/storageconnections")));
         }
-        common.add(new Link("permissions", href(basePath, "/permissions")));
+        common.add(Link.of("permissions", href(basePath, "/permissions")));
         if (includeTemplates) {
-            common.add(new Link("templates", href(basePath, "/templates")));
-            common.add(new Link("vms", href(basePath, "/vms")));
+            common.add(Link.of("templates", href(basePath, "/templates")));
+            common.add(Link.of("vms", href(basePath, "/vms")));
         } else {
-            common.add(new Link("images", href(basePath, "/images")));
+            common.add(Link.of("images", href(basePath, "/images")));
         }
-        common.add(new Link("disksnapshots", href(basePath, "/disksnapshots")));
+        common.add(Link.of("disksnapshots", href(basePath, "/disksnapshots")));
         return common;
     }
 

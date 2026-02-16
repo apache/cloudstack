@@ -28,8 +28,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.ServerAdapter;
+import org.apache.cloudstack.veeam.api.dto.Backup;
+import org.apache.cloudstack.veeam.api.dto.Checkpoint;
+import org.apache.cloudstack.veeam.api.dto.Checkpoints;
+import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachments;
+import org.apache.cloudstack.veeam.api.dto.Disks;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.Nics;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
@@ -164,6 +170,22 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                         handlePostSnapshotForVmId(id, req, resp, outFormat, io);
                     }
                     return;
+                } else if ("backups".equals(subPath)) {
+                    if (!"GET".equalsIgnoreCase(method) && !"POST".equalsIgnoreCase(method)) {
+                        io.methodNotAllowed(resp, "GET, POST", outFormat);
+                    } else if ("GET".equalsIgnoreCase(method)) {
+                        handleGetBackupsByVmId(id, resp, outFormat, io);
+                    } else if ("POST".equalsIgnoreCase(method)) {
+                        handlePostBackupForVmId(id, req, resp, outFormat, io);
+                    }
+                    return;
+                } else if ("checkpoints".equals(subPath)) {
+                    if ("GET".equalsIgnoreCase(method)) {
+                        handleGetCheckpointsByVmId(id, resp, outFormat, io);
+                    } else {
+                        io.methodNotAllowed(resp, "GET, POST", outFormat);
+                    }
+                    return;
                 }
             } else if (idAndSubPath.size() == 3) {
                 String subPath = idAndSubPath.get(1);
@@ -172,9 +194,23 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                     if (!"GET".equalsIgnoreCase(method) && !"DELETE".equalsIgnoreCase(method)) {
                         io.methodNotAllowed(resp, "GET, DELETE", outFormat);
                     } else if ("GET".equalsIgnoreCase(method)) {
-                        handleGetSnapshotsById(subId, resp, outFormat, io);
+                        handleGetSnapshotById(subId, resp, outFormat, io);
                     } else if ("DELETE".equalsIgnoreCase(method)) {
                         handleDeleteSnapshotById(subId, req, resp, outFormat, io);
+                    }
+                    return;
+                } else if ("backups".equals(subPath)) {
+                    if ("GET".equalsIgnoreCase(method)) {
+                        handleGetBackupById(subId, resp, outFormat, io);
+                    } else {
+                        io.methodNotAllowed(resp, "GET", outFormat);
+                    }
+                    return;
+                } else if ("checkpoints".equals(subPath)) {
+                    if ("DELETE".equalsIgnoreCase(method)) {
+                        handleDeleteCheckpointById(subId, req, resp, outFormat, io);
+                    } else {
+                        io.methodNotAllowed(resp, "DELETE", outFormat);
                     }
                     return;
                 }
@@ -185,6 +221,20 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                 if ("snapshots".equals(subPath) && "restore".equals(action)) {
                     if ("POST".equalsIgnoreCase(method)) {
                         handleRestoreSnapshotById(subId, req, resp, outFormat, io);
+                    } else {
+                        io.methodNotAllowed(resp, "POST", outFormat);
+                    }
+                    return;
+                } else if ("backups".equals(subPath) && "disks".equals(action)) {
+                    if ("GET".equalsIgnoreCase(method)) {
+                        handleGetBackupDisksById(subId, req, resp, outFormat, io);
+                    } else {
+                        io.methodNotAllowed(resp, "GET", outFormat);
+                    }
+                    return;
+                } else if ("backups".equals(subPath) && "finalize".equals(action)) {
+                    if ("POST".equalsIgnoreCase(method)) {
+                        handleFinalizeBackupById(id, subId, req, resp, outFormat, io);
                     } else {
                         io.methodNotAllowed(resp, "POST", outFormat);
                     }
@@ -405,8 +455,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
     }
 
-    protected void handleGetSnapshotsById(final String id, final HttpServletResponse resp,
-                  final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+    protected void handleGetSnapshotById(final String id, final HttpServletResponse resp,
+                                         final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         try {
             Snapshot response = serverAdapter.getSnapshot(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
@@ -435,7 +485,94 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleRestoreSnapshotById(final String id, final HttpServletRequest req,
                 final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
+        //ToDo: implement
         String data = getRequestData(req);
         io.badRequest(resp, "Not implemented", outFormat);
+    }
+
+    protected void handleGetBackupsByVmId(final String id, final HttpServletResponse resp,
+              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        try {
+            List<Backup> backups = serverAdapter.listBackupsByInstanceUuid(id);
+            NamedList<Backup> response = NamedList.of("backups", backups);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.notFound(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handlePostBackupForVmId(final String id, final HttpServletRequest req,
+               final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
+            throws IOException {
+        String data = getRequestData(req);
+        try {
+            Backup request = io.getMapper().jsonMapper().readValue(data, Backup.class);
+            Backup response = serverAdapter.createInstanceBackup(id, request);
+            io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, response, outFormat);
+        } catch (JsonProcessingException | CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleGetBackupById(final String id, final HttpServletResponse resp,
+              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        try {
+            Backup response = serverAdapter.getBackup(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.notFound(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleGetBackupDisksById(final String id, final HttpServletRequest req,
+            final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
+            throws IOException {
+        try {
+            List<Disk> disks = serverAdapter.listDisksByBackupUuid(id);
+            Disks response = new Disks(disks);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.notFound(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleFinalizeBackupById(final String vmId, final String backupId, final HttpServletRequest req,
+                final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
+            throws IOException {
+        String data = getRequestData(req);
+        try {
+            serverAdapter.finalizeBackup(vmId, backupId, data);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, null, outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleGetCheckpointsByVmId(final String id, final HttpServletResponse resp,
+              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        try {
+            List<Checkpoint> checkpoints = serverAdapter.listCheckpointsByInstanceUuid(id);
+            Checkpoints response = new Checkpoints(checkpoints);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.notFound(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handleDeleteCheckpointById(final String id, final HttpServletRequest req,
+                final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
+            throws IOException {
+        String asyncStr = req.getParameter("async");
+        boolean async = !Boolean.FALSE.toString().equals(asyncStr);
+        try {
+            ResourceAction action = serverAdapter.deleteCheckpoint(id, async);
+            if (action != null) {
+                io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, action, outFormat);
+            } else {
+                io.getWriter().write(resp, HttpServletResponse.SC_OK, null, outFormat);
+            }
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
     }
 }

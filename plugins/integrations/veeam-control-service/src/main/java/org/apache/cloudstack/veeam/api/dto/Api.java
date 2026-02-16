@@ -21,42 +21,84 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 /**
  * Root response for GET /ovirt-engine/api
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "api")
 public final class Api {
 
-    // <link .../> repeated
     @JacksonXmlElementWrapper(useWrapping = false)
-    public List<Link> link;
+    private List<Link> link;
+    private EmptyElement engineBackup;
+    private ProductInfo productInfo;
+    private SpecialObjects specialObjects;
+    private ApiSummary summary;
+    private Long time;
+    private Ref authenticatedUser;
+    private Ref effectiveUser;
 
-    // <engine_backup/> (empty element)
-    @JacksonXmlProperty(localName = "engine_backup")
-    public EmptyElement engineBackup;
+    public List<Link> getLink() {
+        return link;
+    }
 
-    @JacksonXmlProperty(localName = "product_info")
-    public ProductInfo productInfo;
+    public void setLink(List<Link> link) {
+        this.link = link;
+    }
 
-    @JacksonXmlProperty(localName = "special_objects")
-    public SpecialObjects specialObjects;
+    public EmptyElement getEngineBackup() {
+        return engineBackup;
+    }
 
-    @JacksonXmlProperty(localName = "summary")
-    public ApiSummary summary;
+    public void setEngineBackup(EmptyElement engineBackup) {
+        this.engineBackup = engineBackup;
+    }
 
-    // Keep as String to avoid timezone/date parsing friction; you control formatting.
-    @JacksonXmlProperty(localName = "time")
-    public Long time;
+    public ProductInfo getProductInfo() {
+        return productInfo;
+    }
 
-    @JacksonXmlProperty(localName = "authenticated_user")
-    public Ref authenticatedUser;
+    public void setProductInfo(ProductInfo productInfo) {
+        this.productInfo = productInfo;
+    }
 
-    @JacksonXmlProperty(localName = "effective_user")
-    public Ref effectiveUser;
+    public SpecialObjects getSpecialObjects() {
+        return specialObjects;
+    }
 
-    public Api() {}
+    public void setSpecialObjects(SpecialObjects specialObjects) {
+        this.specialObjects = specialObjects;
+    }
+
+    public ApiSummary getSummary() {
+        return summary;
+    }
+
+    public void setSummary(ApiSummary summary) {
+        this.summary = summary;
+    }
+
+    public Long getTime() {
+        return time;
+    }
+
+    public void setTime(Long time) {
+        this.time = time;
+    }
+
+    public Ref getAuthenticatedUser() {
+        return authenticatedUser;
+    }
+
+    public void setAuthenticatedUser(Ref authenticatedUser) {
+        this.authenticatedUser = authenticatedUser;
+    }
+
+    public Ref getEffectiveUser() {
+        return effectiveUser;
+    }
+
+    public void setEffectiveUser(Ref effectiveUser) {
+        this.effectiveUser = effectiveUser;
+    }
 }

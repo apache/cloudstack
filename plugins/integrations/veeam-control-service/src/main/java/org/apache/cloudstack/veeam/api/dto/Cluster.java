@@ -20,148 +20,315 @@ package org.apache.cloudstack.veeam.api.dto;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JacksonXmlRootElement(localName = "cluster")
-public final class Cluster {
+public final class Cluster extends BaseDto {
 
-    // --- common identity
-    public String href;
-    public String id;
-    public String name;
-    public String description;
-    public String comment;
-
-    // --- oVirt-ish knobs (strings in oVirt JSON)
-    @JsonProperty("ballooning_enabled")
-    @JacksonXmlProperty(localName = "ballooning_enabled")
-    public String ballooningEnabled; // "true"/"false"
-
-    @JsonProperty("bios_type")
-    @JacksonXmlProperty(localName = "bios_type")
-    public String biosType; // e.g. "q35_ovmf"
-
-    public ClusterCpu cpu;
-
-    @JsonProperty("custom_scheduling_policy_properties")
-    @JacksonXmlProperty(localName = "custom_scheduling_policy_properties")
-    public CustomSchedulingPolicyProperties customSchedulingPolicyProperties;
-
-    @JsonProperty("error_handling")
-    @JacksonXmlProperty(localName = "error_handling")
-    public ErrorHandling errorHandling;
-
-    @JsonProperty("fencing_policy")
-    @JacksonXmlProperty(localName = "fencing_policy")
-    public FencingPolicy fencingPolicy;
-
-    @JsonProperty("fips_mode")
-    @JacksonXmlProperty(localName = "fips_mode")
-    public String fipsMode; // "disabled"
-
-    @JsonProperty("firewall_type")
-    @JacksonXmlProperty(localName = "firewall_type")
-    public String firewallType; // "firewalld"
-
-    @JsonProperty("gluster_service")
-    @JacksonXmlProperty(localName = "gluster_service")
-    public String glusterService;
-
-    @JsonProperty("ha_reservation")
-    @JacksonXmlProperty(localName = "ha_reservation")
-    public String haReservation;
-
-    public Ksm ksm;
-
-    @JsonProperty("log_max_memory_used_threshold")
-    @JacksonXmlProperty(localName = "log_max_memory_used_threshold")
-    public String logMaxMemoryUsedThreshold;
-
-    @JsonProperty("log_max_memory_used_threshold_type")
-    @JacksonXmlProperty(localName = "log_max_memory_used_threshold_type")
-    public String logMaxMemoryUsedThresholdType;
-
-    @JsonProperty("memory_policy")
-    @JacksonXmlProperty(localName = "memory_policy")
-    public MemoryPolicy memoryPolicy;
-
-    public Migration migration;
-
-    @JsonProperty("required_rng_sources")
-    @JacksonXmlProperty(localName = "required_rng_sources")
-    public RequiredRngSources requiredRngSources;
-
-    @JsonProperty("switch_type")
-    @JacksonXmlProperty(localName = "switch_type")
-    public String switchType;
-
-    @JsonProperty("threads_as_cores")
-    @JacksonXmlProperty(localName = "threads_as_cores")
-    public String threadsAsCores;
-
-    @JsonProperty("trusted_service")
-    @JacksonXmlProperty(localName = "trusted_service")
-    public String trustedService;
-
-    @JsonProperty("tunnel_migration")
-    @JacksonXmlProperty(localName = "tunnel_migration")
-    public String tunnelMigration;
-
-    @JsonProperty("upgrade_in_progress")
-    @JacksonXmlProperty(localName = "upgrade_in_progress")
-    public String upgradeInProgress;
-
-    @JsonProperty("upgrade_percent_complete")
-    @JacksonXmlProperty(localName = "upgrade_percent_complete")
-    public String upgradePercentComplete;
-
-    public Version version;
-
-    @JsonProperty("virt_service")
-    @JacksonXmlProperty(localName = "virt_service")
-    public String virtService;
-
-    @JsonProperty("vnc_encryption")
-    @JacksonXmlProperty(localName = "vnc_encryption")
-    public String vncEncryption;
-
-    // --- references
-    @JsonProperty("data_center")
-    @JacksonXmlProperty(localName = "data_center")
-    public Ref dataCenter;
-
-    @JsonProperty("mac_pool")
-    @JacksonXmlProperty(localName = "mac_pool")
-    public Ref macPool;
-
-    @JsonProperty("scheduling_policy")
-    @JacksonXmlProperty(localName = "scheduling_policy")
-    public Ref schedulingPolicy;
-
-    // --- actions + links
-    public Actions actions;
-
+    private String name;
+    private String description;
+    private String comment;
+    private String ballooningEnabled;
+    private String biosType;
+    private Cpu cpu;
+    private CustomSchedulingPolicyProperties customSchedulingPolicyProperties;
+    private ErrorHandling errorHandling;
+    private FencingPolicy fencingPolicy;
+    private String fipsMode; // "disabled"
+    private String firewallType; // "firewalld"
+    private String glusterService;
+    private String haReservation;
+    private Ksm ksm;
+    private String logMaxMemoryUsedThreshold;
+    private String logMaxMemoryUsedThresholdType;
+    private MemoryPolicy memoryPolicy;
+    private Migration migration;
+    private RequiredRngSources requiredRngSources;
+    private String switchType;
+    private String threadsAsCores;
+    private String trustedService;
+    private String tunnelMigration;
+    private String upgradeInProgress;
+    private String upgradePercentComplete;
+    private Version version;
+    private String virtService;
+    private String vncEncryption;
+    private Ref dataCenter;
+    private Ref macPool;
+    private Ref schedulingPolicy;
+    private Actions actions;
     @JacksonXmlElementWrapper(useWrapping = false)
-    public List<Link> link;
+    private List<Link> link;
 
-    public Cluster() {}
+    public String getName() {
+        return name;
+    }
 
-    // ===== nested DTOs =====
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static final class ClusterCpu {
-        public String architecture;
-        public String type;
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public String getBallooningEnabled() {
+        return ballooningEnabled;
+    }
+
+    public void setBallooningEnabled(String ballooningEnabled) {
+        this.ballooningEnabled = ballooningEnabled;
+    }
+
+    public String getBiosType() {
+        return biosType;
+    }
+
+    public void setBiosType(String biosType) {
+        this.biosType = biosType;
+    }
+
+    public Cpu getCpu() {
+        return cpu;
+    }
+
+    public void setCpu(Cpu cpu) {
+        this.cpu = cpu;
+    }
+
+    public CustomSchedulingPolicyProperties getCustomSchedulingPolicyProperties() {
+        return customSchedulingPolicyProperties;
+    }
+
+    public void setCustomSchedulingPolicyProperties(CustomSchedulingPolicyProperties customSchedulingPolicyProperties) {
+        this.customSchedulingPolicyProperties = customSchedulingPolicyProperties;
+    }
+
+    public ErrorHandling getErrorHandling() {
+        return errorHandling;
+    }
+
+    public void setErrorHandling(ErrorHandling errorHandling) {
+        this.errorHandling = errorHandling;
+    }
+
+    public FencingPolicy getFencingPolicy() {
+        return fencingPolicy;
+    }
+
+    public void setFencingPolicy(FencingPolicy fencingPolicy) {
+        this.fencingPolicy = fencingPolicy;
+    }
+
+    public String getFipsMode() {
+        return fipsMode;
+    }
+
+    public void setFipsMode(String fipsMode) {
+        this.fipsMode = fipsMode;
+    }
+
+    public String getFirewallType() {
+        return firewallType;
+    }
+
+    public void setFirewallType(String firewallType) {
+        this.firewallType = firewallType;
+    }
+
+    public String getGlusterService() {
+        return glusterService;
+    }
+
+    public void setGlusterService(String glusterService) {
+        this.glusterService = glusterService;
+    }
+
+    public String getHaReservation() {
+        return haReservation;
+    }
+
+    public void setHaReservation(String haReservation) {
+        this.haReservation = haReservation;
+    }
+
+    public Ksm getKsm() {
+        return ksm;
+    }
+
+    public void setKsm(Ksm ksm) {
+        this.ksm = ksm;
+    }
+
+    public String getLogMaxMemoryUsedThreshold() {
+        return logMaxMemoryUsedThreshold;
+    }
+
+    public void setLogMaxMemoryUsedThreshold(String logMaxMemoryUsedThreshold) {
+        this.logMaxMemoryUsedThreshold = logMaxMemoryUsedThreshold;
+    }
+
+    public String getLogMaxMemoryUsedThresholdType() {
+        return logMaxMemoryUsedThresholdType;
+    }
+
+    public void setLogMaxMemoryUsedThresholdType(String logMaxMemoryUsedThresholdType) {
+        this.logMaxMemoryUsedThresholdType = logMaxMemoryUsedThresholdType;
+    }
+
+    public MemoryPolicy getMemoryPolicy() {
+        return memoryPolicy;
+    }
+
+    public void setMemoryPolicy(MemoryPolicy memoryPolicy) {
+        this.memoryPolicy = memoryPolicy;
+    }
+
+    public Migration getMigration() {
+        return migration;
+    }
+
+    public void setMigration(Migration migration) {
+        this.migration = migration;
+    }
+
+    public RequiredRngSources getRequiredRngSources() {
+        return requiredRngSources;
+    }
+
+    public void setRequiredRngSources(RequiredRngSources requiredRngSources) {
+        this.requiredRngSources = requiredRngSources;
+    }
+
+    public String getSwitchType() {
+        return switchType;
+    }
+
+    public void setSwitchType(String switchType) {
+        this.switchType = switchType;
+    }
+
+    public String getThreadsAsCores() {
+        return threadsAsCores;
+    }
+
+    public void setThreadsAsCores(String threadsAsCores) {
+        this.threadsAsCores = threadsAsCores;
+    }
+
+    public String getTrustedService() {
+        return trustedService;
+    }
+
+    public void setTrustedService(String trustedService) {
+        this.trustedService = trustedService;
+    }
+
+    public String getTunnelMigration() {
+        return tunnelMigration;
+    }
+
+    public void setTunnelMigration(String tunnelMigration) {
+        this.tunnelMigration = tunnelMigration;
+    }
+
+    public String getUpgradeInProgress() {
+        return upgradeInProgress;
+    }
+
+    public void setUpgradeInProgress(String upgradeInProgress) {
+        this.upgradeInProgress = upgradeInProgress;
+    }
+
+    public String getUpgradePercentComplete() {
+        return upgradePercentComplete;
+    }
+
+    public void setUpgradePercentComplete(String upgradePercentComplete) {
+        this.upgradePercentComplete = upgradePercentComplete;
+    }
+
+    public Version getVersion() {
+        return version;
+    }
+
+    public void setVersion(Version version) {
+        this.version = version;
+    }
+
+    public String getVirtService() {
+        return virtService;
+    }
+
+    public void setVirtService(String virtService) {
+        this.virtService = virtService;
+    }
+
+    public String getVncEncryption() {
+        return vncEncryption;
+    }
+
+    public void setVncEncryption(String vncEncryption) {
+        this.vncEncryption = vncEncryption;
+    }
+
+    public Ref getDataCenter() {
+        return dataCenter;
+    }
+
+    public void setDataCenter(Ref dataCenter) {
+        this.dataCenter = dataCenter;
+    }
+
+    public Ref getMacPool() {
+        return macPool;
+    }
+
+    public void setMacPool(Ref macPool) {
+        this.macPool = macPool;
+    }
+
+    public Ref getSchedulingPolicy() {
+        return schedulingPolicy;
+    }
+
+    public void setSchedulingPolicy(Ref schedulingPolicy) {
+        this.schedulingPolicy = schedulingPolicy;
+    }
+
+    public Actions getActions() {
+        return actions;
+    }
+
+    public void setActions(Actions actions) {
+        this.actions = actions;
+    }
+
+    public List<Link> getLink() {
+        return link;
+    }
+
+    public void setLink(List<Link> link) {
+        this.link = link;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static final class CustomSchedulingPolicyProperties {
         @JacksonXmlElementWrapper(useWrapping = false)
-        @JsonProperty("property")
         public List<Property> property;
     }
 
@@ -173,29 +340,15 @@ public final class Cluster {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static final class ErrorHandling {
-        @JsonProperty("on_error")
-        @JacksonXmlProperty(localName = "on_error")
         public String onError; // "migrate"
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static final class FencingPolicy {
         public String enabled;
-
-        @JsonProperty("skip_if_connectivity_broken")
-        @JacksonXmlProperty(localName = "skip_if_connectivity_broken")
         public SkipIfConnectivityBroken skipIfConnectivityBroken;
-
-        @JsonProperty("skip_if_gluster_bricks_up")
-        @JacksonXmlProperty(localName = "skip_if_gluster_bricks_up")
         public String skipIfGlusterBricksUp;
-
-        @JsonProperty("skip_if_gluster_quorum_not_met")
-        @JacksonXmlProperty(localName = "skip_if_gluster_quorum_not_met")
         public String skipIfGlusterQuorumNotMet;
-
-        @JsonProperty("skip_if_sd_active")
-        @JacksonXmlProperty(localName = "skip_if_sd_active")
         public SkipIfSdActive skipIfSdActive;
     }
 
@@ -213,20 +366,12 @@ public final class Cluster {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static final class Ksm {
         public String enabled;
-
-        @JsonProperty("merge_across_nodes")
-        @JacksonXmlProperty(localName = "merge_across_nodes")
         public String mergeAcrossNodes;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static final class MemoryPolicy {
-        @JsonProperty("over_commit")
-        @JacksonXmlProperty(localName = "over_commit")
         public OverCommit overCommit;
-
-        @JsonProperty("transparent_hugepages")
-        @JacksonXmlProperty(localName = "transparent_hugepages")
         public TransparentHugepages transparentHugepages;
     }
 
@@ -242,39 +387,22 @@ public final class Cluster {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static final class Migration {
-        @JsonProperty("auto_converge")
-        @JacksonXmlProperty(localName = "auto_converge")
         public String autoConverge;
-
         public Bandwidth bandwidth;
-
         public String compressed;
         public String encrypted;
-
-        @JsonProperty("parallel_migrations_policy")
-        @JacksonXmlProperty(localName = "parallel_migrations_policy")
         public String parallelMigrationsPolicy;
-
         public Ref policy;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static final class Bandwidth {
-        @JsonProperty("assignment_method")
-        @JacksonXmlProperty(localName = "assignment_method")
         public String assignmentMethod;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static final class RequiredRngSources {
-        @JsonProperty("required_rng_source")
         @JacksonXmlElementWrapper(useWrapping = false)
         public List<String> requiredRngSource;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static final class Version {
-        public String major;
-        public String minor;
     }
 }

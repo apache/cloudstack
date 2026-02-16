@@ -27,8 +27,10 @@ import org.apache.cloudstack.veeam.api.ClustersRouteHandler;
 import org.apache.cloudstack.veeam.api.DataCentersRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.Cluster;
+import org.apache.cloudstack.veeam.api.dto.Cpu;
 import org.apache.cloudstack.veeam.api.dto.Link;
 import org.apache.cloudstack.veeam.api.dto.Ref;
+import org.apache.cloudstack.veeam.api.dto.Version;
 
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.dc.ClusterVO;
@@ -43,115 +45,113 @@ public class ClusterVOToClusterConverter {
         // - Prefer: store a UUID in details table and reuse it
         // - Fallback: name-based UUID from "cluster:<id>"
         final String clusterId = vo.getUuid();
-        c.id = clusterId;
-        c.href = basePath + ClustersRouteHandler.BASE_ROUTE + "/" + clusterId;
+        c.setId(clusterId);
+        c.setHref(basePath + ClustersRouteHandler.BASE_ROUTE + "/" + clusterId);
 
-        c.name = vo.getName();
-        c.description = vo.getName();
-        c.comment = "";
+        c.setName(vo.getName());
 
         // --- sensible defaults (match your sample)
-        c.ballooningEnabled = "true";
-        c.biosType = "q35_ovmf"; // or "q35_secure_boot" if you want to align with VM BIOS you saw
-        c.fipsMode = "disabled";
-        c.firewallType = "firewalld";
-        c.glusterService = "false";
-        c.haReservation = "false";
-        c.switchType = "legacy";
-        c.threadsAsCores = "false";
-        c.trustedService = "false";
-        c.tunnelMigration = "false";
-        c.upgradeInProgress = "false";
-        c.upgradePercentComplete = "0";
-        c.virtService = "true";
-        c.vncEncryption = "false";
-        c.logMaxMemoryUsedThreshold = "95";
-        c.logMaxMemoryUsedThresholdType = "percentage";
+        c.setBallooningEnabled("true");
+        c.setBiosType("q35_ovmf"); // or "q35_secure_boot" if you want to align with VM BIOS you saw
+        c.setFipsMode("disabled");
+        c.setFirewallType("firewalld");
+        c.setGlusterService("false");
+        c.setHaReservation("false");
+        c.setSwitchType("legacy");
+        c.setThreadsAsCores("false");
+        c.setTrustedService("false");
+        c.setTunnelMigration("false");
+        c.setUpgradeInProgress("false");
+        c.setUpgradePercentComplete("0");
+        c.setVirtService("true");
+        c.setVncEncryption("false");
+        c.setLogMaxMemoryUsedThreshold("95");
+        c.setLogMaxMemoryUsedThresholdType("percentage");
 
         // --- cpu (best-effort defaults)
-        final Cluster.ClusterCpu cpu = new Cluster.ClusterCpu();
-        cpu.architecture = "x86_64";
-        cpu.type = "x86_64"; // replace if you can detect host cpu model
-        c.cpu = cpu;
+        final Cpu cpu = new Cpu();
+        cpu.setArchitecture("x86_64");
+        cpu.setType("x86_64"); // replace if you can detect host cpu model
+        c.setCpu(cpu);
 
         // --- version (ovirt engine version; keep fixed unless you want to expose something else)
-        final Cluster.Version ver = new Cluster.Version();
-        ver.major = "4";
-        ver.minor = "8";
-        c.version = ver;
+        final Version ver = new Version();
+        ver.setMajor(4);
+        ver.setMinor(8);
+        c.setVersion(ver);
 
         // --- ksm / memory policy (defaults)
-        c.ksm = new Cluster.Ksm();
-        c.ksm.enabled = "true";
-        c.ksm.mergeAcrossNodes = "true";
+        c.setKsm(new Cluster.Ksm());
+        c.getKsm().enabled = "true";
+        c.getKsm().mergeAcrossNodes = "true";
 
-        c.memoryPolicy = new Cluster.MemoryPolicy();
-        c.memoryPolicy.overCommit = new Cluster.OverCommit();
-        c.memoryPolicy.overCommit.percent = "100";
-        c.memoryPolicy.transparentHugepages = new Cluster.TransparentHugepages();
-        c.memoryPolicy.transparentHugepages.enabled = "true";
+        c.setMemoryPolicy(new Cluster.MemoryPolicy());
+        c.getMemoryPolicy().overCommit = new Cluster.OverCommit();
+        c.getMemoryPolicy().overCommit.percent = "100";
+        c.getMemoryPolicy().transparentHugepages = new Cluster.TransparentHugepages();
+        c.getMemoryPolicy().transparentHugepages.enabled = "true";
 
         // --- migration defaults
-        c.migration = new Cluster.Migration();
-        c.migration.autoConverge = "inherit";
-        c.migration.bandwidth = new Cluster.Bandwidth();
-        c.migration.bandwidth.assignmentMethod = "auto";
-        c.migration.compressed = "inherit";
-        c.migration.encrypted = "inherit";
-        c.migration.parallelMigrationsPolicy = "disabled";
+        c.setMigration(new Cluster.Migration());
+        c.getMigration().autoConverge = "inherit";
+        c.getMigration().bandwidth = new Cluster.Bandwidth();
+        c.getMigration().bandwidth.assignmentMethod = "auto";
+        c.getMigration().compressed = "inherit";
+        c.getMigration().encrypted = "inherit";
+        c.getMigration().parallelMigrationsPolicy = "disabled";
         // policy ref (dummy but valid shape)
-        c.migration.policy = Ref.of(basePath + "/migrationpolicies/" + stableUuid("migrationpolicy:default"),
+        c.getMigration().policy = Ref.of(basePath + "/migrationpolicies/" + stableUuid("migrationpolicy:default"),
                 stableUuid("migrationpolicy:default")
         );
 
         // --- rng sources
-        c.requiredRngSources = new Cluster.RequiredRngSources();
-        c.requiredRngSources.requiredRngSource = Collections.singletonList("urandom");
+        c.setRequiredRngSources(new Cluster.RequiredRngSources());
+        c.getRequiredRngSources().requiredRngSource = Collections.singletonList("urandom");
 
         // --- error handling
-        c.errorHandling = new Cluster.ErrorHandling();
-        c.errorHandling.onError = "migrate";
+        c.setErrorHandling(new Cluster.ErrorHandling());
+        c.getErrorHandling().onError = "migrate";
 
         // --- fencing policy defaults
-        c.fencingPolicy = new Cluster.FencingPolicy();
-        c.fencingPolicy.enabled = "true";
-        c.fencingPolicy.skipIfConnectivityBroken = new Cluster.SkipIfConnectivityBroken();
-        c.fencingPolicy.skipIfConnectivityBroken.enabled = "false";
-        c.fencingPolicy.skipIfConnectivityBroken.threshold = "50";
-        c.fencingPolicy.skipIfGlusterBricksUp = "false";
-        c.fencingPolicy.skipIfGlusterQuorumNotMet = "false";
-        c.fencingPolicy.skipIfSdActive = new Cluster.SkipIfSdActive();
-        c.fencingPolicy.skipIfSdActive.enabled = "false";
+        c.setFencingPolicy(new Cluster.FencingPolicy());
+        c.getFencingPolicy().enabled = "true";
+        c.getFencingPolicy().skipIfConnectivityBroken = new Cluster.SkipIfConnectivityBroken();
+        c.getFencingPolicy().skipIfConnectivityBroken.enabled = "false";
+        c.getFencingPolicy().skipIfConnectivityBroken.threshold = "50";
+        c.getFencingPolicy().skipIfGlusterBricksUp = "false";
+        c.getFencingPolicy().skipIfGlusterQuorumNotMet = "false";
+        c.getFencingPolicy().skipIfSdActive = new Cluster.SkipIfSdActive();
+        c.getFencingPolicy().skipIfSdActive.enabled = "false";
 
         // --- scheduling policy props (optional; dummy ok)
-        c.customSchedulingPolicyProperties = new Cluster.CustomSchedulingPolicyProperties();
+        c.setCustomSchedulingPolicyProperties(new Cluster.CustomSchedulingPolicyProperties());
         final Cluster.Property p1 = new Cluster.Property(); p1.name = "HighUtilization"; p1.value = "80";
         final Cluster.Property p2 = new Cluster.Property(); p2.name = "CpuOverCommitDurationMinutes"; p2.value = "2";
-        c.customSchedulingPolicyProperties.property = List.of(p1, p2);
+        c.getCustomSchedulingPolicyProperties().property = List.of(p1, p2);
 
         // --- data_center ref mapping (CloudStack cluster -> pod -> zone)
         if (dataCenterResolver != null) {
             final DataCenterJoinVO zone = dataCenterResolver.apply(vo.getDataCenterId());
             if (zone != null) {
-                c.dataCenter = Ref.of(basePath + DataCentersRouteHandler.BASE_ROUTE + "/" + zone.getUuid(), zone.getUuid());
+                c.setDataCenter(Ref.of(basePath + DataCentersRouteHandler.BASE_ROUTE + "/" + zone.getUuid(), zone.getUuid()));
             }
         }
 
         // --- mac pool & scheduling policy refs (dummy but consistent)
-        c.macPool = Ref.of(basePath + "/macpools/" + stableUuid("macpool:default"),
-                stableUuid("macpool:default"));
-        c.schedulingPolicy = Ref.of(basePath + "/schedulingpolicies/" + stableUuid("schedpolicy:default"),
-                stableUuid("schedpolicy:default"));
+        c.setMacPool(Ref.of(basePath + "/macpools/" + stableUuid("macpool:default"),
+                stableUuid("macpool:default")));
+        c.setSchedulingPolicy(Ref.of(basePath + "/schedulingpolicies/" + stableUuid("schedpolicy:default"),
+                stableUuid("schedpolicy:default")));
 
         // --- actions.links (can be omitted; but Veeam sometimes expects actions to exist)
         final Actions actions = new Actions();
-        actions.link = Collections.emptyList();
-        c.actions = actions;
+        actions.setLink(Collections.emptyList());
+        c.setActions(actions);
 
         // --- related links (optional)
-        c.link = List.of(
-                new Link("networks", c.href + "/networks")
-        );
+        c.setLink(List.of(
+                Link.of("networks", c.getHref() + "/networks")
+        ));
 
         return c;
     }

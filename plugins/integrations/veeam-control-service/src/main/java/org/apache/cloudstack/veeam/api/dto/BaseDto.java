@@ -42,6 +42,6 @@ public class BaseDto {
     }
 
     public static Link getActionLink(final String action, final String baseHref) {
-        return new Link(action, baseHref + "/" + action);
+        return Link.of(action, baseHref + "/" + action);
     }
 }

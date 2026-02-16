@@ -85,9 +85,6 @@ public class ImageTransferVOToImageTransferConverter {
     }
 
     private static Link getLink(ImageTransfer it, String rel) {
-        final Link link = new Link();
-        link.rel = rel;
-        link.href = it.getHref() + "/" + rel;
-        return link;
+        return Link.of(rel, it.getHref() + "/" + rel);
     }
 }

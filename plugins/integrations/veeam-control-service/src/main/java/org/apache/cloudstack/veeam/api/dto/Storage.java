@@ -18,25 +18,53 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Storage {
 
-    public String type;        // nfs / glance
+    private String type;
+    private String address;
+    private String path;
+    private String mountOptions;
+    private String nfsVersion;
 
-    // nfs-ish fields (optional)
-    public String address;
-    public String path;
+    public String getType() {
+        return type;
+    }
 
-    @JsonProperty("mount_options")
-    @JacksonXmlProperty(localName = "mount_options")
-    public String mountOptions;
+    public void setType(String type) {
+        this.type = type;
+    }
 
-    @JsonProperty("nfs_version")
-    @JacksonXmlProperty(localName = "nfs_version")
-    public String nfsVersion;
+    public String getAddress() {
+        return address;
+    }
 
-    public Storage() {}
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getMountOptions() {
+        return mountOptions;
+    }
+
+    public void setMountOptions(String mountOptions) {
+        this.mountOptions = mountOptions;
+    }
+
+    public String getNfsVersion() {
+        return nfsVersion;
+    }
+
+    public void setNfsVersion(String nfsVersion) {
+        this.nfsVersion = nfsVersion;
+    }
 }

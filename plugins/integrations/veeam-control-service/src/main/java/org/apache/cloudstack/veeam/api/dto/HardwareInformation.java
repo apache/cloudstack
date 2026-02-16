@@ -18,23 +18,13 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class HardwareInformation {
-    @JsonProperty("manufacturer")
     private String manufacturer;
-
-    @JsonProperty("product_name")
     private String productName;
-
-    @JsonProperty("serial_number")
     private String serialNumber;
-
-    @JsonProperty("uuid")
     private String uuid;
-
-    @JsonProperty("version")
     private String version;
 
     public String getManufacturer() { return manufacturer; }

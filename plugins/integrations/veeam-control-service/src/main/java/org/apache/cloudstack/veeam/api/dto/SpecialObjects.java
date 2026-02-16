@@ -18,16 +18,26 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class SpecialObjects {
 
-    @JacksonXmlProperty(localName = "blank_template")
-    public SpecialObjectRef blankTemplate;
+    private Ref blankTemplate;
+    private Ref rootTag;
 
-    @JacksonXmlProperty(localName = "root_tag")
-    public SpecialObjectRef rootTag;
+    public Ref getBlankTemplate() {
+        return blankTemplate;
+    }
 
-    public SpecialObjects() {}
+    public void setBlankTemplate(Ref blankTemplate) {
+        this.blankTemplate = blankTemplate;
+    }
+
+    public Ref getRootTag() {
+        return rootTag;
+    }
+
+    public void setRootTag(Ref rootTag) {
+        this.rootTag = rootTag;
+    }
 }

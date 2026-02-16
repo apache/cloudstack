@@ -17,24 +17,22 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
-
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "disk_attachments")
 public final class DiskAttachments {
 
-    @JsonProperty("disk_attachment")
     @JacksonXmlElementWrapper(useWrapping = false)
-    public List<DiskAttachment> diskAttachment;
-
-    public DiskAttachments() {}
+    private List<DiskAttachment> diskAttachment;
 
     public DiskAttachments(final List<DiskAttachment> diskAttachment) {
         this.diskAttachment = diskAttachment;
+    }
+
+    public List<DiskAttachment> getDiskAttachment() {
+        return diskAttachment;
     }
 }

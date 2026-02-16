@@ -24,8 +24,8 @@ import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.BaseDto;
-import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
+import org.apache.cloudstack.veeam.api.dto.Vm;
 
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -36,7 +36,7 @@ public class VmSnapshotVOToSnapshotConverter {
         final Snapshot snapshot = new Snapshot();
         snapshot.setId(vmSnapshotVO.getUuid());
         snapshot.setHref(basePath + VmsRouteHandler.BASE_ROUTE + "/" + vmUuid + "/snapshots/" + vmSnapshotVO.getUuid());
-        snapshot.setVm(Ref.of(basePath + VmsRouteHandler.BASE_ROUTE + "/" + vmUuid, vmUuid));
+        snapshot.setVm(Vm.of(basePath + VmsRouteHandler.BASE_ROUTE + "/" + vmUuid, vmUuid));
         snapshot.setDescription(vmSnapshotVO.getDescription());
         snapshot.setSnapshotType("active");
         snapshot.setDate(vmSnapshotVO.getCreated().getTime());

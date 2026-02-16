@@ -22,5 +22,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BootMenu {
 
-    public String enabled = "false";
+    private String enabled = "false";
+
+    public String getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(String enabled) {
+        this.enabled = enabled;
+    }
 }

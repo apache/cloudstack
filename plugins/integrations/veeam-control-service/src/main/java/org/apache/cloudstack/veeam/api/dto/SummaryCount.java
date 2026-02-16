@@ -18,21 +18,23 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class SummaryCount {
 
-    @JacksonXmlProperty(localName = "active")
-    public Integer active;
-
-    @JacksonXmlProperty(localName = "total")
-    public Integer total;
-
-    public SummaryCount() {}
+    private Integer active;
+    private Integer total;
 
     public SummaryCount(Integer active, Integer total) {
         this.active = active;
         this.total = total;
+    }
+
+    public Integer getActive() {
+        return active;
+    }
+
+    public Integer getTotal() {
+        return total;
     }
 }

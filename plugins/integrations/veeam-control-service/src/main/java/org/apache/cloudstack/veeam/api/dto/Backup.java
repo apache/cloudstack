@@ -17,20 +17,69 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+public class Backup extends BaseDto {
 
-public class Backup {
+    private String name;
+    private String description;
+    private Long creationDate;
+    private Vm vm;
+    private String phase;
+    private String fromCheckpointId;
+    private String toCheckpointId;
 
-    @JsonProperty("creation_date")
-    @JacksonXmlProperty(localName = "creation_date")
-    private String creationDate;
+    public String getName() {
+        return name;
+    }
 
-    public String getCreationDate() {
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Long getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(String creationDate) {
+    public void setCreationDate(Long creationDate) {
         this.creationDate = creationDate;
+    }
+
+    public Vm getVm() {
+        return vm;
+    }
+
+    public void setVm(Vm vm) {
+        this.vm = vm;
+    }
+
+    public String getPhase() {
+        return phase;
+    }
+
+    public void setPhase(String phase) {
+        this.phase = phase;
+    }
+
+    public String getFromCheckpointId() {
+        return fromCheckpointId;
+    }
+
+    public void setFromCheckpointId(String fromCheckpointId) {
+        this.fromCheckpointId = fromCheckpointId;
+    }
+
+    public String getToCheckpointId() {
+        return toCheckpointId;
+    }
+
+    public void setToCheckpointId(String toCheckpointId) {
+        this.toCheckpointId = toCheckpointId;
     }
 }

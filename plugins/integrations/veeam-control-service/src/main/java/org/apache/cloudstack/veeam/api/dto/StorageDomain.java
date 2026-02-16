@@ -20,81 +20,217 @@ package org.apache.cloudstack.veeam.api.dto;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "storage_domain")
-public final class StorageDomain {
+public final class StorageDomain extends BaseDto {
 
-    // Identifiers
-    public String id;
-    public String href;
-
-    public String name;
-    public String description;
-    public String comment;
-
-    // oVirt returns these as strings in your sample
-    public String available;
-    public String used;
-    public String committed;
-
-    @JsonProperty("block_size")
-    @JacksonXmlProperty(localName = "block_size")
-    public String blockSize;
-
-    @JsonProperty("warning_low_space_indicator")
-    @JacksonXmlProperty(localName = "warning_low_space_indicator")
-    public String warningLowSpaceIndicator;
-
-    @JsonProperty("critical_space_action_blocker")
-    @JacksonXmlProperty(localName = "critical_space_action_blocker")
-    public String criticalSpaceActionBlocker;
-
-    public String status;          // e.g. "unattached" (optional in your first object)
-    public String type;            // data / image / iso / export
-
-    public String master;          // "true"/"false"
-    public String backup;          // "true"/"false"
-
-    @JsonProperty("external_status")
-    @JacksonXmlProperty(localName = "external_status")
-    public String externalStatus;  // "ok"
-
-    @JsonProperty("storage_format")
-    @JacksonXmlProperty(localName = "storage_format")
-    public String storageFormat;   // v5 / v1
-
-    @JsonProperty("discard_after_delete")
-    @JacksonXmlProperty(localName = "discard_after_delete")
-    public String discardAfterDelete;
-
-    @JsonProperty("wipe_after_delete")
-    @JacksonXmlProperty(localName = "wipe_after_delete")
-    public String wipeAfterDelete;
-
-    @JsonProperty("supports_discard")
-    @JacksonXmlProperty(localName = "supports_discard")
-    public String supportsDiscard;
-
-    @JsonProperty("supports_discard_zeroes_data")
-    @JacksonXmlProperty(localName = "supports_discard_zeroes_data")
-    public String supportsDiscardZeroesData;
-
-    // Nested
-    public Storage storage;
-
-    @JsonProperty("data_centers")
-    @JacksonXmlProperty(localName = "data_centers")
-    public DataCenters dataCenters;
-
-    public Actions actions;
-
+    private String name;
+    private String description;
+    private String comment;
+    private String available;
+    private String used;
+    private String committed;
+    private String blockSize;
+    private String warningLowSpaceIndicator;
+    private String criticalSpaceActionBlocker;
+    private String status;          // e.g. "unattached" (optional in your first object)
+    private String type;            // data / image / iso / export
+    private String master;          // "true"/"false"
+    private String backup;          // "true"/"false"
+    private String externalStatus;  // "ok"
+    private String storageFormat;   // v5 / v1
+    private String discardAfterDelete;
+    private String wipeAfterDelete;
+    private String supportsDiscard;
+    private String supportsDiscardZeroesData;
+    private Storage storage;
+    private DataCenters dataCenters;
+    private Actions actions;
     @JacksonXmlElementWrapper(useWrapping = false)
-    public List<Link> link;
+    private List<Link> link;
 
-    public StorageDomain() {}
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public String getAvailable() {
+        return available;
+    }
+
+    public void setAvailable(String available) {
+        this.available = available;
+    }
+
+    public String getUsed() {
+        return used;
+    }
+
+    public void setUsed(String used) {
+        this.used = used;
+    }
+
+    public String getCommitted() {
+        return committed;
+    }
+
+    public void setCommitted(String committed) {
+        this.committed = committed;
+    }
+
+    public String getBlockSize() {
+        return blockSize;
+    }
+
+    public void setBlockSize(String blockSize) {
+        this.blockSize = blockSize;
+    }
+
+    public String getWarningLowSpaceIndicator() {
+        return warningLowSpaceIndicator;
+    }
+
+    public void setWarningLowSpaceIndicator(String warningLowSpaceIndicator) {
+        this.warningLowSpaceIndicator = warningLowSpaceIndicator;
+    }
+
+    public String getCriticalSpaceActionBlocker() {
+        return criticalSpaceActionBlocker;
+    }
+
+    public void setCriticalSpaceActionBlocker(String criticalSpaceActionBlocker) {
+        this.criticalSpaceActionBlocker = criticalSpaceActionBlocker;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getMaster() {
+        return master;
+    }
+
+    public void setMaster(String master) {
+        this.master = master;
+    }
+
+    public String getBackup() {
+        return backup;
+    }
+
+    public void setBackup(String backup) {
+        this.backup = backup;
+    }
+
+    public String getExternalStatus() {
+        return externalStatus;
+    }
+
+    public void setExternalStatus(String externalStatus) {
+        this.externalStatus = externalStatus;
+    }
+
+    public String getStorageFormat() {
+        return storageFormat;
+    }
+
+    public void setStorageFormat(String storageFormat) {
+        this.storageFormat = storageFormat;
+    }
+
+    public String getDiscardAfterDelete() {
+        return discardAfterDelete;
+    }
+
+    public void setDiscardAfterDelete(String discardAfterDelete) {
+        this.discardAfterDelete = discardAfterDelete;
+    }
+
+    public String getWipeAfterDelete() {
+        return wipeAfterDelete;
+    }
+
+    public void setWipeAfterDelete(String wipeAfterDelete) {
+        this.wipeAfterDelete = wipeAfterDelete;
+    }
+
+    public String getSupportsDiscard() {
+        return supportsDiscard;
+    }
+
+    public void setSupportsDiscard(String supportsDiscard) {
+        this.supportsDiscard = supportsDiscard;
+    }
+
+    public String getSupportsDiscardZeroesData() {
+        return supportsDiscardZeroesData;
+    }
+
+    public void setSupportsDiscardZeroesData(String supportsDiscardZeroesData) {
+        this.supportsDiscardZeroesData = supportsDiscardZeroesData;
+    }
+
+    public Storage getStorage() {
+        return storage;
+    }
+
+    public void setStorage(Storage storage) {
+        this.storage = storage;
+    }
+
+    public DataCenters getDataCenters() {
+        return dataCenters;
+    }
+
+    public void setDataCenters(DataCenters dataCenters) {
+        this.dataCenters = dataCenters;
+    }
+
+    public Actions getActions() {
+        return actions;
+    }
+
+    public void setActions(Actions actions) {
+        this.actions = actions;
+    }
+
+    public List<Link> getLink() {
+        return link;
+    }
+
+    public void setLink(List<Link> link) {
+        this.link = link;
+    }
 }

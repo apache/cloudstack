@@ -17,97 +17,39 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Host {
+public class Host extends BaseDto {
 
-    @JsonProperty("address")
     private String address;
-
-    @JsonProperty("auto_numa_status")
     private String autoNumaStatus;
-
-    @JsonProperty("certificate")
     private Certificate certificate;
-
-    @JsonProperty("cpu")
     private Cpu cpu;
-
-    @JsonProperty("external_status")
     private String externalStatus;
-
-    @JsonProperty("hardware_information")
     private HardwareInformation hardwareInformation;
-
-    @JsonProperty("kdump_status")
     private String kdumpStatus;
-
-    @JsonProperty("libvirt_version")
     private Version libvirtVersion;
-
-    @JsonProperty("max_scheduling_memory")
     private String maxSchedulingMemory;
-
-    @JsonProperty("memory")
     private String memory;
-
-    @JsonProperty("numa_supported")
     private String numaSupported;
-
-    @JsonProperty("os")
     private Os os;
-
-    @JsonProperty("port")
     private String port;
-
-    @JsonProperty("protocol")
     private String protocol;
-
-    @JsonProperty("reinstallation_required")
     private String reinstallationRequired;
-
-    @JsonProperty("status")
     private String status;
-
-    @JsonProperty("summary")
     private ApiSummary summary;
-
-    @JsonProperty("type")
     private String type;
-
-    @JsonProperty("update_available")
     private String updateAvailable;
-
-    @JsonProperty("version")
     private Version version;
-
-    @JsonProperty("vgpu_placement")
     private String vgpuPlacement;
-
-    @JsonProperty("cluster")
     private Ref cluster;
-
-    @JsonProperty("actions")
     private Actions actions;
-
-    @JsonProperty("name")
     private String name;
-
-    @JsonProperty("comment")
     private String comment;
-
-    @JsonProperty("link")
     private List<Link> link;
-
-    @JsonProperty("href")
-    private String href;
-
-    @JsonProperty("id")
-    private String id;
 
     // getters/setters (generate via IDE)
     public String getAddress() { return address; }
@@ -162,8 +104,4 @@ public class Host {
     public void setComment(String comment) { this.comment = comment; }
     public List<Link> getLink() { return link; }
     public void setLink(List<Link> link) { this.link = link; }
-    public String getHref() { return href; }
-    public void setHref(String href) { this.href = href; }
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
 }

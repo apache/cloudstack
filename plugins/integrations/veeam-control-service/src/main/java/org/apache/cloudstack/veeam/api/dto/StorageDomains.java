@@ -30,10 +30,13 @@ public final class StorageDomains {
 
     @JsonProperty("storage_domain")
     @JacksonXmlElementWrapper(useWrapping = false)
-    public List<StorageDomain> storageDomain;
+    private List<StorageDomain> storageDomain;
 
-    public StorageDomains() {}
-    public StorageDomains(List<StorageDomain> storageDomain) {
+    public List<StorageDomain> getStorageDomain() {
+        return storageDomain;
+    }
+
+    public void setStorageDomain(List<StorageDomain> storageDomain) {
         this.storageDomain = storageDomain;
     }
 }

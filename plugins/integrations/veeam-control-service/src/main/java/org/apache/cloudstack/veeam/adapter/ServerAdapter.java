@@ -36,7 +36,9 @@ import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.admin.backup.FinalizeBackupCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
+import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
@@ -56,16 +58,19 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.ImageTransfer.Direction;
 import org.apache.cloudstack.backup.ImageTransfer.Format;
 import org.apache.cloudstack.backup.ImageTransferVO;
 import org.apache.cloudstack.backup.IncrementalBackupService;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.veeam.api.converter.AsyncJobJoinVOToJobConverter;
+import org.apache.cloudstack.veeam.api.converter.BackupVOToBackupConverter;
 import org.apache.cloudstack.veeam.api.converter.ClusterVOToClusterConverter;
 import org.apache.cloudstack.veeam.api.converter.DataCenterJoinVOToDataCenterConverter;
 import org.apache.cloudstack.veeam.api.converter.HostJoinVOToHostConverter;
@@ -77,6 +82,8 @@ import org.apache.cloudstack.veeam.api.converter.StoreVOToStorageDomainConverter
 import org.apache.cloudstack.veeam.api.converter.UserVmJoinVOToVmConverter;
 import org.apache.cloudstack.veeam.api.converter.VmSnapshotVOToSnapshotConverter;
 import org.apache.cloudstack.veeam.api.converter.VolumeJoinVOToDiskConverter;
+import org.apache.cloudstack.veeam.api.dto.Backup;
+import org.apache.cloudstack.veeam.api.dto.Checkpoint;
 import org.apache.cloudstack.veeam.api.dto.Cluster;
 import org.apache.cloudstack.veeam.api.dto.DataCenter;
 import org.apache.cloudstack.veeam.api.dto.Disk;
@@ -86,7 +93,6 @@ import org.apache.cloudstack.veeam.api.dto.ImageTransfer;
 import org.apache.cloudstack.veeam.api.dto.Job;
 import org.apache.cloudstack.veeam.api.dto.Network;
 import org.apache.cloudstack.veeam.api.dto.Nic;
-import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
@@ -246,6 +252,9 @@ public class ServerAdapter extends ManagerBase {
     @Inject
     VMSnapshotDao vmSnapshotDao;
 
+    @Inject
+    BackupDao backupDao;
+
     //ToDo: check access on objects
 
     protected Role createServiceAccountRole() {
@@ -353,7 +362,7 @@ public class ServerAdapter extends ManagerBase {
     }
 
     public List<Host> listAllHosts() {
-        final List<HostJoinVO> hosts = hostJoinDao.listAll();
+        final List<HostJoinVO> hosts = hostJoinDao.listRoutingHostsByHypervisor(Hypervisor.HypervisorType.KVM);
         return HostJoinVOToHostConverter.toHostList(hosts);
     }
 
@@ -410,11 +419,11 @@ public class ServerAdapter extends ManagerBase {
         if (request == null) {
             throw new InvalidParameterValueException("Request disk data is empty");
         }
-        String name = request.name;
+        String name = request.getName();
         Long zoneId = null;
         Long clusterId = null;
-        if (request.cluster != null && StringUtils.isNotEmpty(request.cluster.id)) {
-            ClusterVO clusterVO = clusterDao.findByUuid(request.cluster.id);
+        if (request.getCluster() != null && StringUtils.isNotEmpty(request.getCluster().getId())) {
+            ClusterVO clusterVO = clusterDao.findByUuid(request.getCluster().getId());
             if (clusterVO != null) {
                 zoneId = clusterVO.getDataCenterId();
                 clusterId = clusterVO.getId();
@@ -425,14 +434,14 @@ public class ServerAdapter extends ManagerBase {
         }
         Integer cpu = null;
         try {
-            cpu = request.cpu.topology.sockets;
+            cpu = request.getCpu().getTopology().getSockets();
         } catch (Exception ignored) {}
         if (cpu == null) {
             throw new InvalidParameterValueException("CPU topology sockets must be specified");
         }
         Long memory = null;
         try {
-            memory = Long.valueOf(request.memory);
+            memory = Long.valueOf(request.getMemory());
         } catch (Exception ignored) {}
         if (memory == null) {
             throw new InvalidParameterValueException("Memory must be specified");
@@ -443,7 +452,7 @@ public class ServerAdapter extends ManagerBase {
         }
         ApiConstants.BootType bootType = ApiConstants.BootType.BIOS;
         ApiConstants.BootMode bootMode = ApiConstants.BootMode.LEGACY;
-        if (request.bios != null && StringUtils.isNotEmpty(request.bios.type) && request.bios.type.contains("secure")) {
+        if (request.getBios() != null && StringUtils.isNotEmpty(request.getBios().getType()) && request.getBios().getType().contains("secure")) {
             bootType = ApiConstants.BootType.UEFI;
             bootMode = ApiConstants.BootMode.SECURE;
         }
@@ -618,6 +627,40 @@ public class ServerAdapter extends ManagerBase {
         return VolumeJoinVOToDiskConverter.toDisk(vo);
     }
 
+    public Disk copyDisk(String uuid) {
+        throw new InvalidParameterValueException("Copy Disk with ID " + uuid + " not implemented");
+//        VolumeVO vo = volumeDao.findByUuid(uuid);
+//        if (vo == null) {
+//            throw new InvalidParameterValueException("Disk with ID " + uuid + " not found");
+//        }
+//        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+//        CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
+//        try {
+//            Volume volume = volumeApiService.copyVolume(vo.getId(), vo.getName() + "_copy", null, null);
+//            VolumeJoinVO copiedVolumeVO = volumeJoinDao.findById(volume.getId());
+//            return VolumeJoinVOToDiskConverter.toDisk(copiedVolumeVO);
+//        } finally {
+//            CallContext.unregister();
+//        }
+    }
+
+    public Disk reduceDisk(String uuid) {
+        throw new InvalidParameterValueException("Reduce Disk with ID " + uuid + " not implemented");
+//        VolumeVO vo = volumeDao.findByUuid(uuid);
+//        if (vo == null) {
+//            throw new InvalidParameterValueException("Disk with ID " + uuid + " not found");
+//        }
+//        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+//        CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
+//        try {
+//            Volume volume = volumeApiService.reduceDisk(vo.getId(), vo.getName() + "_copy", null, null);
+//            VolumeJoinVO copiedVolumeVO = volumeJoinDao.findById(volume.getId());
+//            return VolumeJoinVOToDiskConverter.toDisk(copiedVolumeVO);
+//        } finally {
+//            CallContext.unregister();
+//        }
+    }
+
     protected List<DiskAttachment> listDiskAttachmentsByInstanceId(final long instanceId) {
         List<VolumeJoinVO> kvmVolumes = volumeJoinDao.listByInstanceId(instanceId);
         return VolumeJoinVOToDiskConverter.toDiskAttachmentList(kvmVolumes);
@@ -636,12 +679,12 @@ public class ServerAdapter extends ManagerBase {
         if (vmVo == null) {
             throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
         }
-        if (request == null || request.disk == null || StringUtils.isEmpty(request.disk.id)) {
+        if (request == null || request.getDisk() == null || StringUtils.isEmpty(request.getDisk().getId())) {
             throw new InvalidParameterValueException("Request disk data is empty");
         }
-        VolumeVO volumeVO = volumeDao.findByUuid(request.disk.id);
+        VolumeVO volumeVO = volumeDao.findByUuid(request.getDisk().getId());
         if (volumeVO == null) {
-            throw new InvalidParameterValueException("Disk with ID " + request.disk.id + " not found");
+            throw new InvalidParameterValueException("Disk with ID " + request.getDisk().getId() + " not found");
         }
         Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
         CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
@@ -666,23 +709,23 @@ public class ServerAdapter extends ManagerBase {
         if (request == null) {
             throw new InvalidParameterValueException("Request disk data is empty");
         }
-        String name = request.name;
+        String name = request.getName();
         if (StringUtils.isBlank(name) && !name.startsWith("Veeam_KvmBackupDisk_")) {
             throw new InvalidParameterValueException("Only worker VM disk creation is supported");
         }
-        if (request.storageDomains == null || CollectionUtils.isEmpty(request.storageDomains.storageDomain) ||
-                request.storageDomains.storageDomain.size() > 1) {
+        if (request.getStorageDomains() == null || CollectionUtils.isEmpty(request.getStorageDomains().getStorageDomain()) ||
+                request.getStorageDomains().getStorageDomain().size() > 1) {
             throw new InvalidParameterValueException("Exactly one storage domain must be specified");
         }
-        Ref domain = request.storageDomains.storageDomain.get(0);
-        if (domain == null || domain.id == null) {
+        StorageDomain domain = request.getStorageDomains().getStorageDomain().get(0);
+        if (domain == null || domain.getId() == null) {
             throw new InvalidParameterValueException("Storage domain ID must be specified");
         }
-        StoragePoolVO pool = primaryDataStoreDao.findByUuid(domain.id);
+        StoragePoolVO pool = primaryDataStoreDao.findByUuid(domain.getId());
         if (pool == null) {
-            throw new InvalidParameterValueException("Storage domain with ID " + domain.id + " not found");
+            throw new InvalidParameterValueException("Storage domain with ID " + domain.getId() + " not found");
         }
-        String sizeStr = request.provisionedSize;
+        String sizeStr = request.getProvisionedSize();
         if (StringUtils.isBlank(sizeStr)) {
             throw new InvalidParameterValueException("Provisioned size must be specified");
         }
@@ -697,9 +740,9 @@ public class ServerAdapter extends ManagerBase {
         }
         provisionedSizeInGb = Math.max(1L, provisionedSizeInGb / (1024L * 1024L * 1024L));
         Long initialSize = null;
-        if (StringUtils.isNotBlank(request.initialSize)) {
+        if (StringUtils.isNotBlank(request.getInitialSize())) {
             try {
-                initialSize = Long.parseLong(request.initialSize);
+                initialSize = Long.parseLong(request.getInitialSize());
             } catch (NumberFormatException ignored) {}
         }
         Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
@@ -763,12 +806,12 @@ public class ServerAdapter extends ManagerBase {
         if (vmVo == null) {
             throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
         }
-        if (request == null || request.getVnicProfile() == null || StringUtils.isEmpty(request.getVnicProfile().id)) {
+        if (request == null || request.getVnicProfile() == null || StringUtils.isEmpty(request.getVnicProfile().getId())) {
             throw new InvalidParameterValueException("Request nic data is empty");
         }
-        NetworkVO networkVO = networkDao.findByUuid(request.getVnicProfile().id);
+        NetworkVO networkVO = networkDao.findByUuid(request.getVnicProfile().getId());
         if (networkVO == null) {
-            throw new InvalidParameterValueException("VNic profile " + request.getVnicProfile().id+ " not found");
+            throw new InvalidParameterValueException("VNic profile " + request.getVnicProfile().getId() + " not found");
         }
         Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
         CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
@@ -808,12 +851,12 @@ public class ServerAdapter extends ManagerBase {
         if (request == null) {
             throw new InvalidParameterValueException("Request image transfer data is empty");
         }
-        if (request.getDisk() == null || StringUtils.isBlank(request.getDisk().id)) {
+        if (request.getDisk() == null || StringUtils.isBlank(request.getDisk().getId())) {
             throw new InvalidParameterValueException("Disk ID must be specified");
         }
-        VolumeJoinVO volumeVO = volumeJoinDao.findByUuid(request.getDisk().id);
+        VolumeJoinVO volumeVO = volumeJoinDao.findByUuid(request.getDisk().getId());
         if (volumeVO == null) {
-            throw new InvalidParameterValueException("Disk with ID " + request.getDisk().id + " not found");
+            throw new InvalidParameterValueException("Disk with ID " + request.getDisk().getId() + " not found");
         }
         Direction direction = EnumUtils.fromString(Direction.class, request.getDirection());
         if (direction == null) {
@@ -973,5 +1016,162 @@ public class ServerAdapter extends ManagerBase {
             CallContext.unregister();
         }
         return action;
+    }
+
+    public ResourceAction revertToSnapshot(String uuid) {
+        throw new InvalidParameterValueException("revertToSnapshot with ID " + uuid + " not implemented");
+//        ResourceAction action = null;
+//        VMSnapshotVO vo = vmSnapshotDao.findByUuid(uuid);
+//        if (vo == null) {
+//            throw new InvalidParameterValueException("Snapshot with ID " + uuid + " not found");
+//        }
+//        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+//        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
+//        try {
+//            RevertToVMSnapshotCmd cmd = new RevertToVMSnapshotCmd();
+//            ComponentContext.inject(cmd);
+//            Map<String, String> params = new HashMap<>();
+//            params.put(ApiConstants.VM_SNAPSHOT_ID, vo.getUuid());
+//            ApiServerService.AsyncCmdResult result =
+//                    apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
+//                            serviceUserAccount.second());
+//            AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
+//            if (jobVo == null) {
+//                throw new CloudRuntimeException("Failed to find job for snapshot revert");
+//            }
+//            action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
+//        } catch (Exception e) {
+//            throw new CloudRuntimeException("Failed to revert to snapshot: " + e.getMessage(), e);
+//        } finally {
+//            CallContext.unregister();
+//        }
+//        return action;
+    }
+
+    public List<Backup> listBackupsByInstanceUuid(final String uuid) {
+        UserVmVO vo = userVmDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
+        }
+        List<BackupVO> backups = backupDao.searchByVmIds(List.of(vo.getId()));
+        return BackupVOToBackupConverter.toBackupList(backups, id -> vo);
+    }
+
+    public Backup createInstanceBackup(final String vmUuid, final Backup request) {
+        UserVmVO vmVo = userVmDao.findByUuid(vmUuid);
+        if (vmVo == null) {
+            throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
+        }
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
+        try {
+            CreateBackupCmd cmd = new CreateBackupCmd();
+            ComponentContext.inject(cmd);
+            Map<String, String> params = new HashMap<>();
+            params.put(ApiConstants.VIRTUAL_MACHINE_ID, vmVo.getUuid());
+            params.put(ApiConstants.NAME, request.getName());
+            params.put(ApiConstants.DESCRIPTION, request.getDescription());
+            ApiServerService.AsyncCmdResult result =
+                    apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
+                            serviceUserAccount.second());
+            if (result.objectId == null) {
+                throw new CloudRuntimeException("No backup ID returned");
+            }
+            BackupVO vo = backupDao.findById(result.objectId);
+            if (vo == null) {
+                throw new CloudRuntimeException("Backup not found");
+            }
+            return BackupVOToBackupConverter.toBackup(vo, id -> vmVo);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to create backup: " + e.getMessage(), e);
+        } finally {
+            CallContext.unregister();
+        }
+    }
+
+    public Backup getBackup(String uuid) {
+        BackupVO vo = backupDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("Backup with ID " + uuid + " not found");
+        }
+        return BackupVOToBackupConverter.toBackup(vo, id -> userVmDao.findById(id));
+    }
+
+    public List<Disk> listDisksByBackupUuid(final String uuid) {
+        throw new InvalidParameterValueException("List Backup Disks with ID " + uuid + " not implmenented");
+//        BackupVO vo = backupDao.findByUuid(uuid);
+//        if (vo == null) {
+//            throw new InvalidParameterValueException("Backup with ID " + uuid + " not found");
+//        }
+//        return VolumeJoinVOToDiskConverter.toDiskList(volumes);
+    }
+
+    public void finalizeBackup(final String vmUuid, final String uuid, String data) {
+        ResourceAction action = null;
+        UserVmVO vmVo = userVmDao.findByUuid(vmUuid);
+        if (vmVo == null) {
+            throw new InvalidParameterValueException("Instance with ID " + vmUuid + " not found");
+        }
+        BackupVO vo = backupDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("Backup with ID " + uuid + " not found");
+        }
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
+        try {
+            FinalizeBackupCmd cmd = new FinalizeBackupCmd();
+            ComponentContext.inject(cmd);
+            Map<String, String> params = new HashMap<>();
+            params.put(ApiConstants.VIRTUAL_MACHINE_ID, vmVo.getUuid());
+            params.put(ApiConstants.BACKUP_ID, vo.getUuid());
+            boolean result = incrementalBackupService.finalizeBackup(cmd);
+            if (!result) {
+                throw new CloudRuntimeException("Failed to finalize backup");
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to finalize backup: " + e.getMessage(), e);
+        } finally {
+            CallContext.unregister();
+        }
+    }
+
+    public List<Checkpoint> listCheckpointsByInstanceUuid(final String uuid) {
+        throw new InvalidParameterValueException("Checkpoints for VM with ID " + uuid + " not implemented");
+//        UserVmVO vo = userVmDao.findByUuid(uuid);
+//        if (vo == null) {
+//            throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
+//        }
+//        List<CheckpointVO> checkpoints = checkpointDao.findByVmId(vo.getId());
+//        return CheckpointVOToCheckpointConverter.toCheckpointList(checkpoints, vo.getUuid());
+    }
+
+    public ResourceAction deleteCheckpoint(String uuid, boolean async) {
+        throw new InvalidParameterValueException("Delete Checkpoint with ID " + uuid + " not implemented");
+//        ResourceAction action = null;
+//        CheckpointVO vo = checkpointDao.findByUuid(uuid);
+//        if (vo == null) {
+//            throw new InvalidParameterValueException("Checkpoint with ID " + uuid + " not found");
+//        }
+//        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+//        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
+//        try {
+//            DeleteCheckpointCmd cmd = new DeleteCheckpointCmd();
+//            ComponentContext.inject(cmd);
+//            Map<String, String> params = new HashMap<>();
+//            params.put(ApiConstants.CHECKPOINT_ID, vo.getUuid());
+//            ApiServerService.AsyncCmdResult result =
+//                    apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
+//                            serviceUserAccount.second());
+//            AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
+//            if (jobVo == null) {
+//                throw new CloudRuntimeException("Failed to find job for checkpoint deletion");
+//            }
+//            action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
+//        } catch (Exception e) {
+//            throw new CloudRuntimeException("Failed to delete checkpoint: " + e.getMessage(), e);
+//        } finally {
+//            CallContext.unregister();
+//        }
+//        return action;
     }
 }

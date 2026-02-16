@@ -18,19 +18,35 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class ProductInfo {
 
-    @JacksonXmlProperty(localName = "instance_id")
-    public String instanceId;
-
-    @JacksonXmlProperty(localName = "name")
+    private String instanceId;
     public String name;
-
-    @JacksonXmlProperty(localName = "version")
     public Version version;
 
-    public ProductInfo() {}
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Version getVersion() {
+        return version;
+    }
+
+    public void setVersion(Version version) {
+        this.version = version;
+    }
 }

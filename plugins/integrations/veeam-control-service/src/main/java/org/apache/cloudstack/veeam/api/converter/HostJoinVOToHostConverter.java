@@ -68,12 +68,7 @@ public class HostJoinVOToHostConverter {
         final Cpu cpu = new Cpu();
 
 
-        final Topology topo = new Topology();
-        // oVirt topology: sockets/cores/threads. We approximate.
-        // If CloudStack has cpuNumber = total cores, treat as sockets count w/ 1 core, 1 thread.
-        topo.sockets = vo.getCpuSockets();
-        topo.cores = vo.getCpus();
-        topo.threads = 1;
+        final Topology topo = new Topology(vo.getCpuSockets(), vo.getCpus(), 1);
 
         // --- Memory ---
         h.setMemory(String.valueOf(vo.getTotalMemory()));

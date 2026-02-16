@@ -18,22 +18,44 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class ApiSummary {
 
-    @JacksonXmlProperty(localName = "hosts")
-    public SummaryCount hosts;
+    private SummaryCount hosts;
+    private SummaryCount storageDomains;
+    private SummaryCount users;
+    private SummaryCount vms;
 
-    @JacksonXmlProperty(localName = "storage_domains")
-    public SummaryCount storageDomains;
+    public SummaryCount getHosts() {
+        return hosts;
+    }
 
-    @JacksonXmlProperty(localName = "users")
-    public SummaryCount users;
+    public void setHosts(SummaryCount hosts) {
+        this.hosts = hosts;
+    }
 
-    @JacksonXmlProperty(localName = "vms")
-    public SummaryCount vms;
+    public SummaryCount getStorageDomains() {
+        return storageDomains;
+    }
 
-    public ApiSummary() {}
+    public void setStorageDomains(SummaryCount storageDomains) {
+        this.storageDomains = storageDomains;
+    }
+
+    public SummaryCount getUsers() {
+        return users;
+    }
+
+    public void setUsers(SummaryCount users) {
+        this.users = users;
+    }
+
+    public SummaryCount getVms() {
+        return vms;
+    }
+
+    public void setVms(SummaryCount vms) {
+        this.vms = vms;
+    }
 }

@@ -30,6 +30,9 @@ import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
 import org.apache.cloudstack.veeam.api.dto.Link;
 import org.apache.cloudstack.veeam.api.dto.Ref;
+import org.apache.cloudstack.veeam.api.dto.StorageDomain;
+import org.apache.cloudstack.veeam.api.dto.StorageDomains;
+import org.apache.cloudstack.veeam.api.dto.Vm;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.VolumeJoinVO;
@@ -45,22 +48,22 @@ public class VolumeJoinVOToDiskConverter {
         final String diskId = vol.getUuid();
         final String diskHref = basePath + DisksRouteHandler.BASE_ROUTE + "/" + diskId;
 
-        disk.id = diskId;
-        disk.href = diskHref;
+        disk.setId(diskId);
+        disk.setHref(diskHref);
         disk.setBootable(String.valueOf(Volume.Type.ROOT.equals(vol.getVolumeType())));
 
         // Names
-        disk.name = vol.getName();
-        disk.alias = vol.getName();
-        disk.description = vol.getName();
+        disk.setName(vol.getName());
+        disk.setAlias(vol.getName());
+        disk.setDescription(vol.getName());
 
         // Sizes (bytes)
         final long size = vol.getSize();
         final long actualSize = vol.getVolumeStoreSize();
 
-        disk.provisionedSize = String.valueOf(size);
-        disk.actualSize = String.valueOf(actualSize);
-        disk.totalSize = String.valueOf(size);
+        disk.setProvisionedSize(String.valueOf(size));
+        disk.setActualSize(String.valueOf(actualSize));
+        disk.setTotalSize(String.valueOf(size));
         VolumeStats vs = null;
         if (List.of(Storage.ImageFormat.VHD, Storage.ImageFormat.QCOW2, Storage.ImageFormat.RAW).contains(vol.getFormat())) {
             if (vol.getPath() != null) {
@@ -72,56 +75,54 @@ public class VolumeJoinVOToDiskConverter {
             }
         }
         if (vs != null) {
-            disk.totalSize = String.valueOf(vs.getVirtualSize());
-            disk.actualSize = String.valueOf(vs.getPhysicalSize());
+            disk.setTotalSize(String.valueOf(vs.getVirtualSize()));
+            disk.setActualSize(String.valueOf(vs.getPhysicalSize()));
         }
 
         // Disk format
-        disk.format = mapFormat(vol.getFormat());
-        disk.qcowVersion = "qcow2_v3";
+        disk.setFormat(mapFormat(vol.getFormat()));
+        disk.setQcowVersion("qcow2_v3");
 
         // Content & storage
-        disk.contentType = "data";
-        disk.storageType = "image";
-        disk.sparse = "true";
-        disk.shareable = "false";
+        disk.setContentType("data");
+        disk.setStorageType("image");
+        disk.setSparse("true");
+        disk.setShareable("false");
 
         // Status
-        disk.status = mapStatus(vol.getState());
+        disk.setStatus(mapStatus(vol.getState()));
 
         // Backup-related flags (safe defaults)
-        disk.backup = "none";
-        disk.propagateErrors = "false";
-        disk.wipeAfterDelete = "false";
+        disk.setBackup("none");
+        disk.setPropagateErrors("false");
+        disk.setWipeAfterDelete("false");
 
         // Image ID (best-effort)
-        disk.imageId = vol.getPath(); // acceptable placeholder
+        disk.setImageId(vol.getPath()); // acceptable placeholder
 
         // Disk profile (optional)
-        disk.diskProfile = Ref.of(
+        disk.setDiskProfile(Ref.of(
                 apiBasePath + "/diskprofiles/" + vol.getDiskOfferingUuid(),
                 String.valueOf(vol.getDiskOfferingUuid())
-        );
+        ));
 
         // Storage domains
         if (vol.getPoolUuid() != null) {
-            Disk.StorageDomains sds = new Disk.StorageDomains();
-            sds.storageDomain = List.of(
-                    Ref.of(
-                            apiBasePath + "/storagedomains/" + vol.getPoolUuid(),
-                            vol.getPoolUuid()
-                    )
-            );
-            disk.storageDomains = sds;
+            StorageDomains sds = new StorageDomains();
+            StorageDomain sd = new StorageDomain();
+            sd.setHref(apiBasePath + "/storagedomains/" + vol.getPoolUuid());
+            sd.setId(vol.getPoolUuid());
+            sds.setStorageDomain(List.of(sd));
+            disk.setStorageDomains(sds);
         }
 
         // Actions (Veeam checks presence, not behavior)
-        disk.actions = defaultDiskActions(diskHref);
+        disk.setActions(defaultDiskActions(diskHref));
 
         // Links
-        disk.link = List.of(
-                new Link("disksnapshots", diskHref + "/disksnapshots")
-        );
+        disk.setLink(List.of(
+                Link.of("disksnapshots", diskHref + "/disksnapshots")
+        ));
 
         return disk;
     }
@@ -137,24 +138,21 @@ public class VolumeJoinVOToDiskConverter {
         final String basePath = VeeamControlService.ContextPath.value();
 
         final String diskAttachmentId = vol.getUuid();
-        da.vm = Ref.of(
-                basePath + VmsRouteHandler.BASE_ROUTE + "/" + vol.getVmUuid(),
-                vol.getVmUuid()
-        );
+        da.setVm(Vm.of(basePath + VmsRouteHandler.BASE_ROUTE + "/" + vol.getVmUuid(), vol.getVmUuid()));
 
-        da.id = diskAttachmentId;
-        da.href = da.vm.href + "/diskattachments/" + diskAttachmentId;;
+        da.setId(diskAttachmentId);
+        da.setHref(da.getVm().getHref() + "/diskattachments/" + diskAttachmentId);;
 
         // Links
-        da.disk = toDisk(vol);
+        da.setDisk(toDisk(vol));
 
         // Properties
-        da.active = "true";
-        da.bootable = "false";
-        da.iface = "virtio_scsi";
-        da.logicalName = vol.getName();
-        da.readOnly = "false";
-        da.passDiscard = "false";
+        da.setActive("true");
+        da.setBootable(String.valueOf(Volume.Type.ROOT.equals(vol.getVolumeType())));
+        da.setIface("virtio_scsi");
+        da.setLogicalName(vol.getName());
+        da.setReadOnly("false");
+        da.setPassDiscard("false");
 
         return da;
     }

@@ -17,21 +17,21 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
-public class ReportedDevice extends BaseDto {
-    private String comment;
-    private String description;
-    private Ips ips;
-    private Mac Mac;
-    private String name;
-    private String type;
-    private Vm vm;
+public class Checkpoint extends BaseDto {
 
-    public String getComment() {
-        return comment;
+    private String name;
+    private String description;
+    private String creationDate;
+    private Vm vm;
+    private String state;
+    private String parentId;
+
+    public String getName() {
+        return name;
     }
 
-    public void setComment(String comment) {
-        this.comment = comment;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getDescription() {
@@ -42,36 +42,12 @@ public class ReportedDevice extends BaseDto {
         this.description = description;
     }
 
-    public Ips getIps() {
-        return ips;
+    public String getCreationDate() {
+        return creationDate;
     }
 
-    public void setIps(Ips ips) {
-        this.ips = ips;
-    }
-
-    public Mac getMac() {
-        return Mac;
-    }
-
-    public void setMac(Mac mac) {
-        Mac = mac;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
+    public void setCreationDate(String creationDate) {
+        this.creationDate = creationDate;
     }
 
     public Vm getVm() {
@@ -80,5 +56,21 @@ public class ReportedDevice extends BaseDto {
 
     public void setVm(Vm vm) {
         this.vm = vm;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
     }
 }

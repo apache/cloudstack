@@ -90,6 +90,23 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
                     handleDeleteById(id, resp, outFormat, io);
                     return;
                 }
+            } else if (idAndSubPath.size() == 2) {
+                String subPath = idAndSubPath.get(1);
+                if ("copy".equals(subPath)) {
+                    if ("POST".equalsIgnoreCase(method)) {
+                        handlePostDiskCopy(id, req, resp, outFormat, io);
+                    } else {
+                        io.methodNotAllowed(resp, "POST", outFormat);
+                    }
+                    return;
+                } else if ("reduce".equals(subPath)) {
+                    if ("POST".equalsIgnoreCase(method)) {
+                        handlePostDiskReduce(id, req, resp, outFormat, io);
+                    } else {
+                        io.methodNotAllowed(resp, "POST", outFormat);
+                    }
+                    return;
+                }
             }
         }
 
@@ -132,6 +149,26 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
         try {
             serverAdapter.deleteDisk(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, "Deleted disk ID: " + id, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handlePostDiskCopy(final String id, final HttpServletRequest req, final HttpServletResponse resp,
+                                  final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        try {
+            Disk response = serverAdapter.copyDisk(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handlePostDiskReduce(final String id, final HttpServletRequest req, final HttpServletResponse resp,
+                                  final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        try {
+            Disk response = serverAdapter.reduceDisk(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.badRequest(resp, e.getMessage(), outFormat);
         }

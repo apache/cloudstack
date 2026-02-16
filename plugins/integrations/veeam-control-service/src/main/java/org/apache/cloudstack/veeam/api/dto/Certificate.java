@@ -18,14 +18,10 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Certificate {
-    @JsonProperty("organization")
     private String organization;
-
-    @JsonProperty("subject")
     private String subject;
 
     public String getOrganization() { return organization; }
