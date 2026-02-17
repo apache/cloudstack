@@ -30,7 +30,6 @@ import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.Backup;
 import org.apache.cloudstack.veeam.api.dto.Checkpoint;
-import org.apache.cloudstack.veeam.api.dto.Checkpoints;
 import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachments;
@@ -208,7 +207,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                     return;
                 } else if ("checkpoints".equals(subPath)) {
                     if ("DELETE".equalsIgnoreCase(method)) {
-                        handleDeleteCheckpointById(subId, req, resp, outFormat, io);
+                        handleDeleteCheckpoint(id, subId, resp, outFormat, io);
                     } else {
                         io.methodNotAllowed(resp, "DELETE", outFormat);
                     }
@@ -545,25 +544,19 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
               final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         try {
             List<Checkpoint> checkpoints = serverAdapter.listCheckpointsByInstanceUuid(id);
-            Checkpoints response = new Checkpoints(checkpoints);
+            NamedList<Checkpoint> response = NamedList.of("checkpoints", checkpoints);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
         }
     }
 
-    protected void handleDeleteCheckpointById(final String id, final HttpServletRequest req,
+    protected void handleDeleteCheckpoint(final String vmId, final String checkpointId,
                 final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
-        String asyncStr = req.getParameter("async");
-        boolean async = !Boolean.FALSE.toString().equals(asyncStr);
         try {
-            ResourceAction action = serverAdapter.deleteCheckpoint(id, async);
-            if (action != null) {
-                io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, action, outFormat);
-            } else {
-                io.getWriter().write(resp, HttpServletResponse.SC_OK, null, outFormat);
-            }
+            serverAdapter.deleteCheckpoint(vmId, checkpointId);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, null, outFormat);
         } catch (CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);
         }

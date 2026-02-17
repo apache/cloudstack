@@ -32,6 +32,7 @@ import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.ReportedDevice;
 import org.apache.cloudstack.veeam.api.dto.ReportedDevices;
 import org.apache.cloudstack.veeam.api.dto.Vm;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -76,17 +77,19 @@ public class NicVOToNicConverter {
         device.setName("eth0");
         device.setDescription(String.format("%s device", vo.getReserver()));
         device.setMac(mac);
-        Ip ip = new Ip();
-        if (vo.getIPv4Address() != null) {
-            ip.setAddress(vo.getIPv4Address());
-            ip.setGateway(vo.getIPv4Gateway());
-            ip.setVersion("v4");
-        } else if (vo.getIPv6Address() != null) {
-            ip.setAddress(vo.getIPv6Address());
-            ip.setGateway(vo.getIPv6Gateway());
-            ip.setVersion("v6");
+        if (ObjectUtils.anyNotNull(vo.getIPv4Address(), vo.getIPv6Address())) {
+            Ip ip = new Ip();
+            if (vo.getIPv4Address() != null) {
+                ip.setAddress(vo.getIPv4Address());
+                ip.setGateway(vo.getIPv4Gateway());
+                ip.setVersion("v4");
+            } else if (vo.getIPv6Address() != null) {
+                ip.setAddress(vo.getIPv6Address());
+                ip.setGateway(vo.getIPv6Gateway());
+                ip.setVersion("v6");
+            }
+            device.setIps(new Ips(List.of(ip)));
         }
-        device.setIps(new Ips(List.of(ip)));
         device.setHref(vm.getHref() + "/reporteddevices/" + vo.getUuid());
         device.setVm(vm);
         return device;

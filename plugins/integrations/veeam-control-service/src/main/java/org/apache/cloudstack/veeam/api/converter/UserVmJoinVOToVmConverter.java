@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
-import org.apache.cloudstack.veeam.api.JobsRouteHandler;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.BaseDto;
@@ -40,7 +39,6 @@ import org.apache.cloudstack.veeam.api.dto.Os;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.Topology;
 import org.apache.cloudstack.veeam.api.dto.Vm;
-import org.apache.cloudstack.veeam.api.dto.VmAction;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.query.vo.HostJoinVO;
@@ -154,15 +152,6 @@ public final class UserVmJoinVOToVmConverter {
         return srcList.stream()
                 .map(v -> toVm(v, hostResolver, null, null))
                 .collect(Collectors.toList());
-    }
-
-    public static VmAction toVmAction(final UserVmJoinVO vm) {
-        VmAction action = new VmAction();
-        final String basePath = VeeamControlService.ContextPath.value();
-        action.setVm(toVm(vm, null, null, null));
-        action.setJob(Ref.of(basePath + JobsRouteHandler.BASE_ROUTE + vm.getUuid(), vm.getUuid()));
-        action.setStatus("complete");
-        return action;
     }
 
     private static String mapStatus(final VirtualMachine.State state) {

@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -37,6 +38,7 @@ import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.admin.backup.DeleteVmCheckpointCmd;
 import org.apache.cloudstack.api.command.admin.backup.FinalizeBackupCmd;
 import org.apache.cloudstack.api.command.admin.backup.StartBackupCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
@@ -84,6 +86,7 @@ import org.apache.cloudstack.veeam.api.converter.NetworkVOToVnicProfileConverter
 import org.apache.cloudstack.veeam.api.converter.NicVOToNicConverter;
 import org.apache.cloudstack.veeam.api.converter.StoreVOToStorageDomainConverter;
 import org.apache.cloudstack.veeam.api.converter.UserVmJoinVOToVmConverter;
+import org.apache.cloudstack.veeam.api.converter.UserVmVOToCheckpointConverter;
 import org.apache.cloudstack.veeam.api.converter.VmSnapshotVOToSnapshotConverter;
 import org.apache.cloudstack.veeam.api.converter.VolumeJoinVOToDiskConverter;
 import org.apache.cloudstack.veeam.api.dto.Backup;
@@ -442,7 +445,7 @@ public class ServerAdapter extends ManagerBase {
         }
         Integer cpu = null;
         try {
-            cpu = request.getCpu().getTopology().getSockets();
+            cpu = Integer.valueOf(request.getCpu().getTopology().getSockets());
         } catch (Exception ignored) {}
         if (cpu == null) {
             throw new InvalidParameterValueException("CPU topology sockets must be specified");
@@ -1078,9 +1081,8 @@ public class ServerAdapter extends ManagerBase {
         if (vmVo == null) {
             throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
         }
-        // Register a context as resource owner
-        Account account = accountService.getAccount(vmVo.getAccountId());
-        CallContext ctx = CallContext.register(vmVo.getUserId(), vmVo.getAccountId());
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             StartBackupCmd cmd = new StartBackupCmd();
             ComponentContext.inject(cmd);
@@ -1089,8 +1091,8 @@ public class ServerAdapter extends ManagerBase {
             params.put(ApiConstants.NAME, request.getName());
             params.put(ApiConstants.DESCRIPTION, request.getDescription());
             ApiServerService.AsyncCmdResult result =
-                    apiServerService.processAsyncCmd(cmd, params, ctx, vmVo.getUserId(), account);
-            if (result.objectId == null) {
+                    apiServerService.processAsyncCmd(cmd, params, ctx, vmVo.getUserId(), serviceUserAccount.second());
+            if (result == null || result.objectId == null) {
                 throw new CloudRuntimeException("Unexpected backup ID returned");
             }
             BackupVO vo = backupDao.findById(result.objectId);
@@ -1169,14 +1171,16 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("Backup with ID " + backupUuid + " not found");
         }
         Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
-        CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
+        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             FinalizeBackupCmd cmd = new FinalizeBackupCmd();
             ComponentContext.inject(cmd);
-            cmd.setBackupId(backup.getId());
-            cmd.setVmId(vm.getId());
-            boolean result = incrementalBackupService.finalizeBackup(cmd);
-            if (!result) {
+            Map<String, String> params = new HashMap<>();
+            params.put(ApiConstants.VIRTUAL_MACHINE_ID, vm.getUuid());
+            params.put(ApiConstants.ID, backup.getUuid());
+            ApiServerService.AsyncCmdResult result =
+                    apiServerService.processAsyncCmd(cmd, params, ctx, vm.getUserId(), serviceUserAccount.second());
+            if (result == null) {
                 throw new CloudRuntimeException("Failed to finalize backup");
             }
             backup = backupDao.findById(backup.getId());
@@ -1197,42 +1201,37 @@ public class ServerAdapter extends ManagerBase {
     }
 
     public List<Checkpoint> listCheckpointsByInstanceUuid(final String uuid) {
-        throw new InvalidParameterValueException("Checkpoints for VM with ID " + uuid + " not implemented");
-//        UserVmVO vo = userVmDao.findByUuid(uuid);
-//        if (vo == null) {
-//            throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
-//        }
-//        List<CheckpointVO> checkpoints = checkpointDao.findByVmId(vo.getId());
-//        return CheckpointVOToCheckpointConverter.toCheckpointList(checkpoints, vo.getUuid());
+        UserVmVO vo = userVmDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
+        }
+        Checkpoint checkpoint = UserVmVOToCheckpointConverter.toCheckpoint(vo);
+        if (checkpoint == null) {
+            return Collections.emptyList();
+        }
+        return List.of(checkpoint);
     }
 
-    public ResourceAction deleteCheckpoint(String uuid, boolean async) {
-        throw new InvalidParameterValueException("Delete Checkpoint with ID " + uuid + " not implemented");
-//        ResourceAction action = null;
-//        CheckpointVO vo = checkpointDao.findByUuid(uuid);
-//        if (vo == null) {
-//            throw new InvalidParameterValueException("Checkpoint with ID " + uuid + " not found");
-//        }
-//        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
-//        CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
-//        try {
-//            DeleteCheckpointCmd cmd = new DeleteCheckpointCmd();
-//            ComponentContext.inject(cmd);
-//            Map<String, String> params = new HashMap<>();
-//            params.put(ApiConstants.CHECKPOINT_ID, vo.getUuid());
-//            ApiServerService.AsyncCmdResult result =
-//                    apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
-//                            serviceUserAccount.second());
-//            AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
-//            if (jobVo == null) {
-//                throw new CloudRuntimeException("Failed to find job for checkpoint deletion");
-//            }
-//            action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
-//        } catch (Exception e) {
-//            throw new CloudRuntimeException("Failed to delete checkpoint: " + e.getMessage(), e);
-//        } finally {
-//            CallContext.unregister();
-//        }
-//        return action;
+    public void deleteCheckpoint(String vmUuid, String checkpointId) {
+        UserVmVO vo = userVmDao.findByUuid(vmUuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
+        }
+        if (!Objects.equals(vo.getActiveCheckpointId(), checkpointId)) {
+            logger.warn("Checkpoint ID {} does not match active checkpoint for VM {}", checkpointId, vmUuid);
+            return;
+        }
+        Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
+        CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
+        try {
+            DeleteVmCheckpointCmd cmd = new DeleteVmCheckpointCmd();
+            ComponentContext.inject(cmd);
+            cmd.setVmId(vo.getId());
+            incrementalBackupService.deleteVmCheckpoint(cmd);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to delete checkpoint: " + e.getMessage(), e);
+        } finally {
+            CallContext.unregister();
+        }
     }
 }

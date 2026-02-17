@@ -22,19 +22,22 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class SummaryCount {
 
-    private Integer active;
-    private Integer total;
+    private String active;
+    private String total;
 
-    public SummaryCount(Integer active, Integer total) {
-        this.active = active;
-        this.total = total;
+    public SummaryCount() {
     }
 
-    public Integer getActive() {
+    public SummaryCount(Integer active, Integer total) {
+        this.active = String.valueOf(active);
+        this.total = String.valueOf(total);
+    }
+
+    public String getActive() {
         return active;
     }
 
-    public Integer getTotal() {
+    public String getTotal() {
         return total;
     }
 }

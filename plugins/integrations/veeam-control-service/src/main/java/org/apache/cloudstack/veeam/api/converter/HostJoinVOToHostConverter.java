@@ -66,7 +66,7 @@ public class HostJoinVOToHostConverter {
 
         // --- CPU ---
         final Cpu cpu = new Cpu();
-        cpu.setSpeed(Math.toIntExact(vo.getSpeed()));
+        cpu.setSpeed(String.valueOf(Math.toIntExact(vo.getSpeed())));
         final Topology topo = new Topology(vo.getCpuSockets(), vo.getCpus(), 1);
         cpu.setTopology(topo);
         h.setCpu(cpu);

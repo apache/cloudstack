@@ -21,40 +21,40 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Topology {
-    public Integer sockets;
-    public Integer cores;
-    public Integer threads;
+    public String sockets;
+    public String cores;
+    public String threads;
 
     public Topology() {
     }
 
     public Topology(final Integer sockets, final Integer cores, final Integer threads) {
-        this.sockets = sockets;
-        this.cores = cores;
-        this.threads = threads;
+        this.sockets = String.valueOf(sockets);
+        this.cores = String.valueOf(cores);
+        this.threads = String.valueOf(threads);
     }
 
-    public Integer getSockets() {
+    public String getSockets() {
         return sockets;
     }
 
-    public void setSockets(Integer sockets) {
+    public void setSockets(String sockets) {
         this.sockets = sockets;
     }
 
-    public Integer getCores() {
+    public String getCores() {
         return cores;
     }
 
-    public void setCores(Integer cores) {
+    public void setCores(String cores) {
         this.cores = cores;
     }
 
-    public Integer getThreads() {
+    public String getThreads() {
         return threads;
     }
 
-    public void setThreads(Integer threads) {
+    public void setThreads(String threads) {
         this.threads = threads;
     }
 }
