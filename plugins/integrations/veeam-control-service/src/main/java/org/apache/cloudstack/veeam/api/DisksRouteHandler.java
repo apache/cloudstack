@@ -123,7 +123,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        String data = RouteHandler.getRequestData(req);
+        String data = RouteHandler.getRequestData(req, logger);
         logger.info("Received POST request on /api/disks endpoint. Request-data: {}", data); // ToDo: remove
         try {
             Disk request = io.getMapper().jsonMapper().readValue(data, Disk.class);

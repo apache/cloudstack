@@ -25,13 +25,16 @@ import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Backup;
+import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 
+import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.vm.UserVmVO;
 
 public class BackupVOToBackupConverter {
 
-    public static Backup toBackup(final BackupVO backupVO, final Function<Long, UserVmVO> vmResolver) {
+    public static Backup toBackup(final BackupVO backupVO, final Function<Long, UserVmVO> vmResolver,
+              final Function<Long, HostJoinVO> hostResolver, final Function<BackupVO, List<Disk>> disksResolver) {
         Backup backup = new Backup();
         final String basePath = VeeamControlService.ContextPath.value();
         backup.setHref(basePath + VmsRouteHandler.BASE_ROUTE + "/backups/" + backupVO.getUuid());
@@ -39,13 +42,13 @@ public class BackupVOToBackupConverter {
         backup.setName(backupVO.getName());
         backup.setDescription(backupVO.getDescription());
         backup.setCreationDate(backupVO.getDate().getTime());
-//        backup.setPhase(backupVO.getPhase().name());
-//        if (backupVO.getFromCheckpointId() != null) {
-//            backup.setFromCheckpointId(backupVO.getFromCheckpointId().toString());
-//        }
-//        if (backupVO.getToCheckpointId() != null) {
-//            backup.setToCheckpointId(backupVO.getToCheckpointId().toString());
-//        }
+        backup.setPhase(mapStatusToPhase(backupVO.getStatus()));
+        if (backupVO.getFromCheckpointId() != null) {
+            backup.setFromCheckpointId(backupVO.getFromCheckpointId());
+        }
+        if (backupVO.getToCheckpointId() != null) {
+            backup.setToCheckpointId(backupVO.getToCheckpointId());
+        }
         if (vmResolver != null) {
             final UserVmVO vmVO = vmResolver.apply(backupVO.getVmId());
             if (vmVO != null) {
@@ -55,10 +58,29 @@ public class BackupVOToBackupConverter {
         return backup;
     }
 
-    public static List<Backup> toBackupList(final List<BackupVO> backupVOs, final Function<Long, UserVmVO> vmResolver) {
+    public static List<Backup> toBackupList(final List<BackupVO> backupVOs, final Function<Long, UserVmVO> vmResolver,
+                final Function<Long, HostJoinVO> hostResolver) {
         return backupVOs
                 .stream()
-                .map(backupVO -> toBackup(backupVO, vmResolver))
+                .map(backupVO -> toBackup(backupVO, vmResolver, hostResolver, null))
                 .collect(Collectors.toList());
+    }
+
+    private static String mapStatusToPhase(final BackupVO.Status status) {
+        switch (status) {
+            case Allocated:
+            case Queued:
+                return "initializing";
+            case BackingUp:
+                return "starting";
+            case ReadyForTransfer:
+                return "ready";
+            case FinalizingTransfer:
+                return "finalizing";
+            case Restoring:
+            case BackedUp:
+                return "succeeded";
+        }
+        return "failed";
     }
 }

@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.command.admin.backup.FinalizeImageTransferCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListImageTransfersCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListVmCheckpointsCmd;
 import org.apache.cloudstack.api.command.admin.backup.StartBackupCmd;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.CheckpointResponse;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -45,10 +44,15 @@ public interface IncrementalBackupService extends Configurable, PluggableService
             "The image transfer progress polling interval in seconds.", true, ConfigKey.Scope.Global);
 
     /**
+     * Creates a backup session for a VM
+     */
+    Backup createBackup(StartBackupCmd cmd);
+
+    /**
      * Start a backup session for a VM
      * Creates a new checkpoint and starts NBD server for pull-mode backup
      */
-    BackupResponse startBackup(StartBackupCmd cmd);
+    Backup startBackup(StartBackupCmd cmd);
 
     /**
      * Finalize a backup session

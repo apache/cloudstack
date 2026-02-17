@@ -63,6 +63,14 @@ public class FinalizeBackupCmd extends BaseCmd implements AdminCmd {
         return backupId;
     }
 
+    public void setVmId(Long vmId) {
+        this.vmId = vmId;
+    }
+
+    public void setBackupId(Long backupId) {
+        this.backupId = backupId;
+    }
+
     @Override
     public void execute() {
         boolean result = incrementalBackupService.finalizeBackup(this);

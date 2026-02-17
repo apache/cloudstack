@@ -22,23 +22,32 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.IncrementalBackupService;
 import org.apache.cloudstack.context.CallContext;
+
+import com.cloud.event.EventTypes;
 
 @APICommand(name = "startBackup",
         description = "Start a VM backup session (oVirt-style incremental backup)",
         responseObject = BackupResponse.class,
         since = "4.22.0",
         authorized = {RoleType.Admin})
-public class StartBackupCmd extends BaseCmd implements AdminCmd {
+    public class StartBackupCmd extends BaseAsyncCreateCmd implements AdminCmd {
 
     @Inject
     private IncrementalBackupService incrementalBackupService;
+
+    @Inject
+    private BackupManager backupManager;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -47,19 +56,65 @@ public class StartBackupCmd extends BaseCmd implements AdminCmd {
             description = "ID of the VM")
     private Long vmId;
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            description = "the name of the backup")
+    private String name;
+
+    @Parameter(name = ApiConstants.DESCRIPTION,
+            type = CommandType.STRING,
+            description = "the description for the backup")
+    private String description;
+
     public Long getVmId() {
         return vmId;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
     @Override
     public void execute() {
-        BackupResponse response = incrementalBackupService.startBackup(this);
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
+        try {
+            Backup backup = incrementalBackupService.startBackup(this);
+            BackupResponse response = backupManager.createBackupResponse(backup, null);
+
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        } catch (Exception e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
     }
 
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public void create() {
+        Backup backup = incrementalBackupService.createBackup(this);
+
+        if (backup != null) {
+            setEntityId(backup.getId());
+            setEntityUuid(backup.getUuid());
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Backup");
+        }
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_BACKUP_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Starting backup for Instance " + vmId;
     }
 }

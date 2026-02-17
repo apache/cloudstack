@@ -17,10 +17,12 @@
 
 package org.apache.cloudstack.veeam.api.converter;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
 import org.apache.cloudstack.veeam.api.DisksRouteHandler;
@@ -131,6 +133,21 @@ public class VolumeJoinVOToDiskConverter {
         return srcList.stream()
                 .map(VolumeJoinVOToDiskConverter::toDisk)
                 .collect(Collectors.toList());
+    }
+
+    public static List<Disk> toDiskListFromVolumeInfos(final List<Backup.VolumeInfo> volumeInfos) {
+        List<Disk> disks = new ArrayList<>();
+        for (Backup.VolumeInfo volumeInfo : volumeInfos) {
+            Disk disk = new Disk();
+            disk.setId(volumeInfo.getUuid());
+            disk.setName(volumeInfo.getUuid());
+            disk.setProvisionedSize(String.valueOf(volumeInfo.getSize()));
+            disk.setActualSize(String.valueOf(volumeInfo.getSize()));
+            disk.setTotalSize(String.valueOf(volumeInfo.getSize()));
+            disk.setBootable(String.valueOf(Volume.Type.ROOT.equals(volumeInfo.getType())));
+            disks.add(disk);
+        }
+        return disks;
     }
 
     public static  DiskAttachment toDiskAttachment(final VolumeJoinVO vol) {

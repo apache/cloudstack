@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.utils.Negotiation;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.component.Adapter;
 
@@ -43,6 +44,12 @@ public interface RouteHandler extends Adapter {
         return path;
     }
 
+    static String getRequestData(HttpServletRequest req, Logger logger) {
+        String data = RouteHandler.getRequestData(req);
+        logger.info("Received method: {} request. Request-data: {}", req.getMethod(), data);
+        return data;
+    }
+
     static String getRequestData(HttpServletRequest req) {
         String contentType = req.getContentType();
         if (contentType == null) {
@@ -52,6 +59,7 @@ public interface RouteHandler extends Adapter {
         if (!"application/json".equals(mime) && !"application/x-www-form-urlencoded".equals(mime)) {
             return null;
         }
+        String result = null;
         try {
             StringBuilder data = new StringBuilder();
             String line;

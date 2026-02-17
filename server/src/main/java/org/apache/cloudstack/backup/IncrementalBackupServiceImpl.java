@@ -38,19 +38,19 @@ import org.apache.cloudstack.api.command.admin.backup.FinalizeImageTransferCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListImageTransfersCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListVmCheckpointsCmd;
 import org.apache.cloudstack.api.command.admin.backup.StartBackupCmd;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.CheckpointResponse;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Component;
 
@@ -131,7 +131,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
     }
 
     @Override
-    public BackupResponse startBackup(StartBackupCmd cmd) {
+    public Backup createBackup(StartBackupCmd cmd) {
+        //ToDo: add config check, access check, resource count check, etc.
         Long vmId = cmd.getVmId();
 
         VMInstanceVO vm = vmInstanceDao.findById(vmId);
@@ -148,11 +149,17 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             throw new CloudRuntimeException("Backup already in progress for VM: " + vmId);
         }
 
-        boolean dummyOffering = isDummyOffering(vm.getBackupOfferingId());
-
         BackupVO backup = new BackupVO();
         backup.setVmId(vmId);
-        backup.setName(vmId + "-" + DateTime.now());
+        String name = cmd.getName();
+        if (StringUtils.isEmpty(name)) {
+            name = vmId + "-" + DateTime.now();
+        }
+        backup.setName(name);
+        final String description = cmd.getDescription();
+        if (StringUtils.isNotEmpty(description)) {
+            backup.setDescription(description);
+        }
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
@@ -162,7 +169,6 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
         String toCheckpointId = "ckp-" + UUID.randomUUID().toString().substring(0, 8);
         String fromCheckpointId = vm.getActiveCheckpointId();
-        Long fromCheckpointCreateTime = vm.getActiveCheckpointCreateTime();
 
         backup.setToCheckpointId(toCheckpointId);
         backup.setFromCheckpointId(fromCheckpointId);
@@ -174,26 +180,38 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         // Will be changed later if incremental was done
         backup.setType("FULL");
 
-        backup = backupDao.persist(backup);
+        return backupDao.persist(backup);
+    }
 
+    @Override
+    public Backup startBackup(StartBackupCmd cmd) {
+        BackupVO backup = backupDao.findById(cmd.getEntityId());
+        Long vmId = cmd.getVmId();
+        VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException("VM not found: " + vmId);
+        }
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         Map<String, String> diskPathUuidMap = new HashMap<>();
         for (Volume vol : volumes) {
             String volumePath = getVolumePathForFileBasedBackend(vol);
             diskPathUuidMap.put(volumePath, vol.getUuid());
         }
+        long hostId = backup.getHostId();
 
         Host host = hostDao.findById(hostId);
         StartBackupCommand startCmd = new StartBackupCommand(
             vm.getInstanceName(),
-            toCheckpointId,
-            fromCheckpointId,
-            fromCheckpointCreateTime,
-            nbdPort,
+            backup.getToCheckpointId(),
+            backup.getFromCheckpointId(),
+            vm.getActiveCheckpointCreateTime(),
+            backup.getNbdPort(),
             diskPathUuidMap,
             host.getPrivateIpAddress(),
             vm.getState() == State.Stopped
         );
+
+        boolean dummyOffering = isDummyOffering(vm.getBackupOfferingId());
 
         StartBackupAnswer answer;
         try {
@@ -218,13 +236,14 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             // todo: set it in the backend
             backup.setType("Incremental");
         }
+        backup.setStatus(Backup.Status.ReadyForTransfer);
         backupDao.update(backup.getId(), backup);
+        return backup;
+    }
 
-        BackupResponse response = new BackupResponse();
-        response.setId(backup.getUuid());
-        response.setVmId(vm.getUuid());
-        response.setStatus(backup.getStatus());
-        return response;
+    protected void updateBackupState(BackupVO backup, Backup.Status newStatus) {
+        backup.setStatus(newStatus);
+        backupDao.update(backup.getId(), backup);
     }
 
     @Override
@@ -249,9 +268,12 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
         boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
 
+        updateBackupState(backup, Backup.Status.FinalizingTransfer);
+
         List<ImageTransferVO> transfers = imageTransferDao.listByBackupId(backupId);
         for (ImageTransferVO transfer : transfers) {
             if (transfer.getPhase() != ImageTransferVO.Phase.finished) {
+                updateBackupState(backup, Backup.Status.Failed);
                 throw new CloudRuntimeException(String.format("Image transfer %s not finalized for backup: %s", transfer.getUuid(), backup.getUuid()));
             }
             imageTransferDao.remove(transfer.getId());
@@ -269,10 +291,12 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 }
 
             } catch (AgentUnavailableException | OperationTimedoutException e) {
+                updateBackupState(backup, Backup.Status.Failed);
                 throw new CloudRuntimeException("Failed to communicate with agent", e);
             }
 
             if (!answer.getResult()) {
+                updateBackupState(backup, Backup.Status.Failed);
                 throw new CloudRuntimeException("Failed to stop backup: " + answer.getDetails());
             }
         }
@@ -290,7 +314,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         }
 
         // Delete backup session record
-        backupDao.remove(backup.getId());
+        backup.setStatus(Backup.Status.BackedUp);
+        backupDao.update(backupId, backup);
 
         return true;
 
@@ -616,8 +641,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         }
         imageTransfer.setPhase(ImageTransferVO.Phase.finished);
         imageTransferDao.update(imageTransfer.getId(), imageTransfer);
-// ToDo: check this
-//        imageTransferDao.remove(imageTransfer.getId());
+        imageTransferDao.remove(imageTransfer.getId());
         return true;
     }
 

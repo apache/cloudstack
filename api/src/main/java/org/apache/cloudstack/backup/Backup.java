@@ -41,7 +41,7 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     Integer getNbdPort();
 
     enum Status {
-        Allocated, Queued, BackingUp, BackedUp, Error, Failed, Restoring, Removed, Expunged
+        Allocated, Queued, BackingUp, ReadyForTransfer, FinalizingTransfer, BackedUp, Error, Failed, Restoring, Removed, Expunged
     }
 
     class Metric {

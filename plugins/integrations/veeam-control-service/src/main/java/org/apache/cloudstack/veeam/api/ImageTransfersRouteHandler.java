@@ -113,8 +113,7 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
 
     protected void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
                            Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        String data = RouteHandler.getRequestData(req);
-        logger.info("Received POST request on /api/imagetransfers endpoint. Request-data: {}", data);
+        String data = RouteHandler.getRequestData(req, logger);
         try {
             ImageTransfer request = io.getMapper().jsonMapper().readValue(data, ImageTransfer.class);
             ImageTransfer response = serverAdapter.handleCreateImageTransfer(request);
