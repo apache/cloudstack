@@ -347,7 +347,7 @@ export default {
           data.url = url
         }
         data.provider = provider
-        if (values.zone && !['Swift', 'S3'].includes(provider)) {
+        if (values.zone && !['Swift'].includes(provider)) {
           data.zoneid = values.zone
         }
 

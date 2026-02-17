@@ -1094,19 +1094,12 @@ export default {
       })
     },
     fetchProvider () {
-      const storageProviders = []
-      api('listImageStores', { provider: 'S3' }).then(json => {
-        const s3stores = json.listimagestoresresponse.imagestore
-        if (s3stores != null && s3stores.length > 0) {
-          storageProviders.push({ id: 'S3', description: 'S3' })
-        } else {
-          storageProviders.push({ id: 'NFS', description: 'NFS' })
-          storageProviders.push({ id: 'SMB', description: 'SMB/CIFS' })
-          storageProviders.push({ id: 'S3', description: 'S3' })
-          storageProviders.push({ id: 'Swift', description: 'Swift' })
-        }
-        this.storageProviders = storageProviders
-      })
+      this.storageProviders = [
+        { id: 'NFS', description: 'NFS' },
+        { id: 'SMB', description: 'SMB/CIFS' },
+        { id: 'S3', description: 'S3' },
+        { id: 'Swift', description: 'Swift' }
+      ]
     },
     fetchPrimaryStorageProvider () {
       this.primaryStorageProviders = []

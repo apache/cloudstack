@@ -1596,6 +1596,7 @@ export default {
         params['details[2].value'] = this.prefillContent.secondaryStorageSMBDomain
       } else if (this.prefillContent.secondaryStorageProvider === 'S3') {
         params.provider = this.prefillContent.secondaryStorageProvider
+        params.zoneid = this.stepData.zoneReturned.id
         params['details[0].key'] = 'accesskey'
         params['details[0].value'] = this.prefillContent.secondaryStorageAccessKey
         params['details[1].key'] = 'secretkey'
