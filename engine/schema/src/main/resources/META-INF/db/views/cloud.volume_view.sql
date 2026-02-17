@@ -41,6 +41,8 @@ SELECT
     `volumes`.`external_uuid` AS `external_uuid`,
     `volumes`.`encrypt_format` AS `encrypt_format`,
     `volumes`.`kms_key_id` AS `kms_key_id`,
+    `kms_keys`.`uuid` AS `kms_key_uuid`,
+    `kms_keys`.`name` AS `kms_key_name`,
     `volumes`.`kms_wrapped_key_id` AS `kms_wrapped_key_id`,
     `volumes`.`delete_protection` AS `delete_protection`,
     `account`.`id` AS `account_id`,
@@ -118,7 +120,7 @@ SELECT
     `resource_tag_domain`.`uuid` AS `tag_domain_uuid`,
     `resource_tag_domain`.`name` AS `tag_domain_name`
 FROM
-    ((((((((((((((((((`volumes`
+    (((((((((((((((((((`volumes`
 JOIN `account`ON
     ((`volumes`.`account_id` = `account`.`id`)))
 JOIN `domain`ON
@@ -131,8 +133,10 @@ LEFT JOIN `vm_instance`ON
     ((`volumes`.`instance_id` = `vm_instance`.`id`)))
 LEFT JOIN `user_vm`ON
     ((`user_vm`.`id` = `vm_instance`.`id`)))
-LEFT JOIN `volume_store_ref`ON
+LEFT JOIN `volume_store_ref` ON
     ((`volumes`.`id` = `volume_store_ref`.`volume_id`)))
+LEFT JOIN `kms_keys` ON
+    ((`volumes`.`kms_key_id` = `kms_keys`.`id`)))
 LEFT JOIN `service_offering`ON
     ((`vm_instance`.`service_offering_id` = `service_offering`.`id`)))
 LEFT JOIN `disk_offering`ON

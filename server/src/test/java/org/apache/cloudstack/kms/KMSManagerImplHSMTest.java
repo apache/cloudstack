@@ -17,15 +17,9 @@
 
 package org.apache.cloudstack.kms;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.kms.dao.HSMProfileDetailsDao;
@@ -36,7 +30,14 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.user.AccountManager;
+import java.util.Arrays;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for HSM-related business logic in KMSManagerImpl
@@ -45,20 +46,20 @@ import com.cloud.user.AccountManager;
 @RunWith(MockitoJUnitRunner.class)
 public class KMSManagerImplHSMTest {
 
+    private final Long testAccountId = 100L;
     @Spy
     @InjectMocks
     private KMSManagerImpl kmsManager;
-
     @Mock
     private HSMProfileDao hsmProfileDao;
-
     @Mock
     private HSMProfileDetailsDao hsmProfileDetailsDao;
-
     @Mock
     private AccountManager accountManager;
-
-    private Long testAccountId = 100L;
+    @Mock
+    private DataCenterDao dataCenterDao;
+    @Mock
+    private DomainDao domainDao;
 
     /**
      * Test: isSensitiveKey correctly identifies "pin" as sensitive

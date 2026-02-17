@@ -17,32 +17,32 @@
 
 package org.apache.cloudstack.api.command.user.kms.hsm;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Inject;
-
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.kms.HSMProfile;
 import org.apache.cloudstack.kms.KMSManager;
 
+import javax.inject.Inject;
+
 @APICommand(name = "listHSMProfiles", description = "Lists HSM profiles", responseObject = HSMProfileResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, since = "4.23.0")
-public class ListHSMProfilesCmd extends BaseListCmd {
+            requestHasSensitiveInfo = false, responseHasSensitiveInfo = true, since = "4.23.0",
+            authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class ListHSMProfilesCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Inject
     private KMSManager kmsManager;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HSMProfileResponse.class, description = "the HSM profile ID")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HSMProfileResponse.class,
+               description = "the HSM profile ID")
     private Long id;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
+               description = "the zone ID")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "the protocol of the HSM profile")
@@ -50,6 +50,11 @@ public class ListHSMProfilesCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "list only enabled profiles")
     private Boolean enabled;
+
+    @Parameter(name = ApiConstants.IS_SYSTEM,
+               type = CommandType.BOOLEAN,
+               description = "when true, non-admin users see only system (global) profiles")
+    private Boolean isSystem;
 
     public Long getId() {
         return id;
@@ -67,18 +72,13 @@ public class ListHSMProfilesCmd extends BaseListCmd {
         return enabled;
     }
 
+    public Boolean getIsSystem() {
+        return isSystem;
+    }
+
     @Override
     public void execute() {
-        List<HSMProfile> profiles = kmsManager.listHSMProfiles(this);
-        ListResponse<HSMProfileResponse> response = new ListResponse<>();
-        List<HSMProfileResponse> profileResponses = new ArrayList<>();
-
-        for (HSMProfile profile : profiles) {
-            HSMProfileResponse profileResponse = kmsManager.createHSMProfileResponse(profile);
-            profileResponses.add(profileResponse);
-        }
-
-        response.setResponses(profileResponses);
+        ListResponse<HSMProfileResponse> response = kmsManager.listHSMProfiles(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

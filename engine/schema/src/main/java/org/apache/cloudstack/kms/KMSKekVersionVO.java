@@ -43,79 +43,59 @@ import java.util.UUID;
 @Table(name = "kms_kek_versions")
 public class KMSKekVersionVO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
-
-    @Column(name = "uuid", nullable = false, unique = true)
-    private String uuid;
-
-    @Column(name = "kms_key_id", nullable = false)
-    private Long kmsKeyId;
-
-    @Column(name = "version_number", nullable = false)
-    private Integer versionNumber;
-
-    @Column(name = "kek_label", nullable = false)
-    private String kekLabel;
-
-    @Column(name = "status", nullable = false, length = 32)
-    @Enumerated(EnumType.STRING)
-    private Status status;
-
-    @Column(name = "hsm_profile_id")
-    private Long hsmProfileId;
-
-    @Column(name = "hsm_key_label")
-    private String hsmKeyLabel;
-
-    @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date created;
-
-    @Column(name = GenericDao.REMOVED_COLUMN)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date removed;
-
-    /**
-     * Status of a KEK version
-     */
     public enum Status {
         /**
-         * Active version - used for new encryption operations
+         * Used for new encryption operations
          */
         Active,
         /**
-         * Previous version - still usable for decryption during rotation
+         * Still usable for decryption during key rotation
          */
         Previous,
         /**
-         * Archived version - no longer used (after re-encryption complete)
+         * No longer used; all wrapped keys have been re-encrypted
          */
         Archived
     }
 
-    public KMSKekVersionVO() {
-        this.uuid = UUID.randomUUID().toString();
-        this.created = new Date();
-        this.status = Status.Active;
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+    @Column(name = "uuid", nullable = false)
+    private String uuid;
+    @Column(name = "kms_key_id", nullable = false)
+    private Long kmsKeyId;
+    @Column(name = "version_number", nullable = false)
+    private Integer versionNumber;
+    @Column(name = "kek_label", nullable = false)
+    private String kekLabel;
+    @Column(name = "status", nullable = false, length = 32)
+    @Enumerated(EnumType.STRING)
+    private Status status;
+    @Column(name = "hsm_profile_id")
+    private Long hsmProfileId;
+    @Column(name = "hsm_key_label")
+    private String hsmKeyLabel;
+    @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date created;
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date removed;
 
-    /**
-     * Constructor for creating a new KEK version
-     *
-     * @param kmsKeyId      the KMS key ID this version belongs to
-     * @param versionNumber the version number (1, 2, 3, ...)
-     * @param kekLabel      the provider-specific KEK label
-     * @param status        the status (typically Active for new versions)
-     */
     public KMSKekVersionVO(Long kmsKeyId, Integer versionNumber, String kekLabel, Status status) {
         this();
         this.kmsKeyId = kmsKeyId;
         this.versionNumber = versionNumber;
         this.kekLabel = kekLabel;
         this.status = status;
+    }
+
+    public KMSKekVersionVO() {
+        this.uuid = UUID.randomUUID().toString();
+        this.created = new Date();
+        this.status = Status.Active;
     }
 
     public Long getId() {

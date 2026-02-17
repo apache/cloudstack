@@ -22,10 +22,11 @@ package org.apache.cloudstack.api.command.user.kms;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
+import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -41,7 +42,7 @@ import javax.inject.Inject;
             authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
-public class ListKMSKeysCmd extends BaseListAccountResourcesCmd implements UserCmd {
+public class ListKMSKeysCmd extends BaseListProjectAndAccountResourcesCmd implements UserCmd {
     private static final String s_name = "listkmskeysresponse";
 
     @Inject
@@ -64,10 +65,16 @@ public class ListKMSKeysCmd extends BaseListAccountResourcesCmd implements UserC
                description = "Filter by zone ID")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.STATE,
-               type = CommandType.STRING,
-               description = "Filter by state: Enabled, Disabled")
-    private String state;
+    @Parameter(name = ApiConstants.ENABLED,
+               type = CommandType.BOOLEAN,
+               description = "Filter by enabled status")
+    private Boolean enabled;
+
+    @Parameter(name = ApiConstants.HSM_PROFILE_ID,
+               type = CommandType.UUID,
+               entityType = HSMProfileResponse.class,
+               description = "Filter by HSM profile ID")
+    private Long hsmProfileId;
 
     public Long getId() {
         return id;
@@ -81,13 +88,13 @@ public class ListKMSKeysCmd extends BaseListAccountResourcesCmd implements UserC
         return zoneId;
     }
 
-    public String getState() {
-        return state;
+    public Boolean getEnabled() {
+        return enabled;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    public Long getHsmProfileId() {
+        return hsmProfileId;
+    }
 
     @Override
     public void execute() {

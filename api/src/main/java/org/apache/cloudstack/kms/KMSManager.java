@@ -17,11 +17,10 @@
 
 package org.apache.cloudstack.kms;
 
+import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 import org.apache.cloudstack.api.command.admin.kms.MigrateVolumesToKMSCmd;
-import org.apache.cloudstack.api.command.admin.kms.RotateKMSKeyCmd;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.api.command.user.kms.RotateKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.CreateKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.DeleteKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.ListKMSKeysCmd;
@@ -34,41 +33,16 @@ import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.framework.kms.KMSProvider;
-import org.apache.cloudstack.framework.kms.KeyPurpose;
 import org.apache.cloudstack.framework.kms.WrappedKey;
 
 import java.util.List;
 
-/**
- * Manager interface for Key Management Service operations.
- * Provides high-level API for cryptographic key management with zone-scoping,
- * provider abstraction, and integration with CloudStack's configuration system.
- */
 public interface KMSManager extends Manager, Configurable {
 
-    // ==================== Configuration Keys ====================
-
-    /**
-     * Zone-scoped: enable KMS for a specific zone
-     * When false (default), new volumes use legacy passphrase encryption
-     * When true, new volumes use KMS envelope encryption
-     */
-    ConfigKey<Boolean> KMSEnabled = new ConfigKey<>(
-            "Advanced",
-            Boolean.class,
-            "kms.enabled",
-            "false",
-            "Enable Key Management Service for disk encryption in this zone",
-            true,
-            ConfigKey.Scope.Zone
-    );
-
-    /**
-     * Global: DEK size in bits for volume encryption
-     * Supported: 128, 192, 256
-     */
     ConfigKey<Integer> KMSDekSizeBits = new ConfigKey<>(
             "Advanced",
             Integer.class,
@@ -79,9 +53,6 @@ public interface KMSManager extends Manager, Configurable {
             ConfigKey.Scope.Global
     );
 
-    /**
-     * Global: retry count for transient KMS failures
-     */
     ConfigKey<Integer> KMSRetryCount = new ConfigKey<>(
             "Advanced",
             Integer.class,
@@ -92,9 +63,6 @@ public interface KMSManager extends Manager, Configurable {
             ConfigKey.Scope.Global
     );
 
-    /**
-     * Global: retry delay in milliseconds
-     */
     ConfigKey<Integer> KMSRetryDelayMs = new ConfigKey<>(
             "Advanced",
             Integer.class,
@@ -105,9 +73,6 @@ public interface KMSManager extends Manager, Configurable {
             ConfigKey.Scope.Global
     );
 
-    /**
-     * Global: timeout for KMS operations in seconds
-     */
     ConfigKey<Integer> KMSOperationTimeoutSec = new ConfigKey<>(
             "Advanced",
             Integer.class,
@@ -118,9 +83,6 @@ public interface KMSManager extends Manager, Configurable {
             ConfigKey.Scope.Global
     );
 
-    /**
-     * Global: batch size for background rewrap operations
-     */
     ConfigKey<Integer> KMSRewrapBatchSize = new ConfigKey<>(
             "Advanced",
             Integer.class,
@@ -131,9 +93,6 @@ public interface KMSManager extends Manager, Configurable {
             ConfigKey.Scope.Global
     );
 
-    /**
-     * Global: interval for background rewrap job
-     */
     ConfigKey<Long> KMSRewrapIntervalMs = new ConfigKey<>(
             "Advanced",
             Long.class,
@@ -143,8 +102,6 @@ public interface KMSManager extends Manager, Configurable {
             true,
             ConfigKey.Scope.Global
     );
-
-    // ==================== Provider Management ====================
 
     /**
      * List all registered KMS providers
@@ -162,16 +119,6 @@ public interface KMSManager extends Manager, Configurable {
     KMSProvider getKMSProvider(String name);
 
     /**
-     * Check if KMS is enabled for a zone
-     *
-     * @param zoneId the zone ID
-     * @return true if KMS is enabled
-     */
-    boolean isKmsEnabled(Long zoneId);
-
-    // ==================== DEK Operations ====================
-
-    /**
      * Unwrap a DEK from a wrapped key
      * SECURITY: Caller must zeroize returned byte array after use!
      *
@@ -182,32 +129,27 @@ public interface KMSManager extends Manager, Configurable {
      */
     byte[] unwrapVolumeKey(WrappedKey wrappedKey, Long zoneId) throws KMSException;
 
-    // ==================== Health & Status ====================
-
-    // ==================== User KEK Management ====================
-
-    /**
-     * List KMS keys accessible to a user account
-     *
-     * @param accountId the account ID
-     * @param domainId  the domain ID
-     * @param zoneId    optional zone filter
-     * @param purpose   optional purpose filter
-     * @param state     optional state filter
-     * @return list of accessible KMS keys
-     */
-    List<? extends KMSKey> listUserKMSKeys(Long accountId, Long domainId, Long zoneId,
-                                          KeyPurpose purpose, KMSKey.State state);
-
     /**
      * Check if caller has permission to use a KMS key
      *
      * @param callerAccountId the caller's account ID
-     * @param key         the KMS key
+     * @param key             the KMS key
      * @return true if caller has permission
      */
     boolean hasPermission(Long callerAccountId, KMSKey key);
 
+    /**
+     * Validates that the KMS key can be used for volume encryption: key exists, not deleted,
+     * caller has access, key state is Enabled, and key purpose is VOLUME_ENCRYPTION.
+     * No-op if kmsKeyId is null.
+     *
+     * @param caller   the caller's account
+     * @param kmsKeyId the KMS key database ID
+     * @param zoneId   the zone ID of the target resource (volume/VM)
+     * @throws InvalidParameterValueException if key not found, deleted, disabled, wrong purpose, or zone mismatch
+     * @throws PermissionDeniedException      if caller lacks access
+     */
+    void checkKmsKeyForVolumeEncryption(Account caller, Long kmsKeyId, Long zoneId);
 
     /**
      * Unwrap a DEK by wrapped key ID, trying multiple KEK versions if needed
@@ -221,14 +163,12 @@ public interface KMSManager extends Manager, Configurable {
     /**
      * Generate and wrap a DEK using a specific KMS key UUID
      *
-     * @param kmsKey        the KMS key
+     * @param kmsKey          the KMS key
      * @param callerAccountId the caller's account ID
      * @return wrapped key ready for database storage
      * @throws KMSException if operation fails
      */
     WrappedKey generateVolumeKeyWithKek(KMSKey kmsKey, Long callerAccountId) throws KMSException;
-
-    // ==================== API Response Methods ====================
 
     /**
      * Create a KMS key and return the response object.
@@ -269,8 +209,6 @@ public interface KMSManager extends Manager, Configurable {
      */
     SuccessResponse deleteKMSKey(DeleteKMSKeyCmd cmd) throws KMSException;
 
-    // ==================== Admin Operations ====================
-
     /**
      * Rotate KEK by creating new version and scheduling gradual re-encryption
      *
@@ -297,8 +235,6 @@ public interface KMSManager extends Manager, Configurable {
      */
     boolean deleteKMSKeysByAccountId(Long accountId);
 
-    // ==================== HSM Profile Management ====================
-
     /**
      * Add a new HSM profile
      *
@@ -314,7 +250,7 @@ public interface KMSManager extends Manager, Configurable {
      * @param cmd the list command
      * @return list of HSM profiles
      */
-    List<HSMProfile> listHSMProfiles(ListHSMProfilesCmd cmd);
+    ListResponse<HSMProfileResponse> listHSMProfiles(ListHSMProfilesCmd cmd);
 
     /**
      * Delete an HSM profile

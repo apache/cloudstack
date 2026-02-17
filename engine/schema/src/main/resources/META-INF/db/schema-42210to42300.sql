@@ -57,18 +57,19 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_hsm_profiles` (
     `uuid` VARCHAR(40) NOT NULL,
     `name` VARCHAR(255) NOT NULL,
     `protocol` VARCHAR(32) NOT NULL COMMENT 'PKCS11, KMIP, AWS_KMS, etc.',
-    
+
     -- Scoping
     `account_id` BIGINT UNSIGNED COMMENT 'null = admin-provided (available to all accounts)',
     `domain_id` BIGINT UNSIGNED COMMENT 'null = zone/global scope',
     `zone_id` BIGINT UNSIGNED COMMENT 'null = global scope',
-    
+
     -- Metadata
     `vendor_name` VARCHAR(64) COMMENT 'HSM vendor (Thales, AWS, SoftHSM, etc.)',
     `enabled` BOOLEAN NOT NULL DEFAULT TRUE,
+    `system` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'System profile (globally available, root admin only)',
     `created` DATETIME NOT NULL,
     `removed` DATETIME,
-    
+
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_uuid` (`uuid`),
     UNIQUE KEY `uk_account_name` (`account_id`, `name`, `removed`),
@@ -102,19 +103,17 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_keys` (
     `account_id` BIGINT UNSIGNED NOT NULL COMMENT 'Owning account',
     `domain_id` BIGINT UNSIGNED NOT NULL COMMENT 'Owning domain',
     `zone_id` BIGINT UNSIGNED NOT NULL COMMENT 'Zone where key is valid',
-    `provider_name` VARCHAR(64) NOT NULL COMMENT 'KMS provider (database, pkcs11, etc.)',
     `algorithm` VARCHAR(64) NOT NULL DEFAULT 'AES/GCM/NoPadding' COMMENT 'Encryption algorithm',
     `key_bits` INT NOT NULL DEFAULT 256 COMMENT 'Key size in bits',
-    `state` VARCHAR(32) NOT NULL DEFAULT 'Enabled' COMMENT 'Enabled, Disabled, or Deleted',
-    `hsm_profile_id` BIGINT UNSIGNED COMMENT 'Current HSM profile ID for this key',
+    `enabled` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Whether the key is enabled for new cryptographic operations',
+    `hsm_profile_id` BIGINT UNSIGNED NOT NULL COMMENT 'Current HSM profile ID for this key',
     `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
     `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_uuid` (`uuid`),
-    INDEX `idx_account_purpose` (`account_id`, `purpose`, `state`),
-    INDEX `idx_domain_purpose` (`domain_id`, `purpose`, `state`),
-    INDEX `idx_zone_state` (`zone_id`, `state`),
-    INDEX `idx_kek_label_provider` (`kek_label`, `provider_name`),
+    INDEX `idx_account_purpose` (`account_id`, `purpose`, `enabled`),
+    INDEX `idx_domain_purpose` (`domain_id`, `purpose`, `enabled`),
+    INDEX `idx_zone_enabled` (`zone_id`, `enabled`),
     CONSTRAINT `fk_kms_keys__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_kms_keys__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_kms_keys__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,

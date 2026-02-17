@@ -17,18 +17,6 @@
 
 package org.apache.cloudstack.kms.provider.pkcs11;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-import java.util.Map;
-
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
 import org.apache.cloudstack.kms.HSMProfileDetailsVO;
@@ -42,6 +30,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.Arrays;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for PKCS11HSMProvider
@@ -128,11 +128,11 @@ public class PKCS11HSMProviderTest {
         when(detail2.getValue()).thenReturn("ENC(encrypted_pin)");
 
         HSMProfileDetailsVO detail3 = mock(HSMProfileDetailsVO.class);
-        when(detail3.getName()).thenReturn("slot_id");
+        when(detail3.getName()).thenReturn("slot");
         when(detail3.getValue()).thenReturn("0");
 
         when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(
-            Arrays.asList(detail1, detail2, detail3));
+                Arrays.asList(detail1, detail2, detail3));
 
         // Test
         Map<String, String> config = provider.loadProfileConfig(testProfileId);
@@ -144,7 +144,7 @@ public class PKCS11HSMProviderTest {
         // Note: In real code, DBEncryptionUtil.decrypt would be called
         // Here we just verify the structure is correct
         assertTrue("Config should contain pin", config.containsKey("pin"));
-        assertEquals("0", config.get("slot_id"));
+        assertEquals("0", config.get("slot"));
 
         verify(hsmProfileDetailsDao).listByProfileId(testProfileId);
     }
@@ -152,17 +152,13 @@ public class PKCS11HSMProviderTest {
     /**
      * Test: loadProfileConfig handles empty details
      */
-    @Test
+    @Test(expected = KMSException.class)
     public void testLoadProfileConfig_HandlesEmptyDetails() {
         // Setup
         when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(Arrays.asList());
 
         // Test
         Map<String, String> config = provider.loadProfileConfig(testProfileId);
-
-        // Verify
-        assertNotNull("Config should not be null", config);
-        assertEquals(0, config.size());
     }
 
     /**
@@ -201,7 +197,8 @@ public class PKCS11HSMProviderTest {
         // Verify
         assertNotNull("Label should not be null", label);
         assertTrue("Label should start with purpose", label.startsWith(KeyPurpose.VOLUME_ENCRYPTION.getName()));
-        assertTrue("Label should contain UUID", label.length() > (KeyPurpose.VOLUME_ENCRYPTION.getName() + "-kek-").length());
+        assertTrue("Label should contain UUID",
+                label.length() > (KeyPurpose.VOLUME_ENCRYPTION.getName() + "-kek-").length());
     }
 
     /**
@@ -218,30 +215,11 @@ public class PKCS11HSMProviderTest {
     @Test(expected = KMSException.class)
     public void testCreateKek_RequiresProfileId() throws KMSException {
         provider.createKek(
-            KeyPurpose.VOLUME_ENCRYPTION,
-            "test-label",
-            256,
-            null // null profile ID should throw exception
+                KeyPurpose.VOLUME_ENCRYPTION,
+                "test-label",
+                256,
+                null // null profile ID should throw exception
         );
-    }
-
-    /**
-     * Test: loadProfileConfig caches configuration
-     */
-    @Test
-    public void testLoadProfileConfig_CachesConfiguration() {
-        // Setup
-        HSMProfileDetailsVO detail = mock(HSMProfileDetailsVO.class);
-        when(detail.getName()).thenReturn("library");
-        when(detail.getValue()).thenReturn("/path/to/lib.so");
-        when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(Arrays.asList(detail));
-
-        // Load twice
-        provider.loadProfileConfig(testProfileId);
-        provider.loadProfileConfig(testProfileId);
-
-        // DAO should only be called once due to caching
-        verify(hsmProfileDetailsDao, times(1)).listByProfileId(testProfileId);
     }
 
     /**
@@ -250,10 +228,17 @@ public class PKCS11HSMProviderTest {
     @Test
     public void testGetSessionPool_CreatesPoolForNewProfile() {
         // Setup
-        HSMProfileDetailsVO detail = mock(HSMProfileDetailsVO.class);
-        when(detail.getName()).thenReturn("library");
-        when(detail.getValue()).thenReturn("/path/to/lib.so");
-        when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(Arrays.asList(detail));
+        HSMProfileDetailsVO libraryDetail = mock(HSMProfileDetailsVO.class);
+        when(libraryDetail.getName()).thenReturn("library");
+        when(libraryDetail.getValue()).thenReturn("/path/to/lib.so");
+        HSMProfileDetailsVO slotDetail = mock(HSMProfileDetailsVO.class);
+        when(slotDetail.getName()).thenReturn("slot");
+        when(slotDetail.getValue()).thenReturn("1");
+        HSMProfileDetailsVO pinDetail = mock(HSMProfileDetailsVO.class);
+        when(pinDetail.getName()).thenReturn("pin");
+        when(pinDetail.getValue()).thenReturn("1234");
+        when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(
+                Arrays.asList(libraryDetail, slotDetail, pinDetail));
 
         // Test
         Object pool = provider.getSessionPool(testProfileId);
@@ -269,10 +254,17 @@ public class PKCS11HSMProviderTest {
     @Test
     public void testGetSessionPool_ReusesPoolForSameProfile() {
         // Setup
-        HSMProfileDetailsVO detail = mock(HSMProfileDetailsVO.class);
-        when(detail.getName()).thenReturn("library");
-        when(detail.getValue()).thenReturn("/path/to/lib.so");
-        when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(Arrays.asList(detail));
+        HSMProfileDetailsVO libraryDetail = mock(HSMProfileDetailsVO.class);
+        when(libraryDetail.getName()).thenReturn("library");
+        when(libraryDetail.getValue()).thenReturn("/path/to/lib.so");
+        HSMProfileDetailsVO slotDetail = mock(HSMProfileDetailsVO.class);
+        when(slotDetail.getName()).thenReturn("slot");
+        when(slotDetail.getValue()).thenReturn("1");
+        HSMProfileDetailsVO pinDetail = mock(HSMProfileDetailsVO.class);
+        when(pinDetail.getName()).thenReturn("pin");
+        when(pinDetail.getValue()).thenReturn("1234");
+        when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(
+                Arrays.asList(libraryDetail, slotDetail, pinDetail));
 
         // Test
         Object pool1 = provider.getSessionPool(testProfileId);

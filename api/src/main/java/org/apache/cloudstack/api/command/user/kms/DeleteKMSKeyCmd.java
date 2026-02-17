@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.kms.KMSException;
+import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.kms.KMSManager;
 
 import javax.inject.Inject;
@@ -56,10 +57,6 @@ public class DeleteKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
                description = "The UUID of the KMS key to delete")
     private Long id;
 
-    public Long getId() {
-        return id;
-    }
-
     @Override
     public void execute() {
         try {
@@ -74,12 +71,21 @@ public class DeleteKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
+        KMSKey key = _entityMgr.findById(KMSKey.class, id);
+        if (key != null) {
+            return key.getAccountId();
+        }
         return CallContext.current().getCallingAccount().getId();
     }
 
     @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KmsKey;
+    }
+
+    @Override
     public String getEventType() {
-        return EventTypes.EVENT_KMS_KEK_DELETE;
+        return EventTypes.EVENT_KMS_KEY_DELETE;
     }
 
     @Override
@@ -87,8 +93,7 @@ public class DeleteKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
         return "deleting KMS key: " + getId();
     }
 
-    @Override
-    public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.KmsKey;
+    public Long getId() {
+        return id;
     }
 }

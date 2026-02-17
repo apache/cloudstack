@@ -14,9 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.kms;
+package org.apache.cloudstack.api.command.user.kms;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -29,6 +28,7 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.kms.KMSManager;
@@ -36,10 +36,10 @@ import org.apache.cloudstack.kms.KMSManager;
 import javax.inject.Inject;
 
 @APICommand(name = "rotateKMSKey",
-            description = "Rotates KEK by creating new version and scheduling gradual re-encryption (admin only)",
+            description = "Rotates KEK by creating new version and scheduling gradual re-encryption",
             responseObject = AsyncJobResponse.class,
             since = "4.23.0",
-            authorized = {RoleType.Admin},
+            authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class RotateKMSKeyCmd extends BaseAsyncCmd {
@@ -61,10 +61,11 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
     private Integer keyBits;
 
     @Parameter(name = ApiConstants.HSM_PROFILE_ID,
-            type = CommandType.UUID,
-            entityType = HSMProfileResponse.class,
-               description = "The target HSM profile ID for the new KEK version. If provided, migrates the key to this HSM.")
-    private String hsmProfile;
+               type = CommandType.UUID,
+               entityType = HSMProfileResponse.class,
+               description = "The target HSM profile ID for the new KEK version. If provided, migrates the key to "
+                             + "this HSM.")
+    private Long hsmProfileId;
 
     public Long getId() {
         return id;
@@ -74,8 +75,8 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
         return keyBits;
     }
 
-    public String getHsmProfile() {
-        return hsmProfile;
+    public Long getHsmProfileId() {
+        return hsmProfileId;
     }
 
     @Override
@@ -98,12 +99,16 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        KMSKey key = _entityMgr.findById(KMSKey.class, id);
+        if (key != null) {
+            return key.getAccountId();
+        }
+        return CallContext.current().getCallingAccount().getId();
     }
 
     @Override
     public String getEventType() {
-        return com.cloud.event.EventTypes.EVENT_KMS_KEK_ROTATE;
+        return com.cloud.event.EventTypes.EVENT_KMS_KEY_ROTATE;
     }
 
     @Override

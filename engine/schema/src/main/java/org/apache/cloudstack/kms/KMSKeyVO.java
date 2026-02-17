@@ -47,7 +47,7 @@ public class KMSKeyVO implements KMSKey {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "uuid", nullable = false, unique = true)
+    @Column(name = "uuid", nullable = false)
     private String uuid;
 
     @Column(name = "name", nullable = false)
@@ -72,18 +72,14 @@ public class KMSKeyVO implements KMSKey {
     @Column(name = "zone_id", nullable = false)
     private Long zoneId;
 
-    @Column(name = "provider_name", nullable = false, length = 64)
-    private String providerName;
-
     @Column(name = "algorithm", nullable = false, length = 64)
     private String algorithm;
 
     @Column(name = "key_bits", nullable = false)
     private Integer keyBits;
 
-    @Column(name = "state", nullable = false, length = 32)
-    @Enumerated(EnumType.STRING)
-    private State state;
+    @Column(name = "enabled", nullable = false)
+    private boolean enabled;
 
     @Column(name = "hsm_profile_id")
     private Long hsmProfileId;
@@ -96,15 +92,9 @@ public class KMSKeyVO implements KMSKey {
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
-    public KMSKeyVO() {
-        this.uuid = UUID.randomUUID().toString();
-        this.created = new Date();
-        this.state = State.Enabled;
-    }
-
     public KMSKeyVO(String name, String description, String kekLabel, KeyPurpose purpose,
-                    Long accountId, Long domainId, Long zoneId, String providerName,
-                    String algorithm, Integer keyBits) {
+            Long accountId, Long domainId, Long zoneId,
+            String algorithm, Integer keyBits) {
         this();
         this.name = name;
         this.description = description;
@@ -113,9 +103,14 @@ public class KMSKeyVO implements KMSKey {
         this.accountId = accountId;
         this.domainId = domainId;
         this.zoneId = zoneId;
-        this.providerName = providerName;
         this.algorithm = algorithm;
         this.keyBits = keyBits;
+    }
+
+    public KMSKeyVO() {
+        this.uuid = UUID.randomUUID().toString();
+        this.created = new Date();
+        this.enabled = true;
     }
 
     @Override
@@ -123,9 +118,17 @@ public class KMSKeyVO implements KMSKey {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     @Override
     public String getUuid() {
         return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     @Override
@@ -154,11 +157,6 @@ public class KMSKeyVO implements KMSKey {
     }
 
     @Override
-    public String getProviderName() {
-        return providerName;
-    }
-
-    @Override
     public String getAlgorithm() {
         return algorithm;
     }
@@ -169,8 +167,8 @@ public class KMSKeyVO implements KMSKey {
     }
 
     @Override
-    public State getState() {
-        return state;
+    public boolean isEnabled() {
+        return enabled;
     }
 
     @Override
@@ -183,75 +181,6 @@ public class KMSKeyVO implements KMSKey {
         return removed;
     }
 
-    // ControlledEntity interface methods
-
-    @Override
-    public long getAccountId() {
-        return accountId;
-    }
-
-    @Override
-    public long getDomainId() {
-        return domainId;
-    }
-
-    @Override
-    public Class<?> getEntityType() {
-        return KMSKey.class;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setKekLabel(String kekLabel) {
-        this.kekLabel = kekLabel;
-    }
-
-    public void setPurpose(KeyPurpose purpose) {
-        this.purpose = purpose;
-    }
-
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
-    }
-
-    public void setZoneId(Long zoneId) {
-        this.zoneId = zoneId;
-    }
-
-    public void setProviderName(String providerName) {
-        this.providerName = providerName;
-    }
-
-    public void setAlgorithm(String algorithm) {
-        this.algorithm = algorithm;
-    }
-
-    public void setKeyBits(Integer keyBits) {
-        this.keyBits = keyBits;
-    }
-
-    public void setState(State state) {
-        this.state = state;
-    }
-
     @Override
     public Long getHsmProfileId() {
         return hsmProfileId;
@@ -261,17 +190,73 @@ public class KMSKeyVO implements KMSKey {
         this.hsmProfileId = hsmProfileId;
     }
 
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
     public void setCreated(Date created) {
         this.created = created;
     }
 
-    public void setRemoved(Date removed) {
-        this.removed = removed;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public void setKeyBits(Integer keyBits) {
+        this.keyBits = keyBits;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public void setPurpose(KeyPurpose purpose) {
+        this.purpose = purpose;
+    }
+
+    public void setKekLabel(String kekLabel) {
+        this.kekLabel = kekLabel;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return KMSKey.class;
     }
 
     @Override
     public String toString() {
         return String.format("KMSKey %s",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "purpose", "accountId", "zoneId", "state"));
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "purpose",
+                        "accountId", "zoneId", "enabled"));
     }
 }

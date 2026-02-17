@@ -110,6 +110,7 @@ import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -472,6 +473,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private AlertManager _alertMgr;
     @Inject
     private AccountManager _accountMgr;
+    @Inject
+    private KMSManager kmsManager;
     @Inject
     private AccountService _accountService;
     @Inject
@@ -4213,6 +4216,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (rootDiskOffering.getEncrypt() && hypervisorType != HypervisorType.KVM) {
             throw new InvalidParameterValueException("Root volume encryption is not supported for hypervisor type " + hypervisorType);
+        }
+
+        kmsManager.checkKmsKeyForVolumeEncryption(caller, rootDiskKmsKeyId, zone.getId());
+        if (dataDiskInfoList != null) {
+            for (VmDiskInfo diskInfo : dataDiskInfoList) {
+                kmsManager.checkKmsKeyForVolumeEncryption(caller, diskInfo.getKmsKeyId(), zone.getId());
+            }
         }
 
         UserVm vm = getCheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, dataDiskInfoList, networkList, securityGroupIdList, group, httpmethod, userData, userDataId, userDataDetails, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, rootDiskKmsKeyId, volumesSize, volume, snapshot);

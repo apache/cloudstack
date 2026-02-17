@@ -17,25 +17,28 @@
 
 package org.apache.cloudstack.kms;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import java.util.Date;
 
-public interface HSMProfile extends Identity, InternalIdentity {
+public interface HSMProfile extends Identity, InternalIdentity, ControlledEntity {
     String getName();
 
     String getProtocol();
 
-    Long getAccountId();
+    long getAccountId();
 
-    Long getDomainId();
+    long getDomainId();
 
     Long getZoneId();
 
     String getVendorName();
 
     boolean isEnabled();
+
+    boolean isSystem();
 
     Date getCreated();
 

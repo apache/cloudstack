@@ -486,7 +486,8 @@
                 </a-select>
                 <details-input
                   v-else-if="field.type==='map'"
-                  v-model:value="form[field.name]" />
+                  v-model:value="form[field.name]"
+                  :optionalKeys="currentAction.mapping?.[field.name]?.optionalKeys || []" />
                 <a-input-number
                   v-else-if="field.type==='long'"
                   v-focus="fieldIndex === firstIndex"
@@ -999,7 +1000,7 @@ export default {
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
       this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'userdata', 'volume', 'snapshot', 'buckets', 'vmsnapshot', 'guestnetwork',
         'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'sharedfs',
-        'autoscalevmgroup', 'vnfapp', 'webhook'].includes(this.$route.name)
+        'autoscalevmgroup', 'vnfapp', 'webhook', 'kmskey', 'hsmprofile'].includes(this.$route.name)
 
       if (this.dataView && !refreshed) {
         this.resource = {}

@@ -46,7 +46,7 @@ public class KMSWrappedKeyVO {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "uuid", nullable = false, unique = true)
+    @Column(name = "uuid", nullable = false)
     private String uuid;
 
     @Column(name = "kms_key_id")
@@ -58,7 +58,7 @@ public class KMSWrappedKeyVO {
     @Column(name = "zone_id", nullable = false)
     private Long zoneId;
 
-    @Column(name = "wrapped_blob", nullable = false, columnDefinition = "VARBINARY(4096)")
+    @Column(name = "wrapped_blob", nullable = false)
     private byte[] wrappedBlob;
 
     @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
@@ -76,12 +76,16 @@ public class KMSWrappedKeyVO {
         this.wrappedBlob = wrappedBlob != null ? Arrays.copyOf(wrappedBlob, wrappedBlob.length) : null;
     }
 
+    public KMSWrappedKeyVO() {
+        this.uuid = UUID.randomUUID().toString();
+        this.created = new Date();
+    }
+
     public KMSWrappedKeyVO(KMSKeyVO kmsKey, Long kekVersionId, byte[] wrappedBlob) {
         this();
         this.kmsKeyId = kmsKey.getId();
         this.kekVersionId = kekVersionId;
         this.zoneId = kmsKey.getZoneId();
-        // Defensive copy
         this.wrappedBlob = wrappedBlob != null ? Arrays.copyOf(wrappedBlob, wrappedBlob.length) : null;
     }
 
@@ -98,11 +102,6 @@ public class KMSWrappedKeyVO {
         this.kekVersionId = kekVersionId;
         this.zoneId = zoneId;
         this.wrappedBlob = wrappedBlob != null ? Arrays.copyOf(wrappedBlob, wrappedBlob.length) : null;
-    }
-
-    public KMSWrappedKeyVO() {
-        this.uuid = UUID.randomUUID().toString();
-        this.created = new Date();
     }
 
     public Long getId() {
@@ -173,6 +172,7 @@ public class KMSWrappedKeyVO {
     public String toString() {
         return String.format("KMSWrappedKey %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "uuid", "kmsKeyId", "kekVersionId", "accountId", "zoneId", "state", "created", "removed"));
+                        this, "id", "uuid", "kmsKeyId", "kekVersionId", "accountId", "zoneId", "state", "created",
+                        "removed"));
     }
 }

@@ -22,62 +22,14 @@ import org.apache.cloudstack.kms.KMSWrappedKeyVO;
 
 import java.util.List;
 
-/**
- * Data Access Object for KMS Wrapped Keys.
- * This DAO is purpose-agnostic and can be used for any key purpose
- * (volumes, TLS certs, config secrets, etc.)
- */
 public interface KMSWrappedKeyDao extends GenericDao<KMSWrappedKeyVO, Long> {
 
-    /**
-     * List all wrapped keys using a specific KMS key
-     * (useful for key rotation)
-     *
-     * @param kmsKeyId the KMS key ID (FK to kms_keys)
-     * @return list of wrapped keys
-     */
-    List<KMSWrappedKeyVO> listByKmsKeyId(Long kmsKeyId);
-
-    /**
-     * List all wrapped keys in a zone
-     *
-     * @param zoneId the zone ID
-     * @return list of wrapped keys
-     */
-    List<KMSWrappedKeyVO> listByZone(Long zoneId);
-
-    /**
-     * Count wrapped keys using a specific KMS key
-     *
-     * @param kmsKeyId the KMS key ID (FK to kms_keys)
-     * @return count of keys
-     */
     long countByKmsKeyId(Long kmsKeyId);
 
     /**
-     * List all wrapped keys using a specific KEK version
-     *
-     * @param kekVersionId the KEK version ID (FK to kms_kek_versions)
-     * @return list of wrapped keys
-     */
-    List<KMSWrappedKeyVO> listByKekVersionId(Long kekVersionId);
-
-    /**
-     * List wrapped keys using a specific KEK version with pagination limit
-     * (useful for batch processing in background jobs)
-     *
-     * @param kekVersionId the KEK version ID (FK to kms_kek_versions)
-     * @param limit maximum number of keys to return
-     * @return list of wrapped keys (limited to specified count)
+     * Limited variant for batch processing during key rotation
      */
     List<KMSWrappedKeyVO> listByKekVersionId(Long kekVersionId, int limit);
 
-    /**
-     * List wrapped keys for a KMS key that need re-encryption (not using specified version)
-     *
-     * @param kmsKeyId the KMS key ID
-     * @param excludeKekVersionId the KEK version ID to exclude (keys using this version don't need rewrap)
-     * @return list of wrapped keys that need re-encryption
-     */
-    List<KMSWrappedKeyVO> listWrappedKeysForRewrap(long kmsKeyId, long excludeKekVersionId);
+    long countByKekVersionId(Long kekVersionId);
 }

@@ -50,7 +50,7 @@ public class KMSDatabaseKekObjectVO {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "uuid", nullable = false, unique = true)
+    @Column(name = "uuid", nullable = false)
     private String uuid;
 
     // PKCS#11 Object Class (CKA_CLASS)
@@ -134,17 +134,12 @@ public class KMSDatabaseKekObjectVO {
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
-    public KMSDatabaseKekObjectVO() {
-        this.uuid = UUID.randomUUID().toString();
-        this.created = new Date();
-    }
-
     /**
      * Constructor for creating a new KEK object
      *
-     * @param label      PKCS#11 label (CKA_LABEL)
-     * @param purpose    key purpose
-     * @param keyBits    key size in bits
+     * @param label       PKCS#11 label (CKA_LABEL)
+     * @param purpose     key purpose
+     * @param keyBits     key size in bits
      * @param keyMaterial encrypted key material (CKA_VALUE)
      */
     public KMSDatabaseKekObjectVO(String label, KeyPurpose purpose, Integer keyBits, byte[] keyMaterial) {
@@ -155,6 +150,11 @@ public class KMSDatabaseKekObjectVO {
         this.keyMaterial = keyMaterial;
         this.objectId = label.getBytes(); // Use label as object ID by default
         this.startDate = new Date();
+    }
+
+    public KMSDatabaseKekObjectVO() {
+        this.uuid = UUID.randomUUID().toString();
+        this.created = new Date();
     }
 
     public Long getId() {

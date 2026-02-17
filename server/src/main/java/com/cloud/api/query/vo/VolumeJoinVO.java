@@ -283,6 +283,12 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "kms_key_id")
     private Long kmsKeyId;
 
+    @Column(name = "kms_key_uuid")
+    private String kmsKeyUuid;
+
+    @Column(name = "kms_key_name")
+    private String kmsKeyName;
+
     @Column(name = "kms_wrapped_key_id")
     private Long kmsWrappedKeyId;
 
@@ -630,6 +636,14 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public Long getKmsKeyId() {
         return kmsKeyId;
+    }
+
+    public String getKmsKeyName() {
+        return kmsKeyName;
+    }
+
+    public String getKmsKeyUuid() {
+        return kmsKeyUuid;
     }
 
     public Long getKmsWrappedKeyId() {

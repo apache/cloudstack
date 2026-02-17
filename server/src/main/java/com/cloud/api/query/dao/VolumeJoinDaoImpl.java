@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.kms.KMSKekVersionVO;
-import org.apache.cloudstack.kms.KMSKeyVO;
 import org.apache.cloudstack.kms.KMSWrappedKeyVO;
 import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
 import org.apache.cloudstack.kms.dao.KMSKeyDao;
@@ -296,12 +295,9 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         volResponse.setObjectName("volume");
         volResponse.setExternalUuid(volume.getExternalUuid());
         volResponse.setEncryptionFormat(volume.getEncryptionFormat());
-        if (volume.getKmsKeyId() != null) {
-            KMSKeyVO kmsKey = kmsKeyDao.findById(volume.getKmsKeyId());
-            if (kmsKey != null) {
-                volResponse.setKmsKeyId(kmsKey.getUuid());
-            }
-        }
+        volResponse.setKmsKeyId(volume.getKmsKeyUuid());
+        volResponse.setKmsKey(volume.getKmsKeyName());
+
         if (volume.getKmsWrappedKeyId() != null) {
             KMSWrappedKeyVO wrappedKey = kmsWrappedKeyDao.findById(volume.getKmsWrappedKeyId());
             if (wrappedKey != null) {

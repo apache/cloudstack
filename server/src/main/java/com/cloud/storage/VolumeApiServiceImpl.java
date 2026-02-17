@@ -98,6 +98,7 @@ import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -370,6 +371,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Inject
     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+    @Inject
+    private KMSManager kmsManager;
 
     public static final String KVM_FILE_BASED_STORAGE_SNAPSHOT = "kvmFileBasedStorageSnapshot";
 
@@ -961,6 +964,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         String userSpecifiedName = getVolumeNameFromCommand(cmd);
+
+        if (cmd.getKmsKeyId() != null) {
+            kmsManager.checkKmsKeyForVolumeEncryption(caller, cmd.getKmsKeyId(), zoneId);
+        }
 
         return commitVolume(cmd.getSnapshotId(), caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()), details, cmd.getKmsKeyId());

@@ -413,6 +413,30 @@
                 </span>
               </div>
             </div>
+            <div class="resource-detail-item" v-if="$route.meta.name === 'volume' && resource.kmskey">
+              <div class="resource-detail-item__label">{{ $t('label.kms.key') }}</div>
+              <div class="resource-detail-item__details">
+                <safety-outlined />
+                <router-link
+                  v-if="resource.kmskeyid && $router.resolve('/kmskey/' + resource.kmskeyid).matched[0].redirect !== '/exception/404'"
+                  :to="{ path: '/kmskey/' + resource.kmskeyid }">
+                  {{ resource.kmskey }}
+                </router-link>
+                <span v-else>{{ resource.kmskey }}</span>
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="$route.meta.name === 'kmskey' && resource.hsmprofile">
+              <div class="resource-detail-item__label">{{ $t('label.hsm.profile') }}</div>
+              <div class="resource-detail-item__details">
+                <safety-outlined />
+                <router-link
+                  v-if="resource.hsmprofileid && $router.resolve('/hsmprofile/' + resource.hsmprofileid).matched[0].redirect !== '/exception/404'"
+                  :to="{ path: '/hsmprofile/' + resource.hsmprofileid }">
+                  {{ resource.hsmprofile }}
+                </router-link>
+                <span v-else>{{ resource.hsmprofile }}</span>
+              </div>
+            </div>
             <div class="resource-detail-item" v-if="resource.nic || ('networkkbsread' in resource && 'networkkbswrite' in resource)">
               <div class="resource-detail-item__label">{{ $t('label.network') }}</div>
               <div class="resource-detail-item__details resource-detail-item__details--start">

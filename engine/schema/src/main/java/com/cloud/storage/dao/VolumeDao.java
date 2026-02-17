@@ -177,4 +177,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     int getVolumeCountByOfferingId(long diskOfferingId);
 
     VolumeVO findByLastIdAndState(long lastVolumeId, Volume.State...states);
+
+    boolean existsWithKmsKey(long kmsKeyId);
 }

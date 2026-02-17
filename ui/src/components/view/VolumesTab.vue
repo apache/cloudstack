@@ -80,7 +80,7 @@ export default {
     return {
       vm: {},
       volumes: [],
-      defaultColumns: ['name', 'state', 'type', 'size'],
+      defaultColumns: ['name', 'state', 'type', 'size', 'kmskey'],
       allColumns: [
         {
           key: 'name',
@@ -100,6 +100,11 @@ export default {
           key: 'size',
           title: this.$t('label.size'),
           dataIndex: 'size'
+        },
+        {
+          key: 'kmskey',
+          title: this.$t('label.kms.key'),
+          dataIndex: 'kmskey'
         },
         {
           key: 'storage',

@@ -30,7 +30,7 @@ import org.apache.cloudstack.kms.KMSKey;
 import java.util.Date;
 
 @EntityReference(value = KMSKey.class)
-public class KMSKeyResponse extends BaseResponse implements ControlledEntityResponse {
+public class KMSKeyResponse extends BaseResponse implements ControlledViewEntityResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the UUID of the key")
@@ -76,9 +76,13 @@ public class KMSKeyResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "the zone name where the key is valid")
     private String zoneName;
 
-    @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "the KMS provider (database, pkcs11, etc.)")
-    private String provider;
+    @SerializedName(ApiConstants.HSM_PROFILE_ID)
+    @Param(description = "the zone ID where the key is valid")
+    private String hsmProfileId;
+
+    @SerializedName(ApiConstants.HSM_PROFILE)
+    @Param(description = "the zone name where the key is valid")
+    private String hsmProfileName;
 
     @SerializedName(ApiConstants.ALGORITHM)
     @Param(description = "the encryption algorithm")
@@ -88,20 +92,29 @@ public class KMSKeyResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "the key size in bits")
     private Integer keyBits;
 
-    @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the key (Enabled, Disabled, Deleted)")
-    private String state;
+    @SerializedName(ApiConstants.VERSION)
+    @Param(description = "the key size in bits")
+    private Integer version;
+
+    @SerializedName(ApiConstants.ENABLED)
+    @Param(description = "whether the key is enabled")
+    private Boolean enabled;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the creation timestamp")
     private Date created;
 
-    // KEK label is admin-only for security
-    @SerializedName(ApiConstants.KEK_LABEL)
-    @Param(description = "the provider-specific KEK label (admin only)", authorized = {RoleType.Admin})
-    private String kekLabel;
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project ID of the key")
+    private String projectId;
 
-    // Getters and Setters
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the key")
+    private String projectName;
+
+    @SerializedName(ApiConstants.KEK_LABEL)
+    @Param(description = "the provider-specific KEK label (admin only)", authorized = { RoleType.Admin })
+    private String kekLabel;
 
     public String getId() {
         return id;
@@ -146,12 +159,12 @@ public class KMSKeyResponse extends BaseResponse implements ControlledEntityResp
 
     @Override
     public void setProjectId(String projectId) {
-        // KMS keys are not project-scoped
+        this.projectId = projectId;
     }
 
     @Override
     public void setProjectName(String projectName) {
-        // KMS keys are not project-scoped
+        this.projectName = projectName;
     }
 
     public String getAccountId() {
@@ -205,12 +218,20 @@ public class KMSKeyResponse extends BaseResponse implements ControlledEntityResp
         this.zoneName = zoneName;
     }
 
-    public String getProvider() {
-        return provider;
+    public String getHsmProfileId() {
+        return hsmProfileId;
     }
 
-    public void setProvider(String provider) {
-        this.provider = provider;
+    public void setHsmProfileId(String hsmProfileId) {
+        this.hsmProfileId = hsmProfileId;
+    }
+
+    public String getHsmProfileName() {
+        return hsmProfileName;
+    }
+
+    public void setHsmProfileName(String hsmProfileName) {
+        this.hsmProfileName = hsmProfileName;
     }
 
     public String getAlgorithm() {
@@ -229,12 +250,20 @@ public class KMSKeyResponse extends BaseResponse implements ControlledEntityResp
         this.keyBits = keyBits;
     }
 
-    public String getState() {
-        return state;
+    public Integer getVersion() {
+        return version;
     }
 
-    public void setState(String state) {
-        this.state = state;
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
     public Date getCreated() {
