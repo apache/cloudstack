@@ -196,4 +196,4 @@ repos:
         args: [--config-file=.github/linters/.yamllint.yml]
         types: [yaml]
         files: \.ya?ml$
-        exclude: ^.*k8s-.*\.ya?ml$|^.github/workflows/daily-repo-status\.lock\.ya?ml$|^.github/workflows/issue-triage-agent.lock.yml$
+        exclude: ^.*k8s-.*\.ya?ml$|^.github/workflows/.*\.lock\.ya?ml$
