@@ -775,7 +775,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             logger.debug("Using VG name: {} (from sourceDir: {}) ", vgName, sourceDir);
 
             // Check if the LV exists in LVM using lvs command
-            logger.debug("Checking if volume {} exsits in VG {}", volumeUuid, vgName);
+            logger.debug("Checking if volume {} exists in VG {}", volumeUuid, vgName);
             Script checkLvCmd = new Script("/usr/sbin/lvs", 5000, logger);
             checkLvCmd.add("--noheadings");
             checkLvCmd.add("--unbuffered");

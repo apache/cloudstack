@@ -1667,6 +1667,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             if (backupSnapToSecondary) {
                 if (!isKvmAndFileBasedStorage) {
                     backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary, payload.getZoneIds(), payload.getStoragePoolIds());
+                    if (storagePool.getPoolType() == StoragePoolType.CLVM) {
+                        _snapshotStoreDao.removeBySnapshotStore(snapshotId, snapshotOnPrimary.getDataStore().getId(), snapshotOnPrimary.getDataStore().getRole());
+                    }
                 } else {
                     postSnapshotDirectlyToSecondary(snapshot, snapshotOnPrimary, snapshotId);
                 }

@@ -58,15 +58,11 @@ is_lv() {
 }
 
 get_vg() {
-	lvm lvs --noheadings --unbuffered --separator=/ "${1}" | cut -d '/' -f 2
+	lvm lvs --noheadings --unbuffered --separator=/ "${1}" | cut -d '/' -f 2 | tr -d ' '
 }
 
 get_lv() {
-	lvm lvs --noheadings --unbuffered --separator=/ "${1}" | cut -d '/' -f 1
-}
-
-double_hyphens() {
-	echo ${1} | sed -e "s/-/--/g"
+	lvm lvs --noheadings --unbuffered --separator=/ "${1}" | cut -d '/' -f 1 | tr -d ' '
 }
 
 create_snapshot() {
@@ -77,30 +73,39 @@ create_snapshot() {
   islv_ret=$?
 
   if [ ${dmsnapshot} = "yes" ] && [ "$islv_ret" == "1" ]; then
+    # Modern LVM snapshot approach
     local lv=`get_lv ${disk}`
     local vg=`get_vg ${disk}`
-    local lv_dm=`double_hyphens ${lv}`
-    local vg_dm=`double_hyphens ${vg}`
-    local lvdevice=/dev/mapper/${vg_dm}-${lv_dm}
-    local lv_bytes=`blockdev --getsize64 ${lvdevice}`
-    local lv_sectors=`blockdev --getsz ${lvdevice}`
+    local lv_bytes=`blockdev --getsize64 ${disk}`
 
-    lvm lvcreate --size ${lv_bytes}b --name "${snapshotname}-cow" ${vg} >&2 || return 2
-    dmsetup suspend ${vg_dm}-${lv_dm} >&2
-    if dmsetup info -c --noheadings -o name ${vg_dm}-${lv_dm}-real > /dev/null 2>&1; then
-      echo "0 ${lv_sectors} snapshot ${lvdevice}-real /dev/mapper/${vg_dm}-${snapshotname}--cow p 64" | \
-       dmsetup create "${vg_dm}-${snapshotname}" >&2 || ( destroy_snapshot ${disk} "${snapshotname}"; return 2 )
-      dmsetup resume "${vg_dm}-${snapshotname}" >&2 || ( destroy_snapshot ${disk} "${snapshotname}"; return 2 )
-    else
-      dmsetup table ${vg_dm}-${lv_dm} | dmsetup create ${vg_dm}-${lv_dm}-real >&2 || ( destroy_snapshot ${disk} "${snapshotname}"; return 2 )
-      dmsetup resume ${vg_dm}-${lv_dm}-real >&2 || ( destroy_snapshot ${disk} "${snapshotname}"; return 2 )
-      echo "0 ${lv_sectors} snapshot ${lvdevice}-real /dev/mapper/${vg_dm}-${snapshotname}--cow p 64" | \
-       dmsetup create "${vg_dm}-${snapshotname}" >&2 || ( destroy_snapshot ${disk} "${snapshotname}"; return 2 )
-      echo "0 ${lv_sectors} snapshot-origin ${lvdevice}-real" | \
-       dmsetup load ${vg_dm}-${lv_dm} >&2 || ( destroy_snapshot ${disk} "${snapshotname}"; return 2 )
-      dmsetup resume "${vg_dm}-${snapshotname}" >&2 || ( destroy_snapshot ${disk} "${snapshotname}"; return 2 )
+    # Calculate snapshot size (10% of origin size, minimum 100MB, maximum 10GB)
+    local snapshot_size=$((lv_bytes / 10))
+    local min_size=$((100 * 1024 * 1024))  # 100MB
+    local max_size=$((10 * 1024 * 1024 * 1024))  # 10GB
+
+    if [ ${snapshot_size} -lt ${min_size} ]; then
+      snapshot_size=${min_size}
+    elif [ ${snapshot_size} -gt ${max_size} ]; then
+      snapshot_size=${max_size}
     fi
-    dmsetup resume "${vg_dm}-${lv_dm}" >&2
+
+    # Round to nearest 512-byte multiple (LVM requirement)
+    snapshot_size=$(((snapshot_size + 511) / 512 * 512))
+
+    # Create LVM snapshot using native command
+    lvm lvcreate -L ${snapshot_size}b -s -n "${snapshotname}" "${vg}/${lv}" >&2
+    if [ $? -gt 0 ]; then
+      printf "***Failed to create LVM snapshot ${snapshotname} for ${vg}/${lv}\n" >&2
+      return 2
+    fi
+
+    # Activate the snapshot
+    lvm lvchange --yes -ay "${vg}/${snapshotname}" >&2
+    if [ $? -gt 0 ]; then
+      printf "***Failed to activate LVM snapshot ${snapshotname}\n" >&2
+      lvm lvremove -f "${vg}/${snapshotname}" >&2
+      return 2
+    fi
   elif [ -f "${disk}" ]; then
      $qemu_img snapshot -c "$snapshotname" $disk
 
@@ -132,25 +137,22 @@ destroy_snapshot() {
   islv_ret=$?
 
   if [ "$islv_ret" == "1" ]; then
+    # Modern LVM snapshot deletion
     local lv=`get_lv ${disk}`
     local vg=`get_vg ${disk}`
-    local lv_dm=`double_hyphens ${lv}`
-    local vg_dm=`double_hyphens ${vg}`
-    if [ -e /dev/mapper/${vg_dm}-${lv_dm}-real ]; then
-      local dm_refcount=`dmsetup info -c --noheadings -o open ${vg_dm}-${lv_dm}-real`
-      if [ ${dm_refcount} -le 2 ]; then
-        dmsetup suspend ${vg_dm}-${lv_dm} >&2
-        dmsetup table ${vg_dm}-${lv_dm}-real | dmsetup load ${vg_dm}-${lv_dm} >&2
-        dmsetup resume ${vg_dm}-${lv_dm}
-        dmsetup remove "${vg_dm}-${snapshotname}"
-        dmsetup remove ${vg_dm}-${lv_dm}-real
-      else
-        dmsetup remove "${vg_dm}-${snapshotname}"
-      fi
-    else
-      dmsetup remove "${vg_dm}-${snapshotname}"
+
+    # Check if snapshot exists
+    if ! lvm lvs "${vg}/${snapshotname}" > /dev/null 2>&1; then
+      printf "Snapshot ${vg}/${snapshotname} does not exist or was already deleted\n" >&2
+      return 0
     fi
-    lvm lvremove -f "${vg}/${snapshotname}-cow"
+
+    # Remove the snapshot using native LVM command
+    lvm lvremove -f "${vg}/${snapshotname}" >&2
+    if [ $? -gt 0 ]; then
+      printf "***Failed to remove LVM snapshot ${vg}/${snapshotname}\n" >&2
+      return 2
+    fi
   elif [ -f $disk ]; then
      #delete all the existing snapshots
      $qemu_img snapshot -l $disk |tail -n +3|awk '{print $1}'|xargs -I {} $qemu_img snapshot -d {} $disk >&2
@@ -170,12 +172,37 @@ rollback_snapshot() {
   local disk=$1
   local snapshotname="$2"
   local failed=0
+  is_lv ${disk}
+  islv_ret=$?
 
-  $qemu_img snapshot -a $snapshotname $disk
+  if [ ${dmrollback} = "yes" ] && [ "$islv_ret" == "1" ]; then
+    # Modern LVM snapshot merge (rollback)
+    local lv=`get_lv ${disk}`
+    local vg=`get_vg ${disk}`
 
-  if [ $? -gt 0 ]
-  then
-    printf "***Failed to apply snapshot $snapshotname for path $disk\n" >&2
+    # Check if snapshot exists
+    if ! lvm lvs "${vg}/${snapshotname}" > /dev/null 2>&1; then
+      printf "***Snapshot ${vg}/${snapshotname} does not exist\n" >&2
+      return 1
+    fi
+
+    # Use lvconvert --merge to rollback
+    lvm lvconvert --merge "${vg}/${snapshotname}" >&2
+    if [ $? -gt 0 ]; then
+      printf "***Failed to merge/rollback snapshot ${snapshotname} for ${vg}/${lv}\n" >&2
+      return 1
+    fi
+  elif [ -f ${disk} ]; then
+    # File-based snapshot rollback using qemu-img
+    $qemu_img snapshot -a $snapshotname $disk
+
+    if [ $? -gt 0 ]
+    then
+      printf "***Failed to apply snapshot $snapshotname for path $disk\n" >&2
+      failed=1
+    fi
+  else
+    printf "***Failed to rollback snapshot $snapshotname, undefined type $disk\n" >&2
     failed=1
   fi
 
@@ -204,20 +231,21 @@ backup_snapshot() {
 
   if [ ${dmsnapshot} = "yes" ] && [ "$islv_ret" == "1" ] ; then
     local vg=`get_vg ${disk}`
-    local vg_dm=`double_hyphens ${vg}`
     local scriptdir=`dirname ${0}`
 
-    if ! dmsetup info -c --noheadings -o name ${vg_dm}-${snapshotname} > /dev/null 2>&1; then
+    # Check if snapshot exists using native LVM command
+    if ! lvm lvs "${vg}/${snapshotname}" > /dev/null 2>&1; then
       printf "Disk ${disk} has no snapshot called ${snapshotname}.\n" >&2
       return 1
     fi
 
-    qemuimg_ret=$($qemu_img convert $forceShareFlag -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}" 2>&1)
+    # Use native LVM path for backup
+    qemuimg_ret=$($qemu_img convert $forceShareFlag -f raw -O qcow2 "/dev/${vg}/${snapshotname}" "${destPath}/${destName}" 2>&1)
     ret_code=$?
     if [ $ret_code -gt 0 ] && ([[ $qemuimg_ret == *"invalid option"*"'U'"* ]] || [[ $qemuimg_ret == *"unrecognized option"*"'-U'"* ]])
     then
       forceShareFlag=""
-      $qemu_img convert $forceShareFlag -f raw -O qcow2 "/dev/mapper/${vg_dm}-${snapshotname}" "${destPath}/${destName}"
+      $qemu_img convert $forceShareFlag -f raw -O qcow2 "/dev/${vg}/${snapshotname}" "${destPath}/${destName}"
       ret_code=$?
     fi
     if [ $ret_code -gt 0 ]
