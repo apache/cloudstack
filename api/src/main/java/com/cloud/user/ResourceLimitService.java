@@ -56,6 +56,8 @@ public interface ResourceLimitService {
             "The default maximum number of GPU devices that can be used for a domain", false);
     static final ConfigKey<Long> DefaultMaxProjectGpus = new ConfigKey<>("Project Defaults",Long.class,"max.project.gpus","20",
             "The default maximum number of GPU devices that can be used for a project", false);
+    ConfigKey<Long> DefaultMaxDnsAccounts = new ConfigKey<>("Account Defaults",Long.class, "max.account.dns_zones","10",
+            "The default maximum number of DNS zones that can be created by an Account", true);
 
     static final List<ResourceType> HostTagsSupportingTypes = List.of(ResourceType.user_vm, ResourceType.cpu, ResourceType.memory, ResourceType.gpu);
     static final List<ResourceType> StorageTagsSupportingTypes = List.of(ResourceType.volume, ResourceType.primary_storage);

@@ -33,8 +33,8 @@ import org.apache.cloudstack.dns.DnsProviderManager;
 import org.apache.cloudstack.dns.DnsServer;
 import org.apache.commons.lang3.BooleanUtils;
 
-@APICommand(name = "addDnsServer", description = "Adds a new external DNS server",
-        responseObject = DnsServerResponse.class, requestHasSensitiveInfo = true)
+@APICommand(name = "addDnsServer", description = "Adds a new external DNS server", responseObject = DnsServerResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0")
 public class AddDnsServerCmd extends BaseCmd {
 
     @Inject

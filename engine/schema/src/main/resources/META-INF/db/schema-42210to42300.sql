@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
 -- DNS Framework Schema
 -- ======================================================================
 
--- 1. DNS Server Table (Stores DNS Server Configurations)
+-- DNS Server Table (Stores DNS Server Configurations)
 CREATE TABLE `cloud`.`dns_server` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns server',
     `uuid` varchar(40) COMMENT 'uuid of the dns server',
@@ -76,7 +76,7 @@ CREATE TABLE `cloud`.`dns_server` (
     CONSTRAINT `fk_dns_server__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 2. DNS Zone Table (Stores DNS Zone Metadata)
+-- DNS Zone Table (Stores DNS Zone Metadata)
 CREATE TABLE `cloud`.`dns_zone` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns zone',
     `uuid` varchar(40) COMMENT 'uuid of the dns zone',
@@ -99,7 +99,7 @@ CREATE TABLE `cloud`.`dns_zone` (
     CONSTRAINT `fk_dns_zone__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 3. DNS Zone Network Map (One-to-Many Link)
+-- DNS Zone Network Map (One-to-Many Link)
 CREATE TABLE `cloud`.`dns_zone_network_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns zone to network mapping',
   `uuid` varchar(40),
@@ -115,3 +115,7 @@ CREATE TABLE `cloud`.`dns_zone_network_map` (
   CONSTRAINT `fk_dns_map__zone_id` FOREIGN KEY (`dns_zone_id`) REFERENCES `dns_zone` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_dns_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Set default limit to 10 DNS zones for standard Accounts
+INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`, `default_value`)
+VALUES ('Advanced', 'DEFAULT', 'ResourceLimitManager', 'max.account.dns_zones', '10', 'The default maximum number of DNS zones that can be created by an Account', '10');

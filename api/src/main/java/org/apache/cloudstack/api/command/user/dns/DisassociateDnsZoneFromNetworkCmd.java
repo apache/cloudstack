@@ -34,7 +34,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 @APICommand(name = "disassociateDnsZoneFromNetwork", description = "Removes the association between a DNS Zone and a Network",
-        responseObject = SuccessResponse.class)
+        responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0")
 public class DisassociateDnsZoneFromNetworkCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsZoneNetworkMapResponse.class,

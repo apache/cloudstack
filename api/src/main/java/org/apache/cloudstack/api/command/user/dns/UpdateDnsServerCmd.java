@@ -34,8 +34,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.EnumUtils;
 
-@APICommand(name = "updateDnsServer", description = "Update DNS server",
-        responseObject = DnsServerResponse.class, requestHasSensitiveInfo = true)
+@APICommand(name = "updateDnsServer", description = "Update DNS server", responseObject = DnsServerResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0")
 public class UpdateDnsServerCmd extends BaseCmd {
 
     @Inject

@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.dns.DnsProviderManager;
 
 @APICommand(name = "listDnsProviders", description = "Lists available DNS plugin providers",
-        responseObject = DnsProviderResponse.class, requestHasSensitiveInfo = false)
+        responseObject = DnsProviderResponse.class, requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false, since = "4.23.0")
 public class ListDnsProvidersCmd extends BaseListCmd {
 
     @Inject

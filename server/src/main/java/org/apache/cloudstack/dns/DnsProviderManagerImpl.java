@@ -35,6 +35,8 @@ import org.apache.cloudstack.api.command.user.dns.ListDnsProvidersCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsRecordsCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsServersCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsZonesCmd;
+import org.apache.cloudstack.api.command.user.dns.RegisterDnsRecordForVmCmd;
+import org.apache.cloudstack.api.command.user.dns.RemoveDnsRecordForVmCmd;
 import org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd;
 import org.apache.cloudstack.api.command.user.dns.UpdateDnsZoneCmd;
 import org.apache.cloudstack.api.response.DnsRecordResponse;
@@ -62,6 +64,10 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
 
 @Component
 public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderManager, PluggableService {
@@ -76,6 +82,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     NetworkDao networkDao;
     @Inject
     DnsZoneNetworkMapDao dnsZoneNetworkMapDao;
+    @Inject
+    UserVmDao userVmDao;
+    @Inject
+    NicDao nicDao;
 
     private DnsProvider getProvider(DnsProviderType type) {
         if (type == null) {
@@ -493,6 +503,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (network == null) {
             throw new InvalidParameterValueException("Network not found.");
         }
+
+        if (!NetworkVO.GuestType.Shared.equals(network.getGuestType())) {
+            throw new CloudRuntimeException(String.format("Operation is not permitted for network type: %s", network.getGuestType()));
+        }
         accountMgr.checkAccess(caller, null, true, network);
         DnsZoneNetworkMapVO existing = dnsZoneNetworkMapDao.findByZoneAndNetwork(zone.getId(), network.getId());
         if (existing != null) {
@@ -523,6 +537,103 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, true, zone);
         return dnsZoneNetworkMapDao.remove(mapping.getId());
+    }
+
+    @Override
+    public boolean registerDnsRecordForVm(RegisterDnsRecordForVmCmd cmd) {
+        return processDnsRecordForInstance(cmd.getVmId(), cmd.getNetworkId(), true);
+    }
+
+    @Override
+    public boolean removeDnsRecordForVm(RemoveDnsRecordForVmCmd cmd) {
+        return processDnsRecordForInstance(cmd.getVmId(), cmd.getNetworkId(), false);
+    }
+
+    /**
+     * Helper method to handle both Register and Remove logic for Instance
+     */
+    private boolean processDnsRecordForInstance(Long instanceId, Long networkId, boolean isAdd) {
+        // 1. Fetch VM and verify access
+        UserVmVO instance = userVmDao.findById(instanceId);
+        if (instance == null) {
+            throw new InvalidParameterValueException("Instance not found.");
+        }
+        accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, instance);
+
+        // 2. Resolve the NIC and Network
+        NicVO nic;
+        if (networkId != null) {
+            nic = nicDao.findByNtwkIdAndInstanceId(networkId, instance.getId());
+        } else {
+            nic = nicDao.findDefaultNicForVM(instance.getId());
+            networkId = nic != null ? nic.getNetworkId() : null;
+        }
+
+        if (nic == null) {
+            throw new CloudRuntimeException("No valid NIC found for this Instance on the specified Network.");
+        }
+
+        // 3. Find if this network is linked to any DNS Zones
+        List<DnsZoneNetworkMapVO> mappings = dnsZoneNetworkMapDao.listByNetworkId(networkId);
+        if (mappings == null || mappings.isEmpty()) {
+            throw new CloudRuntimeException("No DNS zones are mapped to this network. Please associate a zone first.");
+        }
+
+        boolean atLeastOneSuccess = false;
+        // 4. Iterate over mapped zones and push the record
+        for (DnsZoneNetworkMapVO map : mappings) {
+            DnsZoneVO zone = dnsZoneDao.findById(map.getDnsZoneId());
+            if (zone == null || zone.getState() != DnsZone.State.Active) {
+                continue;
+            }
+
+            DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
+
+            // Construct FQDN Prefix (e.g., "instance-id" or "instance-id.subdomain")
+            String recordName = String.valueOf(instance.getInstanceName());
+            if (map.getSubDomain() != null && !map.getSubDomain().isEmpty()) {
+                recordName = recordName + "." + map.getSubDomain();
+            }
+
+            try {
+                DnsProvider provider = getProvider(server.getProviderType());
+                // Handle IPv4 (A Record)
+                if (nic.getIPv4Address() != null) {
+                    DnsRecord recordA = new DnsRecord(recordName, DnsRecord.RecordType.A, java.util.Arrays.asList(nic.getIPv4Address()), 3600);
+                    if (isAdd) {
+                        provider.addRecord(server, zone, recordA);
+                    } else {
+                        provider.deleteRecord(server, zone, recordA);
+                    }
+                    atLeastOneSuccess = true;
+                }
+
+                // Handle IPv6 (AAAA Record) if it exists
+                if (nic.getIPv6Address() != null) {
+                    DnsRecord recordAAAA = new DnsRecord(recordName, DnsRecord.RecordType.AAAA, java.util.Arrays.asList(nic.getIPv6Address()), 3600);
+                    if (isAdd) {
+                        provider.addRecord(server, zone, recordAAAA);
+                    } else {
+                        provider.deleteRecord(server, zone, recordAAAA);
+                    }
+                    atLeastOneSuccess = true;
+                }
+
+            } catch (Exception ex) {
+                logger.error(
+                        "Failed to {} DNS record for Instance {} in zone {}",
+                        isAdd ? "register" : "remove",
+                        instance.getHostName(),
+                        zone.getName(),
+                        ex
+                );
+            }
+        }
+
+        if (!atLeastOneSuccess) {
+            throw new CloudRuntimeException("Failed to process DNS records. Ensure the Instance has a valid IP address.");
+        }
+        return true;
     }
 
     @Override
@@ -557,6 +668,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         cmdList.add(CreateDnsRecordCmd.class);
         cmdList.add(ListDnsRecordsCmd.class);
         cmdList.add(DeleteDnsRecordCmd.class);
+        cmdList.add(RegisterDnsRecordForVmCmd.class);
+        cmdList.add(RemoveDnsRecordForVmCmd.class);
         return cmdList;
     }
 
