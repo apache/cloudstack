@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
@@ -23,20 +24,48 @@ export default {
   icon: 'hdd-outlined',
   children: [
     {
-      name: 'KMS key',
+      name: 'kmskey',
       title: 'label.kms.keys',
       icon: 'file-text-outlined',
       permission: ['listKMSKeys'],
       resourceType: 'KMSKey',
       columns: () => {
-        const fields = ['name', 'state', 'account', 'domain', 'purpose']
+        const fields = ['name', 'enabled', 'purpose', 'hsmprofile']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('account')
+        }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push('domain')
         return fields
       },
-      details: ['id', 'name', 'description', 'state', 'account', 'domain', 'created'],
+      details: ['id', 'name', 'description', 'version', 'enabled', 'account', 'domain', 'project', 'created', 'hsmprofile'],
+      related: [
+        {
+          name: 'volume',
+          title: 'label.volumes',
+          param: 'kmskeyid'
+        }
+      ],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'KmsKey',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => {
+            return 'listEvents' in store.getters.apis
+          }
+        }
+      ],
       searchFilters: () => {
-        var filters = ['zoneid']
+        var filters = ['zoneid', 'hsmprofileid']
         if (store.getters.userInfo.roletype === 'Admin') {
-          filters.push('accountid', 'domainid')
+          filters.push('account', 'domainid', 'projectid')
         }
         return filters
       },
@@ -47,23 +76,61 @@ export default {
           label: 'label.create.kms.key',
           listView: true,
           popup: true,
-          dataView: true,
+          dataView: false,
           args: (record, store, group) => {
-            var fields = ['zoneid', 'name', 'description', 'purpose', 'hsmprofileid', 'keybits']
-            return (['Admin'].includes(store.userInfo.roletype))
-              ? fields.concat(['domainid', 'account']) : fields
+            return ['Admin'].includes(store.userInfo.roletype)
+              ? ['zoneid', 'domainid', 'account', 'projectid', 'name', 'description', 'hsmprofileid', 'keybits']
+              : ['zoneid', 'name', 'description', 'hsmprofileid', 'keybits']
           }
         },
         {
           api: 'updateKMSKey',
           icon: 'edit-outlined',
           docHelp: 'adminguide/storage.html#lifecycle-operations',
-          label: 'label.update.kms.ket',
+          label: 'label.update.kms.key',
           dataView: true,
           popup: true,
-          args: ['id', 'name', 'description', 'state'],
+          args: ['id', 'name', 'description', 'enabled'],
           mapping: {
             id: {
+              value: (record) => record.id
+            }
+          }
+        },
+        {
+          api: 'rotateKMSKey',
+          icon: 'sync-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.rotate.kms.key',
+          dataView: true,
+          popup: true,
+          args: ['id', 'keybits', 'hsmprofileid'],
+          mapping: {
+            id: {
+              value: (record) => record.id
+            }
+          }
+        },
+        {
+          api: 'migrateVolumesToKMS',
+          icon: 'swap-outlined',
+          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          label: 'label.migrate.volumes.to.kms',
+          message: 'message.action.migrate.volumes.to.kms',
+          dataView: true,
+          popup: true,
+          show: (record, store) => {
+            return ['Admin'].includes(store.userInfo.roletype)
+          },
+          args: (record, store) => {
+            var fields = ['zoneid', 'kmskeyid', 'volumeids']
+            if (['Admin'].includes(store.userInfo.roletype)) {
+              fields = fields.concat(['account', 'domainid'])
+            }
+            return fields
+          },
+          mapping: {
+            kmskeyid: {
               value: (record) => record.id
             }
           }
@@ -88,16 +155,47 @@ export default {
     {
       name: 'hsmprofile',
       title: 'label.hsm.profile',
-      icon: 'file-text-outlined',
+      icon: 'safety-outlined',
       permission: ['listHSMProfiles'],
       resourceType: 'HSMProfile',
       columns: () => {
-        const fields = ['name', 'state']
+        const fields = ['name', 'enabled']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('account')
+        }
+        if (store.getters.listAllProjects) {
+          fields.push('project')
+        }
+        fields.push('domain')
         return fields
       },
-      details: ['id', 'name', 'description', 'state', 'account', 'domain', 'created'],
+      details: ['id', 'name', 'description', 'enabled', 'account', 'domain', 'project', 'created', 'details'],
+      related: [
+        {
+          name: 'kmskey',
+          title: 'label.kms.keys',
+          param: 'hsmprofileid'
+        }
+      ],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'HsmProfile',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => {
+            return 'listEvents' in store.getters.apis
+          }
+        }
+      ],
       searchFilters: () => {
         var filters = ['zoneid']
+        if (store.getters.userInfo.roletype === 'Admin') {
+          filters.push('account', 'domainid', 'projectid')
+        }
         return filters
       },
       actions: [
@@ -107,10 +205,16 @@ export default {
           label: 'label.create.hsmprofile',
           listView: true,
           popup: true,
-          dataView: true,
+          dataView: false,
           args: (record, store, group) => {
-            return (['Admin'].includes(store.userInfo.roletype))
-              ? ['zoneid', 'name', 'vendorname', 'domainid', 'accountid', 'details', 'protocol'] : ['zoneid', 'name', 'vendorname', 'details', 'protocol']
+            return ['Admin'].includes(store.userInfo.roletype)
+              ? ['name', 'zoneid', 'vendorname', 'domainid', 'account', 'projectid', 'details', 'system']
+              : ['name', 'zoneid', 'vendorname', 'details']
+          },
+          mapping: {
+            details: {
+              optionalKeys: ['pin', 'library', 'slot', 'token_label']
+            }
           }
         },
         {
@@ -120,7 +224,7 @@ export default {
           label: 'label.update.hsm.profile',
           dataView: true,
           popup: true,
-          args: ['id', 'name', 'details', 'enabled'],
+          args: ['id', 'name', 'enabled'],
           mapping: {
             id: {
               value: (record) => record.id

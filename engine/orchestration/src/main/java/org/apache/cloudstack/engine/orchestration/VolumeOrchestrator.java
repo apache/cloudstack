@@ -1947,10 +1947,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return volume;
         }
 
-        Long zoneId = volume.getDataCenterId();
-
-        // Check if KMS is enabled for zone AND KMS key is provided
-        if (kmsManager != null && kmsManager.isKmsEnabled(zoneId) && kmsKey != null) {
+        if (kmsKey != null) {
             // Determine caller account ID if not provided
             if (callerAccountId == null) {
                 callerAccountId = volume.getAccountId();

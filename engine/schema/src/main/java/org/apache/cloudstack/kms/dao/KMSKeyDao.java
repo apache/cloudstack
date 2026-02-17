@@ -19,40 +19,15 @@ package org.apache.cloudstack.kms.dao;
 
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
-import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.kms.KMSKeyVO;
 
 import java.util.List;
 
 public interface KMSKeyDao extends GenericDao<KMSKeyVO, Long> {
 
-    /**
-     * Find a KMS key by KEK label and provider
-     */
-    KMSKeyVO findByKekLabel(String kekLabel, String providerName);
+    List<KMSKeyVO> listByAccount(Long accountId, KeyPurpose purpose, Boolean enabled);
 
-    /**
-     * List KMS keys owned by an account
-     */
-    List<KMSKeyVO> listByAccount(Long accountId, KeyPurpose purpose, KMSKey.State state);
+    List<KMSKeyVO> listByZone(Long zoneId, KeyPurpose purpose, Boolean enabled);
 
-    /**
-     * List KMS keys in a zone
-     */
-    List<KMSKeyVO> listByZone(Long zoneId, KeyPurpose purpose, KMSKey.State state);
-
-    /**
-     * List KMS keys accessible to an account (owns or in parent domain)
-     */
-    List<KMSKeyVO> listAccessibleKeys(Long accountId, Long domainId, Long zoneId, KeyPurpose purpose, KMSKey.State state);
-
-    /**
-     * Count how many wrapped keys reference this KEK
-     */
-    long countWrappedKeysByKmsKey(Long kmsKeyId);
-
-    /**
-     * Count KEKs by label (to check for duplicates)
-     */
-    long countByKekLabel(String kekLabel, String providerName);
+    long countByHsmProfileId(Long hsmProfileId);
 }

@@ -17,15 +17,8 @@
 
 package org.apache.cloudstack.kms.dao;
 
-import java.util.List;
-
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.kms.HSMProfileVO;
 
-import com.cloud.utils.db.GenericDao;
-
 public interface HSMProfileDao extends GenericDao<HSMProfileVO, Long> {
-    List<HSMProfileVO> listByAccountId(Long accountId);
-    List<HSMProfileVO> listAdminProfiles();
-    List<HSMProfileVO> listAdminProfiles(Long zoneId);
-    HSMProfileVO findByName(String name);
 }

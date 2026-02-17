@@ -17,6 +17,23 @@
 
 package org.apache.cloudstack.kms;
 
+import com.cloud.event.ActionEventUtils;
+import org.apache.cloudstack.framework.kms.KMSException;
+import org.apache.cloudstack.framework.kms.KMSProvider;
+import org.apache.cloudstack.framework.kms.KeyPurpose;
+import org.apache.cloudstack.kms.dao.HSMProfileDao;
+import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
+import org.apache.cloudstack.kms.dao.KMSKeyDao;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,21 +45,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.apache.cloudstack.framework.kms.KMSException;
-import org.apache.cloudstack.framework.kms.KMSProvider;
-import org.apache.cloudstack.framework.kms.KeyPurpose;
-import org.apache.cloudstack.kms.dao.HSMProfileDao;
-import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
-import org.apache.cloudstack.kms.dao.KMSKeyDao;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-
 /**
  * Unit tests for KMS key creation logic in KMSManagerImpl
  * Tests key creation with explicit and auto-resolved HSM profiles
@@ -50,32 +52,21 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class KMSManagerImplKeyCreationTest {
 
+    private final Long testAccountId = 100L;
+    private final Long testDomainId = 1L;
+    private final Long testZoneId = 1L;
+    private final String testProviderName = "pkcs11";
     @Spy
     @InjectMocks
     private KMSManagerImpl kmsManager;
-
     @Mock
     private KMSKeyDao kmsKeyDao;
-
     @Mock
     private KMSKekVersionDao kmsKekVersionDao;
-
     @Mock
     private HSMProfileDao hsmProfileDao;
-
     @Mock
     private KMSProvider kmsProvider;
-
-    private Long testAccountId = 100L;
-    private Long testDomainId = 1L;
-    private Long testZoneId = 1L;
-    private String testProviderName = "pkcs11";
-
-    @Before
-    public void setUp() {
-        // Setup provider
-        when(kmsProvider.getProviderName()).thenReturn(testProviderName);
-    }
 
     /**
      * Test: createUserKMSKey uses explicit HSM profile when provided
@@ -87,13 +78,12 @@ public class KMSManagerImplKeyCreationTest {
         Long hsmProfileId = 10L;
 
         HSMProfileVO profile = mock(HSMProfileVO.class);
-        when(profile.getAccountId()).thenReturn(testAccountId);
         when(profile.getProtocol()).thenReturn(testProviderName);
         when(hsmProfileDao.findById(hsmProfileId)).thenReturn(profile);
 
         // Mock provider KEK creation
         when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(hsmProfileId)))
-            .thenReturn("test-kek-label");
+                .thenReturn("test-kek-label");
 
         // Mock DAO persist operations
         KMSKeyVO mockKey = mock(KMSKeyVO.class);
@@ -103,23 +93,27 @@ public class KMSManagerImplKeyCreationTest {
         KMSKekVersionVO mockVersion = mock(KMSKekVersionVO.class);
         when(kmsKekVersionDao.persist(any(KMSKekVersionVO.class))).thenReturn(mockVersion);
 
-        // Mock getKMSProvider to return our mock provider
-        doReturn(true).when(kmsManager).isKmsEnabled(testZoneId);
         doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
 
-        KMSKey result = kmsManager.createUserKMSKey(testAccountId, testDomainId,
-            testZoneId, "test-key", "Test key", KeyPurpose.VOLUME_ENCRYPTION, 256, hsmProfileId);
+        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            actionEventUtils.when(() -> ActionEventUtils.onCompletedActionEvent(
+                    Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyInt())).thenReturn(2L);
+            KMSKey result = kmsManager.createUserKMSKey(testAccountId, testDomainId,
+                    testZoneId, "test-key", "Test key", KeyPurpose.VOLUME_ENCRYPTION, 256, hsmProfileId);
 
-        // Verify explicit profile was used
-        assertNotNull(result);
-        verify(hsmProfileDao).findById(hsmProfileId);
-        verify(kmsProvider).createKek(any(KeyPurpose.class), anyString(), eq(256), eq(hsmProfileId));
+            // Verify explicit profile was used
+            assertNotNull(result);
+            verify(hsmProfileDao).findById(hsmProfileId);
+            verify(kmsProvider).createKek(any(KeyPurpose.class), anyString(), eq(256), eq(hsmProfileId));
 
-        // Verify KMSKeyVO was created with correct profile ID
-        ArgumentCaptor<KMSKeyVO> keyCaptor = ArgumentCaptor.forClass(KMSKeyVO.class);
-        verify(kmsKeyDao).persist(keyCaptor.capture());
-        KMSKeyVO createdKey = keyCaptor.getValue();
-        assertEquals(hsmProfileId, createdKey.getHsmProfileId());
+            // Verify KMSKeyVO was created with correct profile ID
+            ArgumentCaptor<KMSKeyVO> keyCaptor = ArgumentCaptor.forClass(KMSKeyVO.class);
+            verify(kmsKeyDao).persist(keyCaptor.capture());
+            KMSKeyVO createdKey = keyCaptor.getValue();
+            assertEquals(hsmProfileId, createdKey.getHsmProfileId());
+        }
     }
 
     /**
@@ -132,10 +126,8 @@ public class KMSManagerImplKeyCreationTest {
         long hsmProfileId = 1L;
         when(hsmProfileDao.findById(hsmProfileId)).thenReturn(null);
 
-        doReturn(true).when(kmsManager).isKmsEnabled(testZoneId);
-
         kmsManager.createUserKMSKey(testAccountId, testDomainId, testZoneId,
-            "test-key", "Test key", KeyPurpose.VOLUME_ENCRYPTION, 256, hsmProfileId);
+                "test-key", "Test key", KeyPurpose.VOLUME_ENCRYPTION, 256, hsmProfileId);
     }
 
     /**
@@ -148,11 +140,10 @@ public class KMSManagerImplKeyCreationTest {
 
         HSMProfileVO profile = mock(HSMProfileVO.class);
         when(profile.getProtocol()).thenReturn(testProviderName);
-        when(profile.getAccountId()).thenReturn(testAccountId);
         when(hsmProfileDao.findById(hsmProfileId)).thenReturn(profile);
 
         when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(hsmProfileId)))
-            .thenReturn("test-kek-label");
+                .thenReturn("test-kek-label");
 
         KMSKeyVO mockKey = mock(KMSKeyVO.class);
         when(mockKey.getId()).thenReturn(1L);
@@ -161,18 +152,24 @@ public class KMSManagerImplKeyCreationTest {
         KMSKekVersionVO mockVersion = mock(KMSKekVersionVO.class);
         when(kmsKekVersionDao.persist(any(KMSKekVersionVO.class))).thenReturn(mockVersion);
 
-        doReturn(true).when(kmsManager).isKmsEnabled(testZoneId);
         doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
 
-        kmsManager.createUserKMSKey(testAccountId, testDomainId, testZoneId,
-            "test-key", "Test key", KeyPurpose.VOLUME_ENCRYPTION, 256, hsmProfileId);
+        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            actionEventUtils.when(() -> ActionEventUtils.onCompletedActionEvent(
+                    Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyInt())).thenReturn(2L);
 
-        // Verify KEK version was created with correct profile ID
-        ArgumentCaptor<KMSKekVersionVO> versionCaptor = ArgumentCaptor.forClass(KMSKekVersionVO.class);
-        verify(kmsKekVersionDao).persist(versionCaptor.capture());
-        KMSKekVersionVO createdVersion = versionCaptor.getValue();
-        assertEquals(hsmProfileId, createdVersion.getHsmProfileId());
-        assertEquals(Integer.valueOf(1), Integer.valueOf(createdVersion.getVersionNumber()));
-        assertEquals("test-kek-label", createdVersion.getKekLabel());
+            kmsManager.createUserKMSKey(testAccountId, testDomainId, testZoneId,
+                    "test-key", "Test key", KeyPurpose.VOLUME_ENCRYPTION, 256, hsmProfileId);
+
+            // Verify KEK version was created with correct profile ID
+            ArgumentCaptor<KMSKekVersionVO> versionCaptor = ArgumentCaptor.forClass(KMSKekVersionVO.class);
+            verify(kmsKekVersionDao).persist(versionCaptor.capture());
+            KMSKekVersionVO createdVersion = versionCaptor.getValue();
+            assertEquals(hsmProfileId, createdVersion.getHsmProfileId());
+            assertEquals(Integer.valueOf(1), createdVersion.getVersionNumber());
+            assertEquals("test-kek-label", createdVersion.getKekLabel());
+        }
     }
 }

@@ -115,7 +115,6 @@ import org.apache.cloudstack.api.response.HypervisorGuestOsResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
@@ -219,6 +218,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.gui.theme.GuiThemeJoin;
+import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
@@ -425,7 +425,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-import org.apache.cloudstack.kms.KMSKey;
 import com.cloud.user.UserData;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserDataDao;
@@ -531,6 +530,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private ASNumberRangeDao asNumberRangeDao;
     @Inject
     private ASNumberDao asNumberDao;
+    @Inject
+    private HSMProfileDao hsmProfileDao;
 
     @Inject
     ObjectStoreDao _objectStoreDao;

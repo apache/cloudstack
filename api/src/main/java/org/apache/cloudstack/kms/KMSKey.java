@@ -33,73 +33,28 @@ import java.util.Date;
  */
 public interface KMSKey extends Identity, InternalIdentity, ControlledEntity {
 
-    /**
-     * Get the user-friendly name of the key
-     */
     String getName();
 
-    /**
-     * Get the description of the key
-     */
     String getDescription();
 
     /**
-     * Get the provider-specific KEK label/ID
-     * (internal identifier used by the KMS provider)
+     * Provider-specific KEK label/ID (internal identifier used by the KMS provider)
      */
     String getKekLabel();
 
-    /**
-     * Get the purpose of this key
-     */
     KeyPurpose getPurpose();
 
-    /**
-     * Get the zone ID where this key is valid
-     */
     Long getZoneId();
 
-    /**
-     * Get the KMS provider name (e.g., "database", "pkcs11")
-     */
-    String getProviderName();
-
-    /**
-     * Get the encryption algorithm (e.g., "AES/GCM/NoPadding")
-     */
     String getAlgorithm();
 
-    /**
-     * Get the key size in bits (e.g., 128, 192, 256)
-     */
     Integer getKeyBits();
 
-    /**
-     * Get the current state of the key
-     */
-    State getState();
+    boolean isEnabled();
 
-    /**
-     * Get the creation timestamp
-     */
     Date getCreated();
 
-    /**
-     * Get the removal timestamp (null if not removed)
-     */
     Date getRemoved();
-
-    /**
-     * Key state enumeration
-     */
-    enum State {
-        /** Key is active and can be used for encryption/decryption */
-        Enabled,
-        /** Key is disabled and cannot be used for new operations */
-        Disabled,
-        /** Key is soft-deleted */
-        Deleted
-    }
 
     Long getHsmProfileId();
 }

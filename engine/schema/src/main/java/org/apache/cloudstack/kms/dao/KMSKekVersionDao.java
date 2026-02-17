@@ -23,34 +23,21 @@ import org.apache.cloudstack.kms.KMSKekVersionVO;
 import java.util.List;
 
 public interface KMSKekVersionDao extends GenericDao<KMSKekVersionVO, Long> {
-    /**
-     * Get the active version for a KMS key
-     */
+
     KMSKekVersionVO getActiveVersion(Long kmsKeyId);
 
     /**
-     * Get all versions that can be used for decryption (Active and Previous)
+     * Returns Active and Previous versions (usable for decryption)
      */
     List<KMSKekVersionVO> getVersionsForDecryption(Long kmsKeyId);
 
-    /**
-     * List all versions for a KMS key
-     */
     List<KMSKekVersionVO> listByKmsKeyId(Long kmsKeyId);
 
-    /**
-     * Find a specific version by KMS key ID and version number
-     */
     KMSKekVersionVO findByKmsKeyIdAndVersion(Long kmsKeyId, Integer versionNumber);
 
-    /**
-     * Find a KEK version by KEK label
-     */
     KMSKekVersionVO findByKekLabel(String kekLabel);
 
-    /**
-     * Find all KEK versions with a specific status
-     * (useful for background jobs to find versions needing processing)
-     */
     List<KMSKekVersionVO> findByStatus(KMSKekVersionVO.Status status);
+
+    List<KMSKekVersionVO> listByHsmProfileId(Long hsmProfileId);
 }

@@ -17,8 +17,7 @@
 
 package org.apache.cloudstack.kms;
 
-import java.util.Date;
-import java.util.UUID;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -26,6 +25,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "kms_hsm_profiles")
@@ -60,6 +61,9 @@ public class HSMProfileVO implements HSMProfile {
     @Column(name = "enabled")
     private boolean enabled;
 
+    @Column(name = "system")
+    private boolean system;
+
     @Column(name = "created")
     private Date created;
 
@@ -69,6 +73,7 @@ public class HSMProfileVO implements HSMProfile {
     public HSMProfileVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
+        this.system = false;
     }
 
     public HSMProfileVO(String name, String protocol, Long accountId, Long domainId, Long zoneId, String vendorName) {
@@ -80,7 +85,15 @@ public class HSMProfileVO implements HSMProfile {
         this.zoneId = zoneId;
         this.vendorName = vendorName;
         this.enabled = true;
+        this.system = false;
         this.created = new Date();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("HSMProfileVO %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "protocol", "system", "enabled"));
     }
 
     @Override
@@ -104,13 +117,13 @@ public class HSMProfileVO implements HSMProfile {
     }
 
     @Override
-    public Long getAccountId() {
-        return accountId;
+    public long getAccountId() {
+        return accountId == null ? -1 : accountId;
     }
 
     @Override
-    public Long getDomainId() {
-        return domainId;
+    public long getDomainId() {
+        return domainId == null ? -1 : domainId;
     }
 
     @Override
@@ -138,8 +151,13 @@ public class HSMProfileVO implements HSMProfile {
         return removed;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    @Override
+    public Class<?> getEntityType() {
+        return HSMProfile.class;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
     }
 
     public void setEnabled(boolean enabled) {
@@ -150,7 +168,16 @@ public class HSMProfileVO implements HSMProfile {
         this.vendorName = vendorName;
     }
 
-    public void setRemoved(Date removed) {
-        this.removed = removed;
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public boolean isSystem() {
+        return system;
+    }
+
+    public void setSystem(boolean system) {
+        this.system = system;
     }
 }

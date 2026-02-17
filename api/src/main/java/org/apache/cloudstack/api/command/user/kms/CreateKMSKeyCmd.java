@@ -20,7 +20,6 @@
 package org.apache.cloudstack.api.command.user.kms;
 
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -33,6 +32,7 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.kms.KMSException;
@@ -64,9 +64,8 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
     private String description;
 
     @Parameter(name = ApiConstants.PURPOSE,
-               required = true,
                type = CommandType.STRING,
-               description = "Purpose of the key: volume, tls")
+               description = "Purpose of the key: volume, tls. (default: volume)")
     private String purpose;
 
     @Parameter(name = ApiConstants.ZONE_ID,
@@ -86,6 +85,12 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
                entityType = DomainResponse.class,
                description = "Domain ID (for creating keys for child accounts - requires domain admin or admin)")
     private Long domainId;
+
+    @Parameter(name = ApiConstants.PROJECT_ID,
+               type = CommandType.UUID,
+               entityType = ProjectResponse.class,
+               description = "ID of the project to create the KMS key for")
+    private Long projectId;
 
     @Parameter(name = ApiConstants.KEY_BITS,
                type = CommandType.INTEGER,
@@ -108,7 +113,7 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
     }
 
     public String getPurpose() {
-        return purpose;
+        return purpose == null ? "volume" : purpose;
     }
 
     public Long getZoneId() {
@@ -123,8 +128,12 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
         return domainId;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
+
     public Integer getKeyBits() {
-        return keyBits != null ? keyBits : 256; // Default to 256 bits
+        return keyBits != null ? keyBits : 256;
     }
 
     public Long getHsmProfileId() {
@@ -145,11 +154,11 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = CallContext.current().getCallingAccount();
-        if (accountName != null || domainId != null) {
-            return _accountService.finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
+        if (accountId != null) {
+            return accountId;
         }
-        return caller.getId();
+        return CallContext.current().getCallingAccount().getId();
     }
 
     @Override

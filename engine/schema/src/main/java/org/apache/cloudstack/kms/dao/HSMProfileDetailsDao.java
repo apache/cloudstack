@@ -17,14 +17,17 @@
 
 package org.apache.cloudstack.kms.dao;
 
-import java.util.List;
-
-import org.apache.cloudstack.kms.HSMProfileDetailsVO;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.kms.HSMProfileDetailsVO;
+
+import java.util.List;
 
 public interface HSMProfileDetailsDao extends GenericDao<HSMProfileDetailsVO, Long> {
     List<HSMProfileDetailsVO> listByProfileId(long profileId);
+
     void persist(long profileId, String name, String value);
+
     HSMProfileDetailsVO findDetail(long profileId, String name);
+
     void deleteDetails(long profileId);
 }

@@ -122,8 +122,6 @@ public class KMSException extends CloudRuntimeException {
                 "KEK not found: " + kekId);
     }
 
-    // Static factory methods for common error types
-
     public static KMSException keyAlreadyExists(String details) {
         return new KMSException(ErrorType.KEY_ALREADY_EXISTS,
                 "Key already exists: " + details);

@@ -17,10 +17,12 @@
 
 package org.apache.cloudstack.api.command.user.kms.hsm;
 
-import java.util.Map;
-
-import javax.inject.Inject;
-
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -33,30 +35,27 @@ import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.kms.HSMProfile;
 import org.apache.cloudstack.kms.KMSManager;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import javax.inject.Inject;
 
-@APICommand(name = "updateHSMProfile", description = "Updates an HSM profile", responseObject = HSMProfileResponse.class,
-        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true, since = "4.23.0")
+@APICommand(name = "updateHSMProfile", description = "Updates an HSM profile",
+            responseObject = HSMProfileResponse.class,
+            requestHasSensitiveInfo = true, responseHasSensitiveInfo = true, since = "4.23.0",
+            authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateHSMProfileCmd extends BaseCmd {
 
     @Inject
     private KMSManager kmsManager;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HSMProfileResponse.class, required = true, description = "the ID of the HSM profile")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HSMProfileResponse.class, required = true,
+               description = "the ID of the HSM profile")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the HSM profile")
     private String name;
 
-    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "whether the HSM profile is enabled")
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN,
+               description = "whether the HSM profile is enabled")
     private Boolean enabled;
-
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "HSM configuration details to update (protocol specific)")
-    private Map<String, String> details;
 
     public Long getId() {
         return id;
@@ -70,12 +69,9 @@ public class UpdateHSMProfileCmd extends BaseCmd {
         return enabled;
     }
 
-    public Map<String, String> getDetails() {
-        return details;
-    }
-
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
+            ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
             HSMProfile profile = kmsManager.updateHSMProfile(this);
             HSMProfileResponse response = kmsManager.createHSMProfileResponse(profile);
@@ -89,7 +85,7 @@ public class UpdateHSMProfileCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         HSMProfile profile = _entityMgr.findById(HSMProfile.class, id);
-        if (profile != null && profile.getAccountId() != null) {
+        if (profile != null && profile.getAccountId() > 0) {
             return profile.getAccountId();
         }
         return CallContext.current().getCallingAccount().getId();

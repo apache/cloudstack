@@ -755,9 +755,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
         }
-        Integer count = getCount(sc);
-        List<VolumeVO> volumes = listBy(sc, filter);
-        return new Pair<>(volumes, count);
+        return searchAndCount(sc, filter);
     }
 
     @Override
@@ -972,5 +970,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.and(sc.entity().getLastId(), SearchCriteria.Op.EQ,  lastVolumeId);
         sc.and(sc.entity().getState(), SearchCriteria.Op.IN,  (Object[]) states);
         return sc.find();
+    }
+
+    @Override
+    public boolean existsWithKmsKey(long kmsKeyId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("kmsKeyId", kmsKeyId);
+        sc.setParameters("notDestroyed", Volume.State.Expunged, Volume.State.Destroy);
+        return findOneBy(sc) != null;
     }
 }

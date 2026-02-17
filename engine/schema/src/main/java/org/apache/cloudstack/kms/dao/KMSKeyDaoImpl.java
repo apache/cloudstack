@@ -21,11 +21,9 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
-import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.kms.KMSKeyVO;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
 import java.util.List;
 
 @Component
@@ -33,85 +31,44 @@ public class KMSKeyDaoImpl extends GenericDaoBase<KMSKeyVO, Long> implements KMS
 
     private final SearchBuilder<KMSKeyVO> allFieldSearch;
 
-    @Inject
-    private KMSWrappedKeyDao kmsWrappedKeyDao;
-
     public KMSKeyDaoImpl() {
         allFieldSearch = createSearchBuilder();
         allFieldSearch.and("kekLabel", allFieldSearch.entity().getKekLabel(), SearchCriteria.Op.EQ);
-        allFieldSearch.and("providerName", allFieldSearch.entity().getProviderName(), SearchCriteria.Op.EQ);
         allFieldSearch.and("domainId", allFieldSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         allFieldSearch.and("accountId", allFieldSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         allFieldSearch.and("purpose", allFieldSearch.entity().getPurpose(), SearchCriteria.Op.EQ);
-        allFieldSearch.and("state", allFieldSearch.entity().getState(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("enabled", allFieldSearch.entity().isEnabled(), SearchCriteria.Op.EQ);
         allFieldSearch.and("zoneId", allFieldSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("hsmProfileId", allFieldSearch.entity().getHsmProfileId(), SearchCriteria.Op.EQ);
         allFieldSearch.done();
     }
 
     @Override
-    public KMSKeyVO findByKekLabel(String kekLabel, String providerName) {
-        SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
-        sc.setParameters("kekLabel", kekLabel);
-        sc.setParameters("providerName", providerName);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public List<KMSKeyVO> listByAccount(Long accountId, KeyPurpose purpose, KMSKey.State state) {
+    public List<KMSKeyVO> listByAccount(Long accountId, KeyPurpose purpose, Boolean enabled) {
         SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
         sc.setParameters("accountId", accountId);
-        if (purpose != null) {
-            sc.setParameters("purpose", purpose);
-        }
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
+        sc.setParametersIfNotNull("purpose", purpose);
+        sc.setParametersIfNotNull("enabled", enabled);
         return listBy(sc);
     }
 
     @Override
-    public List<KMSKeyVO> listByZone(Long zoneId, KeyPurpose purpose, KMSKey.State state) {
+    public List<KMSKeyVO> listByZone(Long zoneId, KeyPurpose purpose, Boolean enabled) {
         SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
         sc.setParameters("zoneId", zoneId);
-        if (purpose != null) {
-            sc.setParameters("purpose", purpose);
-        }
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
+        sc.setParametersIfNotNull("purpose", purpose);
+        sc.setParametersIfNotNull("enabled", enabled);
         return listBy(sc);
     }
 
     @Override
-    public List<KMSKeyVO> listAccessibleKeys(Long accountId, Long domainId, Long zoneId, KeyPurpose purpose, KMSKey.State state) {
-        SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
-        sc.setParameters("accountId", accountId);
-        if (zoneId != null) {
-            sc.setParameters("zoneId", zoneId);
-        }
-        if (purpose != null) {
-            sc.setParameters("purpose", purpose);
-        }
-        if (state != null) {
-            sc.setParameters("state", state);
-        }
-        return listBy(sc);
-    }
-
-    @Override
-    public long countWrappedKeysByKmsKey(Long kmsKeyId) {
-        if (kmsKeyId == null) {
+    public long countByHsmProfileId(Long hsmProfileId) {
+        if (hsmProfileId == null) {
             return 0;
         }
-        return kmsWrappedKeyDao.countByKmsKeyId(kmsKeyId);
-    }
-
-    @Override
-    public long countByKekLabel(String kekLabel, String providerName) {
         SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
-        sc.setParameters("kekLabel", kekLabel);
-        sc.setParameters("providerName", providerName);
+        sc.setParameters("hsmProfileId", hsmProfileId);
         Integer count = getCount(sc);
-        return count != null ? count.longValue() : 0L;
+        return count != null ? count : 0;
     }
 }

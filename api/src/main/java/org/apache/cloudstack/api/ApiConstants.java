@@ -870,6 +870,7 @@ public class ApiConstants {
     public static final String HSM_PROFILE = "hsmprofile";
     public static final String HSM_PROFILE_ID = "hsmprofileid";
     public static final String PURPOSE = "purpose";
+    public static final String KMS_KEY = "kmskey";
     public static final String KMS_KEY_ID = "kmskeyid";
     public static final String KMS_KEY_VERSION = "kmskeyversion";
     public static final String KEK_LABEL = "keklabel";

@@ -17,14 +17,14 @@
 
 package org.apache.cloudstack.kms;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name = "kms_hsm_profile_details")
@@ -77,7 +77,7 @@ public class HSMProfileDetailsVO implements ResourceDetail {
     public boolean isDisplay() {
         return true;
     }
-    
+
     public void setValue(String value) {
         this.value = value;
     }

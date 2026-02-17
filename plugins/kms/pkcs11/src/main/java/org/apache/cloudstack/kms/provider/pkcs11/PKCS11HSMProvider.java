@@ -69,22 +69,19 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     private static final Logger logger = LogManager.getLogger(PKCS11HSMProvider.class);
     private static final String PROVIDER_NAME = "pkcs11";
+    // AES-CBC with PKCS5Padding: FIPS-compliant (NIST SP 800-38A) with universal PKCS#11 support
+    private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
 
-    // Constants for session management
     private static final long SESSION_ACQUIRE_TIMEOUT_MS = 5000L;
-    private static final int MAX_SESSION_RETRIES = 3;
-    private static final long RETRY_BACKOFF_BASE_MS = 100L;
 
-    // Valid key sizes for AES
     private static final int[] VALID_KEY_SIZES = {128, 192, 256};
-    // Session pool per HSM profile
     private final Map<Long, HSMSessionPool> sessionPools = new ConcurrentHashMap<>();
-    // Profile configuration caching
-    private final Map<Long, Map<String, String>> profileConfigCache = new ConcurrentHashMap<>();
     @Inject
     private HSMProfileDao hsmProfileDao;
     @Inject
@@ -107,19 +104,8 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         if (hsmProfileId == null) {
             throw KMSException.invalidParameter("HSM Profile ID is required for PKCS#11 provider");
         }
-
-        if (StringUtils.isEmpty(label)) {
-            label = generateKekLabel(purpose);
-        }
-
-        HSMSessionPool pool = getSessionPool(hsmProfileId);
-        PKCS11Session session = null;
-        try {
-            session = pool.acquireSession(5000);
-            return session.generateKey(label, keyBits, purpose);
-        } finally {
-            pool.releaseSession(session);
-        }
+        final String kekLabel = StringUtils.isEmpty(label) ? generateKekLabel(purpose) : label;
+        return executeWithSession(hsmProfileId, session -> session.generateKey(kekLabel, keyBits, purpose));
     }
 
     @Override
@@ -133,10 +119,8 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
 
     @Override
     public boolean isKekAvailable(String kekId) throws KMSException {
-        Long hsmProfileId = resolveProfileId(kekId);
-        if (hsmProfileId == null) return false;
-
         try {
+            Long hsmProfileId = resolveProfileId(kekId);
             return executeWithSession(hsmProfileId, session -> session.checkKeyExists(kekId));
         } catch (Exception e) {
             return false;
@@ -151,7 +135,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         }
 
         byte[] wrappedBlob = executeWithSession(hsmProfileId, session -> session.wrapKey(plainDek, kekLabel));
-        return new WrappedKey(kekLabel, purpose, "AES/GCM/NoPadding", wrappedBlob, PROVIDER_NAME, new Date(), null);
+        return new WrappedKey(kekLabel, purpose, CIPHER_ALGORITHM, wrappedBlob, PROVIDER_NAME, new Date(), null);
     }
 
     @Override
@@ -167,34 +151,25 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     @Override
     public WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits,
             Long hsmProfileId) throws KMSException {
-        // Generate random DEK
         byte[] dekBytes = new byte[keyBits / 8];
         new SecureRandom().nextBytes(dekBytes);
 
         try {
             return wrapKey(dekBytes, purpose, kekLabel, hsmProfileId);
         } finally {
-            java.util.Arrays.fill(dekBytes, (byte) 0);
+            Arrays.fill(dekBytes, (byte) 0);
         }
     }
 
     @Override
     public WrappedKey rewrapKey(WrappedKey oldWrappedKey, String newKekLabel,
             Long targetHsmProfileId) throws KMSException {
-        // 1. Unwrap with old KEK
-        byte[] plainKey = unwrapKey(oldWrappedKey, null); // Auto-resolve old profile
-
+        byte[] plainKey = unwrapKey(oldWrappedKey, null);
         try {
-            // 2. Wrap with new KEK
-            Long profileId = targetHsmProfileId;
-            if (profileId == null) {
-                profileId = resolveProfileId(newKekLabel);
-            }
-
+            Long profileId = targetHsmProfileId != null ? targetHsmProfileId : resolveProfileId(newKekLabel);
             return wrapKey(plainKey, oldWrappedKey.getPurpose(), newKekLabel, profileId);
         } finally {
-            // Zeroize plaintext key
-            java.util.Arrays.fill(plainKey, (byte) 0);
+            Arrays.fill(plainKey, (byte) 0);
         }
     }
 
@@ -216,17 +191,14 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
      */
     @Override
     public boolean healthCheck() throws KMSException {
-        // Test connectivity to at least one configured HSM profile
         if (sessionPools.isEmpty()) {
             logger.debug("No HSM profiles configured for health check");
-            return true; // No profiles means nothing to check
+            return true;
         }
 
         boolean allHealthy = true;
-        for (Map.Entry<Long, HSMSessionPool> entry : sessionPools.entrySet()) {
-            Long profileId = entry.getKey();
-            HSMSessionPool pool = entry.getValue();
-            if (!checkProfileHealth(profileId, pool)) {
+        for (Long profileId : sessionPools.keySet()) {
+            if (!checkProfileHealth(profileId)) {
                 allHealthy = false;
             }
         }
@@ -235,35 +207,21 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             throw KMSException.healthCheckFailed("One or more HSM profiles failed health check", null);
         }
 
-        return allHealthy;
+        return true;
     }
 
-    /**
-     * Checks health of a single HSM profile.
-     *
-     * @param profileId HSM profile ID
-     * @param pool      Session pool for the profile
-     * @return true if profile is healthy, false otherwise
-     */
-    private boolean checkProfileHealth(Long profileId, HSMSessionPool pool) {
+    private boolean checkProfileHealth(Long profileId) {
         try {
-            PKCS11Session testSession = pool.acquireSession(SESSION_ACQUIRE_TIMEOUT_MS);
-            if (testSession == null || !testSession.isValid()) {
-                logger.warn("Health check failed for HSM profile {}: Could not acquire valid session", profileId);
-                return false;
-            }
-            try {
-                if (testSession.keyStore != null) {
-                    testSession.keyStore.size(); // Lightweight operation
-                    logger.debug("Health check passed for HSM profile {}", profileId);
-                    return true;
-                } else {
-                    logger.warn("Health check failed for HSM profile {}: KeyStore is null", profileId);
+            Boolean result = executeWithSession(profileId, session -> {
+                try {
+                    session.keyStore.size(); // Verify the HSM token is currently reachable
+                } catch (KeyStoreException e) {
                     return false;
                 }
-            } finally {
-                pool.releaseSession(testSession);
-            }
+                return true;
+            });
+            logger.debug("Health check {} for HSM profile {}", result ? "passed" : "failed", profileId);
+            return result;
         } catch (Exception e) {
             logger.warn("Health check failed for HSM profile {}: {}", profileId, e.getMessage(), e);
             return false;
@@ -299,25 +257,25 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     }
 
     HSMSessionPool getSessionPool(Long profileId) {
-        return sessionPools.computeIfAbsent(profileId,
-                id -> new HSMSessionPool(id, loadProfileConfig(id)));
+        return sessionPools.computeIfAbsent(profileId, id -> {
+            Map<String, String> config = loadProfileConfig(id);
+            int maxSessions = Integer.parseInt(config.getOrDefault("max_sessions", "10"));
+            return new HSMSessionPool(id, maxSessions, this);
+        });
     }
 
     Map<String, String> loadProfileConfig(Long profileId) {
-        return profileConfigCache.computeIfAbsent(profileId, id -> {
-            List<HSMProfileDetailsVO> details = hsmProfileDetailsDao.listByProfileId(id);
-            Map<String, String> config = new HashMap<>();
-            for (HSMProfileDetailsVO detail : details) {
-                String value = detail.getValue();
-                if (isSensitiveKey(detail.getName())) {
-                    value = DBEncryptionUtil.decrypt(value);
-                }
-                config.put(detail.getName(), value);
+        List<HSMProfileDetailsVO> details = hsmProfileDetailsDao.listByProfileId(profileId);
+        Map<String, String> config = new HashMap<>();
+        for (HSMProfileDetailsVO detail : details) {
+            String value = detail.getValue();
+            if (isSensitiveKey(detail.getName())) {
+                value = DBEncryptionUtil.decrypt(value);
             }
-            // Validate configuration
-            validateProfileConfig(config);
-            return config;
-        });
+            config.put(detail.getName(), value);
+        }
+        validateProfileConfig(config);
+        return config;
     }
 
     /**
@@ -329,27 +287,23 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
      *   <li>{@code slot} or {@code token_label}: At least one required</li>
      *   <li>{@code pin}: Required for HSM authentication</li>
      *   <li>{@code max_sessions}: Optional, must be positive integer if provided</li>
-     *   <li>{@code min_idle_sessions}: Optional, must be non-negative integer if provided</li>
      * </ul>
      *
      * @param config Configuration map from HSM profile details
      * @throws KMSException with {@code INVALID_PARAMETER} if validation fails
      */
     void validateProfileConfig(Map<String, String> config) throws KMSException {
-        // Validate required config keys
         String libraryPath = config.get("library");
         if (StringUtils.isEmpty(libraryPath)) {
             throw KMSException.invalidParameter("library is required for PKCS#11 HSM profile");
         }
 
-        // Validate slot or token_label (at least one required)
         String slot = config.get("slot");
         String tokenLabel = config.get("token_label");
         if (StringUtils.isEmpty(slot) && StringUtils.isEmpty(tokenLabel)) {
             throw KMSException.invalidParameter("Either 'slot' or 'token_label' is required for PKCS#11 HSM profile");
         }
 
-        // Validate slot is numeric if provided
         if (!StringUtils.isEmpty(slot)) {
             try {
                 Integer.parseInt(slot);
@@ -358,24 +312,19 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             }
         }
 
-        // Validate PIN is present
         String pin = config.get("pin");
         if (StringUtils.isEmpty(pin)) {
             throw KMSException.invalidParameter("pin is required for PKCS#11 HSM profile");
         }
 
-        // Validate library points to existing file (if accessible)
         File libraryFile = new File(libraryPath);
         if (!libraryFile.exists() && !libraryFile.isAbsolute()) {
-            // Try to find in common library paths, but don't fail if not found
-            // The HSM library might be in system library path
+            // The HSM library might be in the system library path
             logger.debug("Library path {} does not exist as absolute path, will rely on system library path",
                     libraryPath);
         }
 
-        // Validate max_sessions and min_idle_sessions if provided
         parsePositiveInteger(config, "max_sessions", "max_sessions");
-        parseNonNegativeInteger(config, "min_idle_sessions", "min_idle_sessions");
     }
 
     /**
@@ -403,32 +352,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         }
     }
 
-    /**
-     * Parses a non-negative integer from configuration.
-     *
-     * @param config      Configuration map
-     * @param key         Configuration key
-     * @param errorPrefix Prefix for error messages
-     * @return Parsed integer value, or -1 if not provided
-     * @throws KMSException if value is invalid or negative
-     */
-    private int parseNonNegativeInteger(Map<String, String> config, String key,
-            String errorPrefix) throws KMSException {
-        String value = config.get(key);
-        if (StringUtils.isEmpty(value)) {
-            return -1; // Not provided
-        }
-        try {
-            int parsed = Integer.parseInt(value);
-            if (parsed < 0) {
-                throw KMSException.invalidParameter(errorPrefix + " must be non-negative");
-            }
-            return parsed;
-        } catch (NumberFormatException e) {
-            throw KMSException.invalidParameter(errorPrefix + " must be a valid integer: " + value);
-        }
-    }
-
     boolean isSensitiveKey(String key) {
         return key.equalsIgnoreCase("pin") ||
                key.equalsIgnoreCase("password") ||
@@ -440,11 +363,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         return purpose.getName() + "-kek-" + UUID.randomUUID().toString().substring(0, 8);
     }
 
-    /**
-     * @return The name of the component that provided this configuration
-     * variable.  This value is saved in the database so someone can easily
-     * identify who provides this variable.
-     **/
     @Override
     public String getConfigComponentName() {
         return PKCS11HSMProvider.class.getSimpleName();
@@ -455,87 +373,105 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         return new ConfigKey<?>[0];
     }
 
-    /**
-     * Functional interface for operations that require a PKCS#11 session.
-     */
+    @Override
+    public void invalidateProfileCache(Long profileId) {
+        HSMSessionPool pool = sessionPools.remove(profileId);
+        if (pool != null) {
+            pool.invalidate();
+        }
+        logger.info("Invalidated HSM session pool for profile {}", profileId);
+    }
+
     @FunctionalInterface
     private interface SessionOperation<T> {
         T execute(PKCS11Session session) throws KMSException;
     }
 
-    // Inner class for session pooling
     private static class HSMSessionPool {
         private final BlockingQueue<PKCS11Session> availableSessions;
         private final Long profileId;
-        private final Map<String, String> config;
+        private final PKCS11HSMProvider provider;
         private final int maxSessions;
-        private final int minIdleSessions;
+        // Counts total sessions (idle + active). Acquired on creation, released on close.
+        private final Semaphore sessionPermits;
+        private volatile boolean invalidated = false;
 
-        HSMSessionPool(Long profileId, Map<String, String> config) {
+        HSMSessionPool(Long profileId, int maxSessions, PKCS11HSMProvider provider) {
             this.profileId = profileId;
-            this.config = config;
-            this.maxSessions = Integer.parseInt(config.getOrDefault("max_sessions", "10"));
-            this.minIdleSessions = Integer.parseInt(config.getOrDefault("min_idle_sessions", "2"));
+            this.provider = provider;
+            this.maxSessions = maxSessions;
+            this.sessionPermits = new Semaphore(maxSessions);
             this.availableSessions = new ArrayBlockingQueue<>(maxSessions);
-
-            // Pre-warm
-            for (int i = 0; i < minIdleSessions; i++) {
-                try {
-                    availableSessions.offer(createNewSession());
-                } catch (Exception e) {
-                    logger.warn("Failed to pre-warm session for profile {}: {}", profileId, e.getMessage());
-                }
-            }
         }
 
         private PKCS11Session createNewSession() throws KMSException {
-            return new PKCS11Session(config);
+            // Config (including decrypted PIN) is loaded fresh each time and not stored.
+            return new PKCS11Session(provider.loadProfileConfig(profileId));
         }
 
         PKCS11Session acquireSession(long timeoutMs) throws KMSException {
-            // Retry logic for session creation
-            Exception lastException = null;
-
-            for (int attempt = 0; attempt < MAX_SESSION_RETRIES; attempt++) {
-                try {
-                    PKCS11Session session = availableSessions.poll();
-                    if (session == null || !session.isValid()) {
-                        if (session != null) {
-                            session.close();
-                        }
-                        session = createNewSession();
-                    }
+            // Try to get an existing idle session first (no semaphore change: it already owns a permit).
+            PKCS11Session session = availableSessions.poll();
+            if (session != null) {
+                if (session.isValid()) {
                     return session;
-                } catch (Exception e) {
-                    lastException = e;
-                    if (attempt < MAX_SESSION_RETRIES - 1) {
-                        // Exponential backoff: 100ms, 200ms, 400ms
-                        long backoffMs = RETRY_BACKOFF_BASE_MS * (1L << attempt);
-                        try {
-                            Thread.sleep(backoffMs);
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                            throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
-                                    "Interrupted while waiting to retry HSM session acquisition", ie);
-                        }
-                        logger.debug("Retrying HSM session acquisition for profile {} (attempt {}/{})",
-                                profileId, attempt + 2, MAX_SESSION_RETRIES);
-                    }
                 }
+                // Stale idle session: discard it and free its permit so a new one can be created.
+                session.close();
+                sessionPermits.release();
             }
 
-            // All retries failed
-            logger.error("Failed to acquire HSM session for profile {} after {} attempts", profileId,
-                    MAX_SESSION_RETRIES);
-            throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
-                    "Failed to acquire HSM session after " + MAX_SESSION_RETRIES + " attempts", lastException);
+            // Acquire a permit to create a new session, blocking up to timeoutMs if at capacity.
+            try {
+                if (!sessionPermits.tryAcquire(timeoutMs, TimeUnit.MILLISECONDS)) {
+                    // One last try: a session may have been returned while we were waiting.
+                    session = availableSessions.poll();
+                    if (session != null && session.isValid()) {
+                        return session;
+                    }
+                    if (session != null) {
+                        session.close();
+                        sessionPermits.release();
+                    }
+                    throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
+                            "Timed out waiting for an available HSM session for profile " + profileId
+                            + " (max=" + maxSessions + ", timeout=" + timeoutMs + "ms)");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
+                        "Interrupted while waiting to acquire HSM session for profile " + profileId, e);
+            }
+
+            try {
+                return createNewSession();
+            } catch (KMSException e) {
+                sessionPermits.release();
+                throw e;
+            }
         }
 
         void releaseSession(PKCS11Session session) {
-            if (session != null && session.isValid()) {
-                if (!availableSessions.offer(session)) {
-                    session.close(); // Pool full
-                }
+            if (session == null) return;
+            if (!invalidated && session.isValid() && availableSessions.offer(session)) {
+                return; // session returned to the idle pool; permit stays consumed
+            }
+            // Pool is invalidated, session is stale, or the idle queue is full: close immediately.
+            session.close();
+            sessionPermits.release();
+        }
+
+        /**
+         * Marks the pool as invalidated and closes all idle sessions.
+         * Any session currently checked out will be closed (and its permit released) when
+         * it is returned via {@link #releaseSession} — the invalidated flag prevents re-pooling.
+         */
+        void invalidate() {
+            invalidated = true;
+            PKCS11Session session;
+            while ((session = availableSessions.poll()) != null) {
+                session.close();
+                sessionPermits.release();
             }
         }
     }
@@ -547,8 +483,8 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
      * <p>Key operations supported:
      * <ul>
      *   <li>Key generation: Generate AES keys directly in the HSM</li>
-     *   <li>Key wrapping: Encrypt DEKs using KEKs stored in the HSM (AES-GCM)</li>
-     *   <li>Key unwrapping: Decrypt DEKs using KEKs stored in the HSM (AES-GCM)</li>
+     *   <li>Key wrapping: Encrypt DEKs using KEKs stored in the HSM (AES-CBC/PKCS5Padding)</li>
+     *   <li>Key unwrapping: Decrypt DEKs using KEKs stored in the HSM (AES-CBC/PKCS5Padding)</li>
      *   <li>Key deletion: Remove keys from the HSM</li>
      *   <li>Key existence check: Verify if a key exists in the HSM</li>
      * </ul>
@@ -564,13 +500,8 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
      * {@link KMSException.ErrorType} values for proper retry logic and error reporting.
      */
     private static class PKCS11Session {
-        // Use AES-CBC with PKCS5Padding for key wrapping
-        // This is FIPS-compliant (NIST SP 800-38A) and has universal PKCS#11 support
-        private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
-        private static final int IV_LENGTH = 16; // 128 bits for CBC
-        private static final String PROVIDER_PREFIX = "CloudStackPKCS11-";
+        private static final int IV_LENGTH = 16; // 128 bits for CBC mode
 
-        private final Map<String, String> config;
         private KeyStore keyStore;
         private Provider provider;
         private String providerName;
@@ -578,13 +509,14 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
 
         /**
          * Creates a new PKCS#11 session and connects to the HSM.
+         * The config map (including any sensitive values such as the PIN) is used only
+         * during connection setup and is not retained as a field.
          *
          * @param config HSM profile configuration containing library, slot/token_label, and pin
          * @throws KMSException if connection fails or configuration is invalid
          */
         PKCS11Session(Map<String, String> config) throws KMSException {
-            this.config = config;
-            connect();
+            connect(config);
         }
 
         /**
@@ -611,55 +543,54 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          *                        <li>{@code CONNECTION_FAILED} if HSM is unreachable or device error occurs</li>
          *                      </ul>
          */
-        private void connect() throws KMSException {
+        private void connect(Map<String, String> config) throws KMSException {
             try {
-                // Create unique provider name to avoid conflicts
-                providerName = PROVIDER_PREFIX + UUID.randomUUID().toString().substring(0, 8);
+                // Unique suffix ensures each session gets its own provider name in java.security.Security,
+                // allowing Security.removeProvider() in close() to target exactly this session's provider.
+                String nameSuffix = UUID.randomUUID().toString().substring(0, 8);
 
-                String configString = buildSunPKCS11Config(config);
+                String configString = buildSunPKCS11Config(config, nameSuffix);
 
-                // For Java 9+, use the recommended approach: get provider and configure with file
-                // Write config to temporary file (required by Java 9+ API)
+                // Java 9+ API: write config to temp file, then configure the provider
                 tempConfigFile = Files.createTempFile("pkcs11-config-", ".cfg");
                 try (FileWriter writer = new FileWriter(tempConfigFile.toFile(), StandardCharsets.UTF_8)) {
                     writer.write(configString);
                 }
 
-                // Get the base SunPKCS11 provider and configure it
                 Provider baseProvider = Security.getProvider("SunPKCS11");
                 if (baseProvider == null) {
                     throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
                             "SunPKCS11 provider not available in this JVM");
                 }
 
-                // Configure the provider with the config file (Java 9+ API)
                 provider = baseProvider.configure(tempConfigFile.toAbsolutePath().toString());
 
-                // Set the provider name (it will be based on the 'name' field in config)
-                // Add provider to Security if not already present
-                if (Security.getProvider(providerName) == null) {
-                    Security.addProvider(provider);
-                } else {
-                    provider = Security.getProvider(providerName);
+                // Use the actual provider name so Security.removeProvider() in close() works correctly.
+                providerName = provider.getName();
+
+                // Security.addProvider returns -1 if a provider with this name is already registered.
+                // With the UUID-based suffix this should be impossible in practice; guard defensively.
+                if (Security.addProvider(provider) < 0) {
+                    throw new KMSException(KMSException.ErrorType.CONNECTION_FAILED,
+                            "Failed to register PKCS#11 provider '" + providerName + "': name already in use");
                 }
 
-                // Load PKCS#11 KeyStore
                 keyStore = KeyStore.getInstance("PKCS11", provider);
 
-                // Get PIN for authentication
                 String pin = config.get("pin");
                 if (StringUtils.isEmpty(pin)) {
                     throw KMSException.invalidParameter("pin is required");
                 }
                 char[] pinChars = pin.toCharArray();
-
-                // Load KeyStore with PIN (this authenticates to the HSM)
                 keyStore.load(null, pinChars);
-
-                // Zeroize PIN from memory
                 Arrays.fill(pinChars, '\0');
 
-                logger.debug("aSuccessfully connected to PKCS#11 HSM at {}", config.get("library"));
+                // The temp file is only needed during configure()/load(); delete it immediately
+                // rather than holding it until the session is eventually closed.
+                Files.deleteIfExists(tempConfigFile);
+                tempConfigFile = null;
+
+                logger.debug("Successfully connected to PKCS#11 HSM at {}", config.get("library"));
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
                 handlePKCS11Exception(e, "Failed to initialize PKCS#11 connection");
             } catch (IOException e) {
@@ -684,14 +615,17 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          * @return Configuration string for SunPKCS11 provider
          * @throws KMSException if required configuration is missing
          */
-        private String buildSunPKCS11Config(Map<String, String> config) throws KMSException {
+        private String buildSunPKCS11Config(Map<String, String> config, String nameSuffix) throws KMSException {
             String libraryPath = config.get("library");
             if (StringUtils.isEmpty(libraryPath)) {
                 throw KMSException.invalidParameter("library is required");
             }
 
             StringBuilder configBuilder = new StringBuilder();
-            configBuilder.append("name=CloudStackHSM\n");
+            // Include the unique suffix so that each session is registered under a distinct
+            // provider name (SunPKCS11-CloudStackHSM-{suffix}), preventing name collisions
+            // across concurrent sessions and allowing clean removal via Security.removeProvider().
+            configBuilder.append("name=CloudStackHSM-").append(nameSuffix).append("\n");
             configBuilder.append("library=").append(libraryPath).append("\n");
 
             String tokenLabel = config.get("token_label");
@@ -734,7 +668,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             }
             logger.warn("PKCS#11 error: {} - {}", errorMsg, context, e);
 
-            // Map PKCS#11 error codes to KMSException types
             if (errorMsg.contains("CKR_PIN_INCORRECT") || errorMsg.contains("PIN_INCORRECT")) {
                 throw new KMSException(KMSException.ErrorType.AUTHENTICATION_FAILED,
                         context + ": Incorrect PIN", e);
@@ -773,17 +706,14 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          */
         boolean isValid() {
             try {
-                // Check if KeyStore object is not null
                 if (keyStore == null) {
                     return false;
                 }
 
-                // Check if Provider is still registered in Security
                 if (provider == null || Security.getProvider(provider.getName()) == null) {
                     return false;
                 }
 
-                // Test with a lightweight HSM operation (get KeyStore size)
                 keyStore.size();
                 return true;
             } catch (Exception e) {
@@ -808,15 +738,10 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          */
         void close() {
             try {
-                // Close KeyStore if it implements Closeable
                 if (keyStore instanceof Closeable) {
                     ((Closeable) keyStore).close();
                 }
 
-                // Logout from HSM token (if supported)
-                // Note: SunPKCS11 KeyStore doesn't have explicit logout, but closing should handle it
-
-                // Remove provider from Security
                 if (provider != null && providerName != null) {
                     try {
                         Security.removeProvider(providerName);
@@ -825,7 +750,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                     }
                 }
 
-                // Clean up temporary config file
                 if (tempConfigFile != null) {
                     try {
                         Files.deleteIfExists(tempConfigFile);
@@ -1060,7 +984,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             // Minimum size: IV (16) + at least one block of ciphertext (16)
             if (wrappedBlob.length < IV_LENGTH + 16) {
                 throw KMSException.invalidParameter("Wrapped blob too short: expected at least " +
-                        (IV_LENGTH + 16) + " bytes");
+                                                    (IV_LENGTH + 16) + " bytes");
             }
 
             SecretKey kek = null;

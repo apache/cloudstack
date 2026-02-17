@@ -90,7 +90,8 @@ public enum ApiCommandResourceType {
     SharedFS(org.apache.cloudstack.storage.sharedfs.SharedFS.class),
     Extension(org.apache.cloudstack.extension.Extension.class),
     ExtensionCustomAction(org.apache.cloudstack.extension.ExtensionCustomAction.class),
-    KmsKey(org.apache.cloudstack.kms.KMSKey.class);
+    KmsKey(org.apache.cloudstack.kms.KMSKey.class),
+    HsmProfile(org.apache.cloudstack.kms.HSMProfile.class);
 
     private final Class<?> clazz;
 

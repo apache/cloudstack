@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.admin.kms;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -29,11 +28,15 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.kms.KMSException;
+import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.kms.KMSManager;
 
 import javax.inject.Inject;
+import java.util.List;
 
 @APICommand(name = "migrateVolumesToKMS",
             description = "Migrates passphrase-based volumes to KMS (admin only)",
@@ -48,12 +51,7 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
     @Inject
     private KMSManager kmsManager;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
     @Parameter(name = ApiConstants.ZONE_ID,
-               required = true,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                description = "Zone ID")
@@ -70,16 +68,19 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
                description = "Domain ID")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ID,
+    @Parameter(name = ApiConstants.VOLUME_IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = VolumeResponse.class,
+               description = "List of volume IDs to migrate")
+    private List<Long> volumeIds;
+
+    @Parameter(name = ApiConstants.KMS_KEY_ID,
                required = true,
                type = CommandType.UUID,
                entityType = KMSKeyResponse.class,
                description = "KMS Key ID to use for migrating volumes")
     private Long kmsKeyId;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
 
     public Long getZoneId() {
         return zoneId;
@@ -93,13 +94,13 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
         return domainId;
     }
 
+    public List<Long> getVolumeIds() {
+        return volumeIds;
+    }
+
     public Long getKmsKeyId() {
         return kmsKeyId;
     }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public void execute() {
@@ -118,7 +119,11 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        KMSKey key = _entityMgr.findById(KMSKey.class, kmsKeyId);
+        if (key != null) {
+            return key.getAccountId();
+        }
+        return CallContext.current().getCallingAccount().getId();
     }
 
     @Override

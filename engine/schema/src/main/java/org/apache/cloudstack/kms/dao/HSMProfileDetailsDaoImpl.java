@@ -17,15 +17,14 @@
 
 package org.apache.cloudstack.kms.dao;
 
-import java.util.List;
-
-import org.apache.cloudstack.kms.HSMProfileDetailsVO;
-import org.springframework.stereotype.Component;
-
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import org.apache.cloudstack.kms.HSMProfileDetailsVO;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class HSMProfileDetailsDaoImpl extends GenericDaoBase<HSMProfileDetailsVO, Long> implements HSMProfileDetailsDao {
@@ -35,11 +34,11 @@ public class HSMProfileDetailsDaoImpl extends GenericDaoBase<HSMProfileDetailsVO
 
     public HSMProfileDetailsDaoImpl() {
         super();
-        
+
         ProfileSearch = createSearchBuilder();
         ProfileSearch.and("profileId", ProfileSearch.entity().getResourceId(), Op.EQ);
         ProfileSearch.done();
-        
+
         DetailSearch = createSearchBuilder();
         DetailSearch.and("profileId", DetailSearch.entity().getResourceId(), Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), Op.EQ);

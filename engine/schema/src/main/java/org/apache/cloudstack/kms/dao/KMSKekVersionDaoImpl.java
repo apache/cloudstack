@@ -23,6 +23,7 @@ import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.kms.KMSKekVersionVO;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -36,6 +37,7 @@ public class KMSKekVersionDaoImpl extends GenericDaoBase<KMSKekVersionVO, Long> 
         allFieldSearch.and("status", allFieldSearch.entity().getStatus(), SearchCriteria.Op.IN);
         allFieldSearch.and("versionNumber", allFieldSearch.entity().getVersionNumber(), SearchCriteria.Op.EQ);
         allFieldSearch.and("kekLabel", allFieldSearch.entity().getKekLabel(), SearchCriteria.Op.EQ);
+        allFieldSearch.and("hsmProfileId", allFieldSearch.entity().getHsmProfileId(), SearchCriteria.Op.EQ);
         allFieldSearch.done();
     }
 
@@ -81,6 +83,16 @@ public class KMSKekVersionDaoImpl extends GenericDaoBase<KMSKekVersionVO, Long> 
     public List<KMSKekVersionVO> findByStatus(KMSKekVersionVO.Status status) {
         SearchCriteria<KMSKekVersionVO> sc = allFieldSearch.create();
         sc.setParameters("status", status);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<KMSKekVersionVO> listByHsmProfileId(Long hsmProfileId) {
+        if (hsmProfileId == null) {
+            return new ArrayList<>();
+        }
+        SearchCriteria<KMSKekVersionVO> sc = allFieldSearch.create();
+        sc.setParameters("hsmProfileId", hsmProfileId);
         return listBy(sc);
     }
 }

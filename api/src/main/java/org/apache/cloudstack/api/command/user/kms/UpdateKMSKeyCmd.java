@@ -37,7 +37,7 @@ import org.apache.cloudstack.kms.KMSManager;
 import javax.inject.Inject;
 
 @APICommand(name = "updateKMSKey",
-            description = "Updates KMS key name, description, or state",
+            description = "Updates KMS key name, description, or enabled status",
             responseObject = KMSKeyResponse.class,
             since = "4.23.0",
             authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
@@ -65,14 +65,10 @@ public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
                description = "New description for the key")
     private String description;
 
-    @Parameter(name = ApiConstants.STATE,
-               type = CommandType.STRING,
-               description = "New state: Enabled or Disabled")
-    private String state;
-
-    public Long getId() {
-        return id;
-    }
+    @Parameter(name = ApiConstants.ENABLED,
+               type = CommandType.BOOLEAN,
+               description = "whether the key should be enabled")
+    private Boolean enabled;
 
     public String getName() {
         return name;
@@ -82,8 +78,8 @@ public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
         return description;
     }
 
-    public String getState() {
-        return state;
+    public Boolean getEnabled() {
+        return enabled;
     }
 
     @Override
@@ -104,8 +100,13 @@ public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.KmsKey;
+    }
+
+    @Override
     public String getEventType() {
-        return EventTypes.EVENT_KMS_KEK_CREATE; // Reuse create event type for updates
+        return EventTypes.EVENT_KMS_KEY_UPDATE;
     }
 
     @Override
@@ -113,8 +114,7 @@ public class UpdateKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
         return "updating KMS key: " + getId();
     }
 
-    @Override
-    public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.KmsKey;
+    public Long getId() {
+        return id;
     }
 }

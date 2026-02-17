@@ -29,7 +29,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = HSMProfile.class)
-public class HSMProfileResponse extends BaseResponse {
+public class HSMProfileResponse extends BaseResponse implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the HSM profile")
     private String id;
@@ -58,6 +58,18 @@ public class HSMProfileResponse extends BaseResponse {
     @Param(description = "the domain name of the HSM profile owner")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "the domain path of the HSM profile owner")
+    private String domainPath;
+
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project ID of the HSM profile owner")
+    private String projectId;
+
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the HSM profile owner")
+    private String projectName;
+
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the zone ID where the HSM profile is available")
     private String zoneId;
@@ -77,6 +89,10 @@ public class HSMProfileResponse extends BaseResponse {
     @SerializedName(ApiConstants.ENABLED)
     @Param(description = "whether the HSM profile is enabled")
     private Boolean enabled;
+
+    @SerializedName("system")
+    @Param(description = "whether this is a system HSM profile available to all users globally")
+    private Boolean system;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date the HSM profile was created")
@@ -102,16 +118,34 @@ public class HSMProfileResponse extends BaseResponse {
         this.accountId = accountId;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
+    @Override
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
+
+    @Override
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 
     public void setZoneId(String zoneId) {
@@ -132,6 +166,10 @@ public class HSMProfileResponse extends BaseResponse {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public void setSystem(Boolean system) {
+        this.system = system;
     }
 
     public void setCreated(Date created) {

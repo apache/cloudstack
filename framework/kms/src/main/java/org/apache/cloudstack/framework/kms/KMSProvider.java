@@ -17,9 +17,8 @@
 
 package org.apache.cloudstack.framework.kms;
 
-import org.apache.cloudstack.framework.config.Configurable;
-
 import com.cloud.utils.component.Adapter;
+import org.apache.cloudstack.framework.config.Configurable;
 
 /**
  * Abstract provider contract for Key Management Service operations.
@@ -44,14 +43,12 @@ public interface KMSProvider extends Configurable, Adapter {
      */
     String getProviderName();
 
-    // ==================== KEK Management ====================
-
     /**
      * Create a new Key Encryption Key (KEK) in the secure backend with explicit HSM profile.
      *
-     * @param purpose the purpose/scope for this KEK
-     * @param label   human-readable label for the KEK (must be unique within purpose)
-     * @param keyBits key size in bits (typically 128, 192, or 256)
+     * @param purpose      the purpose/scope for this KEK
+     * @param label        human-readable label for the KEK (must be unique within purpose)
+     * @param keyBits      key size in bits (typically 128, 192, or 256)
      * @param hsmProfileId optional HSM profile ID to create the KEK in (null for auto-resolution/default)
      * @return the KEK identifier (label or handle) for later reference
      * @throws KMSException if KEK creation fails
@@ -91,14 +88,12 @@ public interface KMSProvider extends Configurable, Adapter {
      */
     boolean isKekAvailable(String kekId) throws KMSException;
 
-    // ==================== DEK Operations ====================
-
     /**
      * Wrap (encrypt) a plaintext Data Encryption Key with a KEK using explicit HSM profile.
      *
-     * @param plainDek the plaintext DEK to wrap (caller must zeroize after call)
-     * @param purpose  the intended purpose of this DEK
-     * @param kekLabel the label of the KEK to use for wrapping
+     * @param plainDek     the plaintext DEK to wrap (caller must zeroize after call)
+     * @param purpose      the intended purpose of this DEK
+     * @param kekLabel     the label of the KEK to use for wrapping
      * @param hsmProfileId optional HSM profile ID to use (null for auto-resolution/default)
      * @return WrappedKey containing the encrypted DEK and metadata
      * @throws KMSException if wrapping fails or KEK not found
@@ -124,7 +119,7 @@ public interface KMSProvider extends Configurable, Adapter {
      * <p>
      * SECURITY: Caller MUST zeroize the returned byte array after use
      *
-     * @param wrappedKey the wrapped key to decrypt
+     * @param wrappedKey   the wrapped key to decrypt
      * @param hsmProfileId optional HSM profile ID to use (null for auto-resolution/default)
      * @return plaintext DEK (caller must zeroize!)
      * @throws KMSException if unwrapping fails or KEK not found
@@ -149,14 +144,15 @@ public interface KMSProvider extends Configurable, Adapter {
      * Generate a new random DEK and immediately wrap it with a KEK using explicit HSM profile.
      * (convenience method combining generation + wrapping)
      *
-     * @param purpose  the intended purpose of the new DEK
-     * @param kekLabel the label of the KEK to use for wrapping
-     * @param keyBits  DEK size in bits (typically 128, 192, or 256)
+     * @param purpose      the intended purpose of the new DEK
+     * @param kekLabel     the label of the KEK to use for wrapping
+     * @param keyBits      DEK size in bits (typically 128, 192, or 256)
      * @param hsmProfileId optional HSM profile ID to use (null for auto-resolution/default)
      * @return WrappedKey containing the newly generated and wrapped DEK
      * @throws KMSException if generation or wrapping fails
      */
-    WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits, Long hsmProfileId) throws KMSException;
+    WrappedKey generateAndWrapDek(KeyPurpose purpose, String kekLabel, int keyBits,
+            Long hsmProfileId) throws KMSException;
 
     /**
      * Generate a new random DEK and immediately wrap it with a KEK.
@@ -177,8 +173,8 @@ public interface KMSProvider extends Configurable, Adapter {
      * Rewrap a DEK with a different KEK (used during key rotation) using explicit target HSM profile.
      * This unwraps with the old KEK and wraps with the new KEK without exposing the plaintext DEK.
      *
-     * @param oldWrappedKey the currently wrapped key
-     * @param newKekLabel   the label of the new KEK to wrap with
+     * @param oldWrappedKey      the currently wrapped key
+     * @param newKekLabel        the label of the new KEK to wrap with
      * @param targetHsmProfileId optional target HSM profile ID to wrap with (null for auto-resolution/default)
      * @return new WrappedKey encrypted with the new KEK
      * @throws KMSException if rewrapping fails
@@ -199,8 +195,6 @@ public interface KMSProvider extends Configurable, Adapter {
         return rewrapKey(oldWrappedKey, newKekLabel, null);
     }
 
-    // ==================== Health & Status ====================
-
     /**
      * Perform health check on the provider backend
      *
@@ -208,4 +202,18 @@ public interface KMSProvider extends Configurable, Adapter {
      * @throws KMSException if health check fails with critical error
      */
     boolean healthCheck() throws KMSException;
+
+    /**
+     * Invalidates any cached state (config, sessions) associated with the given HSM profile.
+     * Must be called after an HSM profile is updated or deleted so that the next operation
+     * re-reads the profile details from the database instead of using stale cached values.
+     *
+     * <p>Providers that do not cache per-profile state (e.g. the database provider) can
+     * leave this as a no-op.
+     *
+     * @param profileId the HSM profile ID whose cache should be evicted
+     */
+    default void invalidateProfileCache(Long profileId) {
+        // no-op for providers that don't cache per-profile state
+    }
 }
