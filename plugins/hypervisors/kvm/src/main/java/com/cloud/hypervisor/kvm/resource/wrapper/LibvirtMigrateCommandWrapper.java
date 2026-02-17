@@ -1,5 +1,3 @@
-//
-// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -42,9 +40,15 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtGpuDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
+import com.cloud.resource.CommandWrapper;
+import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -69,7 +73,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
-import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -82,11 +85,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.MigrateKVMAsync;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
-import com.cloud.resource.CommandWrapper;
-import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.Ternary;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
 public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, LibvirtComputingResource> {
@@ -117,7 +115,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         Command.State commandState = null;
 
         List<InterfaceDef> ifaces = null;
-        List<DiskDef> disks;
+        List<DiskDef> disks = new ArrayList<>();
+        VirtualMachineTO to = null;
 
         Domain dm = null;
         Connect dconn = null;
@@ -136,7 +135,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("Found domain with name [%s]. Starting VM migration to host [%s].", vmName, destinationUri));
             }
-            VirtualMachineTO to = command.getVirtualMachine();
+            to = command.getVirtualMachine();
 
             dm = conn.domainLookupByName(vmName);
             /*
@@ -239,6 +238,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 libvirtComputingResource.detachAndAttachConfigDriveISO(conn, vmName);
             }
 
+            // Activate CLVM volumes in shared mode before migration starts
+            LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.SHARED);
+
             //run migration in thread so we can monitor it
             logger.info("Starting live migration of instance {} to destination host {} having the final XML configuration: {}.", vmName, dconn.getURI(), maskSensitiveInfoInXML(xmlDesc));
             final ExecutorService executor = Executors.newFixedThreadPool(1);
@@ -336,6 +338,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     logger.debug(String.format("Cleaning the disks of VM [%s] in the source pool after VM migration finished.", vmName));
                 }
                 resumeDomainIfPaused(destDomain, vmName);
+
+                // Deactivate CLVM volumes on source host after successful migration
+                if (to != null) {
+                    LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.DEACTIVATE);
+                }
+
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
                 libvirtComputingResource.cleanOldSecretsByDiskDef(conn, disks);
             }
@@ -381,6 +389,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 }
                 if (destDomain != null) {
                     destDomain.free();
+                }
+                // Revert CLVM volumes to exclusive mode on failure
+                if (to != null) {
+                    LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.EXCLUSIVE);
                 }
             } catch (final LibvirtException e) {
                 logger.trace("Ignoring libvirt error.", e);
@@ -681,7 +693,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     protected void deleteOrDisconnectDisksOnSourcePool(final LibvirtComputingResource libvirtComputingResource, final List<MigrateDiskInfo> migrateDiskInfoList,
             List<DiskDef> disks) {
         for (DiskDef disk : disks) {
-            MigrateDiskInfo migrateDiskInfo = searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
+            MigrateCommand.MigrateDiskInfo migrateDiskInfo = searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
             if (migrateDiskInfo != null && migrateDiskInfo.isSourceDiskOnStorageFileSystem()) {
                 deleteLocalVolume(disk.getDiskPath());
             } else {

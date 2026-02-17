@@ -50,6 +50,7 @@ import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
 
+import com.cloud.agent.api.PostMigrationCommand;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -3238,6 +3239,22 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 logger.warn("Error while checking the vm {} on host {}", vm, dest.getHost(), e);
             }
             migrated = true;
+            try {
+                logger.info("Executing post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostId);
+                final PostMigrationCommand postMigrationCommand = new PostMigrationCommand(to, vm.getInstanceName());
+                final Answer postMigrationAnswer = _agentMgr.send(dstHostId, postMigrationCommand);
+
+                if (postMigrationAnswer == null || !postMigrationAnswer.getResult()) {
+                    final String details = postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
+                    logger.warn("Post-migration tasks failed for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
+                        vm.getInstanceName(), dstHostId, details);
+                } else {
+                    logger.info("Successfully completed post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostId);
+                }
+            } catch (Exception e) {
+                logger.warn("Exception during post-migration tasks for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
+                    vm.getInstanceName(), dstHostId, e.getMessage(), e);
+            }
         } finally {
             if (!migrated) {
                 logger.info("Migration was unsuccessful. Cleaning up: {}", vm);

@@ -1276,6 +1276,17 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean connectPhysicalDisk(String name, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         // this is for managed storage that needs to prep disks prior to use
+        if (pool.getType() == StoragePoolType.CLVM && isVMMigrate) {
+            logger.info("Activating CLVM volume {} at location: {} in shared mode for VM migration", name, pool.getLocalPath() + File.separator + name);
+            Script activateVolInSharedMode = new Script("lvchange", 5000, logger);
+            activateVolInSharedMode.add("-asy");
+            activateVolInSharedMode.add(pool.getLocalPath() + File.separator + name);
+            String result = activateVolInSharedMode.execute();
+            if (result != null) {
+                logger.error("Failed to activate CLVM volume {} in shared mode for VM migration. Command output: {}", name, result);
+                return false;
+            }
+        }
         return true;
     }
 

@@ -1216,7 +1216,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             // Use native LVM command to remove snapshot (handles all cleanup automatically)
-            Script removeSnapshot = new Script("/usr/sbin/lvremove", 10000, logger);
+            Script removeSnapshot = new Script("lvremove", 10000, logger);
             removeSnapshot.add("-f");
             removeSnapshot.add(snapshotLvPath);
 
