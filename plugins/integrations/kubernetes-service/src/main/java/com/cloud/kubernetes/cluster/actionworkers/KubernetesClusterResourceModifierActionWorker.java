@@ -190,8 +190,20 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             } else if (Objects.nonNull(domainId)) {
                 dedicatedHosts = dedicatedResourceDao.listByDomainId(domainId);
             }
-            for (DedicatedResourceVO dedicatedHost : dedicatedHosts) {
-                hosts.add(hostDao.findById(dedicatedHost.getHostId()));
+            for (DedicatedResourceVO dedicatedResource : dedicatedHosts) {
+                if (dedicatedResource.getHostId() != null) {
+                    HostVO host = hostDao.findById(dedicatedResource.getHostId());
+                    if (host != null) {
+                        hosts.add(host);
+                    }
+                } else if (dedicatedResource.getClusterId() != null) {
+                    hosts.addAll(hostDao.findByClusterId(dedicatedResource.getClusterId()));
+                } else if (dedicatedResource.getPodId() != null) {
+                    hosts.addAll(resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, zone.getId())
+                            .stream().filter(h -> dedicatedResource.getPodId().equals(h.getPodId())).collect(Collectors.toList()));
+                } else if (dedicatedResource.getDataCenterId() != null) {
+                    hosts.addAll(resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, dedicatedResource.getDataCenterId()));
+                }
                 useDedicatedHosts = true;
             }
         }
