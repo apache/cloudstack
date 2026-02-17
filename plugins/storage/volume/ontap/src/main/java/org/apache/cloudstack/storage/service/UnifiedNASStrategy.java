@@ -31,6 +31,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.feign.FeignClientFactory;
 import org.apache.cloudstack.storage.feign.client.JobFeignClient;
@@ -93,12 +94,12 @@ public class UnifiedNASStrategy extends NASStrategy {
             Answer answer = createVolumeOnKVMHost(cloudstackVolume.getVolumeInfo());
             if (answer == null || !answer.getResult()) {
                 String errMsg = answer != null ? answer.getDetails() : "Failed to create qcow2 on KVM host";
-                s_logger.error("createCloudStackVolumeForTypeVolume: " + errMsg);
+                s_logger.error("createCloudStackVolume: " + errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
             return cloudstackVolume;
         }catch (Exception e) {
-            s_logger.error("createCloudStackVolumeForTypeVolume: error occured " + e);
+            s_logger.error("createCloudStackVolume: error occured " + e);
             throw new CloudRuntimeException(e);
         }
     }
@@ -111,7 +112,19 @@ public class UnifiedNASStrategy extends NASStrategy {
 
     @Override
     public void deleteCloudStackVolume(CloudStackVolume cloudstackVolume) {
-        //TODO
+        s_logger.info("deleteCloudStackVolume: Delete cloudstack volume " + cloudstackVolume);
+        try {
+            // Step 1: Send command to KVM host to delete qcow2 file using qemu-img
+            Answer answer = deleteVolumeOnKVMHost(cloudstackVolume.getVolumeInfo());
+            if (answer == null || !answer.getResult()) {
+                String errMsg = answer != null ? answer.getDetails() : "Failed to delete qcow2 on KVM host";
+                s_logger.error("deleteCloudStackVolume: " + errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+        }catch (Exception e) {
+            s_logger.error("deleteCloudStackVolume: error occured " + e);
+            throw new CloudRuntimeException(e);
+        }
     }
 
     @Override
@@ -445,7 +458,7 @@ public class UnifiedNASStrategy extends NASStrategy {
             exportClients.add(exportClient);
         }
         exportRule.setClients(exportClients);
-        exportRule.setProtocols(List.of(ExportRule.ProtocolsEnum.any));
+        exportRule.setProtocols(List.of(ExportRule.ProtocolsEnum.nfs3));
         exportRule.setRoRule(List.of("sys"));
         exportRule.setRwRule(List.of("sys"));
         exportRule.setSuperuser(List.of("sys"));
@@ -505,6 +518,33 @@ public class UnifiedNASStrategy extends NASStrategy {
             return answer;
         } catch (Exception e) {
             s_logger.error("createVolumeOnKVMHost: Exception sending CreateObjectCommand", e);
+            return new Answer(null, false, e.toString());
+        }
+    }
+
+    private Answer deleteVolumeOnKVMHost(DataObject volumeInfo) {
+        s_logger.info("deleteVolumeOnKVMHost called with volumeInfo: {} ", volumeInfo);
+
+        try {
+            s_logger.info("deleteVolumeOnKVMHost: Sending DeleteCommand to KVM agent for volume: {}", volumeInfo.getUuid());
+            DeleteCommand cmd = new DeleteCommand(volumeInfo.getTO());
+            EndPoint ep = epSelector.select(volumeInfo);
+            if (ep == null) {
+                String errMsg = "No remote endpoint to send DeleteCommand, check if host is up";
+                s_logger.error(errMsg);
+                return new Answer(cmd, false, errMsg);
+            }
+            s_logger.info("deleteVolumeOnKVMHost: Sending command to endpoint: {}", ep.getHostAddr());
+            Answer answer = ep.sendMessage(cmd);
+            if (answer != null && answer.getResult()) {
+                s_logger.info("deleteVolumeOnKVMHost: Successfully deleted qcow2 file on KVM host");
+            } else {
+                s_logger.error("deleteVolumeOnKVMHost: Failed to delete qcow2 file: {}",
+                        answer != null ? answer.getDetails() : "null answer");
+            }
+            return answer;
+        } catch (Exception e) {
+            s_logger.error("deleteVolumeOnKVMHost: Exception sending DeleteCommand", e);
             return new Answer(null, false, e.toString());
         }
     }

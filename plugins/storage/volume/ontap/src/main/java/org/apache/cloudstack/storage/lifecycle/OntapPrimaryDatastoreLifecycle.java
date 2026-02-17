@@ -230,7 +230,9 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                 parameters.setType(Storage.StoragePoolType.NetworkFilesystem);
                 path = Constants.SLASH + storagePoolName;
                 port = Constants.NFS3_PORT;
-                s_logger.info("Setting NFS path for storage pool: " + path + ", port: " + port);
+                // Force NFSv3 for ONTAP managed storage to avoid NFSv4 ID mapping issues
+                details.put("nfsmountopts", "vers=3");
+                s_logger.info("Setting NFS path for storage pool: " + path + ", port: " + port + " with mount option: vers=3");
                 break;
             case ISCSI:
                 parameters.setType(Storage.StoragePoolType.Iscsi);

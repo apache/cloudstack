@@ -27,6 +27,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.feign.client.JobFeignClient;
@@ -531,6 +532,76 @@ public class UnifiedNASStrategyTest {
 
         assertThrows(CloudRuntimeException.class, () -> {
             strategy.deleteAccessGroup(accessGroup);
+        });
+    }
+
+    // Test deleteCloudStackVolume - Success
+    @Test
+    public void testDeleteCloudStackVolume_Success() throws Exception {
+        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        EndPoint endpoint = mock(EndPoint.class);
+        Answer answer = mock(Answer.class);
+
+        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+        when(epSelector.select(volumeInfo)).thenReturn(endpoint);
+        when(endpoint.sendMessage(any())).thenReturn(answer);
+        when(answer.getResult()).thenReturn(true);
+
+        // Execute - should not throw exception
+        strategy.deleteCloudStackVolume(cloudStackVolume);
+
+        // Verify endpoint was selected and message sent
+        verify(epSelector).select(volumeInfo);
+        verify(endpoint).sendMessage(any());
+    }
+
+    // Test deleteCloudStackVolume - Endpoint Not Found
+    @Test
+    public void testDeleteCloudStackVolume_EndpointNotFound() {
+        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+
+        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+        when(epSelector.select(volumeInfo)).thenReturn(null);
+
+        assertThrows(CloudRuntimeException.class, () -> {
+            strategy.deleteCloudStackVolume(cloudStackVolume);
+        });
+    }
+
+    // Test deleteCloudStackVolume - Answer Result False
+    @Test
+    public void testDeleteCloudStackVolume_AnswerResultFalse() throws Exception {
+        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        EndPoint endpoint = mock(EndPoint.class);
+        Answer answer = mock(Answer.class);
+
+        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+        when(epSelector.select(volumeInfo)).thenReturn(endpoint);
+        when(endpoint.sendMessage(any())).thenReturn(answer);
+        when(answer.getResult()).thenReturn(false);
+        when(answer.getDetails()).thenReturn("Failed to delete volume file");
+
+        assertThrows(CloudRuntimeException.class, () -> {
+            strategy.deleteCloudStackVolume(cloudStackVolume);
+        });
+    }
+
+    // Test deleteCloudStackVolume - Answer is Null
+    @Test
+    public void testDeleteCloudStackVolume_AnswerNull() throws Exception {
+        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+        EndPoint endpoint = mock(EndPoint.class);
+
+        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+        when(epSelector.select(volumeInfo)).thenReturn(endpoint);
+        when(endpoint.sendMessage(any())).thenReturn(null);
+
+        assertThrows(CloudRuntimeException.class, () -> {
+            strategy.deleteCloudStackVolume(cloudStackVolume);
         });
     }
 }

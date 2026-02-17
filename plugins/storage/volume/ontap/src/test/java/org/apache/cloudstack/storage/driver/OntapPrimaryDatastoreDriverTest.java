@@ -308,7 +308,6 @@ class OntapPrimaryDatastoreDriverTest {
 
         when(dataStore.getId()).thenReturn(1L);
         when(volumeInfo.getType()).thenReturn(VOLUME);
-        when(volumeInfo.getId()).thenReturn(100L);
 
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);

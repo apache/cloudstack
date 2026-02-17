@@ -168,16 +168,15 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                         volumeVO.set_iScsiName(iscsiPath);
                         volumeVO.setPath(iscsiPath);
                         s_logger.info("createAsync: Volume [{}] iSCSI path set to {}", volumeVO.getId(), iscsiPath);
+                        createCmdResult = new CreateCmdResult(null, new Answer(null, true, null));
 
                     } else if (ProtocolType.NFS3.name().equalsIgnoreCase(details.get(Constants.PROTOCOL))) {
-                        // For NFS, the hypervisor handles file creation; we only track pool association
+                        createCmdResult = new CreateCmdResult(volInfo.getUuid(), new Answer(null, true, null));
                         s_logger.info("createAsync: Managed NFS volume [{}] associated with pool {}",
                                 volumeVO.getId(), storagePool.getId());
                     }
-
                     volumeDao.update(volumeVO.getId(), volumeVO);
                 }
-                createCmdResult = new CreateCmdResult(null, new Answer(null, true, null));
             } else {
                 errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to createAsync";
                 s_logger.error(errMsg);
@@ -234,39 +233,15 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                     s_logger.error("deleteAsync: Storage Pool not found for id: " + store.getId());
                     throw new CloudRuntimeException("deleteAsync: Storage Pool not found for id: " + store.getId());
                 }
-
                 Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(store.getId());
-
-                if (ProtocolType.NFS3.name().equalsIgnoreCase(details.get(Constants.PROTOCOL))) {
-                    // NFS file deletion is handled by the hypervisor; no ONTAP REST call needed
-                    s_logger.info("deleteAsync: ManagedNFS volume {} - file deletion handled by hypervisor", data.getId());
-
-                } else if (ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(Constants.PROTOCOL))) {
-                    StorageStrategy storageStrategy = Utility.getStrategyByStoragePoolDetails(details);
-                    VolumeInfo volumeObject = (VolumeInfo) data;
-                    s_logger.info("deleteAsync: Deleting LUN for volume id [{}]", volumeObject.getId());
-
-                    // Retrieve LUN identifiers stored during volume creation
-                    String lunName = volumeDetailsDao.findDetail(volumeObject.getId(), Constants.LUN_DOT_NAME).getValue();
-                    String lunUUID = volumeDetailsDao.findDetail(volumeObject.getId(), Constants.LUN_DOT_UUID).getValue();
-                    if (lunName == null) {
-                        throw new CloudRuntimeException("deleteAsync: Missing LUN name for volume " + volumeObject.getId());
-                    }
-
-                    CloudStackVolume delRequest = new CloudStackVolume();
-                    Lun lun = new Lun();
-                    lun.setName(lunName);
-                    lun.setUuid(lunUUID);
-                    delRequest.setLun(lun);
-                    storageStrategy.deleteCloudStackVolume(delRequest);
-
-                    commandResult.setResult(null);
-                    commandResult.setSuccess(true);
-                    s_logger.info("deleteAsync: LUN [{}] deleted successfully", lunName);
-
-                } else {
-                    throw new CloudRuntimeException("deleteAsync: Unsupported protocol: " + details.get(Constants.PROTOCOL));
-                }
+                StorageStrategy storageStrategy = Utility.getStrategyByStoragePoolDetails(details);
+                s_logger.info("createCloudStackVolumeForTypeVolume: Connection to Ontap SVM [{}] successful, preparing CloudStackVolumeRequest", details.get(Constants.SVM_NAME));
+                VolumeInfo volumeInfo = (VolumeInfo) data;
+                CloudStackVolume cloudStackVolumeRequest = createDeleteCloudStackVolumeRequest(storagePool,details,volumeInfo);
+                storageStrategy.deleteCloudStackVolume(cloudStackVolumeRequest);
+                s_logger.error("deleteAsync : Volume deleted: " + volumeInfo.getId());
+                commandResult.setResult(null);
+                commandResult.setSuccess(true);
             }
         } catch (Exception e) {
             s_logger.error("deleteAsync: Failed for data object [{}]: {}", data, e.getMessage());
@@ -339,9 +314,10 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
                 Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(storagePool.getId());
                 String svmName = details.get(Constants.SVM_NAME);
-                String cloudStackVolumeName = volumeDetailsDao.findDetail(volumeVO.getId(), Constants.LUN_DOT_NAME).getValue();
 
                 if (ProtocolType.ISCSI.name().equalsIgnoreCase(details.get(Constants.PROTOCOL))) {
+                    // Only retrieve LUN name for iSCSI volumes
+                    String cloudStackVolumeName = volumeDetailsDao.findDetail(volumeVO.getId(), Constants.LUN_DOT_NAME).getValue();
                     UnifiedSANStrategy sanStrategy = (UnifiedSANStrategy) Utility.getStrategyByStoragePoolDetails(details);
                     String accessGroupName = Utility.getIgroupName(svmName, storagePoolUuid);
 
@@ -360,8 +336,11 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                         volumeVO.set_iScsiName(iscsiPath);
                         volumeVO.setPath(iscsiPath);
                     }
+                } else if (ProtocolType.NFS3.name().equalsIgnoreCase(details.get(Constants.PROTOCOL))) {
+                    // For NFS, no access grant needed - file is accessible via mount
+                    s_logger.debug("grantAccess: NFS volume [{}], no igroup mapping required", volumeVO.getUuid());
+                    return true;
                 }
-
                 volumeVO.setPoolType(storagePool.getPoolType());
                 volumeVO.setPoolId(storagePool.getId());
                 volumeDao.update(volumeVO.getId(), volumeVO);
@@ -610,6 +589,37 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void detachVolumeFromAllStorageNodes(Volume volume) {
+    }
+
+    private CloudStackVolume createDeleteCloudStackVolumeRequest(StoragePool storagePool, Map<String, String> details, VolumeInfo volumeInfo) {
+        CloudStackVolume cloudStackVolumeDeleteRequest = null;
+
+        String protocol = details.get(Constants.PROTOCOL);
+        ProtocolType protocolType = ProtocolType.valueOf(protocol);
+        switch (protocolType) {
+            case NFS3:
+                cloudStackVolumeDeleteRequest = new CloudStackVolume();
+                cloudStackVolumeDeleteRequest.setDatastoreId(String.valueOf(storagePool.getId()));
+                cloudStackVolumeDeleteRequest.setVolumeInfo(volumeInfo);
+                break;
+            case ISCSI:
+                // Retrieve LUN identifiers stored during volume creation
+                String lunName = volumeDetailsDao.findDetail(volumeInfo.getId(), Constants.LUN_DOT_NAME).getValue();
+                String lunUUID = volumeDetailsDao.findDetail(volumeInfo.getId(), Constants.LUN_DOT_UUID).getValue();
+                if (lunName == null) {
+                    throw new CloudRuntimeException("deleteAsync: Missing LUN name for volume " + volumeInfo.getId());
+                }
+                cloudStackVolumeDeleteRequest = new CloudStackVolume();
+                Lun lun = new Lun();
+                lun.setName(lunName);
+                lun.setUuid(lunUUID);
+                cloudStackVolumeDeleteRequest.setLun(lun);
+                break;
+            default:
+                throw new CloudRuntimeException("createDeleteCloudStackVolumeRequest: Unsupported protocol " + protocol);
+
+        }
+        return cloudStackVolumeDeleteRequest;
 
     }
 }
