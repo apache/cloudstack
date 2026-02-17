@@ -131,8 +131,9 @@ public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
             dm.put(ApiConstants.S3_USE_TCP_KEEPALIVE, getUseTCPKeepAlive().toString());
         }
 
+        String url = getEndPoint() + "/" + getBucketName();
         try{
-            ImageStore result = _storageService.discoverImageStore(null, null, "S3", zoneId, dm);
+            ImageStore result = _storageService.discoverImageStore(null, url, "S3", zoneId, dm);
             ImageStoreResponse storeResponse;
             if (result != null) {
                 storeResponse = _responseGenerator.createImageStoreResponse(result);
