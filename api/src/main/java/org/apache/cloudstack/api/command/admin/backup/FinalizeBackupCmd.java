@@ -22,24 +22,32 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.IncrementalBackupService;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.event.EventTypes;
+
 @APICommand(name = "finalizeBackup",
         description = "Finalize a VM backup session",
-        responseObject = SuccessResponse.class,
+        responseObject = BackupResponse.class,
         since = "4.22.0",
         authorized = {RoleType.Admin})
-public class FinalizeBackupCmd extends BaseCmd implements AdminCmd {
+public class FinalizeBackupCmd extends BaseAsyncCmd implements AdminCmd {
 
     @Inject
     private IncrementalBackupService incrementalBackupService;
+
+    @Inject
+    private BackupManager backupManager;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -63,19 +71,16 @@ public class FinalizeBackupCmd extends BaseCmd implements AdminCmd {
         return backupId;
     }
 
-    public void setVmId(Long vmId) {
-        this.vmId = vmId;
-    }
-
-    public void setBackupId(Long backupId) {
-        this.backupId = backupId;
-    }
-
     @Override
     public void execute() {
-        boolean result = incrementalBackupService.finalizeBackup(this);
-        SuccessResponse response = new SuccessResponse(getCommandName());
-        response.setSuccess(result);
+        Backup backup = incrementalBackupService.finalizeBackup(this);
+
+        if (backup == null) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Backup");
+        }
+
+        BackupResponse response = backupManager.createBackupResponse(backup, null);
+
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -83,5 +88,16 @@ public class FinalizeBackupCmd extends BaseCmd implements AdminCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_BACKUP_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Finalizing backup " + backupId;
     }
 }

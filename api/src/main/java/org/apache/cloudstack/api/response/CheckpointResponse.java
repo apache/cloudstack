@@ -17,6 +17,9 @@
 
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
@@ -24,24 +27,24 @@ import com.google.gson.annotations.SerializedName;
 
 public class CheckpointResponse extends BaseResponse {
 
-    @SerializedName("checkpointid")
+    @SerializedName(ApiConstants.ID)
     @Param(description = "the checkpoint ID")
-    private String checkpointId;
+    private String id;
 
-    @SerializedName("createtime")
+    @SerializedName(ApiConstants.CREATED)
     @Param(description = "the checkpoint creation time")
-    private Long createTime;
+    private Date created;
 
-    @SerializedName("isactive")
+    @SerializedName(ApiConstants.IS_ACTIVE)
     @Param(description = "whether this is the active checkpoint")
     private Boolean isActive;
 
-    public void setCheckpointId(String checkpointId) {
-        this.checkpointId = checkpointId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setCreateTime(Long createTime) {
-        this.createTime = createTime;
+    public void setCreated(Date created) {
+        this.created = created;
     }
 
     public void setIsActive(Boolean isActive) {

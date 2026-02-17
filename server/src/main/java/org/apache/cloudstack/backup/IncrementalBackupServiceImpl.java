@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.backup;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -247,7 +248,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
     }
 
     @Override
-    public boolean finalizeBackup(FinalizeBackupCmd cmd) {
+    public Backup finalizeBackup(FinalizeBackupCmd cmd) {
         Long vmId = cmd.getVmId();
         Long backupId = cmd.getBackupId();
 
@@ -317,7 +318,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         backup.setStatus(Backup.Status.BackedUp);
         backupDao.update(backupId, backup);
 
-        return true;
+        return backup;
 
     }
 
@@ -673,14 +674,20 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
         // Return active checkpoint (POC: simplified, no libvirt query)
         List<CheckpointResponse> responses = new ArrayList<>();
-        if (vm.getActiveCheckpointId() != null) {
-            CheckpointResponse response = new CheckpointResponse();
-            response.setCheckpointId(vm.getActiveCheckpointId());
-            response.setCreateTime(vm.getActiveCheckpointCreateTime());
-            response.setIsActive(true);
-            responses.add(response);
+        if (vm.getActiveCheckpointId() == null) {
+            return responses;
         }
-
+        CheckpointResponse response = new CheckpointResponse();
+        response.setObjectName("checkpoint");
+        response.setId(vm.getActiveCheckpointId());
+        Long createTimeSeconds = vm.getActiveCheckpointCreateTime();
+        if (createTimeSeconds != null) {
+            response.setCreated(Date.from(Instant.ofEpochSecond(createTimeSeconds)));
+        } else {
+            response.setCreated(new Date());
+        }
+        response.setIsActive(true);
+        responses.add(response);
         return responses;
     }
 

@@ -58,7 +58,7 @@ public interface IncrementalBackupService extends Configurable, PluggableService
      * Finalize a backup session
      * Stops NBD server, updates checkpoint tracking, deletes old checkpoints
      */
-    boolean finalizeBackup(FinalizeBackupCmd cmd);
+    Backup finalizeBackup(FinalizeBackupCmd cmd);
 
     /**
      * Create an image transfer object for a disk

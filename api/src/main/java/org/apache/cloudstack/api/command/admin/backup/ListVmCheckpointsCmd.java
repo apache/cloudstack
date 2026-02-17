@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.IncrementalBackupService;
 
-@APICommand(name = "listVmCheckpoints",
+@APICommand(name = "listVirtualMachineCheckpoints",
         description = "List checkpoints for a VM",
         responseObject = CheckpointResponse.class,
         since = "4.22.0",

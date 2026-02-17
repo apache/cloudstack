@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.IncrementalBackupService;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = "deleteVmCheckpoint",
+@APICommand(name = "deleteVirtualMachineCheckpoint",
         description = "Delete a VM checkpoint",
         responseObject = SuccessResponse.class,
         since = "4.22.0",
@@ -59,6 +59,14 @@ public class DeleteVmCheckpointCmd extends BaseCmd implements AdminCmd {
 
     public String getCheckpointId() {
         return checkpointId;
+    }
+
+    public void setVmId(Long vmId) {
+        this.vmId = vmId;
+    }
+
+    public void setCheckpointId(String checkpointId) {
+        this.checkpointId = checkpointId;
     }
 
     @Override
