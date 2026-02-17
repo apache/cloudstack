@@ -72,6 +72,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
 
+        Long dcId = (Long)dsInfos.get("zoneId");
         String url = (String)dsInfos.get("url");
         String name = (String)dsInfos.get("name");
         String providerName = (String)dsInfos.get("providerName");
@@ -83,6 +84,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
 
         Map<String, Object> imageStoreParameters = new HashMap();
         imageStoreParameters.put("name", name);
+        imageStoreParameters.put("zoneId", dcId);
         imageStoreParameters.put("url", url);
         String protocol = "http";
         String useHttps = details.get(ApiConstants.S3_HTTPS_FLAG);
@@ -93,7 +95,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         if (scope != null) {
             imageStoreParameters.put("scope", scope);
         } else {
-            imageStoreParameters.put("scope", ScopeType.REGION);
+            imageStoreParameters.put("scope", ScopeType.ZONE);
         }
         imageStoreParameters.put("providerName", providerName);
         imageStoreParameters.put("role", role);
