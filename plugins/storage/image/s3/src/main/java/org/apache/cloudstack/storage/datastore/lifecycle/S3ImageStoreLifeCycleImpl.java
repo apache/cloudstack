@@ -86,12 +86,7 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         imageStoreParameters.put("name", name);
         imageStoreParameters.put("zoneId", dcId);
         imageStoreParameters.put("url", url);
-        String protocol = "http";
-        String useHttps = details.get(ApiConstants.S3_HTTPS_FLAG);
-        if (useHttps != null && Boolean.parseBoolean(useHttps)) {
-            protocol = "https";
-        }
-        imageStoreParameters.put("protocol", protocol);
+        imageStoreParameters.put("protocol", "s3");
         if (scope != null) {
             imageStoreParameters.put("scope", scope);
         } else {
