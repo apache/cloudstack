@@ -87,8 +87,25 @@ public class HAProxyConfiguratorTest {
         result = genConfig(hpg, cmd);
         assertTrue("keepalive enabled should result in 'no option httpclose' in the resulting haproxy config", result.contains("\tno option httpclose"));
 
-        cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true, 0L);
-        result = genConfig(hpg, cmd);
+        // TODO
+        // create lb command
+        // setup tests for
+        // maxconn (test for maxpipes as well)
+        // httpmode
+    }
+
+    /**
+     * Test method for {@link com.cloud.network.HAProxyConfigurator#generateConfiguration(com.cloud.agent.api.routing.LoadBalancerConfigCommand)}.
+     */
+    @Test
+    public void testGenerateConfigurationLoadBalancerIdleTimeoutConfigCommand() {
+        LoadBalancerTO lb = new LoadBalancerTO("1", "10.2.0.1", 80, "http", "bla", false, false, false, null);
+        LoadBalancerTO[] lba = new LoadBalancerTO[1];
+        lba[0] = lb;
+        HAProxyConfigurator hpg = new HAProxyConfigurator();
+
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lba, "10.0.0.1", "10.1.0.1", "10.1.1.1", null, 1L, "4", true, 0L);
+        String result = genConfig(hpg, cmd);
         assertTrue("idleTimeout of 0 should not generate 'timeout server' in the resulting haproxy config", !result.contains("\ttimeout server"));
         assertTrue("idleTimeout of 0 should not generate 'timeout client' in the resulting haproxy config", !result.contains("\ttimeout client"));
 
@@ -96,12 +113,6 @@ public class HAProxyConfiguratorTest {
         result = genConfig(hpg, cmd);
         assertTrue("idleTimeout of 1234 should result in 'timeout server     1234' in the resulting haproxy config", result.contains("\ttimeout server     1234"));
         assertTrue("idleTimeout of 1234 should result in 'timeout client     1234' in the resulting haproxy config", result.contains("\ttimeout client     1234"));
-
-        // TODO
-        // create lb command
-        // setup tests for
-        // maxconn (test for maxpipes as well)
-        // httpmode
     }
 
     /**
