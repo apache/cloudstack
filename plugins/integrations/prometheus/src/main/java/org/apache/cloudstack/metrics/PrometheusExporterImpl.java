@@ -1166,7 +1166,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         long expiryTimestamp;
 
         public ItemHostCertExpiry(final String zoneName, final String zoneUuid, final String hostName, final String hostUuid, final String hostIp, final long expiry) {
-            super("cloudstack_host_cert_expiry_timestamp");
+            super("cloudstack_host_cert_expiry_timestamp", "Host certificate expiry timestamp in seconds since epoch", "gauge");
             this.zoneName = zoneName;
             this.zoneUuid = zoneUuid;
             this.hostName = hostName;
