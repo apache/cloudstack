@@ -615,7 +615,9 @@ export default {
     },
     fetchData () {
       this.fetchZoneData()
-      this.fetchKeyPairData()
+      if (!this.isAdmin()) {
+        this.fetchKeyPairData()
+      }
       this.fetchCksTemplates()
       this.fetchCKSNetworkOfferingName()
       this.fetchCniConfigurations()
@@ -682,10 +684,10 @@ export default {
     handleZoneChange (zone) {
       this.selectedZone = zone
       this.fetchKubernetesVersionData()
-      this.fetchNetworkData()
       this.fetchZoneHypervisors()
       this.fetchZoneASNumbers()
       if (!this.isAdmin()) {
+        this.fetchNetworkData()
         this.fetchAffinityGroups()
       }
     },
@@ -771,6 +773,8 @@ export default {
         }
         this.owner.projectid = ownerOptions.selectedProject
       }
+      this.fetchNetworkData()
+      this.fetchKeyPairData()
       this.fetchAffinityGroups()
     },
     fetchCksTemplates () {
@@ -802,6 +806,12 @@ export default {
       if (!this.isObjectEmpty(this.selectedZone)) {
         params.zoneid = this.selectedZone.id
       }
+      if (this.owner.account) {
+        params.account = this.owner.account
+        params.domainid = this.owner.domainid
+      } else if (this.owner.projectid) {
+        params.projectid = this.owner.projectid
+      }
       this.networkLoading = true
       this.networks = []
       getAPI('listNetworks', params).then(json => {
@@ -820,7 +830,14 @@ export default {
     },
     fetchKeyPairData () {
       const params = {}
+      if (this.owner.account) {
+        params.account = this.owner.account
+        params.domainid = this.owner.domainid
+      } else if (this.owner.projectid) {
+        params.projectid = this.owner.projectid
+      }
       this.keyPairLoading = true
+      this.keyPairs = [this.emptyEntry]
       getAPI('listSSHKeyPairs', params).then(json => {
         const listKeyPairs = json.listsshkeypairsresponse.sshkeypair
         if (this.arrayHasItems(listKeyPairs)) {
