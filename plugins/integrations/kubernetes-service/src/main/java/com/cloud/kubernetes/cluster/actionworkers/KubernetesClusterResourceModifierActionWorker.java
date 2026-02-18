@@ -191,19 +191,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 dedicatedHosts = dedicatedResourceDao.listByDomainId(domainId);
             }
             for (DedicatedResourceVO dedicatedResource : dedicatedHosts) {
-                if (dedicatedResource.getHostId() != null) {
-                    HostVO host = hostDao.findById(dedicatedResource.getHostId());
-                    if (host != null) {
-                        hosts.add(host);
-                    }
-                } else if (dedicatedResource.getClusterId() != null) {
-                    hosts.addAll(hostDao.findByClusterId(dedicatedResource.getClusterId()));
-                } else if (dedicatedResource.getPodId() != null) {
-                    hosts.addAll(resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, zone.getId())
-                            .stream().filter(h -> dedicatedResource.getPodId().equals(h.getPodId())).collect(Collectors.toList()));
-                } else if (dedicatedResource.getDataCenterId() != null) {
-                    hosts.addAll(resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, dedicatedResource.getDataCenterId()));
-                }
+                hosts.addAll(manager.getHostsForDedicatedResource(dedicatedResource, zone));
                 useDedicatedHosts = true;
             }
         }

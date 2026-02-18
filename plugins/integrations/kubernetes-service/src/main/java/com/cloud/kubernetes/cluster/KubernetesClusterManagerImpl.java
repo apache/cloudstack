@@ -702,19 +702,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 dedicatedHosts = dedicatedResourceDao.listByDomainId(domainId);
             }
             for (DedicatedResourceVO dedicatedResource : dedicatedHosts) {
-                if (dedicatedResource.getHostId() != null) {
-                    HostVO host = hostDao.findById(dedicatedResource.getHostId());
-                    if (host != null) {
-                        hosts.add(host);
-                    }
-                } else if (dedicatedResource.getClusterId() != null) {
-                    hosts.addAll(hostDao.findByClusterId(dedicatedResource.getClusterId()));
-                } else if (dedicatedResource.getPodId() != null) {
-                    hosts.addAll(resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, zone.getId())
-                            .stream().filter(h -> dedicatedResource.getPodId().equals(h.getPodId())).collect(Collectors.toList()));
-                } else if (dedicatedResource.getDataCenterId() != null) {
-                    hosts.addAll(resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, dedicatedResource.getDataCenterId()));
-                }
+                hosts.addAll(getHostsForDedicatedResource(dedicatedResource, zone));
                 useDedicatedHosts = true;
             }
         }
@@ -780,6 +768,23 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 cpu_requested * nodesCount, toHumanReadableSize(ram_requested * nodesCount), offering);
         logger.warn(msg);
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
+    }
+
+    public List<HostVO> getHostsForDedicatedResource(DedicatedResourceVO dedicatedResource, DataCenter zone) {
+        if (dedicatedResource.getHostId() != null) {
+            HostVO host = hostDao.findById(dedicatedResource.getHostId());
+            return host != null ? List.of(host) : Collections.emptyList();
+        }
+        if (dedicatedResource.getClusterId() != null) {
+            return hostDao.findByClusterId(dedicatedResource.getClusterId());
+        }
+        if (dedicatedResource.getPodId() != null) {
+            return hostDao.findByPodId(dedicatedResource.getPodId(), Host.Type.Routing);
+        }
+        if (dedicatedResource.getDataCenterId() != null) {
+            return resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, dedicatedResource.getDataCenterId());
+        }
+        return Collections.emptyList();
     }
 
     protected void setNodeTypeServiceOfferingResponse(KubernetesClusterResponse response,
