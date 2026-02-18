@@ -329,7 +329,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#change-affinity-group-for-an-existing-vm',
           dataView: true,
           args: ['affinitygroupids'],
-          show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' },
+          show: (record) => { return record.hypervisor !== 'External' && ['Stopped'].includes(record.state) && record.vmtype !== 'sharedfsvm' && record.vmtype !== 'cksnode' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ChangeAffinity'))),
           popup: true
         },
@@ -619,7 +619,7 @@ export default {
         },
         {
           api: 'scaleKubernetesCluster',
-          icon: 'swap-outlined',
+          icon: 'arrows-alt-outlined',
           label: 'label.kubernetes.cluster.scale',
           message: 'message.kubernetes.cluster.scale',
           docHelp: 'plugins/cloudstack-kubernetes-service.html#scaling-kubernetes-cluster',
@@ -627,6 +627,15 @@ export default {
           show: (record) => { return ['Created', 'Running', 'Stopped'].includes(record.state) && record.clustertype === 'CloudManaged' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleKubernetesCluster.vue')))
+        },
+        {
+          api: 'updateKubernetesClusterAffinityGroups',
+          icon: 'swap-outlined',
+          label: 'label.change.affinity',
+          dataView: true,
+          show: (record) => { return ['Stopped'].includes(record.state) && record.clustertype === 'CloudManaged' },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ChangeKubernetesClusterAffinity.vue')))
         },
         {
           api: 'upgradeKubernetesCluster',

@@ -58,6 +58,7 @@ import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -86,6 +87,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMa
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.AssignToLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
@@ -331,6 +333,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected HostDao hostDao;
     @Inject
     protected AffinityGroupDao affinityGroupDao;
+    @Inject
+    protected AffinityGroupVMMapDao affinityGroupVMMapDao;
     @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -952,7 +956,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     protected void setAffinityGroupResponseForNodeType(KubernetesClusterResponse response, long clusterId, String nodeType) {
         List<Long> affinityGroupIds = kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(clusterId, nodeType);
-        if (affinityGroupIds == null || affinityGroupIds.isEmpty()) {
+        if (CollectionUtils.isEmpty(affinityGroupIds)) {
             return;
         }
         List<String> affinityGroupUuids = new ArrayList<>();
@@ -2313,6 +2317,94 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return upgradeWorker.upgradeCluster();
     }
 
+    @Override
+    @ActionEvent(eventType = KubernetesClusterEventTypes.EVENT_KUBERNETES_CLUSTER_AFFINITY_UPDATE,
+            eventDescription = "updating Kubernetes cluster affinity groups")
+    public boolean updateKubernetesClusterAffinityGroups(UpdateKubernetesClusterAffinityGroupCmd cmd) throws CloudRuntimeException {
+        if (!KubernetesServiceEnabled.value()) {
+            logAndThrow(Level.ERROR, "Kubernetes Service plugin is disabled");
+        }
+        KubernetesClusterVO kubernetesCluster = validateClusterForAffinityGroupUpdate(cmd.getId());
+        Map<String, List<Long>> affinityGroupNodeTypeMap = cmd.getAffinityGroupNodeTypeMap();
+        validateNodeAffinityGroups(affinityGroupNodeTypeMap, kubernetesCluster.getAccountId());
+
+        final Long clusterId = kubernetesCluster.getId();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                kubernetesClusterAffinityGroupMapDao.removeByClusterId(clusterId);
+                persistAffinityGroupMappings(clusterId, affinityGroupNodeTypeMap);
+                syncVmAffinityGroups(clusterId, affinityGroupNodeTypeMap);
+            }
+        });
+        logger.info("Updated affinity groups for Kubernetes cluster {}", kubernetesCluster.getName());
+        return true;
+    }
+
+    private KubernetesClusterVO validateClusterForAffinityGroupUpdate(Long clusterId) {
+        KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(clusterId);
+        if (Objects.isNull(kubernetesCluster) || Objects.nonNull(kubernetesCluster.getRemoved())) {
+            throw new InvalidParameterValueException("Invalid Kubernetes cluster ID");
+        }
+        if (!KubernetesCluster.ClusterType.CloudManaged.equals(kubernetesCluster.getClusterType())) {
+            throw new InvalidParameterValueException("Affinity groups can only be updated for CloudManaged Kubernetes clusters");
+        }
+        if (!KubernetesCluster.State.Stopped.equals(kubernetesCluster.getState())) {
+            throw new InvalidParameterValueException(String.format(
+                    "Kubernetes cluster %s must be stopped before updating affinity groups (current state: %s)",
+                    kubernetesCluster.getName(), kubernetesCluster.getState()));
+        }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(),
+                SecurityChecker.AccessType.OperateEntry, false, kubernetesCluster);
+        return kubernetesCluster;
+    }
+
+    private void validateNodeAffinityGroups(Map<String, List<Long>> affinityGroupNodeTypeMap, long ownerAccountId) {
+        if (MapUtils.isEmpty(affinityGroupNodeTypeMap)) {
+            return;
+        }
+        Account owner = accountDao.findById(ownerAccountId);
+        for (List<Long> affinityGroupIds : affinityGroupNodeTypeMap.values()) {
+            for (Long affinityGroupId : affinityGroupIds) {
+                AffinityGroupVO affinityGroup = affinityGroupDao.findById(affinityGroupId);
+                if (Objects.isNull(affinityGroup)) {
+                    throw new InvalidParameterValueException("Unable to find affinity group with ID: " + affinityGroupId);
+                }
+                if (affinityGroup.getAccountId() != owner.getAccountId()) {
+                    throw new InvalidParameterValueException(String.format(
+                            "Affinity group %s does not belong to the cluster owner account %s",
+                            affinityGroup.getName(), owner.getAccountName()));
+                }
+            }
+        }
+    }
+
+    private void syncVmAffinityGroups(Long clusterId, Map<String, List<Long>> affinityGroupNodeTypeMap) {
+        List<KubernetesClusterVmMapVO> clusterVmMappings = kubernetesClusterVmMapDao.listByClusterId(clusterId);
+        if (CollectionUtils.isEmpty(clusterVmMappings)) {
+            return;
+        }
+        Map<String, List<Long>> nodeTypeAffinityMap = MapUtils.isEmpty(affinityGroupNodeTypeMap)
+                ? Collections.emptyMap() : affinityGroupNodeTypeMap;
+        for (KubernetesClusterVmMapVO clusterVmMapping : clusterVmMappings) {
+            if (clusterVmMapping.isExternalNode()) {
+                continue;
+            }
+            String nodeType = getNodeType(clusterVmMapping);
+            affinityGroupVMMapDao.updateMap(clusterVmMapping.getVmId(),
+                    nodeTypeAffinityMap.getOrDefault(nodeType, Collections.emptyList()));
+        }
+    }
+
+    private String getNodeType(KubernetesClusterVmMapVO clusterVmMapping) {
+        if (clusterVmMapping.isControlNode()) {
+            return CONTROL.name();
+        } else if (clusterVmMapping.isEtcdNode()) {
+            return ETCD.name();
+        }
+        return WORKER.name();
+    }
+
     private void updateNodeCount(KubernetesClusterVO kubernetesCluster) {
         List<KubernetesClusterVmMapVO> nodeList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         kubernetesCluster.setControlNodeCount(nodeList.stream().filter(KubernetesClusterVmMapVO::isControlNode).count());
@@ -2664,6 +2756,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         cmdList.add(RemoveVirtualMachinesFromKubernetesClusterCmd.class);
         cmdList.add(AddNodesToKubernetesClusterCmd.class);
         cmdList.add(RemoveNodesFromKubernetesClusterCmd.class);
+        cmdList.add(UpdateKubernetesClusterAffinityGroupCmd.class);
         return cmdList;
     }
 
