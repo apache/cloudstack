@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,7 +17,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -e
+set -o errexit
+set -o nounset
+set -o pipefail
+
+if [[ "${TRACE-0}" == "1" ]]; then
+    set -o xtrace
+fi
 
 if [ $# -lt 8 ]; then
     echo "============================================================================================================"
@@ -56,12 +63,19 @@ elif [ "${6}" = "aarch64" ] || [ "${6}" = "arm64" ]; then
   ARCH="arm64"
   ARCH_SUFFIX="aarch64"
 else
-  echo "ERROR: ARCH must be 'x86_64' or 'aarch64'."
+  echo "ERROR: ARCH must be one of: x86_64, amd64, aarch64, or arm64."
   exit 1
 fi
 
 RELEASE="v${2}"
-VAL="1.18.0"
+MIN_UPSTREAM_VERSION="1.18.0"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# version_lt returns 0 (true) if $1 < $2 using semver-aware comparison
+version_lt() {
+  [ "$(printf '%s\n%s' "$1" "$2" | sort -V | head -n1)" = "$1" ] && [ "$1" != "$2" ]
+}
+
 output_dir="${1}"
 start_dir="$PWD"
 iso_dir=$(mktemp -d)
@@ -95,7 +109,10 @@ echo "Downloading Kubernetes tools ${RELEASE}..."
 k8s_dir="${working_dir}/k8s"
 mkdir -p "${k8s_dir}"
 cd "${k8s_dir}"
-curl -sS -L --remote-name-all https://dl.k8s.io/release/"${RELEASE}"/bin/linux/${ARCH}/{kubeadm,kubelet,kubectl}
+for binary in kubeadm kubelet kubectl; do
+  echo "  Downloading ${binary}..."
+  curl --progress-bar -fL "https://dl.k8s.io/release/${RELEASE}/bin/linux/${ARCH}/${binary}" -o "${binary}"
+done
 kubeadm_file_permissions=$(stat --format '%a' kubeadm)
 chmod +x kubeadm
 
@@ -103,19 +120,19 @@ echo "Downloading kubelet.service ${RELEASE}..."
 cd "${start_dir}"
 kubelet_service_file="${working_dir}/kubelet.service"
 touch "${kubelet_service_file}"
-if [[ $(echo "${2} $VAL" | awk '{print ($1 < $2)}') == 1 ]]; then
-  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > "${kubelet_service_file}"
+if version_lt "${2}" "${MIN_UPSTREAM_VERSION}"; then
+  curl -sSfL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > "${kubelet_service_file}"
 else
-  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > "${kubelet_service_file}"
+  sed "s:/usr/bin:/opt/bin:g" "${SCRIPT_DIR}/kubelet.service" > "${kubelet_service_file}"
 fi
 
 echo "Downloading 10-kubeadm.conf ${RELEASE}..."
 kubeadm_conf_file="${working_dir}/10-kubeadm.conf"
 touch "${kubeadm_conf_file}"
-if [[ $(echo "${2} $VAL" | awk '{print ($1 < $2)}') == 1 ]]; then
-  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > "${kubeadm_conf_file}"
+if version_lt "${2}" "${MIN_UPSTREAM_VERSION}"; then
+  curl -sSfL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > "${kubeadm_conf_file}"
 else
-  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > "${kubeadm_conf_file}"
+  sed "s:/usr/bin:/opt/bin:g" "${SCRIPT_DIR}/10-kubeadm.conf" > "${kubeadm_conf_file}"
 fi
 
 AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
@@ -139,7 +156,11 @@ if ! command -v helm > /dev/null 2>&1; then
   exit 1
 fi
 
-helm repo add cilium https://helm.cilium.io/ > /dev/null 2>&1 || true
+# Add the Cilium Helm repository only if it is not already configured
+if ! helm repo list 2>/dev/null | awk 'NR>1 {print $1}' | grep -qx "cilium"; then
+  helm repo add cilium https://helm.cilium.io/ > /dev/null 2>&1
+fi
+
 echo "Updating Helm repositories..."
 helm repo update
 echo "Generating Cilium manifest with Helm..."
@@ -260,6 +281,12 @@ etcd_dir="${working_dir}/etcd"
 mkdir -p "${etcd_dir}"
 ETCD_VERSION=v${7}
 echo "Downloading etcd ${ETCD_VERSION}..."
-curl -sS -L "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-${ARCH}.tar.gz" -o "${etcd_dir}/etcd-linux-${ARCH}.tar.gz"
+curl -sSfL "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-${ARCH}.tar.gz" -o "${etcd_dir}/etcd-linux-${ARCH}.tar.gz"
+
+# Validate that the downloaded etcd archive is a valid tar.gz
+if ! tar -tzf "${etcd_dir}/etcd-linux-${ARCH}.tar.gz" > /dev/null; then
+    echo "ERROR: Downloaded etcd archive is invalid or corrupted."
+    exit 1
+fi
 
 mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
