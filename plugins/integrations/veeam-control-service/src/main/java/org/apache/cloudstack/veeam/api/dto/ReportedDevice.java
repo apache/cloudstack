@@ -20,7 +20,7 @@ package org.apache.cloudstack.veeam.api.dto;
 public class ReportedDevice extends BaseDto {
     private String comment;
     private String description;
-    private Ips ips;
+    private NamedList<Ip> ips;
     private Mac Mac;
     private String name;
     private String type;
@@ -42,11 +42,11 @@ public class ReportedDevice extends BaseDto {
         this.description = description;
     }
 
-    public Ips getIps() {
+    public NamedList<Ip> getIps() {
         return ips;
     }
 
-    public void setIps(Ips ips) {
+    public void setIps(NamedList<Ip> ips) {
         this.ips = ips;
     }
 

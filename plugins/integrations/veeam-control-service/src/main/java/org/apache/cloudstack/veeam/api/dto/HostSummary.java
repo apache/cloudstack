@@ -31,10 +31,27 @@ public class HostSummary {
     @JsonProperty("total")
     private String total;
 
-    public String getActive() { return active; }
-    public void setActive(String active) { this.active = active; }
-    public String getMigrating() { return migrating; }
-    public void setMigrating(String migrating) { this.migrating = migrating; }
-    public String getTotal() { return total; }
-    public void setTotal(String total) { this.total = total; }
+    public String getActive() {
+        return active;
+    }
+
+    public void setActive(String active) {
+        this.active = active;
+    }
+
+    public String getMigrating() {
+        return migrating;
+    }
+
+    public void setMigrating(String migrating) {
+        this.migrating = migrating;
+    }
+
+    public String getTotal() {
+        return total;
+    }
+
+    public void setTotal(String total) {
+        this.total = total;
+    }
 }

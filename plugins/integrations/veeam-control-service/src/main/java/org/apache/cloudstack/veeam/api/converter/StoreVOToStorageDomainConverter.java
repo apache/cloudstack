@@ -24,8 +24,8 @@ import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
 import org.apache.cloudstack.veeam.api.DataCentersRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.DataCenter;
-import org.apache.cloudstack.veeam.api.dto.DataCenters;
 import org.apache.cloudstack.veeam.api.dto.Link;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Storage;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
 
@@ -77,7 +77,7 @@ public class StoreVOToStorageDomainConverter {
         DataCenter dc = new DataCenter();
         dc.setHref(href(basePath, DataCentersRouteHandler.BASE_ROUTE + "/" + dcId));
         dc.setId(dcId);
-        sd.setDataCenters(new DataCenters(List.of(dc)));
+        sd.setDataCenters(NamedList.of("data_center", List.of(dc)));
 
         sd.setLink(defaultStorageDomainLinks(href, true, /*includeTemplates*/ true));
 
@@ -130,7 +130,7 @@ public class StoreVOToStorageDomainConverter {
         DataCenter dc = new DataCenter();
         dc.setHref(href(basePath, DataCentersRouteHandler.BASE_ROUTE + "/" + dcId));
         dc.setId(dcId);
-        sd.setDataCenters(new DataCenters(List.of(dc)));
+        sd.setDataCenters(NamedList.of("data_center", List.of(dc)));
 
         sd.setLink(defaultStorageDomainLinks(href, false, /*includeTemplates*/ false));
 

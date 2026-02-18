@@ -27,9 +27,9 @@ import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.DisksRouteHandler;
 import org.apache.cloudstack.veeam.api.HostsRouteHandler;
 import org.apache.cloudstack.veeam.api.ImageTransfersRouteHandler;
-import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.ImageTransfer;
 import org.apache.cloudstack.veeam.api.dto.Link;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 
 import com.cloud.api.query.vo.HostJoinVO;
@@ -73,7 +73,7 @@ public class ImageTransferVOToImageTransferConverter {
         final List<Link> links = new ArrayList<>();
         links.add(getLink(imageTransfer, "cancel"));
         links.add(getLink(imageTransfer, "finalize"));
-        imageTransfer.setActions(new Actions(links));
+        imageTransfer.setActions(NamedList.of("link", links));
         return imageTransfer;
     }
 

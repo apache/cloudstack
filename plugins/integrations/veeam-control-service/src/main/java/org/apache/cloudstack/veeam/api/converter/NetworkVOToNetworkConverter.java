@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.DataCentersRouteHandler;
 import org.apache.cloudstack.veeam.api.NetworksRouteHandler;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Network;
-import org.apache.cloudstack.veeam.api.dto.NetworkUsages;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 
 import com.cloud.api.query.vo.DataCenterJoinVO;
@@ -50,7 +50,7 @@ public class NetworkVOToNetworkConverter {
         dto.setPortIsolation("false");
         dto.setStp("false");
 
-        dto.setUsages(new NetworkUsages(List.of("vm")));
+        dto.setUsages(NamedList.of("usage", List.of("vm")));
 
         // Best-effort mapping for vdsm_name
         dto.setVdsmName(dto.getName());

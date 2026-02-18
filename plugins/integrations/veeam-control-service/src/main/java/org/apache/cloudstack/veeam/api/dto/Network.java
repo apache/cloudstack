@@ -27,7 +27,7 @@ public class Network extends BaseDto {
     private String mtu;           // oVirt prints as string
     private String portIsolation; // "false"
     private String stp;           // "false"
-    private NetworkUsages usages;     // { usage: ["vm"] }
+    private NamedList<String> usages;     // { usage: ["vm"] }
     private String vdsmName;
 
     private Ref dataCenter;
@@ -39,37 +39,88 @@ public class Network extends BaseDto {
     @JsonProperty("link")
     private List<Link> link;
 
-    public Network() {}
+    public Network() {
+    }
 
     // ---- getters / setters ----
 
-    public String getMtu() { return mtu; }
-    public void setMtu(final String mtu) { this.mtu = mtu; }
+    public String getMtu() {
+        return mtu;
+    }
 
-    public String getPortIsolation() { return portIsolation; }
-    public void setPortIsolation(final String portIsolation) { this.portIsolation = portIsolation; }
+    public void setMtu(final String mtu) {
+        this.mtu = mtu;
+    }
 
-    public String getStp() { return stp; }
-    public void setStp(final String stp) { this.stp = stp; }
+    public String getPortIsolation() {
+        return portIsolation;
+    }
 
-    public NetworkUsages getUsages() { return usages; }
-    public void setUsages(final NetworkUsages usages) { this.usages = usages; }
+    public void setPortIsolation(final String portIsolation) {
+        this.portIsolation = portIsolation;
+    }
 
-    public String getVdsmName() { return vdsmName; }
-    public void setVdsmName(final String vdsmName) { this.vdsmName = vdsmName; }
+    public String getStp() {
+        return stp;
+    }
 
-    public Ref getDataCenter() { return dataCenter; }
-    public void setDataCenter(final Ref dataCenter) { this.dataCenter = dataCenter; }
+    public void setStp(final String stp) {
+        this.stp = stp;
+    }
 
-    public String getName() { return name; }
-    public void setName(final String name) { this.name = name; }
+    public NamedList<String> getUsages() {
+        return usages;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(final String description) { this.description = description; }
+    public void setUsages(final NamedList<String> usages) {
+        this.usages = usages;
+    }
 
-    public String getComment() { return comment; }
-    public void setComment(final String comment) { this.comment = comment; }
+    public String getVdsmName() {
+        return vdsmName;
+    }
 
-    public List<Link> getLink() { return link; }
-    public void setLink(final List<Link> link) { this.link = link; }
+    public void setVdsmName(final String vdsmName) {
+        this.vdsmName = vdsmName;
+    }
+
+    public Ref getDataCenter() {
+        return dataCenter;
+    }
+
+    public void setDataCenter(final Ref dataCenter) {
+        this.dataCenter = dataCenter;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(final String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(final String description) {
+        this.description = description;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(final String comment) {
+        this.comment = comment;
+    }
+
+    public List<Link> getLink() {
+        return link;
+    }
+
+    public void setLink(final List<Link> link) {
+        this.link = link;
+    }
 }

@@ -21,5 +21,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @JsonSerialize(using = EmptyElementSerializer.class)
 public final class EmptyElement {
-    public EmptyElement() {}
+    public EmptyElement() {
+    }
 }

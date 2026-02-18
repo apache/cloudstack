@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
-import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.BaseDto;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 
@@ -42,7 +42,7 @@ public class VmSnapshotVOToSnapshotConverter {
         snapshot.setDate(vmSnapshotVO.getCreated().getTime());
         snapshot.setPersistMemorystate(String.valueOf(VMSnapshotVO.Type.DiskAndMemory.equals(vmSnapshotVO.getType())));
         snapshot.setSnapshotStatus(VMSnapshot.State.Ready.equals(vmSnapshotVO.getState()) ? "ok" : "locked");
-        snapshot.setActions(new Actions(List.of(BaseDto.getActionLink("restore", snapshot.getHref()))));
+        snapshot.setActions(NamedList.of("link", List.of(BaseDto.getActionLink("restore", snapshot.getHref()))));
         return snapshot;
     }
 

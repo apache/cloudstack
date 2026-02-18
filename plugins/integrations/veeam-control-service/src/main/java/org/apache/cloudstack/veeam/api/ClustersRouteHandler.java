@@ -28,7 +28,7 @@ import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.Cluster;
-import org.apache.cloudstack.veeam.api.dto.Clusters;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -85,8 +85,7 @@ public class ClustersRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         final List<Cluster> result = serverAdapter.listAllClusters();
-        final Clusters response = new Clusters(result);
-
+        NamedList<Cluster> response = NamedList.of("cluster", result);
         io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 

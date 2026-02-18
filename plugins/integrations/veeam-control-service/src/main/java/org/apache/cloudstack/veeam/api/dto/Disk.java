@@ -46,8 +46,8 @@ public final class Disk extends BaseDto {
     private String wipeAfterDelete;
     private Ref diskProfile;
     private Ref quota;
-    private StorageDomains storageDomains;
-    private Actions actions;
+    private NamedList<StorageDomain> storageDomains;
+    private NamedList<Link> actions;
     private String name;
     private String description;
     @JacksonXmlElementWrapper(useWrapping = false)
@@ -205,19 +205,19 @@ public final class Disk extends BaseDto {
         this.quota = quota;
     }
 
-    public StorageDomains getStorageDomains() {
+    public NamedList<StorageDomain> getStorageDomains() {
         return storageDomains;
     }
 
-    public void setStorageDomains(StorageDomains storageDomains) {
+    public void setStorageDomains(NamedList<StorageDomain> storageDomains) {
         this.storageDomains = storageDomains;
     }
 
-    public Actions getActions() {
+    public NamedList<Link> getActions() {
         return actions;
     }
 
-    public void setActions(Actions actions) {
+    public void setActions(NamedList<Link> actions) {
         this.actions = actions;
     }
 

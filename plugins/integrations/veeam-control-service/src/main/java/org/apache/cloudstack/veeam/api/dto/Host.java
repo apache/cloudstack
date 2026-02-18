@@ -46,62 +46,217 @@ public class Host extends BaseDto {
     private Version version;
     private String vgpuPlacement;
     private Ref cluster;
-    private Actions actions;
+    private NamedList<Link> actions;
     private String name;
     private String comment;
     private List<Link> link;
 
     // getters/setters (generate via IDE)
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-    public String getAutoNumaStatus() { return autoNumaStatus; }
-    public void setAutoNumaStatus(String autoNumaStatus) { this.autoNumaStatus = autoNumaStatus; }
-    public Certificate getCertificate() { return certificate; }
-    public void setCertificate(Certificate certificate) { this.certificate = certificate; }
-    public Cpu getCpu() { return cpu; }
-    public void setCpu(Cpu cpu) { this.cpu = cpu; }
-    public String getExternalStatus() { return externalStatus; }
-    public void setExternalStatus(String externalStatus) { this.externalStatus = externalStatus; }
-    public HardwareInformation getHardwareInformation() { return hardwareInformation; }
-    public void setHardwareInformation(HardwareInformation hardwareInformation) { this.hardwareInformation = hardwareInformation; }
-    public String getKdumpStatus() { return kdumpStatus; }
-    public void setKdumpStatus(String kdumpStatus) { this.kdumpStatus = kdumpStatus; }
-    public Version getLibvirtVersion() { return libvirtVersion; }
-    public void setLibvirtVersion(Version libvirtVersion) { this.libvirtVersion = libvirtVersion; }
-    public String getMaxSchedulingMemory() { return maxSchedulingMemory; }
-    public void setMaxSchedulingMemory(String maxSchedulingMemory) { this.maxSchedulingMemory = maxSchedulingMemory; }
-    public String getMemory() { return memory; }
-    public void setMemory(String memory) { this.memory = memory; }
-    public String getNumaSupported() { return numaSupported; }
-    public void setNumaSupported(String numaSupported) { this.numaSupported = numaSupported; }
-    public Os getOs() { return os; }
-    public void setOs(Os os) { this.os = os; }
-    public String getPort() { return port; }
-    public void setPort(String port) { this.port = port; }
-    public String getProtocol() { return protocol; }
-    public void setProtocol(String protocol) { this.protocol = protocol; }
-    public String getReinstallationRequired() { return reinstallationRequired; }
-    public void setReinstallationRequired(String reinstallationRequired) { this.reinstallationRequired = reinstallationRequired; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public ApiSummary getSummary() { return summary; }
-    public void setSummary(ApiSummary summary) { this.summary = summary; }
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-    public String getUpdateAvailable() { return updateAvailable; }
-    public void setUpdateAvailable(String updateAvailable) { this.updateAvailable = updateAvailable; }
-    public Version getVersion() { return version; }
-    public void setVersion(Version version) { this.version = version; }
-    public String getVgpuPlacement() { return vgpuPlacement; }
-    public void setVgpuPlacement(String vgpuPlacement) { this.vgpuPlacement = vgpuPlacement; }
-    public Ref getCluster() { return cluster; }
-    public void setCluster(Ref cluster) { this.cluster = cluster; }
-    public Actions getActions() { return actions; }
-    public void setActions(Actions actions) { this.actions = actions; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getComment() { return comment; }
-    public void setComment(String comment) { this.comment = comment; }
-    public List<Link> getLink() { return link; }
-    public void setLink(List<Link> link) { this.link = link; }
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getAutoNumaStatus() {
+        return autoNumaStatus;
+    }
+
+    public void setAutoNumaStatus(String autoNumaStatus) {
+        this.autoNumaStatus = autoNumaStatus;
+    }
+
+    public Certificate getCertificate() {
+        return certificate;
+    }
+
+    public void setCertificate(Certificate certificate) {
+        this.certificate = certificate;
+    }
+
+    public Cpu getCpu() {
+        return cpu;
+    }
+
+    public void setCpu(Cpu cpu) {
+        this.cpu = cpu;
+    }
+
+    public String getExternalStatus() {
+        return externalStatus;
+    }
+
+    public void setExternalStatus(String externalStatus) {
+        this.externalStatus = externalStatus;
+    }
+
+    public HardwareInformation getHardwareInformation() {
+        return hardwareInformation;
+    }
+
+    public void setHardwareInformation(HardwareInformation hardwareInformation) {
+        this.hardwareInformation = hardwareInformation;
+    }
+
+    public String getKdumpStatus() {
+        return kdumpStatus;
+    }
+
+    public void setKdumpStatus(String kdumpStatus) {
+        this.kdumpStatus = kdumpStatus;
+    }
+
+    public Version getLibvirtVersion() {
+        return libvirtVersion;
+    }
+
+    public void setLibvirtVersion(Version libvirtVersion) {
+        this.libvirtVersion = libvirtVersion;
+    }
+
+    public String getMaxSchedulingMemory() {
+        return maxSchedulingMemory;
+    }
+
+    public void setMaxSchedulingMemory(String maxSchedulingMemory) {
+        this.maxSchedulingMemory = maxSchedulingMemory;
+    }
+
+    public String getMemory() {
+        return memory;
+    }
+
+    public void setMemory(String memory) {
+        this.memory = memory;
+    }
+
+    public String getNumaSupported() {
+        return numaSupported;
+    }
+
+    public void setNumaSupported(String numaSupported) {
+        this.numaSupported = numaSupported;
+    }
+
+    public Os getOs() {
+        return os;
+    }
+
+    public void setOs(Os os) {
+        this.os = os;
+    }
+
+    public String getPort() {
+        return port;
+    }
+
+    public void setPort(String port) {
+        this.port = port;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public String getReinstallationRequired() {
+        return reinstallationRequired;
+    }
+
+    public void setReinstallationRequired(String reinstallationRequired) {
+        this.reinstallationRequired = reinstallationRequired;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public ApiSummary getSummary() {
+        return summary;
+    }
+
+    public void setSummary(ApiSummary summary) {
+        this.summary = summary;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getUpdateAvailable() {
+        return updateAvailable;
+    }
+
+    public void setUpdateAvailable(String updateAvailable) {
+        this.updateAvailable = updateAvailable;
+    }
+
+    public Version getVersion() {
+        return version;
+    }
+
+    public void setVersion(Version version) {
+        this.version = version;
+    }
+
+    public String getVgpuPlacement() {
+        return vgpuPlacement;
+    }
+
+    public void setVgpuPlacement(String vgpuPlacement) {
+        this.vgpuPlacement = vgpuPlacement;
+    }
+
+    public Ref getCluster() {
+        return cluster;
+    }
+
+    public void setCluster(Ref cluster) {
+        this.cluster = cluster;
+    }
+
+    public NamedList<Link> getActions() {
+        return actions;
+    }
+
+    public void setActions(NamedList<Link> actions) {
+        this.actions = actions;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public List<Link> getLink() {
+        return link;
+    }
+
+    public void setLink(List<Link> link) {
+        this.link = link;
+    }
 }

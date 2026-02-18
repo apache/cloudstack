@@ -30,13 +30,14 @@ public class Snapshot extends BaseDto {
     private String persistMemorystate;
     private String snapshotStatus;
     private String snapshotType;
-    private Actions actions;
+    private NamedList<Link> actions;
     private String description;
     @JacksonXmlElementWrapper(useWrapping = false)
     private List<Link> link;
     private Vm vm;
 
-    public Snapshot() {}
+    public Snapshot() {
+    }
 
     public Long getDate() {
         return date;
@@ -70,11 +71,11 @@ public class Snapshot extends BaseDto {
         this.snapshotType = snapshotType;
     }
 
-    public Actions getActions() {
+    public NamedList<Link> getActions() {
         return actions;
     }
 
-    public void setActions(final Actions actions) {
+    public void setActions(final NamedList<Link> actions) {
         this.actions = actions;
     }
 

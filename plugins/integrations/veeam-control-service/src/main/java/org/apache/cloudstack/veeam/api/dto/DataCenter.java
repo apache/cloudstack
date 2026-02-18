@@ -33,7 +33,7 @@ public final class DataCenter extends BaseDto {
     private SupportedVersions supportedVersions;
     private Version version;
     private Ref macPool;
-    private Actions actions;
+    private NamedList<Link> actions;
     private String name;
     private String description;
     @JacksonXmlElementWrapper(useWrapping = false)
@@ -95,11 +95,11 @@ public final class DataCenter extends BaseDto {
         this.macPool = macPool;
     }
 
-    public Actions getActions() {
+    public NamedList<Link> getActions() {
         return actions;
     }
 
-    public void setActions(Actions actions) {
+    public void setActions(NamedList<Link> actions) {
         this.actions = actions;
     }
 

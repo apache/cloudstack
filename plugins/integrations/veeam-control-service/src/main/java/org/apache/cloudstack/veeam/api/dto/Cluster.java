@@ -58,7 +58,7 @@ public final class Cluster extends BaseDto {
     private Ref dataCenter;
     private Ref macPool;
     private Ref schedulingPolicy;
-    private Actions actions;
+    private NamedList<Link> actions;
     @JacksonXmlElementWrapper(useWrapping = false)
     private List<Link> link;
 
@@ -310,11 +310,11 @@ public final class Cluster extends BaseDto {
         this.schedulingPolicy = schedulingPolicy;
     }
 
-    public Actions getActions() {
+    public NamedList<Link> getActions() {
         return actions;
     }
 
-    public void setActions(Actions actions) {
+    public void setActions(NamedList<Link> actions) {
         this.actions = actions;
     }
 

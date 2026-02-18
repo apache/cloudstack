@@ -48,11 +48,11 @@ public final class Vm extends BaseDto {
     private String stateless;  // true|false
     private String type;    // "server"
     private String origin;  // "ovirt"
-    private Actions actions;      // actions.link[]
+    private NamedList<Link> actions;      // actions.link[]
     @JacksonXmlElementWrapper(useWrapping = false)
     private List<Link> link;      // related resources
     private EmptyElement tags; // empty <tags/>
-    private DiskAttachments diskAttachments;
+    private NamedList<DiskAttachment> diskAttachments;
     private Nics nics;
     private VmInitialization initialization;
 
@@ -200,11 +200,11 @@ public final class Vm extends BaseDto {
         this.origin = origin;
     }
 
-    public Actions getActions() {
+    public NamedList<Link> getActions() {
         return actions;
     }
 
-    public void setActions(Actions actions) {
+    public void setActions(NamedList<Link> actions) {
         this.actions = actions;
     }
 
@@ -224,11 +224,11 @@ public final class Vm extends BaseDto {
         this.tags = tags;
     }
 
-    public DiskAttachments getDiskAttachments() {
+    public NamedList<DiskAttachment> getDiskAttachments() {
         return diskAttachments;
     }
 
-    public void setDiskAttachments(DiskAttachments diskAttachments) {
+    public void setDiskAttachments(NamedList<DiskAttachment> diskAttachments) {
         this.diskAttachments = diskAttachments;
     }
 

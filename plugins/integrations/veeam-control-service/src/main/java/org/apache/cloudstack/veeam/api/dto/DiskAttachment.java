@@ -34,7 +34,8 @@ public final class DiskAttachment extends BaseDto {
     private Disk disk;
     private Vm vm;
 
-    public DiskAttachment() {}
+    public DiskAttachment() {
+    }
 
     public String getActive() {
         return active;

@@ -22,7 +22,6 @@ import java.util.Collections;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.JobsRouteHandler;
-import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.Job;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
@@ -48,7 +47,6 @@ public class AsyncJobJoinVOToJobConverter {
             job.setEndTime(System.currentTimeMillis());
         }
         job.setOwner(Ref.of(basePath + "/api/users/" + uuid, uuid));
-        job.setActions(new Actions());
         job.setDescription("Something");
         job.setLink(Collections.emptyList());
         return job;
@@ -80,7 +78,6 @@ public class AsyncJobJoinVOToJobConverter {
             job.setEndTime(endTime);
         }
         job.setOwner(Ref.of(basePath + "/api/users/" + vo.getUserUuid(), vo.getUserUuid()));
-        job.setActions(new Actions());
         job.setDescription("Something");
         job.setLink(Collections.emptyList());
         return job;

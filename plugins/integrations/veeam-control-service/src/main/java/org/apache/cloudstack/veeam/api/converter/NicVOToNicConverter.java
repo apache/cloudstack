@@ -25,12 +25,11 @@ import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.VnicProfilesRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Ip;
-import org.apache.cloudstack.veeam.api.dto.Ips;
 import org.apache.cloudstack.veeam.api.dto.Mac;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.ReportedDevice;
-import org.apache.cloudstack.veeam.api.dto.ReportedDevices;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -59,7 +58,7 @@ public class NicVOToNicConverter {
         }
         nic.setInterfaceType("virtio");
         ReportedDevice device = getReportedDevice(vo, mac, nic.getVm());
-        nic.setReportedDevices(new ReportedDevices(List.of(device)));
+        nic.setReportedDevices(NamedList.of("reported_device", List.of(device)));
         if (networkResolver != null) {
             final NetworkVO network = networkResolver.apply(vo.getNetworkId());
             if (network != null) {
@@ -88,7 +87,7 @@ public class NicVOToNicConverter {
                 ip.setGateway(vo.getIPv6Gateway());
                 ip.setVersion("v6");
             }
-            device.setIps(new Ips(List.of(ip)));
+            device.setIps(NamedList.of("ip", List.of(ip)));
         }
         device.setHref(vm.getHref() + "/reporteddevices/" + vo.getUuid());
         device.setVm(vm);

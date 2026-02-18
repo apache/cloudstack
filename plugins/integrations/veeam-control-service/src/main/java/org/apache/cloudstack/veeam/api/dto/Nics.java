@@ -32,7 +32,8 @@ public final class Nics {
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<Nic> nic;
 
-    public Nics() {}
+    public Nics() {
+    }
 
     public Nics(final List<Nic> nic) {
         this.nic = nic;

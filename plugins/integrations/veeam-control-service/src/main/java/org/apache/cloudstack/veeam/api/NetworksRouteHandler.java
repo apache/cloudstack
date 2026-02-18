@@ -27,8 +27,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.ServerAdapter;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Network;
-import org.apache.cloudstack.veeam.api.dto.Networks;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -85,8 +85,7 @@ public class NetworksRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         final List<Network> result = serverAdapter.listAllNetworks();
-        final Networks response = new Networks(result);
-
+        NamedList<Network> response = NamedList.of("network", result);
         io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 

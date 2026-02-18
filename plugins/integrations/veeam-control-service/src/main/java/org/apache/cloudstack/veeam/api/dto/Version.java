@@ -28,7 +28,8 @@ public final class Version {
     private String minor;
     private String revision;
 
-    public Version() {}
+    public Version() {
+    }
 
     public String getBuild() {
         return build;

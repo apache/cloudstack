@@ -533,6 +533,7 @@ public class ServerAdapter extends ManagerBase {
     }
 
     public Vm updateInstance(String uuid, Vm request) {
+        // ToDo: what to do?!
         return getInstance(uuid);
     }
 
@@ -724,11 +725,11 @@ public class ServerAdapter extends ManagerBase {
         if (StringUtils.isBlank(name) && !name.startsWith("Veeam_KvmBackupDisk_")) {
             throw new InvalidParameterValueException("Only worker VM disk creation is supported");
         }
-        if (request.getStorageDomains() == null || CollectionUtils.isEmpty(request.getStorageDomains().getStorageDomain()) ||
-                request.getStorageDomains().getStorageDomain().size() > 1) {
+        if (request.getStorageDomains() == null || CollectionUtils.isEmpty(request.getStorageDomains().getItems()) ||
+                request.getStorageDomains().getItems().size() > 1) {
             throw new InvalidParameterValueException("Exactly one storage domain must be specified");
         }
-        StorageDomain domain = request.getStorageDomains().getStorageDomain().get(0);
+        StorageDomain domain = request.getStorageDomains().getItems().get(0);
         if (domain == null || domain.getId() == null) {
             throw new InvalidParameterValueException("Storage domain ID must be specified");
         }
@@ -1154,6 +1155,7 @@ public class ServerAdapter extends ManagerBase {
 
     public List<Disk> listDisksByBackupUuid(final String uuid) {
         throw new InvalidParameterValueException("List Backup Disks with ID " + uuid + " not implemented");
+//        ToDo: implement
 //        BackupVO vo = backupDao.findByUuid(uuid);
 //        if (vo == null) {
 //            throw new InvalidParameterValueException("Backup with ID " + uuid + " not found");

@@ -35,7 +35,7 @@ public class Nic extends BaseDto {
     public String synced;
     private Ref vnicProfile;
     private Vm vm;
-    private ReportedDevices reportedDevices;
+    private NamedList<ReportedDevice> reportedDevices;
 
     public Nic() {
     }
@@ -112,11 +112,11 @@ public class Nic extends BaseDto {
         this.vm = vm;
     }
 
-    public ReportedDevices getReportedDevices() {
+    public NamedList<ReportedDevice> getReportedDevices() {
         return reportedDevices;
     }
 
-    public void setReportedDevices(ReportedDevices reportedDevices) {
+    public void setReportedDevices(NamedList<ReportedDevice> reportedDevices) {
         this.reportedDevices = reportedDevices;
     }
 }

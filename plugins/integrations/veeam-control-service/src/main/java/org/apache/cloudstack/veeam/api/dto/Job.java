@@ -30,38 +30,88 @@ public class Job extends BaseDto {
     private Long endTime;
     private String status;
     private Ref owner;
-    private Actions actions;
+    private NamedList<Link> actions;
     private String description;
     private List<Link> link;
 
     // getters and setters
-    public String getAutoCleared() { return autoCleared; }
-    public void setAutoCleared(String autoCleared) { this.autoCleared = autoCleared; }
+    public String getAutoCleared() {
+        return autoCleared;
+    }
 
-    public String getExternal() { return external; }
-    public void setExternal(String external) { this.external = external; }
+    public void setAutoCleared(String autoCleared) {
+        this.autoCleared = autoCleared;
+    }
 
-    public Long getLastUpdated() { return lastUpdated; }
-    public void setLastUpdated(Long lastUpdated) { this.lastUpdated = lastUpdated; }
+    public String getExternal() {
+        return external;
+    }
 
-    public Long getStartTime() { return startTime; }
-    public void setStartTime(Long startTime) { this.startTime = startTime; }
+    public void setExternal(String external) {
+        this.external = external;
+    }
 
-    public Long getEndTime() { return endTime; }
-    public void setEndTime(Long endTime) { this.endTime = endTime; }
+    public Long getLastUpdated() {
+        return lastUpdated;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setLastUpdated(Long lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
 
-    public Ref getOwner() { return owner; }
-    public void setOwner(Ref owner) { this.owner = owner; }
+    public Long getStartTime() {
+        return startTime;
+    }
 
-    public Actions getActions() { return actions; }
-    public void setActions(Actions actions) { this.actions = actions; }
+    public void setStartTime(Long startTime) {
+        this.startTime = startTime;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public Long getEndTime() {
+        return endTime;
+    }
 
-    public List<Link> getLink() { return link; }
-    public void setLink(List<Link> link) { this.link = link; }
+    public void setEndTime(Long endTime) {
+        this.endTime = endTime;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Ref getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Ref owner) {
+        this.owner = owner;
+    }
+
+    public NamedList<Link> getActions() {
+        return actions;
+    }
+
+    public void setActions(NamedList<Link> actions) {
+        this.actions = actions;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public List<Link> getLink() {
+        return link;
+    }
+
+    public void setLink(List<Link> link) {
+        this.link = link;
+    }
 }

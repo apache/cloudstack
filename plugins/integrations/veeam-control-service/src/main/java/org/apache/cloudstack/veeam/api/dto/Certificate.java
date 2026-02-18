@@ -24,8 +24,19 @@ public class Certificate {
     private String organization;
     private String subject;
 
-    public String getOrganization() { return organization; }
-    public void setOrganization(String organization) { this.organization = organization; }
-    public String getSubject() { return subject; }
-    public void setSubject(String subject) { this.subject = subject; }
+    public String getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(String organization) {
+        this.organization = organization;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
 }

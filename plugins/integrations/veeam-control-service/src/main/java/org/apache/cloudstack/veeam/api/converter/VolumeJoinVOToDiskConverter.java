@@ -18,7 +18,6 @@
 package org.apache.cloudstack.veeam.api.converter;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,13 +26,12 @@ import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
 import org.apache.cloudstack.veeam.api.DisksRouteHandler;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
-import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
 import org.apache.cloudstack.veeam.api.dto.Link;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
-import org.apache.cloudstack.veeam.api.dto.StorageDomains;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 
 import com.cloud.api.ApiDBUtils;
@@ -110,16 +108,11 @@ public class VolumeJoinVOToDiskConverter {
 
         // Storage domains
         if (vol.getPoolUuid() != null) {
-            StorageDomains sds = new StorageDomains();
             StorageDomain sd = new StorageDomain();
             sd.setHref(apiBasePath + "/storagedomains/" + vol.getPoolUuid());
             sd.setId(vol.getPoolUuid());
-            sds.setStorageDomain(List.of(sd));
-            disk.setStorageDomains(sds);
+            disk.setStorageDomains(NamedList.of("storage_domain", List.of(sd)));
         }
-
-        // Actions (Veeam checks presence, not behavior)
-        disk.setActions(defaultDiskActions(diskHref));
 
         // Links
         disk.setLink(List.of(
@@ -204,9 +197,5 @@ public class VolumeJoinVOToDiskConverter {
             default:
                 return "locked";
         }
-    }
-
-    private static Actions defaultDiskActions(final String diskHref) {
-        return new Actions(Collections.emptyList());
     }
 }

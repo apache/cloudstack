@@ -26,13 +26,12 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
-import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.BaseDto;
 import org.apache.cloudstack.veeam.api.dto.Bios;
 import org.apache.cloudstack.veeam.api.dto.Cpu;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
-import org.apache.cloudstack.veeam.api.dto.DiskAttachments;
 import org.apache.cloudstack.veeam.api.dto.EmptyElement;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.Nics;
 import org.apache.cloudstack.veeam.api.dto.Os;
@@ -124,7 +123,7 @@ public final class UserVmJoinVOToVmConverter {
 
         if (disksResolver != null) {
             List<DiskAttachment> diskAttachments = disksResolver.apply(src.getId());
-            dst.setDiskAttachments(new DiskAttachments(diskAttachments));
+            dst.setDiskAttachments(NamedList.of("disk_attachment", diskAttachments));
         }
 
         if (disksResolver != null) {
@@ -132,7 +131,7 @@ public final class UserVmJoinVOToVmConverter {
             dst.setNics(new Nics(nics));
         }
 
-        dst.setActions(new Actions(List.of(
+        dst.setActions(NamedList.of("link", List.of(
                 BaseDto.getActionLink("start", dst.getHref()),
                 BaseDto.getActionLink("stop", dst.getHref()),
                 BaseDto.getActionLink("shutdown", dst.getHref())

@@ -27,14 +27,43 @@ public final class Cpu {
     private String type;
     private Topology topology;
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getSpeed() { return speed; }
-    public void setSpeed(String speed) { this.speed = speed; }
-    public String getArchitecture() { return architecture; }
-    public void setArchitecture(String architecture) { this.architecture = architecture; }
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-    public Topology getTopology() { return topology; }
-    public void setTopology(Topology topology) { this.topology = topology; }
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(String speed) {
+        this.speed = speed;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Topology getTopology() {
+        return topology;
+    }
+
+    public void setTopology(Topology topology) {
+        this.topology = topology;
+    }
 }

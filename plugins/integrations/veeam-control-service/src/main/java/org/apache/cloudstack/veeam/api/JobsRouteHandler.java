@@ -28,7 +28,7 @@ import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.Job;
-import org.apache.cloudstack.veeam.api.dto.Jobs;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -85,8 +85,7 @@ public class JobsRouteHandler  extends ManagerBase implements RouteHandler {
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                              Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         final List<Job> result = serverAdapter.listAllJobs();
-        final Jobs response = new Jobs(result);
-
+        NamedList<Job> response = NamedList.of("job", result);
         io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 

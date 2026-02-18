@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class NamedList<T> {
     private final String name;
@@ -53,5 +54,10 @@ public class NamedList<T> {
         }
         Entry<String, List<T>> e = map.entrySet().iterator().next();
         return new NamedList<>(e.getKey(), e.getValue());
+    }
+
+    @JsonIgnore
+    public List<T> getItems() {
+        return items;
     }
 }

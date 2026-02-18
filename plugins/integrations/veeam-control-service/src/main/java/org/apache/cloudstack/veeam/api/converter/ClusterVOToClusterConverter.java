@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ClustersRouteHandler;
 import org.apache.cloudstack.veeam.api.DataCentersRouteHandler;
-import org.apache.cloudstack.veeam.api.dto.Actions;
 import org.apache.cloudstack.veeam.api.dto.Cluster;
 import org.apache.cloudstack.veeam.api.dto.Cpu;
 import org.apache.cloudstack.veeam.api.dto.Link;
@@ -142,11 +141,6 @@ public class ClusterVOToClusterConverter {
                 stableUuid("macpool:default")));
         c.setSchedulingPolicy(Ref.of(basePath + "/schedulingpolicies/" + stableUuid("schedpolicy:default"),
                 stableUuid("schedpolicy:default")));
-
-        // --- actions.links (can be omitted; but Veeam sometimes expects actions to exist)
-        final Actions actions = new Actions();
-        actions.setLink(Collections.emptyList());
-        c.setActions(actions);
 
         // --- related links (optional)
         c.setLink(List.of(

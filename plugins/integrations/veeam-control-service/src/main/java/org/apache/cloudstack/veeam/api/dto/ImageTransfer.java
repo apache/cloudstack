@@ -40,7 +40,7 @@ public class ImageTransfer extends BaseDto {
     private Ref host;
     private Ref image;
     private Ref disk;
-    private Actions actions;
+    private NamedList<Link> actions;
 
     @JacksonXmlElementWrapper(useWrapping = false)
     public List<Link> link;
@@ -157,11 +157,11 @@ public class ImageTransfer extends BaseDto {
         this.disk = disk;
     }
 
-    public Actions getActions() {
+    public NamedList<Link> getActions() {
         return actions;
     }
 
-    public void setActions(Actions actions) {
+    public void setActions(NamedList<Link> actions) {
         this.actions = actions;
     }
 }

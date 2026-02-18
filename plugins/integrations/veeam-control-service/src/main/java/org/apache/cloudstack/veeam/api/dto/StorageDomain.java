@@ -45,8 +45,8 @@ public final class StorageDomain extends BaseDto {
     private String supportsDiscard;
     private String supportsDiscardZeroesData;
     private Storage storage;
-    private DataCenters dataCenters;
-    private Actions actions;
+    private NamedList<DataCenter> dataCenters;
+    private NamedList<Link> actions;
     @JacksonXmlElementWrapper(useWrapping = false)
     private List<Link> link;
 
@@ -210,19 +210,19 @@ public final class StorageDomain extends BaseDto {
         this.storage = storage;
     }
 
-    public DataCenters getDataCenters() {
+    public NamedList<DataCenter> getDataCenters() {
         return dataCenters;
     }
 
-    public void setDataCenters(DataCenters dataCenters) {
+    public void setDataCenters(NamedList<DataCenter> dataCenters) {
         this.dataCenters = dataCenters;
     }
 
-    public Actions getActions() {
+    public NamedList<Link> getActions() {
         return actions;
     }
 
-    public void setActions(Actions actions) {
+    public void setActions(NamedList<Link> actions) {
         this.actions = actions;
     }
 

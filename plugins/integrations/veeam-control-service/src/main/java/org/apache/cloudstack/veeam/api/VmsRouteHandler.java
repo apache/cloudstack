@@ -32,17 +32,13 @@ import org.apache.cloudstack.veeam.api.dto.Backup;
 import org.apache.cloudstack.veeam.api.dto.Checkpoint;
 import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
-import org.apache.cloudstack.veeam.api.dto.DiskAttachments;
-import org.apache.cloudstack.veeam.api.dto.Disks;
 import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.Nics;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
-import org.apache.cloudstack.veeam.api.dto.Snapshots;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.cloudstack.veeam.api.dto.VmAction;
-import org.apache.cloudstack.veeam.api.dto.Vms;
 import org.apache.cloudstack.veeam.api.request.VmListQuery;
 import org.apache.cloudstack.veeam.api.request.VmSearchExpr;
 import org.apache.cloudstack.veeam.api.request.VmSearchFilters;
@@ -279,8 +275,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
 
         final List<Vm> result = serverAdapter.listAllInstances();
-        final Vms response = new Vms(result);
-
+        NamedList<Vm> response = NamedList.of("vm", result);
         io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
 
@@ -380,7 +375,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                                                   final VeeamControlServlet io) throws IOException {
         try {
             List<DiskAttachment> disks = serverAdapter.listDiskAttachmentsByInstanceUuid(id);
-            DiskAttachments response = new DiskAttachments(disks);
+            NamedList<DiskAttachment> response = NamedList.of("disk_attachment", disks);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
@@ -428,7 +423,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         try {
             List<Snapshot> snapshots = serverAdapter.listSnapshotsByInstanceUuid(id);
-            Snapshots response = new Snapshots(snapshots);
+            NamedList<Snapshot> response = NamedList.of("snapshot", snapshots);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
@@ -487,7 +482,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
               final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         try {
             List<Backup> backups = serverAdapter.listBackupsByInstanceUuid(id);
-            NamedList<Backup> response = NamedList.of("backups", backups);
+            NamedList<Backup> response = NamedList.of("backup", backups);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
@@ -522,7 +517,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             throws IOException {
         try {
             List<Disk> disks = serverAdapter.listDisksByBackupUuid(id);
-            Disks response = new Disks(disks);
+            NamedList<Disk> response = NamedList.of("disk", disks);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
