@@ -1147,12 +1147,8 @@ export default {
           label: 'label.add.affinity.group',
           docHelp: 'adminguide/virtual_machines.html#creating-a-new-affinity-group',
           listView: true,
-          args: ['name', 'description', 'type'],
-          mapping: {
-            type: {
-              options: ['host anti-affinity (Strict)', 'host affinity (Strict)', 'host anti-affinity (Non-Strict)', 'host affinity (Non-Strict)']
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateAffinityGroup.vue')))
         },
         {
           api: 'deleteAffinityGroup',

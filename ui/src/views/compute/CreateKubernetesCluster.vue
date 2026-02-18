@@ -65,6 +65,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <ownership-selection v-if="isAdmin()" @fetch-owner="fetchOwnerOptions"/>
         <a-form-item ref="hypervisor" name="hypervisor">
           <template #label>
             <tooltip-label :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
@@ -492,6 +493,7 @@ import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import UserDataSelection from '@views/compute/wizard/UserDataSelection'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection'
 
 export default {
   name: 'CreateKubernetesCluster',
@@ -499,7 +501,8 @@ export default {
   components: {
     TooltipLabel,
     ResourceIcon,
-    UserDataSelection
+    UserDataSelection,
+    OwnershipSelection
   },
   props: {},
   data () {
@@ -546,7 +549,8 @@ export default {
       affinityGroupLoading: false,
       controlAffinityGroups: [],
       workerAffinityGroups: [],
-      etcdAffinityGroups: []
+      etcdAffinityGroups: [],
+      owner: {}
     }
   },
   beforeCreate () {
@@ -618,9 +622,18 @@ export default {
     },
     fetchAffinityGroups () {
       this.affinityGroups = []
+      this.controlAffinityGroups = []
+      this.workerAffinityGroups = []
+      this.etcdAffinityGroups = []
       const params = {}
       if (!this.isObjectEmpty(this.selectedZone)) {
         params.zoneid = this.selectedZone.id
+      }
+      if (this.owner.account) {
+        params.account = this.owner.account
+        params.domainid = this.owner.domainid
+      } else if (this.owner.projectid) {
+        params.projectid = this.owner.projectid
       }
       this.affinityGroupLoading = true
       getAPI('listAffinityGroups', params).then(json => {
@@ -672,7 +685,9 @@ export default {
       this.fetchNetworkData()
       this.fetchZoneHypervisors()
       this.fetchZoneASNumbers()
-      this.fetchAffinityGroups()
+      if (!this.isAdmin()) {
+        this.fetchAffinityGroups()
+      }
     },
     handleASNumberChange (selectedIndex) {
       this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
@@ -736,8 +751,27 @@ export default {
         }
       })
     },
+    isAdmin () {
+      return this.$store.getters.userInfo.roletype === 'Admin'
+    },
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    fetchOwnerOptions (ownerOptions) {
+      this.owner = {}
+      if (ownerOptions.selectedAccountType === 'Account') {
+        if (!ownerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = ownerOptions.selectedAccount
+        this.owner.domainid = ownerOptions.selectedDomain
+      } else if (ownerOptions.selectedAccountType === 'Project') {
+        if (!ownerOptions.selectedProject) {
+          return
+        }
+        this.owner.projectid = ownerOptions.selectedProject
+      }
+      this.fetchAffinityGroups()
     },
     fetchCksTemplates () {
       var filters = []
@@ -912,6 +946,12 @@ export default {
           serviceofferingid: this.serviceOfferings[values.serviceofferingid].id,
           size: values.size,
           clustertype: 'CloudManaged'
+        }
+        if (this.owner.account) {
+          params.account = this.owner.account
+          params.domainid = this.owner.domainid
+        } else if (this.owner.projectid) {
+          params.projectid = this.owner.projectid
         }
         if (values.hypervisor !== null) {
           params.hypervisor = this.selectedZoneHypervisors[values.hypervisor].name.toLowerCase()
