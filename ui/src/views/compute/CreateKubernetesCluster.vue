@@ -626,7 +626,7 @@ export default {
       getAPI('listAffinityGroups', params).then(json => {
         const groups = json.listaffinitygroupsresponse.affinitygroup
         if (this.arrayHasItems(groups)) {
-          this.affinityGroups = groups
+          this.affinityGroups = groups.filter(group => group.type !== 'ExplicitDedication')
         }
       }).finally(() => {
         this.affinityGroupLoading = false
