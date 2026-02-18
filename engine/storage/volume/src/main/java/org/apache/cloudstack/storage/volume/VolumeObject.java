@@ -126,6 +126,7 @@ public class VolumeObject implements VolumeInfo {
     private boolean directDownload;
     private String vSphereStoragePolicyId;
     private boolean followRedirects;
+    private Long destinationHostId;  // For CLVM: hints where volume should be created
 
     private List<String> checkpointPaths;
     private Set<String> checkpointImageStoreUrls;
@@ -359,6 +360,27 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public void setDirectDownload(boolean directDownload) {
         this.directDownload = directDownload;
+    }
+
+    @Override
+    public Long getDestinationHostId() {
+        // If not in memory, try to load from database (volume_details table)
+        if (destinationHostId == null && volumeVO != null) {
+            VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeVO.getId(), DESTINATION_HOST_ID);
+            if (detail != null && detail.getValue() != null && !detail.getValue().isEmpty()) {
+                try {
+                    destinationHostId = Long.parseLong(detail.getValue());
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid destinationHostId value in volume_details for volume {}: {}", volumeVO.getUuid(), detail.getValue());
+                }
+            }
+        }
+        return destinationHostId;
+    }
+
+    @Override
+    public void setDestinationHostId(Long hostId) {
+        this.destinationHostId = hostId;
     }
 
     public void update() {

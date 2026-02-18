@@ -31,6 +31,18 @@ import java.util.Set;
 
 public interface VolumeInfo extends DownloadableDataInfo, Volume {
 
+    /**
+     * Constant for the volume detail key that stores the destination host ID for CLVM volume creation routing.
+     * This helps ensure volumes are created on the correct host with exclusive locks.
+     */
+    String DESTINATION_HOST_ID = "destinationHostId";
+
+    /**
+     * Constant for the volume detail key that stores the host ID currently holding the CLVM exclusive lock.
+     * This is used during lightweight lock migration to determine the source host for lock transfer.
+     */
+    String CLVM_LOCK_HOST_ID = "clvmLockHostId";
+
     boolean isAttachedVM();
 
     void addPayload(Object data);
@@ -103,4 +115,21 @@ public interface VolumeInfo extends DownloadableDataInfo, Volume {
     List<String> getCheckpointPaths();
 
     Set<String> getCheckpointImageStoreUrls();
+
+    /**
+     * Gets the destination host ID hint for CLVM volume creation.
+     * This is used to route volume creation commands to the specific host where the VM will be deployed.
+     * Only applicable for CLVM storage pools to avoid shared mode activation.
+     *
+     * @return The host ID where the volume should be created, or null if not set
+     */
+    Long getDestinationHostId();
+
+    /**
+     * Sets the destination host ID hint for CLVM volume creation.
+     * This should be set before volume creation when the destination host is known.
+     *
+     * @param hostId The host ID where the volume should be created
+     */
+    void setDestinationHostId(Long hostId);
 }

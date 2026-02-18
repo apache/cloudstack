@@ -745,6 +745,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         logger.debug("Trying to create volume [{}] on storage pool [{}].",
                 volumeToString, poolToString);
         DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+
+        // For CLVM pools, set the destination host hint so volume is created on the correct host
+        // This avoids the need for shared mode activation and improves performance
+        if (pool.getPoolType() == Storage.StoragePoolType.CLVM && hostId != null) {
+            logger.info("CLVM pool detected. Setting destination host {} for volume {} to route creation to correct host",
+                    hostId, volumeInfo.getUuid());
+            volumeInfo.setDestinationHostId(hostId);
+        }
+
         for (int i = 0; i < 2; i++) {
             // retry one more time in case of template reload is required for Vmware case
             AsyncCallFuture<VolumeApiResult> future = null;
@@ -1851,6 +1860,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                     future = volService.createManagedStorageVolumeFromTemplateAsync(volume, destPool.getId(), templ, hostId);
                 } else {
+                    // For CLVM pools, set the destination host hint so volume is created on the correct host
+                    // This avoids the need for shared mode activation and improves performance
+                    StoragePoolVO poolVO = _storagePoolDao.findById(destPool.getId());
+                    if (poolVO != null && poolVO.getPoolType() == Storage.StoragePoolType.CLVM) {
+                        Long hostId = vm.getVirtualMachine().getHostId();
+                        if (hostId != null) {
+                            // Store in both memory and database so it persists across VolumeInfo recreations
+                            volume.setDestinationHostId(hostId);
+                            _volDetailDao.addDetail(volume.getId(), VolumeInfo.DESTINATION_HOST_ID, String.valueOf(hostId), false);
+                            logger.info("CLVM pool detected during volume creation from template. Setting destination host {} for volume {} (persisted to DB) to route creation to correct host",
+                                    hostId, volume.getUuid());
+                        }
+                    }
+
                     future = volService.createVolumeFromTemplateAsync(volume, destPool.getId(), templ);
                 }
             }

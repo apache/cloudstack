@@ -32,8 +32,10 @@ import javax.inject.Inject;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.storage.Storage;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.QueryBuilder;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -46,6 +48,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -59,8 +62,8 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.TemplateType;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -75,6 +78,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private HostDao hostDao;
     @Inject
     private DedicatedResourceDao dedicatedResourceDao;
+    @Inject
+    private PrimaryDataStoreDao _storagePoolDao;
 
     private static final String VOL_ENCRYPT_COLUMN_NAME = "volume_encryption_support";
     private final String findOneHostOnPrimaryStorage = "select t.id from "
@@ -264,6 +269,16 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject srcData, DataObject destData, boolean volumeEncryptionSupportRequired) {
+        // FOR CLVM: Check if destination is a volume with destinationHostId hint
+        // This ensures template-to-volume copy is routed to the correct host for optimal lock placement
+        if (destData instanceof VolumeInfo) {
+            EndPoint clvmEndpoint = selectClvmEndpointIfApplicable((VolumeInfo) destData, "template-to-volume copy");
+            if (clvmEndpoint != null) {
+                return clvmEndpoint;
+            }
+        }
+
+        // Default behavior for non-CLVM or when no destination host is set
         DataStore srcStore = srcData.getDataStore();
         DataStore destStore = destData.getDataStore();
         if (moveBetweenPrimaryImage(srcStore, destStore)) {
@@ -388,9 +403,59 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return sc.list();
     }
 
+    /**
+     * Selects endpoint for CLVM volumes with destination host hint.
+     * This ensures volumes are created on the correct host with exclusive locks.
+     *
+     * @param volume The volume to check for CLVM routing
+     * @param operation Description of the operation (for logging)
+     * @return EndPoint for the destination host if CLVM routing applies, null otherwise
+     */
+    private EndPoint selectClvmEndpointIfApplicable(VolumeInfo volume, String operation) {
+        DataStore store = volume.getDataStore();
+
+        if (store.getRole() != DataStoreRole.Primary) {
+            return null;
+        }
+
+        // Check if this is a CLVM pool
+        StoragePoolVO pool = _storagePoolDao.findById(store.getId());
+        if (pool == null || pool.getPoolType() != Storage.StoragePoolType.CLVM) {
+            return null;
+        }
+
+        // Check if destination host hint is set
+        Long destHostId = volume.getDestinationHostId();
+        if (destHostId == null) {
+            return null;
+        }
+
+        logger.info("CLVM {}: routing volume {} to destination host {} for optimal exclusive lock placement",
+                operation, volume.getUuid(), destHostId);
+
+        EndPoint ep = getEndPointFromHostId(destHostId);
+        if (ep != null) {
+            return ep;
+        }
+
+        logger.warn("Could not get endpoint for destination host {}, falling back to default selection", destHostId);
+        return null;
+    }
+
     @Override
     public EndPoint select(DataObject object, boolean encryptionSupportRequired) {
         DataStore store = object.getDataStore();
+
+        // For CLVM volumes with destination host hint, route to that specific host
+        // This ensures volumes are created on the correct host with exclusive locks
+        if (object instanceof VolumeInfo && store.getRole() == DataStoreRole.Primary) {
+            EndPoint clvmEndpoint = selectClvmEndpointIfApplicable((VolumeInfo) object, "volume creation");
+            if (clvmEndpoint != null) {
+                return clvmEndpoint;
+            }
+        }
+
+        // Default behavior for non-CLVM or when no destination host is set
         if (store.getRole() == DataStoreRole.Primary) {
             return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage, store.getId(), encryptionSupportRequired);
         }
