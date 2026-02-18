@@ -28,7 +28,7 @@ public interface DnsProvider extends Adapter {
     void validate(DnsServer server) throws Exception;
 
     // Zone Operations
-    void provisionZone(DnsServer server, DnsZone zone);
+    String provisionZone(DnsServer server, DnsZone zone);
     void deleteZone(DnsServer server, DnsZone zone) ;
 
     void addRecord(DnsServer server, DnsZone zone, DnsRecord record);

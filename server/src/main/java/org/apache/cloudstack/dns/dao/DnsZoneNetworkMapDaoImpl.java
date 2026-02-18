@@ -1,3 +1,20 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package org.apache.cloudstack.dns.dao;
 
 import java.util.List;
@@ -13,7 +30,6 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 public class DnsZoneNetworkMapDaoImpl extends GenericDaoBase<DnsZoneNetworkMapVO, Long> implements DnsZoneNetworkMapDao {
     private final SearchBuilder<DnsZoneNetworkMapVO> ZoneNetworkSearch;
-    private final SearchBuilder<DnsZoneNetworkMapVO> ZoneSearch;
     private final SearchBuilder<DnsZoneNetworkMapVO> NetworkSearch;
 
     public DnsZoneNetworkMapDaoImpl() {
@@ -23,19 +39,9 @@ public class DnsZoneNetworkMapDaoImpl extends GenericDaoBase<DnsZoneNetworkMapVO
         ZoneNetworkSearch.and(ApiConstants.NETWORK_ID, ZoneNetworkSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         ZoneNetworkSearch.done();
 
-        ZoneSearch = createSearchBuilder();
-        ZoneSearch.and(ApiConstants.DNS_ZONE_ID, ZoneSearch.entity().getDnsZoneId(), SearchCriteria.Op.EQ);
-        ZoneSearch.done();
-
         NetworkSearch = createSearchBuilder();
         NetworkSearch.and(ApiConstants.NETWORK_ID, NetworkSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         NetworkSearch.done();
-    }
-    @Override
-    public List<DnsZoneNetworkMapVO> listByDnsZoneId(long dnsZoneId) {
-        SearchCriteria<DnsZoneNetworkMapVO> sc = ZoneSearch.create();
-        sc.setParameters(ApiConstants.DNS_ZONE_ID, dnsZoneId);
-        return listBy(sc);
     }
 
     @Override

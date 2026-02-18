@@ -95,7 +95,7 @@ public class PowerDnsClient implements AutoCloseable {
         }
     }
 
-    public void createZone(String baseUrl, String apiKey, String zoneName, String nameServers) {
+    public String createZone(String baseUrl, String apiKey, String zoneName, String nameServers) {
         String normalizedZone = formatZoneName(zoneName);
         try {
             String url = buildApiUrl(baseUrl, "/servers/localhost/zones");
@@ -125,8 +125,12 @@ public class PowerDnsClient implements AutoCloseable {
                 String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
 
                 if (statusCode == HttpStatus.SC_CREATED) {
-                    logger.debug("Zone {} created successfully", zoneName);
-                    return;
+                    JsonNode root = MAPPER.readTree(body);
+                    String zoneId = root.path("id").asText();
+                    if (StringUtils.isBlank(zoneId)) {
+                        throw new CloudRuntimeException("PowerDNS returned empty zone id");
+                    }
+                    return zoneId;
                 }
 
                 if (statusCode == HttpStatus.SC_CONFLICT) {

@@ -157,4 +157,8 @@ public class DnsZoneVO implements DnsZone {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public void setExternalReference(String externalReference) {
+        this.externalReference = externalReference;
+    }
 }

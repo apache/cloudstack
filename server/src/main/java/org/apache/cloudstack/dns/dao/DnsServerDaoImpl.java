@@ -33,15 +33,11 @@ import com.cloud.utils.db.SearchCriteria;
 @Component
 public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implements DnsServerDao {
     SearchBuilder<DnsServerVO> AllFieldsSearch;
-    SearchBuilder<DnsServerVO> ProviderSearch;
     SearchBuilder<DnsServerVO> AccountUrlSearch;
 
 
     public DnsServerDaoImpl() {
         super();
-        ProviderSearch = createSearchBuilder();
-        ProviderSearch.and(ApiConstants.PROVIDER_TYPE, ProviderSearch.entity().getProviderType(), SearchCriteria.Op.EQ);
-        ProviderSearch.done();
 
         AccountUrlSearch = createSearchBuilder();
         AccountUrlSearch.and(ApiConstants.URL, AccountUrlSearch.entity().getUrl(), SearchCriteria.Op.EQ);
@@ -55,13 +51,6 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
         AllFieldsSearch.and(ApiConstants.ACCOUNT_ID, AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
 
-    }
-
-    @Override
-    public List<DnsServerVO> listByProvider(String providerType) {
-        SearchCriteria<DnsServerVO> sc = ProviderSearch.create();
-        sc.setParameters(ApiConstants.PROVIDER_TYPE, providerType);
-        return listBy(sc);
     }
 
     @Override

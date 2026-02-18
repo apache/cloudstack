@@ -27,10 +27,6 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface DnsServerDao extends GenericDao<DnsServerVO, Long> {
-
-    List<DnsServerVO> listByProvider(String provider);
-
     DnsServer findByUrlAndAccount(String url, long accountId);
-
     Pair<List<DnsServerVO>, Integer> searchDnsServers(Long id, String keyword, String provider, Long accountId, Filter filter);
 }

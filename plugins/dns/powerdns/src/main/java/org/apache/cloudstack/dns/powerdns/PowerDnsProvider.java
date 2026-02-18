@@ -46,9 +46,9 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     }
 
     @Override
-    public void provisionZone(DnsServer server, DnsZone zone) {
+    public String provisionZone(DnsServer server, DnsZone zone) {
         validateServerZoneParams(server, zone);
-        client.createZone(server.getUrl(), server.getApiKey(), zone.getName(), server.getNameServers());
+        return client.createZone(server.getUrl(), server.getApiKey(), zone.getName(), server.getNameServers());
     }
 
     @Override

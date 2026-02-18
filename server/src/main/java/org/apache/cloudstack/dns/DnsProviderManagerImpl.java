@@ -18,6 +18,7 @@
 package org.apache.cloudstack.dns;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -96,7 +97,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 return provider;
             }
         }
-        throw new CloudRuntimeException("No plugin found for DNS Provider type: " + type);
+        throw new CloudRuntimeException("No plugin found for DNS provider type: " + type);
     }
 
     @Override
@@ -105,7 +106,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         DnsServer existing = dnsServerDao.findByUrlAndAccount(cmd.getUrl(), caller.getId());
         if (existing != null) {
             throw new InvalidParameterValueException(
-                    "This Account already has a DNS Server integration for URL: " + cmd.getUrl());
+                    "This Account already has a DNS server integration for URL: " + cmd.getUrl());
         }
         DnsProviderType type = DnsProviderType.fromString(cmd.getProvider());
         DnsProvider provider = getProvider(type);
@@ -156,7 +157,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Long dnsServerId = cmd.getId();
         DnsServerVO dnsServer = dnsServerDao.findById(dnsServerId);
         if (dnsServer == null) {
-            throw new InvalidParameterValueException(String.format("DNS Server with ID: %s not found.", dnsServerId));
+            throw new InvalidParameterValueException(String.format("DNS server with ID: %s not found.", dnsServerId));
         }
 
         Account caller = CallContext.current().getCallingAccount();
@@ -176,7 +177,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             if (!cmd.getUrl().equals(originalUrl)) {
                 DnsServer duplicate = dnsServerDao.findByUrlAndAccount(cmd.getUrl(), dnsServer.getAccountId());
                 if (duplicate != null && duplicate.getId() != dnsServer.getId()) {
-                    throw new InvalidParameterValueException("Another DNS Server with this URL already exists.");
+                    throw new InvalidParameterValueException("Another DNS server with this URL already exists.");
                 }
                 dnsServer.setUrl(cmd.getUrl());
                 validationRequired = true;
@@ -230,7 +231,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Long dnsServerId = cmd.getId();
         DnsServerVO dnsServer = dnsServerDao.findById(dnsServerId);
         if (dnsServer == null) {
-            throw new InvalidParameterValueException(String.format("DNS Server with ID: %s not found.", dnsServerId));
+            throw new InvalidParameterValueException(String.format("DNS server with ID: %s not found.", dnsServerId));
         }
         Account caller = CallContext.current().getCallingAccount();
         if (!accountMgr.isRootAdmin(caller.getId()) && dnsServer.getAccountId() != caller.getId()) {
@@ -260,7 +261,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     public boolean deleteDnsZone(Long zoneId) {
         DnsZoneVO zone = dnsZoneDao.findById(zoneId);
         if (zone == null) {
-            throw new InvalidParameterValueException("DNS Zone with ID " + zoneId + " not found.");
+            throw new InvalidParameterValueException("DNS zone with ID " + zoneId + " not found.");
         }
 
         Account caller = CallContext.current().getCallingAccount();
@@ -269,10 +270,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (server != null && zone.getState() == DnsZone.State.Active) {
             try {
                 DnsProvider provider = getProvider(server.getProviderType());
-                logger.debug("Deleting DNS zone {} from provider.", zone.getName());
+                logger.debug("Deleting DNS zone: {} from provider.", zone.getName());
                 provider.deleteZone(server, zone);
             } catch (Exception ex) {
-                logger.error("Failed to delete zone from provider", ex);
+                logger.error("Failed to delete DNS zone from provider", ex);
                 throw new CloudRuntimeException("Failed to delete DNS zone.");
             }
         }
@@ -336,7 +337,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     public DnsRecordResponse createDnsRecord(CreateDnsRecordCmd cmd) {
         DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
         if (zone == null) {
-            throw new InvalidParameterValueException("DNS Zone not found.");
+            throw new InvalidParameterValueException("DNS zone not found.");
         }
 
         Account caller = CallContext.current().getCallingAccount();
@@ -358,7 +359,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     public boolean deleteDnsRecord(DeleteDnsRecordCmd cmd) {
         DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
         if (zone == null) {
-            throw new InvalidParameterValueException("DNS Zone not found.");
+            throw new InvalidParameterValueException("DNS zone not found.");
         }
 
         Account caller = CallContext.current().getCallingAccount();
@@ -376,7 +377,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             return true;
         } catch (Exception ex) {
             logger.error("Failed to delete DNS record via provider", ex);
-            throw new CloudRuntimeException(String.format("Failed to delete record: %s", cmd.getName()));
+            throw new CloudRuntimeException(String.format("Failed to delete DNS record: %s", cmd.getName()));
         }
     }
 
@@ -384,13 +385,13 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     public ListResponse<DnsRecordResponse> listDnsRecords(ListDnsRecordsCmd cmd) {
         DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
         if (zone == null) {
-            throw new InvalidParameterValueException(String.format("DNS Zone with ID %s not found.", cmd.getDnsZoneId()));
+            throw new InvalidParameterValueException(String.format("DNS zone with ID %s not found.", cmd.getDnsZoneId()));
         }
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, true, zone);
         DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
         if (server == null) {
-            throw new CloudRuntimeException("The underlying DNS Server for this zone is missing.");
+            throw new CloudRuntimeException("The underlying DNS server for this DNS zone is missing.");
         }
         try {
             DnsProvider provider = getProvider(server.getProviderType());
@@ -425,23 +426,23 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Account caller = CallContext.current().getCallingAccount();
         DnsServerVO server = dnsServerDao.findById(cmd.getDnsServerId());
         if (server == null) {
-            throw new InvalidParameterValueException("DNS Server not found");
+            throw new InvalidParameterValueException("DNS server not found");
         }
         boolean isOwner = (server.getAccountId() == caller.getId());
         if (!server.isPublic() && !isOwner) {
-            throw new PermissionDeniedException("You do not have permission to use this DNS Server.");
+            throw new PermissionDeniedException("You do not have permission to use this DNS server.");
         }
         DnsZone.ZoneType type = DnsZone.ZoneType.Public;
         if (cmd.getType() != null) {
             try {
                 type = DnsZone.ZoneType.valueOf(cmd.getType());
             } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("Invalid Zone Type");
+                throw new InvalidParameterValueException("Invalid DNS zone Type");
             }
         }
         DnsZoneVO existing = dnsZoneDao.findByNameServerAndType(cmd.getName(), server.getId(), type);
         if (existing != null) {
-            throw new InvalidParameterValueException("Zone already exists on this server.");
+            throw new InvalidParameterValueException("DNS zone already exists on this server.");
         }
         DnsZoneVO dnsZoneVO = new DnsZoneVO(cmd.getName(), type, server.getId(), caller.getId(), caller.getDomainId(), cmd.getDescription());
         return dnsZoneDao.persist(dnsZoneVO);
@@ -451,20 +452,20 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     public DnsZone provisionDnsZone(long zoneId) {
         DnsZoneVO dnsZone = dnsZoneDao.findById(zoneId);
         if (dnsZone == null) {
-            throw new CloudRuntimeException("DNS Zone not found during provisioning");
+            throw new CloudRuntimeException("DNS zone not found during provisioning");
         }
         DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
-
         try {
             DnsProvider provider = getProvider(server.getProviderType());
-            logger.debug("Provision DNS zone: {} on DNS server: {}", dnsZone.getName(), server.getName());
-            provider.provisionZone(server, dnsZone);
+            String externalReferenceId = provider.provisionZone(server, dnsZone);
+            dnsZone.setExternalReference(externalReferenceId);
             dnsZone.setState(DnsZone.State.Active);
+            logger.debug("DNS zone: {} created successfully on DNS server: {} with ID: {}", dnsZone.getName(), server.getName(), zoneId);
             dnsZoneDao.update(dnsZone.getId(), dnsZone);
         } catch (Exception ex) {
-            logger.error("Failed to provision zone: {} on server: {}", dnsZone.getName(), server.getName(), ex);
+            logger.error("Failed to provision DNS zone: {} on DNS server: {}", dnsZone.getName(), server.getName(), ex);
             dnsZoneDao.remove(zoneId);
-            throw new CloudRuntimeException("Failed to provision zone: " + dnsZone.getName());
+            throw new CloudRuntimeException("Failed to provision DNS zone: " + dnsZone.getName());
         }
         return dnsZone;
     }
@@ -495,7 +496,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Account caller = CallContext.current().getCallingAccount();
         DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
         if (zone == null) {
-            throw new InvalidParameterValueException("DNS Zone not found.");
+            throw new InvalidParameterValueException("DNS zone not found.");
         }
         accountMgr.checkAccess(caller, null, true, zone);
 
@@ -510,7 +511,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         accountMgr.checkAccess(caller, null, true, network);
         DnsZoneNetworkMapVO existing = dnsZoneNetworkMapDao.findByZoneAndNetwork(zone.getId(), network.getId());
         if (existing != null) {
-            throw new InvalidParameterValueException("This DNS Zone is already associated with this Network.");
+            throw new InvalidParameterValueException("This DNS zone is already associated with this Network.");
         }
         DnsZoneNetworkMapVO mapping = new DnsZoneNetworkMapVO(zone.getId(), network.getId(), cmd.getSubDomain());
         dnsZoneNetworkMapDao.persist(mapping);
@@ -556,7 +557,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         // 1. Fetch VM and verify access
         UserVmVO instance = userVmDao.findById(instanceId);
         if (instance == null) {
-            throw new InvalidParameterValueException("Instance not found.");
+            throw new InvalidParameterValueException("Provided Instance not found.");
         }
         accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, instance);
 
@@ -599,7 +600,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 DnsProvider provider = getProvider(server.getProviderType());
                 // Handle IPv4 (A Record)
                 if (nic.getIPv4Address() != null) {
-                    DnsRecord recordA = new DnsRecord(recordName, DnsRecord.RecordType.A, java.util.Arrays.asList(nic.getIPv4Address()), 3600);
+                    DnsRecord recordA = new DnsRecord(recordName, DnsRecord.RecordType.A, Collections.singletonList(nic.getIPv4Address()), 3600);
                     if (isAdd) {
                         provider.addRecord(server, zone, recordA);
                     } else {
@@ -610,7 +611,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
                 // Handle IPv6 (AAAA Record) if it exists
                 if (nic.getIPv6Address() != null) {
-                    DnsRecord recordAAAA = new DnsRecord(recordName, DnsRecord.RecordType.AAAA, java.util.Arrays.asList(nic.getIPv6Address()), 3600);
+                    DnsRecord recordAAAA = new DnsRecord(recordName, DnsRecord.RecordType.AAAA, Collections.singletonList(nic.getIPv6Address()), 3600);
                     if (isAdd) {
                         provider.addRecord(server, zone, recordAAAA);
                     } else {
