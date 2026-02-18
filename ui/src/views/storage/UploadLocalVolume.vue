@@ -57,43 +57,33 @@
           <template #label>
             <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.zoneId"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id" :label="zone.name || zone.description">
-              <span>
-                <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <global-outlined v-else style="margin-right: 5px"/>
-                {{ zone.name || zone.description }}
-              </span>
-            </a-select-option>
-          </a-select>
+            api="listZones"
+            :apiParams="zonesApiParams"
+            resourceType="zone"
+            optionValueKey="id"
+            optionLabelKey="name"
+            defaultIcon="global-outlined"
+            selectFirstOption="true"
+            @change-option-value="handleZoneChange" />
         </a-form-item>
         <a-form-item name="diskofferingid" ref="diskofferingid">
           <template #label>
             <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.diskofferingid"
-            :loading="offeringLoading"
+            api="listDiskOfferings"
+            :apiParams="diskOfferingsApiParams"
+            resourceType="diskoffering"
+            optionValueKey="id"
+            optionLabelKey="displaytext"
+            defaultIcon="hdd-outlined"
+            :defaultOption="{ id: null, displaytext: ''}"
+            allowClear="true"
             :placeholder="apiParams.diskofferingid.description"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="(offering, index) in offerings"
-              :value="offering.id"
-              :key="index"
-              :label="offering.displaytext || offering.name">
-              {{ offering.displaytext || offering.name }}
-            </a-select-option>
-          </a-select>
+            @change-option="onChangeDiskOffering" />
         </a-form-item>
         <a-form-item ref="format" name="format">
           <template #label>
@@ -124,38 +114,33 @@
           <template #label>
             <tooltip-label :title="$t('label.domain')" :tooltip="apiParams.domainid.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.domainid"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="domainLoading"
+            api="listDomains"
+            :apiParams="domainsApiParams"
+            resourceType="domain"
+            optionValueKey="id"
+            optionLabelKey="path"
+            defaultIcon="block-outlined"
             :placeholder="$t('label.domainid')"
-            @change="val => { handleDomainChange(domainList[val].id) }">
-            <a-select-option v-for="(opt, optIndex) in domainList" :key="optIndex" :label="opt.path || opt.name || opt.description">
-              {{ opt.path || opt.name || opt.description }}
-            </a-select-option>
-          </a-select>
+            allowClear="true"
+            @change-option-value="handleDomainChange" />
         </a-form-item>
         <a-form-item name="account" ref="account" v-if="'listDomains' in $store.getters.apis">
           <template #label>
             <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           </template>
-          <a-select
+          <infinite-scroll-select
             v-model:value="form.account"
-            showSearch
-            optionFilterProp="value"
-            :filterOption="(input, option) => {
-              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
+            api="listAccounts"
+            :apiParams="accountsApiParams"
+            resourceType="account"
+            optionValueKey="name"
+            optionLabelKey="name"
+            defaultIcon="team-outlined"
+            allowClear="true"
             :placeholder="$t('label.account')"
-            @change="val => { handleAccountChange(val) }">
-            <a-select-option v-for="(acc, index) in accountList" :value="acc.name" :key="index">
-              {{ acc.name }}
-            </a-select-option>
-          </a-select>
+            @change-option-value="handleAccountChange" />
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -173,27 +158,25 @@ import { axios } from '../../utils/request'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect.vue'
 
 export default {
   name: 'UploadLocalVolume',
   mixins: [mixinForm],
   components: {
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    InfiniteScrollSelect
   },
   data () {
     return {
       fileList: [],
-      zones: [],
-      domainList: [],
-      accountList: [],
-      offerings: [],
-      offeringLoading: false,
       formats: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2'],
       domainId: null,
       account: null,
       uploadParams: null,
-      domainLoading: false,
+      customDiskOffering: false,
+      isCustomizedDiskIOps: false,
       loading: false,
       uploadPercentage: 0
     }
@@ -201,9 +184,38 @@ export default {
   beforeCreate () {
     this.apiParams = this.$getApiParams('getUploadParamsForVolume')
   },
+  computed: {
+    zonesApiParams () {
+      return {
+        showicon: true
+      }
+    },
+    diskOfferingsApiParams () {
+      if (!this.form.zoneId) {
+        return null
+      }
+      return {
+        zoneid: this.form.zoneId,
+        listall: true
+      }
+    },
+    domainsApiParams () {
+      return {
+        listall: true,
+        details: 'min'
+      }
+    },
+    accountsApiParams () {
+      if (!this.form.domainid) {
+        return null
+      }
+      return {
+        domainid: this.form.domainid
+      }
+    }
+  },
   created () {
     this.initForm()
-    this.fetchData()
   },
   methods: {
     initForm () {
@@ -221,38 +233,18 @@ export default {
         zoneId: [{ required: true, message: this.$t('message.error.select') }]
       })
     },
-    listZones () {
-      getAPI('listZones', { showicon: true }).then(json => {
-        if (json && json.listzonesresponse && json.listzonesresponse.zone) {
-          this.zones = json.listzonesresponse.zone
-          this.zones = this.zones.filter(zone => zone.type !== 'Edge')
-          if (this.zones.length > 0) {
-            this.onZoneChange(this.zones[0].id)
-          }
-        }
-      })
-    },
-    onZoneChange (zoneId) {
+    handleZoneChange (zoneId) {
       this.form.zoneId = zoneId
-      this.zoneId = zoneId
-      this.fetchDiskOfferings(zoneId)
+      // InfiniteScrollSelect will auto-reload disk offerings when apiParams changes
     },
-    fetchDiskOfferings (zoneId) {
-      this.offeringLoading = true
-      this.offerings = [{ id: -1, name: '' }]
-      this.form.diskofferingid = undefined
-      getAPI('listDiskOfferings', {
-        zoneid: zoneId,
-        listall: true
-      }).then(json => {
-        for (var offering of json.listdiskofferingsresponse.diskoffering) {
-          if (offering.iscustomized) {
-            this.offerings.push(offering)
-          }
-        }
-      }).finally(() => {
-        this.offeringLoading = false
-      })
+    onChangeDiskOffering (offering) {
+      if (offering) {
+        this.customDiskOffering = offering.iscustomized || false
+        this.isCustomizedDiskIOps = offering.iscustomizediops || false
+      } else {
+        this.customDiskOffering = false
+        this.isCustomizedDiskIOps = false
+      }
     },
     handleRemove (file) {
       const index = this.fileList.indexOf(file)
@@ -266,53 +258,14 @@ export default {
       this.form.file = file
       return false
     },
-    handleDomainChange (domain) {
-      this.domainId = domain
-      if ('listAccounts' in this.$store.getters.apis) {
-        this.fetchAccounts()
-      }
+    handleDomainChange (domainId) {
+      this.form.domainid = domainId
+      this.domainId = domainId
+      this.form.account = null
     },
-    handleAccountChange (acc) {
-      if (acc) {
-        this.account = acc.name
-      } else {
-        this.account = acc
-      }
-    },
-    fetchData () {
-      this.listZones()
-      if ('listDomains' in this.$store.getters.apis) {
-        this.fetchDomains()
-      }
-    },
-    fetchDomains () {
-      this.domainLoading = true
-      getAPI('listDomains', {
-        listAll: true,
-        details: 'min'
-      }).then(response => {
-        this.domainList = response.listdomainsresponse.domain
-
-        if (this.domainList[0]) {
-          this.handleDomainChange(null)
-        }
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.domainLoading = false
-      })
-    },
-    fetchAccounts () {
-      getAPI('listAccounts', {
-        domainid: this.domainId
-      }).then(response => {
-        this.accountList = response.listaccountsresponse.account || []
-        if (this.accountList && this.accountList.length === 0) {
-          this.handleAccountChange(null)
-        }
-      }).catch(error => {
-        this.$notifyError(error)
-      })
+    handleAccountChange (accountName) {
+      this.form.account = accountName
+      this.account = accountName
     },
     handleSubmit (e) {
       e.preventDefault()

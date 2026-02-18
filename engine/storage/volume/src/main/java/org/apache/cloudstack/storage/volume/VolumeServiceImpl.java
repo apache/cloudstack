@@ -324,7 +324,7 @@ public class VolumeServiceImpl implements VolumeService {
         DataObject vo = context.getVolume();
         String errMsg = null;
         if (result.isSuccess()) {
-            vo.processEvent(Event.OperationSuccessed, result.getAnswer());
+            vo.processEvent(Event.OperationSucceeded, result.getAnswer());
         } else {
             vo.processEvent(Event.OperationFailed);
             errMsg = result.getResult();
@@ -387,6 +387,7 @@ public class VolumeServiceImpl implements VolumeService {
             logger.info("Expunge volume with no data store specified");
             if (canVolumeBeRemoved(volume.getId())) {
                 logger.info("Volume {} is not referred anywhere, remove it from volumes table", volume);
+                snapshotMgr.deletePoliciesForVolume(volume.getId());
                 volDao.remove(volume.getId());
             }
             future.complete(result);
@@ -422,6 +423,7 @@ public class VolumeServiceImpl implements VolumeService {
                 }
                 VMTemplateVO template = templateDao.findById(vol.getTemplateId());
                 if (template != null && !template.isDeployAsIs()) {
+                    snapshotMgr.deletePoliciesForVolume(vol.getId());
                     volDao.remove(vol.getId());
                     future.complete(result);
                     return future;
@@ -485,7 +487,7 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeApiResult apiResult = new VolumeApiResult(vo);
         try {
             if (result.isSuccess()) {
-                vo.processEvent(Event.OperationSuccessed);
+                vo.processEvent(Event.OperationSucceeded);
 
                 if (vo.getPassphraseId() != null) {
                     vo.deletePassphrase();
@@ -493,6 +495,7 @@ public class VolumeServiceImpl implements VolumeService {
 
                 if (canVolumeBeRemoved(vo.getId())) {
                     logger.info("Volume {} is not referred anywhere, remove it from volumes table", vo);
+                    snapshotMgr.deletePoliciesForVolume(vo.getId());
                     volDao.remove(vo.getId());
                 }
 
@@ -722,7 +725,6 @@ public class VolumeServiceImpl implements VolumeService {
         VolumeApiResult res = new VolumeApiResult(volumeInfo);
 
         if (result.isSuccess()) {
-            // volumeInfo.processEvent(Event.OperationSuccessed, result.getAnswer());
 
             VolumeVO volume = volDao.findById(volumeInfo.getId());
             CopyCmdAnswer answer = (CopyCmdAnswer)result.getAnswer();
@@ -759,7 +761,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         if (result.isSuccess()) {
             ((TemplateObject)templateOnPrimaryStoreObj).setInstallPath(result.getPath());
-            templateOnPrimaryStoreObj.processEvent(Event.OperationSuccessed, result.getAnswer());
+            templateOnPrimaryStoreObj.processEvent(Event.OperationSucceeded, result.getAnswer());
         } else {
             templateOnPrimaryStoreObj.processEvent(Event.OperationFailed);
         }
@@ -779,7 +781,7 @@ public class VolumeServiceImpl implements VolumeService {
         DataObject templateOnPrimaryStoreObj = context.destObj;
 
         if (result.isSuccess()) {
-            templateOnPrimaryStoreObj.processEvent(Event.OperationSuccessed, result.getAnswer());
+            templateOnPrimaryStoreObj.processEvent(Event.OperationSucceeded, result.getAnswer());
         } else {
             templateOnPrimaryStoreObj.processEvent(Event.OperationFailed);
         }
@@ -803,7 +805,7 @@ public class VolumeServiceImpl implements VolumeService {
             return null;
         }
 
-        templateOnPrimaryStoreObj.processEvent(Event.OperationSuccessed, result.getAnswer());
+        templateOnPrimaryStoreObj.processEvent(Event.OperationSucceeded, result.getAnswer());
         createVolumeFromBaseImageAsync(context.volume, templateOnPrimaryStoreObj, context.dataStore, future);
         return null;
     }
@@ -854,7 +856,7 @@ public class VolumeServiceImpl implements VolumeService {
         String deployAsIsConfiguration = context.deployAsIsConfiguration;
 
         if (result.isSuccess()) {
-            vo.processEvent(Event.OperationSuccessed, result.getAnswer());
+            vo.processEvent(Event.OperationSucceeded, result.getAnswer());
         } else {
 
             vo.processEvent(Event.OperationFailed);
@@ -864,7 +866,7 @@ public class VolumeServiceImpl implements VolumeService {
             Answer ans = result.getAnswer();
             if (ans instanceof CopyCmdAnswer && ans.getDetails().contains(StorageProcessor.REQUEST_TEMPLATE_RELOAD)) {
                 if (tmplOnPrimary != null) {
-                    logger.info("Reset template_spool_ref entry so that vmware template can be reloaded in next try");
+                    logger.info("Reset template_spool_ref entry so that VMware Template can be reloaded in next try");
                     VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(tmplOnPrimary.getDataStore().getId(), tmplOnPrimary.getId(), deployAsIsConfiguration);
                     if (templatePoolRef != null) {
                         long templatePoolRefId = templatePoolRef.getId();
@@ -909,7 +911,7 @@ public class VolumeServiceImpl implements VolumeService {
             }
 
             volDao.update(volume.getId(), volume);
-            vo.processEvent(Event.OperationSuccessed);
+            vo.processEvent(Event.OperationSucceeded);
         } else {
             volResult.setResult(result.getResult());
 
@@ -973,7 +975,7 @@ public class VolumeServiceImpl implements VolumeService {
                 throw new CloudRuntimeException(String.format("Unable to create template %s on primary storage %s: %s", templateOnPrimary.getImage(), destPrimaryDataStore, errMesg));
             }
 
-            templateOnPrimary.processEvent(Event.OperationSuccessed);
+            templateOnPrimary.processEvent(Event.OperationSucceeded);
 
         } catch (Throwable e) {
             logger.debug("Failed to create template volume on storage", e);
@@ -1446,7 +1448,7 @@ public class VolumeServiceImpl implements VolumeService {
                         logger.debug("Failed to prepare ready bypassed template: {} on primary storage: {}", srcTemplateInfo, templateOnPrimary);
                         throw new CloudRuntimeException(String.format("Failed to prepare ready bypassed template: %s on primary storage: %s", srcTemplateInfo, templateOnPrimary));
                     }
-                    templateOnPrimary.processEvent(Event.OperationSuccessed);
+                    templateOnPrimary.processEvent(Event.OperationSucceeded);
                     return templateOnPrimaryNow;
                 } finally {
                     revokeAccess(templateOnPrimary, destHost, destPrimaryDataStore);
@@ -1657,7 +1659,6 @@ public class VolumeServiceImpl implements VolumeService {
         // mark volume entry in volumes table as destroy state
         VolumeInfo vol = volFactory.getVolume(volumeId);
         vol.stateTransit(Volume.Event.DestroyRequested);
-        snapshotMgr.deletePoliciesForVolume(volumeId);
         annotationDao.removeByEntityType(AnnotationService.EntityType.VOLUME.name(), vol.getUuid());
 
         vol.stateTransit(Volume.Event.OperationSucceeded);
@@ -1701,7 +1702,7 @@ public class VolumeServiceImpl implements VolumeService {
             apiResult.setResult(result.getResult());
             event = Event.OperationFailed;
         } else {
-            event = Event.OperationSuccessed;
+            event = Event.OperationSucceeded;
         }
 
         try {
@@ -1807,8 +1808,8 @@ public class VolumeServiceImpl implements VolumeService {
                 return null;
             }
 
-            srcVolume.processEvent(Event.OperationSuccessed);
-            destVolume.processEvent(Event.OperationSuccessed, result.getAnswer());
+            srcVolume.processEvent(Event.OperationSucceeded);
+            destVolume.processEvent(Event.OperationSucceeded, result.getAnswer());
             srcVolume.getDataStore().delete(srcVolume);
             future.complete(res);
         } catch (Exception e) {
@@ -1858,8 +1859,8 @@ public class VolumeServiceImpl implements VolumeService {
                 res.setResult(result.getResult());
                 future.complete(res);
             } else {
-                srcVolume.processEvent(Event.OperationSuccessed); // back to Ready state in Volume table
-                destVolume.processEventOnly(Event.OperationSuccessed, result.getAnswer());
+                srcVolume.processEvent(Event.OperationSucceeded); // back to Ready state in Volume table
+                destVolume.processEventOnly(Event.OperationSucceeded, result.getAnswer());
                 future.complete(res);
             }
         } catch (Exception e) {
@@ -1941,7 +1942,7 @@ public class VolumeServiceImpl implements VolumeService {
                 if (destVolume.getStoragePoolType() == StoragePoolType.PowerFlex) {
                     logger.info("Dest volume {} can be removed", destVolume);
                     destVolume.processEvent(Event.ExpungeRequested);
-                    destVolume.processEvent(Event.OperationSuccessed);
+                    destVolume.processEvent(Event.OperationSucceeded);
                     volDao.remove(destVolume.getId());
                     future.complete(res);
                     return null;
@@ -1974,7 +1975,7 @@ public class VolumeServiceImpl implements VolumeService {
 
     protected boolean destroySourceVolumeAfterMigration(Event destinationEvent, Answer destinationEventAnswer, VolumeInfo sourceVolume,
       VolumeInfo destinationVolume, boolean retryExpungeVolumeAsync) {
-        sourceVolume.processEvent(Event.OperationSuccessed);
+        sourceVolume.processEvent(Event.OperationSucceeded);
         destinationVolume.processEvent(destinationEvent, destinationEventAnswer);
 
         VolumeVO sourceVolumeVo = ((VolumeObject) sourceVolume).getVolume();
@@ -1990,7 +1991,7 @@ public class VolumeServiceImpl implements VolumeService {
             if (sourceVolume.getStoragePoolType() == StoragePoolType.PowerFlex) {
                 logger.info("Source volume {} can be removed.", sourceVolumeVo);
                 sourceVolume.processEvent(Event.ExpungeRequested);
-                sourceVolume.processEvent(Event.OperationSuccessed);
+                sourceVolume.processEvent(Event.OperationSucceeded);
                 volDao.remove(sourceVolume.getId());
                 return true;
             }
@@ -2085,7 +2086,7 @@ public class VolumeServiceImpl implements VolumeService {
                 logger.debug("Failed to create dest volume {}, volume can be removed", destVolume);
                 destroyVolume(destVolume.getId());
                 destVolume.processEvent(Event.ExpungeRequested);
-                destVolume.processEvent(Event.OperationSuccessed);
+                destVolume.processEvent(Event.OperationSucceeded);
                 volDao.remove(destVolume.getId());
                 throw new CloudRuntimeException("Creation of a dest volume failed: " + createVolumeResult.getResult());
             }
@@ -2174,7 +2175,7 @@ public class VolumeServiceImpl implements VolumeService {
                     logger.debug("failed to clean up managed volume on storage", e);
                 }
             } else {
-                srcVolume.processEvent(Event.OperationSuccessed);
+                srcVolume.processEvent(Event.OperationSucceeded);
                 destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
                 volDao.updateUuid(srcVolume.getId(), destVolume.getId());
                 volDao.detachVolume(srcVolume.getId());
@@ -2294,7 +2295,7 @@ public class VolumeServiceImpl implements VolumeService {
                 srcVolume.processEvent(Event.OperationFailed);
                 future.complete(res);
             } else {
-                srcVolume.processEvent(Event.OperationSuccessed);
+                srcVolume.processEvent(Event.OperationSucceeded);
                 if (srcVolume.getStoragePoolType() == StoragePoolType.PowerFlex) {
                     future.complete(res);
                     return null;
@@ -2381,7 +2382,7 @@ public class VolumeServiceImpl implements VolumeService {
                 for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
                     VolumeInfo volume = entry.getKey();
                     snapshotMgr.cleanupSnapshotsByVolume(volume.getId());
-                    volume.processEvent(Event.OperationSuccessed);
+                    volume.processEvent(Event.OperationSucceeded);
                 }
                 future.complete(res);
             }
@@ -2449,7 +2450,7 @@ public class VolumeServiceImpl implements VolumeService {
                 }
 
             } else {
-                vo.processEvent(Event.OperationSuccessed, result.getAnswer());
+                vo.processEvent(Event.OperationSucceeded, result.getAnswer());
 
                 if (vo.getSize() != null) {
                     // publish usage events
@@ -2569,7 +2570,7 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         try {
-            volume.processEvent(Event.OperationSuccessed);
+            volume.processEvent(Event.OperationSucceeded);
         } catch (Exception e) {
             logger.debug("Failed to change volume state (after resize success)", e);
         }
@@ -2658,7 +2659,7 @@ public class VolumeServiceImpl implements VolumeService {
 
                                 if (volume.getState() == State.NotUploaded || volume.getState() == State.UploadInProgress) {
                                     VolumeObject volObj = (VolumeObject)volFactory.getVolume(volume.getId());
-                                    volObj.processEvent(Event.OperationSuccessed);
+                                    volObj.processEvent(Event.OperationSucceeded);
                                 }
 
                                 if (volInfo.getSize() > 0) {

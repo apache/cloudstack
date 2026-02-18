@@ -32,7 +32,7 @@ import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import javax.inject.Inject;
 import java.util.Date;
 
-@APICommand(name = "updateVMSchedule", description = "Update VM Schedule.", responseObject = VMScheduleResponse.class,
+@APICommand(name = "updateVMSchedule", description = "Update Instance Schedule.", responseObject = VMScheduleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateVMScheduleCmd extends BaseCmd {
@@ -43,7 +43,7 @@ public class UpdateVMScheduleCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = VMScheduleResponse.class,
             required = true,
-            description = "ID of VM schedule")
+            description = "ID of Instance schedule")
     private Long id;
 
     @Parameter(name = ApiConstants.DESCRIPTION,
@@ -55,7 +55,7 @@ public class UpdateVMScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SCHEDULE,
             type = CommandType.STRING,
             required = false,
-            description = "Schedule for action on VM in cron format. e.g. '0 15 10 * *' for 'at 15:00 on 10th day of every month'")
+            description = "Schedule for action on Instance in cron format. e.g. '0 15 10 * *' for 'at 15:00 on 10th day of every month'")
     private String schedule;
 
     @Parameter(name = ApiConstants.TIMEZONE,
@@ -67,21 +67,21 @@ public class UpdateVMScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.START_DATE,
             type = CommandType.DATE,
             required = false,
-            description = "start date from which the schedule becomes active"
+            description = "Start date from which the schedule becomes active"
                     + "Use format \"yyyy-MM-dd hh:mm:ss\")")
     private Date startDate;
 
     @Parameter(name = ApiConstants.END_DATE,
             type = CommandType.DATE,
             required = false,
-            description = "end date after which the schedule becomes inactive"
+            description = "End date after which the schedule becomes inactive"
                     + "Use format \"yyyy-MM-dd hh:mm:ss\")")
     private Date endDate;
 
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "Enable VM schedule")
+            description = "Enable Instance schedule")
     private Boolean enabled;
 
     /////////////////////////////////////////////////////

@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
-@APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
-        + "A template created from this command is automatically designated as a private template visible to the account that created it.", responseView = ResponseView.Full,
+@APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a Template of an Instance. " + "The Instance must be in a STOPPED state. "
+        + "A Template created from this command is automatically designated as a private Template visible to the account that created it.", responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateTemplateCmdByAdmin extends CreateTemplateCmd implements AdminCmd {}

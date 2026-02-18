@@ -159,7 +159,7 @@ public class Network extends OvmObject {
                 && getNetIface(ADDRESS, ip).getIfType().contentEquals(BRIDGE)) {
             return getNetIface(ADDRESS, ip);
         }
-        logger.debug("Unable to find bridge by ip: " + ip);
+        logger.debug("Unable to find bridge by IP: " + ip);
         setSuccess(false);
         return null;
     }

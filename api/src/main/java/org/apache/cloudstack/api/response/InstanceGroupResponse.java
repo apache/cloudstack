@@ -32,35 +32,35 @@ import com.cloud.vm.InstanceGroup;
 public class InstanceGroupResponse extends BaseResponseWithAnnotations implements ControlledViewEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the instance group")
+    @Param(description = "The ID of the Instance group")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the instance group")
+    @Param(description = "The name of the Instance group")
     private String name;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "time and date the instance group was created")
+    @Param(description = "Time and date the Instance group was created")
     private Date created;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account owning the instance group")
+    @Param(description = "The Account owning the Instance group")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project ID of the instance group")
+    @Param(description = "The project ID of the Instance group")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the instance group")
+    @Param(description = "The project name of the Instance group")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the instance group")
+    @Param(description = "The domain ID of the Instance group")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the instance group")
+    @Param(description = "The domain name of the Instance group")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)

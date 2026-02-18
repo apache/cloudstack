@@ -34,6 +34,8 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -73,6 +75,9 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
     @Inject
     ApiServerService _apiServer;
+
+    @Inject
+    UserDetailsDao userDetailsDao;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -157,8 +162,10 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
             if (userAccount != null && User.Source.SAML2 == userAccount.getSource()) {
                 throw new CloudAuthenticationException("User is not allowed CloudStack login");
             }
-            return ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, userAccount.getUsername(), null, domainId, domain, remoteAddress, params),
+            serializedResponse = ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, userAccount.getUsername(), null, domainId, domain, remoteAddress, params),
                     responseType);
+            userDetailsDao.addDetail(userAccount.getId(), UserDetailVO.OauthLogin, "true", false);
+            return serializedResponse;
         } catch (final CloudAuthenticationException ex) {
             ApiServlet.invalidateHttpSession(session, "fall through to API key,");
             String msg = String.format("%s", ex.getMessage() != null ?

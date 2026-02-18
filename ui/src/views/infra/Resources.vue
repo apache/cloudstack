@@ -35,7 +35,7 @@
               v-if="item.tagged"
               class="list-item__collapse"
               @change="handleCollapseChange(item.type)">
-            <a-collapse-panel key="1" :header="$t('label.tagged') + ' ' + returnCapacityTitle(item.type) + (collpaseActive[item.type] ? ''  : ' - ' + item.tagsasstring)">
+            <a-collapse-panel key="1" :header="$t('label.tagged') + ' ' + returnCapacityTitle(item.type) + (collapseActive[item.type] ? ''  : ' - ' + item.tagsasstring)">
               <a-list
                 size="small"
                 :dataSource="item.tagged" >
@@ -90,7 +90,7 @@ export default {
     return {
       fetchLoading: false,
       resourcesList: [],
-      collpaseActive: {}
+      collapseActive: {}
     }
   },
   created () {
@@ -181,11 +181,11 @@ export default {
       }
     },
     handleCollapseChange (type) {
-      if (this.collpaseActive[type]) {
-        this.collpaseActive[type] = null
+      if (this.collapseActive[type]) {
+        this.collapseActive[type] = null
         return
       }
-      this.collpaseActive[type] = true
+      this.collapseActive[type] = true
       var typeItems = this.resourcesList.filter(x => x.type === type)
       typeItems.forEach(resource => {
         this.animatePercentVals(resource.tagged)

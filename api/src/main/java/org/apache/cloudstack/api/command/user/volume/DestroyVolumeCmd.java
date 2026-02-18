@@ -50,7 +50,7 @@ public class DestroyVolumeCmd extends BaseAsyncCmd {
 
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="The ID of the volume")
+            required=true, description = "The ID of the volume")
     private Long id;
 
     @Parameter(name = ApiConstants.EXPUNGE,
@@ -100,7 +100,7 @@ public class DestroyVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "destroying volume: " + getId();
+        return  "Destroying volume with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -115,7 +115,7 @@ public class DestroyVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getId());
+        CallContext.current().setEventDetails("Volume ID: " + getResourceUuid(ApiConstants.ID));
         Volume result = _volumeService.destroyVolume(getId(), CallContext.current().getCallingAccount(), getExpunge(), false);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);

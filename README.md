@@ -31,6 +31,24 @@
 
 [![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Who Uses CloudStack?](#who-uses-cloudstack)
+- [Demo](#demo)
+- [Getting Started](#getting-started)
+- [Getting Source Repository](#getting-source-repository)
+- [Documentation](#documentation)
+- [News and Events](#news-and-events)
+- [Getting Involved and Contributing](#getting-involved-and-contributing)
+- [Reporting Security Vulnerabilities](#reporting-security-vulnerabilities)
+- [License](#license)
+- [Notice of Cryptographic Software](#notice-of-cryptographic-software)
+- [Star History](#star-history)
+- [Contributors](#contributors)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 Apache CloudStack is open source software designed to deploy and manage large
 networks of virtual machines, as a highly available, highly scalable
 Infrastructure as a Service (IaaS) cloud computing platform. CloudStack is used

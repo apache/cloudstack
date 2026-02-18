@@ -306,7 +306,7 @@ public class Xen extends OvmObject {
                 }
                 c += 1;
             }
-            logger.debug("No vif matched ip: " + ip + " in " + vmVifs);
+            logger.debug("No vif matched IP: " + ip + " in " + vmVifs);
             return -1;
         }
 

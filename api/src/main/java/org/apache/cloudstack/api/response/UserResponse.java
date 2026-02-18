@@ -32,88 +32,88 @@ import com.cloud.user.User;
 @EntityReference(value = User.class)
 public class UserResponse extends BaseResponse implements SetResourceIconResponse {
     @SerializedName("id")
-    @Param(description = "the user ID")
+    @Param(description = "The user ID")
     private String id;
 
     @SerializedName("username")
-    @Param(description = "the user name")
+    @Param(description = "The user name")
     private String username;
 
     @SerializedName("firstname")
-    @Param(description = "the user firstname")
+    @Param(description = "The user firstname")
     private String firstname;
 
     @SerializedName("lastname")
-    @Param(description = "the user lastname")
+    @Param(description = "The user lastname")
     private String lastname;
 
     @SerializedName("email")
-    @Param(description = "the user email address")
+    @Param(description = "The user email address")
     private String email;
 
     @SerializedName("created")
-    @Param(description = "the date and time the user account was created")
+    @Param(description = "The date and time the user Account was created")
     private Date created;
 
     @SerializedName("state")
-    @Param(description = "the user state")
+    @Param(description = "The user state")
     private String state;
 
     @SerializedName("account")
-    @Param(description = "the account name of the user")
+    @Param(description = "The Account name of the user")
     private String accountName;
 
     @SerializedName("accounttype")
-    @Param(description = "the account type of the user")
+    @Param(description = "The Account type of the user")
     private Integer accountType;
 
     @SerializedName(ApiConstants.USER_SOURCE)
-    @Param(description = "the source type of the user in lowercase, such as native, ldap, saml2")
+    @Param(description = "The source type of the user in lowercase, such as native, ldap, saml2")
     private String userSource;
 
     @SerializedName(ApiConstants.ROLE_ID)
-    @Param(description = "the ID of the role")
+    @Param(description = "The ID of the role")
     private String roleId;
 
     @SerializedName(ApiConstants.ROLE_TYPE)
-    @Param(description = "the type of the role")
+    @Param(description = "The type of the role")
     private String roleType;
 
     @SerializedName(ApiConstants.ROLE_NAME)
-    @Param(description = "the name of the role")
+    @Param(description = "The name of the role")
     private String roleName;
 
     @SerializedName("domainid")
-    @Param(description = "the domain ID of the user")
+    @Param(description = "The domain ID of the user")
     private String domainId;
 
     @SerializedName("domain")
-    @Param(description = "the domain name of the user")
+    @Param(description = "The domain name of the user")
     private String domainName;
 
     @SerializedName("timezone")
-    @Param(description = "the timezone user was created in")
+    @Param(description = "The timezone user was created in")
     private String timezone;
 
     @SerializedName("apikey")
-    @Param(description = "the api key of the user", isSensitive = true)
+    @Param(description = "The API key of the user", isSensitive = true)
     private String apiKey;
 
     @Deprecated
     @SerializedName("secretkey")
-    @Param(description = "the secret key of the user", isSensitive = true)
+    @Param(description = "The secret key of the user", isSensitive = true)
     private String secretKey;
 
     @SerializedName("accountid")
-    @Param(description = "the account ID of the user")
+    @Param(description = "The Account ID of the user")
     private String accountId;
 
     @SerializedName("iscallerchilddomain")
-    @Param(description = "the boolean value representing if the updating target is in caller's child domain")
+    @Param(description = "The boolean value representing if the updating target is in caller's child domain")
     private boolean isCallerChildDomain;
 
     @SerializedName(ApiConstants.IS_DEFAULT)
-    @Param(description = "true if user is default, false otherwise", since = "4.2.0")
+    @Param(description = "True if user is default, false otherwise", since = "4.2.0")
     private Boolean isDefault;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
@@ -121,15 +121,15 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     ResourceIconResponse icon;
 
     @SerializedName(ApiConstants.IS_2FA_ENABLED)
-    @Param(description = "true if user has two factor authentication enabled", since = "4.18.0.0")
+    @Param(description = "True if user has two factor authentication enabled", since = "4.18.0.0")
     private Boolean is2FAenabled;
 
     @SerializedName(ApiConstants.IS_2FA_MANDATED)
-    @Param(description = "true if user has two factor authentication is mandated", since = "4.18.0.0")
+    @Param(description = "True if user has two factor authentication is mandated", since = "4.18.0.0")
     private Boolean is2FAmandated;
 
     @SerializedName(ApiConstants.API_KEY_ACCESS)
-    @Param(description = "whether api key access is Enabled, Disabled or set to Inherit (it inherits the value from the parent)", since = "4.20.1.0")
+    @Param(description = "Whether api key access is Enabled, Disabled or set to Inherit (it inherits the value from the parent)", since = "4.20.1.0")
     ApiConstants.ApiKeyAccess apiKeyAccess;
 
     @Override

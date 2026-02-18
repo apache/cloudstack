@@ -151,7 +151,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 client.getParams().setAuthenticationPreemptive(true);
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
                 client.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+                logger.info("Added username={}, password=****** for host {}:{}", user, hostAndPort.first(), hostAndPort.second());
             } else {
                 logger.info("No credentials configured for host=" + hostAndPort.first() + ":" + hostAndPort.second());
             }
@@ -578,7 +578,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                     logger.debug("Error on http connection : " + ex.getMessage());
                 }
                 status = Status.UNRECOVERABLE_ERROR;
-                errorString = "Template content is unsupported, or mismatch between selected format and template content. Found  : " + unsupportedFormat;
+                errorString = "Template content is unsupported, or mismatch between selected format and Template content. Found  : " + unsupportedFormat;
                 throw new CloudRuntimeException(errorString);
             } else {
                 logger.debug("Verified format of downloading file " + file.getAbsolutePath() + " is supported");

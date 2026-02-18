@@ -22,7 +22,7 @@
       banner
       :message="$t('message.action.router.health.checks.disabled.warning')" />
     <div v-else>
-      <a-button :disabled="!('getRouterHealthCheckResults' in $store.getters.apis)" type="primary" style="width: 100%; margin-bottom: 15px" @click="showGetHelathCheck">
+      <a-button :disabled="!('getRouterHealthCheckResults' in $store.getters.apis)" type="primary" style="width: 100%; margin-bottom: 15px" @click="showGetHealthCheck">
         <template #icon><play-circle-outlined /></template>
         {{ $t('label.action.router.health.checks') }}
       </a-button>
@@ -158,7 +158,7 @@ export default {
       }
       this.checkConfigurationAndGetHealthChecks()
     },
-    showGetHelathCheck () {
+    showGetHealthCheck () {
       this.showGetHealthChecksForm = true
     },
     onCloseGetHealthChecksForm () {

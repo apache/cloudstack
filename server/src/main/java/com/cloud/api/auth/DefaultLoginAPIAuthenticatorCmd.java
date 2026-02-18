@@ -34,6 +34,8 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
@@ -65,6 +67,9 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
 
     @Inject
     ApiServerService _apiServer;
+
+    @Inject
+    UserDetailsDao userDetailsDao;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -151,8 +156,10 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
                 if (userAccount != null && User.Source.SAML2 == userAccount.getSource()) {
                     throw new CloudAuthenticationException("User is not allowed CloudStack login");
                 }
-                return ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params),
+                serializedResponse = ApiResponseSerializer.toSerializedString(_apiServer.loginUser(session, username[0], pwd, domainId, domain, remoteAddress, params),
                         responseType);
+                userDetailsDao.removeDetail(userAccount.getId(), UserDetailVO.OauthLogin);
+                return serializedResponse;
             } catch (final CloudAuthenticationException ex) {
                 ApiServlet.invalidateHttpSession(session, "fall through to API key,");
                 // TODO: fall through to API key, or just fail here w/ auth error? (HTTP 401)
