@@ -382,7 +382,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 
     public VolumeDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.IN);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("dcId", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("pod", AllFieldsSearch.entity().getPodId(), Op.EQ);
