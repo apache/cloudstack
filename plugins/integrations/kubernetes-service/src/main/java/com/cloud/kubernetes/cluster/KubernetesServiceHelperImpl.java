@@ -130,6 +130,27 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
     }
 
     @Override
+    public void checkVmAffinityGroupsCanBeUpdated(UserVm userVm) {
+        if (!UserVmManager.CKS_NODE.equals(userVm.getUserVmType())) {
+            return;
+        }
+        KubernetesClusterVmMapVO clusterVmMapping = kubernetesClusterVmMapDao.findByVmId(userVm.getId());
+        if (Objects.isNull(clusterVmMapping)) {
+            return;
+        }
+        KubernetesCluster kubernetesCluster = kubernetesClusterDao.findById(clusterVmMapping.getClusterId());
+        String errorMessage = "Affinity groups cannot be updated for a VM part of Kubernetes cluster";
+        if (Objects.nonNull(kubernetesCluster)) {
+            if (KubernetesCluster.ClusterType.ExternalManaged.equals(kubernetesCluster.getClusterType())) {
+                return;
+            }
+            errorMessage += String.format(": %s", kubernetesCluster.getName());
+        }
+        errorMessage += ". Please use the cluster's Change Affinity option instead.";
+        throw new CloudRuntimeException(errorMessage);
+    }
+
+    @Override
     public boolean isValidNodeType(String nodeType) {
         if (StringUtils.isBlank(nodeType)) {
             return false;
