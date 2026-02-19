@@ -19,6 +19,8 @@ package org.apache.cloudstack.dns;
 
 import java.util.List;
 
+import org.apache.cloudstack.dns.exception.DnsProviderException;
+
 import com.cloud.utils.component.Adapter;
 
 public interface DnsProvider extends Adapter {
@@ -28,11 +30,12 @@ public interface DnsProvider extends Adapter {
     void validate(DnsServer server) throws Exception;
 
     // Zone Operations
-    String provisionZone(DnsServer server, DnsZone zone);
-    void deleteZone(DnsServer server, DnsZone zone) ;
+    String provisionZone(DnsServer server, DnsZone zone) throws DnsProviderException;
+    void deleteZone(DnsServer server, DnsZone zone) throws DnsProviderException;
+    void updateZone(DnsServer server, DnsZone zone) throws DnsProviderException;
 
-    void addRecord(DnsServer server, DnsZone zone, DnsRecord record);
-    List<DnsRecord> listRecords(DnsServer server, DnsZone zone);
-    void updateRecord(DnsServer server, DnsZone zone, DnsRecord record);
-    void deleteRecord(DnsServer server, DnsZone zone, DnsRecord record);
+    String addRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException;
+    List<DnsRecord> listRecords(DnsServer server, DnsZone zone) throws DnsProviderException;
+    String updateRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException;
+    void deleteRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException;
 }

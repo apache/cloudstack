@@ -68,6 +68,7 @@ CREATE TABLE `cloud`.`dns_server` (
     `is_public` tinyint(1) NOT NULL DEFAULT '0',
     `public_domain_suffix` VARCHAR(255),
     `state` ENUM('Enabled', 'Disabled') NOT NULL DEFAULT 'Disabled',
+    `domain_id` bigint unsigned COMMENT 'for domain-specific ownership',
     `account_id` bigint(20) unsigned NOT NULL,
     `created` datetime NOT NULL COMMENT 'date created',
     `removed` datetime DEFAULT NULL COMMENT 'Date removed (soft delete)',

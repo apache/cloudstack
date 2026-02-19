@@ -15,35 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.dns;
+package org.apache.cloudstack.dns.exception;
 
-import java.util.Date;
-import java.util.List;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
-public interface DnsServer extends InternalIdentity, Identity, ControlledEntity {
-    enum State {
-        Enabled, Disabled
-    };
-
-    String getName();
-
-    String getUrl();
-
-    DnsProviderType getProviderType();
-
-    List<String> getNameServers();
-
-    String getApiKey();
-
-    long getAccountId();
-
-    boolean isPublic();
-
-    Date getCreated();
-
-    Date getRemoved();
+/**
+ * Thrown for unexpected or unknown errors returned by the DNS provider.
+ */
+public class DnsOperationException extends DnsProviderException {
+    public DnsOperationException(String message) {
+        super(message);
+    }
 }

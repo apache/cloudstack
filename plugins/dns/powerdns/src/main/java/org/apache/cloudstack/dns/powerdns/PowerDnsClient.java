@@ -20,28 +20,34 @@ package org.apache.cloudstack.dns.powerdns;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.dns.exception.DnsAuthenticationException;
+import org.apache.cloudstack.dns.exception.DnsConflictException;
+import org.apache.cloudstack.dns.exception.DnsNotFoundException;
+import org.apache.cloudstack.dns.exception.DnsOperationException;
+import org.apache.cloudstack.dns.exception.DnsProviderException;
+import org.apache.cloudstack.dns.exception.DnsTransportException;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -50,357 +56,248 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class PowerDnsClient implements AutoCloseable {
     public static final Logger logger = LoggerFactory.getLogger(PowerDnsClient.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final int TIMEOUT_MS = 5000;
+
+    private static final int CONNECT_TIMEOUT_MS = 5_000;
+    private static final int SOCKET_TIMEOUT_MS = 10_000;
+    private static final int MAX_CONNECTIONS_TOTAL = 50;
+    private static final int MAX_CONNECTIONS_PER_ROUTE = 10;
+    private static final String API_PREFIX = "/api/v1";
+    private static final String DEFAULT_SERVER = "localhost";
+
     private final CloseableHttpClient httpClient;
 
-    public void validate(String baseUrl, String apiKey) {
-        String checkUrl = buildApiUrl(baseUrl, "/servers");
-        HttpGet request = new HttpGet(checkUrl);
-        request.addHeader("X-API-Key", apiKey);
-        request.addHeader("Content-Type", "application/json");
-        request.addHeader("Accept", "application/json");
-
-        try (CloseableHttpResponse response = httpClient.execute(request)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
-
-            if (statusCode == HttpStatus.SC_OK) {
-                JsonNode root = MAPPER.readTree(body);
-
-                if (!root.isArray() || root.isEmpty()) {
-                    throw new CloudRuntimeException("No servers returned by PowerDNS API");
-                }
-
-                boolean authoritativeFound = false;
-                for (JsonNode node : root) {
-                    if ("authoritative".equalsIgnoreCase(node.path("daemon_type").asText(null))) {
-                        authoritativeFound = true;
-                        break;
-                    }
-                }
-
-                if (!authoritativeFound) {
-                    throw new CloudRuntimeException("No authoritative PowerDNS server found");
-                }
-
-            } else if (statusCode == HttpStatus.SC_UNAUTHORIZED || statusCode == HttpStatus.SC_FORBIDDEN) {
-                throw new CloudRuntimeException("Invalid PowerDNS API key");
-            } else {
-                logger.debug("Unexpected PowerDNS response: HTTP {} Body: {}", statusCode, body);
-                throw new CloudRuntimeException(String.format("PowerDNS validation failed with HTTP %d", statusCode));
-            }
-
-        } catch (IOException ex) {
-            throw new CloudRuntimeException("Failed to connect to PowerDNS", ex);
-        }
-    }
-
-    public String createZone(String baseUrl, String apiKey, String zoneName, String nameServers) {
-        String normalizedZone = formatZoneName(zoneName);
-        try {
-            String url = buildApiUrl(baseUrl, "/servers/localhost/zones");
-            ObjectNode json = MAPPER.createObjectNode();
-            json.put("name", normalizedZone);
-            json.put("kind", "Native");
-            json.put("dnssec", false);
-
-            if (StringUtils.isNotEmpty(nameServers)) {
-                List<String> nsNames = new ArrayList<>(Arrays.asList(nameServers.split(",")));
-                if (!CollectionUtils.isEmpty(nsNames)) {
-                    ArrayNode nsArray = json.putArray("nameservers");
-                    for (String ns : nsNames) {
-                        nsArray.add(ns.endsWith(".") ? ns : ns + ".");
-                    }
-                }
-            }
-            HttpPost request = new HttpPost(url);
-            request.addHeader("X-API-Key", apiKey);
-            request.addHeader("Content-Type", "application/json");
-            request.addHeader("Accept", "application/json");
-            request.setEntity(new StringEntity(json.toString()));
-
-            try (CloseableHttpResponse response = httpClient.execute(request)) {
-
-                int statusCode = response.getStatusLine().getStatusCode();
-                String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
-
-                if (statusCode == HttpStatus.SC_CREATED) {
-                    JsonNode root = MAPPER.readTree(body);
-                    String zoneId = root.path("id").asText();
-                    if (StringUtils.isBlank(zoneId)) {
-                        throw new CloudRuntimeException("PowerDNS returned empty zone id");
-                    }
-                    return zoneId;
-                }
-
-                if (statusCode == HttpStatus.SC_CONFLICT) {
-                    throw new CloudRuntimeException("Zone already exists: " + zoneName);
-                }
-
-                if (statusCode == HttpStatus.SC_UNAUTHORIZED || statusCode == HttpStatus.SC_FORBIDDEN) {
-                    throw new CloudRuntimeException("Invalid PowerDNS API key");
-                }
-
-                logger.debug("Unexpected PowerDNS response: HTTP {} Body: {}", statusCode, body);
-                throw new CloudRuntimeException(String.format("Failed to create zone %s (HTTP %d)", zoneName, statusCode));
-            }
-        } catch (IOException e) {
-            throw new CloudRuntimeException("Error while creating PowerDNS zone " + zoneName, e);
-        }
-    }
-
-    public void deleteZone(String baseUrl, String apiKey, String zoneName) {
-        String normalizedZone = formatZoneName(zoneName);
-        try {
-            String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
-            String url = buildApiUrl(baseUrl, "/servers/localhost/zones/" + encodedZone);
-            HttpDelete request = new HttpDelete(url);
-            request.addHeader("X-API-Key", apiKey);
-            request.addHeader("Content-Type", "application/json");
-            request.addHeader("Accept", "application/json");
-
-            try (CloseableHttpResponse response = httpClient.execute(request)) {
-
-                int statusCode = response.getStatusLine().getStatusCode();
-                String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
-
-                if (statusCode == HttpStatus.SC_NO_CONTENT) {
-                    logger.debug("Zone {} deleted successfully", normalizedZone);
-                    return;
-                }
-
-                if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                    logger.debug("Zone {} not found in PowerDNS", normalizedZone);
-                    return;
-                }
-
-                if (statusCode == HttpStatus.SC_UNAUTHORIZED || statusCode == HttpStatus.SC_FORBIDDEN) {
-                    throw new CloudRuntimeException("Invalid PowerDNS API key");
-                }
-
-                logger.debug("Unexpected PowerDNS response while deleting zone: HTTP {} Body: {}", statusCode, body);
-                throw new CloudRuntimeException(String.format("Failed to delete zone %s (HTTP %d)", normalizedZone, statusCode));
-            }
-        } catch (IOException e) {
-            throw new CloudRuntimeException("Error while deleting PowerDNS zone " + zoneName, e);
-        }
-    }
-
-    public void modifyRecord(String baseUrl, String apiKey, String zoneName, String recordName, String type, long ttl, List<String> contents, String changeType) {
-        String normalizedZone = formatZoneName(zoneName);
-        String normalizedRecord = formatRecordName(recordName, zoneName);
-
-        try {
-            String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
-            String url = buildApiUrl(baseUrl, "/servers/localhost/zones/" + encodedZone);
-
-            ObjectNode root = MAPPER.createObjectNode();
-            ArrayNode rrsets = root.putArray("rrsets");
-            ObjectNode rrset = rrsets.addObject();
-
-            rrset.put("name", normalizedRecord);
-            rrset.put("type", type.toUpperCase());
-            rrset.put("ttl", ttl);
-            rrset.put("changetype", changeType);
-
-            ArrayNode records = rrset.putArray("records");
-            if (!CollectionUtils.isEmpty(contents)) {
-                for (String content : contents) {
-                    ObjectNode record = records.addObject();
-                    record.put("content", content);
-                    record.put("disabled", false);
-                }
-            }
-
-            HttpPatch request = new HttpPatch(url);
-            request.addHeader("X-API-Key", apiKey);
-            request.addHeader("Content-Type", "application/json");
-            request.addHeader("Accept", "application/json");
-            request.setEntity(new StringEntity(root.toString()));
-
-            try (CloseableHttpResponse response = httpClient.execute(request)) {
-                int statusCode = response.getStatusLine().getStatusCode();
-                String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
-
-                if (statusCode == HttpStatus.SC_NO_CONTENT) {
-                    logger.debug("Record {} {} added/updated in zone {}", normalizedRecord, type, normalizedZone);
-                    return;
-                }
-
-                if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                    throw new CloudRuntimeException("Zone not found: " + normalizedZone);
-                }
-
-                if (statusCode == HttpStatus.SC_UNAUTHORIZED || statusCode == HttpStatus.SC_FORBIDDEN) {
-                    throw new CloudRuntimeException("Invalid PowerDNS API key");
-                }
-
-                logger.debug("Unexpected PowerDNS response: HTTP {} Body: {}", statusCode, body);
-                throw new CloudRuntimeException("Failed to add/update record " + normalizedRecord);
-            }
-
-        } catch (IOException e) {
-            throw new CloudRuntimeException("Error while adding PowerDNS record", e);
-        }
-    }
-
-    public void deleteRecord(String baseUrl, String apiKey, String zoneName, String recordName, String type) {
-
-        String normalizedZone = formatZoneName(zoneName);
-        String normalizedRecord = formatRecordName(recordName, zoneName);
-
-        try {
-            String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
-            String url = buildApiUrl(baseUrl, "/servers/localhost/zones/" + encodedZone);
-
-            ObjectNode root = MAPPER.createObjectNode();
-            ArrayNode rrsets = root.putArray("rrsets");
-            ObjectNode rrset = rrsets.addObject();
-
-            rrset.put("name", normalizedRecord);
-            rrset.put("type", type.toUpperCase());
-            rrset.put("changetype", "DELETE");
-
-            HttpPatch request = new HttpPatch(url);
-            request.addHeader("X-API-Key", apiKey);
-            request.addHeader("Content-Type", "application/json");
-            request.addHeader("Accept", "application/json");
-            request.setEntity(new StringEntity(root.toString()));
-
-            try (CloseableHttpResponse response = httpClient.execute(request)) {
-                int statusCode = response.getStatusLine().getStatusCode();
-                String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
-
-                if (statusCode == HttpStatus.SC_NO_CONTENT) {
-                    logger.debug("Record {} {} deleted", normalizedRecord, type);
-                    return;
-                }
-
-                if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                    logger.debug("Record {} {} not found (idempotent delete)", normalizedRecord, type);
-                    return;
-                }
-
-                if (statusCode == HttpStatus.SC_UNAUTHORIZED || statusCode == HttpStatus.SC_FORBIDDEN) {
-                    throw new CloudRuntimeException("Invalid PowerDNS API key");
-                }
-
-                logger.debug("Unexpected PowerDNS response: HTTP {} Body: {}", statusCode, body);
-                throw new CloudRuntimeException("Failed to delete record " + normalizedRecord);
-            }
-
-        } catch (IOException e) {
-            throw new CloudRuntimeException("Error while deleting PowerDNS record", e);
-        }
-    }
-
-    public Iterable<JsonNode> listRecords(String baseUrl, String apiKey, String zoneName) {
-        String normalizedZone = formatZoneName(zoneName);
-        try {
-            String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
-            String url = buildApiUrl(baseUrl, "/servers/localhost/zones/" + encodedZone);
-
-            HttpGet request = new HttpGet(url);
-            request.addHeader("X-API-Key", apiKey);
-            request.addHeader("Accept", "application/json");
-
-            try (CloseableHttpResponse response = httpClient.execute(request)) {
-
-                int statusCode = response.getStatusLine().getStatusCode();
-                String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
-
-                if (statusCode == HttpStatus.SC_OK) {
-                    JsonNode zone = MAPPER.readTree(body);
-                    JsonNode rrsets = zone.path("rrsets");
-
-                    if (rrsets.isArray()) {
-                        return rrsets;
-                    }
-
-                    return Collections.emptyList();
-                }
-
-                if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                    throw new CloudRuntimeException("Zone not found: " + normalizedZone);
-                }
-
-                if (statusCode == HttpStatus.SC_UNAUTHORIZED || statusCode == HttpStatus.SC_FORBIDDEN) {
-                    throw new CloudRuntimeException("Invalid PowerDNS API key");
-                }
-
-                throw new CloudRuntimeException("Failed to list records for zone " + normalizedZone);
-            }
-
-        } catch (IOException e) {
-            throw new CloudRuntimeException("Error while listing PowerDNS records", e);
-        }
-    }
-
     public PowerDnsClient() {
-        RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(TIMEOUT_MS)
-                .setConnectionRequestTimeout(TIMEOUT_MS)
-                .setSocketTimeout(TIMEOUT_MS)
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(MAX_CONNECTIONS_TOTAL);
+        connectionManager.setDefaultMaxPerRoute(MAX_CONNECTIONS_PER_ROUTE);
+
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(CONNECT_TIMEOUT_MS)
+                .setConnectionRequestTimeout(CONNECT_TIMEOUT_MS)
+                .setSocketTimeout(SOCKET_TIMEOUT_MS)
                 .build();
 
         this.httpClient = HttpClientBuilder.create()
-                .setDefaultRequestConfig(config)
+                .setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(requestConfig)
+                .evictIdleConnections(30, TimeUnit.SECONDS)
                 .disableCookieManagement()
                 .build();
     }
 
-    private String normalizeBaseUrl(String baseUrl) {
-        if (baseUrl == null) {
-            throw new IllegalArgumentException("PowerDNS base URL cannot be null");
+    public void validate(String baseUrl, String apiKey) throws DnsProviderException {
+        String url = buildUrl(baseUrl, "/servers");
+        HttpGet request = new HttpGet(url);
+        JsonNode servers = execute(request, apiKey, 200);
+        if (servers == null || !servers.isArray() || servers.isEmpty()) {
+            throw new DnsOperationException("No servers returned by PowerDNS API");
         }
-        String normalizedUrl = baseUrl.trim();
-        if (!normalizedUrl.startsWith("http://") && !normalizedUrl.startsWith("https://")) {
-            normalizedUrl = "http://" + normalizedUrl;
+        boolean authoritativeFound = false;
+        for (JsonNode server : servers) {
+            if (ApiConstants.AUTHORITATIVE.equalsIgnoreCase(server.path("daemon_type").asText(null))) {
+                authoritativeFound = true;
+                break;
+            }
         }
-        if (normalizedUrl.endsWith("/")) {
-            normalizedUrl = normalizedUrl.substring(0, normalizedUrl.length() - 1);
+        if (!authoritativeFound) {
+            throw new DnsOperationException("No authoritative PowerDNS server found");
         }
-        return normalizedUrl;
     }
 
-    private String formatZoneName(String zoneName) {
+    public String createZone(String baseUrl, String apiKey, String zoneName, String zoneKind, boolean dnsSecFlag,
+                             List<String> nameServers) throws DnsProviderException {
+
+        validate(baseUrl, apiKey);
+
+        String normalizedZone = normalizeZone(zoneName);
+        ObjectNode json = MAPPER.createObjectNode();
+        json.put(ApiConstants.NAME, normalizedZone);
+        json.put(ApiConstants.KIND, zoneKind);
+        json.put(ApiConstants.DNS_SEC, dnsSecFlag);
+        if (!CollectionUtils.isEmpty(nameServers)) {
+            ArrayNode nsArray = json.putArray(ApiConstants.NAME_SERVERS);
+            for (String ns : nameServers) {
+                nsArray.add(ns.endsWith(".") ? ns : ns + ".");
+            }
+        }
+        HttpPost request = new HttpPost(buildUrl(baseUrl, "/servers/" + DEFAULT_SERVER + "/zones"));
+        request.setEntity(new StringEntity(json.toString(), StandardCharsets.UTF_8));
+        JsonNode response = execute(request, apiKey, 201);
+        if (response == null) {
+            throw new DnsOperationException("Empty response from DNS server");
+        }
+        String zoneId = response.path(ApiConstants.ID).asText();
+        if (StringUtils.isBlank(zoneId)) {
+            throw new DnsOperationException("PowerDNS returned empty zone id");
+        }
+        return zoneId;
+    }
+
+    public void updateZone(String baseUrl, String apiKey, String zoneName, String zoneKind, Boolean dnsSecFlag,
+                           List<String> nameServers) throws DnsProviderException {
+
+        String normalizedZone = normalizeZone(zoneName);
+        String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
+        String url = buildUrl(baseUrl, "/servers/" + DEFAULT_SERVER + "/zones/" + encodedZone);
+
+        ObjectNode json = MAPPER.createObjectNode();
+
+        if (dnsSecFlag != null) {
+            json.put(ApiConstants.DNS_SEC, dnsSecFlag);
+        }
+        if (StringUtils.isNotBlank(zoneKind)) {
+            json.put(ApiConstants.KIND, zoneKind);
+        }
+        if (!CollectionUtils.isEmpty(nameServers)) {
+            ArrayNode nsArray = json.putArray(ApiConstants.NAME_SERVERS);
+            for (String ns : nameServers) {
+                nsArray.add(ns.endsWith(".") ? ns : ns + ".");
+            }
+        }
+        HttpPatch request = new HttpPatch(url);
+        request.setEntity(new org.apache.http.entity.StringEntity(json.toString(), StandardCharsets.UTF_8));
+        execute(request, apiKey, 204);
+    }
+
+    public void deleteZone(String baseUrl, String apiKey, String zoneName) throws DnsProviderException {
+        validate(baseUrl, apiKey);
+        String normalizedZone = normalizeZone(zoneName);
+        String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
+        HttpDelete request = new HttpDelete(buildUrl(baseUrl, "/servers/" + DEFAULT_SERVER + "/zones/" + encodedZone));
+        execute(request, apiKey, 204, 404);
+    }
+
+    public String modifyRecord(String baseUrl, String apiKey, String zoneName, String recordName, String type, long ttl,
+                             List<String> contents, String changeType) throws DnsProviderException {
+
+        validate(baseUrl, apiKey);
+        String normalizedZone = normalizeZone(zoneName);
+        String normalizedRecord = normalizeRecordName(recordName, normalizedZone);
+        ObjectNode root = MAPPER.createObjectNode();
+        ArrayNode rrsets = root.putArray(ApiConstants.RR_SETS);
+        ObjectNode rrset = rrsets.addObject();
+        rrset.put(ApiConstants.NAME, normalizedRecord);
+        rrset.put(ApiConstants.TYPE, type.toUpperCase());
+        rrset.put(ApiConstants.TTL, ttl);
+        rrset.put(ApiConstants.CHANGE_TYPE, changeType);
+        ArrayNode records = rrset.putArray(ApiConstants.RECORDS);
+        if (!CollectionUtils.isEmpty(contents)) {
+            for (String content : contents) {
+                ObjectNode record = records.addObject();
+                record.put(ApiConstants.CONTENT, content);
+                record.put(ApiConstants.DISABLED, false);
+            }
+        }
+        String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
+        HttpPatch request = new HttpPatch(buildUrl(baseUrl, "/servers/" + DEFAULT_SERVER + "/zones/" + encodedZone));
+        request.setEntity(new org.apache.http.entity.StringEntity(root.toString(), StandardCharsets.UTF_8));
+        execute(request, apiKey, 204);
+        return normalizedRecord;
+    }
+
+    public Iterable<JsonNode> listRecords(String baseUrl, String apiKey, String zoneName) throws DnsProviderException {
+        validate(baseUrl, apiKey);
+        String normalizedZone = normalizeZone(zoneName);
+        String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
+        HttpGet request = new HttpGet(buildUrl(baseUrl, "/servers/" + DEFAULT_SERVER + "/zones/" + encodedZone));
+        JsonNode zoneNode = execute(request, apiKey, 200);
+        if (zoneNode == null || !zoneNode.has(ApiConstants.RR_SETS)) {
+            return Collections.emptyList();
+        }
+        JsonNode rrsets = zoneNode.path(ApiConstants.RR_SETS);
+        return rrsets.isArray() ? rrsets : Collections.emptyList();
+    }
+
+    private JsonNode execute(HttpUriRequest request, String apiKey, int... expectedStatus) throws DnsProviderException {
+        request.addHeader(ApiConstants.X_API_KEY, apiKey);
+        request.addHeader("Accept", "application/json");
+        request.addHeader(ApiConstants.CONTENT_TYPE, "application/json");
+
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            int status = response.getStatusLine().getStatusCode();
+            String body = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
+
+            for (int expected : expectedStatus) {
+                if (status == expected) {
+                    if (body != null && !body.isEmpty()) {
+                        return MAPPER.readTree(body);
+                    } else {
+                        return null;
+                    }
+                }
+            }
+            if (status == 404) {
+                throw new DnsNotFoundException("Resource not found: " + body);
+            } else if (status == 401 || status == 403) {
+                throw new DnsAuthenticationException("Invalid API key");
+            } else if (status == 409) {
+                throw new DnsConflictException("Conflict: " + body);
+            }
+            throw new DnsOperationException("Unexpected PowerDNS response: HTTP " + status + " Body: " + body);
+        } catch (IOException ex) {
+            throw new DnsTransportException("Error communicating with PowerDNS", ex);
+        }
+    }
+
+    private String buildUrl(String baseUrl, String path) {
+        return normalizeBaseUrl(baseUrl) + API_PREFIX + path;
+    }
+
+    private String normalizeBaseUrl(String baseUrl) {
+        if (baseUrl == null) {
+            throw new IllegalArgumentException("Base URL cannot be null");
+        }
+        String url = baseUrl.trim();
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "http://" + url;
+        }
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+        return url;
+    }
+
+    private String normalizeZone(String zoneName) {
+        if (StringUtils.isBlank(zoneName)) {
+            throw new IllegalArgumentException("Zone name must not be null or empty");
+        }
         String zone = zoneName.trim().toLowerCase();
         if (!zone.endsWith(".")) {
-            zone += ".";
+            zone = zone + ".";
+        }
+        if (zone.length() < 2) {
+            throw new IllegalArgumentException("Zone name is too short");
         }
         return zone;
     }
 
-    private String formatRecordName(String recordName, String zoneName) {
+    String normalizeRecordName(String recordName, String zoneName) {
         if (recordName == null) {
-            throw new IllegalArgumentException("Record name cannot be null");
+            throw new IllegalArgumentException("Record name must not be null");
         }
-        String normalizedZone = formatZoneName(zoneName);
-        String zoneWithoutDot = normalizedZone.substring(0, normalizedZone.length() - 1);
-
+        String normalizedZone = normalizeZone(zoneName);
         String name = recordName.trim().toLowerCase();
-
-        // Root record
+        // Apex of the zone
         if (name.equals("@") || name.isEmpty()) {
             return normalizedZone;
         }
 
-        // Already absolute
+        String zoneWithoutDot = normalizedZone.substring(0, normalizedZone.length() - 1);
+        // Already absolute (ends with dot)
         if (name.endsWith(".")) {
+            // Check if the record belongs to the zone
+            if (!name.equals(normalizedZone) && !name.endsWith("." + zoneWithoutDot + ".")) {
+                throw new IllegalArgumentException(
+                        String.format("Record '%s' does not belong to zone '%s'", recordName, zoneName)
+                );
+            }
             return name;
         }
-
-        // Fully qualified but missing trailing dot
-        if (name.equals(zoneWithoutDot) || name.endsWith("." + zoneWithoutDot)) {
+        if (name.contains(".")) {
             return name + ".";
         }
-
-        // Relative name
+        // Relative name → append zone
         return name + "." + normalizedZone;
-    }
-
-    private String buildApiUrl(String baseUrl, String path) {
-        return normalizeBaseUrl(baseUrl) + "/api/v1" + path;
     }
 
     @Override

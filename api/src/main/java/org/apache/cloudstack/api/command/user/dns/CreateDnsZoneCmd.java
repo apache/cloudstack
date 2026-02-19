@@ -51,7 +51,7 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
             description = "The name of the DNS zone (e.g. example.com)")
     private String name;
 
-    @Parameter(name = "dnsserverid", type = CommandType.UUID, entityType = DnsServerResponse.class,
+    @Parameter(name = ApiConstants.DNS_SERVER_ID, type = CommandType.UUID, entityType = DnsServerResponse.class,
             required = true, description = "The ID of the DNS server to host this zone")
     private Long dnsServerId;
 

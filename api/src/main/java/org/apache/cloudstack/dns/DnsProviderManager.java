@@ -61,7 +61,6 @@ public interface DnsProviderManager extends Manager, PluggableService {
     DnsZone updateDnsZone(UpdateDnsZoneCmd cmd);
     boolean deleteDnsZone(Long id);
     ListResponse<DnsZoneResponse> listDnsZones(ListDnsZonesCmd cmd);
-    DnsZone getDnsZone(long id);
 
     DnsRecordResponse createDnsRecord(CreateDnsRecordCmd cmd);
     boolean deleteDnsRecord(DeleteDnsRecordCmd cmd);

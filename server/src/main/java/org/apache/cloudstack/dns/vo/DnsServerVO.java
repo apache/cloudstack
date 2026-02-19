@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.dns.vo;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -34,7 +36,9 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsServer;
+import org.apache.cloudstack.dns.DnsZone;
 
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
@@ -79,6 +83,9 @@ public class DnsServerVO implements DnsServer {
     @Column(name = "account_id")
     private long accountId;
 
+    @Column(name = "domain_id")
+    private long domainId;
+
     @Column(name = "name_servers")
     private String nameServers;
 
@@ -114,6 +121,11 @@ public class DnsServerVO implements DnsServer {
     @Override
     public long getId() {
         return id;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return DnsZone.class;
     }
 
     @Override
@@ -206,7 +218,15 @@ public class DnsServerVO implements DnsServer {
         this.name = name;
     }
 
-    public String getNameServers() {
-        return nameServers;
+    public List<String> getNameServers() {
+        if (StringUtils.isBlank(nameServers)) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(nameServers.split(","));
+    }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
     }
 }

@@ -26,6 +26,7 @@ import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsRecord;
 import org.apache.cloudstack.dns.DnsServer;
 import org.apache.cloudstack.dns.DnsZone;
+import org.apache.cloudstack.dns.exception.DnsProviderException;
 
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
@@ -40,21 +41,33 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
         return DnsProviderType.PowerDNS;
     }
 
-    public void validate(DnsServer server) {
+    public void validate(DnsServer server) throws DnsProviderException {
         validateServerParams(server);
         client.validate(server.getUrl(), server.getApiKey());
     }
 
     @Override
-    public String provisionZone(DnsServer server, DnsZone zone) {
+    public String provisionZone(DnsServer server, DnsZone zone) throws DnsProviderException {
         validateServerZoneParams(server, zone);
-        return client.createZone(server.getUrl(), server.getApiKey(), zone.getName(), server.getNameServers());
+        return client.createZone(server.getUrl(),
+                server.getApiKey(),
+                zone.getName(),
+                "Native",
+                false,
+                server.getNameServers()
+        );
     }
 
     @Override
-    public void deleteZone(DnsServer server, DnsZone zone) {
+    public void deleteZone(DnsServer server, DnsZone zone) throws DnsProviderException {
         validateServerZoneParams(server, zone);
         client.deleteZone(server.getUrl(), server.getApiKey(), zone.getName());
+    }
+
+    @Override
+    public void updateZone(DnsServer server, DnsZone zone) throws DnsProviderException {
+        validateServerZoneParams(server, zone);
+        client.updateZone(server.getUrl(), server.getApiKey(), zone.getName(), "Native", false, server.getNameServers());
     }
 
     public enum ChangeType {
@@ -62,32 +75,31 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     }
 
     @Override
-    public void addRecord(DnsServer server, DnsZone zone, DnsRecord record) {
+    public String addRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException {
         validateServerZoneParams(server, zone);
-        applyRecord(server.getUrl(), server.getApiKey(), zone.getName(), record, ChangeType.REPLACE);
+        return applyRecord(server.getUrl(), server.getApiKey(), zone.getName(), record, ChangeType.REPLACE);
     }
 
     @Override
-    public void updateRecord(DnsServer server, DnsZone zone, DnsRecord record) {
-        addRecord(server, zone, record);
+    public String updateRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException {
+        validateServerZoneParams(server, zone);
+        return addRecord(server, zone, record);
     }
 
-
     @Override
-    public void deleteRecord(DnsServer server, DnsZone zone, DnsRecord record) {
+    public void deleteRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException {
         validateServerZoneParams(server, zone);
         applyRecord(server.getUrl(), server.getApiKey(), zone.getName(), record, ChangeType.DELETE);
     }
 
-    public void applyRecord(String serverUrl, String apiKey, String zoneName, DnsRecord record, ChangeType changeType) {
-        client.modifyRecord(serverUrl, apiKey, zoneName, record.getName(), record.getType().name(),
+    public String applyRecord(String serverUrl, String apiKey, String zoneName, DnsRecord record, ChangeType changeType) throws DnsProviderException {
+        return client.modifyRecord(serverUrl, apiKey, zoneName, record.getName(), record.getType().name(),
                 record.getTtl(), record.getContents(), changeType.name());
     }
 
-
-
     @Override
-    public List<DnsRecord> listRecords(DnsServer server, DnsZone zone) {
+    public List<DnsRecord> listRecords(DnsServer server, DnsZone zone) throws DnsProviderException {
+        validateServerZoneParams(server, zone);
         List<DnsRecord> records = new ArrayList<>();
         for (JsonNode rrset: client.listRecords(server.getUrl(), server.getApiKey(), zone.getName())) {
             String name = rrset.path("name").asText();
@@ -114,7 +126,7 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
         return records;
     }
 
-    void validateServerZoneParams(DnsServer server, DnsZone zone) {
+    void validateServerZoneParams(DnsServer server, DnsZone zone) throws DnsProviderException {
         validateServerParams(server);
         if (StringUtils.isBlank(zone.getName())) {
             throw new IllegalArgumentException("Zone name cannot be empty");
@@ -129,8 +141,6 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
             throw new IllegalArgumentException("PowerDNS API key cannot be empty");
         }
     }
-
-
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {

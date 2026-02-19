@@ -1337,8 +1337,21 @@ public class ApiConstants {
     public static final String NAME_SERVERS = "nameservers";
     public static final String CREDENTIALS = "credentials";
     public static final String DNS_ZONE_ID = "dnszoneid";
+    public static final String DNS_SERVER_ID = "dnsserverid";
+    public static final String CONTENT = "content";
     public static final String CONTENTS = "contents";
     public static final String PUBLIC_DOMAIN_SUFFIX = "publicdomainsuffix";
+    public static final String AUTHORITATIVE = "authoritative";
+    public static final String KIND = "kind";
+    public static final String DNS_SEC = "dnssec";
+    public static final String TTL = "ttl";
+    public static final String CHANGE_TYPE = "changetype";
+    public static final String RECORDS = "records";
+    public static final String RR_SETS = "rrsets";
+    public static final String X_API_KEY = "X-API-Key";
+    public static final String DISABLED = "disabled";
+    public static final String CONTENT_TYPE = "Content-Type";
+
 
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +

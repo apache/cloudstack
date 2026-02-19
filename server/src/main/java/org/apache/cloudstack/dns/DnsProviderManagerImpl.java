@@ -61,6 +61,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
@@ -161,9 +162,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         Account caller = CallContext.current().getCallingAccount();
-        if (!accountMgr.isRootAdmin(caller.getId()) && dnsServer.getAccountId() != caller.getId()) {
-            throw new PermissionDeniedException("You do not have permission to update this DNS server.");
-        }
+        accountMgr.checkAccess(caller, null, true, dnsServer);
 
         boolean validationRequired = false;
         String originalUrl = dnsServer.getUrl();
@@ -234,9 +233,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             throw new InvalidParameterValueException(String.format("DNS server with ID: %s not found.", dnsServerId));
         }
         Account caller = CallContext.current().getCallingAccount();
-        if (!accountMgr.isRootAdmin(caller.getId()) && dnsServer.getAccountId() != caller.getId()) {
-            throw new PermissionDeniedException("You do not have permission to delete this DNS server.");
-        }
+        accountMgr.checkAccess(caller, null, true, dnsServer);
         return dnsServerDao.remove(dnsServerId);
     }
 
@@ -248,6 +245,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         response.setUrl(server.getUrl());
         response.setProvider(server.getProviderType());
         response.setPublic(server.isPublic());
+        response.setNameServers(server.getNameServers());
         response.setObjectName("dnsserver");
         return response;
     }
@@ -270,8 +268,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (server != null && zone.getState() == DnsZone.State.Active) {
             try {
                 DnsProvider provider = getProvider(server.getProviderType());
-                logger.debug("Deleting DNS zone: {} from provider.", zone.getName());
                 provider.deleteZone(server, zone);
+                logger.debug("Deleted DNS zone: {}", zone.getName());
             } catch (Exception ex) {
                 logger.error("Failed to delete DNS zone from provider", ex);
                 throw new CloudRuntimeException("Failed to delete DNS zone.");
@@ -287,26 +285,32 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
     @Override
     public DnsZone updateDnsZone(UpdateDnsZoneCmd cmd) {
-        DnsZoneVO zone = dnsZoneDao.findById(cmd.getId());
-        if (zone == null) {
+        DnsZoneVO dnsZone = dnsZoneDao.findById(cmd.getId());
+        if (dnsZone == null) {
             throw new InvalidParameterValueException("DNS zone not found.");
         }
-
-        // ACL Check
         Account caller = CallContext.current().getCallingAccount();
-        accountMgr.checkAccess(caller, null, true, zone);
-
-        // Update fields
+        accountMgr.checkAccess(caller, null, true, dnsZone);
         boolean updated = false;
         if (cmd.getDescription() != null) {
-            zone.setDescription(cmd.getDescription());
+            dnsZone.setDescription(cmd.getDescription());
             updated = true;
         }
 
         if (updated) {
-            dnsZoneDao.update(zone.getId(), zone);
+            DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
+            if (server == null) {
+                throw new CloudRuntimeException("The underlying DNS server for this DNS zone is missing.");
+            }
+            try {
+                DnsProvider provider = getProvider(server.getProviderType());
+                provider.updateZone(server, dnsZone);
+            } catch (Exception ex) {
+                logger.error("Failed to update DNS zone: {} on DNS server: {}", dnsZone.getName(), server.getName(), ex);
+                throw new CloudRuntimeException("Failed to update DNS zone: " + dnsZone.getName());
+            }
         }
-        return zone;
+        return dnsZone;
     }
 
     @Override
@@ -329,11 +333,6 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
-    public DnsZone getDnsZone(long id) {
-        return null;
-    }
-
-    @Override
     public DnsRecordResponse createDnsRecord(CreateDnsRecordCmd cmd) {
         DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
         if (zone == null) {
@@ -344,10 +343,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         accountMgr.checkAccess(caller, null, true, zone);
         DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
         try {
-            DnsRecord record = new DnsRecord(cmd.getName(), cmd.getType(), cmd.getContents(), cmd.getTtl());
             DnsProvider provider = getProvider(server.getProviderType());
-            // Add Record via Provider
-            provider.addRecord(server, zone, record);
+            DnsRecord record = new DnsRecord(cmd.getName(), cmd.getType(), cmd.getContents(), cmd.getTtl());
+            String normalizedRecordName = provider.addRecord(server, zone, record);
+            record.setName(normalizedRecordName);
             return createDnsRecordResponse(record);
         } catch (Exception ex) {
             logger.error("Failed to add DNS record via provider", ex);
@@ -449,8 +448,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
-    public DnsZone provisionDnsZone(long zoneId) {
-        DnsZoneVO dnsZone = dnsZoneDao.findById(zoneId);
+    public DnsZone provisionDnsZone(long dnsZoneId) {
+        DnsZoneVO dnsZone = dnsZoneDao.findById(dnsZoneId);
         if (dnsZone == null) {
             throw new CloudRuntimeException("DNS zone not found during provisioning");
         }
@@ -460,11 +459,11 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             String externalReferenceId = provider.provisionZone(server, dnsZone);
             dnsZone.setExternalReference(externalReferenceId);
             dnsZone.setState(DnsZone.State.Active);
-            logger.debug("DNS zone: {} created successfully on DNS server: {} with ID: {}", dnsZone.getName(), server.getName(), zoneId);
             dnsZoneDao.update(dnsZone.getId(), dnsZone);
+            logger.debug("DNS zone: {} created successfully on DNS server: {} with ID: {}", dnsZone.getName(), server.getName(), dnsZoneId);
         } catch (Exception ex) {
+            dnsZoneDao.remove(dnsZoneId);
             logger.error("Failed to provision DNS zone: {} on DNS server: {}", dnsZone.getName(), server.getName(), ex);
-            dnsZoneDao.remove(zoneId);
             throw new CloudRuntimeException("Failed to provision DNS zone: " + dnsZone.getName());
         }
         return dnsZone;
@@ -570,6 +569,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             networkId = nic != null ? nic.getNetworkId() : null;
         }
 
+        // networkId may not be of Shared network type
+        // there might be multiple shared networks
+        // possible to have dns record for secondary ip
+
         if (nic == null) {
             throw new CloudRuntimeException("No valid NIC found for this Instance on the specified Network.");
         }
@@ -592,7 +595,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
             // Construct FQDN Prefix (e.g., "instance-id" or "instance-id.subdomain")
             String recordName = String.valueOf(instance.getInstanceName());
-            if (map.getSubDomain() != null && !map.getSubDomain().isEmpty()) {
+            if (StringUtils.isNotBlank(map.getSubDomain() )) {
                 recordName = recordName + "." + map.getSubDomain();
             }
 
@@ -664,6 +667,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         cmdList.add(DeleteDnsZoneCmd.class);
         cmdList.add(UpdateDnsZoneCmd.class);
         cmdList.add(AssociateDnsZoneToNetworkCmd.class);
+        cmdList.add(DisassociateDnsZoneFromNetworkCmd.class);
 
         // DNS Record Commands
         cmdList.add(CreateDnsRecordCmd.class);
