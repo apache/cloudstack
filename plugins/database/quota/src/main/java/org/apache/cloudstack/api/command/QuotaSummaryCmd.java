@@ -52,9 +52,11 @@ public class QuotaSummaryCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account for which balance will be listed. Can not be specified with projectId.", since = "4.23.0")
     private Long accountId;
 
+    @ACL
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Optional, Account Id for which statement needs to be generated")
     private String accountName;
 
+    @ACL
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
     private Long domainId;
 
@@ -75,7 +77,6 @@ public class QuotaSummaryCmd extends BaseListCmd {
     public void execute() {
         Pair<List<QuotaSummaryResponse>, Integer> responses = quotaResponseBuilder.createQuotaSummaryResponse(this);
         ListResponse<QuotaSummaryResponse> response = new ListResponse<>();
-
         response.setResponses(responses.first(), responses.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
