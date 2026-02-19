@@ -47,7 +47,6 @@ import java.net.InetAddress;
 @APICommand(name = "login", description = "Logs a user into the CloudStack. A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
 public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
 
-
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -107,17 +106,13 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         if (HTTPMethod.valueOf(req.getMethod()) != HTTPMethod.POST) {
             throw new ServerApiException(ApiErrorCode.METHOD_NOT_ALLOWED, "Please use HTTP POST to authenticate using this API");
         }
+
         // FIXME: ported from ApiServlet, refactor and cleanup
         final String[] username = (String[])params.get(ApiConstants.USERNAME);
         final String[] password = (String[])params.get(ApiConstants.PASSWORD);
-        String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
-
-        if (domainIdArr == null) {
-            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
-        }
-        final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
+        final String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
         Long domainId = null;
-        if ((domainIdArr != null) && (domainIdArr.length > 0)) {
+        if (domainIdArr != null && domainIdArr.length > 0) {
             try {
                 //check if UUID is passed in for domain
                 domainId = _apiServer.fetchDomainId(domainIdArr[0]);
@@ -135,6 +130,7 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         }
 
         String domain = null;
+        final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
         domain = getDomainName(auditTrailSb, domainName, domain);
 
         String serializedResponse = null;
