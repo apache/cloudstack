@@ -71,7 +71,7 @@ export default {
       popup: true,
       show: (record, store) => {
         return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || store.userInfo.id === record.id) &&
-          record.state === 'enabled'
+          ['native'].includes(record.usersource) && record.state === 'enabled'
       },
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/ChangeUserPassword.vue')))
     },
