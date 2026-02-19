@@ -21,7 +21,9 @@ package org.apache.cloudstack.storage.feign.client;
 
 import feign.QueryMap;
 import org.apache.cloudstack.storage.feign.model.ExportPolicy;
+import org.apache.cloudstack.storage.feign.model.FileClone;
 import org.apache.cloudstack.storage.feign.model.FileInfo;
+import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import feign.Headers;
 import feign.Param;
@@ -57,6 +59,11 @@ public interface NASFeignClient {
                     @Param("volumeUuid") String volumeUUID,
                     @Param("path") String filePath,
                     FileInfo file);
+
+    @RequestLine("POST /api/storage/volumes/{volumeUuid}/files/{path}")
+    @Headers({"Authorization: {authHeader}"})
+    JobResponse cloneFile(@Param("authHeader") String authHeader,
+                          FileClone fileClone);
 
     // Export Policy Operations
     @RequestLine("POST /api/protocols/nfs/export-policies")

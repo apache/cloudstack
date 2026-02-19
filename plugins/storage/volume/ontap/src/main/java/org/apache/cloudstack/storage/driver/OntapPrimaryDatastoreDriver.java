@@ -29,6 +29,8 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.Pair;
@@ -47,9 +49,11 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.feign.model.FileInfo;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.service.SANStrategy;
 import org.apache.cloudstack.storage.service.StorageStrategy;
@@ -57,8 +61,10 @@ import org.apache.cloudstack.storage.service.UnifiedSANStrategy;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.utils.Constants;
 import org.apache.cloudstack.storage.utils.Utility;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -80,14 +86,16 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     @Inject private VMInstanceDao vmDao;
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeDetailsDao volumeDetailsDao;
+    @Inject private SnapshotDetailsDao snapshotDetailsDao;
+
     @Override
     public Map<String, String> getCapabilities() {
         s_logger.trace("OntapPrimaryDatastoreDriver: getCapabilities: Called");
         Map<String, String> mapCapabilities = new HashMap<>();
         // RAW managed initial implementation: snapshot features not yet supported
         // TODO Set it to false once we start supporting snapshot feature
-        mapCapabilities.put(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString(), Boolean.FALSE.toString());
-        mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), Boolean.FALSE.toString());
+        mapCapabilities.put(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString(), Boolean.TRUE.toString());
+        mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), Boolean.TRUE.toString());
         return mapCapabilities;
     }
 
@@ -525,6 +533,81 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
 
+        CreateCmdResult result;
+
+        try {
+            VolumeInfo volumeInfo = snapshot.getBaseVolume();
+
+            VolumeVO volumeVO = volumeDao.findById(volumeInfo.getId());
+            if(volumeVO == null) {
+                throw new CloudRuntimeException("takeSnapshot: VolumeVO not found for id: " + volumeInfo.getId());
+            }
+
+            /** we are keeping file path at volumeVO.getPath() */
+
+            StoragePoolVO storagePool = storagePoolDao.findById(volumeVO.getPoolId());
+            if(storagePool == null) {
+                s_logger.error("takeSnapshot : Storage Pool not found for id: " + volumeVO.getPoolId());
+                throw new CloudRuntimeException("takeSnapshot : Storage Pool not found for id: " + volumeVO.getPoolId());
+            }
+            Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(volumeVO.getPoolId());
+            StorageStrategy storageStrategy = Utility.getStrategyByStoragePoolDetails(poolDetails);
+
+            Map<String, String> cloudStackVolumeRequestMap = new HashMap<>();
+            cloudStackVolumeRequestMap.put(Constants.VOLUME_UUID, poolDetails.get(Constants.VOLUME_UUID));
+            cloudStackVolumeRequestMap.put(Constants.FILE_PATH, volumeVO.getPath());
+            CloudStackVolume cloudStackVolume = storageStrategy.getCloudStackVolume(cloudStackVolumeRequestMap);
+            if (cloudStackVolume == null || cloudStackVolume.getFile() == null) {
+                throw new CloudRuntimeException("takeSnapshot: Failed to get source file to take snapshot");
+            }
+            long capacityBytes = storagePool.getCapacityBytes();
+
+            long usedBytes = getUsedBytes(storagePool);
+            long fileSize = cloudStackVolume.getFile().getSize();
+
+            usedBytes += fileSize;
+
+            if (usedBytes > capacityBytes) {
+                throw new CloudRuntimeException("Insufficient space remains in this primary storage to take a snapshot");
+            }
+
+            storagePool.setUsedBytes(usedBytes);
+
+            SnapshotObjectTO snapshotObjectTo = (SnapshotObjectTO)snapshot.getTO();
+
+            String fileSnapshotName = volumeInfo.getName() + "-" + snapshot.getUuid();
+
+            int maxSnapshotNameLength = 64;
+            int trimRequired = fileSnapshotName.length() - maxSnapshotNameLength;
+
+            if (trimRequired > 0) {
+                fileSnapshotName = StringUtils.left(volumeInfo.getName(), (volumeInfo.getName().length() - trimRequired)) + "-" + snapshot.getUuid();
+            }
+
+            CloudStackVolume snapCloudStackVolumeRequest = snapshotCloudStackVolumeRequestByProtocol(poolDetails, volumeVO.getPath(), fileSnapshotName);
+            CloudStackVolume cloneCloudStackVolume = storageStrategy.snapshotCloudStackVolume(snapCloudStackVolumeRequest);
+
+            updateSnapshotDetails(snapshot.getId(), volumeInfo.getId(), poolDetails.get(Constants.VOLUME_UUID), cloneCloudStackVolume.getFile().getPath(), volumeVO.getPoolId(), fileSize);
+
+            snapshotObjectTo.setPath(Constants.ONTAP_SNAP_ID +"="+cloneCloudStackVolume.getFile().getPath());
+
+            /** Update size for the storage-pool including snapshot size */
+            storagePoolDao.update(volumeVO.getPoolId(), storagePool);
+
+            CreateObjectAnswer createObjectAnswer = new CreateObjectAnswer(snapshotObjectTo);
+
+            result = new CreateCmdResult(null, createObjectAnswer);
+
+            result.setResult(null);
+        }
+        catch (Exception ex) {
+            s_logger.error("takeSnapshot: Failed due to ", ex);
+            result = new CreateCmdResult(null, new CreateObjectAnswer(ex.toString()));
+
+            result.setResult(ex.toString());
+        }
+
+        callback.complete(result);
     }
 
     @Override
@@ -622,4 +705,87 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         return cloudStackVolumeDeleteRequest;
 
     }
+
+    private CloudStackVolume getCloudStackVolumeRequestByProtocol(Map<String, String> details, String filePath) {
+        CloudStackVolume cloudStackVolumeRequest = null;
+        ProtocolType protocolType = null;
+        String protocol = null;
+
+        try {
+            protocol = details.get(Constants.PROTOCOL);
+            protocolType = ProtocolType.valueOf(protocol);
+        } catch (IllegalArgumentException e) {
+            throw new CloudRuntimeException("getCloudStackVolumeRequestByProtocol: Protocol: "+ protocol +" is not valid");
+        }
+        switch (protocolType) {
+            case NFS3:
+                cloudStackVolumeRequest = new CloudStackVolume();
+                FileInfo fileInfo = new FileInfo();
+                fileInfo.setPath(filePath);
+                cloudStackVolumeRequest.setFile(fileInfo);
+                String volumeUuid = details.get(Constants.VOLUME_UUID);
+                cloudStackVolumeRequest.setFlexVolumeUuid(volumeUuid);
+                break;
+            default:
+                throw new CloudRuntimeException("createCloudStackVolumeRequestByProtocol: Unsupported protocol " + protocol);
+        }
+        return cloudStackVolumeRequest;
+    }
+
+    private CloudStackVolume snapshotCloudStackVolumeRequestByProtocol(Map<String, String> details,
+                                                                       String sourcePath,
+                                                                       String destinationPath) {
+        CloudStackVolume cloudStackVolumeRequest = null;
+        ProtocolType protocolType = null;
+        String protocol = null;
+
+        try {
+            protocol = details.get(Constants.PROTOCOL);
+            protocolType = ProtocolType.valueOf(protocol);
+        } catch (IllegalArgumentException e) {
+            throw new CloudRuntimeException("getCloudStackVolumeRequestByProtocol: Protocol: "+ protocol +" is not valid");
+        }
+        switch (protocolType) {
+            case NFS3:
+                cloudStackVolumeRequest = new CloudStackVolume();
+                FileInfo fileInfo = new FileInfo();
+                fileInfo.setPath(sourcePath);
+                cloudStackVolumeRequest.setFile(fileInfo);
+                String volumeUuid = details.get(Constants.VOLUME_UUID);
+                cloudStackVolumeRequest.setFlexVolumeUuid(volumeUuid);
+                cloudStackVolumeRequest.setDestinationPath(destinationPath);
+                break;
+            default:
+                throw new CloudRuntimeException("createCloudStackVolumeRequestByProtocol: Unsupported protocol " + protocol);
+
+        }
+        return cloudStackVolumeRequest;
+    }
+
+    /**
+     *
+     * @param csSnapshotId: generated snapshot id from cloudstack
+     * @param csVolumeId: Source CS volume id
+     * @param ontapVolumeUuid: storage flexvolume id
+     * @param ontapNewSnapshot: generated snapshot id from ONTAP
+     * @param storagePoolId: primary storage pool id
+     * @param ontapSnapSize: Size of snapshot CS volume(LUN/file)
+     */
+    private void updateSnapshotDetails(long csSnapshotId, long csVolumeId, String ontapVolumeUuid, String ontapNewSnapshot, long storagePoolId, long ontapSnapSize) {
+        SnapshotDetailsVO snapshotDetail = new SnapshotDetailsVO(csSnapshotId, Constants.SRC_CS_VOLUME_ID,  String.valueOf(csVolumeId), false);
+        snapshotDetailsDao.persist(snapshotDetail);
+
+        snapshotDetail = new SnapshotDetailsVO(csSnapshotId, Constants.BASE_ONTAP_FV_ID, String.valueOf(ontapVolumeUuid), false);
+        snapshotDetailsDao.persist(snapshotDetail);
+
+        snapshotDetail = new SnapshotDetailsVO(csSnapshotId, Constants.ONTAP_SNAP_ID, String.valueOf(ontapNewSnapshot), false);
+        snapshotDetailsDao.persist(snapshotDetail);
+
+        snapshotDetail = new SnapshotDetailsVO(csSnapshotId, Constants.PRIMARY_POOL_ID, String.valueOf(storagePoolId), false);
+        snapshotDetailsDao.persist(snapshotDetail);
+
+        snapshotDetail = new SnapshotDetailsVO(csSnapshotId, Constants.ONTAP_SNAP_SIZE, String.valueOf(ontapSnapSize), false);
+        snapshotDetailsDao.persist(snapshotDetail);
+    }
+
 }

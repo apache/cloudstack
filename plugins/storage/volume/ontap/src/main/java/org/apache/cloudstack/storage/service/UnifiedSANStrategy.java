@@ -203,6 +203,11 @@ public class UnifiedSANStrategy extends SANStrategy {
     }
 
     @Override
+    public CloudStackVolume snapshotCloudStackVolume(CloudStackVolume cloudstackVolume) {
+        return null;
+    }
+
+    @Override
     public AccessGroup createAccessGroup(AccessGroup accessGroup) {
         s_logger.info("createAccessGroup : Create Igroup");
         String igroupName = "unknown";

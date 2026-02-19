@@ -147,6 +147,11 @@ public class StorageStrategyTest {
         }
 
         @Override
+        public CloudStackVolume snapshotCloudStackVolume(CloudStackVolume cloudstackVolume) {
+            return null;
+        }
+
+        @Override
         public AccessGroup createAccessGroup(
                 org.apache.cloudstack.storage.service.model.AccessGroup accessGroup) {
             return null;

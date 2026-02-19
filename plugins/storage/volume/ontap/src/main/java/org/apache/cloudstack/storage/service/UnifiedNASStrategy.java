@@ -39,12 +39,14 @@ import org.apache.cloudstack.storage.feign.client.NASFeignClient;
 import org.apache.cloudstack.storage.feign.client.VolumeFeignClient;
 import org.apache.cloudstack.storage.feign.model.ExportPolicy;
 import org.apache.cloudstack.storage.feign.model.ExportRule;
+import org.apache.cloudstack.storage.feign.model.FileClone;
 import org.apache.cloudstack.storage.feign.model.FileInfo;
 import org.apache.cloudstack.storage.feign.model.Job;
 import org.apache.cloudstack.storage.feign.model.Nas;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.Volume;
+import org.apache.cloudstack.storage.feign.model.VolumeConcise;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
@@ -134,7 +136,72 @@ public class UnifiedNASStrategy extends NASStrategy {
 
     @Override
     public CloudStackVolume getCloudStackVolume(Map<String, String> cloudStackVolumeMap) {
-        return null;
+        s_logger.info("getCloudStackVolume: Get cloudstack volume " + cloudStackVolumeMap);
+        CloudStackVolume cloudStackVolume = null;
+        FileInfo fileInfo = getFile(cloudStackVolumeMap.get(Constants.VOLUME_UUID),cloudStackVolumeMap.get(Constants.FILE_PATH));
+
+        if(fileInfo != null){
+            cloudStackVolume = new CloudStackVolume();
+            cloudStackVolume.setFlexVolumeUuid(cloudStackVolumeMap.get(Constants.VOLUME_UUID));
+            cloudStackVolume.setFile(fileInfo);
+        } else {
+            s_logger.warn("getCloudStackVolume: File not found for volume UUID: {} and file path: {}", cloudStackVolumeMap.get(Constants.VOLUME_UUID), cloudStackVolumeMap.get(Constants.FILE_PATH));
+        }
+
+        return cloudStackVolume;
+    }
+
+    @Override
+    public CloudStackVolume snapshotCloudStackVolume(CloudStackVolume cloudstackVolumeArg) {
+        s_logger.info("snapshotCloudStackVolume: Get cloudstack volume " + cloudstackVolumeArg);
+        CloudStackVolume cloudStackVolume = null;
+        String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        JobResponse jobResponse = null;
+
+        FileClone fileClone = new FileClone();
+        VolumeConcise volumeConcise = new VolumeConcise();
+        volumeConcise.setUuid(cloudstackVolumeArg.getFlexVolumeUuid());
+        fileClone.setVolume(volumeConcise);
+
+        fileClone.setSourcePath(cloudstackVolumeArg.getFile().getPath());
+        fileClone.setDestinationPath(cloudstackVolumeArg.getDestinationPath());
+
+        try {
+            /** Clone file call to storage */
+            jobResponse = nasFeignClient.cloneFile(authHeader, fileClone);
+            if (jobResponse == null || jobResponse.getJob() == null) {
+                throw new CloudRuntimeException("Failed to initiate file clone" + cloudstackVolumeArg.getFile().getPath());
+            }
+            String jobUUID = jobResponse.getJob().getUuid();
+
+            /** Create URI for GET Job API */
+            Boolean jobSucceeded = jobPollForSuccess(jobUUID,3,2);
+            if (!jobSucceeded) {
+                s_logger.error("File clone failed: " + cloudstackVolumeArg.getFile().getPath());
+                throw new CloudRuntimeException("File clone failed: " + cloudstackVolumeArg.getFile().getPath());
+            }
+            s_logger.info("File clone job completed successfully for file: " + cloudstackVolumeArg.getFile().getPath());
+
+        } catch (FeignException e) {
+            s_logger.error("Failed to clone file response: " + cloudstackVolumeArg.getFile().getPath(), e);
+            throw new CloudRuntimeException("File not found: " + e.getMessage());
+        } catch (Exception e) {
+            s_logger.error("Exception to get file: {}", cloudstackVolumeArg.getFile().getPath(), e);
+            throw new CloudRuntimeException("Failed to get the file: " + e.getMessage());
+        }
+
+        FileInfo clonedFileInfo = null;
+        try {
+            /** Get cloned file call from storage */
+            clonedFileInfo = getFile(cloudstackVolumeArg.getFlexVolumeUuid(), cloudstackVolumeArg.getDestinationPath());
+        } catch (Exception e) {
+            s_logger.error("Exception to get cloned file: {}", cloudstackVolumeArg.getDestinationPath(), e);
+            throw new CloudRuntimeException("Failed to get the cloned file: " + e.getMessage());
+        }
+        cloudStackVolume = new CloudStackVolume();
+        cloudStackVolume.setFlexVolumeUuid(cloudstackVolumeArg.getFlexVolumeUuid());
+        cloudStackVolume.setFile(clonedFileInfo);
+        return cloudStackVolume;
     }
 
     @Override
@@ -547,5 +614,27 @@ public class UnifiedNASStrategy extends NASStrategy {
             s_logger.error("deleteVolumeOnKVMHost: Exception sending DeleteCommand", e);
             return new Answer(null, false, e.toString());
         }
+    }
+
+    private FileInfo getFile(String volumeUuid, String filePath) {
+        s_logger.info("Get File: {} for volume: {}", filePath, volumeUuid);
+
+        String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        OntapResponse<FileInfo> fileResponse = null;
+        try {
+            fileResponse = nasFeignClient.getFileResponse(authHeader, volumeUuid, filePath);
+            if (fileResponse == null || fileResponse.getRecords().isEmpty()) {
+                throw new CloudRuntimeException("File " + filePath + " not not found on ONTAP. " +
+                        "Received successful response but file does not exist.");
+            }
+        } catch (FeignException e) {
+            s_logger.error("Failed to get file response: " + filePath, e);
+            throw new CloudRuntimeException("File not found: " + e.getMessage());
+        } catch (Exception e) {
+            s_logger.error("Exception to get file: {}", filePath, e);
+            throw new CloudRuntimeException("Failed to get the file: " + e.getMessage());
+        }
+        s_logger.info("File retrieved successfully with name {}", filePath);
+        return fileResponse.getRecords().get(0);
     }
 }

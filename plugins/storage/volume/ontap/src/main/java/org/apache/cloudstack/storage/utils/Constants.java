@@ -90,4 +90,10 @@ public class Constants {
     public static final String IGROUP_DOT_UUID = "igroup.uuid";
     public static final String UNDERSCORE = "_";
     public static final String CS = "cs";
+    public static final String SRC_CS_VOLUME_ID = "src_cs_volume_id";
+    public static final String BASE_ONTAP_FV_ID = "base_ontap_fv_id";
+    public static final String ONTAP_SNAP_ID = "ontap_snap_id";
+    public static final String PRIMARY_POOL_ID = "primary_pool_id";
+    public static final String ONTAP_SNAP_SIZE = "ontap_snap_size";
+    public static final String FILE_PATH = "file_path";
 }
