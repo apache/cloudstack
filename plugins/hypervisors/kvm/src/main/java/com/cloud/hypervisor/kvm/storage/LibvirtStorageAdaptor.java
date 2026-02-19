@@ -1425,16 +1425,18 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         }
 
+        // For CLVM pools, always use direct LVM cleanup to ensure secure zero-fill
+        if (pool.getType() == StoragePoolType.CLVM) {
+            logger.info("CLVM pool detected - using direct LVM cleanup with secure zero-fill for volume {}", uuid);
+            return cleanupCLVMVolume(uuid, pool);
+        }
+
+        // For non-CLVM pools, use libvirt deletion
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
         try {
             StorageVol vol = getVolume(libvirtPool.getPool(), uuid);
             if (vol == null) {
                 logger.warn("Volume {} not found in libvirt pool {}, it may have been already deleted", uuid, pool.getUuid());
-
-                // For CLVM, attempt direct LVM cleanup in case the volume exists but libvirt can't see it
-                if (pool.getType() == StoragePoolType.CLVM) {
-                    return cleanupCLVMVolume(uuid, pool);
-                }
                 return true;
             }
             logger.debug("Instructing libvirt to remove volume {} from pool {}", uuid, pool.getUuid());
@@ -1446,11 +1448,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             vol.free();
             return true;
         } catch (LibvirtException e) {
-            // For CLVM, if libvirt fails, try direct LVM cleanup
-            if (pool.getType() == StoragePoolType.CLVM) {
-                logger.warn("Libvirt failed to delete CLVM volume {}, attempting direct LVM cleanup: {}", uuid, e.getMessage());
-                return cleanupCLVMVolume(uuid, pool);
-            }
             throw new CloudRuntimeException(e.toString());
         }
     }
@@ -2043,7 +2040,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 logger.info("Successfully zero-filled CLVM volume {} using blkdiscard (TRIM)", volumeUuid);
                 blkdiscardSuccess = true;
             } else {
-                // Check if the error is "Operation not supported" - common with thick LVM without TRIM support
                 if (result.contains("Operation not supported") || result.contains("BLKDISCARD ioctl failed")) {
                     logger.info("blkdiscard not supported for volume {} (device doesn't support TRIM/DISCARD), using dd fallback", volumeUuid);
                 } else {
@@ -2054,15 +2050,13 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             logger.warn("Exception during blkdiscard for volume {}: {}, will try dd fallback", volumeUuid, e.getMessage());
         }
 
-        // Fallback to dd zero-fill (slow but thorough)
+        // Fallback to dd zero-fill (slow)
         if (!blkdiscardSuccess) {
             logger.info("Attempting zero-fill using dd for CLVM volume: {}", volumeUuid);
             try {
-                // Use bash to chain commands with proper error handling
                 // nice -n 19: lowest CPU priority
                 // ionice -c 2 -n 7: best-effort I/O scheduling with lowest priority
                 // oflag=direct: bypass cache for more predictable performance
-                // || true at the end ensures the command doesn't fail even if dd returns error (which it does when disk is full - expected)
                 String command = String.format(
                     "nice -n 19 ionice -c 2 -n 7 dd if=/dev/zero of=%s bs=1M oflag=direct 2>&1 || true",
                     lvPath
@@ -2076,7 +2070,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 String ddResult = ddZeroFill.execute(parser);
                 String output = parser.getLines();
 
-                // dd writes to stderr even on success, check for completion indicators
                 if (output != null && (output.contains("copied") || output.contains("records in") ||
                     output.contains("No space left on device"))) {
                     logger.info("Successfully zero-filled CLVM volume {} using dd", volumeUuid);
@@ -2087,7 +2080,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         output != null ? output : ddResult);
                 }
             } catch (Exception e) {
-                // Log warning but don't fail the deletion - zero-fill is a best-effort security measure
                 logger.warn("Failed to zero-fill CLVM volume {} before deletion: {}. Proceeding with deletion anyway.",
                         volumeUuid, e.getMessage());
             }
