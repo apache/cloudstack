@@ -1335,6 +1335,7 @@ public class ApiConstants {
 
     // DNS provider related
     public static final String NAME_SERVERS = "nameservers";
+    public static final String DNS_USER_NAME = "dnsusername";
     public static final String CREDENTIALS = "credentials";
     public static final String DNS_ZONE_ID = "dnszoneid";
     public static final String DNS_SERVER_ID = "dnsserverid";
@@ -1351,6 +1352,7 @@ public class ApiConstants {
     public static final String X_API_KEY = "X-API-Key";
     public static final String DISABLED = "disabled";
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final String NATIVE_ZONE = "Native";
 
 
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +

@@ -53,7 +53,11 @@ public class AddDnsServerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "Provider type (e.g., PowerDNS)")
     private String provider;
 
-    @Parameter(name = ApiConstants.CREDENTIALS, type = CommandType.STRING, description = "API Key or Credentials for the external provider")
+    @Parameter(name = ApiConstants.DNS_USER_NAME, type = CommandType.STRING,
+            description = "Username or email associated with the external DNS provider account (used for authentication)")
+    private String dnsUserName;
+
+    @Parameter(name = ApiConstants.CREDENTIALS, required = true, type = CommandType.STRING, description = "API key or credentials for the external provider")
     private String credentials;
 
     @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, description = "Port number of the external DNS server")
@@ -68,6 +72,9 @@ public class AddDnsServerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME_SERVERS, type = CommandType.LIST, collectionType = CommandType.STRING,
             required = true, description = "Comma separated list of name servers")
     private List<String> nameServers;
+
+    @Parameter(name = "externalserverid", type = CommandType.STRING, description = "External server id or hostname for the DNS server, e.g., 'localhost' for PowerDNS")
+    private String externalServerId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -116,5 +123,13 @@ public class AddDnsServerCmd extends BaseCmd {
             logger.error("Failed to add DNS server", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
+    }
+
+    public String getExternalServerId() {
+        return externalServerId;
+    }
+
+    public String getDnsUserName() {
+        return dnsUserName;
     }
 }

@@ -109,17 +109,29 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             throw new InvalidParameterValueException(
                     "This Account already has a DNS server integration for URL: " + cmd.getUrl());
         }
+
+        boolean isDnsPublic = cmd.isPublic();
+        String publicDomainSuffix = cmd.getPublicDomainSuffix();
+        if (caller.getType().equals(Account.Type.NORMAL)) {
+            logger.info("Only admin and domain admin users are allowed to configure a public DNS server");
+            isDnsPublic = false;
+            publicDomainSuffix = null;
+        }
         DnsProviderType type = DnsProviderType.fromString(cmd.getProvider());
-        DnsProvider provider = getProvider(type);
-        DnsServerVO server = new DnsServerVO(cmd.getName(), cmd.getUrl(), type, cmd.getCredentials(), cmd.getPort(),
-                cmd.isPublic(), cmd.getPublicDomainSuffix(), cmd.getNameServers(), caller.getId());
+        DnsServerVO server = new DnsServerVO(cmd.getName(), cmd.getUrl(), cmd.getPort(), cmd.getExternalServerId(), type,
+                cmd.getDnsUserName(), cmd.getCredentials(), isDnsPublic, publicDomainSuffix, cmd.getNameServers(),
+                caller.getAccountId(), caller.getDomainId());
         try {
-            provider.validate(server);
+            DnsProvider provider = getProvider(type);
+            String dnsServerId = provider.validateAndResolveServer(server); // localhost for PowerDNS
+            if (StringUtils.isNotBlank(dnsServerId)) {
+                server.setExternalServerId(dnsServerId);
+            }
+            return dnsServerDao.persist(server);
         } catch (Exception ex) {
             logger.error("Failed to validate DNS server", ex);
             throw new CloudRuntimeException("Failed to validate DNS server");
         }
-        return dnsServerDao.persist(server);
     }
 
     @Override
@@ -246,6 +258,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         response.setProvider(server.getProviderType());
         response.setPublic(server.isPublic());
         response.setNameServers(server.getNameServers());
+        response.setPublicDomainSuffix(server.getPublicDomainSuffix());
         response.setObjectName("dnsserver");
         return response;
     }

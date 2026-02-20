@@ -18,6 +18,8 @@
 package org.apache.cloudstack.dns.powerdns;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -62,7 +64,7 @@ public class PowerDnsClient implements AutoCloseable {
     private static final int MAX_CONNECTIONS_TOTAL = 50;
     private static final int MAX_CONNECTIONS_PER_ROUTE = 10;
     private static final String API_PREFIX = "/api/v1";
-    private static final String DEFAULT_SERVER = "localhost";
+    public static final String DEFAULT_SERVER_NAME = "localhost";
 
     private final CloseableHttpClient httpClient;
 
@@ -85,30 +87,59 @@ public class PowerDnsClient implements AutoCloseable {
                 .build();
     }
 
-    public void validate(String baseUrl, String apiKey) throws DnsProviderException {
-        String url = buildUrl(baseUrl, "/servers");
+    public String resolveServerId(String baseUrl, Integer port, String apiKey, String externalServerId) throws DnsProviderException {
+        if (StringUtils.isNotBlank(externalServerId)) {
+            return validateServerId(baseUrl, port, apiKey, externalServerId);
+        }
+        return discoverAuthoritativeServerId(baseUrl, port, apiKey);
+    }
+
+    public String validateServerId(String baseUrl, Integer port, String apiKey, String externalServerId) throws DnsProviderException {
+        String encodedServer = URLEncoder.encode(externalServerId, StandardCharsets.UTF_8);
+        HttpGet request = new HttpGet(buildUrl(baseUrl, port, "/servers/" + encodedServer));
+        JsonNode server = execute(request, apiKey, 200);
+        if (!ApiConstants.AUTHORITATIVE.equalsIgnoreCase(server.path("daemon_type").asText(null))) {
+            throw new DnsOperationException(String.format("Server %s is not authoritative type=%s", externalServerId,
+                    server.path("daemon_type").asText(null)));
+        }
+        return externalServerId;
+    }
+
+    public String discoverAuthoritativeServerId(String baseUrl, Integer port, String apiKey) throws DnsProviderException {
+        String url = buildUrl(baseUrl, port , "/servers");
         HttpGet request = new HttpGet(url);
         JsonNode servers = execute(request, apiKey, 200);
         if (servers == null || !servers.isArray() || servers.isEmpty()) {
             throw new DnsOperationException("No servers returned by PowerDNS API");
         }
-        boolean authoritativeFound = false;
+        String fallbackId = null;
         for (JsonNode server : servers) {
-            if (ApiConstants.AUTHORITATIVE.equalsIgnoreCase(server.path("daemon_type").asText(null))) {
-                authoritativeFound = true;
-                break;
+            String daemonType = server.path("daemon_type").asText(null);
+            if (!ApiConstants.AUTHORITATIVE.equalsIgnoreCase(daemonType)) {
+                continue;
+            }
+            String serverId = server.path(ApiConstants.ID).asText(null);
+            if (StringUtils.isBlank(serverId)) {
+                continue;
+            }
+            // Prefer localhost if present
+            if (DEFAULT_SERVER_NAME.equals(serverId)) {
+                return serverId;
+            }
+            if (fallbackId == null) {
+                fallbackId = serverId;
             }
         }
-        if (!authoritativeFound) {
-            throw new DnsOperationException("No authoritative PowerDNS server found");
+        if (fallbackId != null) {
+            return fallbackId;
         }
+        throw new DnsOperationException("No authoritative PowerDNS server found");
     }
 
-    public String createZone(String baseUrl, String apiKey, String zoneName, String zoneKind, boolean dnsSecFlag,
-                             List<String> nameServers) throws DnsProviderException {
+    public String createZone(String baseUrl, Integer port, String apiKey, String externalServerId, String zoneName,
+                             String zoneKind, boolean dnsSecFlag, List<String> nameServers) throws DnsProviderException {
 
-        validate(baseUrl, apiKey);
-
+        validateServerId(baseUrl, port, externalServerId, apiKey);
         String normalizedZone = normalizeZone(zoneName);
         ObjectNode json = MAPPER.createObjectNode();
         json.put(ApiConstants.NAME, normalizedZone);
@@ -120,7 +151,7 @@ public class PowerDnsClient implements AutoCloseable {
                 nsArray.add(ns.endsWith(".") ? ns : ns + ".");
             }
         }
-        HttpPost request = new HttpPost(buildUrl(baseUrl, "/servers/" + DEFAULT_SERVER + "/zones"));
+        HttpPost request = new HttpPost(buildUrl(baseUrl, port, "/servers/" + externalServerId + "/zones"));
         request.setEntity(new StringEntity(json.toString(), StandardCharsets.UTF_8));
         JsonNode response = execute(request, apiKey, 201);
         if (response == null) {
@@ -133,15 +164,15 @@ public class PowerDnsClient implements AutoCloseable {
         return zoneId;
     }
 
-    public void updateZone(String baseUrl, String apiKey, String zoneName, String zoneKind, Boolean dnsSecFlag,
-                           List<String> nameServers) throws DnsProviderException {
+    public void updateZone(String baseUrl, Integer port, String apiKey, String externalServerId, String zoneName,
+                           String zoneKind, Boolean dnsSecFlag, List<String> nameServers) throws DnsProviderException {
 
+        validateServerId(baseUrl, port, externalServerId, apiKey);
         String normalizedZone = normalizeZone(zoneName);
         String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
-        String url = buildUrl(baseUrl, "/servers/" + DEFAULT_SERVER + "/zones/" + encodedZone);
+        String url = buildUrl(baseUrl, port,"/servers/" + externalServerId + "/zones/" + encodedZone);
 
         ObjectNode json = MAPPER.createObjectNode();
-
         if (dnsSecFlag != null) {
             json.put(ApiConstants.DNS_SEC, dnsSecFlag);
         }
@@ -159,18 +190,18 @@ public class PowerDnsClient implements AutoCloseable {
         execute(request, apiKey, 204);
     }
 
-    public void deleteZone(String baseUrl, String apiKey, String zoneName) throws DnsProviderException {
-        validate(baseUrl, apiKey);
+    public void deleteZone(String baseUrl, Integer port, String apiKey, String externalServerId, String zoneName) throws DnsProviderException {
+        validateServerId(baseUrl, port, apiKey, externalServerId);
         String normalizedZone = normalizeZone(zoneName);
         String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
-        HttpDelete request = new HttpDelete(buildUrl(baseUrl, "/servers/" + DEFAULT_SERVER + "/zones/" + encodedZone));
+        HttpDelete request = new HttpDelete(buildUrl(baseUrl, port, "/servers/" + externalServerId + "/zones/" + encodedZone));
         execute(request, apiKey, 204, 404);
     }
 
-    public String modifyRecord(String baseUrl, String apiKey, String zoneName, String recordName, String type, long ttl,
-                             List<String> contents, String changeType) throws DnsProviderException {
+    public String modifyRecord(String baseUrl, Integer port, String apiKey, String externalServerId, String zoneName,
+                               String recordName, String type, long ttl, List<String> contents, String changeType) throws DnsProviderException {
 
-        validate(baseUrl, apiKey);
+        validateServerId(baseUrl, port, apiKey, externalServerId);
         String normalizedZone = normalizeZone(zoneName);
         String normalizedRecord = normalizeRecordName(recordName, normalizedZone);
         ObjectNode root = MAPPER.createObjectNode();
@@ -189,17 +220,17 @@ public class PowerDnsClient implements AutoCloseable {
             }
         }
         String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
-        HttpPatch request = new HttpPatch(buildUrl(baseUrl, "/servers/" + DEFAULT_SERVER + "/zones/" + encodedZone));
+        HttpPatch request = new HttpPatch(buildUrl(baseUrl, port, "/servers/" + externalServerId + "/zones/" + encodedZone));
         request.setEntity(new org.apache.http.entity.StringEntity(root.toString(), StandardCharsets.UTF_8));
         execute(request, apiKey, 204);
         return normalizedRecord;
     }
 
-    public Iterable<JsonNode> listRecords(String baseUrl, String apiKey, String zoneName) throws DnsProviderException {
-        validate(baseUrl, apiKey);
+    public Iterable<JsonNode> listRecords(String baseUrl, Integer port, String apiKey, String externalServerId, String zoneName) throws DnsProviderException {
+        validateServerId(baseUrl, port, apiKey, externalServerId);
         String normalizedZone = normalizeZone(zoneName);
         String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
-        HttpGet request = new HttpGet(buildUrl(baseUrl, "/servers/" + DEFAULT_SERVER + "/zones/" + encodedZone));
+        HttpGet request = new HttpGet(buildUrl(baseUrl, port, "/servers/" + externalServerId + "/zones/" + encodedZone));
         JsonNode zoneNode = execute(request, apiKey, 200);
         if (zoneNode == null || !zoneNode.has(ApiConstants.RR_SETS)) {
             return Collections.emptyList();
@@ -239,8 +270,22 @@ public class PowerDnsClient implements AutoCloseable {
         }
     }
 
-    private String buildUrl(String baseUrl, String path) {
-        return normalizeBaseUrl(baseUrl) + API_PREFIX + path;
+    private String buildUrl(String baseUrl, Integer port, String path) {
+        String fullUrl = normalizeBaseUrl(baseUrl);
+        if (port != null && port > 0) {
+            try {
+                URI uri = new URI(fullUrl);
+                if (uri.getPort() == -1) {
+                    fullUrl = fullUrl + ":" + port;
+                }
+            } catch (URISyntaxException e) {
+                fullUrl = fullUrl + ":" + port;
+            }
+        }
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        return fullUrl + API_PREFIX + path;
     }
 
     private String normalizeBaseUrl(String baseUrl) {

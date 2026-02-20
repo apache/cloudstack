@@ -39,10 +39,6 @@ public class DnsZoneResponse extends BaseResponse {
     @Param(description = "ID of the DNS server this zone belongs to")
     private Long dnsServerId;
 
-    @SerializedName("dnsservername")
-    @Param(description = "Name of the DNS server this zone belongs to")
-    private String dnsServerName;
-
     @SerializedName(ApiConstants.NETWORK_ID)
     @Param(description = "ID of the network this zone is associated with")
     private String networkId;
@@ -74,10 +70,6 @@ public class DnsZoneResponse extends BaseResponse {
 
     public void setDnsServerId(Long dnsServerId) {
         this.dnsServerId = dnsServerId;
-    }
-
-    public void setDnsServerName(String dnsServerName) {
-        this.dnsServerName = dnsServerName;
     }
 
     public void setNetworkId(String networkId) {

@@ -46,4 +46,10 @@ public interface DnsServer extends InternalIdentity, Identity, ControlledEntity 
     Date getCreated();
 
     Date getRemoved();
+
+    String getPublicDomainSuffix();
+
+    String getExternalServerId();
+
+    Integer getPort();
 }

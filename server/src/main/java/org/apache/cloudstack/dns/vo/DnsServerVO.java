@@ -44,7 +44,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "dns_server")
-public class DnsServerVO implements DnsServer {
+public class    DnsServerVO implements DnsServer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -66,9 +66,15 @@ public class DnsServerVO implements DnsServer {
     @Enumerated(EnumType.STRING)
     private DnsProviderType providerType;
 
+    @Column(name = "dns_user_name")
+    private String dnsUserName;
+
     @Encrypt
     @Column(name = "api_key")
     private String apiKey;
+
+    @Column(name = "external_server_id")
+    private String externalServerId;
 
     @Column(name = "is_public")
     private boolean isPublic;
@@ -91,7 +97,7 @@ public class DnsServerVO implements DnsServer {
 
     @Column(name = GenericDao.CREATED_COLUMN)
     @Temporal(value = TemporalType.TIMESTAMP)
-    private Date created = null;
+    private Date created;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     @Temporal(value = TemporalType.TIMESTAMP)
@@ -102,16 +108,18 @@ public class DnsServerVO implements DnsServer {
         this.created = new Date();
     }
 
-    public DnsServerVO(String name, String url, DnsProviderType providerType, String apiKey,
-                       Integer port, boolean isPublic, String publicDomainSuffix, List<String> nameServers,
-                       long accountId) {
+    public DnsServerVO(String name, String url, Integer port, String externalServerId, DnsProviderType providerType, String dnsUserName, String apiKey,
+                       boolean isPublic, String publicDomainSuffix, List<String> nameServers, Long accountId, Long domainId) {
         this();
         this.name = name;
         this.url = url;
         this.port = port;
+        this.externalServerId = externalServerId;
         this.providerType = providerType;
+        this.dnsUserName = dnsUserName;
         this.apiKey = apiKey;
         this.accountId = accountId;
+        this.domainId = domainId;
         this.publicDomainSuffix = publicDomainSuffix;
         this.isPublic = isPublic;
         this.state = State.Enabled;
@@ -228,5 +236,21 @@ public class DnsServerVO implements DnsServer {
     @Override
     public long getDomainId() {
         return domainId;
+    }
+
+    public String getPublicDomainSuffix() {
+        return publicDomainSuffix;
+    }
+
+    public String getExternalServerId() {
+        return externalServerId;
+    }
+
+    public void setExternalServerId(String externalServerId) {
+        this.externalServerId = externalServerId;
+    }
+
+    public Integer getPort() {
+        return this.port;
     }
 }

@@ -55,10 +55,12 @@ public class DnsServerResponse extends BaseResponse  {
     @Param(description = "Is the DNS server publicly available")
     private Boolean isPublic;
 
-    @SerializedName(ApiConstants.PUBLIC_DOMAIN_SUFFIX) @Param(description = "The public domain suffix for the DNS server")
+    @SerializedName(ApiConstants.PUBLIC_DOMAIN_SUFFIX)
+    @Param(description = "The public domain suffix for the DNS server")
     private String publicDomainSuffix;
 
-    @SerializedName(ApiConstants.NAME_SERVERS) @Param(description = "Name servers entries associated to DNS server")
+    @SerializedName(ApiConstants.NAME_SERVERS)
+    @Param(description = "Name servers entries associated to DNS server")
     private List<String> nameServers;
 
     public DnsServerResponse() {
