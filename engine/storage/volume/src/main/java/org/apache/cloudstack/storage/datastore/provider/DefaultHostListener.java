@@ -43,6 +43,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StorageService;
+import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -139,6 +140,15 @@ public class DefaultHostListener implements HypervisorHostListener {
         Map<String, String> nfsMountOpts = storageManager.getStoragePoolNFSMountOpts(pool, null).first();
 
         Optional.ofNullable(nfsMountOpts).ifPresent(detailsMap::putAll);
+
+        if (pool.getPoolType() == Storage.StoragePoolType.CLVM) {
+            Boolean clvmSecureZeroFill = VolumeApiServiceImpl.CLVMSecureZeroFill.valueIn(poolId);
+            if (clvmSecureZeroFill != null) {
+                detailsMap.put("clvmsecurezerofill", String.valueOf(clvmSecureZeroFill));
+                logger.debug("Added CLVM secure zero-fill setting: {} for storage pool: {}", clvmSecureZeroFill, pool);
+            }
+        }
+
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool, detailsMap);
         cmd.setWait(modifyStoragePoolCommandWait);
         HostVO host = hostDao.findById(hostId);

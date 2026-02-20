@@ -1452,6 +1452,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private boolean shouldSecureZeroFill(KVMStoragePool pool) {
+        Map<String, String> details = pool.getDetails();
+        String secureZeroFillStr = (details != null) ? details.get(KVMStoragePool.CLVM_SECURE_ZERO_FILL) : null;
+        return Boolean.parseBoolean(secureZeroFillStr);
+    }
+
     /**
      * Clean up CLVM volume and its snapshots directly using LVM commands.
      * This is used as a fallback when libvirt cannot find or delete the volume.
@@ -1492,8 +1498,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             logger.info("Volume {} exists, proceeding with cleanup", uuid);
 
-            logger.info("Step 1: Zero-filling volume {} for security", uuid);
-            secureZeroFillVolume(lvPath, uuid);
+            boolean secureZeroFillEnabled = shouldSecureZeroFill(pool);
+
+            if (secureZeroFillEnabled) {
+                logger.info("Step 1: Zero-filling volume {} for security", uuid);
+                secureZeroFillVolume(lvPath, uuid);
+            } else {
+                logger.info("Secure zero-fill is disabled, skipping zero-filling for volume {}", uuid);
+            }
 
             logger.info("Step 2: Removing volume {}", uuid);
             Script removeLv = new Script("lvremove", 10000, logger);
