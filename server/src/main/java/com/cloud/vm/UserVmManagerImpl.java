@@ -5493,13 +5493,135 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return startVirtualMachine(vmId, podId, clusterId, hostId, additionalParams, deploymentPlannerToUse, true);
     }
 
+    private Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachineUnchecked(UserVmVO vm, VMTemplateVO template, Long podId,
+            Long clusterId, Long hostId, @NotNull Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse,
+            boolean isExplicitHost, boolean isRootAdmin) throws ResourceUnavailableException, InsufficientCapacityException {
+
+        // check if vm is security group enabled
+        if (_securityGroupMgr.isVmSecurityGroupEnabled(vm.getId()) && _securityGroupMgr.getSecurityGroupsForVm(vm.getId()).isEmpty()
+                && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vm.getId()) && _networkModel.canAddDefaultSecurityGroup()) {
+            // if vm is not mapped to security group, create a mapping
+            if (logger.isDebugEnabled()) {
+                logger.debug("Vm " + vm + " is security group enabled, but not mapped to default security group; creating the mapping automatically");
+            }
+
+            SecurityGroup defaultSecurityGroup = _securityGroupMgr.getDefaultSecurityGroup(vm.getAccountId());
+            if (defaultSecurityGroup != null) {
+                List<Long> groupList = new ArrayList<>();
+                groupList.add(defaultSecurityGroup.getId());
+                _securityGroupMgr.addInstanceToGroups(vm, groupList);
+            }
+        }
+
+        // Choose deployment planner
+        // Host takes 1st preference, Cluster takes 2nd preference and Pod takes 3rd
+        // Default behaviour is invoked when host, cluster or pod are not specified
+        Pod destinationPod = getDestinationPod(podId, isRootAdmin);
+        Cluster destinationCluster = getDestinationCluster(clusterId, isRootAdmin);
+        HostVO destinationHost = getDestinationHost(hostId, isRootAdmin, isExplicitHost);
+        DataCenterDeployment plan = null;
+        boolean deployOnGivenHost = false;
+        if (destinationHost != null) {
+            logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
+            _hostDao.loadHostTags(destinationHost);
+            validateStrictHostTagCheck(vm, destinationHost);
+
+            final ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+            Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(destinationHost, offering, false);
+            if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
+                String errorMsg;
+                if (!cpuCapabilityAndCapacity.first()) {
+                    errorMsg = String.format("Cannot deploy the VM to specified host %s, requested CPU and speed is more than the host capability", destinationHost);
+                } else {
+                    errorMsg = String.format("Cannot deploy the VM to specified host %s, host does not have enough free CPU or RAM, please check the logs", destinationHost);
+                }
+                logger.info(errorMsg);
+                if (!AllowDeployVmIfGivenHostFails.value()) {
+                    throw new InvalidParameterValueException(errorMsg);
+                }
+            } else {
+                plan = new DataCenterDeployment(vm.getDataCenterId(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null, null);
+                if (!AllowDeployVmIfGivenHostFails.value()) {
+                    deployOnGivenHost = true;
+                }
+            }
+        } else if (destinationCluster != null) {
+            logger.debug("Destination Cluster to deploy the VM is specified, specifying a deployment plan to deploy the VM");
+            plan = new DataCenterDeployment(vm.getDataCenterId(), destinationCluster.getPodId(), destinationCluster.getId(), null, null, null);
+            if (!AllowDeployVmIfGivenHostFails.value()) {
+                deployOnGivenHost = true;
+            }
+        } else if (destinationPod != null) {
+            logger.debug("Destination Pod to deploy the VM is specified, specifying a deployment plan to deploy the VM");
+            plan = new DataCenterDeployment(vm.getDataCenterId(), destinationPod.getId(), null, null, null, null);
+            if (!AllowDeployVmIfGivenHostFails.value()) {
+                deployOnGivenHost = true;
+            }
+        }
+
+        // Set parameters
+        Map<VirtualMachineProfile.Param, Object> params = null;
+        if (vm.isUpdateParameters()) {
+            _vmDao.loadDetails(vm);
+            String password = getCurrentVmPasswordOrDefineNewPassword(String.valueOf(additionalParams.getOrDefault(VirtualMachineProfile.Param.VmPassword, "")), vm, template);
+            if (!validPassword(password)) {
+                throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
+            }
+            // Check if an SSH key pair was selected for the instance and if so
+            // use it to encrypt & save the vm password
+            encryptAndStorePassword(vm, password);
+            params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.VmPassword, password);
+        }
+
+        if (additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoSetup)) {
+            if (!HypervisorType.VMware.equals(vm.getHypervisorType())) {
+                throw new InvalidParameterValueException(ApiConstants.BOOT_INTO_SETUP + " makes no sense for " + vm.getHypervisorType());
+            }
+            Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoSetup);
+            if (logger.isTraceEnabled()) {
+                logger.trace("It was specified whether to enter setup mode: " + paramValue.toString());
+            }
+            params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoSetup, paramValue);
+        }
+
+        VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
+
+        DeploymentPlanner planner = null;
+        if (deploymentPlannerToUse != null) {
+            // if set to null, the deployment planner would be later figured out either from global config var, or from
+            // the service offering
+            planner = _planningMgr.getDeploymentPlannerByName(deploymentPlannerToUse);
+            if (planner == null) {
+                throw new InvalidParameterValueException("Can't find a planner by name " + deploymentPlannerToUse);
+            }
+        }
+        vmEntity.setParamsToEntity(additionalParams);
+
+        UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
+        String reservationId = vmEntity.reserve(planner, plan, new ExcludeList(), Long.toString(callerUser.getId()));
+        vmEntity.deploy(reservationId, Long.toString(callerUser.getId()), params, deployOnGivenHost);
+
+        Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = new Pair(vm, params);
+        if (vm.isUpdateParameters()) {
+            // this value is not being sent to the backend; need only for api
+            // display purposes
+            if (template.isEnablePassword()) {
+                if (vm.getDetail(VmDetailConstants.PASSWORD) != null) {
+                    userVmDetailsDao.removeDetail(vm.getId(), VmDetailConstants.PASSWORD);
+                }
+                vm.setUpdateParameters(false);
+                _vmDao.update(vm.getId(), vm);
+            }
+        }
+        return vmParamPair;
+    }
+
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId,
             @NotNull Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean isExplicitHost)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         // Input validation
         final Account callerAccount = CallContext.current().getCallingAccount();
-        UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
 
         // if account is removed, return error
         if (callerAccount == null || callerAccount.getRemoved() != null) {
@@ -5527,138 +5649,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (owner.getState() == Account.State.DISABLED) {
             throw new PermissionDeniedException(String.format("The owner of %s is disabled: %s", vm, owner));
         }
-        Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair;
-        try (CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, vm.getId(), null, 1L, reservationDao, _resourceLimitMgr)) {
-            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-            if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-                // check if account/domain is with in resource limits to start a new vm
-                ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
-                resourceLimitService.checkVmResourceLimit(owner, vm.isDisplayVm(), offering, template);
+        boolean isRootAdmin = _accountService.isRootAdmin(callerAccount.getId());
+
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
+        if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+            ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
+            List<String> resourceLimitHostTags = resourceLimitService.getResourceLimitHostTags(offering, template);
+            try (CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, resourceLimitHostTags, 1l, reservationDao, resourceLimitService);
+                 CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, resourceLimitHostTags, Long.valueOf(offering.getCpu()), reservationDao, resourceLimitService);
+                 CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, resourceLimitHostTags, Long.valueOf(offering.getRamSize()), reservationDao, resourceLimitService);
+            ) {
+                return startVirtualMachineUnchecked(vm, template, podId, clusterId, hostId, additionalParams, deploymentPlannerToUse, isExplicitHost, isRootAdmin);
+            } catch (ResourceAllocationException | CloudRuntimeException  e) {
+                throw e;
+            } catch (Exception e) {
+                logger.error("Failed to start VM {} : error during resource reservation and allocation", e);
+                throw new CloudRuntimeException(e);
             }
-            // check if vm is security group enabled
-            if (_securityGroupMgr.isVmSecurityGroupEnabled(vmId) && _securityGroupMgr.getSecurityGroupsForVm(vmId).isEmpty()
-                    && !_securityGroupMgr.isVmMappedToDefaultSecurityGroup(vmId) && _networkModel.canAddDefaultSecurityGroup()) {
-                // if vm is not mapped to security group, create a mapping
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Vm " + vm + " is security group enabled, but not mapped to default security group; creating the mapping automatically");
-                }
-
-                SecurityGroup defaultSecurityGroup = _securityGroupMgr.getDefaultSecurityGroup(vm.getAccountId());
-                if (defaultSecurityGroup != null) {
-                    List<Long> groupList = new ArrayList<>();
-                    groupList.add(defaultSecurityGroup.getId());
-                    _securityGroupMgr.addInstanceToGroups(vm, groupList);
-                }
-            }
-            // Choose deployment planner
-            // Host takes 1st preference, Cluster takes 2nd preference and Pod takes 3rd
-            // Default behaviour is invoked when host, cluster or pod are not specified
-            boolean isRootAdmin = _accountService.isRootAdmin(callerAccount.getId());
-            Pod destinationPod = getDestinationPod(podId, isRootAdmin);
-            Cluster destinationCluster = getDestinationCluster(clusterId, isRootAdmin);
-            HostVO destinationHost = getDestinationHost(hostId, isRootAdmin, isExplicitHost);
-            DataCenterDeployment plan = null;
-            boolean deployOnGivenHost = false;
-            if (destinationHost != null) {
-                logger.debug("Destination Host to deploy the VM is specified, specifying a deployment plan to deploy the VM");
-                _hostDao.loadHostTags(destinationHost);
-                validateStrictHostTagCheck(vm, destinationHost);
-
-                final ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
-                Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(destinationHost, offering, false);
-                if (!cpuCapabilityAndCapacity.first() || !cpuCapabilityAndCapacity.second()) {
-                    String errorMsg;
-                    if (!cpuCapabilityAndCapacity.first()) {
-                        errorMsg = String.format("Cannot deploy the VM to specified host %s, requested CPU and speed is more than the host capability", destinationHost);
-                    } else {
-                        errorMsg = String.format("Cannot deploy the VM to specified host %s, host does not have enough free CPU or RAM, please check the logs", destinationHost);
-                    }
-                    logger.info(errorMsg);
-                    if (!AllowDeployVmIfGivenHostFails.value()) {
-                        throw new InvalidParameterValueException(errorMsg);
-                    }
-                } else {
-                    plan = new DataCenterDeployment(vm.getDataCenterId(), destinationHost.getPodId(), destinationHost.getClusterId(), destinationHost.getId(), null, null);
-                    if (!AllowDeployVmIfGivenHostFails.value()) {
-                        deployOnGivenHost = true;
-                    }
-                }
-            } else if (destinationCluster != null) {
-                logger.debug("Destination Cluster to deploy the VM is specified, specifying a deployment plan to deploy the VM");
-                plan = new DataCenterDeployment(vm.getDataCenterId(), destinationCluster.getPodId(), destinationCluster.getId(), null, null, null);
-                if (!AllowDeployVmIfGivenHostFails.value()) {
-                    deployOnGivenHost = true;
-                }
-            } else if (destinationPod != null) {
-                logger.debug("Destination Pod to deploy the VM is specified, specifying a deployment plan to deploy the VM");
-                plan = new DataCenterDeployment(vm.getDataCenterId(), destinationPod.getId(), null, null, null, null);
-                if (!AllowDeployVmIfGivenHostFails.value()) {
-                    deployOnGivenHost = true;
-                }
-            }
-
-            // Set parameters
-            Map<VirtualMachineProfile.Param, Object> params = null;
-            if (vm.isUpdateParameters()) {
-                _vmDao.loadDetails(vm);
-
-                String password = getCurrentVmPasswordOrDefineNewPassword(String.valueOf(additionalParams.getOrDefault(VirtualMachineProfile.Param.VmPassword, "")), vm, template);
-
-                if (!validPassword(password)) {
-                    throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
-                }
-
-                // Check if an SSH key pair was selected for the instance and if so
-                // use it to encrypt & save the vm password
-                encryptAndStorePassword(vm, password);
-
-                params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.VmPassword, password);
-            }
-
-            if (additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoSetup)) {
-                if (!HypervisorType.VMware.equals(vm.getHypervisorType())) {
-                    throw new InvalidParameterValueException(ApiConstants.BOOT_INTO_SETUP + " makes no sense for " + vm.getHypervisorType());
-                }
-                Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoSetup);
-                if (logger.isTraceEnabled()) {
-                    logger.trace("It was specified whether to enter setup mode: " + paramValue.toString());
-                }
-                params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoSetup, paramValue);
-            }
-
-            VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-
-            DeploymentPlanner planner = null;
-            if (deploymentPlannerToUse != null) {
-                // if set to null, the deployment planner would be later figured out either from global config var, or from
-                // the service offering
-                planner = _planningMgr.getDeploymentPlannerByName(deploymentPlannerToUse);
-                if (planner == null) {
-                    throw new InvalidParameterValueException("Can't find a planner by name " + deploymentPlannerToUse);
-                }
-            }
-            vmEntity.setParamsToEntity(additionalParams);
-
-            String reservationId = vmEntity.reserve(planner, plan, new ExcludeList(), Long.toString(callerUser.getId()));
-            vmEntity.deploy(reservationId, Long.toString(callerUser.getId()), params, deployOnGivenHost);
-
-            vmParamPair = new Pair(vm, params);
-            if (vm != null && vm.isUpdateParameters()) {
-                // this value is not being sent to the backend; need only for api
-                // display purposes
-                if (template.isEnablePassword()) {
-                    if (vm.getDetail(VmDetailConstants.PASSWORD) != null) {
-                        userVmDetailsDao.removeDetail(vm.getId(), VmDetailConstants.PASSWORD);
-                    }
-                    vm.setUpdateParameters(false);
-                    _vmDao.update(vm.getId(), vm);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Failed to start VM {}", vm, e);
-            throw new CloudRuntimeException("Failed to start VM " + vm, e);
+        } else {
+            return startVirtualMachineUnchecked(vm, template, podId, clusterId, hostId, additionalParams, deploymentPlannerToUse, isExplicitHost, isRootAdmin);
         }
-        return vmParamPair;
     }
 
     /**
