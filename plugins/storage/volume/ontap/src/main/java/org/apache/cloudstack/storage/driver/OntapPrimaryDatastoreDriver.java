@@ -532,7 +532,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
-
+        s_logger.error("temp takeSnapshot : entered with snapshot id: " + snapshot.getId() + " and name: " + snapshot.getName());
         CreateCmdResult result;
 
         try {
@@ -561,7 +561,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 throw new CloudRuntimeException("takeSnapshot: Failed to get source file to take snapshot");
             }
             long capacityBytes = storagePool.getCapacityBytes();
-
+            s_logger.error("temp takeSnapshot : entered after getting cloudstack volume with file path: " + cloudStackVolume.getFile().getPath() + " and size: " + cloudStackVolume.getFile().getSize());
             long usedBytes = getUsedBytes(storagePool);
             long fileSize = cloudStackVolume.getFile().getSize();
 
