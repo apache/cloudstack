@@ -643,7 +643,6 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 return StrategyPriority.DEFAULT;
             }
 
-            // Check if this is a CLVM volume with snapshot backed up to secondary storage
             if (isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO)) {
                 return StrategyPriority.DEFAULT;
             }
