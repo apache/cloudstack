@@ -54,6 +54,7 @@ import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -81,6 +82,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -516,7 +518,7 @@ public class VpcManagerImplTest {
         VpcVO vpc = Mockito.mock(VpcVO.class);
         Mockito.when(vpcDao.persist(any(), anyMap())).thenReturn(vpc);
         Mockito.when(vpc.getUuid()).thenReturn("uuid");
-        try {
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
                     ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null, false);
@@ -533,7 +535,7 @@ public class VpcManagerImplTest {
         Mockito.when(vpc.getUuid()).thenReturn("uuid");
         doReturn(true).when(routedIpv4Manager).isRoutedVpc(any());
         doNothing().when(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyString());
-        try {
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
                     ip4Dns[0], ip4Dns[1], null, null, true, 1500, null, null, null, false);
@@ -556,7 +558,7 @@ public class VpcManagerImplTest {
         Ipv4GuestSubnetNetworkMap ipv4GuestSubnetNetworkMap = Mockito.mock(Ipv4GuestSubnetNetworkMap.class);
         doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyInt());
         List<Long> bgpPeerIds = Arrays.asList(11L, 12L);
-        try {
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
             doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, null, vpcDomain,
                     ip4Dns[0], ip4Dns[1], null, null, true, 1500, 24, null, bgpPeerIds, false);
