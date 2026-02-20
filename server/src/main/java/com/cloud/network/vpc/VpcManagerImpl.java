@@ -50,6 +50,7 @@ import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.Vlan;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.google.common.collect.Sets;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
@@ -1246,6 +1247,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         vpc.setPublicMtu(publicMtu);
         vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
 
+        try (CheckedReservation vpcReservation = new CheckedReservation(owner, ResourceType.vpc, null, null, 1L, reservationDao, _resourceLimitMgr)) {
         if (vpc.getCidr() == null && cidrSize != null) {
             // Allocate a CIDR for VPC
             Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForVpc(vpc, cidrSize);
@@ -1265,6 +1267,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             routedIpv4Manager.persistBgpPeersForVpc(newVpc.getId(), bgpPeerIds);
         }
         return newVpc;
+        }
     }
 
     private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize, long zoneId) {
