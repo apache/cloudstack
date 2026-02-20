@@ -587,10 +587,11 @@ public class ResourceLimitManagerImplTest extends TestCase {
     public void testCheckResourceLimitWithTagNonAdmin() throws ResourceAllocationException {
         AccountVO account = Mockito.mock(AccountVO.class);
         Mockito.when(account.getId()).thenReturn(1L);
+        Mockito.when(account.getDomainId()).thenReturn(1L);
         Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
         Mockito.doReturn(new ArrayList<ResourceLimitVO>()).when(resourceLimitManager).lockAccountAndOwnerDomainRows(Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString());
         Mockito.doNothing().when(resourceLimitManager).checkAccountResourceLimit(account, null, Resource.ResourceType.cpu, hostTags.get(0), 1);
-        Mockito.doNothing().when(resourceLimitManager).checkDomainResourceLimit(account, null, Resource.ResourceType.cpu, hostTags.get(0), 1);
+        Mockito.doNothing().when(resourceLimitManager).checkDomainResourceLimit(1L, Resource.ResourceType.cpu, hostTags.get(0), 1);
         try {
             resourceLimitManager.checkResourceLimitWithTag(account, Resource.ResourceType.cpu, hostTags.get(0), 1);
         } catch (ResourceAllocationException e) {
@@ -606,9 +607,10 @@ public class ResourceLimitManagerImplTest extends TestCase {
         Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
         ProjectVO projectVO = Mockito.mock(ProjectVO.class);
         Mockito.when(projectDao.findByProjectAccountId(Mockito.anyLong())).thenReturn(projectVO);
+        Mockito.when(projectVO.getDomainId()).thenReturn(1L);
         Mockito.doReturn(new ArrayList<ResourceLimitVO>()).when(resourceLimitManager).lockAccountAndOwnerDomainRows(Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString());
         Mockito.doNothing().when(resourceLimitManager).checkAccountResourceLimit(account, projectVO, Resource.ResourceType.cpu, hostTags.get(0), 1);
-        Mockito.doNothing().when(resourceLimitManager).checkDomainResourceLimit(account, projectVO, Resource.ResourceType.cpu, hostTags.get(0), 1);
+        Mockito.doNothing().when(resourceLimitManager).checkDomainResourceLimit(1L, Resource.ResourceType.cpu, hostTags.get(0), 1);
         try {
             resourceLimitManager.checkResourceLimitWithTag(account, Resource.ResourceType.cpu, hostTags.get(0), 1);
         } catch (ResourceAllocationException e) {

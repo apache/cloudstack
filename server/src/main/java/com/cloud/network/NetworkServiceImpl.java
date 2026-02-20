@@ -3168,7 +3168,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (displayNetwork != null && displayNetwork != network.getDisplayNetwork()) {
             // Update resource count if it needs to be updated
             NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-            if (_networkMgr.resourceCountNeedsUpdate(networkOffering, network.getAclType())) {
+            if (_networkMgr.isResourceCountUpdateNeeded(networkOffering)) {
                 _resourceLimitMgr.changeResourceCount(network.getAccountId(), Resource.ResourceType.network, displayNetwork);
             }
 
