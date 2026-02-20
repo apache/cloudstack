@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -54,6 +55,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.FreezeThawVMAnswer;
@@ -90,6 +93,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
  * </ul>
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class OntapVMSnapshotStrategyTest {
 
     private static final long VM_ID = 100L;
@@ -182,7 +186,7 @@ class OntapVMSnapshotStrategyTest {
         when(vmSnapshot.getId()).thenReturn(SNAPSHOT_ID);
         when(vmSnapshot.getVmId()).thenReturn(VM_ID);
         when(vmSnapshot.getState()).thenReturn(state);
-        when(vmSnapshot.getType()).thenReturn(type);
+        lenient().when(vmSnapshot.getType()).thenReturn(type);
         return vmSnapshot;
     }
 
@@ -570,7 +574,7 @@ class OntapVMSnapshotStrategyTest {
 
         // Cleanup mocks for finally block
         when(vmSnapshotDetailsDao.listDetails(SNAPSHOT_ID)).thenReturn(Collections.emptyList());
-        doNothing().when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
+        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
 
         CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
                 () -> strategy.takeVMSnapshot(vmSnapshot));
@@ -591,7 +595,7 @@ class OntapVMSnapshotStrategyTest {
         when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class))).thenReturn(null);
 
         when(vmSnapshotDetailsDao.listDetails(SNAPSHOT_ID)).thenReturn(Collections.emptyList());
-        doNothing().when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
+        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
 
         assertThrows(CloudRuntimeException.class, () -> strategy.takeVMSnapshot(vmSnapshot));
     }
@@ -616,7 +620,7 @@ class OntapVMSnapshotStrategyTest {
 
         // Cleanup mocks
         when(vmSnapshotDetailsDao.listDetails(SNAPSHOT_ID)).thenReturn(Collections.emptyList());
-        doNothing().when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
+        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
 
         assertThrows(CloudRuntimeException.class, () -> strategy.takeVMSnapshot(vmSnapshot));
 
@@ -634,7 +638,7 @@ class OntapVMSnapshotStrategyTest {
                 .thenThrow(new AgentUnavailableException(HOST_ID));
 
         when(vmSnapshotDetailsDao.listDetails(SNAPSHOT_ID)).thenReturn(Collections.emptyList());
-        doNothing().when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
+        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
 
         CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
                 () -> strategy.takeVMSnapshot(vmSnapshot));
@@ -651,7 +655,7 @@ class OntapVMSnapshotStrategyTest {
                 .thenThrow(new OperationTimedoutException(null, 0, 0, 0, false));
 
         when(vmSnapshotDetailsDao.listDetails(SNAPSHOT_ID)).thenReturn(Collections.emptyList());
-        doNothing().when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
+        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(any(), eq(VMSnapshot.Event.OperationFailed));
 
         CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
                 () -> strategy.takeVMSnapshot(vmSnapshot));
@@ -663,8 +667,6 @@ class OntapVMSnapshotStrategyTest {
         VMSnapshotVO vmSnapshot = createTakeSnapshotVmSnapshot();
         when(vmSnapshotHelper.pickRunningHost(VM_ID)).thenReturn(HOST_ID);
         UserVmVO userVm = mock(UserVmVO.class);
-        when(userVm.getGuestOSId()).thenReturn(GUEST_OS_ID);
-        when(userVm.getId()).thenReturn(VM_ID);
         when(userVmDao.findById(VM_ID)).thenReturn(userVm);
 
         // State transition fails
@@ -786,10 +788,10 @@ class OntapVMSnapshotStrategyTest {
         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
         when(vmSnapshot.getId()).thenReturn(SNAPSHOT_ID);
         when(vmSnapshot.getVmId()).thenReturn(VM_ID);
-        when(vmSnapshot.getName()).thenReturn("vm-snap-1");
-        when(vmSnapshot.getType()).thenReturn(VMSnapshot.Type.Disk);
-        when(vmSnapshot.getDescription()).thenReturn("Test ONTAP VM Snapshot");
-        when(vmSnapshot.getOptions()).thenReturn(new VMSnapshotOptions(true));
+        lenient().when(vmSnapshot.getName()).thenReturn("vm-snap-1");
+        lenient().when(vmSnapshot.getType()).thenReturn(VMSnapshot.Type.Disk);
+        lenient().when(vmSnapshot.getDescription()).thenReturn("Test ONTAP VM Snapshot");
+        lenient().when(vmSnapshot.getOptions()).thenReturn(new VMSnapshotOptions(true));
         return vmSnapshot;
     }
 
@@ -809,7 +811,7 @@ class OntapVMSnapshotStrategyTest {
 
         when(vmSnapshotDao.findCurrentSnapshotByVmId(VM_ID)).thenReturn(null);
 
-        doNothing().when(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.CreateRequested);
+        doReturn(true).when(vmSnapshotHelper).vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.CreateRequested);
 
         return userVm;
     }
