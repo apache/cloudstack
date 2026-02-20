@@ -205,11 +205,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     protected Pair<List<QuotaSummaryResponse>, Integer> getQuotaSummaryResponseWithListAll(QuotaSummaryCmd cmd, Account caller) {
-        Long accountId = cmd.getEntityOwnerId();
-        if (accountId == -1) {
-            accountId = cmd.isListAll() ? null : caller.getAccountId();
-        }
-
         Long domainId = cmd.getDomainId();
         if (domainId != null) {
             DomainVO domain = domainDao.findByIdIncludingRemoved(domainId);
@@ -219,6 +214,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
 
         String domainPath = getDomainPathByDomainIdForDomainAdmin(caller);
+
+        Long accountId = cmd.getEntityOwnerId();
+        if (accountId == -1) {
+            // No specific account was provided
+            accountId = cmd.isListAll() ? null : caller.getAccountId();
+        }
 
         String keyword = null;
         if (Account.Type.ADMIN.equals(caller.getType())) {
@@ -250,7 +251,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     protected Pair<List<QuotaSummaryResponse>, Integer> getQuotaSummaryResponse(Long accountId, String accountName, Long domainId, String domainPath, QuotaSummaryCmd cmd) {
-        if (accountId == -1) {
+        if (accountId != null && accountId == -1) {
+            // Either no specific account as provided, or list all is disabled
             accountId = CallContext.current().getCallingAccountId();
         }
 
@@ -299,33 +301,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
 
         return response;
-    }
-
-    protected QuotaSummaryResponse getQuotaSummaryResponse(final Account account) {
-        Calendar[] period = quotaStatement.getCurrentStatementTime();
-
-        if (account != null) {
-            QuotaSummaryResponse qr = new QuotaSummaryResponse();
-            DomainVO domain = domainDao.findById(account.getDomainId());
-            BigDecimal curBalance = _quotaBalanceDao.lastQuotaBalance(account.getAccountId(), account.getDomainId(), period[1].getTime());
-            BigDecimal quotaUsage = quotaUsageDao.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, period[0].getTime(), period[1].getTime());
-
-            qr.setAccountId(account.getUuid());
-            qr.setAccountName(account.getAccountName());
-            qr.setDomainId(domain.getUuid());
-            qr.setDomainPath(domain.getName());
-            qr.setBalance(curBalance);
-            qr.setQuotaUsage(quotaUsage);
-            qr.setState(account.getState());
-            qr.setStartDate(period[0].getTime());
-            qr.setEndDate(period[1].getTime());
-            qr.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
-            qr.setQuotaEnabled(QuotaConfig.QuotaAccountEnabled.valueIn(account.getId()));
-            qr.setObjectName("summary");
-            return qr;
-        } else {
-            return new QuotaSummaryResponse();
-        }
     }
 
     public boolean isUserAllowedToSeeActivationRules(User user) {

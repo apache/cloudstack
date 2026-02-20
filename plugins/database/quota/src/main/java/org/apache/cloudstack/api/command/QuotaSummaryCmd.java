@@ -107,7 +107,8 @@ public class QuotaSummaryCmd extends BaseListCmd {
     }
 
     public Boolean isListAll() {
-        return ObjectUtils.defaultIfNull(listAll, Boolean.FALSE);
+        // If a domain ID was specified, then allow listing all summaries of domain
+        return ObjectUtils.defaultIfNull(listAll, Boolean.FALSE) || domainId != null;
     }
 
     public void setListAll(Boolean listAll) {
