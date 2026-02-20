@@ -1447,7 +1447,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         for (String command : apiNameList) {
             try {
                 if (roleAndPermissionsForRequested == null) {
-                    apiChecker.checkAccess(caller, command);
+                    apiChecker.checkAccess(requested, command);
                 } else {
                     apiChecker.checkAccess(caller, command, roleAndPermissionsForRequested.first(), roleAndPermissionsForRequested.second());
                 }
