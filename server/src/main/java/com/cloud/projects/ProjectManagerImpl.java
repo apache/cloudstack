@@ -36,6 +36,7 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -47,6 +48,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.utils.mailing.MailAddress;
 import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
@@ -159,6 +161,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     private VpcManager _vpcMgr;
     @Inject
     MessageBus messageBus;
+    @Inject
+    private ReservationDao reservationDao;
 
     protected boolean _invitationRequired = false;
     protected long _invitationTimeOut = 86400000;
@@ -272,8 +276,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
             owner = _accountDao.findById(user.getAccountId());
         }
 
-        //do resource limit check
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.project);
+        try (CheckedReservation projectReservation = new CheckedReservation(owner, ResourceType.project, null, null, 1L, reservationDao, _resourceLimitMgr)) {
 
         final Account ownerFinal = owner;
         User finalUser = user;
@@ -308,6 +311,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         messageBus.publish(_name, ProjectManager.MESSAGE_CREATE_TUNGSTEN_PROJECT_EVENT, PublishScope.LOCAL, project);
 
         return project;
+        }
     }
 
     @Override
@@ -491,6 +495,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         //remove account
         ProjectAccountVO projectAccount = _projectAccountDao.findByProjectIdAccountId(projectId, account.getId());
         success = _projectAccountDao.remove(projectAccount.getId());
+        if (projectAccount.getAccountRole() == Role.Admin) {
+            _resourceLimitMgr.decrementResourceCount(account.getId(), ResourceType.project);
+        }
 
         //remove all invitations for account
         if (success) {
@@ -594,12 +601,22 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
             if (username == null) {
                 throw new InvalidParameterValueException("User information (ID) is required to add user to the project");
             }
+
+            boolean shouldIncrementResourceCount = projectRole != null && Role.Admin == projectRole;
+            try (CheckedReservation cr = new CheckedReservation(userAccount, ResourceType.project, shouldIncrementResourceCount ? 1L : 0L, reservationDao, _resourceLimitMgr)) {
             if (assignUserToProject(project, user.getId(), user.getAccountId(), projectRole,
                     Optional.ofNullable(role).map(ProjectRole::getId).orElse(null)) != null) {
+                if (shouldIncrementResourceCount) {
+                    _resourceLimitMgr.incrementResourceCount(userAccount.getId(), ResourceType.project);
+                }
                 return true;
+            } else {
+                logger.warn("Failed to add user to project: {}", project);
+                return false;
             }
-            logger.warn("Failed to add user to project: {}", project);
-            return false;
+            } catch (ResourceAllocationException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -652,13 +669,17 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
     }
 
     private void updateProjectAccount(ProjectAccountVO futureOwner, Role newAccRole, Long accountId) throws ResourceAllocationException {
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(accountId), ResourceType.project);
+        Account account = _accountMgr.getAccount(accountId);
+        boolean shouldIncrementResourceCount = Role.Admin == newAccRole;
+
+        try (CheckedReservation checkedReservation = new CheckedReservation(account, ResourceType.project, shouldIncrementResourceCount ? 1L : 0L, reservationDao, _resourceLimitMgr)) {
         futureOwner.setAccountRole(newAccRole);
         _projectAccountDao.update(futureOwner.getId(), futureOwner);
-        if (newAccRole != null && Role.Admin == newAccRole) {
+        if (shouldIncrementResourceCount) {
             _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.project);
         } else {
             _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.project);
+        }
         }
     }
 
@@ -701,7 +722,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                                     " doesn't belong to the project. Add it to the project first and then change the project's ownership");
                         }
 
-                        //do resource limit check
+                        try (CheckedReservation checkedReservation = new CheckedReservation(futureOwnerAccount, ResourceType.project, null, null, 1L, reservationDao, _resourceLimitMgr)) {
+
                         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(futureOwnerAccount.getId()), ResourceType.project);
 
                         //unset the role for the old owner
@@ -714,7 +736,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                         futureOwner.setAccountRole(Role.Admin);
                         _projectAccountDao.update(futureOwner.getId(), futureOwner);
                         _resourceLimitMgr.incrementResourceCount(futureOwnerAccount.getId(), ResourceType.project);
-
+                        }
                     } else {
                         logger.trace("Future owner {}is already the owner of the project {}", newOwnerName, project);
                     }
@@ -857,12 +879,21 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
             if (account == null) {
                 throw new InvalidParameterValueException("Account information is required for assigning account to the project");
             }
+
+            boolean shouldIncrementResourceCount = projectRoleType != null && Role.Admin == projectRoleType;
+            try (CheckedReservation cr = new CheckedReservation(account, ResourceType.project, shouldIncrementResourceCount ? 1L : 0L, reservationDao, _resourceLimitMgr)) {
             if (assignAccountToProject(project, account.getId(), projectRoleType, null,
                     Optional.ofNullable(projectRole).map(ProjectRole::getId).orElse(null)) != null) {
+                if (shouldIncrementResourceCount) {
+                    _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.project);
+                }
                 return true;
             } else {
                 logger.warn("Failed to add account {} to project {}", accountName, project);
                 return false;
+            }
+            } catch (ResourceAllocationException e) {
+                throw new RuntimeException(e);
             }
         }
     }
@@ -1042,7 +1073,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 boolean success = true;
                 ProjectAccountVO projectAccount = _projectAccountDao.findByProjectIdUserId(projectId, user.getAccountId(), user.getId());
                 success = _projectAccountDao.remove(projectAccount.getId());
-
+                if (projectAccount.getAccountRole() == Role.Admin) {
+                    _resourceLimitMgr.decrementResourceCount(user.getAccountId(), ResourceType.project);
+                }
                 if (success) {
                     logger.debug("Removed user {} from project. Removing any invite sent to the user", user);
                     ProjectInvitation invite = _projectInvitationDao.findByUserIdProjectId(user.getId(), user.getAccountId(),  projectId);
