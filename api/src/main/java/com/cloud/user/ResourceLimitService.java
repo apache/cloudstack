@@ -191,6 +191,7 @@ public interface ResourceLimitService {
      */
     public void checkResourceLimit(Account account, ResourceCount.ResourceType type, long... count) throws ResourceAllocationException;
     public void checkResourceLimitWithTag(Account account, ResourceCount.ResourceType type, String tag, long... count) throws ResourceAllocationException;
+    public void checkResourceLimitWithTag(Account account, Long domainId, boolean considerSystemAccount, ResourceCount.ResourceType type, String tag, long... count) throws ResourceAllocationException;
 
     /**
      * Gets the count of resources for a resource type and account
@@ -294,4 +295,5 @@ public interface ResourceLimitService {
     void incrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu);
     void decrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu);
 
+    long recalculateDomainResourceCount(final long domainId, final ResourceType type, String tag);
 }

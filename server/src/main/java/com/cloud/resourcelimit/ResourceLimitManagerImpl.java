@@ -36,9 +36,6 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventTypes;
-import com.cloud.utils.Ternary;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -86,12 +83,15 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -118,6 +118,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -203,6 +204,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     DiskOfferingDao diskOfferingDao;
     @Inject
     BucketDao bucketDao;
+    @Inject
+    private NetworkDomainDao networkDomainDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
     protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
@@ -514,15 +517,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return max;
     }
 
-    protected void checkDomainResourceLimit(final Account account, final Project project, final ResourceType type, String tag, long numResources) throws ResourceAllocationException {
-        // check all domains in the account's domain hierarchy
-        Long domainId;
-        if (project != null) {
-            domainId = project.getDomainId();
-        } else {
-            domainId = account.getDomainId();
-        }
-
+    protected void checkDomainResourceLimit(Long domainId, final ResourceType type, String tag, long numResources) throws ResourceAllocationException {
         while (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
             // no limit check if it is ROOT domain
@@ -644,11 +639,16 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void checkResourceLimitWithTag(final Account account, final ResourceType type, String tag, long... count) throws ResourceAllocationException {
+        checkResourceLimitWithTag(account, null, false, type, tag, count);
+    }
+
+    @Override
+    public void checkResourceLimitWithTag(final Account account, Long domainId, boolean considerSystemAccount, final ResourceType type, String tag, long... count) throws ResourceAllocationException {
         final long numResources = ((count.length == 0) ? 1 : count[0]);
         Project project = null;
 
         // Don't place any limits on system or root admin accounts
-        if (_accountMgr.isRootAdmin(account.getId())) {
+        if (_accountMgr.isRootAdmin(account.getId()) && !(considerSystemAccount && Account.ACCOUNT_ID_SYSTEM == account.getId())) {
             return;
         }
 
@@ -656,6 +656,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             project = _projectDao.findByProjectAccountId(account.getId());
         }
 
+        if (domainId == null) {
+            if (project != null) {
+                domainId = project.getDomainId();
+            } else {
+                domainId = account.getDomainId();
+            }
+        }
+        Long domainIdFinal = domainId;
         final Project projectFinal = project;
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<ResourceAllocationException>() {
             @Override
@@ -665,7 +673,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 // Check account limits
                 checkAccountResourceLimit(account, projectFinal, type, tag, numResources);
                 // check all domains in the account's domain hierarchy
-                checkDomainResourceLimit(account, projectFinal, type, tag, numResources);
+                checkDomainResourceLimit(domainIdFinal, type, tag, numResources);
             }
         });
     }
@@ -1201,7 +1209,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
      * @param type the resource type to do the recalculation for
      * @return the resulting new resource count
      */
-    protected long recalculateDomainResourceCount(final long domainId, final ResourceType type, String tag) {
+    public long recalculateDomainResourceCount(final long domainId, final ResourceType type, String tag) {
         List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(domainId);
         List<DomainVO> childDomains = _domainDao.findImmediateChildrenForParent(domainId);
 
@@ -1240,6 +1248,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             // calculate project count here
             if (type == ResourceType.project) {
                 newResourceCount += _projectDao.countProjectsForDomain(domainId);
+            }
+
+            if (type == ResourceType.network) {
+                newResourceCount += networkDomainDao.listDomainNetworkMapByDomain(domainId).size();
             }
 
             // TODO make sure that the resource counts are not null

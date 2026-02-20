@@ -945,7 +945,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType) {
+    public boolean isResourceCountUpdateNeeded(NetworkOffering ntwkOff) {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 

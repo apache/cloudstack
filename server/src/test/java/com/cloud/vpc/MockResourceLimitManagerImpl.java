@@ -238,6 +238,11 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
+    public void checkResourceLimitWithTag(Account account, Long domainId, boolean considerSystemAccount, ResourceType type, String tag, long... count) throws ResourceAllocationException {
+
+    }
+
+    @Override
     public List<String> getResourceLimitHostTags() {
         return null;
     }
@@ -395,5 +400,10 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     @Override
     public void decrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu) {
 
+    }
+
+    @Override
+    public long recalculateDomainResourceCount(long domainId, ResourceType type, String tag) {
+        return 0;
     }
 }
