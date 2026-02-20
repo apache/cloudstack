@@ -85,6 +85,16 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage-snapshot</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
             <version>${swagger-annotations.version}</version>
