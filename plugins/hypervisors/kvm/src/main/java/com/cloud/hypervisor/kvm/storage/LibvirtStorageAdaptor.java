@@ -1227,7 +1227,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * Activates a CLVM volume in shared mode so all hosts in the cluster can access it.
      * This is necessary after volume creation since libvirt creates LVs with exclusive activation by default.
      *
-     * @param volumePath The full path to the LV (e.g., /dev/vgname/volume-uuid)
+     * @param volumePath The full path to the LV (e.g., /dev/vgname/volume-path)
      */
     private void activateClvmVolumeInSharedMode(String volumePath) {
         try {

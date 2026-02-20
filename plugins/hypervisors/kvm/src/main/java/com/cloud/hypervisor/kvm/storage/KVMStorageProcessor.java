@@ -1285,22 +1285,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    /**
-     * Extract VG name from CLVM disk path.
-     * Path format: /dev/vgname/volumeuuid
-     * Returns: vgname
-     */
-    private String extractVgNameFromDiskPath(String diskPath) {
-        if (diskPath == null || diskPath.isEmpty()) {
-            return null;
-        }
-        String[] pathParts = diskPath.split("/");
-        if (pathParts.length >= 3) {
-            return pathParts[2];  // /dev/vgname/volumeuuid -> vgname
-        }
-        return null;
-    }
-
     protected synchronized void attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params, DataStoreTO store) throws
             LibvirtException, InternalErrorException {
         DiskDef iso = new DiskDef();

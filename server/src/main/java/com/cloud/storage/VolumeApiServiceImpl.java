@@ -3055,8 +3055,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             vgName = vgName.substring(1);
         }
 
-        // Full LV path: /dev/vgname/volume-uuid
-        String lvPath = String.format("/dev/%s/%s", vgName, volumeUuid);
+        // Full LV path: /dev/vgname/volume-path
+        String lvPath = String.format("/dev/%s/%s", vgName, volume.getPath());
 
         try {
             // Step 1: Deactivate on source host (if different from dest)
