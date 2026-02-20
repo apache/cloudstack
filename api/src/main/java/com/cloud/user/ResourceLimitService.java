@@ -247,7 +247,7 @@ public interface ResourceLimitService {
     void updateTaggedResourceLimitsAndCountsForAccounts(List<AccountResponse> responses, String tag);
     void updateTaggedResourceLimitsAndCountsForDomains(List<DomainResponse> responses, String tag);
     void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException;
-
+    List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering);
     void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentOffering, DiskOffering newOffering) throws ResourceAllocationException;
 

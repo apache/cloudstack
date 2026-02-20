@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -87,6 +88,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
@@ -354,6 +356,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private BackupDao backupDao;
     @Inject
     HostPodDao podDao;
+    @Inject
+    private ReservationDao reservationDao;
 
 
     protected Gson _gson;
@@ -918,8 +922,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         Storage.ProvisioningType provisioningType = diskOffering.getProvisioningType();
 
-        // Check that the resource limit for volume & primary storage won't be exceeded
-        _resourceLimitMgr.checkVolumeResourceLimit(owner,displayVolume, size, diskOffering);
+        List<String> tags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(displayVolume, diskOffering);
+        if (tags.size() == 1 && tags.get(0) == null) {
+            tags = new ArrayList<>();
+        }
+        try (CheckedReservation volumeReservation = new CheckedReservation(owner, ResourceType.volume, null, tags, 1L, reservationDao, _resourceLimitMgr);
+             CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, null, tags, size, reservationDao, _resourceLimitMgr)) {
 
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -942,6 +950,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         return commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()), details);
+         } catch (Exception e) {
+            logger.error(e);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
