@@ -1729,7 +1729,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return tags;
     }
 
-    protected List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering) {
+    @Override
+    public List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering) {
         if (Boolean.FALSE.equals(display)) {
             return new ArrayList<>();
         }

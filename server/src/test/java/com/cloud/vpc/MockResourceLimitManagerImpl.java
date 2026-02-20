@@ -278,6 +278,11 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
+    public List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering) {
+        return null;
+    }
+
+    @Override
     public void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
             DiskOffering currentOffering, DiskOffering newOffering) throws ResourceAllocationException {
 

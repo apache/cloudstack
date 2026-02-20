@@ -35,16 +35,11 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectManager;
-import com.cloud.vm.snapshot.VMSnapshot;
-import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
-import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
@@ -94,6 +89,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
@@ -166,8 +162,11 @@ import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
@@ -242,8 +241,12 @@ import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
@@ -367,6 +370,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     HostPodDao podDao;
     @Inject
     EndPointSelector _epSelector;
+    @Inject
+    private ReservationDao reservationDao;
 
     @Inject
     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
@@ -937,8 +942,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         Storage.ProvisioningType provisioningType = diskOffering.getProvisioningType();
 
-        // Check that the resource limit for volume & primary storage won't be exceeded
-        _resourceLimitMgr.checkVolumeResourceLimit(owner,displayVolume, size, diskOffering);
+        List<String> tags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(displayVolume, diskOffering);
+        if (tags.size() == 1 && tags.get(0) == null) {
+            tags = new ArrayList<>();
+        }
+        try (CheckedReservation volumeReservation = new CheckedReservation(owner, ResourceType.volume, null, tags, 1L, reservationDao, _resourceLimitMgr);
+             CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, null, tags, size, reservationDao, _resourceLimitMgr)) {
 
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -961,6 +970,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         return commitVolume(cmd.getSnapshotId(), caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()), details);
+         } catch (Exception e) {
+            logger.error(e);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -978,7 +991,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
-                VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, provisioningType, 0, Volume.Type.DATADISK);
+                VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, -1L, null, null, provisioningType, 0, Volume.Type.DATADISK);
                 volume.setPoolId(null);
                 volume.setUuid(uuid);
                 volume.setDataCenterId(zoneId);
@@ -5276,20 +5289,20 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private Pair<JobInfo.Status, String> orchestrateAttachVolumeToVM(VmWorkAttachVolume work) throws Exception {
         Volume vol = orchestrateAttachVolumeToVM(work.getVmId(), work.getVolumeId(), work.getDeviceId());
 
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(new Long(vol.getId())));
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(vol.getId()));
     }
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateDetachVolumeFromVM(VmWorkDetachVolume work) throws Exception {
         Volume vol = orchestrateDetachVolumeFromVM(work.getVmId(), work.getVolumeId());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(new Long(vol.getId())));
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(vol.getId()));
     }
 
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateResizeVolume(VmWorkResizeVolume work) throws Exception {
         Volume vol = orchestrateResizeVolume(work.getVolumeId(), work.getCurrentSize(), work.getNewSize(), work.getNewMinIops(), work.getNewMaxIops(), work.getNewHypervisorSnapshotReserve(),
                 work.getNewServiceOfferingId(), work.isShrinkOk());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(new Long(vol.getId())));
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(vol.getId()));
     }
 
     @ReflectionUse
