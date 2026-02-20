@@ -136,6 +136,7 @@ import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PreMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RecreateCheckpointsCommand;
@@ -3108,6 +3109,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         updateOverCommitRatioForVmProfile(profile, dest.getHost().getClusterId());
 
         final VirtualMachineTO to = toVmTO(profile);
+
+        logger.info("Sending PreMigrationCommand to source host {} for VM {}", srcHostId, vm.getInstanceName());
+        final PreMigrationCommand preMigCmd = new PreMigrationCommand(to, vm.getInstanceName());
+        Answer preMigAnswer = null;
+        try {
+            preMigAnswer = _agentMgr.send(srcHostId, preMigCmd);
+            if (preMigAnswer == null || !preMigAnswer.getResult()) {
+                final String details = preMigAnswer != null ? preMigAnswer.getDetails() : "null answer returned";
+                final String msg = "Failed to prepare source host for migration: " + details;
+                logger.error("Failed to prepare source host {} for migration of VM {}: {}", srcHostId, vm.getInstanceName(), details);
+                throw new CloudRuntimeException(msg);
+            }
+            logger.info("Successfully prepared source host {} for migration of VM {}", srcHostId, vm.getInstanceName());
+        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Failed to send PreMigrationCommand to source host {}: {}", srcHostId, e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to prepare source host for migration: " + e.getMessage(), e);
+        }
+
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
         setVmNetworkDetails(vm, to);
 
@@ -4914,6 +4933,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         volumeMgr.prepareForMigration(profile, dest);
 
         final VirtualMachineTO to = toVmTO(profile);
+
+        // Step 1: Send PreMigrationCommand to source host to convert CLVM volumes to shared mode
+        // This must happen BEFORE PrepareForMigrationCommand on destination to avoid lock conflicts
+        logger.info("Sending PreMigrationCommand to source host {} for VM {}", srcHostId, vm.getInstanceName());
+        final PreMigrationCommand preMigCmd = new PreMigrationCommand(to, vm.getInstanceName());
+        Answer preMigAnswer = null;
+        try {
+            preMigAnswer = _agentMgr.send(srcHostId, preMigCmd);
+            if (preMigAnswer == null || !preMigAnswer.getResult()) {
+                final String details = preMigAnswer != null ? preMigAnswer.getDetails() : "null answer returned";
+                final String msg = "Failed to prepare source host for migration: " + details;
+                logger.error("Failed to prepare source host {} for migration of VM {}: {}", srcHostId, vm.getInstanceName(), details);
+                throw new CloudRuntimeException(msg);
+            }
+            logger.info("Successfully prepared source host {} for migration of VM {}", srcHostId, vm.getInstanceName());
+        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Failed to send PreMigrationCommand to source host {}: {}", srcHostId, e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to prepare source host for migration: " + e.getMessage(), e);
+        }
+
+        // Step 2: Send PrepareForMigrationCommand to destination host
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Migrating, vm.getType(), vm.getId());

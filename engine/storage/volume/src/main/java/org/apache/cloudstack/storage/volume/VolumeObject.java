@@ -365,13 +365,16 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public Long getDestinationHostId() {
         // If not in memory, try to load from database (volume_details table)
+        // For CLVM volumes, this uses the CLVM_LOCK_HOST_ID which serves dual purpose:
+        // 1. During creation: hints where to create the volume
+        // 2. After creation: tracks which host holds the exclusive lock
         if (destinationHostId == null && volumeVO != null) {
-            VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeVO.getId(), DESTINATION_HOST_ID);
+            VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeVO.getId(), CLVM_LOCK_HOST_ID);
             if (detail != null && detail.getValue() != null && !detail.getValue().isEmpty()) {
                 try {
                     destinationHostId = Long.parseLong(detail.getValue());
                 } catch (NumberFormatException e) {
-                    logger.warn("Invalid destinationHostId value in volume_details for volume {}: {}", volumeVO.getUuid(), detail.getValue());
+                    logger.warn("Invalid CLVM lock host ID value in volume_details for volume {}: {}", volumeVO.getUuid(), detail.getValue());
                 }
             }
         }

@@ -33,6 +33,8 @@ import javax.inject.Inject;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.storage.Storage;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.QueryBuilder;
@@ -80,6 +82,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private DedicatedResourceDao dedicatedResourceDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private VolumeDetailsDao _volDetailsDao;
 
     private static final String VOL_ENCRYPT_COLUMN_NAME = "volume_encryption_support";
     private final String findOneHostOnPrimaryStorage = "select t.id from "
@@ -449,7 +453,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
         // For CLVM volumes with destination host hint, route to that specific host
         // This ensures volumes are created on the correct host with exclusive locks
         if (object instanceof VolumeInfo && store.getRole() == DataStoreRole.Primary) {
-            EndPoint clvmEndpoint = selectClvmEndpointIfApplicable((VolumeInfo) object, "volume creation");
+            VolumeInfo volInfo = (VolumeInfo) object;
+            EndPoint clvmEndpoint = selectClvmEndpointIfApplicable(volInfo, "volume creation");
             if (clvmEndpoint != null) {
                 return clvmEndpoint;
             }
@@ -558,6 +563,31 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
             case DELETEVOLUME: {
                 VolumeInfo volume = (VolumeInfo) object;
+
+                // For CLVM volumes, route to the host holding the exclusive lock
+                if (volume.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+                    DataStore store = volume.getDataStore();
+                    if (store.getRole() == DataStoreRole.Primary) {
+                        StoragePoolVO pool = _storagePoolDao.findById(store.getId());
+                        if (pool != null && pool.getPoolType() == Storage.StoragePoolType.CLVM) {
+                            Long lockHostId = getClvmLockHostId(volume);
+                            if (lockHostId != null) {
+                                logger.info("Routing CLVM volume {} deletion to lock holder host {}",
+                                        volume.getUuid(), lockHostId);
+                                EndPoint ep = getEndPointFromHostId(lockHostId);
+                                if (ep != null) {
+                                    return ep;
+                                }
+                                logger.warn("Could not get endpoint for CLVM lock host {}, falling back to default selection",
+                                        lockHostId);
+                            } else {
+                                logger.debug("No CLVM lock host tracked for volume {}, using default endpoint selection",
+                                        volume.getUuid());
+                            }
+                        }
+                    }
+                }
+
                 if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
                     VirtualMachine vm = volume.getAttachedVM();
                     if (vm != null) {
@@ -653,5 +683,25 @@ public class DefaultEndPointSelector implements EndPointSelector {
             throw new CloudRuntimeException("shouldn't use it for other scope");
         }
         return endPoints;
+    }
+
+    /**
+     * Retrieves the host ID that currently holds the exclusive lock on a CLVM volume.
+     * This is tracked in volume_details table for proper routing of delete operations.
+     *
+     * @param volume The CLVM volume
+     * @return Host ID holding the lock, or null if not tracked
+     */
+    private Long getClvmLockHostId(VolumeInfo volume) {
+        VolumeDetailVO detail = _volDetailsDao.findDetail(volume.getId(), VolumeInfo.CLVM_LOCK_HOST_ID);
+        if (detail != null && detail.getValue() != null && !detail.getValue().isEmpty()) {
+            try {
+                return Long.parseLong(detail.getValue());
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid CLVM lock host ID in volume_details for volume {}: {}",
+                        volume.getUuid(), detail.getValue());
+            }
+        }
+        return null;
     }
 }

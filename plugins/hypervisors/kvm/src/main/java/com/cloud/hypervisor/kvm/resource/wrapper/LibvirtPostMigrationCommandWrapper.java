@@ -73,7 +73,7 @@ public final class LibvirtPostMigrationCommandWrapper extends CommandWrapper<Pos
             return new PostMigrationAnswer(command);
 
         } catch (final LibvirtException e) {
-            logger.error("LibVirt error during post-migration for VM {}: {}", vmName, e.getMessage(), e);
+            logger.error("Libvirt error during post-migration for VM {}: {}", vmName, e.getMessage(), e);
             return new PostMigrationAnswer(command, e);
         } catch (final Exception e) {
             logger.error("Error during post-migration for VM {}: {}", vmName, e.getMessage(), e);

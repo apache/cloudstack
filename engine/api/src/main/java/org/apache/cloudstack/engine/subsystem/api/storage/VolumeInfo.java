@@ -32,12 +32,6 @@ import java.util.Set;
 public interface VolumeInfo extends DownloadableDataInfo, Volume {
 
     /**
-     * Constant for the volume detail key that stores the destination host ID for CLVM volume creation routing.
-     * This helps ensure volumes are created on the correct host with exclusive locks.
-     */
-    String DESTINATION_HOST_ID = "destinationHostId";
-
-    /**
      * Constant for the volume detail key that stores the host ID currently holding the CLVM exclusive lock.
      * This is used during lightweight lock migration to determine the source host for lock transfer.
      */

@@ -1754,6 +1754,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (DataStoreRole.Image.equals(role)) {
                 _resourceLimitMgr.decrementResourceCount(volOnStorage.getAccountId(), ResourceType.secondary_storage, volOnStorage.getSize());
             }
+
+            // Clean up CLVM lock host tracking detail after successful deletion from primary storage
+            if (DataStoreRole.Primary.equals(role)) {
+                cleanupClvmLockHostDetail(volume);
+            }
         }
     }
 
@@ -2989,6 +2994,45 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     /**
+     * Cleans up CLVM lock host tracking detail from volume_details table.
+     * Called after successful volume deletion to prevent orphaned records.
+     *
+     * @param volume The volume being deleted
+     */
+    private void cleanupClvmLockHostDetail(VolumeVO volume) {
+        try {
+            VolumeDetailVO detail = _volsDetailsDao.findDetail(volume.getId(), VolumeInfo.CLVM_LOCK_HOST_ID);
+            if (detail != null) {
+                logger.debug("Removing CLVM lock host detail for deleted volume {}", volume.getUuid());
+                _volsDetailsDao.remove(detail.getId());
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to clean up CLVM lock host detail for volume {}: {}",
+                    volume.getUuid(), e.getMessage());
+        }
+    }
+
+    /**
+     * Safely sets or updates the CLVM_LOCK_HOST_ID detail for a volume.
+     * If the detail already exists, it will be updated. Otherwise, it will be created.
+     *
+     * @param volumeId The ID of the volume
+     * @param hostId The host ID that holds/should hold the CLVM exclusive lock
+     */
+    private void setClvmLockHostId(long volumeId, long hostId) {
+        VolumeDetailVO existingDetail = _volsDetailsDao.findDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID);
+
+        if (existingDetail != null) {
+            existingDetail.setValue(String.valueOf(hostId));
+            _volsDetailsDao.update(existingDetail.getId(), existingDetail);
+            logger.debug("Updated CLVM_LOCK_HOST_ID for volume {} to host {}", volumeId, hostId);
+        } else {
+            _volsDetailsDao.addDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID, String.valueOf(hostId), false);
+            logger.debug("Created CLVM_LOCK_HOST_ID for volume {} with host {}", volumeId, hostId);
+        }
+    }
+
+    /**
      * Transfers CLVM volume exclusive lock from source host to destination host.
      *
      * @param volume The volume to transfer lock for
@@ -3054,7 +3098,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             // Step 3: Store the new lock host in volume_details for future reference
-            _volsDetailsDao.addDetail(volume.getId(), VolumeInfo.CLVM_LOCK_HOST_ID, String.valueOf(destHostId), false);
+            setClvmLockHostId(volume.getId(), destHostId);
 
             logger.info("Successfully transferred CLVM lock for volume {} from host {} to host {}",
                     volumeUuid, sourceHostId, destHostId);

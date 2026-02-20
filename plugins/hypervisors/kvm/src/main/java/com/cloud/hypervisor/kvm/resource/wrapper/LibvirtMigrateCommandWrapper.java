@@ -238,9 +238,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 libvirtComputingResource.detachAndAttachConfigDriveISO(conn, vmName);
             }
 
-            // Activate CLVM volumes in shared mode before migration starts
-            LibvirtComputingResource.modifyClvmVolumesStateForMigration(disks, libvirtComputingResource, to, LibvirtComputingResource.ClvmVolumeState.SHARED);
-
             //run migration in thread so we can monitor it
             logger.info("Starting live migration of instance {} to destination host {} having the final XML configuration: {}.", vmName, dconn.getURI(), maskSensitiveInfoInXML(xmlDesc));
             final ExecutorService executor = Executors.newFixedThreadPool(1);
