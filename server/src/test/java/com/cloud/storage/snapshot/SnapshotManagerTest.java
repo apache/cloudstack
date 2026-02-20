@@ -36,6 +36,7 @@ import java.util.UUID;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.command.user.snapshot.ExtractSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -65,6 +66,7 @@ import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -233,8 +235,6 @@ public class SnapshotManagerTest {
         when(_storageStrategyFactory.getSnapshotStrategy(Mockito.any(SnapshotVO.class), Mockito.eq(SnapshotOperation.BACKUP))).thenReturn(snapshotStrategy);
         when(_storageStrategyFactory.getSnapshotStrategy(Mockito.any(SnapshotVO.class), Mockito.eq(SnapshotOperation.REVERT))).thenReturn(snapshotStrategy);
 
-        doNothing().when(_resourceLimitMgr).checkResourceLimit(any(Account.class), any(ResourceType.class));
-        doNothing().when(_resourceLimitMgr).checkResourceLimit(any(Account.class), any(ResourceType.class), anyLong());
         doNothing().when(_resourceLimitMgr).decrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
         doNothing().when(_resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class));
         doNothing().when(_resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
@@ -317,7 +317,12 @@ public class SnapshotManagerTest {
         when(mockList2.size()).thenReturn(0);
         when(_vmSnapshotDao.listByInstanceId(TEST_VM_ID, VMSnapshot.State.Creating, VMSnapshot.State.Reverting, VMSnapshot.State.Expunging)).thenReturn(mockList2);
         when(_snapshotDao.persist(any(SnapshotVO.class))).thenReturn(snapshotMock);
-        _snapshotMgr.allocSnapshot(TEST_VOLUME_ID, Snapshot.MANUAL_POLICY_ID, null, null);
+
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            _snapshotMgr.allocSnapshot(TEST_VOLUME_ID, Snapshot.MANUAL_POLICY_ID, null, null);
+        } catch (ResourceAllocationException e) {
+            Assert.fail(String.format("Failure with exception: %s", e.getMessage()));
+        }
     }
 
     @Test(expected = InvalidParameterValueException.class)
