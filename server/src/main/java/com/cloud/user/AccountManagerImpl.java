@@ -1449,7 +1449,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (roleAndPermissionsForRequested == null) {
                     apiChecker.checkAccess(requested, command);
                 } else {
-                    apiChecker.checkAccess(caller, command, roleAndPermissionsForRequested.first(), roleAndPermissionsForRequested.second());
+                    apiChecker.checkAccess(requested, command, roleAndPermissionsForRequested.first(), roleAndPermissionsForRequested.second());
                 }
             } catch (PermissionDeniedException pde) {
                 continue;
