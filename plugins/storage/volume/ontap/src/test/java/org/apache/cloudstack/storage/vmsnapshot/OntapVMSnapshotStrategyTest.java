@@ -713,6 +713,39 @@ class OntapVMSnapshotStrategyTest {
         verify(agentMgr, times(2)).send(eq(HOST_ID), any(FreezeThawVMCommand.class));
     }
 
+    @Test
+    void testTakeVMSnapshot_WithQuiesceTrue_SucceedsWithoutPayloadRejection() throws Exception {
+        VMSnapshotVO vmSnapshot = createTakeSnapshotVmSnapshot();
+        // Explicitly set quiesce to TRUE — this is the scenario that was failing
+        VMSnapshotOptions options = new VMSnapshotOptions(true);
+        when(vmSnapshot.getOptions()).thenReturn(options);
+
+        setupTakeSnapshotCommon(vmSnapshot);
+        setupSingleVolumeForTakeSnapshot();
+
+        FreezeThawVMAnswer freezeAnswer = mock(FreezeThawVMAnswer.class);
+        when(freezeAnswer.getResult()).thenReturn(true);
+        FreezeThawVMAnswer thawAnswer = mock(FreezeThawVMAnswer.class);
+        when(thawAnswer.getResult()).thenReturn(true);
+        when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class)))
+                .thenReturn(freezeAnswer)
+                .thenReturn(thawAnswer);
+
+        SnapshotInfo snapshotInfo = mock(SnapshotInfo.class);
+        doReturn(snapshotInfo).when(strategy).createDiskSnapshot(any(), any(), any());
+        doNothing().when(strategy).processAnswer(any(), any(), any(), any());
+        doNothing().when(strategy).publishUsageEvent(any(String.class), any(VMSnapshot.class), any(), any(VolumeObjectTO.class));
+        doNothing().when(strategy).publishUsageEvent(any(String.class), any(VMSnapshot.class), any(), anyLong(), anyLong());
+
+        VMSnapshot result = strategy.takeVMSnapshot(vmSnapshot);
+
+        // Snapshot should succeed with quiesce=true because ONTAP overrides quiesce
+        // to false in the per-volume createDiskSnapshot payload (freeze/thaw is at VM level)
+        assertNotNull(result);
+        verify(agentMgr, times(2)).send(eq(HOST_ID), any(FreezeThawVMCommand.class));
+        verify(strategy).createDiskSnapshot(any(), any(), any());
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // Tests: Parent snapshot chain
     // ══════════════════════════════════════════════════════════════════════════

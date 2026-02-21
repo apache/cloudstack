@@ -191,6 +191,34 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
+    // Per-Volume Snapshot (quiesce override)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Creates a per-volume disk snapshot as part of a VM snapshot operation.
+     *
+     * <p>Overrides the parent to ensure {@code quiescevm} is always {@code false}
+     * in the per-volume snapshot payload. ONTAP handles quiescing at the VM level
+     * via QEMU guest agent freeze/thaw in {@link #takeVMSnapshot}, so the
+     * individual volume snapshot must not request quiescing again. Without this
+     * override, {@link org.apache.cloudstack.storage.snapshot.DefaultSnapshotStrategy#takeSnapshot}
+     * would reject the request with "can't handle quiescevm equal true for volume snapshot"
+     * when the user selects the quiesce option in the UI.</p>
+     */
+    @Override
+    protected SnapshotInfo createDiskSnapshot(VMSnapshot vmSnapshot, List<SnapshotInfo> forRollback, VolumeInfo vol) {
+        // Temporarily override the quiesce option to false for the per-volume snapshot
+        VMSnapshotVO vmSnapshotVO = (VMSnapshotVO) vmSnapshot;
+        VMSnapshotOptions originalOptions = vmSnapshotVO.getOptions();
+        try {
+            vmSnapshotVO.setOptions(new VMSnapshotOptions(false));
+            return super.createDiskSnapshot(vmSnapshot, forRollback, vol);
+        } finally {
+            vmSnapshotVO.setOptions(originalOptions);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // Take VM Snapshot
     // ──────────────────────────────────────────────────────────────────────────
 
