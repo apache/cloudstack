@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.api.command.user.dns;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,8 +32,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
 @APICommand(name = "deleteDnsServer", description = "Removes a DNS server integration",
-        responseObject = SuccessResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.23.0")
+        responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteDnsServerCmd extends BaseAsyncCmd {
 
     /////////////////////////////////////////////////////

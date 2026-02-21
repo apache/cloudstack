@@ -36,9 +36,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = "removeDnsRecordForVm", description = "Removes the auto-registered DNS record for a VM",
-        responseObject = SuccessResponse.class,
-        since = "4.23.0",
-        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.User})
+        responseObject = SuccessResponse.class, since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RemoveDnsRecordForVmCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,

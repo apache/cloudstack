@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.dns;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,7 +36,8 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.utils.EnumUtils;
 
 @APICommand(name = "updateDnsServer", description = "Update DNS server", responseObject = DnsServerResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateDnsServerCmd extends BaseCmd {
 
     @Inject

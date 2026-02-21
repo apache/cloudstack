@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.api.command.user.dns;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
@@ -26,7 +27,8 @@ import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
 @APICommand(name = "listDnsZones", description = "Lists DNS zones.", responseObject = DnsZoneResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0")
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListDnsZonesCmd extends BaseListAccountResourcesCmd {
 
     /////////////////////////////////////////////////////

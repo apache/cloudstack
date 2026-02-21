@@ -35,10 +35,10 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "registerDnsRecordForVm", description = "Automatically registers a DNS record for a VM based on its associated Network and DNS Zone mapping",
-        responseObject = SuccessResponse.class,
-        since = "4.23.0",
-        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = "registerDnsRecordForVm",
+        description = "Automatically registers a DNS record for a VM based on its associated Network and DNS Zone mapping",
+        responseObject = SuccessResponse.class, since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RegisterDnsRecordForVmCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,

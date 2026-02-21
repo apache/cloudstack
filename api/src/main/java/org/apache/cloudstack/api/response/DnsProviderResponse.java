@@ -29,9 +29,6 @@ public class DnsProviderResponse extends BaseResponse {
     @Param(description = "The name of the DNS provider (e.g. PowerDNS, Cloudflare)")
     private String name;
 
-    // Constructors
-    public DnsProviderResponse() {}
-
     public DnsProviderResponse(String name) {
         this.name = name;
         setObjectName("dnsprovider"); // Sets the JSON wrapper name

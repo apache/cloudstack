@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.response.DnsProviderResponse;
@@ -29,8 +30,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.dns.DnsProviderManager;
 
 @APICommand(name = "listDnsProviders", description = "Lists available DNS plugin providers",
-        responseObject = DnsProviderResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.23.0")
+        responseObject = DnsProviderResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListDnsProvidersCmd extends BaseListCmd {
 
     @Inject
@@ -42,9 +43,8 @@ public class ListDnsProvidersCmd extends BaseListCmd {
         ListResponse<DnsProviderResponse> response = new ListResponse<>();
         List<DnsProviderResponse> responses = new ArrayList<>();
         for (String name : providers) {
-            DnsProviderResponse resp = new DnsProviderResponse();
+            DnsProviderResponse resp = new DnsProviderResponse(name);
             resp.setName(name);
-            resp.setObjectName("dnsprovider");
             responses.add(resp);
         }
         response.setResponses(responses);
