@@ -21,6 +21,7 @@ import { isZoneCreated } from '@/utils/zone'
 import { getAPI, postAPI, getBaseUrl } from '@/api'
 import { getLatestKubernetesIsoParams } from '@/utils/acsrepo'
 import kubernetesIcon from '@/assets/icons/kubernetes.svg?inline'
+import { hasNoItems } from '@/utils/advisory'
 
 export default {
   name: 'compute',
@@ -100,6 +101,119 @@ export default {
       tabs: [{
         component: shallowRef(defineAsyncComponent(() => import('@/views/compute/InstanceTab.vue')))
       }],
+      advisories: [
+        {
+          id: 'instance-image-check',
+          severity: 'warning',
+          message: 'message.advisory.instance.image.missing',
+          condition: async (store) => {
+            return await hasNoItems(store,
+              'listTemplates',
+              { isvnf: false, templatefilter: 'executable', isready: true }) &&
+              await hasNoItems(store, 'listIsos', { isofilter: 'executable', bootable: true, isready: true }) &&
+              await hasNoItems(store, 'listVolumes', { state: 'Ready' }) &&
+              await hasNoItems(store, 'listSnapshots')
+          },
+          actions: [
+            {
+              label: 'label.register.template',
+              show: (store) => { return ('registerTemplate' in store.getters.apis) },
+              primary: true,
+              run: (store, router) => {
+                router.push({ name: 'template', query: { action: 'registerTemplate' } })
+                return false
+              }
+            },
+            {
+              label: 'label.go.to.templates',
+              show: (store) => { return ('listTemplates' in store.getters.apis) },
+              run: (store, router) => {
+                router.push({ name: 'template' })
+                return false
+              }
+            },
+            {
+              label: 'label.go.to.isos',
+              show: (store) => { return ('listIsos' in store.getters.apis) },
+              run: (store, router) => {
+                router.push({ name: 'iso' })
+                return false
+              }
+            },
+            {
+              label: 'label.go.to.volumes',
+              show: (store) => { return ('listVolumes' in store.getters.apis) },
+              run: (store, router) => {
+                router.push({ name: 'volume' })
+                return false
+              }
+            },
+            {
+              label: 'label.go.to.snapshots',
+              show: (store) => { return ('listSnapshots' in store.getters.apis) },
+              run: (store, router) => {
+                router.push({ name: 'snapshot' })
+                return false
+              }
+            }
+          ]
+        },
+        {
+          id: 'instance-compute-offering-check',
+          severity: 'warning',
+          message: 'message.advisory.instance.compute.offering.missing',
+          condition: async (store) => {
+            return await hasNoItems(store, 'listServiceOfferings', { issystem: false })
+          },
+          actions: [
+            {
+              label: 'label.add.compute.offering',
+              show: (store) => { return ('createServiceOffering' in store.getters.apis) },
+              primary: true,
+              run: (store, router) => {
+                router.push({ name: 'computeoffering', query: { action: 'createServiceOffering' } })
+                return false
+              }
+            },
+            {
+              label: 'label.go.to.compute.offerings',
+              show: (store) => { return ('listServiceOfferings' in store.getters.apis) },
+              run: (store, router) => {
+                router.push({ name: 'computeoffering' })
+                return false
+              }
+            }
+          ]
+        },
+        {
+          id: 'instance-network-check',
+          severity: 'warning',
+          message: 'message.advisory.instance.network.missing',
+          dismissOnConditionFail: true,
+          condition: async (store) => {
+            return await hasNoItems(store, 'listNetworks')
+          },
+          actions: [
+            {
+              label: 'label.add.network',
+              show: (store) => { return ('createNetwork' in store.getters.apis) },
+              primary: true,
+              run: (store, router) => {
+                router.push({ name: 'guestnetwork', query: { action: 'createNetwork' } })
+                return false
+              }
+            },
+            {
+              label: 'label.go.to.networks',
+              show: (store) => { return ('listNetworks' in store.getters.apis) },
+              run: (store, router) => {
+                router.push({ name: 'guestnetworks' })
+                return false
+              }
+            }
+          ]
+        }
+      ],
       actions: [
         {
           api: 'deployVirtualMachine',
@@ -589,23 +703,12 @@ export default {
           id: 'cks-min-offering',
           severity: 'warning',
           message: 'message.advisory.cks.min.offering',
-          docsHelp: 'plugins/cloudstack-kubernetes-service.html',
-          dismissOnConditionFail: true,
           condition: async (store) => {
-            if (!('listServiceOfferings' in store.getters.apis)) {
-              return false
-            }
-            const params = {
-              cpunumber: 2,
-              memory: 2048,
-              issystem: false
-            }
-            try {
-              const json = await getAPI('listServiceOfferings', params)
-              const offerings = json?.listserviceofferingsresponse?.serviceoffering || []
-              return !offerings.some(o => !o.iscustomized)
-            } catch (error) {}
-            return false
+            return await hasNoItems(store,
+              'listServiceOfferings',
+              { cpunumber: 2, memory: 2048, issystem: false },
+              o => !o.iscustomized
+            )
           },
           actions: [
             {
@@ -647,19 +750,8 @@ export default {
           id: 'cks-version-check',
           severity: 'warning',
           message: 'message.advisory.cks.version.check',
-          docsHelp: 'plugins/cloudstack-kubernetes-service.html',
-          dismissOnConditionFail: true,
           condition: async (store) => {
-            const api = 'listKubernetesSupportedVersions'
-            if (!(api in store.getters.apis)) {
-              return false
-            }
-            try {
-              const json = await getAPI(api, {})
-              const versions = json?.listkubernetessupportedversionsresponse?.kubernetessupportedversion || []
-              return versions.length === 0
-            } catch (error) {}
-            return false
+            return await hasNoItems(store, 'listKubernetesSupportedVersions')
           },
           actions: [
             {
@@ -702,7 +794,6 @@ export default {
           id: 'cks-endpoint-url',
           severity: 'warning',
           message: 'message.advisory.cks.endpoint.url.not.configured',
-          docsHelp: 'plugins/cloudstack-kubernetes-service.html',
           dismissOnConditionFail: true,
           condition: async (store) => {
             if (!['Admin'].includes(store.getters.userInfo.roletype)) {
