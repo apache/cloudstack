@@ -503,8 +503,9 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             return processCreateVmSnapshotAnswer(vmSnapshot, volumeInfoToSnapshotObjectMap, createDiskOnlyVMSnapshotAnswer, userVm, vmSnapshotVO, virtualSize, parentSnapshotVo);
         }
 
-        logger.error("Disk-only VM snapshot for VM [{}] failed{}.", userVm.getUuid(), answer != null ? " due to" + answer.getDetails() : "");
-        throw new CloudRuntimeException(String.format("Disk-only VM snapshot for VM [%s] failed.", userVm.getUuid()));
+        String details = answer != null ? answer.getDetails() : String.format("No answer received from host [%s]. The host may be unreachable.", hostId);
+        logger.error("Disk-only VM snapshot for VM [{}] failed due to: {}.", userVm.getUuid(), details);
+        throw new CloudRuntimeException(String.format("Disk-only VM snapshot for VM [%s] failed due to: %s.", userVm.getUuid(), details));
     }
 
     /**
