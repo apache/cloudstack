@@ -66,7 +66,7 @@ public class    DnsServerVO implements DnsServer {
     @Enumerated(EnumType.STRING)
     private DnsProviderType providerType;
 
-    @Column(name = "dns_user_name")
+    @Column(name = "dns_username")
     private String dnsUserName;
 
     @Encrypt

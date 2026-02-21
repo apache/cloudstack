@@ -139,7 +139,7 @@ public class PowerDnsClient implements AutoCloseable {
     public String createZone(String baseUrl, Integer port, String apiKey, String externalServerId, String zoneName,
                              String zoneKind, boolean dnsSecFlag, List<String> nameServers) throws DnsProviderException {
 
-        validateServerId(baseUrl, port, externalServerId, apiKey);
+        validateServerId(baseUrl, port, apiKey, externalServerId);
         String normalizedZone = normalizeZone(zoneName);
         ObjectNode json = MAPPER.createObjectNode();
         json.put(ApiConstants.NAME, normalizedZone);
@@ -167,7 +167,7 @@ public class PowerDnsClient implements AutoCloseable {
     public void updateZone(String baseUrl, Integer port, String apiKey, String externalServerId, String zoneName,
                            String zoneKind, Boolean dnsSecFlag, List<String> nameServers) throws DnsProviderException {
 
-        validateServerId(baseUrl, port, externalServerId, apiKey);
+        validateServerId(baseUrl, port, apiKey, externalServerId);
         String normalizedZone = normalizeZone(zoneName);
         String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
         String url = buildUrl(baseUrl, port,"/servers/" + externalServerId + "/zones/" + encodedZone);

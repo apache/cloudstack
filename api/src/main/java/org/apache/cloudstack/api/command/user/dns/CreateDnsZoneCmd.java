@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.dns;
 
+import java.util.Arrays;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
@@ -27,13 +29,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
-import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dns.DnsProviderManager;
 import org.apache.cloudstack.dns.DnsZone;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.utils.EnumUtils;
 
 @APICommand(name = "createDnsZone", description = "Creates a new DNS Zone on a specific server",
         responseObject = DnsZoneResponse.class, requestHasSensitiveInfo = false,
@@ -55,10 +58,6 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
             required = true, description = "The ID of the DNS server to host this zone")
     private Long dnsServerId;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
-            description = "Optional: The Guest Network to associate with this zone for auto-registration")
-    private Long networkId;
-
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING,
             description = "The type of zone (Public, Private). Defaults to Public.")
     private String type;
@@ -78,12 +77,15 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
         return dnsServerId;
     }
 
-    public Long getNetworkId() {
-        return networkId;
-    }
-
-    public String getType() {
-        return type;
+    public DnsZone.ZoneType getType() {
+        if (StringUtils.isBlank(type)) {
+            return DnsZone.ZoneType.Public;
+        }
+        DnsZone.ZoneType zoneType = EnumUtils.getEnumIgnoreCase(DnsZone.ZoneType.class, type);
+        if (type == null) {
+            throw new IllegalArgumentException("Invalid type value, supported values are: " + Arrays.toString(DnsZone.ZoneType.values()));
+        }
+        return zoneType;
     }
 
     public String getDescription() {

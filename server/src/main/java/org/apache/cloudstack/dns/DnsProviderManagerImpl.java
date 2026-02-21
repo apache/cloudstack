@@ -20,6 +20,7 @@ package org.apache.cloudstack.dns;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -117,6 +118,11 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             isDnsPublic = false;
             publicDomainSuffix = null;
         }
+
+        if (StringUtils.isNotBlank(publicDomainSuffix)) {
+            publicDomainSuffix = DnsUtil.normalizeDomain(publicDomainSuffix);
+        }
+
         DnsProviderType type = DnsProviderType.fromString(cmd.getProvider());
         DnsServerVO server = new DnsServerVO(cmd.getName(), cmd.getUrl(), cmd.getPort(), cmd.getExternalServerId(), type,
                 cmd.getDnsUserName(), cmd.getCredentials(), isDnsPublic, publicDomainSuffix, cmd.getNameServers(),
@@ -208,7 +214,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         if (cmd.getPublicDomainSuffix() != null) {
-            dnsServer.setPublicDomainSuffix(cmd.getPublicDomainSuffix());
+            dnsServer.setPublicDomainSuffix(DnsUtil.normalizeDomain(cmd.getPublicDomainSuffix()));
         }
 
         if (cmd.getNameServers() != null) {
@@ -255,6 +261,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         response.setId(server.getUuid());
         response.setName(server.getName());
         response.setUrl(server.getUrl());
+        response.setPort(server.getPort());
         response.setProvider(server.getProviderType());
         response.setPublic(server.isPublic());
         response.setNameServers(server.getNameServers());
@@ -272,7 +279,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     public boolean deleteDnsZone(Long zoneId) {
         DnsZoneVO zone = dnsZoneDao.findById(zoneId);
         if (zone == null) {
-            throw new InvalidParameterValueException("DNS zone with ID " + zoneId + " not found.");
+            throw new InvalidParameterValueException("DNS zone not found for the given ID.");
         }
 
         Account caller = CallContext.current().getCallingAccount();
@@ -347,23 +354,29 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
     @Override
     public DnsRecordResponse createDnsRecord(CreateDnsRecordCmd cmd) {
+        String recordName = StringUtils.trimToEmpty(cmd.getName()).toLowerCase();
+        if (StringUtils.isBlank(recordName)) {
+            throw new InvalidParameterValueException("Empty DNS record name is not allowed");
+        }
         DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
         if (zone == null) {
             throw new InvalidParameterValueException("DNS zone not found.");
         }
-
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, true, zone);
         DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
         try {
+            DnsRecord.RecordType type = cmd.getType();
+            List<String> normalizedContents = cmd.getContents().stream()
+                    .map(value -> DnsUtil.normalizeDnsRecordValue(value, type)).collect(Collectors.toList());
+            DnsRecord record = new DnsRecord(recordName, type, normalizedContents, cmd.getTtl());
             DnsProvider provider = getProvider(server.getProviderType());
-            DnsRecord record = new DnsRecord(cmd.getName(), cmd.getType(), cmd.getContents(), cmd.getTtl());
             String normalizedRecordName = provider.addRecord(server, zone, record);
             record.setName(normalizedRecordName);
             return createDnsRecordResponse(record);
         } catch (Exception ex) {
             logger.error("Failed to add DNS record via provider", ex);
-            throw new CloudRuntimeException(String.format("Failed to add DNS record: %s", cmd.getName()));
+            throw new CloudRuntimeException(String.format("Failed to add DNS record: %s", recordName));
         }
     }
 
@@ -397,7 +410,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     public ListResponse<DnsRecordResponse> listDnsRecords(ListDnsRecordsCmd cmd) {
         DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
         if (zone == null) {
-            throw new InvalidParameterValueException(String.format("DNS zone with ID %s not found.", cmd.getDnsZoneId()));
+            throw new InvalidParameterValueException("DNS zone not found for the given ID.");
         }
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, true, zone);
@@ -435,28 +448,30 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
     @Override
     public DnsZone allocateDnsZone(CreateDnsZoneCmd cmd) {
-        Account caller = CallContext.current().getCallingAccount();
+        if (StringUtils.isBlank(cmd.getName())) {
+            throw new InvalidParameterValueException("DNS zone name cannot be empty");
+        }
+
+        String dnsZoneName = DnsUtil.normalizeDomain(cmd.getName());
         DnsServerVO server = dnsServerDao.findById(cmd.getDnsServerId());
         if (server == null) {
-            throw new InvalidParameterValueException("DNS server not found");
+            throw new InvalidParameterValueException(String.format("DNS server not found for the given ID: %s", cmd.getDnsServerId()));
         }
+
+        Account caller = CallContext.current().getCallingAccount();
         boolean isOwner = (server.getAccountId() == caller.getId());
-        if (!server.isPublic() && !isOwner) {
-            throw new PermissionDeniedException("You do not have permission to use this DNS server.");
-        }
-        DnsZone.ZoneType type = DnsZone.ZoneType.Public;
-        if (cmd.getType() != null) {
-            try {
-                type = DnsZone.ZoneType.valueOf(cmd.getType());
-            } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("Invalid DNS zone Type");
+        if (!isOwner) {
+            if (!server.isPublic()) {
+                throw new PermissionDeniedException("You do not have permission to use this DNS server.");
             }
+            dnsZoneName = DnsUtil.appendPublicSuffixToZone(dnsZoneName, DnsUtil.normalizeDomain(server.getPublicDomainSuffix()));
         }
-        DnsZoneVO existing = dnsZoneDao.findByNameServerAndType(cmd.getName(), server.getId(), type);
+        DnsZone.ZoneType type = cmd.getType();
+        DnsZoneVO existing = dnsZoneDao.findByNameServerAndType(dnsZoneName, server.getId(), type);
         if (existing != null) {
             throw new InvalidParameterValueException("DNS zone already exists on this server.");
         }
-        DnsZoneVO dnsZoneVO = new DnsZoneVO(cmd.getName(), type, server.getId(), caller.getId(), caller.getDomainId(), cmd.getDescription());
+        DnsZoneVO dnsZoneVO = new DnsZoneVO(dnsZoneName, type, server.getId(), caller.getId(), caller.getDomainId(), cmd.getDescription());
         return dnsZoneDao.persist(dnsZoneVO);
     }
 
