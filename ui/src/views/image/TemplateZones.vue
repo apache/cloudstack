@@ -91,7 +91,7 @@
           :rowKey="record => record.datastoreId">
           <template #bodyCell="{ text, record, column }">
             <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
-                <router-link :to="{ path: '/storagepool/' + encodeURIComponent(record.datastoreId) }">
+              <router-link :to="{ path: '/storagepool/' + encodeURIComponent(record.datastoreId) }">
                 {{ text }}
               </router-link>
             </template>
@@ -107,7 +107,7 @@
           :rowKey="record => record.datastoreId">
           <template #bodyCell="{ text, record, column }">
             <template v-if="column.dataIndex === 'datastore' && record.datastoreId">
-                <router-link :to="{ path: '/imagestore/' + record.datastoreId }">
+              <router-link :to="{ path: '/imagestore/' + record.datastoreId }">
                 {{ text }}
               </router-link>
             </template>
@@ -139,7 +139,13 @@
       :pageSize="pageSize"
       :total="itemCount"
       :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-      :pageSizeOptions="['10', '20', '40', '80', '100']"
+      :pageSizeOptions="[
+        '10',
+        '20',
+        '40',
+        '80',
+        '100'
+      ]"
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
@@ -217,7 +223,9 @@
           <a-alert type="error">
             <template #message>
               <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
-              <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+              <span
+                style="padding-left: 5px"
+                v-html="'<b>' + selectedRowKeys.length + ' ' + $t('label.items.selected') + '. </b>'" />
               <span v-html="$t(message.confirmMessage)" />
             </template>
           </a-alert>
@@ -391,10 +399,10 @@ export default {
   },
   computed: {
     isActionsOnTemplatePermitted () {
-      return (['Admin'].includes(this.$store.getters.userInfo.roletype) || // If admin or owner or belongs to current project
+      return (['Admin'].includes(this.$store.getters.userInfo.roletype) ||
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.projectid && this.$store.getters.project && this.$store.getters.project.id && this.resource.projectid === this.$store.getters.project.id)) &&
-        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Template is ready or downloaded
+        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) &&
         this.resource.templatetype !== 'SYSTEM'
     }
   },
