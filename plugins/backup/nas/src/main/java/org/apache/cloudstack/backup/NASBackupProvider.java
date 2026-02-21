@@ -471,6 +471,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         } else {
             host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, backup.getZoneId());
         }
+        if (host == null) {
+            throw new CloudRuntimeException(String.format("Unable to find a running KVM host in zone %d to delete backup %s", backup.getZoneId(), backup.getUuid()));
+        }
 
         DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
                 backupRepository.getAddress(), backupRepository.getMountOptions());
@@ -552,7 +555,14 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public void syncBackupStorageStats(Long zoneId) {
         final List<BackupRepository> repositories = backupRepositoryDao.listByZoneAndProvider(zoneId, getName());
+        if (CollectionUtils.isEmpty(repositories)) {
+            return;
+        }
         final Host host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+        if (host == null) {
+            logger.warn("Unable to find a running KVM host in zone {} to sync backup storage stats", zoneId);
+            return;
+        }
         for (final BackupRepository repository : repositories) {
             GetBackupStorageStatsCommand command = new GetBackupStorageStatsCommand(repository.getType(), repository.getAddress(), repository.getMountOptions());
             BackupStorageStatsAnswer answer;
