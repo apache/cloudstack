@@ -276,6 +276,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.google.common.collect.Sets;
 
 
@@ -343,6 +344,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected HypervisorGuruManager _hvGuruMgr;
     @Inject
     protected VolumeDao volumeDao;
+    @Inject
+    protected SecondaryStorageVmManager _ssVmMgr;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -3989,6 +3992,37 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
             throw new CloudRuntimeException("Failed to add data store: " + e.getMessage(), e);
         }
+
+        // Validate secondary storage mount immediately using SSVM
+if (zoneId != null) {
+    List<HostVO> ssvmHosts = _hostDao.listByType(Host.Type.SecondaryStorageVM);
+    boolean mountSuccess = false;
+    String failureReason = "No Secondary Storage VM available to validate the NFS mount.";
+
+    for (HostVO ssvm : ssvmHosts) {
+        if (ssvm.getDataCenterId() != zoneId.longValue()) {
+            continue;
+        }
+
+        try {
+            boolean result = _ssVmMgr.generateSetupCommand(ssvm.getId());
+            if (result) {
+                mountSuccess = true;
+                break;
+            } else {
+                failureReason = "Secondary Storage VM failed to mount the NFS secondary storage.";
+            }
+        } catch (Exception e) {
+            failureReason = e.getMessage();
+        }
+    }
+
+    if (!mountSuccess) {
+        // cleanup created store
+        _imageStoreDao.remove(store.getId());
+        throw new CloudRuntimeException("Invalid secondary storage mount: " + failureReason);
+    }
+}
 
         if (((ImageStoreProvider)storeProvider).needDownloadSysTemplate()) {
             // trigger system vm template download
