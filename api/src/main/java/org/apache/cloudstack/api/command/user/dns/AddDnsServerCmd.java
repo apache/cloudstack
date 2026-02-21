@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.dns;
 
 import java.util.List;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,17 +28,18 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.dns.DnsProviderManager;
 import org.apache.cloudstack.dns.DnsServer;
 import org.apache.commons.lang3.BooleanUtils;
 
-@APICommand(name = "addDnsServer", description = "Adds a new external DNS server", responseObject = DnsServerResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0",
+@APICommand(name = "addDnsServer",
+        description = "Adds a new external DNS server",
+        responseObject = DnsServerResponse.class,
+        entityType = {DnsServer.class},
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
+        since = "4.23.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AddDnsServerCmd extends BaseCmd {
-
-    @Inject
-    DnsProviderManager dnsProviderManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

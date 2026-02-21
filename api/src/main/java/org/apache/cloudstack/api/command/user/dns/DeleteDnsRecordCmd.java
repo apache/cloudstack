@@ -18,6 +18,8 @@
 package org.apache.cloudstack.api.command.user.dns;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -33,11 +35,16 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.EnumUtils;
 
-@APICommand(name = "deleteDnsRecord", description = "Deletes a DNS record from the external provider",
-        responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.23.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = "deleteDnsRecord",
+        description = "Deletes a DNS record from the external provider",
+        responseObject = SuccessResponse.class,
+        entityType = {DnsRecord.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteDnsRecordCmd extends BaseAsyncCmd {
 
+    @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class,
             required = true, description = "The ID of the DNS zone")
     private Long dnsZoneId;

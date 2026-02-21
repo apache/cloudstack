@@ -17,29 +17,30 @@
 
 package org.apache.cloudstack.api.command.user.dns;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.dns.DnsProviderManager;
+import org.apache.cloudstack.dns.DnsServer;
 
-@APICommand(name = "listDnsServers", description = "Lists DNS servers owned by the account.",
-        responseObject = DnsServerResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.23.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = "listDnsServers",
+        description = "Lists DNS servers owned by the account.",
+        responseObject = DnsServerResponse.class,
+        entityType = {DnsServer.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListDnsServersCmd  extends BaseListAccountResourcesCmd {
-
-    @Inject
-    DnsProviderManager dnsProviderManager;
 
     /////////////////////////////////////////////////////
     //////////////// API Parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsServerResponse.class,
             description = "the ID of the DNS server")
     private Long id;

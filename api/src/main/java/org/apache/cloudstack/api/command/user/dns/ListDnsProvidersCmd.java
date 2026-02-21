@@ -20,26 +20,25 @@ package org.apache.cloudstack.api.command.user.dns;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.response.DnsProviderResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.dns.DnsProviderManager;
+import org.apache.cloudstack.dns.DnsProvider;
 
-@APICommand(name = "listDnsProviders", description = "Lists available DNS plugin providers",
-        responseObject = DnsProviderResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.23.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = "listDnsProviders",
+        description = "Lists available DNS plugin providers",
+        responseObject = DnsProviderResponse.class,
+        entityType = {DnsProvider.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListDnsProvidersCmd extends BaseListCmd {
-
-    @Inject
-    DnsProviderManager dnsManager;
 
     @Override
     public void execute() {
-        List<String> providers = dnsManager.listProviderNames();
+        List<String> providers = dnsProviderManager.listProviderNames();
         ListResponse<DnsProviderResponse> response = new ListResponse<>();
         List<DnsProviderResponse> responses = new ArrayList<>();
         for (String name : providers) {

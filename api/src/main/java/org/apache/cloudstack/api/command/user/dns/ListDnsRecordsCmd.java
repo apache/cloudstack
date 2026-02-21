@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.user.dns;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -25,12 +26,18 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DnsRecordResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.dns.DnsRecord;
 
-@APICommand(name = "listDnsRecords", description = "Lists DNS records from the external provider",
-        responseObject = DnsRecordResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.23.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = "listDnsRecords",
+        description = "Lists DNS records from the external provider",
+        responseObject = DnsRecordResponse.class,
+        entityType = {DnsRecord.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListDnsRecordsCmd extends BaseListCmd {
 
+    @ACL
     @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class, required = true,
             description = "ID of the DNS zone to list records from")
     private Long dnsZoneId;

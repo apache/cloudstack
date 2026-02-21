@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.user.dns;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
@@ -25,20 +26,26 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.dns.DnsZone;
 
-@APICommand(name = "listDnsZones", description = "Lists DNS zones.", responseObject = DnsZoneResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0",
+@APICommand(name = "listDnsZones",
+        description = "Lists DNS zones.", responseObject = DnsZoneResponse.class,
+        entityType = {DnsZone.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListDnsZonesCmd extends BaseListAccountResourcesCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    ///
+
+    @ACL
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsZoneResponse.class,
             description = "List DNS zone by ID")
     private Long id;
 
+    @ACL
     @Parameter(name = "dnsserverid", type = CommandType.UUID, entityType = DnsServerResponse.class,
             description = "List DNS zones belonging to a specific DNS server")
     private Long dnsServerId;

@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.dns;
 import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,11 +36,16 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.EnumUtils;
 
-@APICommand(name = "createDnsRecord", description = "Creates a DNS record directly on the provider",
-        responseObject = DnsRecordResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.23.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = "createDnsRecord",
+        description = "Creates a DNS record directly on the provider",
+        responseObject = DnsRecordResponse.class,
+        entityType = {DnsRecord.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateDnsRecordCmd extends BaseAsyncCmd {
 
+    @ACL
     @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class, required = true,
             description = "ID of the DNS zone")
     private Long dnsZoneId;

@@ -17,8 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.dns;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,16 +26,16 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.dns.DnsProviderManager;
 import org.apache.cloudstack.dns.DnsZone;
 
-@APICommand(name = "updateDnsZone", description = "Updates a DNS Zone's metadata", responseObject = DnsZoneResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0",
+@APICommand(name = "updateDnsZone",
+        description = "Updates a DNS Zone's metadata",
+        responseObject = DnsZoneResponse.class,
+        entityType = {DnsZone.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class UpdateDnsZoneCmd extends BaseCmd {
-
-    @Inject
-    DnsProviderManager dnsProviderManager;
 
     /////////////////////////////////////////////////////
     //////////////// API Parameters /////////////////////

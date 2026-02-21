@@ -19,9 +19,8 @@ package org.apache.cloudstack.api.command.user.dns;
 
 import java.util.Arrays;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,7 +30,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.dns.DnsProviderManager;
 import org.apache.cloudstack.dns.DnsZone;
 import org.apache.commons.lang3.StringUtils;
 
@@ -39,13 +37,14 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.utils.EnumUtils;
 
-@APICommand(name = "createDnsZone", description = "Creates a new DNS Zone on a specific server",
-        responseObject = DnsZoneResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.23.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = "createDnsZone",
+        description = "Creates a new DNS Zone on a specific server",
+        responseObject = DnsZoneResponse.class,
+        entityType = {DnsZone.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
-
-    @Inject
-    DnsProviderManager dnsProviderManager;
 
     /////////////////////////////////////////////////////
     //////////////// API Parameters /////////////////////
@@ -55,6 +54,7 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
             description = "The name of the DNS zone (e.g. example.com)")
     private String name;
 
+    @ACL
     @Parameter(name = ApiConstants.DNS_SERVER_ID, type = CommandType.UUID, entityType = DnsServerResponse.class,
             required = true, description = "The ID of the DNS server to host this zone")
     private Long dnsServerId;

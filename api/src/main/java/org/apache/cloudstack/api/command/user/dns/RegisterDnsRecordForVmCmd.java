@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.user.dns;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -28,6 +29,7 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsRecord;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -37,14 +39,18 @@ import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = "registerDnsRecordForVm",
         description = "Automatically registers a DNS record for a VM based on its associated Network and DNS Zone mapping",
-        responseObject = SuccessResponse.class, since = "4.23.0",
+        responseObject = SuccessResponse.class,
+        entityType = {DnsRecord.class},
+        since = "4.23.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RegisterDnsRecordForVmCmd extends BaseCmd {
 
+    @ACL
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
             required = true, description = "The ID of the Virtual Machine")
     private Long vmId;
 
+    @ACL
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
             description = "The ID of the network. If not specified, the VM's default NIC network is used.")
     private Long networkId;

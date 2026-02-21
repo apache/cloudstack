@@ -18,6 +18,7 @@
 package org.apache.cloudstack.api.command.user.dns;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,15 +36,19 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "removeDnsRecordForVm", description = "Removes the auto-registered DNS record for a VM",
-        responseObject = SuccessResponse.class, since = "4.23.0",
+@APICommand(name = "removeDnsRecordForVm",
+        description = "Removes the auto-registered DNS record for a VM",
+        responseObject = SuccessResponse.class,
+        since = "4.23.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RemoveDnsRecordForVmCmd extends BaseCmd {
 
+    @ACL
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
             required = true, description = "The ID of the Virtual Machine")
     private Long vmId;
 
+    @ACL
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
             description = "The ID of the network. If not specified, the VM's default NIC network is used.")
     private Long networkId;

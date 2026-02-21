@@ -34,9 +34,13 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "associateDnsZoneToNetwork", description = "Associates a DNS Zone with a Network for VM auto-registration",
-        responseObject = DnsZoneNetworkMapResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.23.0", authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = "associateDnsZoneToNetwork",
+        description = "Associates a DNS Zone with a Network for VM auto-registration",
+        responseObject = DnsZoneNetworkMapResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
+        since = "4.23.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AssociateDnsZoneToNetworkCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class,
