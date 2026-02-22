@@ -51,7 +51,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -226,8 +225,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         if (user == null) {
             throw new IllegalArgumentException("Unable to find user with id " + userId);
         }
-
-        _resourceLimitMgr.checkResourceLimit(templateOwner, ResourceType.template);
 
         // If a zoneId is specified, make sure it is valid
         if (zoneIdList != null) {
