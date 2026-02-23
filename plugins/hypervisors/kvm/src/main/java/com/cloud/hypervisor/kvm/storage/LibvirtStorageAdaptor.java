@@ -1206,12 +1206,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             volName = vol.getName();
             volAllocation = vol.getInfo().allocation;
             volCapacity = vol.getInfo().capacity;
-
-            // For CLVM volumes, activate in shared mode so all cluster hosts can access it
-            if (pool.getType() == StoragePoolType.CLVM) {
-                logger.info("Activating CLVM volume {} in shared mode for cluster-wide access", volPath);
-                activateClvmVolumeInSharedMode(volPath);
-            }
         } catch (LibvirtException e) {
             throw new CloudRuntimeException(e.toString());
         }
@@ -1221,30 +1215,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         disk.setSize(volAllocation);
         disk.setVirtualSize(volCapacity);
         return disk;
-    }
-
-    /**
-     * Activates a CLVM volume in shared mode so all hosts in the cluster can access it.
-     * This is necessary after volume creation since libvirt creates LVs with exclusive activation by default.
-     *
-     * @param volumePath The full path to the LV (e.g., /dev/vgname/volume-path)
-     */
-    private void activateClvmVolumeInSharedMode(String volumePath) {
-        try {
-            Script cmd = new Script("lvchange", 5000, logger);
-            cmd.add("-asy");  // Activate in shared mode
-            cmd.add(volumePath);
-
-            String result = cmd.execute();
-            if (result != null) {
-                logger.error("Failed to activate CLVM volume {} in shared mode. Result: {}", volumePath, result);
-                throw new CloudRuntimeException("Failed to activate CLVM volume in shared mode: " + result);
-            }
-            logger.info("Successfully activated CLVM volume {} in shared mode", volumePath);
-        } catch (Exception e) {
-            logger.error("Exception while activating CLVM volume {} in shared mode: {}", volumePath, e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to activate CLVM volume in shared mode: " + e.getMessage(), e);
-        }
     }
 
 
