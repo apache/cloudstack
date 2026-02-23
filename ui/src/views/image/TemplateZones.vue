@@ -139,13 +139,7 @@
       :pageSize="pageSize"
       :total="itemCount"
       :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-      :pageSizeOptions="[
-        '10',
-        '20',
-        '40',
-        '80',
-        '100'
-      ]"
+      :pageSizeOptions="['10', '20', '40', '80', '100']"
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
@@ -225,7 +219,7 @@
               <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
               <span
                 style="padding-left: 5px"
-                v-html="'<b>' + selectedRowKeys.length + ' ' + $t('label.items.selected') + '. </b>'" />
+                v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
               <span v-html="$t(message.confirmMessage)" />
             </template>
           </a-alert>
@@ -484,7 +478,7 @@ export default {
       this.showTable = false
       this.fetchData()
       if (this.dataSource.length === 0) {
-        this.$router.go(-1)
+        this.$router.push({ path: '/template' })
       }
     },
     getOkProps () {
