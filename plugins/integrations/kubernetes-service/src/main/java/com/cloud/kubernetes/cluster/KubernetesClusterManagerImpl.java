@@ -56,8 +56,6 @@ import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.affinity.AffinityGroupProcessor;
-import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.AffinityProcessorBase;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -336,8 +334,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected HostDao hostDao;
     @Inject
     protected AffinityGroupDao affinityGroupDao;
-    @Inject
-    protected AffinityGroupService affinityGroupService;
     @Inject
     protected AffinityGroupVMMapDao affinityGroupVMMapDao;
     @Inject
@@ -2565,11 +2561,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     protected void validateNodesAgainstExistingWorkers(List<Long> nodeIds, Set<Long> existingWorkerHostIds,
                                                        AffinityGroupVO affinityGroup, KubernetesCluster cluster) {
-        AffinityGroupProcessor processor = getAffinityGroupProcessor(affinityGroup.getType());
-        if (Objects.isNull(processor)) {
-            return;
-        }
-
         for (Long nodeId : nodeIds) {
             VMInstanceVO node = vmInstanceDao.findById(nodeId);
             if (node == null || node.getHostId() == null) {
@@ -2602,8 +2593,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     protected void validateNewNodesAntiAffinity(List<Long> nodeIds, AffinityGroupVO affinityGroup, KubernetesCluster cluster) {
-        AffinityGroupProcessor processor = getAffinityGroupProcessor(affinityGroup.getType());
-        if (processor == null || !AffinityProcessorBase.AFFINITY_TYPE_HOST_ANTI.equals(affinityGroup.getType())) {
+        if (!AffinityProcessorBase.AFFINITY_TYPE_HOST_ANTI.equals(affinityGroup.getType())) {
             return;
         }
 
@@ -2622,14 +2612,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 newNodeHostIds.add(nodeHostId);
             }
         }
-    }
-
-    protected AffinityGroupProcessor getAffinityGroupProcessor(String affinityGroupType) {
-        Map<String, AffinityGroupProcessor> typeProcessorMap = affinityGroupService.getAffinityTypeToProcessorMap();
-        if (MapUtils.isEmpty(typeProcessorMap)) {
-            return null;
-        }
-        return typeProcessorMap.get(affinityGroupType);
     }
 
     protected String getHostName(Long hostId) {
