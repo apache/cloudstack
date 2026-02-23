@@ -47,6 +47,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -3140,7 +3141,6 @@ public class UserVmManagerImplTest {
             when(serviceOffering.isCustomCpuSpeedSupported()).thenReturn(false);
             when(serviceOffering.getSpeed()).thenReturn(1000);
         }
-        System.out.println("Service Offering customized: " + serviceOffering.isCustomized() + ", speed: " + serviceOffering.getSpeed());
         return serviceOffering;
     }
 
@@ -3168,6 +3168,12 @@ public class UserVmManagerImplTest {
     @Test
     public void cpuSpeedCustomizationAllowedDoesNotThrowException() {
         ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, true);
+
+        when(serviceOfferingDetailsDao.listDetailsKeyPairs(anyLong())).thenReturn(
+                Map.of(ApiConstants.MIN_CPU_NUMBER, "1",
+                        ApiConstants.MAX_CPU_NUMBER, "4",
+                        ApiConstants.MIN_MEMORY, "256",
+                        ApiConstants.MAX_MEMORY, "8192"));
 
         Map<String, String> customParameters = new HashMap<>();
         customParameters.put(VmDetailConstants.CPU_NUMBER, "1");
