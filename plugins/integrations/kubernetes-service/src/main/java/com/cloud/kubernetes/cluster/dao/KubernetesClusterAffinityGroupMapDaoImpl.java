@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.kubernetes.cluster.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.kubernetes.cluster.KubernetesClusterAffinityGroupMapVO;
@@ -55,6 +57,9 @@ public class KubernetesClusterAffinityGroupMapDaoImpl extends GenericDaoBase<Kub
     @Override
     public List<Long> listAffinityGroupIdsByClusterIdAndNodeType(long clusterId, String nodeType) {
         List<KubernetesClusterAffinityGroupMapVO> maps = listByClusterIdAndNodeType(clusterId, nodeType);
+        if (CollectionUtils.isEmpty(maps)) {
+            return new ArrayList<>();
+        }
         return maps.stream().map(KubernetesClusterAffinityGroupMapVO::getAffinityGroupId).collect(Collectors.toList());
     }
 
