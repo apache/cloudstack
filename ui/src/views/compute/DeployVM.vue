@@ -148,6 +148,7 @@
                       @handle-image-search-filter="filters => fetchImages(filters)"
                       @update-image="updateFieldValue"
                       @update-disk-size="updateFieldValue"
+                      @change-root-disk-override-checked="val => { showRootDiskSizeChanger = val; form.rootdisksizeitem = val }"
                       @change-iso-hypervisor="value => form.hypervisor = value" />
                     <a-card
                       v-else
@@ -2030,6 +2031,8 @@ export default {
           this.updateTemplateParameters()
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
+          this.dataPreFill.rootdisksize = Math.ceil(size)
+          this.form.rootdisksize = Math.ceil(size)
           this.updateTemplateLinkedUserData(template.userdataid)
           this.userdataDefaultOverridePolicy = template.userdatapolicy
           this.form.dynamicscalingenabled = template.isdynamicallyscalable
