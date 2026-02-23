@@ -42,6 +42,7 @@ public final class Vm extends BaseDto {
     private Ref cluster;
     private Ref host;
     private String memory;          // bytes
+    private MemoryPolicy memoryPolicy;
     private Cpu cpu;
     private Os os;
     private Bios bios;
@@ -53,8 +54,22 @@ public final class Vm extends BaseDto {
     private List<Link> link;      // related resources
     private EmptyElement tags; // empty <tags/>
     private NamedList<DiskAttachment> diskAttachments;
-    private Nics nics;
-    private VmInitialization initialization;
+    private NamedList<Nic> nics;
+    private Initialization initialization;
+
+    private Ref cpuProfile;
+
+    public EmptyElement io = new EmptyElement();
+    public EmptyElement migration = new EmptyElement();
+    public EmptyElement sso = new EmptyElement();
+    public EmptyElement usb = new EmptyElement();
+    public EmptyElement quota = new EmptyElement();
+    public EmptyElement highAvailability = new EmptyElement();
+    public EmptyElement largeIcon = new EmptyElement();
+    public EmptyElement smallIcon = new EmptyElement();
+    public EmptyElement placementPolicy = new EmptyElement();
+    public EmptyElement timeZone = new EmptyElement();
+    public EmptyElement display = new EmptyElement();
 
     public String getName() {
         return name;
@@ -152,6 +167,14 @@ public final class Vm extends BaseDto {
         this.memory = memory;
     }
 
+    public MemoryPolicy getMemoryPolicy() {
+        return memoryPolicy;
+    }
+
+    public void setMemoryPolicy(MemoryPolicy memoryPolicy) {
+        this.memoryPolicy = memoryPolicy;
+    }
+
     public Cpu getCpu() {
         return cpu;
     }
@@ -232,20 +255,143 @@ public final class Vm extends BaseDto {
         this.diskAttachments = diskAttachments;
     }
 
-    public Nics getNics() {
+    public NamedList<Nic> getNics() {
         return nics;
     }
 
-    public void setNics(Nics nics) {
+    public void setNics(NamedList<Nic> nics) {
         this.nics = nics;
     }
 
-    public VmInitialization getInitialization() {
+    public Initialization getInitialization() {
         return initialization;
     }
 
-    public void setInitialization(VmInitialization initialization) {
+    public void setInitialization(Initialization initialization) {
         this.initialization = initialization;
+    }
+
+    public Ref getCpuProfile() {
+        return cpuProfile;
+    }
+
+    public void setCpuProfile(Ref cpuProfile) {
+        this.cpuProfile = cpuProfile;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static final class Bios {
+
+        private String type; // "uefi" or "bios" or whatever mapping you choose
+        private BootMenu bootMenu = new BootMenu();
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public BootMenu getBootMenu() {
+            return bootMenu;
+        }
+
+        public void setBootMenu(BootMenu bootMenu) {
+            this.bootMenu = bootMenu;
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public static class BootMenu {
+
+            private String enabled;
+
+            public String getEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(String enabled) {
+                this.enabled = enabled;
+            }
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static final class MemoryPolicy {
+
+        private String guaranteed;
+        private String max;
+        private String ballooning;
+
+        public String getGuaranteed() {
+            return guaranteed;
+        }
+
+        public void setGuaranteed(String guaranteed) {
+            this.guaranteed = guaranteed;
+        }
+
+        public String getMax() {
+            return max;
+        }
+
+        public void setMax(String max) {
+            this.max = max;
+        }
+
+        public String getBallooning() {
+            return ballooning;
+        }
+
+        public void setBallooning(String ballooning) {
+            this.ballooning = ballooning;
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class Initialization {
+
+        private String customScript;
+        private Configuration configuration;
+
+        public String getCustomScript() {
+            return customScript;
+        }
+
+        public void setCustomScript(String customScript) {
+            this.customScript = customScript;
+        }
+
+        public Configuration getConfiguration() {
+            return configuration;
+        }
+
+        public void setConfiguration(Configuration configuration) {
+            this.configuration = configuration;
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public static class Configuration {
+
+            private String data;
+            private String type;
+
+            public String getData() {
+                return data;
+            }
+
+            public void setData(String data) {
+                this.data = data;
+            }
+
+            public String getType() {
+                return type;
+            }
+
+            public void setType(String type) {
+                this.type = type;
+            }
+        }
     }
 
     public static Vm of(String href, String id) {

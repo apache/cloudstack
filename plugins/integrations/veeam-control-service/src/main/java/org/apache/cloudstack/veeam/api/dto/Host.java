@@ -259,4 +259,53 @@ public class Host extends BaseDto {
     public void setLink(List<Link> link) {
         this.link = link;
     }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class HardwareInformation {
+        private String manufacturer;
+        private String productName;
+        private String serialNumber;
+        private String uuid;
+        private String version;
+
+        public String getManufacturer() {
+            return manufacturer;
+        }
+
+        public void setManufacturer(String manufacturer) {
+            this.manufacturer = manufacturer;
+        }
+
+        public String getProductName() {
+            return productName;
+        }
+
+        public void setProductName(String productName) {
+            this.productName = productName;
+        }
+
+        public String getSerialNumber() {
+            return serialNumber;
+        }
+
+        public void setSerialNumber(String serialNumber) {
+            this.serialNumber = serialNumber;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+    }
 }

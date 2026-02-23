@@ -18,6 +18,7 @@
 package org.apache.cloudstack.veeam.adapter;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -75,6 +76,8 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.veeam.VeeamControlService;
+import org.apache.cloudstack.veeam.api.TagsRouteHandler;
 import org.apache.cloudstack.veeam.api.converter.AsyncJobJoinVOToJobConverter;
 import org.apache.cloudstack.veeam.api.converter.BackupVOToBackupConverter;
 import org.apache.cloudstack.veeam.api.converter.ClusterVOToClusterConverter;
@@ -84,12 +87,14 @@ import org.apache.cloudstack.veeam.api.converter.ImageTransferVOToImageTransferC
 import org.apache.cloudstack.veeam.api.converter.NetworkVOToNetworkConverter;
 import org.apache.cloudstack.veeam.api.converter.NetworkVOToVnicProfileConverter;
 import org.apache.cloudstack.veeam.api.converter.NicVOToNicConverter;
+import org.apache.cloudstack.veeam.api.converter.ResourceTagVOToTagConverter;
 import org.apache.cloudstack.veeam.api.converter.StoreVOToStorageDomainConverter;
 import org.apache.cloudstack.veeam.api.converter.UserVmJoinVOToVmConverter;
 import org.apache.cloudstack.veeam.api.converter.UserVmVOToCheckpointConverter;
 import org.apache.cloudstack.veeam.api.converter.VmSnapshotVOToSnapshotConverter;
 import org.apache.cloudstack.veeam.api.converter.VolumeJoinVOToDiskConverter;
 import org.apache.cloudstack.veeam.api.dto.Backup;
+import org.apache.cloudstack.veeam.api.dto.BaseDto;
 import org.apache.cloudstack.veeam.api.dto.Checkpoint;
 import org.apache.cloudstack.veeam.api.dto.Cluster;
 import org.apache.cloudstack.veeam.api.dto.DataCenter;
@@ -100,9 +105,11 @@ import org.apache.cloudstack.veeam.api.dto.ImageTransfer;
 import org.apache.cloudstack.veeam.api.dto.Job;
 import org.apache.cloudstack.veeam.api.dto.Network;
 import org.apache.cloudstack.veeam.api.dto.Nic;
+import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
+import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.cloudstack.veeam.api.dto.VmAction;
 import org.apache.cloudstack.veeam.api.dto.VnicProfile;
@@ -138,12 +145,15 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
+import com.cloud.server.ResourceTag;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -266,7 +276,30 @@ public class ServerAdapter extends ManagerBase {
     @Inject
     BackupDao backupDao;
 
+    @Inject
+    ResourceTagDao resourceTagDao;
+
     //ToDo: check access on objects
+
+    protected static Tag getDummyTagByName(String name) {
+        Tag tag = new Tag();
+        String id = UUID.nameUUIDFromBytes(String.format("veeam:%s", name.toLowerCase()).getBytes()).toString();
+        tag.setId(id);
+        tag.setName(name);
+        tag.setDescription(String.format("Default %s tag", name.toLowerCase()));
+        tag.setHref(VeeamControlService.ContextPath.value() + TagsRouteHandler.BASE_ROUTE + "/" + id);
+        tag.setParent(ResourceTagVOToTagConverter.getRootTagRef());
+        return tag;
+    }
+
+    protected static Map<String, Tag> getDummyTags() {
+        Map<String, Tag> tags = new HashMap<>();
+        Tag tag1 = getDummyTagByName("Automatic");
+        tags.put(tag1.getId(), tag1);
+        Tag tag2 = getDummyTagByName("Manual");
+        tags.put(tag2.getId(), tag2);
+        return tags;
+    }
 
     protected Role createServiceAccountRole() {
         Role role = roleService.createRole(SERVICE_ACCOUNT_ROLE_NAME, RoleType.User,
@@ -417,20 +450,30 @@ public class ServerAdapter extends ManagerBase {
         return UserVmJoinVOToVmConverter.toVmList(vms, this::getHostById);
     }
 
-    public Vm getInstance(String uuid) {
+    public Vm getInstance(String uuid, boolean includeDisks, boolean includeNics, boolean allContent) {
         UserVmJoinVO vo = userVmJoinDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
         }
-        return UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::listDiskAttachmentsByInstanceId,
-                this::listNicsByInstance);
+        return UserVmJoinVOToVmConverter.toVm(vo, this::getHostById,
+                includeDisks ? this::listDiskAttachmentsByInstanceId : null,
+                includeNics ? this::listNicsByInstance : null,
+                allContent);
     }
 
     public Vm createInstance(Vm request) {
         if (request == null) {
             throw new InvalidParameterValueException("Request disk data is empty");
         }
+        OvfXmlUtil.updateFromConfiguration(request);
         String name = request.getName();
+        if (StringUtils.isBlank(name)) {
+            throw new InvalidParameterValueException("Invalid name specified for the VM");
+        }
+        String displayName = name;
+        if (name.endsWith("_restored")) {
+            name = name.replace("_restored", "-restored");
+        }
         Long zoneId = null;
         Long clusterId = null;
         if (request.getCluster() != null && StringUtils.isNotEmpty(request.getCluster().getId())) {
@@ -446,14 +489,16 @@ public class ServerAdapter extends ManagerBase {
         Integer cpu = null;
         try {
             cpu = Integer.valueOf(request.getCpu().getTopology().getSockets());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         if (cpu == null) {
             throw new InvalidParameterValueException("CPU topology sockets must be specified");
         }
         Long memory = null;
         try {
             memory = Long.valueOf(request.getMemory());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         if (memory == null) {
             throw new InvalidParameterValueException("Memory must be specified");
         }
@@ -470,7 +515,7 @@ public class ServerAdapter extends ManagerBase {
         Pair<User, Account> serviceUserAccount = createServiceAccountIfNeeded();
         CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
-            return createInstance(zoneId, clusterId, name, cpu, memory, userdata, bootType, bootMode);
+            return createInstance(zoneId, clusterId, name, displayName, cpu, memory, userdata, bootType, bootMode);
         } finally {
             CallContext.unregister();
         }
@@ -491,8 +536,8 @@ public class ServerAdapter extends ManagerBase {
         return serviceOfferingDao.findByUuid(uuid);
     }
 
-    protected Vm createInstance(Long zoneId, Long clusterId, String name, int cpu, long memory, String userdata,
-                                ApiConstants.BootType bootType, ApiConstants.BootMode bootMode) {
+    protected Vm createInstance(Long zoneId, Long clusterId, String name, String displayName, int cpu, long memory,
+                String userdata, ApiConstants.BootType bootType, ApiConstants.BootMode bootMode) {
         ServiceOffering serviceOffering = getServiceOfferingIdForVmCreation(zoneId, cpu, memory);
         if (serviceOffering == null) {
             throw new CloudRuntimeException("No service offering found for VM creation with specified CPU and memory");
@@ -503,6 +548,9 @@ public class ServerAdapter extends ManagerBase {
         cmd.setZoneId(zoneId);
         cmd.setClusterId(clusterId);
         cmd.setName(name);
+        if (displayName != null) {
+            cmd.setDisplayName(displayName);
+        }
         cmd.setServiceOfferingId(serviceOffering.getId());
         if (StringUtils.isNotEmpty(userdata)) {
             cmd.setUserData(Base64.getEncoder().encodeToString(userdata.getBytes(StandardCharsets.UTF_8)));
@@ -526,7 +574,7 @@ public class ServerAdapter extends ManagerBase {
             vm = userVmService.finalizeCreateVirtualMachine(vm.getId());
             UserVmJoinVO vo = userVmJoinDao.findById(vm.getId());
             return UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::listDiskAttachmentsByInstanceId,
-                    this::listNicsByInstance);
+                    this::listNicsByInstance, false);
         } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException | CloudRuntimeException e) {
             throw new CloudRuntimeException("Failed to create VM: " + e.getMessage(), e);
         }
@@ -534,7 +582,7 @@ public class ServerAdapter extends ManagerBase {
 
     public Vm updateInstance(String uuid, Vm request) {
         // ToDo: what to do?!
-        return getInstance(uuid);
+        return getInstance(uuid, false, false, false);
     }
 
     public void deleteInstance(String uuid) {
@@ -1235,5 +1283,31 @@ public class ServerAdapter extends ManagerBase {
         } finally {
             CallContext.unregister();
         }
+    }
+
+    public List<Tag> listAllTags() {
+        List<Tag> tags = new ArrayList<>(getDummyTags().values());
+        List<ResourceTagVO> vmResourceTags = resourceTagDao.listByResourceType(ResourceTag.ResourceObjectType.UserVm);
+        if (CollectionUtils.isNotEmpty(vmResourceTags)) {
+            tags.addAll(ResourceTagVOToTagConverter.toTags(vmResourceTags));
+        }
+        return tags;
+    }
+
+    public Tag getTag(String uuid) {
+        if (BaseDto.ZERO_UUID.equals(uuid)) {
+            return ResourceTagVOToTagConverter.getRootTag();
+        }
+        Tag tag = getDummyTags().get(uuid);
+        if (tag == null) {
+            ResourceTagVO resourceTagVO = resourceTagDao.findByUuid(uuid);
+            if (resourceTagVO != null) {
+                tag = ResourceTagVOToTagConverter.toTag(resourceTagVO);
+            }
+        }
+        if (tag == null) {
+            throw new InvalidParameterValueException("Tag with ID " + uuid + " not found");
+        }
+        return tag;
     }
 }

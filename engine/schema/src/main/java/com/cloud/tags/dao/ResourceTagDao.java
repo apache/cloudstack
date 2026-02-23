@@ -60,4 +60,6 @@ public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long> {
     void removeByResourceIdAndKey(long resourceId, ResourceObjectType resourceType, String key);
 
     List<? extends ResourceTag> listByResourceUuid(String resourceUuid);
+
+    List<ResourceTagVO> listByResourceType(ResourceObjectType resourceType);
 }

@@ -17,25 +17,41 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
-import java.util.List;
+public class Tag extends BaseDto {
+    private String name;
+    private String description;
+    private Ref parent;
+    private Ref vm;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JacksonXmlRootElement(localName = "nics")
-public final class Nics {
-
-    @JsonProperty("nic")
-    @JacksonXmlElementWrapper(useWrapping = false)
-    public List<Nic> nic;
-
-    public Nics() {
+    public String getName() {
+        return name;
     }
 
-    public Nics(final List<Nic> nic) {
-        this.nic = nic;
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Ref getParent() {
+        return parent;
+    }
+
+    public void setParent(Ref parent) {
+        this.parent = parent;
+    }
+
+    public Ref getVm() {
+        return vm;
+    }
+
+    public void setVm(Ref vm) {
+        this.vm = vm;
     }
 }

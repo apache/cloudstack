@@ -22,6 +22,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Os {
     private String type;
+    private String version;
+    private Boot boot;
 
     public String getType() {
         return type;
@@ -29,5 +31,25 @@ public final class Os {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public Boot getBoot() {
+        return boot;
+    }
+
+    public void setBoot(Boot boot) {
+        this.boot = boot;
+    }
+
+    public final static class Boot {
+        private NamedList<String> devices;
+
+        public NamedList<String> getDevices() {
+            return devices;
+        }
+
+        public void setDevices(NamedList<String> devices) {
+            this.devices = devices;
+        }
     }
 }

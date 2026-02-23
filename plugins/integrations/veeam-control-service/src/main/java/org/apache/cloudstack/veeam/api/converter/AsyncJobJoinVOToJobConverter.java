@@ -92,7 +92,7 @@ public class AsyncJobJoinVOToJobConverter {
     public static VmAction toVmAction(final AsyncJobJoinVO vo, final UserVmJoinVO vm) {
         VmAction action = new VmAction();
         fillAction(action, vo);
-        action.setVm(UserVmJoinVOToVmConverter.toVm(vm, null, null, null));
+        action.setVm(UserVmJoinVOToVmConverter.toVm(vm, null, null, null, false));
         return action;
     }
 

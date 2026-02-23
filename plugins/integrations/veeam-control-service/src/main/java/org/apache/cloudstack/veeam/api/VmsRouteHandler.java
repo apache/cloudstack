@@ -34,7 +34,6 @@ import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
 import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Nic;
-import org.apache.cloudstack.veeam.api.dto.Nics;
 import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
 import org.apache.cloudstack.veeam.api.dto.Vm;
@@ -46,6 +45,7 @@ import org.apache.cloudstack.veeam.api.request.VmSearchParser;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
@@ -108,7 +108,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                 if (!"GET".equalsIgnoreCase(method) && !"PUT".equalsIgnoreCase(method) && !"DELETE".equalsIgnoreCase(method)) {
                     io.methodNotAllowed(resp, "GET, PUT, DELETE", outFormat);
                 } else if ("GET".equalsIgnoreCase(method)) {
-                    handleGetById(id, resp, outFormat, io);
+                    handleGetById(id, req, resp, outFormat, io);
                 } else if ("PUT".equalsIgnoreCase(method)) {
                     handleUpdateById(id, req, resp, outFormat, io);
                 } else if ("DELETE".equalsIgnoreCase(method)) {
@@ -308,10 +308,22 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         }
     }
 
-    protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
-          final VeeamControlServlet io) throws IOException {
+    protected void handleGetById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
+             final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        String followStr = req.getParameter("follow");
+        boolean includeDisks = false;
+        boolean includeNics = false;
+        if (StringUtils.isNotBlank(followStr)) {
+            Set<String> followParts = java.util.Arrays.stream(followStr.split(","))
+                   .map(String::trim)
+                   .filter(s -> !s.isEmpty())
+                   .collect(java.util.stream.Collectors.toSet());
+            includeDisks = followParts.contains("disk_attachments.disk");
+            includeNics = followParts.contains("nics.reporteddevices");
+        }
+        boolean allContent = Boolean.parseBoolean(req.getParameter("all_content"));
         try {
-            Vm response = serverAdapter.getInstance(id);
+            Vm response = serverAdapter.getInstance(id, includeDisks, includeNics, allContent);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
@@ -399,7 +411,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                                                   final VeeamControlServlet io) throws IOException {
         try {
             List<Nic> nics = serverAdapter.listNicsByInstanceUuid(id);
-            Nics response = new Nics(nics);
+            NamedList<Nic> response = NamedList.of("nic", nics);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);

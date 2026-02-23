@@ -137,6 +137,10 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             throw new CloudRuntimeException("VM must be running or stopped to start backup");
         }
 
+        if (vm.getBackupOfferingId() == null) {
+            throw new CloudRuntimeException("VM not assigned a backup offering");
+        }
+
         Backup existingBackup = backupDao.findByVmId(vmId);
         if (existingBackup != null && existingBackup.getStatus() == Backup.Status.BackingUp) {
             throw new CloudRuntimeException("Backup already in progress for VM: " + vmId);

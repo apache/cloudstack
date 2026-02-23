@@ -27,14 +27,13 @@ import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.BaseDto;
-import org.apache.cloudstack.veeam.api.dto.Bios;
 import org.apache.cloudstack.veeam.api.dto.Cpu;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
 import org.apache.cloudstack.veeam.api.dto.EmptyElement;
 import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Nic;
-import org.apache.cloudstack.veeam.api.dto.Nics;
 import org.apache.cloudstack.veeam.api.dto.Os;
+import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.Topology;
 import org.apache.cloudstack.veeam.api.dto.Vm;
@@ -55,7 +54,9 @@ public final class UserVmJoinVOToVmConverter {
      * @param src      UserVmJoinVO
      */
     public static Vm toVm(final UserVmJoinVO src, final Function<Long, HostJoinVO> hostResolver,
-                          final Function<Long, List<DiskAttachment>> disksResolver, final Function<UserVmJoinVO, List<Nic>> nicsResolver) {
+              final Function<Long, List<DiskAttachment>> disksResolver,
+              final Function<UserVmJoinVO, List<Nic>> nicsResolver,
+              final boolean allContent) {
         if (src == null) {
             return null;
         }
@@ -104,7 +105,13 @@ public final class UserVmJoinVOToVmConverter {
             }
         }
 
-        dst.setMemory(String.valueOf(src.getRamSize() * 1024L * 1024L));
+        String memory = String.valueOf(src.getRamSize() * 1024L * 1024L);
+        dst.setMemory(memory);
+        Vm.MemoryPolicy memoryPolicy = new Vm.MemoryPolicy();
+        memoryPolicy.setGuaranteed(memory);
+        memoryPolicy.setMax(memory);
+        memoryPolicy.setBallooning("false");
+        dst.setMemoryPolicy(memoryPolicy);
         Cpu cpu = new Cpu();
         cpu.setArchitecture(src.getArch());
         cpu.setTopology(new Topology(src.getCpu(), 1, 1));
@@ -113,9 +120,15 @@ public final class UserVmJoinVOToVmConverter {
         os.setType(src.getGuestOsId() % 2 == 0
                 ? "windows"
                 : "linux");
+        Os.Boot boot = new Os.Boot();
+        boot.setDevices(NamedList.of("device", List.of("hd")));
+        os.setBoot(boot);
         dst.setOs(os);
-        Bios bios = new Bios();
+        Vm.Bios bios = new Vm.Bios();
         bios.setType("q35_secure_boot");
+        Vm.Bios.BootMenu bootMenu = new Vm.Bios.BootMenu();
+        bootMenu.setEnabled("false");
+        bios.setBootMenu(bootMenu);
         dst.setBios(bios);
         dst.setType("desktop");
         dst.setOrigin("ovirt");
@@ -126,9 +139,9 @@ public final class UserVmJoinVOToVmConverter {
             dst.setDiskAttachments(NamedList.of("disk_attachment", diskAttachments));
         }
 
-        if (disksResolver != null) {
+        if (nicsResolver != null) {
             List<Nic> nics = nicsResolver.apply(src);
-            dst.setNics(new Nics(nics));
+            dst.setNics(NamedList.of("nic", nics));
         }
 
         dst.setActions(NamedList.of("link", List.of(
@@ -143,13 +156,29 @@ public final class UserVmJoinVOToVmConverter {
                 BaseDto.getActionLink("snapshots", dst.getHref())
         ));
         dst.setTags(new EmptyElement());
+        dst.setCpuProfile(Ref.of(
+                basePath + ApiService.BASE_ROUTE + "/cpuprofiles/" + src.getServiceOfferingUuid(),
+                src.getServiceOfferingUuid()));
+        if (allContent) {
+            dst.setInitialization(getOvfInitialization(dst));
+        }
 
         return dst;
     }
 
+    private static Vm.Initialization getOvfInitialization(Vm vm) {
+        final Vm.Initialization.Configuration configuration = new Vm.Initialization.Configuration();
+        configuration.setType("ovf");
+        configuration.setData(OvfXmlUtil.toXml(vm));
+
+        final Vm.Initialization initialization = new Vm.Initialization();
+        initialization.setConfiguration(configuration);
+        return initialization;
+    }
+
     public static List<Vm> toVmList(final List<UserVmJoinVO> srcList, final Function<Long, HostJoinVO> hostResolver) {
         return srcList.stream()
-                .map(v -> toVm(v, hostResolver, null, null))
+                .map(v -> toVm(v, hostResolver, null, null, false))
                 .collect(Collectors.toList());
     }
 

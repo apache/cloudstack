@@ -120,4 +120,11 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
         sc.setParameters("resourceUuid", resourceUuid);
         return listBy(sc);
     }
+
+    @Override
+    public List<ResourceTagVO> listByResourceType(ResourceObjectType resourceType) {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceType", resourceType);
+        return listBy(sc);
+    }
 }
