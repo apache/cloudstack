@@ -56,7 +56,11 @@ import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.HostAffinityProcessor;
+import org.apache.cloudstack.affinity.HostAntiAffinityProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -333,6 +337,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     protected HostDao hostDao;
     @Inject
     protected AffinityGroupDao affinityGroupDao;
+    @Inject
+    protected AffinityGroupService affinityGroupService;
     @Inject
     protected AffinityGroupVMMapDao affinityGroupVMMapDao;
     @Inject
@@ -2560,7 +2566,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     protected void validateNodesAgainstExistingWorkers(List<Long> nodeIds, Set<Long> existingWorkerHostIds,
                                                        AffinityGroupVO affinityGroup, KubernetesCluster cluster) {
-        String affinityGroupType = affinityGroup.getType();
+        AffinityGroupProcessor processor = getAffinityGroupProcessor(affinityGroup.getType());
+        if (Objects.isNull(processor)) {
+            return;
+        }
 
         for (Long nodeId : nodeIds) {
             VMInstanceVO node = vmInstanceDao.findById(nodeId);
@@ -2570,14 +2579,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             Long nodeHostId = node.getHostId();
             String nodeHostName = getHostName(nodeHostId);
 
-            if ("host anti-affinity".equalsIgnoreCase(affinityGroupType)) {
+            if (processor instanceof HostAntiAffinityProcessor) {
                 if (existingWorkerHostIds.contains(nodeHostId)) {
                     throw new InvalidParameterValueException(String.format(
                             "Cannot add VM %s to cluster %s. VM is running on host %s which violates the cluster's " +
                             "host anti-affinity rule (affinity group: %s). Existing worker VMs are already running on this host.",
                             node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName()));
                 }
-            } else if ("host affinity".equalsIgnoreCase(affinityGroupType)) {
+            } else if (processor instanceof HostAffinityProcessor) {
                 if (!existingWorkerHostIds.isEmpty() && !existingWorkerHostIds.contains(nodeHostId)) {
                     List<String> existingHostNames = existingWorkerHostIds.stream()
                             .map(this::getHostName)
@@ -2594,7 +2603,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     protected void validateNewNodesAntiAffinity(List<Long> nodeIds, AffinityGroupVO affinityGroup, KubernetesCluster cluster) {
-        if (!"host anti-affinity".equalsIgnoreCase(affinityGroup.getType())) {
+        AffinityGroupProcessor processor = getAffinityGroupProcessor(affinityGroup.getType());
+        if (!(processor instanceof HostAntiAffinityProcessor)) {
             return;
         }
 
@@ -2613,6 +2623,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 newNodeHostIds.add(nodeHostId);
             }
         }
+    }
+
+    protected AffinityGroupProcessor getAffinityGroupProcessor(String affinityGroupType) {
+        Map<String, AffinityGroupProcessor> typeProcessorMap = affinityGroupService.getAffinityTypeToProcessorMap();
+        if (MapUtils.isEmpty(typeProcessorMap)) {
+            return null;
+        }
+        return typeProcessorMap.get(affinityGroupType);
     }
 
     protected String getHostName(Long hostId) {

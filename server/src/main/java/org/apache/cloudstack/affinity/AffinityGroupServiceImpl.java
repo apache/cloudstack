@@ -355,7 +355,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         return types;
     }
 
-    protected Map<String, AffinityGroupProcessor> getAffinityTypeToProcessorMap() {
+    @Override
+    public Map<String, AffinityGroupProcessor> getAffinityTypeToProcessorMap() {
         Map<String, AffinityGroupProcessor> typeProcessorMap = new HashMap<String, AffinityGroupProcessor>();
 
         for (AffinityGroupProcessor processor : _affinityProcessors) {
