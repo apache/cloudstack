@@ -87,7 +87,6 @@ import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.UsageEventUtils;
-import com.cloud.event.UsageEventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -3134,15 +3133,12 @@ public class UserVmManagerImplTest {
         if (custom) {
             when(serviceOffering.getCpu()).thenReturn(null);
             when(serviceOffering.getRamSize()).thenReturn(null);
-        } else {
-            when(serviceOffering.getCpu()).thenReturn(2);
-            when(serviceOffering.getRamSize()).thenReturn(2048);
         }
         if (customSpeed) {
             when(serviceOffering.getSpeed()).thenReturn(null);
         } else {
             when(serviceOffering.isCustomCpuSpeedSupported()).thenReturn(false);
-            when(serviceOffering.getSpeed()).thenReturn(2500);
+            when(serviceOffering.getSpeed()).thenReturn(1000);
         }
         System.out.println("Service Offering customized: " + serviceOffering.isCustomized() + ", speed: " + serviceOffering.getSpeed());
         return serviceOffering;
@@ -3161,7 +3157,8 @@ public class UserVmManagerImplTest {
         ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, false);
 
         Map<String, String> customParameters = new HashMap<>();
-        customParameters.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), "2500");
+        customParameters.put(VmDetailConstants.CPU_NUMBER, "1");
+        customParameters.put(VmDetailConstants.CPU_SPEED, "2500");
 
         InvalidParameterValueException ex = Assert.assertThrows(InvalidParameterValueException.class, () ->
                 userVmManagerImpl.validateCustomParameters(serviceOffering, customParameters));
@@ -3173,7 +3170,9 @@ public class UserVmManagerImplTest {
         ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, true);
 
         Map<String, String> customParameters = new HashMap<>();
-        customParameters.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), "2500");
+        customParameters.put(VmDetailConstants.CPU_NUMBER, "1");
+        customParameters.put(VmDetailConstants.CPU_SPEED, "2500");
+        customParameters.put(VmDetailConstants.MEMORY, "256");
 
         userVmManagerImpl.validateCustomParameters(serviceOffering, customParameters);
     }
