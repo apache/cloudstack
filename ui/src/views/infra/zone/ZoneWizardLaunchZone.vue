@@ -2196,13 +2196,11 @@ export default {
     },
     createSecondaryStagingStore (args) {
       return new Promise((resolve, reject) => {
-        let message = ''
-
         api('createSecondaryStagingStore', args).then(json => {
-          const result = json.addimagestoreresponse.secondarystorage
+          const result = json.createsecondarystagingstoreresponse.secondarystorage
           resolve(result)
         }).catch(error => {
-          message = error.response.headers['x-description']
+          const message = error?.response?.headers?.['x-description'] || error.message || error
           reject(message)
         })
       })
