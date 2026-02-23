@@ -400,10 +400,8 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
         if (object instanceof TemplateInfo) {
             TemplateInfo tmplInfo = (TemplateInfo)object;
-            if (tmplInfo.getTemplateType() == TemplateType.SYSTEM &&
-                (store.getScope().getScopeType() == ScopeType.REGION ||
-                 (store.getScope().getScopeType() == ScopeType.ZONE && store.getScope().getScopeId() == null))) {
-                return LocalHostEndpoint.getEndpoint(); // for bootstrap system vm template downloading to region image store
+            if (tmplInfo.getTemplateType() == TemplateType.SYSTEM) {
+                return LocalHostEndpoint.getEndpoint(); // for bootstrap system vm template downloading when no SSVM is available
             }
         }
         return null;
