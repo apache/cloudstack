@@ -1117,8 +1117,12 @@ public class KubernetesClusterActionWorker {
     }
 
     protected List<Long> getAffinityGroupIdsForNodeType(KubernetesClusterNodeType nodeType) {
-        return new ArrayList<>(kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(
-            kubernetesCluster.getId(), nodeType.name()));
+        List<Long> affinityGroupIds = kubernetesClusterAffinityGroupMapDao.listAffinityGroupIdsByClusterIdAndNodeType(
+            kubernetesCluster.getId(), nodeType.name());
+        if (CollectionUtils.isEmpty(affinityGroupIds)) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(affinityGroupIds);
     }
 
     protected List<Long> getMergedAffinityGroupIds(KubernetesClusterNodeType nodeType, Long domainId, Long accountId) {
