@@ -413,7 +413,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             "To check and repair the volume if it has any leaks before performing volume attach or VM start operations", true, ConfigKey.Scope.StoragePool);
 
     public static final ConfigKey<Boolean> CLVMSecureZeroFill = new ConfigKey<>("Advanced", Boolean.class, "clvm.secure.zero.fill", "false",
-            "When enabled, CLVM volumes to be zero-filled at the time of deletion to prevent data from being recovered by VMs reusing the space, as thick LVM volumes write data linearly", true, ConfigKey.Scope.StoragePool);
+            "When enabled, CLVM volumes to be zero-filled at the time of deletion to prevent data from being recovered by VMs reusing the space, as thick LVM volumes write data linearly. Note: This setting is propagated to hosts when they connect to the storage pool. Changing this setting requires disconnecting and reconnecting hosts or restarting the KVM agent for it to take effect.", false, ConfigKey.Scope.StoragePool);
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 

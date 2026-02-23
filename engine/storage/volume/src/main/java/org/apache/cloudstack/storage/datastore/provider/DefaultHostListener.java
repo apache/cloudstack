@@ -141,6 +141,9 @@ public class DefaultHostListener implements HypervisorHostListener {
 
         Optional.ofNullable(nfsMountOpts).ifPresent(detailsMap::putAll);
 
+        // Propagate CLVM secure zero-fill setting to the host
+        // Note: This is done during host connection (agent start, MS restart, host reconnection)
+        // so the setting is non-dynamic. Changes require host reconnection to take effect.
         if (pool.getPoolType() == Storage.StoragePoolType.CLVM) {
             Boolean clvmSecureZeroFill = VolumeApiServiceImpl.CLVMSecureZeroFill.valueIn(poolId);
             if (clvmSecureZeroFill != null) {

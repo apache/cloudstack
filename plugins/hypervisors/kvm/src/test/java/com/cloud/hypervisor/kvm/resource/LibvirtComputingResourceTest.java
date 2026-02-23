@@ -2728,8 +2728,11 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testModifyStoragePoolCommand() {
-        final StoragePool pool = Mockito.mock(StoragePool.class);;
+        final StoragePool pool = Mockito.mock(StoragePool.class);
         final ModifyStoragePoolCommand command = new ModifyStoragePoolCommand(true, pool);
+        Map<String, String> details = new HashMap<>();
+        details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "false");
+        command.setDetails(details);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool kvmStoragePool = Mockito.mock(KVMStoragePool.class);
@@ -2753,8 +2756,11 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testModifyStoragePoolCommandFailure() {
-        final StoragePool pool = Mockito.mock(StoragePool.class);;
+        final StoragePool pool = Mockito.mock(StoragePool.class);
         final ModifyStoragePoolCommand command = new ModifyStoragePoolCommand(true, pool);
+        Map<String, String> details = new HashMap<>();
+        details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "false");
+        command.setDetails(details);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
 
