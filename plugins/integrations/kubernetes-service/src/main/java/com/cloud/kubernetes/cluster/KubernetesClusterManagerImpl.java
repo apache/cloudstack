@@ -59,8 +59,7 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
-import org.apache.cloudstack.affinity.HostAffinityProcessor;
-import org.apache.cloudstack.affinity.HostAntiAffinityProcessor;
+import org.apache.cloudstack.affinity.AffinityProcessorBase;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -2579,14 +2578,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             Long nodeHostId = node.getHostId();
             String nodeHostName = getHostName(nodeHostId);
 
-            if (processor instanceof HostAntiAffinityProcessor) {
+            if (AffinityProcessorBase.AFFINITY_TYPE_HOST_ANTI.equals(affinityGroup.getType())) {
                 if (existingWorkerHostIds.contains(nodeHostId)) {
                     throw new InvalidParameterValueException(String.format(
                             "Cannot add VM %s to cluster %s. VM is running on host %s which violates the cluster's " +
                             "host anti-affinity rule (affinity group: %s). Existing worker VMs are already running on this host.",
                             node.getInstanceName(), cluster.getName(), nodeHostName, affinityGroup.getName()));
                 }
-            } else if (processor instanceof HostAffinityProcessor) {
+            } else if (AffinityProcessorBase.AFFINITY_TYPE_HOST.equals(affinityGroup.getType())) {
                 if (!existingWorkerHostIds.isEmpty() && !existingWorkerHostIds.contains(nodeHostId)) {
                     List<String> existingHostNames = existingWorkerHostIds.stream()
                             .map(this::getHostName)
@@ -2604,7 +2603,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     protected void validateNewNodesAntiAffinity(List<Long> nodeIds, AffinityGroupVO affinityGroup, KubernetesCluster cluster) {
         AffinityGroupProcessor processor = getAffinityGroupProcessor(affinityGroup.getType());
-        if (!(processor instanceof HostAntiAffinityProcessor)) {
+        if (processor == null || !AffinityProcessorBase.AFFINITY_TYPE_HOST_ANTI.equals(affinityGroup.getType())) {
             return;
         }
 
