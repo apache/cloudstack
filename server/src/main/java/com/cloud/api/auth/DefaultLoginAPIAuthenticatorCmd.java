@@ -110,7 +110,11 @@ public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthe
         // FIXME: ported from ApiServlet, refactor and cleanup
         final String[] username = (String[])params.get(ApiConstants.USERNAME);
         final String[] password = (String[])params.get(ApiConstants.PASSWORD);
-        final String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
+        String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (domainIdArr == null) {
+            // Fallback to support clients using the camelCase parameter name "domainId"
+            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
+        }
         Long domainId = null;
         if (domainIdArr != null && domainIdArr.length > 0) {
             try {
