@@ -79,8 +79,8 @@ export default {
       icon: 'login-outlined',
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       permission: ['listOauthProvider'],
-      columns: ['provider', 'enabled', 'description', 'clientid', 'secretkey', 'redirecturi', 'domainid'],
-      details: ['provider', 'description', 'enabled', 'clientid', 'secretkey', 'redirecturi', 'domainid'],
+      columns: ['provider', 'enabled', 'description', 'clientid', 'secretkey', 'redirecturi', 'domain'],
+      details: ['provider', 'description', 'enabled', 'clientid', 'secretkey', 'redirecturi', 'domain'],
       actions: [
         {
           api: 'registerOauthProvider',
