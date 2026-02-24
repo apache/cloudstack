@@ -216,10 +216,10 @@
       @cancel="closeModal">
       <div v-ctrl-enter="addRule">
         <span
-          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || this.vpcConserveMode)">
+          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            :v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || this.vpcConserveMode)"
+            v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
@@ -800,7 +800,7 @@ export default {
       this.newRule.virtualmachineid = e.target.value
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkId: ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
+        networkid: ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
         if (!response.listnicsresponse.nic || response.listnicsresponse.nic.length < 1) return
         const nic = response.listnicsresponse.nic[0]

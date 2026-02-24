@@ -487,10 +487,10 @@
     >
       <div @keyup.ctrl.enter="handleAddNewRule">
         <span
-          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || this.vpcConserveMode)">
+          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || this.vpcConserveMode)"
+            v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
