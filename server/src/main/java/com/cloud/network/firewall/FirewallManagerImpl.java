@@ -30,6 +30,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import org.apache.commons.lang3.ObjectUtils;
@@ -406,7 +407,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         boolean isNewRuleOnVpcNetwork = newRuleNetwork.getVpcId() != null;
         boolean isVpcConserveModeEnabled = false;
         if (isNewRuleOnVpcNetwork) {
-            VpcOfferingVO vpcOffering = vpcOfferingDao.findById(newRuleNetwork.getVpcId());
+            Vpc vpc = _vpcMgr.getActiveVpc(newRuleNetwork.getVpcId());
+            VpcOfferingVO vpcOffering = vpc != null ? vpcOfferingDao.findById(vpc.getVpcOfferingId()) : null;
             isVpcConserveModeEnabled = vpcOffering != null && vpcOffering.isConserveMode();
         }
 
