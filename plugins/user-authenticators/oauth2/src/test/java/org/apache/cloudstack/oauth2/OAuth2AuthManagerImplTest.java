@@ -66,7 +66,7 @@ public class OAuth2AuthManagerImplTest {
 
     @Test
     public void testRegisterOauthProvider() {
-        when(_authManager.isOAuthPluginEnabled()).thenReturn(false);
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(false);
         RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
         try {
             _authManager.registerOauthProvider(cmd);
@@ -76,7 +76,7 @@ public class OAuth2AuthManagerImplTest {
         }
 
         // Test when provider is already registered
-        when(_authManager.isOAuthPluginEnabled()).thenReturn(true);
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
         OauthProviderVO providerVO = new OauthProviderVO();
         providerVO.setProvider("testProvider");
         when(_authManager._oauthProviderDao.findByProviderAndDomain(Mockito.anyString(), Mockito.isNull())).thenReturn(providerVO);
@@ -180,12 +180,12 @@ public class OAuth2AuthManagerImplTest {
 
     @Test
     public void testStart() {
-        when(_authManager.isOAuthPluginEnabled()).thenReturn(true);
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
         doNothing().when(_authManager).initializeUserOAuth2AuthenticationProvidersMap();
         boolean result = _authManager.start();
         assertTrue(result);
 
-        when(_authManager.isOAuthPluginEnabled()).thenReturn(false);
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(false);
         result = _authManager.start();
         assertTrue(result);
     }

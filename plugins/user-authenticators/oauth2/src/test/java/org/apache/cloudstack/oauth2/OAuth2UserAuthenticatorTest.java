@@ -69,7 +69,7 @@ public class OAuth2UserAuthenticatorTest {
     @Before
     public void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
-        doReturn(true).when(authenticator).isOAuthPluginEnabled();
+        doReturn(true).when(authenticator).isOAuthPluginEnabled(anyLong());
     }
 
     @After
