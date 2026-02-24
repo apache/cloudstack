@@ -400,17 +400,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             assert (rules.size() >= 1);
         }
 
-        NetworkVO newRuleNetwork = _networkDao.findById(newRule.getNetworkId());
-        if (newRuleNetwork == null) {
-            throw new InvalidParameterValueException("Unable to create firewall rule as cannot find network by id=" + newRule.getNetworkId());
-        }
-        boolean isNewRuleOnVpcNetwork = newRuleNetwork.getVpcId() != null;
-        boolean isVpcConserveModeEnabled = false;
-        if (isNewRuleOnVpcNetwork) {
-            Vpc vpc = _vpcMgr.getActiveVpc(newRuleNetwork.getVpcId());
-            VpcOfferingVO vpcOffering = vpc != null ? vpcOfferingDao.findById(vpc.getVpcOfferingId()) : null;
-            isVpcConserveModeEnabled = vpcOffering != null && vpcOffering.isConserveMode();
-        }
+        NetworkVO newRuleNetwork = getNewRuleNetwork(newRule);
+        boolean newRuleIsOnVpcNetwork = isNewRuleOnVpcNetwork(newRuleNetwork);
+        boolean vpcConserveModeEnabled = isVpcConserveModeEnabled(newRuleNetwork);
 
         for (FirewallRuleVO rule : rules) {
             if (rule.getId() == newRule.getId()) {
@@ -461,10 +453,10 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
             // Checking if the rule applied is to the same network that is passed in the rule.
             // (except for VPCs with conserve mode = true)
-            if ((!isNewRuleOnVpcNetwork || !isVpcConserveModeEnabled)
+            if ((!newRuleIsOnVpcNetwork || !vpcConserveModeEnabled)
                     && rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
                 String errMsg = String.format("New rule is for a different network than what's specified in rule %s", rule.getXid());
-                if (isNewRuleOnVpcNetwork) {
+                if (newRuleIsOnVpcNetwork) {
                     errMsg += String.format(" - VPC id=%s is not using conserve mode", newRuleNetwork.getVpcId());
                 }
                 throw new NetworkRuleConflictException(errMsg);
@@ -514,6 +506,27 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         if (logger.isDebugEnabled()) {
             logger.debug("No network rule conflicts detected for " + newRule + " against " + (rules.size() - 1) + " existing rules");
         }
+    }
+
+    protected boolean isVpcConserveModeEnabled(NetworkVO newRuleNetwork) {
+        if (isNewRuleOnVpcNetwork(newRuleNetwork)) {
+            Vpc vpc = _vpcMgr.getActiveVpc(newRuleNetwork.getVpcId());
+            VpcOfferingVO vpcOffering = vpc != null ? vpcOfferingDao.findById(vpc.getVpcOfferingId()) : null;
+            return vpcOffering != null && vpcOffering.isConserveMode();
+        }
+        return false;
+    }
+
+    protected boolean isNewRuleOnVpcNetwork(NetworkVO newRuleNetwork) {
+        return newRuleNetwork.getVpcId() != null;
+    }
+
+    protected NetworkVO getNewRuleNetwork(FirewallRule newRule) {
+        NetworkVO newRuleNetwork = _networkDao.findById(newRule.getNetworkId());
+        if (newRuleNetwork == null) {
+            throw new InvalidParameterValueException("Unable to create firewall rule as cannot find network by id=" + newRule.getNetworkId());
+        }
+        return newRuleNetwork;
     }
 
     protected boolean checkIfRulesHaveConflictingPortRanges(FirewallRule newRule, FirewallRule rule, boolean oneOfRulesIsFirewall, boolean bothRulesFirewall, boolean bothRulesPortForwarding, boolean duplicatedCidrs) {
