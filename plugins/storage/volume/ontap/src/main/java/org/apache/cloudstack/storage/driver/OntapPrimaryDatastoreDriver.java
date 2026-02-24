@@ -564,7 +564,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 cloudStackVolumeRequestMap.put(Constants.FILE_PATH, volumeVO.getPath());
                 cloudStackVolume = storageStrategy.getCloudStackVolume(cloudStackVolumeRequestMap);
                 if (cloudStackVolume == null || cloudStackVolume.getFile() == null) {
-                    throw new CloudRuntimeException("takeSnapshot: Failed to get source file to take snapshot");
+                    throw new CloudRuntimeException("Failed to get source file to take snapshot");
                     }
                 s_logger.info("takeSnapshot : entered after getting cloudstack volume with file path: " + cloudStackVolume.getFile().getPath() + " and size: " + cloudStackVolume.getFile().getSize());
                 fileSize = cloudStackVolume.getFile().getSize();

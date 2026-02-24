@@ -177,16 +177,16 @@ public class UnifiedNASStrategy extends NASStrategy {
             /** Create URI for GET Job API */
             Boolean jobSucceeded = jobPollForSuccess(jobUUID,3,2);
             if (!jobSucceeded) {
-                s_logger.error("File clone failed: " + cloudstackVolumeArg.getFile().getPath());
+                s_logger.error("snapshotCloudStackVolume: File clone failed: " + cloudstackVolumeArg.getFile().getPath());
                 throw new CloudRuntimeException("File clone failed: " + cloudstackVolumeArg.getFile().getPath());
             }
-            s_logger.info("File clone job completed successfully for file: " + cloudstackVolumeArg.getFile().getPath());
+            s_logger.info("snapshotCloudStackVolume: File clone job completed successfully for file: " + cloudstackVolumeArg.getFile().getPath());
 
         } catch (FeignException e) {
-            s_logger.error("Failed to clone file response: " + cloudstackVolumeArg.getFile().getPath(), e);
+            s_logger.error("snapshotCloudStackVolume: Failed to clone file response: " + cloudstackVolumeArg.getFile().getPath(), e);
             throw new CloudRuntimeException("File not found: " + e.getMessage());
         } catch (Exception e) {
-            s_logger.error("Exception to get file: {}", cloudstackVolumeArg.getFile().getPath(), e);
+            s_logger.error("snapshotCloudStackVolume: Exception to get file: {}", cloudstackVolumeArg.getFile().getPath(), e);
             throw new CloudRuntimeException("Failed to get the file: " + e.getMessage());
         }
 
@@ -195,7 +195,7 @@ public class UnifiedNASStrategy extends NASStrategy {
             /** Get cloned file call from storage */
             clonedFileInfo = getFile(cloudstackVolumeArg.getFlexVolumeUuid(), cloudstackVolumeArg.getDestinationPath());
         } catch (Exception e) {
-            s_logger.error("Exception to get cloned file: {}", cloudstackVolumeArg.getDestinationPath(), e);
+            s_logger.error("snapshotCloudStackVolume: Exception to get cloned file: {}", cloudstackVolumeArg.getDestinationPath(), e);
             throw new CloudRuntimeException("Failed to get the cloned file: " + e.getMessage());
         }
         cloudStackVolume = new CloudStackVolume();
@@ -216,17 +216,17 @@ public class UnifiedNASStrategy extends NASStrategy {
         ExportPolicy policyRequest = createExportPolicyRequest(accessGroup,svmName,volumeName);
         try {
             ExportPolicy createdPolicy = createExportPolicy(svmName, policyRequest);
-            s_logger.info("ExportPolicy created: {}, now attaching this policy to storage pool volume", createdPolicy.getName());
+            s_logger.info("createAccessGroup: ExportPolicy created: {}, now attaching this policy to storage pool volume", createdPolicy.getName());
             // attach export policy to volume of storage pool
             assignExportPolicyToVolume(volumeUUID,createdPolicy.getName());
             // save the export policy details in storage pool details
             storagePoolDetailsDao.addDetail(accessGroup.getPrimaryDataStoreInfo().getId(), Constants.EXPORT_POLICY_ID, String.valueOf(createdPolicy.getId()), true);
             storagePoolDetailsDao.addDetail(accessGroup.getPrimaryDataStoreInfo().getId(), Constants.EXPORT_POLICY_NAME, createdPolicy.getName(), true);
-            s_logger.info("Successfully assigned exportPolicy {} to volume {}", policyRequest.getName(), volumeName);
+            s_logger.info("createAccessGroup: Successfully assigned exportPolicy {} to volume {}", policyRequest.getName(), volumeName);
             accessGroup.setPolicy(policyRequest);
             return accessGroup;
         }catch(Exception e){
-            s_logger.error("Exception occurred while creating access group: " +  e);
+            s_logger.error("createAccessGroup: Exception occurred while creating access group: " +  e);
             throw new CloudRuntimeException("Failed to create access group: " + e);
         }
     }
@@ -333,7 +333,7 @@ public class UnifiedNASStrategy extends NASStrategy {
 
 
     private ExportPolicy createExportPolicy(String svmName, ExportPolicy policy) {
-        s_logger.info("Creating export policy: {} for SVM: {}", policy, svmName);
+        s_logger.info("createExportPolicy: Creating export policy: {} for SVM: {}", policy, svmName);
 
         try {
             String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
@@ -346,18 +346,18 @@ public class UnifiedNASStrategy extends NASStrategy {
                     throw new CloudRuntimeException("Export policy " + policy.getName() + " was not created on ONTAP. " +
                             "Received successful response but policy does not exist.");
                 }
-                s_logger.info("Export policy created and verified successfully: " + policy.getName());
+                s_logger.info("createExportPolicy: Export policy created and verified successfully: " + policy.getName());
             } catch (FeignException e) {
-                s_logger.error("Failed to verify export policy creation: " + policy.getName(), e);
+                s_logger.error("createExportPolicy: Failed to verify export policy creation: " + policy.getName(), e);
                 throw new CloudRuntimeException("Export policy creation verification failed: " + e.getMessage());
             }
-            s_logger.info("Export policy created successfully with name {}", policy.getName());
+            s_logger.info("createExportPolicy: Export policy created successfully with name {}", policy.getName());
             return policiesResponse.getRecords().get(0);
         } catch (FeignException e) {
-            s_logger.error("Failed to create export policy: {}", policy, e);
+            s_logger.error("createExportPolicy: Failed to create export policy: {}", policy, e);
             throw new CloudRuntimeException("Failed to create export policy: " + e.getMessage());
         } catch (Exception e) {
-            s_logger.error("Exception while creating export policy: {}", policy, e);
+            s_logger.error("createExportPolicy: Exception while creating export policy: {}", policy, e);
             throw new CloudRuntimeException("Failed to create export policy: " + e.getMessage());
         }
     }
@@ -369,20 +369,20 @@ public class UnifiedNASStrategy extends NASStrategy {
             OntapResponse<ExportPolicy> policiesResponse = nasFeignClient.getExportPolicyResponse(authHeader, queryParams);
 
             if (policiesResponse == null ) {
-                s_logger.warn("Export policy not found for deletion: {}", policyName);
+                s_logger.warn("deleteExportPolicy: Export policy not found for deletion: {}", policyName);
                 throw new CloudRuntimeException("Export policy not found : " + policyName);
             }
             String policyId = String.valueOf(policiesResponse.getRecords().get(0).getId());
             nasFeignClient.deleteExportPolicyById(authHeader, policyId);
-            s_logger.info("Export policy deleted successfully: {}", policyName);
+            s_logger.info("deleteExportPolicy: Export policy deleted successfully: {}", policyName);
         } catch (Exception e) {
-            s_logger.error("Failed to delete export policy: {}", policyName, e);
+            s_logger.error("deleteExportPolicy: Failed to delete export policy: {}", policyName, e);
             throw new CloudRuntimeException("Failed to delete export policy: " + policyName);
         }
     }
 
     private void assignExportPolicyToVolume(String volumeUuid, String policyName) {
-        s_logger.info("Assigning export policy: {} to volume: {}", policyName, volumeUuid);
+        s_logger.info("assignExportPolicyToVolume: Assigning export policy: {} to volume: {}", policyName, volumeUuid);
 
         try {
             String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
@@ -405,13 +405,13 @@ public class UnifiedNASStrategy extends NASStrategy {
                 Job createVolumeJob = null;
                 while(createVolumeJob == null || !createVolumeJob.getState().equals(Constants.JOB_SUCCESS)) {
                     if(jobRetryCount >= Constants.JOB_MAX_RETRIES) {
-                        s_logger.error("Job to update volume " + volumeUuid + " did not complete within expected time.");
+                        s_logger.error("assignExportPolicyToVolume: Job to update volume " + volumeUuid + " did not complete within expected time.");
                         throw new CloudRuntimeException("Job to update volume " + volumeUuid + " did not complete within expected time.");
                     }
                     try {
                         createVolumeJob = jobFeignClient.getJobByUUID(authHeader, jobUUID);
                         if (createVolumeJob == null) {
-                            s_logger.warn("Job with UUID " + jobUUID + " not found. Retrying...");
+                            s_logger.warn("assignExportPolicyToVolume: Job with UUID " + jobUUID + " not found. Retrying...");
                         } else if (createVolumeJob.getState().equals(Constants.JOB_FAILURE)) {
                             throw new CloudRuntimeException("Job to update volume " + volumeUuid + " failed with error: " + createVolumeJob.getMessage());
                         }
@@ -422,83 +422,83 @@ public class UnifiedNASStrategy extends NASStrategy {
                     Thread.sleep(Constants.CREATE_VOLUME_CHECK_SLEEP_TIME); // Sleep for 2 seconds before polling again
                 }
             } catch (Exception e) {
-                s_logger.error("Exception while updating volume: ", e);
+                s_logger.error("assignExportPolicyToVolume: Exception while updating volume: ", e);
                 throw new CloudRuntimeException("Failed to update volume: " + e.getMessage());
             }
-            s_logger.info("Export policy successfully assigned to volume: {}", volumeUuid);
+            s_logger.info("assignExportPolicyToVolume: Export policy successfully assigned to volume: {}", volumeUuid);
         } catch (FeignException e) {
-            s_logger.error("Failed to assign export policy to volume: {}", volumeUuid, e);
+            s_logger.error("assignExportPolicyToVolume: Failed to assign export policy to volume: {}", volumeUuid, e);
             throw new CloudRuntimeException("Failed to assign export policy: " + e.getMessage());
         } catch (Exception e) {
-            s_logger.error("Exception while assigning export policy to volume: {}", volumeUuid, e);
+            s_logger.error("assignExportPolicyToVolume: Exception while assigning export policy to volume: {}", volumeUuid, e);
             throw new CloudRuntimeException("Failed to assign export policy: " + e.getMessage());
         }
     }
 
     private boolean createFile(String volumeUuid, String filePath, FileInfo fileInfo) {
-        s_logger.info("Creating file: {} in volume: {}", filePath, volumeUuid);
+        s_logger.info("createFile: Creating file: {} in volume: {}", filePath, volumeUuid);
         try {
             String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
             nasFeignClient.createFile(authHeader, volumeUuid, filePath, fileInfo);
-            s_logger.info("File created successfully: {} in volume: {}", filePath, volumeUuid);
+            s_logger.info("createFile: File created successfully: {} in volume: {}", filePath, volumeUuid);
             return true;
         } catch (FeignException e) {
-            s_logger.error("Failed to create file: {} in volume: {}", filePath, volumeUuid, e);
+            s_logger.error("createFile: Failed to create file: {} in volume: {}", filePath, volumeUuid, e);
             return false;
         } catch (Exception e) {
-            s_logger.error("Exception while creating file: {} in volume: {}", filePath, volumeUuid, e);
+            s_logger.error("createFile: Exception while creating file: {} in volume: {}", filePath, volumeUuid, e);
             return false;
         }
     }
 
     private boolean deleteFile(String volumeUuid, String filePath) {
-        s_logger.info("Deleting file: {} from volume: {}", filePath, volumeUuid);
+        s_logger.info("deleteFile: Deleting file: {} from volume: {}", filePath, volumeUuid);
         try {
             String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
             nasFeignClient.deleteFile(authHeader, volumeUuid, filePath);
-            s_logger.info("File deleted successfully: {} from volume: {}", filePath, volumeUuid);
+            s_logger.info("deleteFile: File deleted successfully: {} from volume: {}", filePath, volumeUuid);
             return true;
         } catch (FeignException e) {
-            s_logger.error("Failed to delete file: {} from volume: {}", filePath, volumeUuid, e);
+            s_logger.error("deleteFile: Failed to delete file: {} from volume: {}", filePath, volumeUuid, e);
             return false;
         } catch (Exception e) {
-            s_logger.error("Exception while deleting file: {} from volume: {}", filePath, volumeUuid, e);
+            s_logger.error("deleteFile: Exception while deleting file: {} from volume: {}", filePath, volumeUuid, e);
             return false;
         }
     }
 
     private OntapResponse<FileInfo> getFileInfo(String volumeUuid, String filePath) {
-        s_logger.debug("Getting file info for: {} in volume: {}", filePath, volumeUuid);
+        s_logger.debug("getFileInfo: Getting file info for: {} in volume: {}", filePath, volumeUuid);
         try {
             String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
             OntapResponse<FileInfo> response = nasFeignClient.getFileResponse(authHeader, volumeUuid, filePath);
-            s_logger.debug("Retrieved file info for: {} in volume: {}", filePath, volumeUuid);
+            s_logger.debug("getFileInfo: Retrieved file info for: {} in volume: {}", filePath, volumeUuid);
             return response;
         } catch (FeignException e){
             if (e.status() == 404) {
-                s_logger.debug("File not found: {} in volume: {}", filePath, volumeUuid);
+                s_logger.debug("getFileInfo: File not found: {} in volume: {}", filePath, volumeUuid);
                 return null;
             }
-            s_logger.error("Failed to get file info: {} in volume: {}", filePath, volumeUuid, e);
+            s_logger.error("getFileInfo: Failed to get file info: {} in volume: {}", filePath, volumeUuid, e);
             throw new CloudRuntimeException("Failed to get file info: " + e.getMessage());
         } catch (Exception e){
-            s_logger.error("Exception while getting file info: {} in volume: {}", filePath, volumeUuid, e);
+            s_logger.error("getFileInfo: Exception while getting file info: {} in volume: {}", filePath, volumeUuid, e);
             throw new CloudRuntimeException("Failed to get file info: " + e.getMessage());
         }
     }
 
     private boolean updateFile(String volumeUuid, String filePath, FileInfo fileInfo) {
-        s_logger.info("Updating file: {} in volume: {}", filePath, volumeUuid);
+        s_logger.info("updateFile: Updating file: {} in volume: {}", filePath, volumeUuid);
         try {
             String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
             nasFeignClient.updateFile( authHeader, volumeUuid, filePath, fileInfo);
-            s_logger.info("File updated successfully: {} in volume: {}", filePath, volumeUuid);
+            s_logger.info("updateFile: File updated successfully: {} in volume: {}", filePath, volumeUuid);
             return true;
         } catch (FeignException e) {
-            s_logger.error("Failed to update file: {} in volume: {}", filePath, volumeUuid, e);
+            s_logger.error("updateFile: Failed to update file: {} in volume: {}", filePath, volumeUuid, e);
             return false;
         } catch (Exception e){
-            s_logger.error("Exception while updating file: {} in volume: {}", filePath, volumeUuid, e);
+            s_logger.error("updateFile: Exception while updating file: {} in volume: {}", filePath, volumeUuid, e);
             return false;
         }
     }
@@ -545,7 +545,7 @@ public class UnifiedNASStrategy extends NASStrategy {
        try {
            VolumeObject volumeObject = (VolumeObject) volumeInfo;
            long volumeId = volumeObject.getId();
-           s_logger.info("VolumeInfo ID from VolumeObject: {}", volumeId);
+           s_logger.info("updateCloudStackVolumeMetadata: VolumeInfo ID from VolumeObject: {}", volumeId);
            VolumeVO volume = volumeDao.findById(volumeId);
            if (volume == null) {
                throw new CloudRuntimeException("Volume not found with id: " + volumeId);
@@ -557,7 +557,7 @@ public class UnifiedNASStrategy extends NASStrategy {
            volumeDao.update(volume.getId(), volume);
            return volumeUuid;
        }catch (Exception e){
-           s_logger.error("Exception while updating volumeInfo: {} in volume: {}", dataStoreId, volumeInfo.getUuid(), e);
+           s_logger.error("updateCloudStackVolumeMetadata: Exception while updating volumeInfo: {} in volume: {}", dataStoreId, volumeInfo.getUuid(), e);
            throw new CloudRuntimeException("Exception while updating volumeInfo: " + e.getMessage());
        }
     }
@@ -624,17 +624,17 @@ public class UnifiedNASStrategy extends NASStrategy {
         try {
             fileResponse = nasFeignClient.getFileResponse(authHeader, volumeUuid, filePath);
             if (fileResponse == null || fileResponse.getRecords().isEmpty()) {
-                throw new CloudRuntimeException("File " + filePath + " not not found on ONTAP. " +
+                throw new CloudRuntimeException("File " + filePath + " not found on ONTAP. " +
                         "Received successful response but file does not exist.");
             }
         } catch (FeignException e) {
-            s_logger.error("Failed to get file response: " + filePath, e);
+            s_logger.error("getFile: Failed to get file response: " + filePath, e);
             throw new CloudRuntimeException("File not found: " + e.getMessage());
         } catch (Exception e) {
-            s_logger.error("Exception to get file: {}", filePath, e);
+            s_logger.error("getFile: Exception to get file: {}", filePath, e);
             throw new CloudRuntimeException("Failed to get the file: " + e.getMessage());
         }
-        s_logger.info("File retrieved successfully with name {}", filePath);
+        s_logger.info("getFile: File retrieved successfully with name {}", filePath);
         return fileResponse.getRecords().get(0);
     }
 }
