@@ -170,9 +170,7 @@ public class KMSWrappedKeyVO {
 
     @Override
     public String toString() {
-        return String.format("KMSWrappedKey %s",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "uuid", "kmsKeyId", "kekVersionId", "accountId", "zoneId", "state", "created",
-                        "removed"));
+        return String.format("KMSWrappedKey %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "kmsKeyId", "kekVersionId", "zoneId", "created", "removed"));
     }
 }

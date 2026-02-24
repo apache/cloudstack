@@ -206,6 +206,9 @@ export default {
           listView: true,
           popup: true,
           dataView: false,
+          show: (record, store) => {
+            return ['Admin'].includes(store.userInfo.roletype)
+          },
           args: (record, store, group) => {
             return ['Admin'].includes(store.userInfo.roletype)
               ? ['name', 'zoneid', 'vendorname', 'domainid', 'account', 'projectid', 'details', 'system']
@@ -224,6 +227,9 @@ export default {
           label: 'label.update.hsm.profile',
           dataView: true,
           popup: true,
+          show: (record, store) => {
+            return ['Admin'].includes(store.userInfo.roletype)
+          },
           args: ['id', 'name', 'enabled'],
           mapping: {
             id: {
@@ -239,6 +245,9 @@ export default {
           message: 'message.action.delete.hsm.profile',
           dataView: true,
           popup: true,
+          show: (record, store) => {
+            return ['Admin'].includes(store.userInfo.roletype)
+          },
           args: ['id'],
           mapping: {
             id: {
