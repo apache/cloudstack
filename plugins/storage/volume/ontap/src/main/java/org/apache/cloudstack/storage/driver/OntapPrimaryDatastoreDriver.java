@@ -556,7 +556,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             CloudStackVolume cloudStackVolume = null;
             long usedBytes = getUsedBytes(storagePool);
             long capacityBytes = storagePool.getCapacityBytes();
-
+            long fileSize = 0l;
             // Only proceed for NFS3 protocol
             if (ProtocolType.NFS3.name().equalsIgnoreCase(poolDetails.get(Constants.PROTOCOL))) {
                 Map<String, String> cloudStackVolumeRequestMap = new HashMap<>();
@@ -567,11 +567,9 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                     throw new CloudRuntimeException("takeSnapshot: Failed to get source file to take snapshot");
                     }
                 s_logger.info("takeSnapshot : entered after getting cloudstack volume with file path: " + cloudStackVolume.getFile().getPath() + " and size: " + cloudStackVolume.getFile().getSize());
-                long fileSize = cloudStackVolume.getFile().getSize();
-                usedBytes += fileSize;            
+                fileSize = cloudStackVolume.getFile().getSize();
+                usedBytes += fileSize;
             }
-            
-            
 
             if (usedBytes > capacityBytes) {
                 throw new CloudRuntimeException("Insufficient space remains in this primary storage to take a snapshot");
@@ -583,8 +581,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
             String snapshotName = volumeInfo.getName() + "-" + snapshot.getUuid();
 
-            int maxSnapshotNameLength = 64;
-            int trimRequired = snapshotName.length() - maxSnapshotNameLength;
+            int trimRequired = snapshotName.length() - Constants.MAX_SNAPSHOT_NAME_LENGTH;
 
             if (trimRequired > 0) {
                 snapshotName = StringUtils.left(volumeInfo.getName(), (volumeInfo.getName().length() - trimRequired)) + "-" + snapshot.getUuid();
@@ -710,32 +707,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
         }
         return cloudStackVolumeDeleteRequest;
 
-    }
-
-    private CloudStackVolume getCloudStackVolumeRequestByProtocol(Map<String, String> details, String filePath) {
-        CloudStackVolume cloudStackVolumeRequest = null;
-        ProtocolType protocolType = null;
-        String protocol = null;
-
-        try {
-            protocol = details.get(Constants.PROTOCOL);
-            protocolType = ProtocolType.valueOf(protocol);
-        } catch (IllegalArgumentException e) {
-            throw new CloudRuntimeException("getCloudStackVolumeRequestByProtocol: Protocol: "+ protocol +" is not valid");
-        }
-        switch (protocolType) {
-            case NFS3:
-                cloudStackVolumeRequest = new CloudStackVolume();
-                FileInfo fileInfo = new FileInfo();
-                fileInfo.setPath(filePath);
-                cloudStackVolumeRequest.setFile(fileInfo);
-                String volumeUuid = details.get(Constants.VOLUME_UUID);
-                cloudStackVolumeRequest.setFlexVolumeUuid(volumeUuid);
-                break;
-            default:
-                throw new CloudRuntimeException("createCloudStackVolumeRequestByProtocol: Unsupported protocol " + protocol);
-        }
-        return cloudStackVolumeRequest;
     }
 
     private CloudStackVolume snapshotCloudStackVolumeRequestByProtocol(Map<String, String> details,
