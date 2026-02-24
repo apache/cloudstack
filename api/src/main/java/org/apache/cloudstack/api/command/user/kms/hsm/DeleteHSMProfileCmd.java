@@ -40,7 +40,7 @@ import javax.inject.Inject;
 
 @APICommand(name = "deleteHSMProfile", description = "Deletes an HSM profile", responseObject = SuccessResponse.class,
             requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.23.0",
-            authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        authorized = { RoleType.Admin })
 public class DeleteHSMProfileCmd extends BaseCmd {
 
     @Inject

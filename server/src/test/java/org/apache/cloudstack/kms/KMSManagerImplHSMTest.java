@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.kms;
 
+import com.cloud.api.ApiResponseHelper;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.AccountManager;
@@ -27,6 +28,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -130,7 +133,6 @@ public class KMSManagerImplHSMTest {
         when(profile.getUuid()).thenReturn("profile-uuid");
         when(profile.getName()).thenReturn("test-profile");
         when(profile.getProtocol()).thenReturn("PKCS11");
-        when(profile.getAccountId()).thenReturn(testAccountId);
         when(profile.getVendorName()).thenReturn("TestVendor");
         when(profile.isEnabled()).thenReturn(true);
         when(profile.getCreated()).thenReturn(new java.util.Date());
@@ -145,15 +147,11 @@ public class KMSManagerImplHSMTest {
 
         when(hsmProfileDetailsDao.listByProfileId(profileId)).thenReturn(Arrays.asList(detail1, detail2));
 
-        com.cloud.user.Account mockAccount = mock(com.cloud.user.Account.class);
-        when(mockAccount.getUuid()).thenReturn("account-uuid");
-        when(mockAccount.getAccountName()).thenReturn("testaccount");
-        when(accountManager.getAccount(testAccountId)).thenReturn(mockAccount);
+        try (MockedStatic<ApiResponseHelper> mockedApiResponseHelper = Mockito.mockStatic(ApiResponseHelper.class)) {
+            HSMProfileResponse response = kmsManager.createHSMProfileResponse(profile);
 
-        HSMProfileResponse response = kmsManager.createHSMProfileResponse(profile);
-
-        assertNotNull("Response should not be null", response);
-        verify(accountManager).getAccount(testAccountId);
-        verify(hsmProfileDetailsDao).listByProfileId(profileId);
+            assertNotNull("Response should not be null", response);
+            verify(hsmProfileDetailsDao).listByProfileId(profileId);
+        }
     }
 }

@@ -37,10 +37,10 @@ import javax.annotation.PostConstruct;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import java.io.Closeable;
 import java.io.File;
@@ -75,6 +75,12 @@ import java.util.concurrent.TimeUnit;
 public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     private static final Logger logger = LogManager.getLogger(PKCS11HSMProvider.class);
     private static final String PROVIDER_NAME = "pkcs11";
+    // Security note (#7): AES-CBC provides confidentiality but not authenticity (no
+    // HMAC).
+    // While AES-GCM is preferred, SunPKCS11 support for GCM is often buggy or
+    // missing
+    // depending on the underlying driver. We rely on the HSM/storage for tamper
+    // resistance.
     // AES-CBC with PKCS5Padding: FIPS-compliant (NIST SP 800-38A) with universal PKCS#11 support
     private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
 
@@ -228,6 +234,15 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         }
     }
 
+    @Override
+    public void invalidateProfileCache(Long profileId) {
+        HSMSessionPool pool = sessionPools.remove(profileId);
+        if (pool != null) {
+            pool.invalidate();
+        }
+        logger.info("Invalidated HSM session pool for profile {}", profileId);
+    }
+
     Long resolveProfileId(String kekLabel) throws KMSException {
         KMSKekVersionVO version = kmsKekVersionDao.findByKekLabel(kekLabel);
         if (version != null && version.getHsmProfileId() != null) {
@@ -312,11 +327,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             }
         }
 
-        String pin = config.get("pin");
-        if (StringUtils.isEmpty(pin)) {
-            throw KMSException.invalidParameter("pin is required for PKCS#11 HSM profile");
-        }
-
         File libraryFile = new File(libraryPath);
         if (!libraryFile.exists() && !libraryFile.isAbsolute()) {
             // The HSM library might be in the system library path
@@ -353,10 +363,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     }
 
     boolean isSensitiveKey(String key) {
-        return key.equalsIgnoreCase("pin") ||
-               key.equalsIgnoreCase("password") ||
-               key.toLowerCase().contains("secret") ||
-               key.equalsIgnoreCase("private_key");
+        return KMSProvider.isSensitiveKey(key);
     }
 
     String generateKekLabel(KeyPurpose purpose) {
@@ -371,15 +378,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[0];
-    }
-
-    @Override
-    public void invalidateProfileCache(Long profileId) {
-        HSMSessionPool pool = sessionPools.remove(profileId);
-        if (pool != null) {
-            pool.invalidate();
-        }
-        logger.info("Invalidated HSM session pool for profile {}", profileId);
     }
 
     @FunctionalInterface
@@ -402,11 +400,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             this.maxSessions = maxSessions;
             this.sessionPermits = new Semaphore(maxSessions);
             this.availableSessions = new ArrayBlockingQueue<>(maxSessions);
-        }
-
-        private PKCS11Session createNewSession() throws KMSException {
-            // Config (including decrypted PIN) is loaded fresh each time and not stored.
-            return new PKCS11Session(provider.loadProfileConfig(profileId));
         }
 
         PKCS11Session acquireSession(long timeoutMs) throws KMSException {
@@ -449,6 +442,11 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 sessionPermits.release();
                 throw e;
             }
+        }
+
+        private PKCS11Session createNewSession() throws KMSException {
+            // Config (including decrypted PIN) is loaded fresh each time and not stored.
+            return new PKCS11Session(provider.loadProfileConfig(profileId));
         }
 
         void releaseSession(PKCS11Session session) {
@@ -725,15 +723,8 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         /**
          * Closes the PKCS#11 session and cleans up resources.
          *
-         * <p>This method:
-         * <ol>
-         *   <li>Closes the KeyStore (if it implements Closeable)</li>
-         *   <li>Logs out from the HSM token</li>
-         *   <li>Removes the provider from Security</li>
-         *   <li>Clears all references</li>
-         * </ol>
-         *
-         * <p>Note: Errors during cleanup are logged but do not throw exceptions
+         * <p>
+         * Note: Errors during cleanup are logged but do not throw exceptions
          * to ensure cleanup continues even if some steps fail.
          */
         void close() {
@@ -770,25 +761,26 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         /**
          * Generates an AES key directly in the HSM with the specified label.
          *
-         * <p>Implementation note: Due to limitations in the Java PKCS#11 API, this method:
-         * <ol>
-         *   <li>Generates a secure random key in software using SecureRandom</li>
-         *   <li>Imports it into the HSM via KeyStore.setEntry() with the label</li>
-         *   <li>Clears the key material from memory immediately</li>
-         * </ol>
+         * <p>
+         * This method generates the key natively inside the HSM using a
+         * {@link KeyGenerator} configured with the PKCS#11 provider, so the key
+         * material never leaves the HSM boundary. The returned PKCS#11-native key
+         * reference ({@code P11Key}) is then stored in the KeyStore under the
+         * requested label.
          *
-         * <p>While the key is briefly in software memory, this is necessary because:
-         * <ul>
-         *   <li>Java's PKCS#11 provider doesn't support setting CKA_LABEL during generation</li>
-         *   <li>Keys generated via KeyGenerator have no label and can't be retrieved later</li>
-         *   <li>The key material is immediately cleared after import</li>
-         * </ul>
+         * <p>
+         * Using {@code KeyGenerator} with the HSM provider is required for
+         * HSMs such as NetHSM that do not support importing raw secret-key bytes
+         * via {@code KeyStore.setKeyEntry()}. By generating the key on the HSM first,
+         * the value passed to {@code setKeyEntry()} is already a PKCS#11 token object,
+         * so no raw-bytes import is attempted.
          *
-         * <p>Once imported, the key:
+         * <p>
+         * Once stored, the key:
          * <ul>
-         *   <li>Resides permanently in the HSM token storage</li>
-         *   <li>Is marked as non-extractable (CKA_EXTRACTABLE=false) by the HSM</li>
-         *   <li>Can only be used for cryptographic operations via the HSM</li>
+         * <li>Resides permanently in the HSM token storage</li>
+         * <li>Is marked as non-extractable (CKA_EXTRACTABLE=false) by the HSM</li>
+         * <li>Can only be used for cryptographic operations via the HSM</li>
          * </ul>
          *
          * @param label   Unique label for the key in the HSM
@@ -800,36 +792,35 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         String generateKey(String label, int keyBits, KeyPurpose purpose) throws KMSException {
             validateKeySize(keyBits);
 
-            byte[] keyBytes = null;
             try {
                 // Check if key with this label already exists
                 if (keyStore.containsAlias(label)) {
                     throw KMSException.keyAlreadyExists("Key with label '" + label + "' already exists in HSM");
                 }
 
-                // Generate cryptographically secure random key material
-                // Using SecureRandom instead of HSM generation due to Java PKCS#11 API limitations
-                keyBytes = new byte[keyBits / 8];
-                SecureRandom.getInstanceStrong().nextBytes(keyBytes);
+                // Generate the AES key natively inside the HSM using the PKCS#11 provider.
+                // This avoids importing raw key bytes into the HSM, which is not supported
+                // by all HSMs (e.g. NetHSM rejects SecretKeySpec via storeSkey()).
+                // The resulting key is a PKCS#11-native P11Key that lives inside the token.
+                KeyGenerator keyGen = KeyGenerator.getInstance("AES", provider);
+                keyGen.init(keyBits);
+                SecretKey hsmKey = keyGen.generateKey();
 
-                // Wrap key bytes in a SecretKeySpec for import into HSM
-                SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
+                // Associate the HSM-generated key with the requested label by storing
+                // it in the PKCS#11 KeyStore. Because hsmKey is already a P11Key
+                // (not a software SecretKeySpec), P11KeyStore.storeSkey() stores it
+                // as a persistent token object (CKA_TOKEN=true) with CKA_LABEL=label
+                // without attempting any raw-bytes conversion.
+                keyStore.setKeyEntry(label, hsmKey, null, null);
 
-                // Import into PKCS#11 KeyStore with label
-                // Uses setKeyEntry(String, Key, char[], Certificate[]) which is  the only
-                // variant supported by P11KeyStore (the byte[] variant throws UnsupportedOperationException)
-                // The P11KeyStore will internally convert the SecretKeySpec to a P11 token object with:
-                // - CKA_TOKEN=true, CKA_LABEL=label, CKA_EXTRACTABLE=false
-                keyStore.setKeyEntry(label, secretKey, null, null);
-
-                logger.info("Generated and imported AES-{} key '{}' into HSM (purpose: {})",
+                logger.info("Generated AES-{} key '{}' in HSM (purpose: {})",
                         keyBits, label, purpose);
                 return label;
 
             } catch (KeyStoreException e) {
-                handlePKCS11Exception(e, "Failed to import key into HSM KeyStore");
+                handlePKCS11Exception(e, "Failed to store key in HSM KeyStore");
             } catch (NoSuchAlgorithmException e) {
-                handlePKCS11Exception(e, "SecureRandom algorithm not available or key not retrievable");
+                handlePKCS11Exception(e, "AES KeyGenerator not available via PKCS#11 provider");
             } catch (Exception e) {
                 String errorMsg = e.getMessage();
                 if (errorMsg != null && (errorMsg.contains("CKR_OBJECT_HANDLE_INVALID")
@@ -838,13 +829,8 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 } else {
                     handlePKCS11Exception(e, "Failed to generate key in HSM");
                 }
-            } finally {
-                // Immediately clear sensitive key material from memory
-                if (keyBytes != null) {
-                    Arrays.fill(keyBytes, (byte) 0);
-                }
             }
-            return null; // Unreachable
+            return null;
         }
 
         /**
@@ -886,22 +872,15 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 throw KMSException.invalidParameter("Plain DEK cannot be null or empty");
             }
 
-            SecretKey kek = null;
+            SecretKey kek = getKekFromKeyStore(kekLabel);
             try {
-                kek = getKekFromKeyStore(kekLabel);
-
-                // Generate random IV for CBC
                 byte[] iv = new byte[IV_LENGTH];
                 new SecureRandom().nextBytes(iv);
 
-                // Create cipher with AES-CBC
                 Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM, provider);
                 cipher.init(Cipher.ENCRYPT_MODE, kek, new IvParameterSpec(iv));
-
-                // Encrypt the plaintext DEK
                 byte[] ciphertext = cipher.doFinal(plainDek);
 
-                // Prepend IV to ciphertext: [IV][ciphertext]
                 byte[] result = new byte[IV_LENGTH + ciphertext.length];
                 System.arraycopy(iv, 0, result, 0, IV_LENGTH);
                 System.arraycopy(ciphertext, 0, result, IV_LENGTH, ciphertext.length);
@@ -917,10 +896,9 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             } catch (Exception e) {
                 handlePKCS11Exception(e, "Failed to wrap key with HSM");
             } finally {
-                // Zeroize KEK reference (actual key material is in HSM, but clear reference)
                 kek = null;
             }
-            return null; // Unreachable
+            return null;
         }
 
         /**
@@ -947,33 +925,29 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             } catch (KeyStoreException e) {
                 handlePKCS11Exception(e, "Failed to retrieve KEK from HSM");
             }
-            return null; // Unreachable
+            return null;
         }
-
 
         /**
          * Unwraps (decrypts) a wrapped DEK using a KEK stored in the HSM.
          *
-         * <p>Uses AES-CBC with PKCS5Padding (FIPS 197 + NIST SP 800-38A):
-         * <ol>
-         *   <li>Extracts IV from the wrapped blob</li>
-         *   <li>Retrieves KEK from HSM using the label</li>
-         *   <li>Decrypts using AES-CBC</li>
-         *   <li>Returns plaintext DEK</li>
-         * </ol>
+         * <p>
+         * Uses AES-CBC with PKCS5Padding. Expected format: [IV (16 bytes)][ciphertext].
          *
-         * <p>Security: The returned plaintext DEK must be zeroized by the caller after use.
-         *
-         * <p>Expected format: [IV (16 bytes)][ciphertext]
+         * <p>
+         * Security: The returned plaintext DEK must be zeroized by the caller after
+         * use.
          *
          * @param wrappedBlob Wrapped DEK blob (IV + ciphertext)
          * @param kekLabel    Label of the KEK stored in the HSM
          * @return Plaintext DEK
          * @throws KMSException with appropriate ErrorType:
          *                      <ul>
-         *                        <li>{@code INVALID_PARAMETER} if wrappedBlob is null, empty, or too short</li>
-         *                        <li>{@code KEK_NOT_FOUND} if KEK with label doesn't exist or is not accessible</li>
-         *                        <li>{@code WRAP_UNWRAP_FAILED} if unwrapping fails</li>
+         *                      <li>{@code INVALID_PARAMETER} if wrappedBlob is null,
+         *                      empty, or too short</li>
+         *                      <li>{@code KEK_NOT_FOUND} if KEK with label doesn't
+         *                      exist or is not accessible</li>
+         *                      <li>{@code WRAP_UNWRAP_FAILED} if unwrapping fails</li>
          *                      </ul>
          */
         byte[] unwrapKey(byte[] wrappedBlob, String kekLabel) throws KMSException {
@@ -981,27 +955,21 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 throw KMSException.invalidParameter("Wrapped blob cannot be null or empty");
             }
 
-            // Minimum size: IV (16) + at least one block of ciphertext (16)
+            // Minimum size: IV (16 bytes) + at least one AES block (16 bytes)
             if (wrappedBlob.length < IV_LENGTH + 16) {
                 throw KMSException.invalidParameter("Wrapped blob too short: expected at least " +
                                                     (IV_LENGTH + 16) + " bytes");
             }
 
-            SecretKey kek = null;
+            SecretKey kek = getKekFromKeyStore(kekLabel);
             try {
-                kek = getKekFromKeyStore(kekLabel);
-
-                // Extract IV and ciphertext from wrapped blob
                 byte[] iv = new byte[IV_LENGTH];
                 System.arraycopy(wrappedBlob, 0, iv, 0, IV_LENGTH);
                 byte[] ciphertext = new byte[wrappedBlob.length - IV_LENGTH];
                 System.arraycopy(wrappedBlob, IV_LENGTH, ciphertext, 0, ciphertext.length);
 
-                // Create cipher with AES-CBC
                 Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM, provider);
                 cipher.init(Cipher.DECRYPT_MODE, kek, new IvParameterSpec(iv));
-
-                // Decrypt the ciphertext to get plaintext DEK
                 byte[] plainDek = cipher.doFinal(ciphertext);
 
                 logger.debug("Unwrapped key with KEK '{}' using AES-CBC", kekLabel);
@@ -1018,12 +986,10 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             } catch (Exception e) {
                 handlePKCS11Exception(e, "Failed to unwrap key with HSM");
             } finally {
-                // Zeroize KEK reference
                 kek = null;
             }
-            return null; // Unreachable
+            return null;
         }
-
 
         /**
          * Deletes a key from the HSM.
@@ -1040,12 +1006,10 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          */
         void deleteKey(String label) throws KMSException {
             try {
-                // Check if key exists first
                 if (!keyStore.containsAlias(label)) {
                     throw KMSException.kekNotFound("Key with label '" + label + "' not found in HSM");
                 }
 
-                // Delete key from KeyStore
                 keyStore.deleteEntry(label);
 
                 logger.debug("Deleted key '{}' from HSM", label);
@@ -1074,7 +1038,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          */
         boolean checkKeyExists(String label) throws KMSException {
             try {
-                // Try to retrieve key from HSM KeyStore
                 Key key = keyStore.getKey(label, null);
                 return key != null;
             } catch (KeyStoreException e) {

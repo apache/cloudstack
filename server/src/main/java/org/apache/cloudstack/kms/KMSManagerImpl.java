@@ -40,8 +40,12 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.kms.MigrateVolumesToKMSCmd;
@@ -69,7 +73,7 @@ import org.apache.cloudstack.kms.dao.HSMProfileDetailsDao;
 import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
 import org.apache.cloudstack.kms.dao.KMSKeyDao;
 import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.secret.PassphraseVO;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.commons.collections4.CollectionUtils;
@@ -83,19 +87,22 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class KMSManagerImpl extends ManagerBase implements KMSManager, PluggableService {
     private static final Logger logger = LogManager.getLogger(KMSManagerImpl.class);
     private static final Map<String, KMSProvider> kmsProviderMap = new HashMap<>();
-    private final ExecutorService kmsOperationExecutor = Executors.newCachedThreadPool(r -> {
+    private final ExecutorService kmsOperationExecutor = new ThreadPoolExecutor(
+            2, 100, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(), r -> {
         Thread t = new Thread(r, "kms-operation");
         t.setDaemon(true);
         return t;
@@ -119,7 +126,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     @Inject
     private PassphraseDao passphraseDao;
     private List<KMSProvider> kmsProviders;
-    private Timer rewrapTimer;
+    private ScheduledExecutorService rewrapExecutor;
 
     @Override
     public List<? extends KMSProvider> listKMSProviders() {
@@ -585,12 +592,11 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw new InvalidParameterValueException("Cannot delete KMS key: " + key + ". " +
                                                      "There are Volumes which still reference this key");
         }
-        checkKmsKeyAccess(caller, key);
         logger.info("Deleted KMS key {}", key);
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_CREATE, eventDescription = "rotating KMS key", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_ROTATE, eventDescription = "rotating KMS key", async = true)
     public String rotateKMSKey(RotateKMSKeyCmd cmd) throws KMSException {
         Account caller = CallContext.current().getCallingAccount();
         Integer keyBits = cmd.getKeyBits();
@@ -632,7 +638,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 kmsWrappedKeyDao.countByKmsKeyId(kmsKey.getId()));
 
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), kmsKey.getAccountId(),
-                EventVO.LEVEL_INFO, EventTypes.EVENT_KMS_KEY_CREATE,
+                EventVO.LEVEL_INFO, EventTypes.EVENT_KMS_KEY_ROTATE,
                 String.format("KMS key rotation completed for KMS key from version %d to version %d",
                         currentActive.getVersionNumber(), newVersion.getVersionNumber()),
                 kmsKey.getId(), ApiCommandResourceType.KmsKey.toString(), CallContext.current().getStartEventId());
@@ -661,22 +667,44 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
             String finalNewKekLabel = newKekLabel;
             Long newProfileId = newHSMProfile.getId();
+            final HSMProfileVO finalHSMProfile = newHSMProfile;
             String newKekId = retryOperation(
                     () -> provider.createKek(kmsKey.getPurpose(), finalNewKekLabel, keyBits, newProfileId));
 
-            KMSKekVersionVO newVersion = createKekVersion(kmsKey.getId(), newKekId, newProfileId);
+            try {
+                KMSKekVersionVO newVersion = Transaction
+                        .execute(new TransactionCallbackWithException<KMSKekVersionVO, KMSException>() {
+                            @Override
+                            public KMSKekVersionVO doInTransaction(TransactionStatus status) throws KMSException {
+                                KMSKekVersionVO version = createKekVersion(kmsKey.getId(), newKekId, newProfileId);
 
-            if (!newProfileId.equals(kmsKey.getHsmProfileId())) {
-                kmsKey.setHsmProfileId(newProfileId);
-                kmsKeyDao.update(kmsKey.getId(), kmsKey);
-                logger.info("Updated KMS key {} to use HSM profile {}", kmsKey, newHSMProfile);
+                                if (!newProfileId.equals(kmsKey.getHsmProfileId())) {
+                                    kmsKey.setHsmProfileId(newProfileId);
+                                    kmsKeyDao.update(kmsKey.getId(), kmsKey);
+                                    logger.info("Updated KMS key {} to use HSM profile {}", kmsKey, finalHSMProfile);
+                                }
+                                return version;
+                            }
+                        });
+
+                logger.info("KEK rotation: KMS key {} now has {} versions (active: v{}, previous: v{})",
+                        kmsKey, newVersion.getVersionNumber(), newVersion.getVersionNumber(),
+                        newVersion.getVersionNumber() - 1);
+
+                return newKekId;
+            } catch (KMSException e) {
+                logger.error(
+                        "Database update failed during KEK rotation for kmsKey {}. Attempting to delete orphaned KEK "
+                        + "{} from provider {}",
+                        kmsKey, newKekId, provider.getProviderName());
+                try {
+                    provider.deleteKek(newKekId);
+                } catch (KMSException ex) {
+                    logger.error("Failed to delete orphaned KEK {} from provider {} after DB failure: {}",
+                            newKekId, provider.getProviderName(), ex.getMessage());
+                }
+                throw e;
             }
-
-            logger.info("KEK rotation: KMS key {} now has {} versions (active: v{}, previous: v{})",
-                    kmsKey, newVersion.getVersionNumber(), newVersion.getVersionNumber(),
-                    newVersion.getVersionNumber() - 1);
-
-            return newKekId;
 
         } catch (Exception e) {
             logger.error("KEK rotation failed for kmsKey {}: {}", kmsKey, e.getMessage());
@@ -830,7 +858,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         if (passphrase == null) {
             logger.warn(
                     "Skipping migration of volume from to the KMS key {} because passphrase id: {} not found for "
-                    + "volume {}}",
+                    + "volume {}",
                     kmsKey, volume.getPassphraseId(), volume);
             return false;
         }
@@ -1214,10 +1242,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     boolean isSensitiveKey(String key) {
-        return key.equalsIgnoreCase("pin") ||
-               key.equalsIgnoreCase("password") ||
-               key.toLowerCase().contains("secret") ||
-               key.equalsIgnoreCase("private_key");
+        return KMSProvider.isSensitiveKey(key);
     }
 
     /**
@@ -1394,7 +1419,18 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     private void scheduleRewrapWorker() {
-        final ManagedContextTimerTask rewrapTask = new ManagedContextTimerTask() {
+        long intervalMs = KMSRewrapIntervalMs.value();
+        if (intervalMs <= 0) {
+            return;
+        }
+
+        rewrapExecutor = Executors.newScheduledThreadPool(1, r -> {
+            Thread t = new Thread(r, "KMSRewrapWorker");
+            t.setDaemon(true);
+            return t;
+        });
+
+        rewrapExecutor.scheduleAtFixedRate(new ManagedContextRunnable() {
             @Override
             protected void runInContext() {
                 try {
@@ -1403,11 +1439,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                     logger.error("Error while running KMS rewrap worker", e);
                 }
             }
-        };
+        }, 10000L, intervalMs, TimeUnit.MILLISECONDS);
 
-        long intervalMs = KMSRewrapIntervalMs.value();
-        rewrapTimer = new Timer("KMSRewrapWorker", true); // daemon so it doesn't block JVM shutdown
-        rewrapTimer.schedule(rewrapTask, 10000L, intervalMs);
         logger.info("KMS rewrap worker scheduled with interval: {} ms", intervalMs);
     }
 
@@ -1416,28 +1449,41 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
      * using the active version.
      */
     private void processRewrapBatch() {
+        GlobalLock lock = GlobalLock.getInternLock("kms.rewrap.worker");
         try {
-            List<KMSKekVersionVO> previousVersions = kmsKekVersionDao.findByStatus(KMSKekVersionVO.Status.Previous);
-
-            if (previousVersions.isEmpty()) {
-                logger.trace("No KEK versions pending rewrap");
-                return;
-            }
-
-            logger.debug("Found {} KEK version(s) with status Previous - processing rewrap batches",
-                    previousVersions.size());
-
-            int batchSize = KMSRewrapBatchSize.value();
-
-            for (KMSKekVersionVO oldVersion : previousVersions) {
+            if (lock.lock(5)) {
                 try {
-                    processVersionRewrap(oldVersion, batchSize);
-                } catch (Exception e) {
-                    logger.error("Error processing rewrap for KEK version {}: {}", oldVersion, e.getMessage(), e);
+                    List<KMSKekVersionVO> previousVersions = kmsKekVersionDao
+                            .findByStatus(KMSKekVersionVO.Status.Previous);
+
+                    if (previousVersions.isEmpty()) {
+                        logger.trace("No KEK versions pending rewrap");
+                        return;
+                    }
+
+                    logger.debug("Found {} KEK version(s) with status Previous - processing rewrap batches",
+                            previousVersions.size());
+
+                    int batchSize = KMSRewrapBatchSize.value();
+
+                    for (KMSKekVersionVO oldVersion : previousVersions) {
+                        try {
+                            processVersionRewrap(oldVersion, batchSize);
+                        } catch (Exception e) {
+                            logger.error("Error processing rewrap for KEK version {}: {}", oldVersion, e.getMessage(),
+                                    e);
+                        }
+                    }
+                } finally {
+                    lock.unlock();
                 }
+            } else {
+                logger.trace("KMS rewrap worker: could not acquire cluster lock, skipping batch");
             }
         } catch (Exception e) {
             logger.error("Error in rewrap worker: {}", e.getMessage(), e);
+        } finally {
+            lock.releaseRef();
         }
     }
 
@@ -1457,11 +1503,25 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         List<KMSWrappedKeyVO> keysToRewrap = kmsWrappedKeyDao.listByKekVersionId(oldVersion.getId(), batchSize);
 
         if (keysToRewrap.isEmpty()) {
-            logger.info("All wrapped keys rewrapped for KEK version {} (v{}) - archiving",
+            logger.info("All wrapped keys rewrapped for KEK version {} (v{}) - archiving and deleting from provider",
                     oldVersion.getUuid(), oldVersion.getVersionNumber());
 
             oldVersion.setStatus(KMSKekVersionVO.Status.Archived);
             kmsKekVersionDao.update(oldVersion.getId(), oldVersion);
+
+            // Delete the old KEK from the HSM since no wrapped keys reference it anymore
+            try {
+                HSMProfileVO oldProfile = hsmProfileDao.findById(oldVersion.getHsmProfileId());
+                if (oldProfile != null) {
+                    KMSProvider provider = getKMSProvider(oldProfile.getProtocol());
+                    provider.deleteKek(oldVersion.getKekLabel());
+                    logger.info("Deleted archived KEK {} (v{}) from provider {}",
+                            oldVersion.getKekLabel(), oldVersion.getVersionNumber(), provider.getProviderName());
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to delete archived KEK {} (v{}) from provider: {}",
+                        oldVersion.getKekLabel(), oldVersion.getVersionNumber(), e.getMessage());
+            }
 
             return;
         }
@@ -1513,9 +1573,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
     @Override
     public boolean stop() {
-        if (rewrapTimer != null) {
-            rewrapTimer.cancel();
-            rewrapTimer = null;
+        if (rewrapExecutor != null) {
+            rewrapExecutor.shutdownNow();
+            rewrapExecutor = null;
         }
         kmsOperationExecutor.shutdownNow();
         return super.stop();

@@ -40,7 +40,7 @@ import javax.inject.Inject;
 @APICommand(name = "updateHSMProfile", description = "Updates an HSM profile",
             responseObject = HSMProfileResponse.class,
             requestHasSensitiveInfo = true, responseHasSensitiveInfo = true, since = "4.23.0",
-            authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+        authorized = { RoleType.Admin })
 public class UpdateHSMProfileCmd extends BaseCmd {
 
     @Inject
