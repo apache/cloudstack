@@ -532,7 +532,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback) {
-        s_logger.error("temp takeSnapshot : entered with snapshot id: " + snapshot.getId() + " and name: " + snapshot.getName());
+        s_logger.info("takeSnapshot : entered with snapshot id: " + snapshot.getId() + " and name: " + snapshot.getName());
         CreateCmdResult result;
 
         try {
@@ -553,19 +553,25 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(volumeVO.getPoolId());
             StorageStrategy storageStrategy = Utility.getStrategyByStoragePoolDetails(poolDetails);
 
-            Map<String, String> cloudStackVolumeRequestMap = new HashMap<>();
-            cloudStackVolumeRequestMap.put(Constants.VOLUME_UUID, poolDetails.get(Constants.VOLUME_UUID));
-            cloudStackVolumeRequestMap.put(Constants.FILE_PATH, volumeVO.getPath());
-            CloudStackVolume cloudStackVolume = storageStrategy.getCloudStackVolume(cloudStackVolumeRequestMap);
-            if (cloudStackVolume == null || cloudStackVolume.getFile() == null) {
-                throw new CloudRuntimeException("takeSnapshot: Failed to get source file to take snapshot");
-            }
-            long capacityBytes = storagePool.getCapacityBytes();
-            s_logger.error("temp takeSnapshot : entered after getting cloudstack volume with file path: " + cloudStackVolume.getFile().getPath() + " and size: " + cloudStackVolume.getFile().getSize());
+            CloudStackVolume cloudStackVolume = null;
             long usedBytes = getUsedBytes(storagePool);
-            long fileSize = cloudStackVolume.getFile().getSize();
+            long capacityBytes = storagePool.getCapacityBytes();
 
-            usedBytes += fileSize;
+            // Only proceed for NFS3 protocol
+            if (ProtocolType.NFS3.name().equalsIgnoreCase(poolDetails.get(Constants.PROTOCOL))) {
+                Map<String, String> cloudStackVolumeRequestMap = new HashMap<>();
+                cloudStackVolumeRequestMap.put(Constants.VOLUME_UUID, poolDetails.get(Constants.VOLUME_UUID));
+                cloudStackVolumeRequestMap.put(Constants.FILE_PATH, volumeVO.getPath());
+                cloudStackVolume = storageStrategy.getCloudStackVolume(cloudStackVolumeRequestMap);
+                if (cloudStackVolume == null || cloudStackVolume.getFile() == null) {
+                    throw new CloudRuntimeException("takeSnapshot: Failed to get source file to take snapshot");
+                    }
+                s_logger.info("takeSnapshot : entered after getting cloudstack volume with file path: " + cloudStackVolume.getFile().getPath() + " and size: " + cloudStackVolume.getFile().getSize());
+                long fileSize = cloudStackVolume.getFile().getSize();
+                usedBytes += fileSize;            
+            }
+            
+            
 
             if (usedBytes > capacityBytes) {
                 throw new CloudRuntimeException("Insufficient space remains in this primary storage to take a snapshot");
@@ -575,16 +581,16 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
             SnapshotObjectTO snapshotObjectTo = (SnapshotObjectTO)snapshot.getTO();
 
-            String fileSnapshotName = volumeInfo.getName() + "-" + snapshot.getUuid();
+            String snapshotName = volumeInfo.getName() + "-" + snapshot.getUuid();
 
             int maxSnapshotNameLength = 64;
-            int trimRequired = fileSnapshotName.length() - maxSnapshotNameLength;
+            int trimRequired = snapshotName.length() - maxSnapshotNameLength;
 
             if (trimRequired > 0) {
-                fileSnapshotName = StringUtils.left(volumeInfo.getName(), (volumeInfo.getName().length() - trimRequired)) + "-" + snapshot.getUuid();
+                snapshotName = StringUtils.left(volumeInfo.getName(), (volumeInfo.getName().length() - trimRequired)) + "-" + snapshot.getUuid();
             }
 
-            CloudStackVolume snapCloudStackVolumeRequest = snapshotCloudStackVolumeRequestByProtocol(poolDetails, volumeVO.getPath(), fileSnapshotName);
+            CloudStackVolume snapCloudStackVolumeRequest = snapshotCloudStackVolumeRequestByProtocol(poolDetails, volumeVO.getPath(), snapshotName);
             CloudStackVolume cloneCloudStackVolume = storageStrategy.snapshotCloudStackVolume(snapCloudStackVolumeRequest);
 
             updateSnapshotDetails(snapshot.getId(), volumeInfo.getId(), poolDetails.get(Constants.VOLUME_UUID), cloneCloudStackVolume.getFile().getPath(), volumeVO.getPoolId(), fileSize);
