@@ -26,33 +26,15 @@ import java.util.List;
 
 public class OauthProviderDaoImpl extends GenericDaoBase<OauthProviderVO, Long> implements OauthProviderDao {
 
-    private final SearchBuilder<OauthProviderVO> oauthProviderSearchByName;
     private final SearchBuilder<OauthProviderVO> oauthProviderSearchByProviderAndDomain;
-    private final SearchBuilder<OauthProviderVO> oauthProviderSearchByDomain;
 
     public OauthProviderDaoImpl() {
         super();
-
-        oauthProviderSearchByName = createSearchBuilder();
-        oauthProviderSearchByName.and("provider", oauthProviderSearchByName.entity().getProvider(), SearchCriteria.Op.EQ);
-        oauthProviderSearchByName.done();
 
         oauthProviderSearchByProviderAndDomain = createSearchBuilder();
         oauthProviderSearchByProviderAndDomain.and("provider", oauthProviderSearchByProviderAndDomain.entity().getProvider(), SearchCriteria.Op.EQ);
         oauthProviderSearchByProviderAndDomain.and("domainId", oauthProviderSearchByProviderAndDomain.entity().getDomainId(), SearchCriteria.Op.EQ);
         oauthProviderSearchByProviderAndDomain.done();
-
-        oauthProviderSearchByDomain = createSearchBuilder();
-        oauthProviderSearchByDomain.and("domainId", oauthProviderSearchByDomain.entity().getDomainId(), SearchCriteria.Op.EQ);
-        oauthProviderSearchByDomain.done();
-    }
-
-    @Override
-    public OauthProviderVO findByProvider(String provider) {
-        SearchCriteria<OauthProviderVO> sc = oauthProviderSearchByName.create();
-        sc.setParameters("provider", provider);
-
-        return findOneBy(sc);
     }
 
     @Override
@@ -61,13 +43,6 @@ public class OauthProviderDaoImpl extends GenericDaoBase<OauthProviderVO, Long> 
         sc.setParameters("provider", provider);
         sc.setParameters("domainId", domainId);
         return findOneBy(sc);
-    }
-
-    @Override
-    public List<OauthProviderVO> listByDomain(Long domainId) {
-        SearchCriteria<OauthProviderVO> sc = oauthProviderSearchByDomain.create();
-        sc.setParameters("domainId", domainId);
-        return listBy(sc);
     }
 
     @Override

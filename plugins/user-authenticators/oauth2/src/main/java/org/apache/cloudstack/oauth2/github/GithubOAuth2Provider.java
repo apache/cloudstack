@@ -55,78 +55,12 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
 
     @Override
     public boolean verifyUser(String email, String secretCode) {
-        if (StringUtils.isAnyEmpty(email, secretCode)) {
-            throw new CloudRuntimeException(String.format("Either email or secretcode should not be null/empty"));
-        }
-
-        OauthProviderVO providerVO = _oauthProviderDao.findByProvider(getName());
-        if (providerVO == null) {
-            throw new CloudRuntimeException("Github provider is not registered, so user cannot be verified");
-        }
-
-        String verifiedEmail = getUserEmailAddress();
-        if (verifiedEmail == null || !email.equals(verifiedEmail)) {
-            throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
-        }
-
-        clearAccessToken();
-
-        return true;
+        return verifyUser(email, secretCode, null);
     }
 
     @Override
     public String verifyCodeAndFetchEmail(String secretCode) {
-        String accessToken = getAccessToken(secretCode);
-        if (accessToken == null) {
-            return null;
-        }
-        return getUserEmailAddress();
-    }
-
-    protected String getAccessToken(String secretCode) throws CloudRuntimeException {
-        OauthProviderVO githubProvider = _oauthProviderDao.findByProvider(getName());
-        String tokenUrl = "https://github.com/login/oauth/access_token";
-        String generatedAccessToken = null;
-        try {
-            URL url = new URL(tokenUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setDoOutput(true);
-
-            String jsonParams = "{\"client_id\":\"" + githubProvider.getClientId() + "\",\"client_secret\":\"" + githubProvider.getSecretKey() + "\",\"code\":\"" + secretCode + "\"}";
-
-            try (OutputStream os = connection.getOutputStream()) {
-                byte[] input = jsonParams.getBytes("utf-8");
-                os.write(input, 0, input.length);
-            }
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                try (BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                    String inputLine;
-                    StringBuilder response = new StringBuilder();
-                    while ((inputLine = in.readLine()) != null) {
-                        response.append(inputLine);
-                    }
-                    String regexPattern = "access_token=([^&]+)";
-                    Pattern pattern = Pattern.compile(regexPattern);
-                    Matcher matcher = pattern.matcher(response);
-                    if (matcher.find()) {
-                        generatedAccessToken = matcher.group(1);
-                    } else {
-                        throw new CloudRuntimeException("Could not fetch access token from the given code");
-                    }
-                }
-            } else {
-                throw new CloudRuntimeException("HTTP Request while fetching access token from github failed with error code: " + responseCode);
-            }
-        } catch (IOException e) {
-            throw new CloudRuntimeException(String.format("Error while trying to fetch the github access token : %s", e.getMessage()));
-        }
-
-        accessToken = generatedAccessToken;
-        return accessToken;
+        return verifyCodeAndFetchEmail(secretCode, null);
     }
 
     public String getUserEmailAddress() throws CloudRuntimeException {

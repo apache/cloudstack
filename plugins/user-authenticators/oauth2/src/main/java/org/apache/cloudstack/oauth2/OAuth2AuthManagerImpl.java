@@ -166,7 +166,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         } else if (StringUtils.isNotBlank(provider) && domainId != null) {
             providers = Collections.singletonList(_oauthProviderDao.findByProviderAndDomain(provider, domainId));
         } else if (StringUtils.isNotBlank(provider)) {
-            providers = Collections.singletonList(_oauthProviderDao.findByProvider(provider));
+            providers = Collections.singletonList(_oauthProviderDao.findByProviderAndDomain(provider, null));
         } else if (domainId != null) {
             providers = _oauthProviderDao.listByDomainIncludingGlobal(domainId);
         } else {

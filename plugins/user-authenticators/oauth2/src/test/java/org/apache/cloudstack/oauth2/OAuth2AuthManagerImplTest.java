@@ -156,7 +156,7 @@ public class OAuth2AuthManagerImplTest {
         assertEquals(providerList, result);
 
         // Test when provider is not blank
-        when(_oauthProviderDao.findByProvider(provider)).thenReturn(providerVO);
+        when(_oauthProviderDao.findByProviderAndDomain(provider, null)).thenReturn(providerVO);
         result = _authManager.listOauthProviders(provider, null, null);
         assertEquals(providerList, result);
 

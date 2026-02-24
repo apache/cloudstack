@@ -58,73 +58,12 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
 
     @Override
     public boolean verifyUser(String email, String secretCode) {
-        if (StringUtils.isAnyEmpty(email, secretCode)) {
-            throw new CloudAuthenticationException("Either email or secret code should not be null/empty");
-        }
-
-        OauthProviderVO providerVO = _oauthProviderDao.findByProvider(getName());
-        if (providerVO == null) {
-            throw new CloudAuthenticationException("Google provider is not registered, so user cannot be verified");
-        }
-
-        String verifiedEmail = verifyCodeAndFetchEmail(secretCode);
-        if (verifiedEmail == null || !email.equals(verifiedEmail)) {
-            throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
-        }
-        clearAccessAndRefreshTokens();
-
-        return true;
+        return verifyUser(email, secretCode, null);
     }
 
     @Override
     public String verifyCodeAndFetchEmail(String secretCode) {
-        OauthProviderVO githubProvider = _oauthProviderDao.findByProvider(getName());
-        String clientId = githubProvider.getClientId();
-        String secret = githubProvider.getSecretKey();
-        String redirectURI = githubProvider.getRedirectUri();
-        GoogleClientSecrets clientSecrets = new GoogleClientSecrets()
-                .setWeb(new GoogleClientSecrets.Details()
-                        .setClientId(clientId)
-                        .setClientSecret(secret));
-
-        NetHttpTransport httpTransport = new NetHttpTransport();
-        JsonFactory jsonFactory = new JacksonFactory();
-        List<String> scopes = Arrays.asList(
-                                "https://www.googleapis.com/auth/userinfo.profile",
-                                "https://www.googleapis.com/auth/userinfo.email");
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-                httpTransport, jsonFactory, clientSecrets, scopes)
-                .build();
-
-        if (StringUtils.isAnyEmpty(accessToken, refreshToken)) {
-            GoogleTokenResponse tokenResponse = null;
-            try {
-                tokenResponse = flow.newTokenRequest(secretCode)
-                        .setRedirectUri(redirectURI)
-                        .execute();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            accessToken = tokenResponse.getAccessToken();
-            refreshToken = tokenResponse.getRefreshToken();
-        }
-
-        GoogleCredential credential = new GoogleCredential.Builder()
-                .setTransport(httpTransport)
-                .setJsonFactory(jsonFactory)
-                .setClientSecrets(clientSecrets)
-                .build()
-                .setAccessToken(accessToken)
-                .setRefreshToken(refreshToken);
-
-        Oauth2 oauth2 = new Oauth2.Builder(httpTransport, jsonFactory, credential).build();
-        Userinfo userinfo = null;
-        try {
-            userinfo = oauth2.userinfo().get().execute();
-        } catch (IOException e) {
-            throw new CloudRuntimeException(String.format("Failed to fetch the email address with the provided secret: %s" + e.getMessage()));
-        }
-        return userinfo.getEmail();
+        return verifyCodeAndFetchEmail(secretCode, null);
     }
 
     protected void clearAccessAndRefreshTokens() {

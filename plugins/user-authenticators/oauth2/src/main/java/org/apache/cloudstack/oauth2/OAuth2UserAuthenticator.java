@@ -30,6 +30,7 @@ import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 
 import javax.inject.Inject;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.apache.cloudstack.oauth2.OAuth2AuthManager.OAuth2IsPluginEnabled;
 
@@ -76,7 +77,7 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
 
             UserOAuth2Authenticator authenticator = userOAuth2mgr.getUserOAuth2AuthenticationProvider(oauthProvider);
-            if (user != null && authenticator.verifyUser(email, secretCode)) {
+            if (Objects.nonNull(user) && authenticator.verifyUser(email, secretCode, domainId)) {
                 return new Pair<Boolean, ActionOnFailedAuthentication>(true, null);
             }
         }
