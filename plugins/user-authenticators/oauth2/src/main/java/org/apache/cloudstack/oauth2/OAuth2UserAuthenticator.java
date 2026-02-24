@@ -49,7 +49,7 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
             logger.debug("Trying OAuth2 auth for user: " + username);
         }
 
-        if (!isOAuthPluginEnabled()) {
+        if (!isOAuthPluginEnabled(domainId)) {
             logger.debug("OAuth2 plugin is disabled");
             return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         } else if (requestParameters == null) {
@@ -89,7 +89,7 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
         return null;
     }
 
-    protected boolean isOAuthPluginEnabled() {
-        return OAuth2IsPluginEnabled.value();
+    protected boolean isOAuthPluginEnabled(Long domainId) {
+        return OAuth2IsPluginEnabled.valueIn(domainId);
     }
 }

@@ -64,7 +64,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public boolean start() {
-        if (isOAuthPluginEnabled()) {
+        if (isOAuthPluginEnabled(null)) {
             logger.info("OAUTH plugin loaded");
             initializeUserOAuth2AuthenticationProvidersMap();
         } else {
@@ -73,8 +73,8 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         return true;
     }
 
-    protected boolean isOAuthPluginEnabled() {
-        return OAuth2IsPluginEnabled.value();
+    protected boolean isOAuthPluginEnabled(Long domainId) {
+        return OAuth2IsPluginEnabled.valueIn(domainId);
     }
 
     @Override
@@ -141,7 +141,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String secretKey = StringUtils.trim(cmd.getSecretKey());
         Long domainId = cmd.getDomainId();
 
-        if (!isOAuthPluginEnabled()) {
+        if (!isOAuthPluginEnabled(domainId)) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
         }
 

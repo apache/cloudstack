@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.oauth2.api.command;
 
+import java.util.Objects;
+
 import com.cloud.api.ApiServlet;
 import com.cloud.domain.Domain;
 import com.cloud.user.User;
@@ -115,9 +117,6 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
     @Override
     public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletRequest req, final HttpServletResponse resp) throws ServerApiException {
-        if (!OAuth2IsPluginEnabled.value()) {
-            throw new CloudAuthenticationException("OAuth is not enabled in CloudStack, users cannot login using OAuth");
-        }
         final String[] provider = (String[])params.get(ApiConstants.PROVIDER);
         final String[] emailArray = (String[])params.get(ApiConstants.EMAIL);
         final String[] secretCodeArray = (String[])params.get(ApiConstants.SECRET_CODE);
@@ -132,6 +131,15 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         Long domainId = getDomainIdFromParams(params, auditTrailSb, responseType);
         final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
         String domain = getDomainName(auditTrailSb, domainName);
+
+        final Domain userDomain = _domainService.findDomainByIdOrPath(domainId, domain);
+        if (Objects.nonNull(userDomain)) {
+            domainId = userDomain.getId();
+        }
+
+        if (!OAuth2IsPluginEnabled.valueIn(domainId)) {
+            throw new CloudAuthenticationException("OAuth is not enabled, users cannot login using OAuth");
+        }
 
         return doOauthAuthentication(session, domainId, domain, email, params, remoteAddress, responseType, auditTrailSb);
     }
