@@ -143,7 +143,7 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
             throw new CloudAuthenticationException("Either email or secret code should not be null/empty");
         }
 
-        OauthProviderVO providerVO = getProviderForDomain(domainId);
+        OauthProviderVO providerVO = _oauthProviderDao.findByProviderAndDomainWithGlobalFallback(getName(), domainId);
         if (providerVO == null) {
             throw new CloudAuthenticationException("Google provider is not registered, so user cannot be verified");
         }
@@ -159,7 +159,7 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
 
     @Override
     public String verifyCodeAndFetchEmail(String secretCode, Long domainId) {
-        OauthProviderVO provider = getProviderForDomain(domainId);
+        OauthProviderVO provider = _oauthProviderDao.findByProviderAndDomainWithGlobalFallback(getName(), domainId);
         String clientId = provider.getClientId();
         String secret = provider.getSecretKey();
         String redirectURI = provider.getRedirectUri();
@@ -208,17 +208,4 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         return userinfo.getEmail();
     }
 
-    /**
-     * Gets OAuth provider config, preferring domain-specific over global
-     */
-    private OauthProviderVO getProviderForDomain(Long domainId) {
-        OauthProviderVO provider = null;
-        if (domainId != null) {
-            provider = _oauthProviderDao.findByProviderAndDomain(getName(), domainId);
-        }
-        if (provider == null) {
-            provider = _oauthProviderDao.findByProviderAndDomain(getName(), null);
-        }
-        return provider;
-    }
 }

@@ -31,4 +31,6 @@ public interface OauthProviderDao extends GenericDao<OauthProviderVO, Long> {
 
     public List<OauthProviderVO> listByDomainIncludingGlobal(Long domainId);
 
+    public OauthProviderVO findByProviderAndDomainWithGlobalFallback(String provider, Long domainId);
+
 }

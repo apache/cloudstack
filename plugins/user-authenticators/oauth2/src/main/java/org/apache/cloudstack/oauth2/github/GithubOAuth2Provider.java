@@ -183,7 +183,7 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
             throw new CloudRuntimeException(String.format("Either email or secretcode should not be null/empty"));
         }
 
-        OauthProviderVO providerVO = getProviderForDomain(domainId);
+        OauthProviderVO providerVO = _oauthProviderDao.findByProviderAndDomainWithGlobalFallback(getName(), domainId);
         if (providerVO == null) {
             throw new CloudRuntimeException("Github provider is not registered, so user cannot be verified");
         }
@@ -208,7 +208,7 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
     }
 
     protected String getAccessToken(String secretCode, Long domainId) throws CloudRuntimeException {
-        OauthProviderVO githubProvider = getProviderForDomain(domainId);
+        OauthProviderVO githubProvider = _oauthProviderDao.findByProviderAndDomainWithGlobalFallback(getName(), domainId);
         String tokenUrl = "https://github.com/login/oauth/access_token";
         String generatedAccessToken = null;
         try {
@@ -253,17 +253,4 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         return accessToken;
     }
 
-    /**
-     * Gets OAuth provider config, preferring domain-specific over global
-     */
-    private OauthProviderVO getProviderForDomain(Long domainId) {
-        OauthProviderVO provider = null;
-        if (domainId != null) {
-            provider = _oauthProviderDao.findByProviderAndDomain(getName(), domainId);
-        }
-        if (provider == null) {
-            provider = _oauthProviderDao.findByProviderAndDomain(getName(), null);
-        }
-        return provider;
-    }
 }
