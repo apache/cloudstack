@@ -113,23 +113,7 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         if (ArrayUtils.isNotEmpty(providerArray)) {
             provider = providerArray[0];
         }
-        final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
-        if (ArrayUtils.isNotEmpty(domainIdArray)) {
-            domainId = Long.parseLong(domainIdArray[0]);
-        }
-        final String[] domainArray = (String[])params.get(ApiConstants.DOMAIN);
-        if (ArrayUtils.isNotEmpty(domainArray) && domainId == null) {
-            String path = domainArray[0];
-            if (path != null && !"/".equals(path)) {
-                // Look up domain by path - ensure path starts with /
-                String fullPath = path.startsWith("/") ? path : "/" + path;
-                if (!fullPath.endsWith("/")) fullPath = fullPath + "/";
-                DomainVO domain = _domainDao.findDomainByPath(fullPath);
-                if (domain != null) {
-                    domainId = domain.getId();
-                }
-            }
-        }
+        domainId = resolveDomainId(params);
 
         String email = _oauth2mgr.verifyCodeAndFetchEmail(secretCode, provider, domainId);
         if (email != null) {
@@ -142,6 +126,33 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         }
 
         throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to verify the code provided");
+    }
+
+    private Long resolveDomainId(Map<String, Object[]> params) {
+        final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (ArrayUtils.isNotEmpty(domainIdArray)) {
+            DomainVO domain = _domainDao.findByUuid(domainIdArray[0]);
+            if (domain != null) {
+                return domain.getId();
+            }
+        }
+        final String[] domainArray = (String[])params.get(ApiConstants.DOMAIN);
+        if (ArrayUtils.isNotEmpty(domainArray)) {
+            String path = domainArray[0];
+            if (path != null) {
+                if (!path.startsWith("/")) {
+                    path = "/" + path;
+                }
+                if (!path.endsWith("/")) {
+                    path += "/";
+                }
+                DomainVO domain = _domainDao.findDomainByPath(path);
+                if (domain != null) {
+                    return domain.getId();
+                }
+            }
+        }
+        return null;
     }
 
     @Override
