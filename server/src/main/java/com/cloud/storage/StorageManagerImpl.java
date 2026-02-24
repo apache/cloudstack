@@ -148,6 +148,7 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.time.DateUtils;
@@ -173,6 +174,9 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.agent.api.SecStorageSetupCommand;
+import com.cloud.agent.api.SecStorageSetupAnswer;
+import com.cloud.agent.api.to.NfsTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
@@ -3992,37 +3996,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
             throw new CloudRuntimeException("Failed to add data store: " + e.getMessage(), e);
         }
-
-        // Validate secondary storage mount immediately using SSVM
-if (zoneId != null) {
-    List<HostVO> ssvmHosts = _hostDao.listByType(Host.Type.SecondaryStorageVM);
-    boolean mountSuccess = false;
-    String failureReason = "No Secondary Storage VM available to validate the NFS mount.";
-
-    for (HostVO ssvm : ssvmHosts) {
-        if (ssvm.getDataCenterId() != zoneId.longValue()) {
-            continue;
-        }
-
-        try {
-            boolean result = _ssVmMgr.generateSetupCommand(ssvm.getId());
-            if (result) {
-                mountSuccess = true;
-                break;
-            } else {
-                failureReason = "Secondary Storage VM failed to mount the NFS secondary storage.";
-            }
-        } catch (Exception e) {
-            failureReason = e.getMessage();
-        }
-    }
-
-    if (!mountSuccess) {
-        // cleanup created store
-        _imageStoreDao.remove(store.getId());
-        throw new CloudRuntimeException("Invalid secondary storage mount: " + failureReason);
-    }
-}
+        validateSecondaryStorageMount(zoneId, (ImageStoreVO) store);
 
         if (((ImageStoreProvider)storeProvider).needDownloadSysTemplate()) {
             // trigger system vm template download
@@ -4044,6 +4018,70 @@ if (zoneId != null) {
 
         return (ImageStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
     }
+
+    private void validateSecondaryStorageMount(Long zoneId, ImageStoreVO store) {
+
+    if (zoneId == null) {
+        return;
+    }
+
+    List<HostVO> ssvmHosts = _ssVmMgr.listUpAndConnectingSecondaryStorageVmHost(zoneId);
+
+    String failureReason = "No active Secondary Storage VM available in zone to validate the NFS mount.";
+
+    if (ssvmHosts == null || ssvmHosts.isEmpty()) {
+        cleanupImageStore(store.getId(), store.getUuid());
+        throw new CloudRuntimeException(failureReason);
+    }
+
+    boolean mountSuccess = false;
+
+for (HostVO ssvm : ssvmHosts) {
+    try {
+        DataStore dataStore = _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
+
+        if (!(dataStore.getTO() instanceof NfsTO)) {
+            continue;
+        }
+
+        String secUrl = dataStore.getUri();
+        SecStorageSetupCommand setupCmd =
+            new SecStorageSetupCommand(dataStore.getTO(), secUrl, null);
+
+        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
+        setupCmd.setNfsVersion(nfsVersion);
+
+        String postUploadKey = _configDao.getValue(Config.SSVMPSK.key());
+        setupCmd.setPostUploadKey(postUploadKey);
+
+        Answer answer = _agentMgr.easySend(ssvm.getId(), setupCmd);
+
+        if (answer != null && answer.getResult()) {
+
+            SecStorageSetupAnswer an = (SecStorageSetupAnswer) answer;
+            if (an.get_dir() != null) {
+                store.setParent(an.get_dir());
+                _imageStoreDao.update(store.getId(), store);
+            }
+
+            mountSuccess = true;
+            break;
+        } else {
+            failureReason = (answer == null) ?
+                "Null response from SSVM" :
+                answer.getDetails();
+        }
+
+    } catch (Exception e) {
+        failureReason = e.getMessage();
+    }
+}
+
+    if (!mountSuccess) {
+        cleanupImageStore(store.getId(), store.getUuid());
+        throw new CloudRuntimeException("Invalid secondary storage mount: " + failureReason);
+    }
+}
 
     protected void registerSystemVmTemplateForHypervisorArch(final HypervisorType hypervisorType,
                  final CPU.CPUArch arch, final Long zoneId, final String url, final DataStore store,
@@ -4336,6 +4374,23 @@ if (zoneId != null) {
         });
 
         return true;
+    }
+
+    private void cleanupImageStore(long storeId, String storeUuid) {
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                _imageStoreDetailsDao.deleteDetails(storeId);
+                _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
+                _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
+                _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+                annotationDao.removeByEntityType(
+                    AnnotationService.EntityType.SECONDARY_STORAGE.name(),
+                    storeUuid
+                );
+                _imageStoreDao.remove(storeId);
+            }
+        });
     }
 
     @Override
