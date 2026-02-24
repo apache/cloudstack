@@ -138,7 +138,7 @@ export default {
         const vpc = await this.fetchVpc()
 
         // VPC IPs with source nat have only VPN when VPC offering conserve mode = false
-        if (this.resource.issourcenat && vpc.vpcofferingconservemode === false) {
+        if (this.resource.issourcenat && vpc?.vpcofferingconservemode === false) {
           this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
           return
         }
@@ -157,7 +157,7 @@ export default {
         const network = await this.fetchNetwork()
         if (network && network.networkofferingconservemode) {
           // VPC IPs with source nat have only VPN when VPC offering conserve mode = false
-          if (this.resource.issourcenat && vpc.vpcofferingconservemode === false) {
+          if (this.resource.issourcenat && vpc?.vpcofferingconservemode === false) {
             this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
           } else {
             this.tabs = tabs
