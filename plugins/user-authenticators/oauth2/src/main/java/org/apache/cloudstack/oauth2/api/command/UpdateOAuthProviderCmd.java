@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.oauth2.api.command;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.domain.Domain;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
@@ -62,6 +64,7 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
 
     @Inject
     OAuth2AuthManager _oauthMgr;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -114,8 +117,9 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
     public void execute() {
         OauthProviderVO result = _oauthMgr.updateOauthProvider(this);
         if (result != null) {
+            Domain domain = result.getDomainId() != null ? ApiDBUtils.findDomainById(result.getDomainId()) : null;
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
-                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), result.getDomainId());
+                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), domain);
 
             List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauthMgr.listUserOAuth2AuthenticationProviders();
             List<String> authenticatorPluginNames = new ArrayList<>();

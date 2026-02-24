@@ -30,6 +30,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 
 import java.util.Collection;
@@ -109,8 +111,9 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     public void execute() throws ServerApiException, ConcurrentOperationException, EntityExistsException {
         OauthProviderVO provider = _oauth2mgr.registerOauthProvider(this);
 
+        Domain domain = provider.getDomainId() != null ? ApiDBUtils.findDomainById(provider.getDomainId()) : null;
         OauthProviderResponse response = new OauthProviderResponse(provider.getUuid(), provider.getProvider(),
-                provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri(), provider.getDomainId());
+                provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri(), domain);
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.OAUTH_PROVIDER);
         setResponseObject(response);

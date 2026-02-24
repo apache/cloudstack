@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentContext;
@@ -116,7 +118,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             if ("-1".equals(domainUuid)) {
                 domainId = -1L;  // Special case for global-only filter
             } else {
-                com.cloud.domain.DomainVO domain = _domainDao.findByUuid(domainUuid);
+                Domain domain = _domainDao.findByUuid(domainUuid);
                 if (domain != null) {
                     domainId = domain.getId();
                 }
@@ -132,8 +134,9 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         }
         List<OauthProviderResponse> responses = new ArrayList<>();
         for (OauthProviderVO result : resultList) {
+            Domain domain = result.getDomainId() != null ? ApiDBUtils.findDomainById(result.getDomainId()) : null;
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
-                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), result.getDomainId());
+                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), domain);
             if (OAuth2AuthManager.OAuth2IsPluginEnabled.value() && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {

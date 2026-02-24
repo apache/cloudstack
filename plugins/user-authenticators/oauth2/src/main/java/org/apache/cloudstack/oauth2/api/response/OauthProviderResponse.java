@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.oauth2.api.response;
 
+import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
@@ -55,14 +56,18 @@ public class OauthProviderResponse extends BaseResponse {
     private String redirectUri;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "Domain ID of the provider (null for global)")
-    private Long domainId;
+    @Param(description = "UUID of the domain the provider belongs to (empty for global)")
+    private String domainUuid;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "name of the domain the provider belongs to (empty for global)")
+    private String domainName;
 
     @SerializedName(ApiConstants.ENABLED)
     @Param(description = "Whether the OAuth provider is enabled or not")
     private boolean enabled;
 
-    public OauthProviderResponse(String id, String provider, String description, String clientId, String secretKey, String redirectUri, Long domainId) {
+    public OauthProviderResponse(String id, String provider, String description, String clientId, String secretKey, String redirectUri, Domain domain) {
         this.id = id;
         this.provider = provider;
         this.name = provider;
@@ -70,7 +75,10 @@ public class OauthProviderResponse extends BaseResponse {
         this.clientId = clientId;
         this.secretKey = secretKey;
         this.redirectUri = redirectUri;
-        this.domainId = domainId;
+        if (domain != null) {
+            this.domainUuid = domain.getUuid();
+            this.domainName = domain.getName();
+        }
     }
 
     public String getId() {
@@ -122,12 +130,20 @@ public class OauthProviderResponse extends BaseResponse {
         this.redirectUri = redirectUri;
     }
 
-    public Long getDomainId() {
-        return domainId;
+    public String getDomainUuid() {
+        return domainUuid;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+    public void setDomainUuid(String domainUuid) {
+        this.domainUuid = domainUuid;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
     }
 
     public String getSecretKey() {
