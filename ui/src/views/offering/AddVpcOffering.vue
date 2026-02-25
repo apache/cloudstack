@@ -540,7 +540,7 @@ export default {
         this.supportedServices = []
         this.supportedServiceLoading = true
         getAPI('listSupportedNetworkServices').then(json => {
-          const vpcServices = ['Dhcp', 'Dns', 'Lb', 'Gateway', 'StaticNat', 'SourceNat', 'NetworkACL', 'PortForwarding', 'UserData', 'Vpn', 'Connectivity', 'CustomAction']
+          const vpcServices = ['Dhcp', 'Dns', 'Lb', 'Gateway', 'StaticNat', 'SourceNat', 'NetworkACL', 'PortForwarding', 'UserData', 'Vpn', 'Connectivity', 'CustomAction', 'Firewall']
           services = (json?.listsupportednetworkservicesresponse?.networkservice || [])
             .filter(service => vpcServices.includes(service.name))
             .map(service => {
@@ -575,7 +575,7 @@ export default {
 
           this.supportedServices = []
           if (this.networkmode === 'ROUTED') {
-            services = services.filter(service => !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name))
+            services = services.filter(service => !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn', 'Firewall'].includes(service.name))
           }
           this.supportedServices = services
         }).catch(error => {
