@@ -1354,7 +1354,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 return volumeStats;
             }
         } else {
-            List<VolumeVO> volumes = volumeDao.findByPoolId(storagePool.getId());
+            List<VolumeVO> volumes = volumeDao.findNonDestroyedVolumesByPoolId(storagePool.getId());
             for (VolumeVO volume : volumes) {
                 if (volume.getPath() != null && volume.getPath().equals(volumeId)) {
                     long size = volume.getSize();

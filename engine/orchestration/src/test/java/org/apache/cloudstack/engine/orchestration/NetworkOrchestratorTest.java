@@ -396,6 +396,7 @@ public class NetworkOrchestratorTest extends TestCase {
         when(testOrchestrator._ipAddressDao.acquireInLockTable(Mockito.anyLong())).thenReturn(ipVoSpy);
         when(testOrchestrator._ipAddressDao.update(Mockito.anyLong(), Mockito.any(IPAddressVO.class))).thenReturn(true);
         when(testOrchestrator._ipAddressDao.releaseFromLockTable(Mockito.anyLong())).thenReturn(true);
+        when(testOrchestrator._networkModel.isMACUnique(Mockito.anyString(), Mockito.anyLong())).thenReturn(true);
         try {
             when(testOrchestrator._networkModel.getNextAvailableMacAddressInNetwork(Mockito.anyLong())).thenReturn(macAddress);
         } catch (InsufficientAddressCapacityException e) {

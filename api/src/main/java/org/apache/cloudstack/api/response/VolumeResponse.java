@@ -38,7 +38,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the disk volume")
+    @Param(description = "Name of the disk volume")
     private String name;
 
     @SerializedName(ApiConstants.ZONE_ID)
@@ -46,103 +46,103 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "name of the availability zone")
+    @Param(description = "Name of the availability zone")
     private String zoneName;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "type of the disk volume (ROOT or DATADISK)")
+    @Param(description = "Type of the disk volume (ROOT or DATADISK)")
     private String volumeType;
 
     @SerializedName(ApiConstants.DEVICE_ID)
-    @Param(description = "the ID of the device on user vm the volume is attahed to. This tag is not returned when the volume is detached.")
+    @Param(description = "The ID of the device on User Instance the volume is attached to. This tag is not returned when the volume is detached.")
     private Long deviceId;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "id of the virtual machine")
+    @Param(description = "ID of the Instance")
     private String virtualMachineId;
 
     @SerializedName("isoid")
-    @Param(description = "the ID of the ISO attached to the virtual machine")
+    @Param(description = "The ID of the ISO attached to the Instance")
     private String isoId;
 
     @SerializedName("isoname")
-    @Param(description = "the name of the ISO attached to the virtual machine")
+    @Param(description = "The name of the ISO attached to the Instance")
     private String isoName;
 
     @SerializedName("isodisplaytext")
-    @Param(description = "an alternate display text of the ISO attached to the virtual machine")
+    @Param(description = "An alternate display text of the ISO attached to the Instance")
     private String isoDisplayText;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
-    @Param(description = "the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
+    @Param(description = "The ID of the Template for the Instance. A -1 is returned if the Instance was created from an ISO file.")
     private String templateId;
 
     @SerializedName("templatename")
-    @Param(description = "the name of the template for the virtual machine")
+    @Param(description = "The name of the Template for the Instance")
     private String templateName;
 
     @SerializedName("templatedisplaytext")
-    @Param(description = " an alternate display text of the template for the virtual machine")
+    @Param(description = "An alternate display text of the Template for the Instance")
     private String templateDisplayText;
 
     @SerializedName("vmname")
-    @Param(description = "name of the virtual machine")
+    @Param(description = "Name of the Instance")
     private String virtualMachineName;
 
     @SerializedName("vmdisplayname")
-    @Param(description = "display name of the virtual machine")
+    @Param(description = "Display name of the Instance")
     private String virtualMachineDisplayName;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_STATE)
-    @Param(description = "state of the virtual machine")
+    @Param(description = "State of the Instance")
     private String virtualMachineState;
 
     @SerializedName(ApiConstants.VM_TYPE)
-    @Param(description = "type of the virtual machine")
+    @Param(description = "Type of the Instance")
     private String vmType;
 
     @SerializedName(ApiConstants.PROVISIONINGTYPE)
-    @Param(description = "provisioning type used to create volumes.")
+    @Param(description = "Provisioning type used to create volumes.")
     private String provisioningType;
 
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "size of the disk volume")
+    @Param(description = "Size of the disk volume")
     private Long size;
 
     @SerializedName(ApiConstants.MIN_IOPS)
-    @Param(description = "min iops of the disk volume")
+    @Param(description = "Min IOPS of the disk volume")
     private Long minIops;
 
     @SerializedName(ApiConstants.MAX_IOPS)
-    @Param(description = "max iops of the disk volume")
+    @Param(description = "Max IOPS of the disk volume")
     private Long maxIops;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date the disk volume was created")
+    @Param(description = "The date the disk volume was created")
     private Date created;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the disk volume")
+    @Param(description = "The state of the disk volume")
     private String state;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the disk volume")
+    @Param(description = "The Account associated with the disk volume")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the vpn")
+    @Param(description = "The project id of the VPN")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vpn")
+    @Param(description = "The project name of the VPN")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain associated with the disk volume")
+    @Param(description = "The ID of the domain associated with the disk volume")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain associated with the disk volume")
+    @Param(description = "The domain associated with the disk volume")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -150,15 +150,15 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private String domainPath;
 
     @SerializedName("storagetype")
-    @Param(description = "shared or local storage")
+    @Param(description = "Shared or local storage")
     private String storageType;
 
     @SerializedName("diskBytesReadRate")
-    @Param(description = "bytes read rate of the disk volume")
+    @Param(description = "Bytes read rate of the disk volume")
     private Long bytesReadRate;
 
     @SerializedName("diskBytesWriteRate")
-    @Param(description = "bytes write rate of the disk volume")
+    @Param(description = "Bytes write rate of the disk volume")
     private Long bytesWriteRate;
 
     @SerializedName("diskIopsReadRate")
@@ -170,19 +170,19 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private Long iopsWriteRate;
 
     @SerializedName(ApiConstants.DISK_KBS_READ)
-    @Param(description = "the VM's disk read in KiB")
+    @Param(description = "The Instance's disk read in KiB")
     private Long diskKbsRead;
 
     @SerializedName(ApiConstants.DISK_KBS_WRITE)
-    @Param(description = "the VM's disk write in KiB")
+    @Param(description = "The Instance's disk write in KiB")
     private Long diskKbsWrite;
 
     @SerializedName(ApiConstants.DISK_IO_READ)
-    @Param(description = "the read (IO) of disk on the vm")
+    @Param(description = "The read (IO) of disk on the Instance")
     private Long diskIORead;
 
     @SerializedName(ApiConstants.DISK_IO_WRITE)
-    @Param(description = "the write (IO) of disk on the vm")
+    @Param(description = "The write (IO) of disk on the Instance")
     private Long diskIOWrite;
 
     @SerializedName(ApiConstants.HYPERVISOR)
@@ -194,27 +194,27 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private String diskOfferingId;
 
     @SerializedName("diskofferingname")
-    @Param(description = "name of the disk offering")
+    @Param(description = "Name of the disk offering")
     private String diskOfferingName;
 
     @SerializedName("diskofferingdisplaytext")
-    @Param(description = "the display text of the disk offering")
+    @Param(description = "The display text of the disk offering")
     private String diskOfferingDisplayText;
 
     @SerializedName("storage")
-    @Param(description = "name of the primary storage hosting the disk volume")
+    @Param(description = "Name of the primary storage hosting the disk volume")
     private String storagePoolName;
 
     @SerializedName(ApiConstants.SNAPSHOT_ID)
-    @Param(description = "ID of the snapshot from which this volume was created")
+    @Param(description = "ID of the Snapshot from which this volume was created")
     private String snapshotId;
 
     @SerializedName("attached")
-    @Param(description = "the date the volume was attached to a VM instance")
+    @Param(description = "The date the volume was attached to an Instance")
     private Date attached;
 
     @SerializedName("destroyed")
-    @Param(description = "the boolean state of whether the volume is destroyed or not")
+    @Param(description = "The boolean state of whether the volume is destroyed or not")
     private boolean destroyed;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
@@ -222,43 +222,43 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private String serviceOfferingId;
 
     @SerializedName("serviceofferingname")
-    @Param(description = "name of the service offering for root disk")
+    @Param(description = "Name of the service offering for root disk")
     private String serviceOfferingName;
 
     @SerializedName("serviceofferingdisplaytext")
-    @Param(description = "the display text of the service offering for root disk")
+    @Param(description = "The display text of the service offering for root disk")
     private String serviceOfferingDisplayText;
 
     @SerializedName("isextractable")
-    @Param(description = "true if the volume is extractable, false otherwise")
+    @Param(description = "True if the volume is extractable, false otherwise")
     private boolean extractable;
 
     @SerializedName(ApiConstants.STATUS)
-    @Param(description = "the status of the volume")
+    @Param(description = "The status of the volume")
     private String status;
 
     @SerializedName(ApiConstants.DISPLAY_VOLUME)
-    @Param(description = "an optional field whether to the display the volume to the end user or not.", authorized = {RoleType.Admin})
+    @Param(description = "An optional field whether to the display the volume to the end User or not.", authorized = {RoleType.Admin})
     private boolean displayVolume;
 
     @SerializedName(ApiConstants.PATH)
-    @Param(description = "the path of the volume")
+    @Param(description = "The path of the volume")
     private String path;
 
     @SerializedName(ApiConstants.STORAGE_ID)
-    @Param(description = "id of the primary storage hosting the disk volume; returned to admin user only", since = "4.3")
+    @Param(description = "ID of the primary storage hosting the disk volume; returned to admin User only", since = "4.3")
     private String storagePoolId;
 
     @SerializedName(ApiConstants.CHAIN_INFO)
-    @Param(description = "the chain info of the volume", since = "4.4")
+    @Param(description = "The chain info of the volume", since = "4.4")
     String chainInfo;
 
     @SerializedName(ApiConstants.SNAPSHOT_QUIESCEVM)
-    @Param(description = "need quiesce vm or not when taking snapshot", since = "4.3")
+    @Param(description = "Need quiesce Instance or not when taking Snapshot", since = "4.3")
     private boolean needQuiescevm;
 
     @SerializedName(ApiConstants.SUPPORTS_STORAGE_SNAPSHOT)
-    @Param(description = "true if storage snapshot is supported for the volume, false otherwise", since = "4.16")
+    @Param(description = "True if storage Snapshot is supported for the volume, false otherwise", since = "4.16")
     private boolean supportsStorageSnapshot;
 
     @SerializedName(ApiConstants.DELETE_PROTECTION)
@@ -266,35 +266,35 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private boolean deleteProtection;
 
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
-    @Param(description = "the bytes actually consumed on disk")
+    @Param(description = "The bytes actually consumed on disk")
     private Long physicalsize;
 
     @SerializedName(ApiConstants.VIRTUAL_SIZE)
-    @Param(description = "the bytes allocated")
+    @Param(description = "The bytes allocated")
     private Long virtualsize;
 
     @SerializedName(ApiConstants.UTILIZATION)
-    @Param(description = "the disk utilization")
+    @Param(description = "The disk utilization")
     private String utilization;
 
     @SerializedName(ApiConstants.CLUSTER_ID)
-    @Param(description = "cluster id of the volume")
+    @Param(description = "Cluster id of the volume")
     private String clusterId;
 
     @SerializedName(ApiConstants.CLUSTER_NAME)
-    @Param(description = "cluster name where the volume is allocated")
+    @Param(description = "Cluster name where the volume is allocated")
     private String clusterName;
 
     @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "pod id of the volume")
+    @Param(description = "Pod id of the volume")
     private String podId;
 
     @SerializedName(ApiConstants.POD_NAME)
-    @Param(description = "pod name of the volume")
+    @Param(description = "Pod name of the volume")
     private String podName;
 
     @SerializedName(ApiConstants.EXTERNAL_UUID)
-    @Param(description = "volume uuid that is given by virtualisation provider (only for VMware)")
+    @Param(description = "Volume UUID that is given by virtualisation provider (only for VMware)")
     private String externalUuid;
 
     @SerializedName(ApiConstants.VOLUME_CHECK_RESULT)

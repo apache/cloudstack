@@ -782,7 +782,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 result.add(new Ternary<Integer, Integer, Integer>(rs.getInt(1), rs.getInt(2), rs.getInt(3)));
             }
         } catch (Exception e) {
-            logger.warn("Error counting vms by size for Data Center ID = " + dcId, e);
+            logger.warn("Error counting Instances by size for Data Center ID = " + dcId, e);
         }
         return result;
     }

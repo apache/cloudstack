@@ -46,7 +46,7 @@ public class ImportVolumeCmdTest {
         Long projectId = 5L;
         long accountId = 6L;
 
-        Mockito.when(accountService.finalyzeAccountId(accountName, domainId, projectId, true)).thenReturn(accountId);
+        Mockito.when(accountService.finalizeAccountId(accountName, domainId, projectId, true)).thenReturn(accountId);
 
         ImportVolumeCmd cmd = new ImportVolumeCmd();
         ReflectionTestUtils.setField(cmd, "path", path);

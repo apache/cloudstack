@@ -301,7 +301,7 @@ CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.service_offering','fk_service_
 CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.service_offering', 'fk_service_offering__vgpu_profile_id', '(vgpu_profile_id)', '`vgpu_profile`(`id`)');
 
 -- Netris Plugin
-CREATE TABLE `cloud`.`netris_providers` (
+CREATE TABLE IF NOT EXISTS `cloud`.`netris_providers` (
                                             `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
                                             `uuid` varchar(40),
                                             `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',
@@ -321,11 +321,11 @@ CREATE TABLE `cloud`.`netris_providers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Drop the Tungsten and NSX columns from the network offerings (replaced by checking the provider on the ntwk_offering_service_map table)
-ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_tungsten`;
-ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_nsx`;
+CALL `cloud`.`IDEMPOTENT_DROP_COLUMN`('cloud.network_offerings', 'for_tungsten');
+CALL `cloud`.`IDEMPOTENT_DROP_COLUMN`('cloud.network_offerings', 'for_nsx');
 
 -- Drop the Tungsten and NSX columns from the VPC offerings (replaced by checking the provider on the vpc_offering_service_map table)
-ALTER TABLE `cloud`.`vpc_offerings` DROP COLUMN `for_nsx`;
+CALL `cloud`.`IDEMPOTENT_DROP_COLUMN`('cloud.vpc_offerings', 'for_nsx');
 
 -- Add next_hop to the static_routes table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.static_routes', 'next_hop', 'varchar(50) COMMENT "next hop of the static route" AFTER `vpc_gateway_id`');

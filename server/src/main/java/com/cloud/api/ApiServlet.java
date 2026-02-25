@@ -25,8 +25,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.servlet.ServletConfig;
@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.APICommand;
+import com.cloud.api.auth.DefaultForgotPasswordAPIAuthenticatorCmd;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -52,10 +53,9 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
 import org.apache.commons.collections.MapUtils;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
@@ -70,12 +70,12 @@ import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
-
 import com.cloud.utils.HttpUtils;
-import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.HttpUtils.ApiSessionKeyCheckOption;
+import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Component("apiServlet")
@@ -84,9 +84,7 @@ public class ApiServlet extends HttpServlet {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
-    private static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
-    private static final HashSet<String> GET_REQUEST_COMMANDS_LIST = new HashSet<>(Set.of("isaccountallowedtocreateofferingswithtags",
-            "readyforshutdown", "cloudianisenabled", "quotabalance", "quotasummary", "quotatarifflist", "quotaisenabled", "quotastatement", "verifyoauthcodeandgetuser"));
+    public static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
     private static final HashSet<String> POST_REQUESTS_TO_DISABLE_LOGGING = new HashSet<>(Set.of(
             "login",
             "oauthlogin",
@@ -203,7 +201,6 @@ public class ApiServlet extends HttpServlet {
                 LOGGER.warn(message);
             }
         });
-
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
@@ -276,7 +273,6 @@ public class ApiServlet extends HttpServlet {
             }
 
             if (command != null && !command.equals(ValidateUserTwoFactorAuthenticationCodeCmd.APINAME)) {
-
                 APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
                 if (apiAuthenticator != null) {
                     auditTrailSb.append("command=");
@@ -312,7 +308,9 @@ public class ApiServlet extends HttpServlet {
                     } catch (ServerApiException e) {
                         httpResponseCode = e.getErrorCode().getHttpCode();
                         responseString = e.getMessage();
-                        LOGGER.debug("Authentication failure: " + e.getMessage());
+                        if (!DefaultForgotPasswordAPIAuthenticatorCmd.APINAME.equalsIgnoreCase(command) || StringUtils.isNotBlank(username)) {
+                            LOGGER.debug("Authentication failure: {}", e.getMessage());
+                        }
                     }
 
                     if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGOUT_API) {
@@ -367,7 +365,7 @@ public class ApiServlet extends HttpServlet {
                 }
             }
 
-            if (apiServer.isPostRequestsAndTimestampsEnforced() && !isStateChangingCommandUsingPOST(command, req.getMethod(), params)) {
+            if (apiServer.isPostRequestsAndTimestampsEnforced() && isStateChangingCommandNotUsingPOST(command, req.getMethod(), params)) {
                 String errorText = String.format("State changing command %s needs to be sent using POST request", command);
                 if (command.equalsIgnoreCase("updateConfiguration") && params.containsKey("name")) {
                     errorText = String.format("Changes for configuration %s needs to be sent using POST request", params.get("name")[0]);
@@ -393,7 +391,7 @@ public class ApiServlet extends HttpServlet {
                     }
                 }
 
-                if (! requestChecksoutAsSane(resp, auditTrailSb, responseType, params, session, command, userId, account, accountObj))
+                if (!requestChecksoutAsSane(resp, auditTrailSb, responseType, params, session, command, userId, account, accountObj))
                     return;
             } else {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
@@ -425,7 +423,6 @@ public class ApiServlet extends HttpServlet {
                         apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params,
                                 responseType);
                 HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
-
             }
         } catch (final ServerApiException se) {
             final String serializedResponseText = apiServer.getSerializedApiError(se, params, responseType);
@@ -485,13 +482,32 @@ public class ApiServlet extends HttpServlet {
         return verify2FA;
     }
 
-    private boolean isStateChangingCommandUsingPOST(String command, String method, Map<String, Object[]> params) {
-        if (command == null || (!GET_REQUEST_COMMANDS.matcher(command.toLowerCase()).matches() && !GET_REQUEST_COMMANDS_LIST.contains(command.toLowerCase())
-                && !command.equalsIgnoreCase("updateConfiguration") && !method.equals("POST"))) {
+    protected boolean isStateChangingCommandNotUsingPOST(String command, String method, Map<String, Object[]> params) {
+        if (BaseCmd.HTTPMethod.POST.toString().equalsIgnoreCase(method)) {
             return false;
         }
-        return !command.equalsIgnoreCase("updateConfiguration") || method.equals("POST") || (params.containsKey("name")
-                && params.get("name")[0].toString().equalsIgnoreCase(ApiServer.EnforcePostRequestsAndTimestamps.key()));
+        if (command == null || method == null) {
+            return true;
+        }
+        String commandHttpMethod = null;
+        try {
+            Class<?> cmdClass = apiServer.getCmdClass(command);
+            if (cmdClass != null) {
+                APICommand at = cmdClass.getAnnotation(APICommand.class);
+                if (at != null && org.apache.commons.lang3.StringUtils.isNotBlank(at.httpMethod())) {
+                    commandHttpMethod = at.httpMethod();
+                }
+            }
+        } catch (CloudRuntimeException e) {
+            LOGGER.trace("Command class not found for {}; falling back to pattern match", command, e);
+        }
+        if (BaseCmd.HTTPMethod.GET.toString().equalsIgnoreCase(commandHttpMethod) ||
+                GET_REQUEST_COMMANDS.matcher(command.toLowerCase()).matches()) {
+            return false;
+        }
+        return !command.equalsIgnoreCase("updateConfiguration") ||
+                !params.containsKey("name") ||
+                !ApiServer.EnforcePostRequestsAndTimestamps.key().equalsIgnoreCase(params.get("name")[0].toString());
     }
 
     protected boolean skip2FAcheckForAPIs(String command) {
@@ -637,6 +653,9 @@ public class ApiServlet extends HttpServlet {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(msg);
             }
+            if (session == null) {
+                return;
+            }
             session.invalidate();
         } catch (final IllegalStateException ise) {
             if (LOGGER.isTraceEnabled()) {
@@ -679,38 +698,34 @@ public class ApiServlet extends HttpServlet {
         }
         return false;
     }
-    boolean doUseForwardHeaders() {
+    static boolean doUseForwardHeaders() {
         return Boolean.TRUE.equals(ApiServer.useForwardHeader.value());
     }
 
-    String[] proxyNets() {
+    static String[] proxyNets() {
         return ApiServer.proxyForwardList.value().split(",");
     }
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    public InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
-        String ip = null;
-        InetAddress pretender = InetAddress.getByName(request.getRemoteAddr());
-        if(doUseForwardHeaders()) {
-            if (NetUtils.isIpInCidrList(pretender, proxyNets())) {
+    public static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
+        final String remote = request.getRemoteAddr();
+        if (doUseForwardHeaders()) {
+            final InetAddress remoteAddr = InetAddress.getByName(remote);
+            if (NetUtils.isIpInCidrList(remoteAddr, proxyNets())) {
                 for (String header : getClientAddressHeaders()) {
                     header = header.trim();
-                    ip = getCorrectIPAddress(request.getHeader(header));
+                    final String ip = getCorrectIPAddress(request.getHeader(header));
                     if (StringUtils.isNotBlank(ip)) {
-                        LOGGER.debug(String.format("found ip %s in header %s ", ip, header));
-                        break;
+                        LOGGER.debug("found ip {} in header {}", ip, header);
+                        return InetAddress.getByName(ip);
                     }
-                } // no address found in header so ip is blank and use remote addr
-            } // else not an allowed proxy address, ip is blank and use remote addr
+                }
+            }
         }
-        if (StringUtils.isBlank(ip)) {
-            LOGGER.trace(String.format("no ip found in headers, returning remote address %s.", pretender.getHostAddress()));
-            return pretender;
-        }
-
-        return InetAddress.getByName(ip);
+        LOGGER.trace("no ip found in headers, returning remote address {}.", remote);
+        return InetAddress.getByName(remote);
     }
 
-    private String[] getClientAddressHeaders() {
+    private static String[] getClientAddressHeaders() {
         return ApiServer.listOfForwardHeaders.value().split(",");
     }
 

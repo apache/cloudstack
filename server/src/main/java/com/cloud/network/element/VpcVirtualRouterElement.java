@@ -550,7 +550,15 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
     @Override
     public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
-        return true;
+        boolean result = true;
+        try {
+            for (Network network : networks) {
+                result = result && applyNetworkACLs(network, networkACLItems);
+            }
+        } catch (ResourceUnavailableException ex) {
+            result = false;
+        }
+        return result;
     }
 
     @Override

@@ -51,7 +51,7 @@ public class StopNetScalerVMCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the NetScaler vm")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "The ID of the NetScaler vm")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force stop the VM (vm is marked as Stopped even when command fails to be send to the backend, otherwise a force poweroff is attempted). To be used if the caller knows the VM is stopped and should be marked as such.")
@@ -91,7 +91,7 @@ public class StopNetScalerVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "stopping Netscaler vm: " + getId();
+        return "Stopping NetScaler VM with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
@@ -110,7 +110,7 @@ public class StopNetScalerVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("NetScaler vm Id: " + getId());
+        CallContext.current().setEventDetails("NetScaler Instance ID: " + getResourceUuid(ApiConstants.ID));
         VirtualRouter result = null;
         VirtualRouter vm = _routerService.findRouter(getId());
         if (vm == null || vm.getRole() != Role.NETSCALER_VM) {

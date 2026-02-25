@@ -51,19 +51,19 @@ public class ListStorageNetworkIpRangeCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ID,
                type = CommandType.UUID,
                entityType = StorageNetworkIpRangeResponse.class,
-               description = "optional parameter. Storaget network IP range uuid, if specicied, using it to search the range.")
+               description = "Optional parameter. Storage network IP range UUID, if specified, using it to search the range.")
     private Long rangeId;
 
     @Parameter(name = ApiConstants.POD_ID,
                type = CommandType.UUID,
                entityType = PodResponse.class,
-               description = "optional parameter. Pod uuid, if specicied and range uuid is absent, using it to search the range.")
+               description = "Optional parameter. Pod UUID, if specified and range UUID is absent, using it to search the range.")
     private Long podId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
-               description = "optional parameter. Zone uuid, if specicied and both pod uuid and range uuid are absent, using it to search the range.")
+               description = "Optional parameter. Zone UUID, if specified and both pod UUID and range UUID are absent, using it to search the range.")
     private Long zoneId;
 
     /////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ public class ListStorageNetworkIpRangeCmd extends BaseListCmd {
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } catch (Exception e) {
-            logger.warn("Failed to list storage network ip range for rangeId=" + getRangeId() + " podId=" + getPodId() + " zoneId=" + getZoneId());
+            logger.warn("Failed to list storage Network IP range for rangeId={} podId={} zoneId={}", getRangeId(), getPodId(), getZoneId());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

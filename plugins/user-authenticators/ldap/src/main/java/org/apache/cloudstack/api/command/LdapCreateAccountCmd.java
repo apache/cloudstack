@@ -72,7 +72,7 @@ public class LdapCreateAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "Network domain for the account's networks")
     private String networkDomain;
 
-    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
+    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "Details for account used to store specific parameters")
     private Map<String, String> details;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.STRING, description = "Account UUID, required for adding account from external provisioning system")
@@ -138,7 +138,7 @@ public class LdapCreateAccountCmd extends BaseCmd {
         final CallContext callContext = getCurrentContext();
         String finalAccountName = getAccountName();
         Long finalDomainId = getDomainId();
-        callContext.setEventDetails("Account Name: " + finalAccountName + ", Domain Id:" + finalDomainId);
+        callContext.setEventDetails("Account Name: " + finalAccountName + ", Domain ID:" + finalDomainId);
         try {
             final LdapUser user = _ldapManager.getUser(username, domainId);
             validateUser(user);

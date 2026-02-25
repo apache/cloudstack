@@ -49,25 +49,25 @@ public class ListKubernetesSupportedVersionsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = KubernetesSupportedVersionResponse.class,
-            description = "the ID of the Kubernetes supported version")
+            description = "The ID of the Kubernetes supported version")
     private Long id;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "the ID of the zone in which Kubernetes supported version will be available")
+            description = "The ID of the zone in which Kubernetes supported version will be available")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.MIN_SEMANTIC_VERSION, type = CommandType.STRING,
-            description = "the minimum semantic version for the Kubernetes supported version to be listed")
+            description = "The minimum semantic version for the Kubernetes supported version to be listed")
     private String minimumSemanticVersion;
 
     @Parameter(name = ApiConstants.MIN_KUBERNETES_VERSION_ID, type = CommandType.UUID,
             entityType = KubernetesSupportedVersionResponse.class,
-            description = "the ID of the minimum Kubernetes supported version")
+            description = "The ID of the minimum Kubernetes supported version")
     private Long minimumKubernetesVersionId;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the binaries ISO. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the binaries ISO. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 

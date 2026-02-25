@@ -27,6 +27,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.DomainHelper;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -97,6 +98,9 @@ public class CreateNetworkOfferingTest extends TestCase {
 
     @Mock
     LoadBalancerVMMapDao _loadBalancerVMMapDao;
+
+    @Mock
+    DomainHelper domainHelper;
 
     @Mock
     AnnotationDao annotationDao;

@@ -43,28 +43,28 @@ public class UpdateHypervisorCapabilitiesCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HypervisorCapabilitiesResponse.class, description = "ID of the hypervisor capability")
     private Long id;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor for which the hypervisor capabilities are to be updated", since = "4.19.1")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "The hypervisor for which the hypervisor capabilities are to be updated", since = "4.19.1")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, description = "the hypervisor version for which the hypervisor capabilities are to be updated", since = "4.19.1")
+    @Parameter(name = ApiConstants.HYPERVISOR_VERSION, type = CommandType.STRING, description = "The hypervisor version for which the hypervisor capabilities are to be updated", since = "4.19.1")
     private String hypervisorVersion;
 
-    @Parameter(name = ApiConstants.SECURITY_GROUP_EANBLED, type = CommandType.BOOLEAN, description = "set true to enable security group for this hypervisor.")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_EANBLED, type = CommandType.BOOLEAN, description = "Set true to enable security group for this hypervisor.")
     private Boolean securityGroupEnabled;
 
-    @Parameter(name = ApiConstants.MAX_GUESTS_LIMIT, type = CommandType.LONG, description = "the max number of Guest VMs per host for this hypervisor.")
+    @Parameter(name = ApiConstants.MAX_GUESTS_LIMIT, type = CommandType.LONG, description = "The maximum number of Guest Instances per host for this hypervisor.")
     private Long maxGuestsLimit;
 
-    @Parameter(name = ApiConstants.MAX_DATA_VOLUMES_LIMIT, type = CommandType.INTEGER, description = "the maximum number of Data Volumes that can be attached to a VM for this hypervisor.", since = "4.16.0")
+    @Parameter(name = ApiConstants.MAX_DATA_VOLUMES_LIMIT, type = CommandType.INTEGER, description = "The maximum number of Data Volumes that can be attached to an Instance for this hypervisor.", since = "4.16.0")
     private Integer maxDataVolumesLimit;
 
-    @Parameter(name = ApiConstants.STORAGE_MOTION_ENABLED, type = CommandType.BOOLEAN, description = "set true to enable storage motion support for this hypervisor", since = "4.16.0")
+    @Parameter(name = ApiConstants.STORAGE_MOTION_ENABLED, type = CommandType.BOOLEAN, description = "Set true to enable storage motion support for this hypervisor", since = "4.16.0")
     private Boolean storageMotionSupported;
 
-    @Parameter(name = ApiConstants.MAX_HOSTS_PER_CLUSTER, type = CommandType.INTEGER, description = "the maximum number of the hypervisor hosts per cluster ", since = "4.16.0")
+    @Parameter(name = ApiConstants.MAX_HOSTS_PER_CLUSTER, type = CommandType.INTEGER, description = "The maximum number of the hypervisor hosts per cluster ", since = "4.16.0")
     private Integer maxHostsPerClusterLimit;
 
-    @Parameter(name = ApiConstants.VM_SNAPSHOT_ENABELD, type = CommandType.BOOLEAN, description = "set true to enable VM snapshots for this hypervisor", since = "4.16.0")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_ENABELD, type = CommandType.BOOLEAN, description = "Set true to enable Instance Snapshots for this hypervisor", since = "4.16.0")
     private Boolean vmSnapshotEnabled;
 
     /////////////////////////////////////////////////////

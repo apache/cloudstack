@@ -63,6 +63,7 @@ import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.utils.DomainHelper;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Sets;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -284,6 +285,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     DomainRouterDao routerDao;
     @Inject
     DomainDao domainDao;
+    @Inject
+    DomainHelper domainHelper;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
@@ -636,7 +639,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
 
         final Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         final Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
@@ -743,7 +746,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 vpcOfferingDetailsDao.saveDetails(detailsVO);
             }
         }
-        CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
+        CallContext.current().setEventDetails(" ID: " + offering.getUuid() + " Name: " + name);
         CallContext.current().putContextParameter(VpcOffering.class, offering.getUuid());
 
         return offering;
@@ -1037,13 +1040,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_DELETE, eventDescription = "deleting vpc offering")
     public boolean deleteVpcOffering(final long offId) {
-        CallContext.current().setEventDetails(" Id: " + offId);
-
         // Verify vpc offering id
         final VpcOfferingVO offering = _vpcOffDao.findById(offId);
         if (offering == null) {
             throw new InvalidParameterValueException("unable to find vpc offering " + offId);
         }
+        CallContext.current().setEventDetails(" ID: " + offering.getUuid());
 
         // Don't allow to delete default vpc offerings
         if (offering.isDefault() == true) {
@@ -1102,13 +1104,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     private VpcOffering updateVpcOfferingInternal(long vpcOffId, String vpcOfferingName, String displayText, String state, Integer sortKey, final List<Long> domainIds, final List<Long> zoneIds) {
-        CallContext.current().setEventDetails(" Id: " + vpcOffId);
-
         // Verify input parameters
         final VpcOfferingVO offeringToUpdate = _vpcOffDao.findById(vpcOffId);
         if (offeringToUpdate == null) {
             throw new InvalidParameterValueException("Unable to find vpc offering " + vpcOffId);
         }
+        CallContext.current().setEventDetails(" ID: " + offeringToUpdate.getUuid());
 
         List<Long> existingDomainIds = vpcOfferingDetailsDao.findDomainIds(vpcOffId);
         Collections.sort(existingDomainIds);
@@ -1118,7 +1119,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
@@ -1512,7 +1513,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_DELETE, eventDescription = "deleting VPC")
     public boolean deleteVpc(final long vpcId) throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails(" Id: " + vpcId);
         final CallContext ctx = CallContext.current();
 
         // Verify vpc id
@@ -1520,6 +1520,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (vpc == null) {
             throw new InvalidParameterValueException("unable to find VPC id=" + vpcId);
         }
+
+        CallContext.current().setEventDetails(" ID: " + vpc.getUuid());
 
         // verify permissions
         _accountMgr.checkAccess(ctx.getCallingAccount(), null, false, vpc);
@@ -1591,7 +1593,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
     public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId, final Boolean displayVpc, Integer mtu, String sourceNatIp) throws ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails(" Id: " + vpcId);
         final Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
@@ -1599,6 +1600,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (vpcToUpdate == null) {
             throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
         }
+
+        CallContext.current().setEventDetails(" ID: " + vpcToUpdate.getUuid());
 
         _accountMgr.checkAccess(caller, null, false, vpcToUpdate);
 
@@ -2608,7 +2611,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new IllegalStateException(e);
         }
 
-        CallContext.current().setEventDetails("Private Gateway Id: " + gatewayVO.getId());
+        CallContext.current().setEventDetails("Private Gateway ID: " + gatewayVO.getUuid());
         return getVpcPrivateGateway(gatewayVO.getId());
     }
 
@@ -2728,7 +2731,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     _vpcGatewayDao.update(vo.getId(), vo);
                     logger.debug("Marke gateway " + gateway + " with state " + VpcGateway.State.Ready);
                 }
-                CallContext.current().setEventDetails("Private Gateway Id: " + gatewayId);
+                CallContext.current().setEventDetails("Private Gateway ID: " + gateway.getUuid());
                 return getVpcPrivateGateway(gatewayId);
             } else {
                 logger.warn("Private gateway " + gateway + " failed to apply on the backend");
@@ -3125,7 +3128,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (!_staticRouteDao.setStateToAdd(newRoute)) {
                     throw new CloudRuntimeException("Unable to update the state to add for " + newRoute);
                 }
-                CallContext.current().setEventDetails("Static route Id: " + newRoute.getId());
+                CallContext.current().setEventDetails("Static route ID: " + newRoute.getUuid());
 
                 return newRoute;
             }
@@ -3656,30 +3659,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return _ntwkMgr.areRoutersRunning(routerDao.listByVpcId(vpc.getId()));
-    }
-
-    private List<Long> filterChildSubDomains(final List<Long> domainIds) {
-        List<Long> filteredDomainIds = new ArrayList<>();
-        if (domainIds != null) {
-            filteredDomainIds.addAll(domainIds);
-        }
-        if (filteredDomainIds.size() > 1) {
-            for (int i = filteredDomainIds.size() - 1; i >= 1; i--) {
-                long first = filteredDomainIds.get(i);
-                for (int j = i - 1; j >= 0; j--) {
-                    long second = filteredDomainIds.get(j);
-                    if (domainDao.isChildDomain(filteredDomainIds.get(i), filteredDomainIds.get(j))) {
-                        filteredDomainIds.remove(j);
-                        i--;
-                    }
-                    if (domainDao.isChildDomain(filteredDomainIds.get(j), filteredDomainIds.get(i))) {
-                        filteredDomainIds.remove(i);
-                        break;
-                    }
-                }
-            }
-        }
-        return filteredDomainIds;
     }
 
     protected boolean isGlobalAcl(Long aclVpcId) {

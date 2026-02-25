@@ -28,36 +28,40 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class ApiDiscoveryResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the api command")
+    @Param(description = "The name of the API command")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "description of the api")
+    @Param(description = "Description of the API")
     private String description;
 
     @SerializedName(ApiConstants.SINCE)
-    @Param(description = "version of CloudStack the api was introduced in")
+    @Param(description = "Version of CloudStack the API was introduced in")
     private String since;
 
     @SerializedName(ApiConstants.IS_ASYNC)
-    @Param(description = "true if api is asynchronous")
+    @Param(description = "True if API is asynchronous")
     private Boolean isAsync;
 
     @SerializedName("related")
-    @Param(description = "comma separated related apis")
+    @Param(description = "Comma separated related apis")
     private String related;
 
     @SerializedName(ApiConstants.PARAMS)
-    @Param(description = "the list params the api accepts", responseObject = ApiParameterResponse.class)
+    @Param(description = "The list params the api accepts", responseObject = ApiParameterResponse.class)
     private Set<ApiParameterResponse> params;
 
     @SerializedName(ApiConstants.RESPONSE)
-    @Param(description = "api response fields", responseObject = ApiResponseResponse.class)
+    @Param(description = "API response fields", responseObject = ApiResponseResponse.class)
     private Set<ApiResponseResponse> apiResponse;
 
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "response field type")
+    @Param(description = "Response field type")
     private String type;
+
+    @SerializedName(ApiConstants.HTTP_REQUEST_TYPE)
+    @Param(description = "Preferred HTTP request type for the API", since = "4.23.0")
+    private String httpRequestType;
 
     public ApiDiscoveryResponse() {
         params = new HashSet<ApiParameterResponse>();
@@ -74,6 +78,7 @@ public class ApiDiscoveryResponse extends BaseResponse {
         this.params = new HashSet<>(another.getParams());
         this.apiResponse = new HashSet<>(another.getApiResponse());
         this.type = another.getType();
+        this.httpRequestType = another.getHttpRequestType();
         this.setObjectName(another.getObjectName());
     }
 
@@ -139,5 +144,13 @@ public class ApiDiscoveryResponse extends BaseResponse {
 
     public String getType() {
         return type;
+    }
+
+    public String getHttpRequestType() {
+        return httpRequestType;
+    }
+
+    public void setHttpRequestType(String httpRequestType) {
+        this.httpRequestType = httpRequestType;
     }
 }

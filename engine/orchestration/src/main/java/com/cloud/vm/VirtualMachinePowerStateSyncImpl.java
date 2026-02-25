@@ -89,7 +89,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             return;
         }
         for (Long vmId : vmIds) {
-            if (!notUpdated.containsKey(vmId)) {
+            if (MapUtils.isEmpty(notUpdated) || !notUpdated.containsKey(vmId)) {
                 logger.debug("VM state report is updated. {}, {}, power state: {}",
                         () -> hostCache.get(hostId), () -> vmCache.get(vmId), () -> instancePowerStates.get(vmId));
                 _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE,
@@ -158,8 +158,8 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 // an update might have occurred that we should not override in case of out of band migration
                 instancePowerStates.put(instance.getId(), VirtualMachine.PowerState.PowerReportMissing);
             } else {
-                logger.debug("vm id: {} - time since last state update({} ms) has not passed graceful period yet",
-                        instance.getId(), milliSecondsSinceLastStateUpdate);
+                logger.debug("vm id: {} - time since last state update({} ms) has not passed graceful period ({} ms) yet",
+                        instance.getId(), milliSecondsSinceLastStateUpdate, milliSecondsGracefulPeriod);
             }
         }
         updateAndPublishVmPowerStates(hostId, instancePowerStates, startTime);

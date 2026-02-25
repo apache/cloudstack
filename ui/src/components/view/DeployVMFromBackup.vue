@@ -975,6 +975,9 @@ export default {
           }, {
             id: 'aarch64',
             description: 'ARM 64 bits (aarch64)'
+          }, {
+            id: 's390x',
+            description: 'IBM Z 64 bits (s390x)'
           }
         ]
       }
@@ -2137,7 +2140,9 @@ export default {
         this.owner.domainid = null
         this.owner.projectid = OwnerOptions.selectedProject
       }
-      this.resetData()
+      if (OwnerOptions.initialized) {
+        this.resetData()
+      }
     },
     fetchZones (zoneId, listZoneAllow) {
       this.zones = []

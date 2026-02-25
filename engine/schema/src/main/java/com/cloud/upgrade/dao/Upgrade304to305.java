@@ -82,7 +82,7 @@ public class Upgrade304to305 extends Upgrade30xBase {
 
     private void addVpcProvider(Connection conn) {
         //Encrypt config params and change category to Hidden
-        logger.debug("Adding vpc provider to all physical networks in the system");
+        logger.debug("Adding VPC provider to all physical Networks in the system");
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {

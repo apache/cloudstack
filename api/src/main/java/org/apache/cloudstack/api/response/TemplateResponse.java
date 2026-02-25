@@ -36,153 +36,153 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class TemplateResponse extends BaseResponseWithTagInformation implements ControlledViewEntityResponse, SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the template ID")
+    @Param(description = "The Template ID")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the template name")
+    @Param(description = "The Template name")
     private String name;
 
     @SerializedName(ApiConstants.DISPLAY_TEXT)
-    @Param(description = "the template display text")
+    @Param(description = "The Template display text")
     private String displayText;
 
     @SerializedName(ApiConstants.IS_PUBLIC)
     // propName="public"  (FIXME:  this used to be part of Param annotation, do we need it?)
-    @Param(description = "true if this template is a public template, false otherwise")
+    @Param(description = "True if this Template is a public Template, false otherwise")
     private boolean isPublic;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date this template was created")
+    @Param(description = "The date this Template was created")
     private Date created;
 
     @SerializedName(ApiConstants.REMOVED)
-    @Param(description = "the date this template was removed")
+    @Param(description = "The date this Template was removed")
     private Date removed;
 
     @SerializedName(ApiConstants.IS_READY)
     // propName="ready"  (FIXME:  this used to be part of Param annotation, do we need it?)
-    @Param(description = "true if the template is ready to be deployed from, false otherwise.")
+    @Param(description = "True if the Template is ready to be deployed from, false otherwise.")
     private boolean isReady;
 
     @SerializedName(ApiConstants.PASSWORD_ENABLED)
-    @Param(description = "true if the reset password feature is enabled, false otherwise")
+    @Param(description = "True if the reset password feature is enabled, false otherwise")
     private Boolean passwordEnabled;
 
     @SerializedName(ApiConstants.FORMAT)
-    @Param(description = "the format of the template.")
+    @Param(description = "The format of the Template.")
     private ImageFormat format;
 
     @SerializedName(ApiConstants.BOOTABLE)
-    @Param(description = "true if the ISO is bootable, false otherwise")
+    @Param(description = "True if the ISO is bootable, false otherwise")
     private Boolean bootable;
 
     @SerializedName(ApiConstants.IS_FEATURED)
-    @Param(description = "true if this template is a featured template, false otherwise")
+    @Param(description = "True if this Template is a featured Template, false otherwise")
     private boolean featured;
 
     @SerializedName(ApiConstants.CROSS_ZONES)
-    @Param(description = "true if the template is managed across all Zones, false otherwise")
+    @Param(description = "True if the Template is managed across all Zones, false otherwise")
     private boolean crossZones;
 
     @SerializedName(ApiConstants.OS_TYPE_ID)
-    @Param(description = "the ID of the OS type for this template.")
+    @Param(description = "The ID of the OS type for this Template.")
     private String osTypeId;
 
     @SerializedName("ostypename")
-    @Param(description = "the name of the OS type for this template.")
+    @Param(description = "The name of the OS type for this Template.")
     private String osTypeName;
 
     private transient Long osTypeCategoryId;
 
     @SerializedName(ApiConstants.ACCOUNT_ID)
-    @Param(description = "the account id to which the template belongs")
+    @Param(description = "The Account id to which the Template belongs")
     private String accountId;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account name to which the template belongs")
+    @Param(description = "The Account name to which the Template belongs")
     private String account;
 
     //TODO: since a template can be associated to more than one zones, this model is not accurate. For backward-compatibility, keep these fields
     // here, but add a zones field to capture multiple zones.
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the ID of the zone for this template")
+    @Param(description = "The ID of the zone for this Template")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the name of the zone for this template")
+    @Param(description = "The name of the zone for this Template")
     private String zoneName;
 
     @SerializedName(ApiConstants.STATUS)
-    @Param(description = "the status of the template")
+    @Param(description = "The status of the Template")
     private String status;
 
     @SerializedName(ApiConstants.SIZE)
-    @Param(description = "the size of the template")
+    @Param(description = "The size of the Template")
     private Long size;
 
     @SerializedName(ApiConstants.PHYSICAL_SIZE)
-    @Param(description = "the physical size of the template")
+    @Param(description = "The physical size of the Template")
     private Long physicalSize;
 
     @SerializedName(ApiConstants.TEMPLATE_TYPE)
-    @Param(description = "the type of the template")
+    @Param(description = "The type of the Template")
     private String templateType;
 
     @SerializedName(ApiConstants.HYPERVISOR)
-    @Param(description = "the hypervisor on which the template runs")
+    @Param(description = "The hypervisor on which the Template runs")
     private String hypervisor;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the name of the domain to which the template belongs")
+    @Param(description = "The name of the domain to which the Template belongs")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the Domain the template belongs to", since = "4.19.2.0")
+    @Param(description = "Path of the Domain the template belongs to", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the ID of the domain to which the template belongs")
+    @Param(description = "The ID of the domain to which the Template belongs")
     private String domainId;
 
     @SerializedName(ApiConstants.IS_EXTRACTABLE)
-    @Param(description = "true if the template is extractable, false otherwise")
+    @Param(description = "True if the Template is extractable, false otherwise")
     private Boolean extractable;
 
     @SerializedName(ApiConstants.CHECKSUM)
-    @Param(description = "checksum of the template")
+    @Param(description = "Checksum of the Template")
     private String checksum;
 
     @SerializedName(ApiConstants.SOURCETEMPLATEID)
-    @Param(description = "the template ID of the parent template if present")
+    @Param(description = "The Template ID of the parent Template if present")
     private String sourcetemplateId;
 
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "the ID of the secondary storage host for the template")
+    @Param(description = "The ID of the secondary storage host for the Template")
     private String hostId;
 
     @SerializedName(ApiConstants.HOST_NAME)
-    @Param(description = "the name of the secondary storage host for the template")
+    @Param(description = "The name of the secondary storage host for the Template")
     private String hostName;
 
     @SerializedName(ApiConstants.TEMPLATE_TAG)
-    @Param(description = "the tag of this template")
+    @Param(description = "The tag of this Template")
     private String templateTag;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the template")
+    @Param(description = "The project ID of the Template")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the template")
+    @Param(description = "The project name of the Template")
     private String projectName;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "additional key/value details tied with template")
+    @Param(description = "Additional key/value details tied with Template")
     private Map<String, String> details;
 
     @SerializedName(ApiConstants.DOWNLOAD_DETAILS)
-    @Param(description = "Lists the download progress of a template across all secondary storages")
+    @Param(description = "Lists the download progress of a Template across all secondary storages")
     private List<Map<String, String>> downloadDetails;
 
     @SerializedName(ApiConstants.ARCH)
@@ -190,23 +190,23 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private String arch;
 
     @SerializedName(ApiConstants.BITS)
-    @Param(description = "the processor bit size", since = "4.10")
+    @Param(description = "The processor bit size", since = "4.10")
     private int bits;
 
     @SerializedName(ApiConstants.SSHKEY_ENABLED)
-    @Param(description = "true if template is sshkey enabled, false otherwise")
+    @Param(description = "True if Template is sshkey enabled, false otherwise")
     private Boolean sshKeyEnabled;
 
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
-    @Param(description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    @Param(description = "True if Template contains XS/VMWare tools in order to support dynamic scaling of Instance CPU/memory")
     private Boolean isDynamicallyScalable;
 
     @SerializedName(ApiConstants.DIRECT_DOWNLOAD)
-    @Param(description = "KVM Only: true if template is directly downloaded to Primary Storage bypassing Secondary Storage")
+    @Param(description = "KVM Only: true if Template is directly downloaded to Primary Storage bypassing Secondary Storage")
     private Boolean directDownload;
 
     @SerializedName(ApiConstants.DEPLOY_AS_IS)
-    @Param(description = "VMware only: true if template is deployed without orchestrating disks and networks but \"as-is\" defined in the template.",
+    @Param(description = "VMware only: true if Template is deployed without orchestrating disks and Networks but \"as-is\" defined in the Template.",
             since = "4.15")
     private Boolean deployAsIs;
 
@@ -216,42 +216,42 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     private Boolean forCks;
 
     @SerializedName(ApiConstants.DEPLOY_AS_IS_DETAILS)
-    @Param(description = "VMware only: additional key/value details tied with deploy-as-is template",
+    @Param(description = "VMware only: additional key/value details tied with deploy-as-is Template",
             since = "4.15")
     private Map<String, String> deployAsIsDetails;
 
     @SerializedName("parenttemplateid")
-    @Param(description = "if Datadisk template, then id of the root disk template this template belongs to")
+    @Param(description = "If Datadisk Template, then id of the root disk Template this Template belongs to")
     @Deprecated(since = "4.15")
     private String parentTemplateId;
 
     @SerializedName("childtemplates")
-    @Param(description = "if root disk template, then ids of the datas disk templates this template owns")
+    @Param(description = "If root disk Template, then IDs of the datas disk Templates this Template owns")
     @Deprecated(since = "4.15")
     private Set<ChildTemplateResponse> childTemplates;
 
     @SerializedName(ApiConstants.REQUIRES_HVM)
-    @Param(description = "true if template requires HVM enabled, false otherwise")
+    @Param(description = "True if Template requires HVM enabled, false otherwise")
     private Boolean requiresHvm;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description = "the URL which the template/iso is registered from")
+    @Param(description = "The URL which the Template/ISO is registered from")
     private String url;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse icon;
 
-    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata linked to this template", since = "4.18.0")
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description = "The id of userdata linked to this Template", since = "4.18.0")
     private String userDataId;
 
-    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata linked to this template", since = "4.18.0")
+    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description = "The name of userdata linked to this Template", since = "4.18.0")
     private String userDataName;
 
-    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.0")
+    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description = "The userdata override policy with the userdata provided while deploying Instance", since = "4.18.0")
     private String userDataPolicy;
 
-    @SerializedName(ApiConstants.USER_DATA_PARAMS) @Param(description="list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata", since = "4.18.0")
+    @SerializedName(ApiConstants.USER_DATA_PARAMS) @Param(description = "List of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata", since = "4.18.0")
     private String userDataParams;
 
     @SerializedName(ApiConstants.EXTENSION_ID) @Param(description="The ID of extension linked to this template", since = "4.21.0")
