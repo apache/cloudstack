@@ -160,7 +160,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
-        backup.setStatus(Backup.Status.BackingUp);
+        backup.setStatus(Backup.Status.ReadyForTransfer);
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setDate(new Date());
 
@@ -230,8 +230,6 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             // todo: set it in the backend
             backup.setType("Incremental");
         }
-        backup.setStatus(Backup.Status.ReadyForTransfer);
-        backupDao.update(backup.getId(), backup);
         return backup;
     }
 

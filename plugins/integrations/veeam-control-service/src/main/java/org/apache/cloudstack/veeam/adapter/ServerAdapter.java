@@ -1193,7 +1193,7 @@ public class ServerAdapter extends ManagerBase {
     }
 
     public Backup getBackup(String uuid) {
-        BackupVO vo = backupDao.findByUuid(uuid);
+        BackupVO vo = backupDao.findByUuidIncludingRemoved(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("Backup with ID " + uuid + " not found");
         }
@@ -1233,7 +1233,7 @@ public class ServerAdapter extends ManagerBase {
             if (result == null) {
                 throw new CloudRuntimeException("Failed to finalize backup");
             }
-            backup = backupDao.findById(backup.getId());
+            backup = backupDao.findByIdIncludingRemoved(backup.getId());
             return BackupVOToBackupConverter.toBackup(backup, id -> vm, this::getHostById, this::getBackupDisks);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to finalize backup: " + e.getMessage(), e);
