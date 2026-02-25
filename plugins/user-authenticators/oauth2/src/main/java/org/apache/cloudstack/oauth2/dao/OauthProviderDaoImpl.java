@@ -23,6 +23,7 @@ import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 
 import java.util.List;
+import java.util.Objects;
 
 public class OauthProviderDaoImpl extends GenericDaoBase<OauthProviderVO, Long> implements OauthProviderDao {
 
@@ -56,10 +57,10 @@ public class OauthProviderDaoImpl extends GenericDaoBase<OauthProviderVO, Long> 
     @Override
     public OauthProviderVO findByProviderAndDomainWithGlobalFallback(String provider, Long domainId) {
         OauthProviderVO providerVO = null;
-        if (domainId != null) {
+        if (Objects.nonNull(domainId)) {
             providerVO = findByProviderAndDomain(provider, domainId);
         }
-        if (providerVO == null) {
+        if (Objects.isNull(providerVO)) {
             providerVO = findByProviderAndDomain(provider, null);
         }
         return providerVO;

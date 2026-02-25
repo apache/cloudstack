@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.ApiDBUtils;
@@ -119,7 +120,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
                 domainId = -1L;  // Special case for global-only filter
             } else {
                 Domain domain = _domainDao.findByUuid(domainUuid);
-                if (domain != null) {
+                if (Objects.nonNull(domain)) {
                     domainId = domain.getId();
                 }
             }
@@ -170,7 +171,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             logger.error("No suitable Pluggable Authentication Manager found for listing OAuth providers");
         }
         _domainDao = (DomainDao) ComponentContext.getComponent(DomainDao.class);
-        if (_domainDao == null) {
+        if (Objects.isNull(_domainDao)) {
             logger.error("Could not get DomainDao component");
         }
     }

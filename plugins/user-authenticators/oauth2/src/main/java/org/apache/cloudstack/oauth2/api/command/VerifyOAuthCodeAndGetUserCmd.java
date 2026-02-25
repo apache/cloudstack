@@ -19,6 +19,7 @@ package org.apache.cloudstack.oauth2.api.command;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.domain.DomainVO;
@@ -40,6 +41,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -132,14 +134,14 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
         if (ArrayUtils.isNotEmpty(domainIdArray)) {
             DomainVO domain = _domainDao.findByUuid(domainIdArray[0]);
-            if (domain != null) {
+            if (Objects.nonNull(domain)) {
                 return domain.getId();
             }
         }
         final String[] domainArray = (String[])params.get(ApiConstants.DOMAIN);
         if (ArrayUtils.isNotEmpty(domainArray)) {
             String path = domainArray[0];
-            if (path != null) {
+            if (StringUtils.isNotEmpty(path)) {
                 if (!path.startsWith("/")) {
                     path = "/" + path;
                 }
@@ -147,7 +149,7 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
                     path += "/";
                 }
                 DomainVO domain = _domainDao.findDomainByPath(path);
-                if (domain != null) {
+                if (Objects.nonNull(domain)) {
                     return domain.getId();
                 }
             }
@@ -171,7 +173,7 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
             logger.error("No suitable Pluggable Authentication Manager found for listing OAuth providers");
         }
         _domainDao = (DomainDao) ComponentContext.getComponent(DomainDao.class);
-        if (_domainDao == null) {
+        if (Objects.isNull(_domainDao)) {
             logger.error("Could not get DomainDao component");
         }
     }

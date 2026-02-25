@@ -18,6 +18,8 @@ package org.apache.cloudstack.oauth2.api.response;
 
 import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
+
+import java.util.Objects;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -75,7 +77,7 @@ public class OauthProviderResponse extends BaseResponse {
         this.clientId = clientId;
         this.secretKey = secretKey;
         this.redirectUri = redirectUri;
-        if (domain != null) {
+        if (Objects.nonNull(domain)) {
             this.domainUuid = domain.getUuid();
             this.domainName = domain.getName();
         }
