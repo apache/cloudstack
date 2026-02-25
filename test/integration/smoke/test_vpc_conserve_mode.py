@@ -63,10 +63,12 @@ class TestVPCConserveModeRules(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestVPCConserveModeRules, cls).getClsTestClient()
         cls.apiclient = cls.testClient.getApiClient()
+        cls.services = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.domain = get_domain(cls.apiclient)
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.logger = logging.getLogger("TestVPCConserveModeRules")
+        cls._cleanup = []
 
         cls.account = Account.create(
             cls.apiclient,
@@ -88,21 +90,34 @@ class TestVPCConserveModeRules(cloudstackTestCase):
         )
         cls._cleanup.append(cls.service_offering)
 
+        cls.services["vpc_offering"]["supportedservices"] = 'Vpn,Dhcp,Dns,SourceNat,Lb,UserData,StaticNat,NetworkACL,PortForwarding'
+        cls.services["vpc_offering"]["conservemode"] = True
         cls.vpc_offering_conserve_mode = VpcOffering.create(
             cls.apiclient,
-            cls.services["vpc_offering"],
-            conservemode=True,
+            cls.services["vpc_offering"]
         )
+        cls.vpc_offering_conserve_mode.update(cls.apiclient, state="Enabled")
         cls._cleanup.append(cls.vpc_offering_conserve_mode)
 
-        cls.vpc_offering_conserve_mode.update(cls.apiclient, state="Enabled")
-
+        cls.services["network_offering"]["supportedservices"] = 'Vpn,Dhcp,Dns,SourceNat,Lb,UserData,StaticNat,NetworkACL,PortForwarding'
+        cls.services["network_offering"]["serviceProviderList"] = {
+            "Vpn": 'VpcVirtualRouter',
+            "Dhcp": 'VpcVirtualRouter',
+            "Dns": 'VpcVirtualRouter',
+            "SourceNat": 'VpcVirtualRouter',
+            "Lb": 'VpcVirtualRouter',
+            "UserData": 'VpcVirtualRouter',
+            "StaticNat": 'VpcVirtualRouter',
+            "NetworkACL": 'VpcVirtualRouter',
+            "PortForwarding": 'VpcVirtualRouter'
+        }
         cls.network_offering = NetworkOffering.create(
             cls.apiclient,
             cls.services["network_offering"],
             conservemode=True
         )
         cls.network_offering.update(cls.apiclient, state="Enabled")
+        cls._cleanup.append(cls.network_offering)
 
         cls.services["vpc"]["cidr"] = "10.10.20.0/24"
 
@@ -114,6 +129,7 @@ class TestVPCConserveModeRules(cloudstackTestCase):
             account=cls.account.name,
             domainid=cls.account.domainid,
         )
+        cls._cleanup.append(cls.vpc)
 
         gateway_tier1 = "10.10.20.1"
         netmask_tiers = "255.255.255.240"
@@ -121,7 +137,7 @@ class TestVPCConserveModeRules(cloudstackTestCase):
         cls.services["network_offering"]["name"] = "tier1-" + cls.vpc.id
         cls.services["network_offering"]["displayname"] = "tier1-" + cls.vpc.id
         cls.tier1 = Network.create(
-            cls.self.apiclient,
+            cls.apiclient,
             services=cls.services["network_offering"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
@@ -131,6 +147,7 @@ class TestVPCConserveModeRules(cloudstackTestCase):
             gateway=gateway_tier1,
             netmask=netmask_tiers,
         )
+        cls._cleanup.append(cls.tier1)
 
         gateway_tier2 = "10.10.20.17"
         cls.services["network_offering"]["name"] = "tier2-" + cls.vpc.id
@@ -146,6 +163,7 @@ class TestVPCConserveModeRules(cloudstackTestCase):
             gateway=gateway_tier2,
             netmask=netmask_tiers,
         )
+        cls._cleanup.append(cls.tier2)
 
         cls.services["virtual_machine"]["displayname"] = "vm1" + cls.vpc.id
         cls.vm1 = VirtualMachine.create(
@@ -169,6 +187,8 @@ class TestVPCConserveModeRules(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             networkids=[cls.tier2.id],
         )
+        cls._cleanup.append(cls.vm1)
+        cls._cleanup.append(cls.vm2)
 
     @classmethod
     def tearDownClass(cls):
@@ -181,7 +201,7 @@ class TestVPCConserveModeRules(cloudstackTestCase):
     def tearDown(self):
         super(TestVPCConserveModeRules, self).tearDown()
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_vpc_conserve_mode_cross_tier_rules_allowed(self):
         """With conserveMode=True, LB rule on VPC Tier 1 and Port Forwarding rule on VPC Tier 2 can
         share the same public IP without a NetworkRuleConflictException.
@@ -237,7 +257,7 @@ class TestVPCConserveModeRules(cloudstackTestCase):
                 "conserveMode=True, but got exception: %s" % e
             )
 
-    @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_02_vpc_conserve_mode_reuse_source_nat_ip_address(self):
         """With VPC conserve mode enabled, a NAT rule can be created on a VPC tier (conserve mode enabled)
         with a source NAT IP address
@@ -255,14 +275,14 @@ class TestVPCConserveModeRules(cloudstackTestCase):
             "Creating Port Forwarding rule on tier-1 (networkid=%s) "
             "using the source NAT public IP %s – should succeed with conserve mode",
             self.tier1.id,
-            source_nat_ip.ipaddress.ipaddress,
+            source_nat_ip.ipaddress,
         )
         try:
             nat_rule = NATRule.create(
                 self.apiclient,
                 self.vm2,
                 self.services["natrule"],
-                ipaddressid=source_nat_ip.ipaddress.id,
+                ipaddressid=source_nat_ip.id,
                 vpcid=self.vpc.id,
                 networkid=self.tier2.id,
             )
