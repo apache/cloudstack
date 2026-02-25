@@ -64,12 +64,8 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public boolean start() {
-        if (isOAuthPluginEnabled(null)) {
-            logger.info("OAUTH plugin loaded");
-            initializeUserOAuth2AuthenticationProvidersMap();
-        } else {
-            logger.info("OAUTH plugin not enabled so not loading");
-        }
+        initializeUserOAuth2AuthenticationProvidersMap();
+        logger.info("OAUTH plugin loaded");
         return true;
     }
 
