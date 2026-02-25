@@ -20,6 +20,7 @@
 package org.apache.cloudstack.oauth2.api.command;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +47,14 @@ public class RegisterOAuthProviderCmdTest {
     @Test
     public void testExecute() throws ServerApiException {
         OauthProviderVO provider = mock(OauthProviderVO.class);
-        when(_oauth2mgr.registerOauthProvider(_cmd)).thenReturn(provider);
+        when(provider.getDomainId()).thenReturn(null);
+        when(provider.getUuid()).thenReturn("test-uuid");
+        when(provider.getProvider()).thenReturn("github");
+        when(provider.getDescription()).thenReturn("test");
+        when(provider.getClientId()).thenReturn("client-id");
+        when(provider.getSecretKey()).thenReturn("secret-key");
+        when(provider.getRedirectUri()).thenReturn("http://localhost");
+        when(_oauth2mgr.registerOauthProvider(any(RegisterOAuthProviderCmd.class))).thenReturn(provider);
 
         _cmd.execute();
         assertEquals(ApiConstants.OAUTH_PROVIDER, ((OauthProviderResponse)_cmd.getResponseObject()).getObjectName());
