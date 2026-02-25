@@ -93,7 +93,7 @@ public class OAuth2UserAuthenticatorTest {
         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
         when(userDao.getUser(userAccount.getId())).thenReturn(user);
         when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
-        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0])).thenReturn(true);
+        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId)).thenReturn(true);
 
         Map<String, Object[]> requestParameters = new HashMap<>();
         requestParameters.put("provider", provider);
@@ -108,7 +108,7 @@ public class OAuth2UserAuthenticatorTest {
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
         verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
-        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0]);
+        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0], domainId);
     }
 
     @Test
@@ -126,7 +126,7 @@ public class OAuth2UserAuthenticatorTest {
         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
         when(userDao.getUser(userAccount.getId())).thenReturn(user);
         when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
-        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0])).thenReturn(false);
+        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId)).thenReturn(false);
 
         Map<String, Object[]> requestParameters = new HashMap<>();
         requestParameters.put("provider", provider);
@@ -141,7 +141,7 @@ public class OAuth2UserAuthenticatorTest {
         verify(userAccountDao).getUserAccount(username, domainId);
         verify(userDao).getUser(userAccount.getId());
         verify(userOAuth2mgr).getUserOAuth2AuthenticationProvider(provider[0]);
-        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0]);
+        verify(userOAuth2Authenticator).verifyUser(email[0], secretCode[0], domainId);
     }
 
     @Test
