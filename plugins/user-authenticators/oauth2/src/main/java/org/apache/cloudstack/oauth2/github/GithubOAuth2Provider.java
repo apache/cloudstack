@@ -189,5 +189,4 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
     private void clearAccessToken() {
         accessToken = null;
     }
-
 }
