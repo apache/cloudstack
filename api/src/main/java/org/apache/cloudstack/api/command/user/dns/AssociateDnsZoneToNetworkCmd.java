@@ -18,6 +18,8 @@
 package org.apache.cloudstack.api.command.user.dns;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,12 +29,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.dns.DnsZone;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
 
 @APICommand(name = "associateDnsZoneToNetwork",
         description = "Associates a DNS Zone with a Network for VM auto-registration",
@@ -47,6 +51,7 @@ public class AssociateDnsZoneToNetworkCmd extends BaseCmd {
             required = true, description = "The ID of the DNS zone")
     private Long dnsZoneId;
 
+    @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
             required = true, description = "The ID of the network")
     private Long networkId;
@@ -68,7 +73,11 @@ public class AssociateDnsZoneToNetworkCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return dnsProviderManager.getDnsZone(dnsZoneId).getAccountId();
+        DnsZone zone = _entityMgr.findById(DnsZone.class, dnsZoneId);
+        if (zone != null) {
+            return zone.getAccountId();
+        }
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     public Long getDnsZoneId() {

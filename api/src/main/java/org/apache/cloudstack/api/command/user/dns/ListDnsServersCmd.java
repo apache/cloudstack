@@ -24,7 +24,11 @@ import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsServer;
+
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.EnumUtils;
 
 @APICommand(name = "listDnsServers",
         description = "Lists DNS servers owned by the account.",
@@ -43,9 +47,9 @@ public class ListDnsServersCmd  extends BaseListAccountResourcesCmd {
             description = "the ID of the DNS server")
     private Long id;
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING,
+    @Parameter(name = ApiConstants.PROVIDER_TYPE, type = CommandType.STRING,
             description = "filter by provider type (e.g. PowerDNS, Cloudflare)")
-    private String provider;
+    private String providerType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -55,8 +59,13 @@ public class ListDnsServersCmd  extends BaseListAccountResourcesCmd {
         return id;
     }
 
-    public String getProvider() {
-        return provider;
+    public DnsProviderType getProviderType() {
+        DnsProviderType dnsProviderType = EnumUtils.getEnumIgnoreCase(DnsProviderType.class, providerType, DnsProviderType.PowerDNS);
+        if (dnsProviderType == null) {
+            throw new InvalidParameterValueException(String.format("Invalid value passed for provider type, valid values are: %s",
+                    EnumUtils.listValues(DnsProviderType.values())));
+        }
+        return dnsProviderType;
     }
 
     /////////////////////////////////////////////////////

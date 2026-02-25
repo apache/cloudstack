@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
+import org.apache.cloudstack.api.response.DnsZoneResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -44,10 +45,14 @@ import com.cloud.user.Account;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DisassociateDnsZoneFromNetworkCmd extends BaseCmd {
 
+    @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class,
+            required = true, description = "The ID of the DNS zone")
+    private Long dnsZoneId;
+
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsZoneNetworkMapResponse.class,
-            required = true, description = "The ID of the DNS zone to network mapping")
-    private Long id;
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
+            required = true, description = "The ID of the network")
+    private Long networkId;
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
@@ -69,5 +74,11 @@ public class DisassociateDnsZoneFromNetworkCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-    public Long getId() { return id; }
+    public Long getDnsZoneId() {
+        return dnsZoneId;
+    }
+
+    public void setDnsZoneId(Long dnsZoneId) {
+        this.dnsZoneId = dnsZoneId;
+    }
 }

@@ -80,8 +80,7 @@ public class DeleteDnsZoneCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        // Look up the Zone to find the Account Owner
-        DnsZone zone = dnsProviderManager.getDnsZone(id);
+        DnsZone zone = _entityMgr.findById(DnsZone.class, id);
         if (zone != null) {
             return zone.getAccountId();
         }

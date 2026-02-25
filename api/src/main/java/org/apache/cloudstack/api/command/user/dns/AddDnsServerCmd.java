@@ -28,8 +28,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsServer;
 import org.apache.commons.lang3.BooleanUtils;
+
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.EnumUtils;
 
 @APICommand(name = "addDnsServer",
         description = "Adds a new external DNS server",
@@ -51,8 +55,8 @@ public class AddDnsServerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "API URL of the provider")
     private String url;
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "Provider type (e.g., PowerDNS)")
-    private String provider;
+    @Parameter(name = ApiConstants.PROVIDER_TYPE, type = CommandType.STRING, required = true, description = "Provider type (e.g., PowerDNS)")
+    private String providerType;
 
     @Parameter(name = ApiConstants.DNS_USER_NAME, type = CommandType.STRING,
             description = "Username or email associated with the external DNS provider account (used for authentication)")
@@ -82,8 +86,9 @@ public class AddDnsServerCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     public String getName() { return name; }
+
     public String getUrl() { return url; }
-    public String getProvider() { return provider; }
+
     public String getCredentials() {
         return credentials;
     }
@@ -102,6 +107,15 @@ public class AddDnsServerCmd extends BaseCmd {
 
     public List<String> getNameServers() {
         return nameServers;
+    }
+
+    public DnsProviderType getProviderType() {
+        DnsProviderType dnsProviderType = EnumUtils.getEnumIgnoreCase(DnsProviderType.class, providerType, DnsProviderType.PowerDNS);
+        if (dnsProviderType == null) {
+            throw new InvalidParameterValueException(String.format("Invalid value passed for provider type, valid values are: %s",
+                    EnumUtils.listValues(DnsProviderType.values())));
+        }
+        return dnsProviderType;
     }
 
     @Override

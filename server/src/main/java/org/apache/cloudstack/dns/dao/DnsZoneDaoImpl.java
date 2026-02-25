@@ -35,7 +35,6 @@ import com.cloud.utils.db.SearchCriteria;
 public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements DnsZoneDao {
     SearchBuilder<DnsZoneVO> AccountSearch;
     SearchBuilder<DnsZoneVO> NameServerTypeSearch;
-    SearchBuilder<DnsZoneVO> AllFieldsSearch;
 
     public DnsZoneDaoImpl() {
         super();
@@ -51,16 +50,6 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
         NameServerTypeSearch.and(ApiConstants.TYPE, NameServerTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
         NameServerTypeSearch.and(ApiConstants.STATE, NameServerTypeSearch.entity().getState(), SearchCriteria.Op.EQ);
         NameServerTypeSearch.done();
-
-        AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and().op(ApiConstants.DNS_SERVER_ID, AllFieldsSearch.entity().getDnsServerId(), SearchCriteria.Op.IN);
-        AllFieldsSearch.or(ApiConstants.ACCOUNT_ID, AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.cp();
-        AllFieldsSearch.and(ApiConstants.STATE, AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and(ApiConstants.ID, AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and(ApiConstants.NAME, AllFieldsSearch.entity().getName(), SearchCriteria.Op.LIKE);
-        AllFieldsSearch.and(ApiConstants.TARGET_ID, AllFieldsSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.done();
     }
 
     @Override
@@ -85,7 +74,21 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
     public Pair<List<DnsZoneVO>, Integer> searchZones(Long id, Long accountId, List<Long> ownDnsServerIds, Long targetDnsServerId,
                                                       String keyword, Filter filter) {
 
-        SearchCriteria<DnsZoneVO> sc = AllFieldsSearch.create();
+        SearchBuilder<DnsZoneVO> sb = createSearchBuilder();
+        sb.and(ApiConstants.STATE, sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and(ApiConstants.ID, sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and(ApiConstants.NAME, sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and(ApiConstants.TARGET_ID, sb.entity().getDnsServerId(), SearchCriteria.Op.EQ);
+        if (!CollectionUtils.isEmpty(ownDnsServerIds)) {
+            sb.and().op(ApiConstants.DNS_SERVER_ID, sb.entity().getDnsServerId(), SearchCriteria.Op.IN);
+            sb.or(ApiConstants.ACCOUNT_ID, sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+            sb.cp();
+        } else {
+            sb.and(ApiConstants.ACCOUNT_ID, sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        }
+        sb.done();
+
+        SearchCriteria<DnsZoneVO> sc = sb.create();
         if (id != null) {
             sc.setParameters(ApiConstants.ID, id);
         }

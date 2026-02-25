@@ -24,6 +24,7 @@ import org.apache.cloudstack.dns.exception.DnsProviderException;
 import com.cloud.utils.component.Adapter;
 
 public interface DnsProvider extends Adapter {
+
     DnsProviderType getProviderType();
 
     // Validates connectivity to the server

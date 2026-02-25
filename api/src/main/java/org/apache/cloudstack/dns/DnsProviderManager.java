@@ -29,8 +29,6 @@ import org.apache.cloudstack.api.command.user.dns.DisassociateDnsZoneFromNetwork
 import org.apache.cloudstack.api.command.user.dns.ListDnsRecordsCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsServersCmd;
 import org.apache.cloudstack.api.command.user.dns.ListDnsZonesCmd;
-import org.apache.cloudstack.api.command.user.dns.RegisterDnsRecordForVmCmd;
-import org.apache.cloudstack.api.command.user.dns.RemoveDnsRecordForVmCmd;
 import org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd;
 import org.apache.cloudstack.api.command.user.dns.UpdateDnsZoneCmd;
 import org.apache.cloudstack.api.response.DnsRecordResponse;
@@ -56,7 +54,6 @@ public interface DnsProviderManager extends Manager, PluggableService {
     // Calls the Plugin (State: Inactive -> Active)
     DnsZone provisionDnsZone(long zoneId);
 
-    DnsZone getDnsZone(Long id);
     DnsZone updateDnsZone(UpdateDnsZoneCmd cmd);
     boolean deleteDnsZone(Long id);
     ListResponse<DnsZoneResponse> listDnsZones(ListDnsZonesCmd cmd);
@@ -75,9 +72,5 @@ public interface DnsProviderManager extends Manager, PluggableService {
 
     boolean disassociateZoneFromNetwork(DisassociateDnsZoneFromNetworkCmd cmd);
 
-    boolean registerDnsRecordForVm(RegisterDnsRecordForVmCmd cmd);
-    boolean removeDnsRecordForVm(RemoveDnsRecordForVmCmd cmd);
-
     void checkDnsServerPermissions(Account caller, DnsServer server);
-    void checkDnsZonePermission(Account caller, DnsZone zone);
 }

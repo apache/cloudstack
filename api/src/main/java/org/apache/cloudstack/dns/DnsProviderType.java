@@ -20,15 +20,4 @@ package org.apache.cloudstack.dns;
 public enum DnsProviderType {
     PowerDNS;
 //    Cloudflare
-
-    // Helper to validate and return Enum from String safely
-    public static DnsProviderType fromString(String type) {
-        if (type == null) return null;
-        for (DnsProviderType t : DnsProviderType.values()) {
-            if (t.name().equalsIgnoreCase(type)) {
-                return t;
-            }
-        }
-        throw new IllegalArgumentException("Invalid DNS Provider type: " + type);
-    }
 }

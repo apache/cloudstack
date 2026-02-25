@@ -20,7 +20,7 @@ package org.apache.cloudstack.api.command.user.dns;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
@@ -33,7 +33,7 @@ import org.apache.cloudstack.dns.DnsZone;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.23.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListDnsZonesCmd extends BaseListAccountResourcesCmd {
+public class ListDnsZonesCmd extends BaseListCmd {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

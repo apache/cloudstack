@@ -56,6 +56,7 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
         DnsServerIdsByAccountSearch = createSearchBuilder(Long.class);
         DnsServerIdsByAccountSearch.selectFields(DnsServerIdsByAccountSearch.entity().getId());
         DnsServerIdsByAccountSearch.and(ApiConstants.ACCOUNT_ID, DnsServerIdsByAccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        DnsServerIdsByAccountSearch.and(ApiConstants.STATE, DnsServerIdsByAccountSearch.entity().getState(), SearchCriteria.Op.EQ);
         DnsServerIdsByAccountSearch.done();
 
     }
@@ -74,6 +75,7 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
         if (accountId != null) {
             sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
         }
+        sc.setParameters(ApiConstants.STATE, DnsServer.State.Enabled);
         return customSearch(sc, null);
     }
 
