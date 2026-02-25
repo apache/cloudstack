@@ -63,54 +63,6 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
         return verifyCodeAndFetchEmail(secretCode, null);
     }
 
-    public String getUserEmailAddress() throws CloudRuntimeException {
-        if (StringUtils.isEmpty(accessToken)) {
-            throw new CloudRuntimeException("Access Token not found to fetch the email address");
-        }
-
-        String apiUrl = "https://api.github.com/user/emails";
-        String email = null;
-        try {
-            URL url = new URL(apiUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Authorization", "token " + accessToken);
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                try (BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                    String inputLine;
-                    StringBuilder response = new StringBuilder();
-                    while ((inputLine = in.readLine()) != null) {
-                        response.append(inputLine);
-                    }
-
-                    try {
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        JsonNode jsonNode = objectMapper.readTree(response.toString());
-                        if (jsonNode != null  && jsonNode.isArray()) {
-                            JsonNode firstObject = jsonNode.get(0);
-                            email = firstObject.get("email").asText();
-                        } else {
-                            throw new CloudRuntimeException("Invalid JSON format found while accessing email from github");
-                        }
-                    } catch (Exception e) {
-                        throw new CloudRuntimeException(String.format("Error occurred while accessing email from github: %s", e.getMessage()));
-                    }                }
-            } else {
-                throw new CloudRuntimeException(String.format("HTTP Request Failed with error code: %s", responseCode));
-            }
-        } catch (IOException e) {
-            throw new CloudRuntimeException(String.format("Error while trying to fetch email from github : %s", e.getMessage()));
-        }
-
-        return email;
-    }
-
-    private void clearAccessToken() {
-        accessToken = null;
-    }
-
     @Override
     public boolean verifyUser(String email, String secretCode, Long domainId) {
         if (StringUtils.isAnyEmpty(email, secretCode)) {
@@ -188,6 +140,54 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
 
         accessToken = generatedAccessToken;
         return accessToken;
+    }
+
+    public String getUserEmailAddress() throws CloudRuntimeException {
+        if (StringUtils.isEmpty(accessToken)) {
+            throw new CloudRuntimeException("Access Token not found to fetch the email address");
+        }
+
+        String apiUrl = "https://api.github.com/user/emails";
+        String email = null;
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "token " + accessToken);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                    String inputLine;
+                    StringBuilder response = new StringBuilder();
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+
+                    try {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        JsonNode jsonNode = objectMapper.readTree(response.toString());
+                        if (jsonNode != null  && jsonNode.isArray()) {
+                            JsonNode firstObject = jsonNode.get(0);
+                            email = firstObject.get("email").asText();
+                        } else {
+                            throw new CloudRuntimeException("Invalid JSON format found while accessing email from github");
+                        }
+                    } catch (Exception e) {
+                        throw new CloudRuntimeException(String.format("Error occurred while accessing email from github: %s", e.getMessage()));
+                    }                }
+            } else {
+                throw new CloudRuntimeException(String.format("HTTP Request Failed with error code: %s", responseCode));
+            }
+        } catch (IOException e) {
+            throw new CloudRuntimeException(String.format("Error while trying to fetch email from github : %s", e.getMessage()));
+        }
+
+        return email;
+    }
+
+    private void clearAccessToken() {
+        accessToken = null;
     }
 
 }
