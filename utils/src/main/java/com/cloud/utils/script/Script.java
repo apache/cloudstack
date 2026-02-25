@@ -245,7 +245,7 @@ public class Script implements Callable<String> {
     }
 
     public String execute(OutputInterpreter interpreter) {
-        return execute(interpreter, null);
+        return executeInternal(interpreter, null);
     }
 
     public String execute(OutputInterpreter interpreter, Map<String, String> environment) {
