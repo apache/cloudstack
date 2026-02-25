@@ -632,6 +632,18 @@ class CsIP:
                                 (self.address['network'], self.address['network'])])
 
         if self.get_type() in ["public"]:
+            # Add PREROUTING firewall chain jump for public IP
+            self.fw.append(["mangle", "front",
+                            "-A PREROUTING " +
+                            "-d %s/32 -j FIREWALL_%s" % (self.address['public_ip'], self.address['public_ip'])])
+
+            # Add the firewall chain with default DROP policy
+            self.fw.append(["mangle", "front",
+                            "-A FIREWALL_%s " % self.address['public_ip'] +
+                            "-m state --state RELATED,ESTABLISHED -j RETURN"])
+            self.fw.append(["mangle", "",
+                            "-A FIREWALL_%s -j DROP" % self.address['public_ip']])
+
             self.fw.append(
                 ["mangle", "", "-A FORWARD -j VPN_STATS_%s" % self.dev])
             self.fw.append(

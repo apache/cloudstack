@@ -556,6 +556,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         defaultVPCOffProviders.put(Service.StaticNat, defaultProviders);
         defaultVPCOffProviders.put(Service.PortForwarding, defaultProviders);
         defaultVPCOffProviders.put(Service.Vpn, defaultProviders);
+        defaultVPCOffProviders.put(Service.Firewall, defaultProviders);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override

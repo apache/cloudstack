@@ -135,22 +135,24 @@ export default {
         return
       }
       if (this.resource && this.resource.vpcid) {
-        // VPC IPs with source nat have only VPN
+        // VPC IPs with source nat have VPN and Firewall
         if (this.resource.issourcenat) {
-          this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+          this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
           return
         }
 
-        // VPC IPs with static nat have nothing
+        // VPC IPs with static nat have firewall
         if (this.resource.isstaticnat) {
           if (this.resource.virtualmachinetype === 'DomainRouter') {
-            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
+          } else {
+            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'firewall'))
           }
           return
         }
 
-        // VPC IPs don't have firewall
-        let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
+        // VPC IPs now have firewall support
+        let tabs = this.$route.meta.tabs
 
         const network = await this.fetchNetwork()
         if (network && network.networkofferingconservemode) {
@@ -161,12 +163,12 @@ export default {
         this.portFWRuleCount = await this.fetchPortFWRule()
         this.loadBalancerRuleCount = await this.fetchLoadBalancerRule()
 
-        // VPC IPs with PF only have PF
+        // VPC IPs with PF only have PF (and firewall)
         if (this.portFWRuleCount > 0) {
           tabs = tabs.filter(tab => tab.name !== 'loadbalancing')
         }
 
-        // VPC IPs with LB rules only have LB
+        // VPC IPs with LB rules only have LB (and firewall)
         if (this.loadBalancerRuleCount > 0) {
           tabs = tabs.filter(tab => tab.name !== 'portforwarding')
         }
