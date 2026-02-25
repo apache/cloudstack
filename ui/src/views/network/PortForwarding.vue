@@ -642,7 +642,7 @@ export default {
       if (this.loading) return
       this.loading = true
       this.addVmModalVisible = false
-      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource || this.vpcConserveMode))) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       postAPI('createPortForwardingRule', {
         ...this.newRule,
         ipaddressid: this.resource.id,
