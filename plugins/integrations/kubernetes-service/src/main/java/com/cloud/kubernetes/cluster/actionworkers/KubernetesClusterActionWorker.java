@@ -28,9 +28,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -63,7 +65,9 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.AffinityProcessorBase;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
@@ -125,10 +129,12 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VMInstanceDetailVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
@@ -214,6 +220,10 @@ public class KubernetesClusterActionWorker {
     private NicDao nicDao;
     @Inject
     protected AffinityGroupDao affinityGroupDao;
+    @Inject
+    protected AffinityGroupVMMapDao affinityGroupVMMapDao;
+    @Inject
+    protected VMInstanceDao vmInstanceDao;
 
     protected KubernetesClusterDao kubernetesClusterDao;
     protected KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
@@ -1132,5 +1142,59 @@ public class KubernetesClusterActionWorker {
             affinityGroupIds.add(explicitAffinityGroupId);
         }
         return affinityGroupIds.isEmpty() ? null : affinityGroupIds;
+    }
+
+    private Set<Long> getRunningVmHostIds(Long affinityGroupId) {
+        return affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId).stream()
+                .map(vmInstanceDao::findById)
+                .filter(vm -> Objects.nonNull(vm) && Objects.nonNull(vm.getHostId()) && VirtualMachine.State.Running.equals(vm.getState()))
+                .map(VMInstanceVO::getHostId)
+                .collect(Collectors.toSet());
+    }
+
+    protected AffinityConstraints resolveAffinityConstraints(KubernetesClusterNodeType nodeType, Long domainId, Long accountId) {
+        Set<Long> antiAffinityOccupiedHosts = new HashSet<>();
+        Long requiredHostId = null;
+        boolean hasHostAntiAffinity = false;
+        boolean hasHostAffinity = false;
+
+        if (Objects.nonNull(nodeType)) {
+            List<Long> affinityGroupIds = getMergedAffinityGroupIds(nodeType, domainId, accountId);
+            if (CollectionUtils.isNotEmpty(affinityGroupIds)) {
+            for (Long affinityGroupId : affinityGroupIds) {
+                AffinityGroupVO affinityGroup = affinityGroupDao.findById(affinityGroupId);
+                if (Objects.isNull(affinityGroup)) {
+                    continue;
+                }
+                if (AffinityProcessorBase.AFFINITY_TYPE_HOST_ANTI.equals(affinityGroup.getType())) {
+                    hasHostAntiAffinity = true;
+                    antiAffinityOccupiedHosts.addAll(getRunningVmHostIds(affinityGroupId));
+                } else if (AffinityProcessorBase.AFFINITY_TYPE_HOST.equals(affinityGroup.getType())) {
+                    hasHostAffinity = true;
+                    Set<Long> hostIds = getRunningVmHostIds(affinityGroupId);
+                    if (CollectionUtils.isNotEmpty(hostIds)) {
+                        requiredHostId = hostIds.iterator().next();
+                    }
+                }
+            }
+            }
+        }
+
+        return new AffinityConstraints(hasHostAntiAffinity, hasHostAffinity, antiAffinityOccupiedHosts, requiredHostId);
+    }
+
+    protected static class AffinityConstraints {
+        final boolean hasHostAntiAffinity;
+        final boolean hasHostAffinity;
+        final Set<Long> antiAffinityOccupiedHosts;
+        final Long requiredHostId;
+
+        AffinityConstraints(boolean hasHostAntiAffinity, boolean hasHostAffinity,
+                            Set<Long> antiAffinityOccupiedHosts, Long requiredHostId) {
+            this.hasHostAntiAffinity = hasHostAntiAffinity;
+            this.hasHostAffinity = hasHostAffinity;
+            this.antiAffinityOccupiedHosts = antiAffinityOccupiedHosts;
+            this.requiredHostId = requiredHostId;
+        }
     }
 }
