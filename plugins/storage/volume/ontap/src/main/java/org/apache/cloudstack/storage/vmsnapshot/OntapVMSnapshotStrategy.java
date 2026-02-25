@@ -198,10 +198,12 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
      * Creates a per-volume disk snapshot as part of a VM snapshot operation.
      *
      * <p>Overrides the parent to ensure {@code quiescevm} is always {@code false}
-     * in the per-volume snapshot payload. ONTAP handles quiescing at the VM level
-     * via QEMU guest agent freeze/thaw in {@link #takeVMSnapshot}, so the
-     * individual volume snapshot must not request quiescing again. Without this
-     * override, {@link org.apache.cloudstack.storage.snapshot.DefaultSnapshotStrategy#takeSnapshot}
+     * in the per-volume snapshot payload. When quiescing is requested, ONTAP handles
+     * it at the VM level via QEMU guest agent freeze/thaw in {@link #takeVMSnapshot},
+     * so the individual volume snapshot must not request quiescing again. Without this
+     * override, {@link org.apache.cloudstack.storage.snapshot.StorageSystemSnapshotStrategy#takeSnapshot}
+     * would attempt a second freeze/thaw for each volume, and
+     * {@link org.apache.cloudstack.storage.snapshot.DefaultSnapshotStrategy#takeSnapshot}
      * would reject the request with "can't handle quiescevm equal true for volume snapshot"
      * when the user selects the quiesce option in the UI.</p>
      */
@@ -226,9 +228,11 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
      * Takes a VM-level snapshot by freezing the VM, creating per-volume snapshots
      * on ONTAP storage (file clones), and then thawing the VM.
      *
-     * <p>The quiesce option is always {@code true} for ONTAP to ensure filesystem
-     * consistency across all volumes. The QEMU guest agent must be installed and
-     * running inside the guest VM.</p>
+     * <p>If the user requests quiescing ({@code quiescevm=true}), the QEMU guest
+     * agent is used to freeze/thaw the VM file systems for application-consistent
+     * snapshots. If {@code quiescevm=false}, the snapshots are crash-consistent
+     * only. The QEMU guest agent must be installed and running inside the guest VM
+     * for quiescing to work.</p>
      */
     @Override
     public VMSnapshot takeVMSnapshot(VMSnapshot vmSnapshot) {
@@ -264,12 +268,19 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 current = vmSnapshotHelper.getSnapshotWithParents(currentSnapshot);
             }
 
-            // For ONTAP managed NFS, always quiesce the VM for filesystem consistency
-            boolean quiescevm = true;
+            // Respect the user's quiesce option from the VM snapshot request
+            boolean quiescevm = true; // default to true for safety
             VMSnapshotOptions options = vmSnapshotVO.getOptions();
-            if (options != null && !options.needQuiesceVM()) {
-                logger.info("Quiesce option was set to false, but overriding to true for ONTAP managed storage " +
-                        "to ensure filesystem consistency across all volumes");
+            if (options != null) {
+                quiescevm = options.needQuiesceVM();
+            }
+
+            if (quiescevm) {
+                logger.info("Quiesce option is enabled for ONTAP VM Snapshot of VM [{}]. " +
+                        "VM file systems will be frozen/thawed for application-consistent snapshots.", userVm.getInstanceName());
+            } else {
+                logger.info("Quiesce option is disabled for ONTAP VM Snapshot of VM [{}]. " +
+                        "Snapshots will be crash-consistent only.", userVm.getInstanceName());
             }
 
             VMSnapshotTO target = new VMSnapshotTO(vmSnapshot.getId(), vmSnapshot.getName(),
@@ -284,7 +295,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(
                     userVm.getInstanceName(), userVm.getUuid(), target, volumeTOs, guestOS.getDisplayName());
 
-            logger.info("Creating ONTAP VM Snapshot for VM [{}] with quiesce=true", userVm.getInstanceName());
+            logger.info("Creating ONTAP VM Snapshot for VM [{}] with quiesce={}", userVm.getInstanceName(), quiescevm);
 
             // Prepare volume info list
             List<VolumeInfo> volumeInfos = new ArrayList<>();
@@ -295,22 +306,26 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 prev_chain_size += volumeVO.getVmSnapshotChainSize() == null ? 0 : volumeVO.getVmSnapshotChainSize();
             }
 
-            // ── Step 1: Freeze the VM ──
-            FreezeThawVMCommand freezeCommand = new FreezeThawVMCommand(userVm.getInstanceName());
-            freezeCommand.setOption(FreezeThawVMCommand.FREEZE);
-            freezeAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, freezeCommand);
-            startFreeze = System.nanoTime();
+            // ── Step 1: Freeze the VM (only if quiescing is requested) ──
+            if (quiescevm) {
+                FreezeThawVMCommand freezeCommand = new FreezeThawVMCommand(userVm.getInstanceName());
+                freezeCommand.setOption(FreezeThawVMCommand.FREEZE);
+                freezeAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, freezeCommand);
+                startFreeze = System.nanoTime();
 
-            thawCmd = new FreezeThawVMCommand(userVm.getInstanceName());
-            thawCmd.setOption(FreezeThawVMCommand.THAW);
+                thawCmd = new FreezeThawVMCommand(userVm.getInstanceName());
+                thawCmd.setOption(FreezeThawVMCommand.THAW);
 
-            if (freezeAnswer == null || !freezeAnswer.getResult()) {
-                String detail = (freezeAnswer != null) ? freezeAnswer.getDetails() : "no response from agent";
-                throw new CloudRuntimeException("Could not freeze VM [" + userVm.getInstanceName() +
-                        "] for ONTAP snapshot. Ensure qemu-guest-agent is installed and running. Details: " + detail);
+                if (freezeAnswer == null || !freezeAnswer.getResult()) {
+                    String detail = (freezeAnswer != null) ? freezeAnswer.getDetails() : "no response from agent";
+                    throw new CloudRuntimeException("Could not freeze VM [" + userVm.getInstanceName() +
+                            "] for ONTAP snapshot. Ensure qemu-guest-agent is installed and running. Details: " + detail);
+                }
+
+                logger.info("VM [{}] frozen successfully via QEMU guest agent", userVm.getInstanceName());
+            } else {
+                logger.info("Skipping VM freeze for VM [{}] as quiesce is not requested", userVm.getInstanceName());
             }
-
-            logger.info("VM [{}] frozen successfully via QEMU guest agent", userVm.getInstanceName());
 
             // ── Step 2: Create per-volume snapshots (ONTAP file clones) ──
             try {
@@ -328,19 +343,21 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                             TimeUnit.MILLISECONDS.convert(System.nanoTime() - startSnapshot, TimeUnit.NANOSECONDS));
                 }
             } finally {
-                // ── Step 3: Thaw the VM (always, even on error) ──
-                try {
-                    thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
-                    if (thawAnswer != null && thawAnswer.getResult()) {
-                        logger.info("VM [{}] thawed successfully. Total freeze duration: {} ms",
-                                userVm.getInstanceName(),
-                                TimeUnit.MILLISECONDS.convert(System.nanoTime() - startFreeze, TimeUnit.NANOSECONDS));
-                    } else {
-                        logger.warn("Failed to thaw VM [{}]: {}", userVm.getInstanceName(),
-                                (thawAnswer != null) ? thawAnswer.getDetails() : "no response");
+                // ── Step 3: Thaw the VM (only if it was frozen, always even on error) ──
+                if (quiescevm && freezeAnswer != null && freezeAnswer.getResult()) {
+                    try {
+                        thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
+                        if (thawAnswer != null && thawAnswer.getResult()) {
+                            logger.info("VM [{}] thawed successfully. Total freeze duration: {} ms",
+                                    userVm.getInstanceName(),
+                                    TimeUnit.MILLISECONDS.convert(System.nanoTime() - startFreeze, TimeUnit.NANOSECONDS));
+                        } else {
+                            logger.warn("Failed to thaw VM [{}]: {}", userVm.getInstanceName(),
+                                    (thawAnswer != null) ? thawAnswer.getDetails() : "no response");
+                        }
+                    } catch (Exception thawEx) {
+                        logger.error("Exception while thawing VM [{}]: {}", userVm.getInstanceName(), thawEx.getMessage(), thawEx);
                     }
-                } catch (Exception thawEx) {
-                    logger.error("Exception while thawing VM [{}]: {}", userVm.getInstanceName(), thawEx.getMessage(), thawEx);
                 }
             }
 

@@ -89,7 +89,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
  *   <li>canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) — allocation-phase checks</li>
  *   <li>takeVMSnapshot — success path with freeze/thaw and per-volume snapshot</li>
  *   <li>takeVMSnapshot — failure scenarios (freeze failure, disk snapshot failure, agent errors)</li>
- *   <li>Quiesce override behavior (always true for ONTAP)</li>
+ *   <li>Quiesce behavior (honors user input; freeze/thaw only when quiesce=true)</li>
  * </ul>
  */
 @ExtendWith(MockitoExtension.class)
@@ -677,11 +677,11 @@ class OntapVMSnapshotStrategyTest {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // Tests: Quiesce Override
+    // Tests: Quiesce Behavior
     // ══════════════════════════════════════════════════════════════════════════
 
     @Test
-    void testTakeVMSnapshot_QuiesceOverriddenToTrue() throws Exception {
+    void testTakeVMSnapshot_QuiesceFalse_SkipsFreezeThaw() throws Exception {
         VMSnapshotVO vmSnapshot = createTakeSnapshotVmSnapshot();
         // Explicitly set quiesce to false
         VMSnapshotOptions options = mock(VMSnapshotOptions.class);
@@ -691,14 +691,6 @@ class OntapVMSnapshotStrategyTest {
         setupTakeSnapshotCommon(vmSnapshot);
         setupSingleVolumeForTakeSnapshot();
 
-        FreezeThawVMAnswer freezeAnswer = mock(FreezeThawVMAnswer.class);
-        when(freezeAnswer.getResult()).thenReturn(true);
-        FreezeThawVMAnswer thawAnswer = mock(FreezeThawVMAnswer.class);
-        when(thawAnswer.getResult()).thenReturn(true);
-        when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class)))
-                .thenReturn(freezeAnswer)
-                .thenReturn(thawAnswer);
-
         SnapshotInfo snapshotInfo = mock(SnapshotInfo.class);
         doReturn(snapshotInfo).when(strategy).createDiskSnapshot(any(), any(), any());
         doNothing().when(strategy).processAnswer(any(), any(), any(), any());
@@ -707,10 +699,12 @@ class OntapVMSnapshotStrategyTest {
 
         VMSnapshot result = strategy.takeVMSnapshot(vmSnapshot);
 
-        // Snapshot should succeed even with quiesce=false, because ONTAP overrides to true
+        // Snapshot should succeed with quiesce=false (crash-consistent, no freeze/thaw)
         assertNotNull(result);
-        // The freeze command is always sent (quiesce=true)
-        verify(agentMgr, times(2)).send(eq(HOST_ID), any(FreezeThawVMCommand.class));
+        // No freeze/thaw commands should be sent when quiesce is false
+        verify(agentMgr, never()).send(eq(HOST_ID), any(FreezeThawVMCommand.class));
+        // Per-volume snapshot should still be created
+        verify(strategy).createDiskSnapshot(any(), any(), any());
     }
 
     @Test
