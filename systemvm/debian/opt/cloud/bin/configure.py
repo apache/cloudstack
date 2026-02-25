@@ -705,8 +705,8 @@ class CsAcl(CsDataBag):
 
         for item in self.dbag:
             if item == "id":
-                continue
-            if self.config.is_vpc():
+                 continue
+            if self.config.is_vpc() and not ("purpose" in self.dbag[item] and self.dbag[item]["purpose"] == "Firewall"):
                 self.AclDevice(self.dbag[item], self.config).create()
             else:
                 self.AclIP(self.dbag[item], self.config).create()

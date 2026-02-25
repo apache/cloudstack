@@ -17,6 +17,8 @@
 package com.cloud.upgrade.dao;
 
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -51,6 +53,7 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     public void performDataMigration(Connection conn) {
         unhideJsInterpretationEnabled(conn);
+        updateVpcDefaultOfferingsWithFirewallService(conn);
     }
 
     protected void unhideJsInterpretationEnabled(Connection conn) {
@@ -87,6 +90,67 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
             throw new CloudRuntimeException("Error while unhiding configuration 'js.interpretation.enabled'.", e);
         } catch (CloudRuntimeException e) {
             logger.warn("Error while decrypting configuration 'js.interpretation.enabled'. The configuration may already be decrypted.");
+        }
+    }
+
+    private void updateVpcDefaultOfferingsWithFirewallService(Connection conn) {
+        logger.debug("Updating default VPC offerings to add Firewall service with VpcVirtualRouter provider");
+
+        final List<String> defaultVpcOfferingUniqueNames = Arrays.asList(
+                "DefaultIsolatedNetworkOfferingForVpcNetworks",
+                "DefaultIsolatedNetworkOfferingForVpcNetworksNoLB",
+                "DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB",
+                "DefaultNATNSXNetworkOfferingForVpc",
+                "DefaultRoutedNSXNetworkOfferingForVpc",
+                "DefaultNATNSXNetworkOfferingForVpcWithInternalLB",
+                "DefaultRoutedNetrisNetworkOfferingForVpc",
+                "DefaultNATNetrisNetworkOfferingForVpc",
+                "DefaultNSXVPCNetworkOfferingforKubernetesService"
+        );
+
+        try {
+            for (String uniqueName : defaultVpcOfferingUniqueNames) {
+                PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`network_offerings` WHERE unique_name = ?");
+                pstmt.setString(1, uniqueName);
+
+                ResultSet rs = pstmt.executeQuery();
+                if (!rs.next()) {
+                    continue;
+                }
+
+                long offeringId = rs.getLong(1);
+                rs.close();
+                pstmt.close();
+
+                // Insert into ntwk_offering_service_map (if not exists)
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ntwk_offering_service_map` " +
+                        "(network_offering_id, service, provider, created) " +
+                        "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())");
+                pstmt.setLong(1, offeringId);
+                pstmt.executeUpdate();
+                pstmt.close();
+
+                // Update existing networks (ntwk_service_map)
+                pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`networks` WHERE network_offering_id = ?");
+                pstmt.setLong(1, offeringId);
+
+                rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    long networkId = rs.getLong(1);
+                    PreparedStatement insertService = conn.prepareStatement("INSERT INTO `cloud`.`ntwk_service_map` " +
+                            "(network_id, service, provider, created) " +
+                            "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())");
+                    insertService.setLong(1, networkId);
+                    insertService.executeUpdate();
+                    insertService.close();
+                }
+
+                rs.close();
+                pstmt.close();
+            }
+
+        } catch (SQLException e) {
+            logger.warn("Exception while updating VPC default offerings with Firewall service: " + e.getMessage(), e);
         }
     }
 }
