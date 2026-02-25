@@ -21,13 +21,14 @@ import org.apache.commons.validator.routines.DomainValidator;
 
 import com.cloud.utils.StringUtils;
 
-public class DnsUtil {
+public class DnsProviderUtil {
     static DomainValidator validator = DomainValidator.getInstance(true);
 
     public static String appendPublicSuffixToZone(String zoneName, String suffixDomain) {
         if (StringUtils.isBlank(suffixDomain)) {
             return zoneName;
         }
+        suffixDomain = DnsProviderUtil.normalizeDomain(suffixDomain);
         // Already suffixed → return as-is
         if (zoneName.toLowerCase().endsWith("." + suffixDomain.toLowerCase())) {
             return zoneName;

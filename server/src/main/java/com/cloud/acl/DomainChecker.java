@@ -28,6 +28,9 @@ import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsProviderManager;
+import org.apache.cloudstack.dns.DnsServer;
+import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
@@ -101,6 +104,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     private ProjectDao projectDao;
     @Inject
     private AccountService accountService;
+    @Inject
+    private DnsProviderManager dnsProviderManager;
 
     protected DomainChecker() {
         super();
@@ -216,7 +221,12 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             _networkMgr.checkRouterPermissions(caller, (VirtualRouter)entity);
         } else if (entity instanceof AffinityGroup) {
             return false;
-        } else {
+        } else if (entity instanceof DnsServer) {
+            dnsProviderManager.checkDnsServerPermissions(caller, (DnsServer) entity);
+        } else if (entity instanceof DnsZone) {
+            dnsProviderManager.checkDnsZonePermission(caller, (DnsZone) entity);
+        }
+        else {
             validateCallerHasAccessToEntityOwner(caller, entity, accessType);
         }
         return true;

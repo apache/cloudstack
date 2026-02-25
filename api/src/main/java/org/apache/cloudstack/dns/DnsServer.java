@@ -41,7 +41,7 @@ public interface DnsServer extends InternalIdentity, Identity, ControlledEntity 
 
     long getAccountId();
 
-    boolean isPublic();
+    boolean isPublicServer();
 
     Date getCreated();
 

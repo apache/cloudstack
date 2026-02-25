@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
+import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 
@@ -49,8 +50,6 @@ public interface DnsProviderManager extends Manager, PluggableService {
     DnsServer updateDnsServer(UpdateDnsServerCmd cmd);
     boolean deleteDnsServer(DeleteDnsServerCmd cmd);
     DnsServerResponse createDnsServerResponse(DnsServer server);
-
-    DnsServer getDnsServer(Long id);
 
     // Allocates the DB row (State: Inactive)
     DnsZone allocateDnsZone(CreateDnsZoneCmd cmd);
@@ -78,4 +77,7 @@ public interface DnsProviderManager extends Manager, PluggableService {
 
     boolean registerDnsRecordForVm(RegisterDnsRecordForVmCmd cmd);
     boolean removeDnsRecordForVm(RemoveDnsRecordForVmCmd cmd);
+
+    void checkDnsServerPermissions(Account caller, DnsServer server);
+    void checkDnsZonePermission(Account caller, DnsZone zone);
 }

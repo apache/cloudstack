@@ -17,8 +17,8 @@
 
 package org.apache.cloudstack.dns;
 
-import static org.apache.cloudstack.dns.DnsUtil.appendPublicSuffixToZone;
-import static org.apache.cloudstack.dns.DnsUtil.normalizeDomain;
+import static org.apache.cloudstack.dns.DnsProviderUtil.appendPublicSuffixToZone;
+import static org.apache.cloudstack.dns.DnsProviderUtil.normalizeDomain;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -31,16 +31,16 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class DnsUtilTest {
+public class DnsProviderUtilTest {
     private final String userZoneName;
     private final String publicSuffix;
     private final String expectedResult;
     private final boolean expectException;
 
-    public DnsUtilTest(String userZoneName,
-                       String publicSuffix,
-                       String expectedResult,
-                       boolean expectException) {
+    public DnsProviderUtilTest(String userZoneName,
+                               String publicSuffix,
+                               String expectedResult,
+                               boolean expectException) {
         this.userZoneName = userZoneName;
         this.publicSuffix = publicSuffix;
         this.expectedResult = expectedResult;
@@ -96,8 +96,6 @@ public class DnsUtilTest {
     }
 
     String executeAppendSuffixTest(String zoneName, String domainSuffix) {
-        return appendPublicSuffixToZone(
-                normalizeDomain(zoneName),
-                normalizeDomain(domainSuffix));
+        return appendPublicSuffixToZone(normalizeDomain(zoneName), domainSuffix);
     }
 }

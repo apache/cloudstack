@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -34,6 +35,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implements DnsServerDao {
     SearchBuilder<DnsServerVO> AllFieldsSearch;
     SearchBuilder<DnsServerVO> AccountUrlSearch;
+    GenericSearchBuilder<DnsServerVO, Long> DnsServerIdsByAccountSearch;
 
 
     public DnsServerDaoImpl() {
@@ -51,6 +53,11 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
         AllFieldsSearch.and(ApiConstants.ACCOUNT_ID, AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
 
+        DnsServerIdsByAccountSearch = createSearchBuilder(Long.class);
+        DnsServerIdsByAccountSearch.selectFields(DnsServerIdsByAccountSearch.entity().getId());
+        DnsServerIdsByAccountSearch.and(ApiConstants.ACCOUNT_ID, DnsServerIdsByAccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        DnsServerIdsByAccountSearch.done();
+
     }
 
     @Override
@@ -59,6 +66,15 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
         sc.setParameters(ApiConstants.URL, url);
         sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<Long> listDnsServerIdsByAccountId(Long accountId) {
+        SearchCriteria<Long> sc = DnsServerIdsByAccountSearch.create();
+        if (accountId != null) {
+            sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
+        }
+        return customSearch(sc, null);
     }
 
     @Override

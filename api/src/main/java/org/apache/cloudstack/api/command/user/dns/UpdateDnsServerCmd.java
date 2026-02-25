@@ -27,11 +27,11 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsServerResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dns.DnsServer;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.user.Account;
 import com.cloud.utils.EnumUtils;
 
 @APICommand(name = "updateDnsServer",
@@ -99,7 +99,12 @@ public class UpdateDnsServerCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return CallContext.current().getCallingAccount().getId();
+        DnsServer server = _entityMgr.findById(DnsServer.class, id);
+        if (server != null) {
+            return server.getAccountId();
+        }
+        // If server not found, return System to fail safely (or let manager handle 404)
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override

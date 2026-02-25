@@ -18,7 +18,6 @@
 package org.apache.cloudstack.api.command.user.dns;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
@@ -40,7 +39,6 @@ public class ListDnsServersCmd  extends BaseListAccountResourcesCmd {
     //////////////// API Parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @ACL
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsServerResponse.class,
             description = "the ID of the DNS server")
     private Long id;

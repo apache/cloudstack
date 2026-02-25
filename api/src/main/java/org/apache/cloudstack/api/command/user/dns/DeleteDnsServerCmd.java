@@ -80,13 +80,10 @@ public class DeleteDnsServerCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        // Look up the server to find its owner.
-        // This allows the Framework to check: Is Caller == Owner?
-        DnsServer server = dnsProviderManager.getDnsServer(id);
+        DnsServer server = _entityMgr.findById(DnsServer.class, id);
         if (server != null) {
             return server.getAccountId();
         }
-
         // If server not found, return System to fail safely (or let manager handle 404)
         return Account.ACCOUNT_ID_SYSTEM;
     }

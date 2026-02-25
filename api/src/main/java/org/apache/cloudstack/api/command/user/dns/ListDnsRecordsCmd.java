@@ -18,7 +18,6 @@
 package org.apache.cloudstack.api.command.user.dns;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -37,7 +36,6 @@ import org.apache.cloudstack.dns.DnsRecord;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListDnsRecordsCmd extends BaseListCmd {
 
-    @ACL
     @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class, required = true,
             description = "ID of the DNS zone to list records from")
     private Long dnsZoneId;

@@ -44,7 +44,7 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "dns_server")
-public class    DnsServerVO implements DnsServer {
+public class DnsServerVO implements DnsServer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -77,7 +77,7 @@ public class    DnsServerVO implements DnsServer {
     private String externalServerId;
 
     @Column(name = "is_public")
-    private boolean isPublic;
+    private boolean publicServer;
 
     @Column(name = "public_domain_suffix")
     private String publicDomainSuffix;
@@ -121,7 +121,7 @@ public class    DnsServerVO implements DnsServer {
         this.accountId = accountId;
         this.domainId = domainId;
         this.publicDomainSuffix = publicDomainSuffix;
-        this.isPublic = isPublic;
+        this.publicServer = isPublic;
         this.state = State.Enabled;
         this.nameServers = String.join(",", nameServers);;
     }
@@ -176,8 +176,8 @@ public class    DnsServerVO implements DnsServer {
         return uuid;
     }
 
-    public boolean isPublic() {
-        return isPublic;
+    public boolean isPublicServer() {
+        return publicServer;
     }
 
     public State getState() {
@@ -203,7 +203,7 @@ public class    DnsServerVO implements DnsServer {
     }
 
     public void setIsPublic(boolean value) {
-        isPublic = value;
+        publicServer = value;
     }
 
     public void setPublicDomainSuffix(String publicDomainSuffix) {

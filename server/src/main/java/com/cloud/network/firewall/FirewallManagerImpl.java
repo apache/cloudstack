@@ -311,7 +311,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
-            sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
+        sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
         sb.and("display", sb.entity().isDisplay(), Op.EQ);

@@ -29,5 +29,7 @@ import com.cloud.utils.db.GenericDao;
 public interface DnsZoneDao extends GenericDao<DnsZoneVO, Long> {
     List<DnsZoneVO> listByAccount(long accountId);
     DnsZoneVO findByNameServerAndType(String name, long dnsServerId, DnsZone.ZoneType type);
-    Pair<List<DnsZoneVO>, Integer> searchZones(Long id, Long dnsServerId, String keyword, Long accountId, Filter filter);
+
+    Pair<List<DnsZoneVO>, Integer> searchZones(Long id, Long accountId, List<Long> ownDnsServerIds, Long targetDnsServerId,
+                                               String keyword, Filter filter);
 }

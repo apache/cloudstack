@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.dns.DnsZone;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.Pair;
@@ -32,7 +33,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements DnsZoneDao {
-    static final String DNS_SERVER_ID = "dnsServerId";
     SearchBuilder<DnsZoneVO> AccountSearch;
     SearchBuilder<DnsZoneVO> NameServerTypeSearch;
     SearchBuilder<DnsZoneVO> AllFieldsSearch;
@@ -42,19 +42,24 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
 
         AccountSearch = createSearchBuilder();
         AccountSearch.and(ApiConstants.ACCOUNT_ID, AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountSearch.and(ApiConstants.STATE, AccountSearch.entity().getState(), SearchCriteria.Op.EQ);
         AccountSearch.done();
 
         NameServerTypeSearch = createSearchBuilder();
         NameServerTypeSearch.and(ApiConstants.NAME, NameServerTypeSearch.entity().getName(), SearchCriteria.Op.EQ);
-        NameServerTypeSearch.and(DNS_SERVER_ID, NameServerTypeSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
+        NameServerTypeSearch.and(ApiConstants.DNS_SERVER_ID, NameServerTypeSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
         NameServerTypeSearch.and(ApiConstants.TYPE, NameServerTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
+        NameServerTypeSearch.and(ApiConstants.STATE, NameServerTypeSearch.entity().getState(), SearchCriteria.Op.EQ);
         NameServerTypeSearch.done();
 
         AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and().op(ApiConstants.DNS_SERVER_ID, AllFieldsSearch.entity().getDnsServerId(), SearchCriteria.Op.IN);
+        AllFieldsSearch.or(ApiConstants.ACCOUNT_ID, AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.cp();
+        AllFieldsSearch.and(ApiConstants.STATE, AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and(ApiConstants.ID, AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and(DNS_SERVER_ID, AllFieldsSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and(ApiConstants.NAME, AllFieldsSearch.entity().getName(), SearchCriteria.Op.LIKE);
-        AllFieldsSearch.and(ApiConstants.ACCOUNT_ID, AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and(ApiConstants.TARGET_ID, AllFieldsSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
@@ -62,6 +67,7 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
     public List<DnsZoneVO> listByAccount(long accountId) {
         SearchCriteria<DnsZoneVO> sc = AccountSearch.create();
         sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
+        sc.setParameters(ApiConstants.STATE, DnsZone.State.Active);
         return listBy(sc);
     }
 
@@ -69,19 +75,22 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
     public DnsZoneVO findByNameServerAndType(String name, long dnsServerId, DnsZone.ZoneType type) {
         SearchCriteria<DnsZoneVO> sc = NameServerTypeSearch.create();
         sc.setParameters(ApiConstants.NAME, name);
-        sc.setParameters(DNS_SERVER_ID, dnsServerId);
+        sc.setParameters(ApiConstants.DNS_SERVER_ID, dnsServerId);
         sc.setParameters(ApiConstants.TYPE, type);
+        sc.setParameters(ApiConstants.STATE, DnsZone.State.Active);
         return findOneBy(sc);
     }
 
     @Override
-    public Pair<List<DnsZoneVO>, Integer> searchZones(Long id, Long dnsServerId, String keyword, Long accountId, Filter filter) {
+    public Pair<List<DnsZoneVO>, Integer> searchZones(Long id, Long accountId, List<Long> ownDnsServerIds, Long targetDnsServerId,
+                                                      String keyword, Filter filter) {
+
         SearchCriteria<DnsZoneVO> sc = AllFieldsSearch.create();
         if (id != null) {
             sc.setParameters(ApiConstants.ID, id);
         }
-        if (dnsServerId != null) {
-            sc.setParameters(DNS_SERVER_ID, dnsServerId);
+        if (!CollectionUtils.isEmpty(ownDnsServerIds)) {
+            sc.setParameters(ApiConstants.DNS_SERVER_ID, ownDnsServerIds.toArray());
         }
         if (keyword != null) {
             sc.setParameters(ApiConstants.NAME, "%" + keyword + "%");
@@ -89,6 +98,10 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
         if (accountId != null) {
             sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
         }
+        if (targetDnsServerId != null) {
+            sc.setParameters(ApiConstants.TARGET_ID, targetDnsServerId);
+        }
+        sc.setParameters(ApiConstants.STATE, DnsZone.State.Active);
         return searchAndCount(sc, filter);
     }
 }
