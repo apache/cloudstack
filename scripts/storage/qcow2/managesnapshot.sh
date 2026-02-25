@@ -307,7 +307,12 @@ backup_snapshot() {
 revert_snapshot() {
   local snapshotPath=$1
   local destPath=$2
-  ${qemu_img} convert -f qcow2 -O qcow2 "$snapshotPath" "$destPath" || \
+  local output_format="qcow2"
+  if [ -b "$destPath" ]; then
+    output_format="raw"
+  fi
+
+  ${qemu_img} convert -f qcow2 -O ${output_format} "$snapshotPath" "$destPath" || \
    ( printf "${qemu_img} failed to revert snapshot ${snapshotPath} to disk ${destPath}.\n" >&2; return 2 )
   return 0
 }

@@ -258,6 +258,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -266,6 +267,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -360,6 +362,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private GuestOSDao _guestOsDao;
     @Inject
     private VolumeDao _volsDao;
+    @Inject
+    private VolumeDetailsDao _volsDetailsDao;
     @Inject
     private HighAvailabilityManager _haMgr;
     @Inject
@@ -3274,6 +3278,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 logger.warn("Exception during post-migration tasks for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
                     vm.getInstanceName(), dstHostId, e.getMessage(), e);
             }
+
+            updateClvmLockHostForVmVolumes(vm.getId(), dstHostId);
         } finally {
             if (!migrated) {
                 logger.info("Migration was unsuccessful. Cleaning up: {}", vm);
@@ -3357,6 +3363,37 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VMInstanceVO newVm = _vmDao.findById(vm.getId());
         newVm.setPodIdToDeployIn(host.getPodId());
         _vmDao.persist(newVm);
+    }
+
+    /**
+     * Updates CLVM_LOCK_HOST_ID for all CLVM volumes attached to a VM after VM migration.
+     * This ensures that subsequent operations on CLVM volumes are routed to the correct host.
+     *
+     * @param vmId The ID of the VM that was migrated
+     * @param destHostId The destination host ID where the VM now resides
+     */
+    private void updateClvmLockHostForVmVolumes(long vmId, long destHostId) {
+        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+        if (volumes == null || volumes.isEmpty()) {
+            return;
+        }
+
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+            if (pool != null && pool.getPoolType() == Storage.StoragePoolType.CLVM) {
+                VolumeDetailVO existingDetail = _volsDetailsDao.findDetail(volume.getId(), VolumeInfo.CLVM_LOCK_HOST_ID);
+                if (existingDetail != null) {
+                    existingDetail.setValue(String.valueOf(destHostId));
+                    _volsDetailsDao.update(existingDetail.getId(), existingDetail);
+                    logger.debug("Updated CLVM_LOCK_HOST_ID for volume {} to host {} after VM {} migration",
+                            volume.getUuid(), destHostId, vmId);
+                } else {
+                    _volsDetailsDao.addDetail(volume.getId(), VolumeInfo.CLVM_LOCK_HOST_ID, String.valueOf(destHostId), false);
+                    logger.debug("Created CLVM_LOCK_HOST_ID for volume {} with host {} after VM {} migration",
+                            volume.getUuid(), destHostId, vmId);
+                }
+            }
+        }
     }
 
     /**

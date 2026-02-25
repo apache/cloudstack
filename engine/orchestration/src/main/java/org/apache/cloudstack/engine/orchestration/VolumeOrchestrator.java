@@ -819,6 +819,39 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
+    /**
+     * Updates the CLVM_LOCK_HOST_ID for a migrated volume if applicable.
+     * For CLVM volumes that are attached to a VM, this updates the lock host tracking
+     * to point to the VM's current host after volume migration.
+     *
+     * @param migratedVolume The volume that was migrated
+     * @param destPool The destination storage pool
+     * @param operationType Description of the operation (e.g., "migrated", "live-migrated") for logging
+     */
+    private void updateClvmLockHostAfterMigration(Volume migratedVolume, StoragePool destPool, String operationType) {
+        if (migratedVolume == null || destPool == null) {
+            return;
+        }
+
+        StoragePoolVO pool = _storagePoolDao.findById(destPool.getId());
+        if (pool == null || pool.getPoolType() != Storage.StoragePoolType.CLVM) {
+            return;
+        }
+
+        if (migratedVolume.getInstanceId() == null) {
+            return;
+        }
+
+        VMInstanceVO vm = vmInstanceDao.findById(migratedVolume.getInstanceId());
+        if (vm == null || vm.getHostId() == null) {
+            return;
+        }
+
+        setClvmLockHostId(migratedVolume.getId(), vm.getHostId());
+        logger.debug("Updated CLVM_LOCK_HOST_ID for {} volume {} to host {} where VM {} is running",
+                operationType, migratedVolume.getUuid(), vm.getHostId(), vm.getInstanceName());
+    }
+
     public String getRandomVolumeName() {
         return UUID.randomUUID().toString();
     }
@@ -1485,6 +1518,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     _snapshotDao.updateVolumeIds(vol.getId(), result.getVolume().getId());
                     _snapshotDataStoreDao.updateVolumeIds(vol.getId(), result.getVolume().getId());
                 }
+
+                // For CLVM volumes attached to a VM, update the CLVM_LOCK_HOST_ID after migration
+                updateClvmLockHostAfterMigration(result.getVolume(), destPool, "migrated");
             }
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
@@ -1510,6 +1546,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 logger.error("Volume [{}] migration failed due to [{}].", volToString, result.getResult());
                 return null;
             }
+
+            // For CLVM volumes attached to a VM, update the CLVM_LOCK_HOST_ID after live migration
+            updateClvmLockHostAfterMigration(result.getVolume(), destPool, "live-migrated");
+
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Volume [{}] migration failed due to [{}].", volToString, e.getMessage());
@@ -1551,6 +1591,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 String msg = String.format("Failed to migrate VM [%s] along with its volumes due to [%s].", vm, result.getResult());
                 logger.error(msg);
                 throw new CloudRuntimeException(msg);
+            }
+            for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
+                Volume volume = entry.getKey();
+                StoragePool destPool = entry.getValue();
+                updateClvmLockHostAfterMigration(volume, destPool, "vm-migrated");
             }
         } catch (InterruptedException |  ExecutionException e) {
             logger.error("Failed to migrate VM [{}] along with its volumes due to [{}].", vm, e.getMessage());

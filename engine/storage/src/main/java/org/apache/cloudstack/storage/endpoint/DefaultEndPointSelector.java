@@ -470,6 +470,26 @@ public class DefaultEndPointSelector implements EndPointSelector {
     @Override
     public EndPoint select(DataObject object) {
         DataStore store = object.getDataStore();
+
+        // For CLVM volumes, check if there's a lock host ID to route to
+        if (object instanceof VolumeInfo && store.getRole() == DataStoreRole.Primary) {
+            VolumeInfo volume = (VolumeInfo) object;
+            StoragePoolVO pool = _storagePoolDao.findById(store.getId());
+            if (pool != null && pool.getPoolType() == Storage.StoragePoolType.CLVM) {
+                Long lockHostId = getClvmLockHostId(volume);
+                if (lockHostId != null) {
+                    logger.debug("Routing CLVM volume {} operation to lock holder host {}",
+                            volume.getUuid(), lockHostId);
+                    EndPoint ep = getEndPointFromHostId(lockHostId);
+                    if (ep != null) {
+                        return ep;
+                    }
+                    logger.warn("Could not get endpoint for CLVM lock host {}, falling back to default selection",
+                            lockHostId);
+                }
+            }
+        }
+
         EndPoint ep = select(store);
         if (ep != null) {
             return ep;
