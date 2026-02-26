@@ -327,7 +327,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             Connection conn = txn.getConnection();
 
             for (String filePath : filesPathUnderViewsDirectory) {
-                LOGGER.debug("Executing PROCEDURE script [{}].", filePath);
+                LOGGER.debug(String.format("Executing PROCEDURE script [%s].", filePath));
+                if (filePath.startsWith("/")) {
+                    filePath = filePath.substring(1);
+                }
 
                 InputStream viewScript = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
                 runScript(conn, viewScript);
@@ -439,7 +442,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             Connection conn = txn.getConnection();
 
             for (String filePath : filesPathUnderViewsDirectory) {
-                LOGGER.debug("Executing VIEW script [{}].", filePath);
+                LOGGER.debug(String.format("Executing VIEW script [%s].", filePath));
+                if (filePath.startsWith("/")) {
+                    filePath = filePath.substring(1);
+                }
 
                 InputStream viewScript = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
                 runScript(conn, viewScript);
