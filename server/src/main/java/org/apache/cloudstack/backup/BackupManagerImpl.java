@@ -358,11 +358,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (!provider.isValidProviderOffering(zoneId, externalId)) {
                 throw new CloudRuntimeException("Backup offering '" + externalId + "' does not exist on provider " + provider.getName() + " on zone " + zoneId);
             }
+        }
 
-            final BackupOffering existingOffering = backupOfferingDao.findByExternalId(externalId, zoneId);
-            if (existingOffering != null) {
-                throw new CloudRuntimeException("A backup offering with external ID '" + externalId + "' already exists in this zone");
-            }
+        final BackupOffering existingOffering = backupOfferingDao.findByExternalId(externalId, zoneId);
+        if (existingOffering != null) {
+            throw new CloudRuntimeException("A backup offering with external ID '" + externalId + "' already exists in this zone");
         }
 
         final BackupOfferingVO clonedOffering = new BackupOfferingVO(
