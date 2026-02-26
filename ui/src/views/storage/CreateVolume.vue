@@ -116,7 +116,7 @@
             :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
       </span>
-      <span v-if="diskOfferingSupportsEncryption">
+      <span v-if="diskOfferingSupportsEncryption && kmsKeys !== null">
         <a-form-item ref="kmskeyid" name="kmskeyid">
           <template #label>
             <tooltip-label :title="$t('label.kms.key')" :tooltip="apiParams.kmskeyid.description"/>
@@ -529,9 +529,14 @@ export default {
         purpose: 'volume'
       }
       getAPI('listKMSKeys', params).then(response => {
-        this.kmsKeys = response.listkmskeysresponse.kmskey || []
-      }).catch(error => {
-        this.$notifyError(error)
+        const kmskeyMap = response.listkmskeysresponse.kmskey || []
+        if (kmskeyMap.length > 0) {
+          this.kmsKeys = kmskeyMap
+        } else {
+          this.kmsKeys = null
+        }
+      }).catch(() => {
+        this.kmsKeys = null
       }).finally(() => {
         this.loadingKmsKeys = false
       })

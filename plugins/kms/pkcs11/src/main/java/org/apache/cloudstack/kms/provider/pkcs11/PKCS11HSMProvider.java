@@ -296,34 +296,50 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     /**
      * Validates HSM profile configuration for PKCS#11 provider.
      *
-     * <p>Validates:
+     * <p>
+     * Validates:
      * <ul>
-     *   <li>{@code library}: Required, should point to PKCS#11 library</li>
-     *   <li>{@code slot} or {@code token_label}: At least one required</li>
-     *   <li>{@code pin}: Required for HSM authentication</li>
-     *   <li>{@code max_sessions}: Optional, must be positive integer if provided</li>
+     * <li>{@code library}: Required, should point to PKCS#11 library</li>
+     * <li>{@code slot}, {@code slot_list_index}, or {@code token_label}: At least
+     * one required</li>
+     * <li>{@code pin}: Required for HSM authentication</li>
+     * <li>{@code max_sessions}: Optional, must be positive integer if provided</li>
      * </ul>
      *
      * @param config Configuration map from HSM profile details
      * @throws KMSException with {@code INVALID_PARAMETER} if validation fails
      */
-    void validateProfileConfig(Map<String, String> config) throws KMSException {
+    @Override
+    public void validateProfileConfig(Map<String, String> config) throws KMSException {
         String libraryPath = config.get("library");
-        if (StringUtils.isEmpty(libraryPath)) {
+        if (StringUtils.isBlank(libraryPath)) {
             throw KMSException.invalidParameter("library is required for PKCS#11 HSM profile");
         }
 
         String slot = config.get("slot");
+        String slotListIndex = config.get("slot_list_index");
         String tokenLabel = config.get("token_label");
-        if (StringUtils.isEmpty(slot) && StringUtils.isEmpty(tokenLabel)) {
-            throw KMSException.invalidParameter("Either 'slot' or 'token_label' is required for PKCS#11 HSM profile");
+        if (StringUtils.isAllBlank(slot, slotListIndex, tokenLabel)) {
+            throw KMSException.invalidParameter(
+                    "One of 'slot', 'slot_list_index', or 'token_label' is required for PKCS#11 HSM profile");
         }
 
-        if (!StringUtils.isEmpty(slot)) {
+        if (StringUtils.isNotBlank(slot)) {
             try {
                 Integer.parseInt(slot);
             } catch (NumberFormatException e) {
                 throw KMSException.invalidParameter("slot must be a valid integer: " + slot);
+            }
+        }
+
+        if (StringUtils.isNotBlank(slotListIndex)) {
+            try {
+                int idx = Integer.parseInt(slotListIndex);
+                if (idx < 0) {
+                    throw KMSException.invalidParameter("slot_list_index must be a non-negative integer");
+                }
+            } catch (NumberFormatException e) {
+                throw KMSException.invalidParameter("slot_list_index must be a valid integer: " + slotListIndex);
             }
         }
 
@@ -334,31 +350,16 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                     libraryPath);
         }
 
-        parsePositiveInteger(config, "max_sessions", "max_sessions");
-    }
-
-    /**
-     * Parses a positive integer from configuration.
-     *
-     * @param config      Configuration map
-     * @param key         Configuration key
-     * @param errorPrefix Prefix for error messages
-     * @return Parsed integer value, or -1 if not provided
-     * @throws KMSException if value is invalid or not positive
-     */
-    private int parsePositiveInteger(Map<String, String> config, String key, String errorPrefix) throws KMSException {
-        String value = config.get(key);
-        if (StringUtils.isEmpty(value)) {
-            return -1; // Not provided
-        }
-        try {
-            int parsed = Integer.parseInt(value);
-            if (parsed <= 0) {
-                throw KMSException.invalidParameter(errorPrefix + " must be greater than 0");
+        String max_sessions = config.get("max_sessions");
+        if (StringUtils.isNotBlank(max_sessions)) {
+            try {
+                int idx = Integer.parseInt(max_sessions);
+                if (idx <= 0) {
+                    throw KMSException.invalidParameter("max_sessions must be greater than 0");
+                }
+            } catch (NumberFormatException e) {
+                throw KMSException.invalidParameter("max_sessions must be a valid integer: " + max_sessions);
             }
-            return parsed;
-        } catch (NumberFormatException e) {
-            throw KMSException.invalidParameter(errorPrefix + " must be a valid integer: " + value);
         }
     }
 
@@ -615,7 +616,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
          */
         private String buildSunPKCS11Config(Map<String, String> config, String nameSuffix) throws KMSException {
             String libraryPath = config.get("library");
-            if (StringUtils.isEmpty(libraryPath)) {
+            if (StringUtils.isBlank(libraryPath)) {
                 throw KMSException.invalidParameter("library is required");
             }
 
@@ -627,14 +628,17 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             configBuilder.append("library=").append(libraryPath).append("\n");
 
             String tokenLabel = config.get("token_label");
+            String slotListIndex = config.get("slot_list_index");
             String slot = config.get("slot");
 
-            if (!StringUtils.isEmpty(tokenLabel)) {
+            if (StringUtils.isNotBlank(tokenLabel)) {
                 configBuilder.append("tokenLabel=").append(tokenLabel).append("\n");
-            } else if (!StringUtils.isEmpty(slot)) {
+            } else if (StringUtils.isNotBlank(slotListIndex)) {
+                configBuilder.append("slotListIndex=").append(slotListIndex).append("\n");
+            } else if (StringUtils.isNotBlank(slot)) {
                 configBuilder.append("slot=").append(slot).append("\n");
             } else {
-                throw KMSException.invalidParameter("Either 'slot' or 'token_label' is required");
+                throw KMSException.invalidParameter("One of 'slot', 'slot_list_index', or 'token_label' is required");
             }
 
             return configBuilder.toString();
