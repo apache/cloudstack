@@ -94,7 +94,7 @@ public class RestartSharedFSCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restarting Shared FileSystem " + id;
+        return "Restarting Shared FileSystem with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

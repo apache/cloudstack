@@ -4479,7 +4479,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (usageRecord.getUsageType() == UsageTypes.BACKUP) {
             resourceType = ResourceObjectType.Backup;
             final StringBuilder builder = new StringBuilder();
-            builder.append("Backup usage of size ").append(usageRecord.getUsageDisplay());
+            builder.append("Backup usage");
             if (vmInstance != null) {
                 resourceId = vmInstance.getId();
                 usageRecResponse.setResourceName(vmInstance.getInstanceName());
@@ -4492,9 +4492,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                             .append(" (").append(backupOffering.getUuid()).append(", user ad-hoc/scheduled backup allowed: ")
                             .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
                 }
-
             }
+            builder.append(" with size ").append(toHumanReadableSize(usageRecord.getSize()));
+            builder.append(" and with virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
             usageRecResponse.setDescription(builder.toString());
+            usageRecResponse.setSize(usageRecord.getSize());
+            usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
             resourceType = ResourceObjectType.VMSnapshot;
             VMSnapshotVO vmSnapshotVO = null;

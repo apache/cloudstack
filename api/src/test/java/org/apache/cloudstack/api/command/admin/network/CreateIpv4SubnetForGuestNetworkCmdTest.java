@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.network;
 import com.cloud.event.EventTypes;
 
 import org.apache.cloudstack.api.response.Ipv4SubnetForGuestNetworkResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
@@ -29,6 +30,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.UUID;
+
 @RunWith(MockitoJUnitRunner.class)
 public class CreateIpv4SubnetForGuestNetworkCmdTest {
 
@@ -37,6 +40,7 @@ public class CreateIpv4SubnetForGuestNetworkCmdTest {
     @Test
     public void testCreateIpv4SubnetForGuestNetworkCmd() {
         Long parentId = 1L;
+        UUID parentUuid = UUID.randomUUID();
         String subnet = "192.168.1.0/24";
         Integer cidrSize = 26;
 
@@ -46,12 +50,14 @@ public class CreateIpv4SubnetForGuestNetworkCmdTest {
         ReflectionTestUtils.setField(cmd, "cidrSize", cidrSize);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
+        CallContext.current().putApiResourceUuid("parentid", parentUuid);
+
         Assert.assertEquals(parentId, cmd.getParentId());
         Assert.assertEquals(subnet, cmd.getSubnet());
         Assert.assertEquals(cidrSize, cmd.getCidrSize());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_IP4_GUEST_SUBNET_CREATE, cmd.getEventType());
-        Assert.assertEquals(String.format("Creating guest IPv4 subnet %s in zone subnet=%s", subnet, parentId), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Creating guest IPv4 subnet %s in zone subnet: %s", subnet, parentUuid), cmd.getEventDescription());
 
         Ipv4GuestSubnetNetworkMap ipv4GuestSubnetNetworkMap = Mockito.mock(Ipv4GuestSubnetNetworkMap.class);
         Mockito.when(routedIpv4Manager.createIpv4SubnetForGuestNetwork(cmd)).thenReturn(ipv4GuestSubnetNetworkMap);
