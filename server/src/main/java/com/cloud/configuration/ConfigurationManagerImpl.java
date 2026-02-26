@@ -107,6 +107,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.ValidatedConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
@@ -762,6 +763,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (validationMsg != null) {
             logger.error("Invalid value [{}] for configuration [{}] due to [{}].", value, name, validationMsg);
             throw new InvalidParameterValueException(validationMsg);
+        }
+
+        ConfigKey<?> configKey = _configDepot.get(name);
+        if (configKey instanceof ValidatedConfigKey) {
+            ValidatedConfigKey<?> validatedConfigKey = (ValidatedConfigKey<?>) configKey;
+            validatedConfigKey.validateValue(value);
         }
 
         // If scope of the parameter is given then it needs to be updated in the

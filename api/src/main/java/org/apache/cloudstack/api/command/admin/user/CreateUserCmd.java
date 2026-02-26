@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
@@ -78,6 +79,12 @@ public class CreateUserCmd extends BaseCmd {
     @Parameter(name = ApiConstants.USER_ID, type = CommandType.STRING, description = "User UUID, required for adding account from external provisioning system")
     private String userUUID;
 
+    @Parameter(name = ApiConstants.PASSWORD_CHANGE_REQUIRED,
+            type = CommandType.BOOLEAN,
+            description = "Provide true to mandate the User to reset password on next login.",
+            since = "4.23.0")
+    private Boolean passwordChangeRequired;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -118,6 +125,10 @@ public class CreateUserCmd extends BaseCmd {
         return userUUID;
     }
 
+    public Boolean isPasswordChangeRequired() {
+        return BooleanUtils.isTrue(passwordChangeRequired);
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -147,7 +158,7 @@ public class CreateUserCmd extends BaseCmd {
         CallContext.current().setEventDetails("UserName: " + getUserName() + ", FirstName :" + getFirstName() + ", LastName: " + getLastName());
         User user =
             _accountService.createUser(getUserName(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimezone(), getAccountName(), getDomainId(),
-                getUserUUID());
+                getUserUUID(), isPasswordChangeRequired());
         if (user != null) {
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName());

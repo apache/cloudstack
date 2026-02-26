@@ -123,8 +123,8 @@ public class UserVO implements User, Identity, InternalIdentity {
     }
 
     public UserVO(long id) {
+        this();
         this.id = id;
-        this.uuid = UUID.randomUUID().toString();
     }
 
     public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone, String uuid, Source source) {

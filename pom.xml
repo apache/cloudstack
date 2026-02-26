@@ -1087,6 +1087,10 @@
                             <exclude>utils/testsmallfileinactive</exclude>
                             <exclude>**/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker</exclude>
                             <exclude>.github/workflows/dependabot.yaml</exclude>
+                            <exclude>.gitattributes</exclude>
+                            <exclude>.github/workflows/*.md</exclude>
+                            <exclude>.github/workflows/*.lock.ya?ml</exclude>
+                            <exclude>.github/aw/**</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
