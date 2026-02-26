@@ -22,7 +22,6 @@ import java.util.List;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsServer;
 
 import com.cloud.serializer.Param;
@@ -49,7 +48,7 @@ public class DnsServerResponse extends BaseResponse  {
 
     @SerializedName(ApiConstants.PROVIDER)
     @Param(description = "The provider type of the DNS server")
-    private DnsProviderType provider;
+    private String provider;
 
     @SerializedName(ApiConstants.IS_PUBLIC)
     @Param(description = "Is the DNS server publicly available")
@@ -62,6 +61,18 @@ public class DnsServerResponse extends BaseResponse  {
     @SerializedName(ApiConstants.NAME_SERVERS)
     @Param(description = "Name servers entries associated to DNS server")
     private List<String> nameServers;
+
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account associated with the DNS server")
+    private String accountName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the ID of the domain associated with the DNS server")
+    private String domainId;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the name of the domain associated with the DNS server")
+    private String domainName;
 
     public DnsServerResponse() {
         super();
@@ -80,7 +91,7 @@ public class DnsServerResponse extends BaseResponse  {
         this.url = url;
     }
 
-    public void setProvider(DnsProviderType provider) {
+    public void setProvider(String provider) {
         this.provider = provider;
     }
 
@@ -98,5 +109,17 @@ public class DnsServerResponse extends BaseResponse  {
 
     public void setNameServers(List<String> nameServers) {
         this.nameServers = nameServers;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
     }
 }

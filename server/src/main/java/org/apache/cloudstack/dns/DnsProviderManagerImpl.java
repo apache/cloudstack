@@ -47,9 +47,14 @@ import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dns.dao.DnsServerDao;
+import org.apache.cloudstack.dns.dao.DnsServerJoinDao;
 import org.apache.cloudstack.dns.dao.DnsZoneDao;
+import org.apache.cloudstack.dns.dao.DnsZoneJoinDao;
 import org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDao;
+import org.apache.cloudstack.dns.exception.DnsNotFoundException;
+import org.apache.cloudstack.dns.vo.DnsServerJoinVO;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
+import org.apache.cloudstack.dns.vo.DnsZoneJoinVO;
 import org.apache.cloudstack.dns.vo.DnsZoneNetworkMapVO;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
 import org.springframework.stereotype.Component;
@@ -95,6 +100,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     NicDao nicDao;
     @Inject
     DomainDao domainDao;
+    @Inject
+    DnsZoneJoinDao dnsZoneJoinDao;
+    @Inject
+    DnsServerJoinDao dnsServerJoinDao;
 
     private DnsProvider getProviderByType(DnsProviderType type) {
         if (type == null) {
@@ -149,9 +158,14 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     @Override
     public ListResponse<DnsServerResponse> listDnsServers(ListDnsServersCmd cmd) {
         Pair<List<DnsServerVO>, Integer> result = searchForDnsServerInternal(cmd);
+        List<String> serverIds = new ArrayList<>();
+        for (DnsServer server : result.first()) {
+            serverIds.add(server.getUuid());
+        }
+        List<DnsServerJoinVO> joinResult = dnsServerJoinDao.listByUuids(serverIds);
         ListResponse<DnsServerResponse> response = new ListResponse<>();
         List<DnsServerResponse> serverResponses = new ArrayList<>();
-        for (DnsServerVO server : result.first()) {
+        for (DnsServerJoinVO server : joinResult) {
             serverResponses.add(createDnsServerResponse(server));
         }
         response.setResponses(serverResponses, result.second());
@@ -186,9 +200,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         SearchCriteria<DnsServerVO> sc = sb.create();
         accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
         sc.setParameters(ApiConstants.STATE, DnsServer.State.Enabled);
-        if (cmd.getProviderType() != null) {
-            sc.setParameters(ApiConstants.PROVIDER_TYPE, cmd.getProviderType());
-        }
+        sc.setParameters(ApiConstants.PROVIDER_TYPE, cmd.getProviderType());
 
         Pair<List<DnsServerVO>, Integer> ownServersPair = dnsServerDao.searchAndCount(sc, searchFilter);
         List<DnsServerVO> dnsServers = new ArrayList<>(ownServersPair.first());
@@ -206,9 +218,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 publicSc.setParameters(ApiConstants.IS_PUBLIC, 1);
                 publicSc.setParameters(ApiConstants.DOMAIN_IDS, parentDomainIds.toArray());
                 publicSc.setParameters(ApiConstants.STATE, DnsServer.State.Enabled);
-                if (cmd.getProviderType() != null) {
-                    publicSc.setParameters(ApiConstants.PROVIDER_TYPE, cmd.getProviderType());
-                }
+                publicSc.setParameters(ApiConstants.PROVIDER_TYPE, cmd.getProviderType());
                 List<DnsServerVO> publicServers = dnsServerDao.search(publicSc, null);
                 List<Long> ownServerIds = dnsServers.stream().map(DnsServerVO::getId).collect(Collectors.toList());
                 for (DnsServerVO publicServer : publicServers) {
@@ -306,21 +316,6 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
-    public DnsServerResponse createDnsServerResponse(DnsServer server) {
-        DnsServerResponse response = new DnsServerResponse();
-        response.setId(server.getUuid());
-        response.setName(server.getName());
-        response.setUrl(server.getUrl());
-        response.setPort(server.getPort());
-        response.setProvider(server.getProviderType());
-        response.setPublic(server.isPublicServer());
-        response.setNameServers(server.getNameServers());
-        response.setPublicDomainSuffix(server.getPublicDomainSuffix());
-        response.setObjectName("dnsserver");
-        return response;
-    }
-
-    @Override
     public boolean deleteDnsZone(Long zoneId) {
         DnsZoneVO zone = dnsZoneDao.findById(zoneId);
         if (zone == null) {
@@ -376,10 +371,14 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     @Override
     public ListResponse<DnsZoneResponse> listDnsZones(ListDnsZonesCmd cmd) {
         Pair<List<DnsZoneVO>, Integer> result = searchForDnsZonesInternal(cmd);
-
-        List<DnsZoneResponse> zoneResponses = new ArrayList<>();
+        List<String> zoneIds = new ArrayList<>();
         for (DnsZoneVO zone : result.first()) {
-            zoneResponses.add(createDnsZoneResponse(zone));
+            zoneIds.add(zone.getUuid());
+        }
+        List<DnsZoneJoinVO> zoneJoinVos = dnsZoneJoinDao.listByUuids(zoneIds);
+        List<DnsZoneResponse> zoneResponses = new ArrayList<>();
+        for (DnsZoneJoinVO zoneJoin: zoneJoinVos) {
+            zoneResponses.add(createDnsZoneResponse(zoneJoin));
         }
         ListResponse<DnsZoneResponse> response = new ListResponse<>();
         response.setResponses(zoneResponses, result.second());
@@ -484,6 +483,9 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             ListResponse<DnsRecordResponse> listResponse = new ListResponse<>();
             listResponse.setResponses(responses, responses.size());
             return listResponse;
+        } catch (DnsNotFoundException ex) {
+            logger.error("DNS zone is not found", ex);
+            throw new CloudRuntimeException("DNS zone is not found, please register it first");
         } catch (Exception ex) {
             logger.error("Failed to list DNS records from provider", ex);
             throw new CloudRuntimeException("Failed to fetch DNS records");
@@ -551,16 +553,48 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         return dnsZone;
     }
 
+
+    public DnsServerResponse createDnsServerResponse(DnsServer dnsServer) {
+        DnsServerJoinVO serverJoin = dnsServerJoinDao.findById(dnsServer.getId());
+        return createDnsServerResponse(serverJoin);
+    }
+
+    DnsServerResponse createDnsServerResponse(DnsServerJoinVO server) {
+        DnsServerResponse response = new DnsServerResponse();
+        response.setId(server.getUuid());
+        response.setName(server.getName());
+        response.setUrl(server.getUrl());
+        response.setPort(server.getPort());
+        response.setProvider(server.getProviderType());
+        response.setPublic(server.isPublicServer());
+        response.setNameServers(server.getNameServers());
+        response.setPublicDomainSuffix(server.getPublicDomainSuffix());
+        response.setAccountName(server.getAccountName());
+        response.setDomainId(server.getDomainUuid()); // Note: APIs always return UUIDs, not internal DB IDs!
+        response.setDomainName(server.getDomainName());
+        response.setObjectName("dnsserver");
+        return response;
+    }
+
     @Override
-    public DnsZoneResponse createDnsZoneResponse(DnsZone zone) {
-        DnsZoneResponse res = new DnsZoneResponse();
-        res.setName(zone.getName());
-        res.setDnsServerId(zone.getDnsServerId());
-        res.setType(zone.getType());
-        res.setState(zone.getState());
-        res.setId(zone.getUuid());
-        res.setDescription(zone.getDescription());
-        return res;
+    public DnsZoneResponse createDnsZoneResponse(DnsZone dnsZone) {
+        DnsZoneJoinVO zoneJoinVO = dnsZoneJoinDao.findById(dnsZone.getId());
+        return createDnsZoneResponse(zoneJoinVO);
+    }
+
+    DnsZoneResponse createDnsZoneResponse(DnsZoneJoinVO zone) {
+        DnsZoneResponse response = new DnsZoneResponse();
+        response.setId(zone.getUuid());
+        response.setName(zone.getName());
+        response.setDnsServerId(zone.getDnsServerUuid());
+        response.setAccountName(zone.getAccountName());
+        response.setDomainId(zone.getDomainUuid());
+        response.setDomainName(zone.getDomainName());
+        response.setDnsServerName(zone.getDnsServerName());
+        response.setDnsServerAccountName(zone.getDnsServerAccountName());
+        response.setState(zone.getState());
+        response.setDescription(zone.getDescription());
+        return response;
     }
 
     @Override

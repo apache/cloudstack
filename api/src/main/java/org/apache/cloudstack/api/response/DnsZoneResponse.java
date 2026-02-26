@@ -37,7 +37,27 @@ public class DnsZoneResponse extends BaseResponse {
 
     @SerializedName("dnsserverid")
     @Param(description = "ID of the DNS server this zone belongs to")
-    private Long dnsServerId;
+    private String dnsServerId;
+
+    @SerializedName("dnsservername")
+    @Param(description = "the name of the DNS server hosting this zone")
+    private String dnsServerName;
+
+    @SerializedName("dnsserveraccount")
+    @Param(description = "the account name of the DNS server owner")
+    private String dnsServerAccountName;
+
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account associated with the DNS zone")
+    private String accountName;
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the name of the domain associated with the DNS zone")
+    private String domainName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the ID of the domain associated with the DNS server")
+    private String domainId;
 
     @SerializedName(ApiConstants.NETWORK_ID)
     @Param(description = "ID of the network this zone is associated with")
@@ -68,7 +88,7 @@ public class DnsZoneResponse extends BaseResponse {
         this.name = name;
     }
 
-    public void setDnsServerId(Long dnsServerId) {
+    public void setDnsServerId(String dnsServerId) {
         this.dnsServerId = dnsServerId;
     }
 
@@ -95,4 +115,25 @@ public class DnsZoneResponse extends BaseResponse {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public void setDnsServerName(String dnsServerName) {
+        this.dnsServerName = dnsServerName;
+    }
+
+    public void setDnsServerAccountName(String dnsServerAccountName) {
+        this.dnsServerAccountName = dnsServerAccountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
 }
