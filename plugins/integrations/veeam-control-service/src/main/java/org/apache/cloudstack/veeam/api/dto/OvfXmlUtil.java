@@ -359,12 +359,15 @@ public class OvfXmlUtil {
     }
 
     public static void updateFromConfiguration(Vm vm) {
-        if (ObjectUtils.anyNull(vm.getInitialization(),
-                vm.getInitialization().getConfiguration(),
-                vm.getInitialization().getConfiguration().getData())) {
+        Vm.Initialization initialization = vm.getInitialization();
+        if (initialization == null) {
             return;
         }
-        OvfXmlUtil.updateFromXml(vm, vm.getInitialization().getConfiguration().getData());
+        Vm.Initialization.Configuration configuration = vm.getInitialization().getConfiguration();
+        if (configuration == null) {
+            return;
+        }
+        OvfXmlUtil.updateFromXml(vm, configuration.getData());
     }
 
     protected static void updateFromXml(Vm vm, String ovfXml) {
