@@ -492,7 +492,6 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
             gateway=gateway_tier1,
             netmask=netmask_tiers,
         )
-        self.cleanup.append(tier1)
 
         gateway_tier2 = "10.10.20.17"
         self.services["network_offering"]["name"] = "tier2-" + vpc.id
@@ -508,7 +507,6 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
             gateway=gateway_tier2,
             netmask=netmask_tiers,
         )
-        self.cleanup.append(tier2)
 
         self.services["virtual_machine"]["displayname"] = "vm1" + vpc.id
         vm1 = VirtualMachine.create(
@@ -533,8 +531,6 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
             serviceofferingid=service_offering.id,
             networkids=[tier2.id],
         )
-        self.cleanup.append(vm1)
-        self.cleanup.append(vm2)
 
         public_ip = PublicIPAddress.create(
             self.apiclient,
