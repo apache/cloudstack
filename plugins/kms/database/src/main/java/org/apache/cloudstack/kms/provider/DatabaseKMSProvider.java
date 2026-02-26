@@ -37,7 +37,6 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
-import java.util.UUID;
 
 /**
  * Database-backed KMS provider that stores master KEKs in a PKCS#11-like object table.
@@ -78,7 +77,7 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
         }
 
         if (StringUtils.isEmpty(label)) {
-            label = generateKekLabel(purpose);
+            throw KMSException.invalidParameter("KEK label cannot be empty");
         }
 
         if (kekObjectDao.existsByLabel(label)) {
@@ -321,9 +320,6 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
         }
     }
 
-    private String generateKekLabel(KeyPurpose purpose) {
-        return purpose.getName() + "-kek-" + UUID.randomUUID().toString().substring(0, 8);
-    }
 
     @Override
     public String getConfigComponentName() {

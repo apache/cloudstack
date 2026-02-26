@@ -110,8 +110,10 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         if (hsmProfileId == null) {
             throw KMSException.invalidParameter("HSM Profile ID is required for PKCS#11 provider");
         }
-        final String kekLabel = StringUtils.isEmpty(label) ? generateKekLabel(purpose) : label;
-        return executeWithSession(hsmProfileId, session -> session.generateKey(kekLabel, keyBits, purpose));
+        if (StringUtils.isEmpty(label)) {
+            throw KMSException.invalidParameter("KEK label cannot be empty");
+        }
+        return executeWithSession(hsmProfileId, session -> session.generateKey(label, keyBits, purpose));
     }
 
     @Override
@@ -367,9 +369,7 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         return KMSProvider.isSensitiveKey(key);
     }
 
-    String generateKekLabel(KeyPurpose purpose) {
-        return purpose.getName() + "-kek-" + UUID.randomUUID().toString().substring(0, 8);
-    }
+
 
     @Override
     public String getConfigComponentName() {
@@ -822,6 +822,12 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 return label;
 
             } catch (KeyStoreException e) {
+                if (e.getMessage() != null
+                        && e.getMessage().contains("found multiple secret keys sharing same CKA_LABEL")) {
+                    logger.warn("Multiple duplicate keys found with label '{}' in HSM. Reusing the existing key. " +
+                            "Please purge duplicate keys manually if possible.", label);
+                    return label;
+                }
                 handlePKCS11Exception(e, "Failed to store key in HSM KeyStore");
             } catch (NoSuchAlgorithmException e) {
                 handlePKCS11Exception(e, "AES KeyGenerator not available via PKCS#11 provider");

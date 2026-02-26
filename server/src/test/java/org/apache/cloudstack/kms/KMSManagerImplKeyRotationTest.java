@@ -253,6 +253,9 @@ public class KMSManagerImplKeyRotationTest {
         when(kmsKey.getId()).thenReturn(kmsKeyId);
         when(kmsKey.getHsmProfileId()).thenReturn(oldProfileId);
         when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+        when(kmsKey.getUuid()).thenReturn("test-kms-key-uuid");
+        when(kmsKey.getDomainId()).thenReturn(1L);
+        when(kmsKey.getAccountId()).thenReturn(2L);
 
         HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
         when(hsmProfile.getId()).thenReturn(oldProfileId);

@@ -220,7 +220,7 @@ export default {
           },
           mapping: {
             details: {
-              optionalKeys: ['pin', 'library', 'slot', 'token_label']
+              optionalKeys: ['pin', 'library', 'slot', 'slot_list_index', 'token_label']
             }
           }
         },

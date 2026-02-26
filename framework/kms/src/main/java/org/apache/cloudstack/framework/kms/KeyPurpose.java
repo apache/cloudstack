@@ -65,12 +65,15 @@ public enum KeyPurpose {
     }
 
     /**
-     * Generate a KEK label with purpose prefix
+     * Generate a globally unique, collision-resistant KEK label with context
      *
-     * @param customLabel optional custom label suffix
-     * @return formatted KEK label (e.g., "volume-kek-v1")
+     * @param domainId  the domain ID associated with this key
+     * @param accountId the account ID associated with this key
+     * @param uuid      the unique identifier of the key entity
+     * @param version   the version number of the key
+     * @return formatted KEK label (e.g., "volume-kek-1-2-a8054d8f-...-1")
      */
-    public String generateKekLabel(String customLabel) {
-        return name + "-kek-" + (customLabel != null ? customLabel : "v1");
+    public String generateKekLabel(long domainId, long accountId, String uuid, int version) {
+        return name + "-kek-" + domainId + "-" + accountId + "-" + uuid.replace("-", "") + "-v" + version;
     }
 }
