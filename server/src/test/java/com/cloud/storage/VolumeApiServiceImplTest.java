@@ -226,6 +226,8 @@ public class VolumeApiServiceImplTest {
     ClusterDao clusterDao;
     @Mock
     VolumeOrchestrationService volumeOrchestrationService;
+    @Mock
+    ClvmLockManager clvmLockManager;
 
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
