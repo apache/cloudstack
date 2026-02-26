@@ -163,7 +163,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.CONSERVE_MODE, type = CommandType.BOOLEAN,
             since = "4.23.0",
-            description = "True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers")
+            description = "True if the VPC offering is IP conserve mode enabled, allowing public IPs to be used across multiple VPC tiers. Default value is false")
     private Boolean conserveMode;
 
 

@@ -1141,4 +1141,9 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public String getNicVlanValueForExternalVm(NicTO nic) {
         return null;
     }
+
+    @Override
+    public Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId) {
+        return null;
+    }
 }

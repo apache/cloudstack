@@ -1853,7 +1853,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             _accountMgr.checkAccess(caller.getCallingAccount(), null, true, ipAddr);
 
-            final Long networkId = ipAddr.getVpcId() == null ? ipAddr.getAssociatedWithNetworkId() : networkIdParam;
+            final Long networkId = _ipAddrMgr.getPreferredNetworkIdForPublicIpRuleAssignment(ipAddr, networkIdParam);
             if (networkId == null) {
                 InvalidParameterValueException ex =
                         new InvalidParameterValueException("Unable to create load balancer rule ; specified sourceip id is not associated with any network");

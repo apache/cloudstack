@@ -275,4 +275,6 @@ public interface NetworkService {
     IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress);
 
     String getNicVlanValueForExternalVm(NicTO nic);
+
+    Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId);
 }

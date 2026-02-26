@@ -272,7 +272,7 @@ class TestVPCConserveModeRules(cloudstackTestCase):
         source_nat_ip = source_nat_ip_resp[0]
 
         self.logger.debug(
-            "Creating Port Forwarding rule on tier-1 (networkid=%s) "
+            "Creating Port Forwarding rule on tier-2 (networkid=%s) "
             "using the source NAT public IP %s – should succeed with conserve mode",
             self.tier1.id,
             source_nat_ip.ipaddress,
@@ -290,8 +290,25 @@ class TestVPCConserveModeRules(cloudstackTestCase):
                 nat_rule,
                 "Port Forwarding rule creation on tier-2 failed unexpectedly",
             )
+            self.logger.debug(
+                "Creating LB rule on tier-1 (networkid=%s) "
+                "using the source NAT public IP %s – should succeed with conserve mode",
+                self.tier1.id,
+                source_nat_ip.ipaddress,
+            )
+            lb_rule_tier1 = LoadBalancerRule.create(
+                self.apiclient,
+                self.services["lbrule"],
+                ipaddressid=source_nat_ip.id,
+                accountid=self.account.name,
+                vpcid=self.vpc.id,
+                networkid=self.tier2.id,
+                domainid=self.account.domainid,
+            )
+            self.assertIsNotNone(lb_rule_tier1, "LB rule creation on tier-2 failed")
+            lb_rule_tier1.assign(self.apiclient, [self.vm2])
         except CloudstackAPIException as e:
             self.fail(
-                "Expected cross-tier Port Forwarding rule to succeed with "
+                "Expected multiple rules on VPC Source NAT IP to succeed with "
                 "conserveMode=True, but got exception: %s" % e
             )

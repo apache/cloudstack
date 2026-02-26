@@ -6416,6 +6416,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
+    public Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId) {
+        return _ipAddrMgr.getPreferredNetworkIdForPublicIpRuleAssignment(ip, networkId);
+    }
+
+    @Override
     public Network.IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress) {
         if (ip6Address != null) {
             ip6Address = NetUtils.standardizeIp6Address(ip6Address);

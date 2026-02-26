@@ -103,7 +103,7 @@ public class VpcOfferingResponse extends BaseResponse {
     private String routingMode;
 
     @SerializedName(ApiConstants.CONSERVE_MODE)
-    @Param(description = "True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers.")
+    @Param(description = "True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers.", since = "4.23.0")
     private Boolean conserveMode;
 
     public void setId(String id) {

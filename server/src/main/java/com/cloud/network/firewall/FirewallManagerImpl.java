@@ -457,7 +457,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                     && rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
                 String errMsg = String.format("New rule is for a different network than what's specified in rule %s", rule.getXid());
                 if (newRuleIsOnVpcNetwork) {
-                    errMsg += String.format(" - VPC id=%s is not using conserve mode", newRuleNetwork.getVpcId());
+                    Vpc vpc = _vpcMgr.getActiveVpc(newRuleNetwork.getVpcId());
+                    errMsg += String.format(" - VPC id=%s is not using conserve mode", vpc.getUuid());
                 }
                 throw new NetworkRuleConflictException(errMsg);
             }
