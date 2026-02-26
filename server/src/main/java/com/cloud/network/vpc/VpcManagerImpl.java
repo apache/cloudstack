@@ -1973,6 +1973,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         services.add(Network.Service.StaticNat);
         services.add(Network.Service.Gateway);
         services.add(Network.Service.Vpn);
+        services.add(Service.Firewall);
         return services;
     }
 
