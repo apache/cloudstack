@@ -87,7 +87,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -435,8 +435,11 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw KMSException.invalidParameter("HSM Profile not found");
         }
 
+        KMSKeyVO kmsKey = new KMSKeyVO(name, description, "", purpose,
+                accountId, domainId, zoneId, "AES/GCM/NoPadding", keyBits);
+
         KMSProvider provider = getKMSProvider(profile.getProtocol());
-        String kekLabel = purpose.getName() + "-kek-" + UUID.randomUUID().toString().substring(0, 8);
+        String kekLabel = purpose.generateKekLabel(domainId, accountId, kmsKey.getUuid(), 1);
 
         String providerKekLabel;
         Long finalProfileId = hsmProfileId;
@@ -446,8 +449,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw handleKmsException(e);
         }
 
-        KMSKeyVO kmsKey = new KMSKeyVO(name, description, providerKekLabel, purpose,
-                accountId, domainId, zoneId, "AES/GCM/NoPadding", keyBits);
+        kmsKey.setKekLabel(providerKekLabel);
         kmsKey.setHsmProfileId(finalProfileId);
         kmsKey = kmsKeyDao.persist(kmsKey);
 
@@ -661,8 +663,12 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         try {
             logger.info("Starting KEK rotation from {} to {} for kms key {}", oldKekLabel, newKekLabel, kmsKey);
 
+            final KMSKekVersionVO newVersionEntity = new KMSKekVersionVO();
             if (StringUtils.isEmpty(newKekLabel)) {
-                newKekLabel = kmsKey.getPurpose().getName() + "-kek-" + UUID.randomUUID().toString().substring(0, 8);
+                List<KMSKekVersionVO> existingVersions = kmsKekVersionDao.listByKmsKeyId(kmsKey.getId());
+                int nextVersion = existingVersions.stream().mapToInt(KMSKekVersionVO::getVersionNumber).max().orElse(0) + 1;
+                newKekLabel = kmsKey.getPurpose().generateKekLabel(kmsKey.getDomainId(), kmsKey.getAccountId(),
+                        kmsKey.getUuid(), nextVersion);
             }
 
             String finalNewKekLabel = newKekLabel;
@@ -676,7 +682,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                         .execute(new TransactionCallbackWithException<KMSKekVersionVO, KMSException>() {
                             @Override
                             public KMSKekVersionVO doInTransaction(TransactionStatus status) throws KMSException {
-                                KMSKekVersionVO version = createKekVersion(kmsKey.getId(), newKekId, newProfileId);
+                                newVersionEntity.setKmsKeyId(kmsKey.getId());
+                                newVersionEntity.setHsmProfileId(newProfileId);
+                                KMSKekVersionVO version = createKekVersion(newVersionEntity);
 
                                 if (!newProfileId.equals(kmsKey.getHsmProfileId())) {
                                     kmsKey.setHsmProfileId(newProfileId);
@@ -712,26 +720,23 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         }
     }
 
-    private KMSKekVersionVO createKekVersion(Long kmsKeyId, String kekLabel, Long hsmProfileId) throws KMSException {
-        List<KMSKekVersionVO> existingVersions = kmsKekVersionDao.listByKmsKeyId(kmsKeyId);
+    private KMSKekVersionVO createKekVersion(KMSKekVersionVO newVersion) throws KMSException {
+        List<KMSKekVersionVO> existingVersions = kmsKekVersionDao.listByKmsKeyId(newVersion.getKmsKeyId());
         int nextVersion = existingVersions.stream()
                                   .mapToInt(KMSKekVersionVO::getVersionNumber)
                                   .max()
                                   .orElse(0) + 1;
 
-        KMSKekVersionVO currentActive = kmsKekVersionDao.getActiveVersion(kmsKeyId);
+        KMSKekVersionVO currentActive = kmsKekVersionDao.getActiveVersion(newVersion.getKmsKeyId());
         if (currentActive != null) {
             currentActive.setStatus(KMSKekVersionVO.Status.Previous);
             kmsKekVersionDao.update(currentActive.getId(), currentActive);
         }
 
-        KMSKekVersionVO newVersion = new KMSKekVersionVO(kmsKeyId, nextVersion, kekLabel,
-                KMSKekVersionVO.Status.Active);
-        newVersion.setHsmProfileId(hsmProfileId);
+        newVersion.setVersionNumber(nextVersion);
+        newVersion.setStatus(KMSKekVersionVO.Status.Active);
         newVersion = kmsKekVersionDao.persist(newVersion);
-
-        logger.info("Created KEK version {} for KMS key {} (label: {}, profile: {})", nextVersion, kmsKeyId, kekLabel,
-                hsmProfileId);
+        logger.info("Created KEK version {} for KMS key {}", nextVersion, newVersion.getKmsKeyId());
         return newVersion;
     }
 

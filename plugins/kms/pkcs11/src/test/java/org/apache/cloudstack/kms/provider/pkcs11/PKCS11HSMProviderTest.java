@@ -187,21 +187,6 @@ public class PKCS11HSMProviderTest {
     }
 
     /**
-     * Test: generateKekLabel creates valid label
-     */
-    @Test
-    public void testGenerateKekLabel_CreatesValidLabel() {
-        // Test
-        String label = provider.generateKekLabel(KeyPurpose.VOLUME_ENCRYPTION);
-
-        // Verify
-        assertNotNull("Label should not be null", label);
-        assertTrue("Label should start with purpose", label.startsWith(KeyPurpose.VOLUME_ENCRYPTION.getName()));
-        assertTrue("Label should contain UUID",
-                label.length() > (KeyPurpose.VOLUME_ENCRYPTION.getName() + "-kek-").length());
-    }
-
-    /**
      * Test: getProviderName returns correct name
      */
     @Test
