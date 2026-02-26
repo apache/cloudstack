@@ -113,8 +113,9 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
         // For new snapshots, check if Disk-only and all volumes on ONTAP
         if (vmSnapshotVO.getType() != VMSnapshot.Type.Disk) {
-            logger.debug("ONTAP VM snapshot strategy cannot handle memory snapshots for VM [{}]", vmSnapshot.getVmId());
-            return StrategyPriority.CANT_HANDLE;
+            logger.error("ONTAP VM snapshot strategy cannot handle memory snapshots for VM [{}]", vmSnapshot.getVmId());
+            //return StrategyPriority.CANT_HANDLE;
+            throw new CloudRuntimeException("ONTAP VM snapshot strategy cannot handle memory snapshots for VM [" + vmSnapshot.getVmId() + "]");
         }
 
         if (allVolumesOnOntapManagedStorage(vmSnapshot.getVmId())) {
