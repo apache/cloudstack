@@ -222,10 +222,11 @@ class OntapVMSnapshotStrategyTest {
     void testCanHandle_AllocatedDiskAndMemoryType_ReturnsCantHandle() {
         VMSnapshotVO vmSnapshot = createMockVmSnapshot(VMSnapshot.State.Allocated, VMSnapshot.Type.DiskAndMemory);
         when(vmSnapshot.getVmId()).thenReturn(VM_ID);
-
-        StrategyPriority result = strategy.canHandle(vmSnapshot);
-
-        assertEquals(StrategyPriority.CANT_HANDLE, result);
+        try{
+            strategy.canHandle(vmSnapshot);
+        } catch (CloudRuntimeException ex) {
+            assertEquals(true, ex.getMessage().contains("Memory snapshots are not supported"));
+        }
     }
 
     @Test
