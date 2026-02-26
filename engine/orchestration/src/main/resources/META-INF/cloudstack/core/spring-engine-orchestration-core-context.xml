@@ -44,6 +44,8 @@
             value="#{storagePoolAllocatorsRegistry.registered}" />
     </bean>
 
+    <bean id="clvmLockManager" class="com.cloud.storage.ClvmLockManager" />
+
     <bean id="storageOrchestrator"
           class="org.apache.cloudstack.engine.orchestration.StorageOrchestrator"/>
     <bean id="dataMigrationHelper"

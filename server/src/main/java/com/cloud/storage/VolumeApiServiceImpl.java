@@ -130,7 +130,6 @@ import org.joda.time.DateTimeZone;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import org.apache.cloudstack.storage.command.ClvmLockTransferCommand;
 import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -153,7 +152,6 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
@@ -369,6 +367,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     HostPodDao podDao;
     @Inject
     EndPointSelector _epSelector;
+    @Inject
+    ClvmLockManager clvmLockManager;
 
     @Inject
     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
@@ -1760,7 +1760,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             // Clean up CLVM lock host tracking detail after successful deletion from primary storage
             if (DataStoreRole.Primary.equals(role)) {
-                cleanupClvmLockHostDetail(volume);
+                clvmLockManager.clearClvmLockHostDetail(volume);
             }
         }
     }
@@ -2959,18 +2959,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * @return Host ID that has the exclusive lock, or null if cannot be determined
      */
     private Long findClvmVolumeLockHost(VolumeInfo volume) {
-        // Strategy 1: Check volume_details for a host hint we may have stored
-        VolumeDetailVO detail = _volsDetailsDao.findDetail(volume.getId(), VolumeInfo.CLVM_LOCK_HOST_ID);
-        if (detail != null && detail.getValue() != null && !detail.getValue().isEmpty()) {
-            try {
-                return Long.parseLong(detail.getValue());
-            } catch (NumberFormatException e) {
-                logger.warn("Invalid clvmLockHostId in volume_details for volume {}: {}",
-                        volume.getUuid(), detail.getValue());
-            }
+        Long lockHostId = clvmLockManager.getClvmLockHostId(volume.getId(), volume.getUuid());
+        if (lockHostId != null) {
+            return lockHostId;
         }
 
-        // Strategy 2: If volume was attached to a VM, use that VM's last host
         Long instanceId = volume.getInstanceId();
         if (instanceId != null) {
             VMInstanceVO vmInstance = _vmInstanceDao.findById(instanceId);
@@ -2979,7 +2972,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        // Strategy 3: Check any host in the pool's cluster
         StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
         if (pool != null && pool.getClusterId() != null) {
             List<HostVO> hosts = _hostDao.findByClusterId(pool.getClusterId());
@@ -2997,45 +2989,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     /**
-     * Cleans up CLVM lock host tracking detail from volume_details table.
-     * Called after successful volume deletion to prevent orphaned records.
-     *
-     * @param volume The volume being deleted
-     */
-    private void cleanupClvmLockHostDetail(VolumeVO volume) {
-        try {
-            VolumeDetailVO detail = _volsDetailsDao.findDetail(volume.getId(), VolumeInfo.CLVM_LOCK_HOST_ID);
-            if (detail != null) {
-                logger.debug("Removing CLVM lock host detail for deleted volume {}", volume.getUuid());
-                _volsDetailsDao.remove(detail.getId());
-            }
-        } catch (Exception e) {
-            logger.warn("Failed to clean up CLVM lock host detail for volume {}: {}",
-                    volume.getUuid(), e.getMessage());
-        }
-    }
-
-    /**
-     * Safely sets or updates the CLVM_LOCK_HOST_ID detail for a volume.
-     * If the detail already exists, it will be updated. Otherwise, it will be created.
-     *
-     * @param volumeId The ID of the volume
-     * @param hostId The host ID that holds/should hold the CLVM exclusive lock
-     */
-    private void setClvmLockHostId(long volumeId, long hostId) {
-        VolumeDetailVO existingDetail = _volsDetailsDao.findDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID);
-
-        if (existingDetail != null) {
-            existingDetail.setValue(String.valueOf(hostId));
-            _volsDetailsDao.update(existingDetail.getId(), existingDetail);
-            logger.debug("Updated CLVM_LOCK_HOST_ID for volume {} to host {}", volumeId, hostId);
-        } else {
-            _volsDetailsDao.addDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID, String.valueOf(hostId), false);
-            logger.debug("Created CLVM_LOCK_HOST_ID for volume {} with host {}", volumeId, hostId);
-        }
-    }
-
-    /**
      * Transfers CLVM volume exclusive lock from source host to destination host.
      *
      * @param volume The volume to transfer lock for
@@ -3044,74 +2997,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * @return true if successful, false otherwise
      */
     private boolean transferClvmVolumeLock(VolumeInfo volume, Long sourceHostId, Long destHostId) {
-        String volumeUuid = volume.getUuid();
-
-        // Get storage pool info
         StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
         if (pool == null) {
-            logger.error("Cannot find storage pool for volume {}", volumeUuid);
+            logger.error("Cannot find storage pool for volume {}", volume.getUuid());
             return false;
         }
 
-        String vgName = pool.getPath();
-        if (vgName.startsWith("/")) {
-            vgName = vgName.substring(1);
-        }
-
-        // Full LV path: /dev/vgname/volume-path
-        String lvPath = String.format("/dev/%s/%s", vgName, volume.getPath());
-
-        try {
-            // Step 1: Deactivate on source host (if different from dest)
-            if (!sourceHostId.equals(destHostId)) {
-                logger.debug("Deactivating CLVM volume {} on source host {}", volumeUuid, sourceHostId);
-
-                ClvmLockTransferCommand deactivateCmd = new ClvmLockTransferCommand(
-                    ClvmLockTransferCommand.Operation.DEACTIVATE,
-                    lvPath,
-                    volumeUuid
-                );
-
-                Answer deactivateAnswer = _agentMgr.send(sourceHostId, deactivateCmd);
-
-                if (deactivateAnswer == null || !deactivateAnswer.getResult()) {
-                    String error = deactivateAnswer != null ? deactivateAnswer.getDetails() : "null answer";
-                    logger.warn("Failed to deactivate CLVM volume {} on source host {}: {}. " +
-                            "Will attempt to activate on destination anyway.",
-                            volumeUuid, sourceHostId, error);
-                }
-            }
-
-            // Step 2: Activate exclusively on destination host
-            logger.debug("Activating CLVM volume {} exclusively on destination host {}", volumeUuid, destHostId);
-
-            ClvmLockTransferCommand activateCmd = new ClvmLockTransferCommand(
-                ClvmLockTransferCommand.Operation.ACTIVATE_EXCLUSIVE,
-                lvPath,
-                volumeUuid
-            );
-
-            Answer activateAnswer = _agentMgr.send(destHostId, activateCmd);
-
-            if (activateAnswer == null || !activateAnswer.getResult()) {
-                String error = activateAnswer != null ? activateAnswer.getDetails() : "null answer";
-                logger.error("Failed to activate CLVM volume {} exclusively on dest host {}: {}",
-                        volumeUuid, destHostId, error);
-                return false;
-            }
-
-            // Step 3: Store the new lock host in volume_details for future reference
-            setClvmLockHostId(volume.getId(), destHostId);
-
-            logger.info("Successfully transferred CLVM lock for volume {} from host {} to host {}",
-                    volumeUuid, sourceHostId, destHostId);
-
-            return true;
-
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
-            logger.error("Exception during CLVM lock transfer for volume {}: {}", volumeUuid, e.getMessage(), e);
-            return false;
-        }
+        return clvmLockManager.transferClvmVolumeLock(volume.getUuid(), volume.getId(),
+                volume.getPath(), pool, sourceHostId, destHostId);
     }
 
     public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS) {

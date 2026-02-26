@@ -51,6 +51,7 @@ import javax.persistence.EntityExistsException;
 
 
 import com.cloud.agent.api.PostMigrationCommand;
+import com.cloud.storage.ClvmLockManager;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -258,7 +259,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeApiServiceImpl;
-import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -467,6 +467,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ExtensionsManager extensionsManager;
     @Inject
     ExtensionDetailsDao extensionDetailsDao;
+    @Inject
+    ClvmLockManager clvmLockManager;
 
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
@@ -3381,17 +3383,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         for (VolumeVO volume : volumes) {
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
             if (pool != null && pool.getPoolType() == Storage.StoragePoolType.CLVM) {
-                VolumeDetailVO existingDetail = _volsDetailsDao.findDetail(volume.getId(), VolumeInfo.CLVM_LOCK_HOST_ID);
-                if (existingDetail != null) {
-                    existingDetail.setValue(String.valueOf(destHostId));
-                    _volsDetailsDao.update(existingDetail.getId(), existingDetail);
-                    logger.debug("Updated CLVM_LOCK_HOST_ID for volume {} to host {} after VM {} migration",
-                            volume.getUuid(), destHostId, vmId);
-                } else {
-                    _volsDetailsDao.addDetail(volume.getId(), VolumeInfo.CLVM_LOCK_HOST_ID, String.valueOf(destHostId), false);
-                    logger.debug("Created CLVM_LOCK_HOST_ID for volume {} with host {} after VM {} migration",
-                            volume.getUuid(), destHostId, vmId);
-                }
+                clvmLockManager.setClvmLockHostId(volume.getId(), destHostId);
             }
         }
     }

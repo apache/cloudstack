@@ -38,8 +38,10 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.storage.ClvmLockManager;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -273,6 +275,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     ConfigurationDao configurationDao;
     @Inject
     VMInstanceDao vmInstanceDao;
+    @Inject
+    ClvmLockManager clvmLockManager;
+    @Inject
+    AgentManager _agentMgr;
 
     @Inject
     protected SnapshotHelper snapshotHelper;
@@ -753,9 +759,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     hostId, volumeInfo.getUuid());
             volumeInfo.setDestinationHostId(hostId);
 
-            // Persist CLVM lock host to database immediately so it survives across VolumeInfo object recreations
-            // and serves as both the creation routing hint and the lock host tracker
-            setClvmLockHostId(volumeInfo.getId(), hostId);
+            clvmLockManager.setClvmLockHostId(volumeInfo.getId(), hostId);
         }
 
         for (int i = 0; i < 2; i++) {
@@ -800,26 +804,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     /**
-     * Sets or updates the CLVM_LOCK_HOST_ID detail for a volume.
-     * If the detail already exists, it will be updated. Otherwise, it will be created.
-     *
-     * @param volumeId The ID of the volume
-     * @param hostId The host ID that holds/should hold the CLVM exclusive lock
-     */
-    private void setClvmLockHostId(long volumeId, long hostId) {
-        VolumeDetailVO existingDetail = _volDetailDao.findDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID);
-
-        if (existingDetail != null) {
-            existingDetail.setValue(String.valueOf(hostId));
-            _volDetailDao.update(existingDetail.getId(), existingDetail);
-            logger.debug("Updated CLVM_LOCK_HOST_ID for volume {} to host {}", volumeId, hostId);
-        } else {
-            _volDetailDao.addDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID, String.valueOf(hostId), false);
-            logger.debug("Created CLVM_LOCK_HOST_ID for volume {} with host {}", volumeId, hostId);
-        }
-    }
-
-    /**
      * Updates the CLVM_LOCK_HOST_ID for a migrated volume if applicable.
      * For CLVM volumes that are attached to a VM, this updates the lock host tracking
      * to point to the VM's current host after volume migration.
@@ -847,9 +831,79 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return;
         }
 
-        setClvmLockHostId(migratedVolume.getId(), vm.getHostId());
+        clvmLockManager.setClvmLockHostId(migratedVolume.getId(), vm.getHostId());
         logger.debug("Updated CLVM_LOCK_HOST_ID for {} volume {} to host {} where VM {} is running",
                 operationType, migratedVolume.getUuid(), vm.getHostId(), vm.getInstanceName());
+    }
+
+    /**
+     * Retrieves the CLVM lock host ID from any existing volume of the specified VM.
+     * This is useful when attaching a new volume to a stopped VM - we want to maintain
+     * consistency by using the same host that manages the VM's other CLVM volumes.
+     *
+     * @param vmId The ID of the VM
+     * @return The host ID if found, null otherwise
+     */
+    private Long getClvmLockHostFromVmVolumes(Long vmId) {
+        if (vmId == null) {
+            return null;
+        }
+
+        List<VolumeVO> vmVolumes = _volsDao.findByInstance(vmId);
+        if (vmVolumes == null || vmVolumes.isEmpty()) {
+            return null;
+        }
+
+        for (VolumeVO volume : vmVolumes) {
+            if (volume.getPoolId() == null) {
+                continue;
+            }
+
+            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+            if (pool != null && pool.getPoolType() == Storage.StoragePoolType.CLVM) {
+                Long lockHostId = clvmLockManager.getClvmLockHostId(volume.getId(), volume.getUuid());
+                if (lockHostId != null) {
+                    logger.debug("Found CLVM lock host {} from existing volume {} of VM {}",
+                            lockHostId, volume.getUuid(), vmId);
+                    return lockHostId;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void transferClvmLocksForVmStart(List<VolumeVO> volumes, Long destHostId, VMInstanceVO vm) {
+        if (volumes == null || volumes.isEmpty() || destHostId == null) {
+            return;
+        }
+
+        for (VolumeVO volume : volumes) {
+            if (volume.getPoolId() == null) {
+                continue;
+            }
+
+            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+            if (pool == null || pool.getPoolType() != Storage.StoragePoolType.CLVM) {
+                continue;
+            }
+
+            Long currentLockHost = clvmLockManager.getClvmLockHostId(volume.getId(), volume.getUuid());
+
+            if (currentLockHost == null) {
+                clvmLockManager.setClvmLockHostId(volume.getId(), destHostId);
+            } else if (!currentLockHost.equals(destHostId)) {
+                logger.info("CLVM volume {} is locked on host {} but VM {} starting on host {}. Transferring lock.",
+                        volume.getUuid(), currentLockHost, vm.getInstanceName(), destHostId);
+
+                if (!clvmLockManager.transferClvmVolumeLock(volume.getUuid(), volume.getId(),
+                        volume.getPath(), pool, currentLockHost, destHostId)) {
+                    throw new CloudRuntimeException(
+                            String.format("Failed to transfer CLVM lock for volume %s from host %s to host %s",
+                                    volume.getUuid(), currentLockHost, destHostId));
+                }
+            }
+        }
     }
 
     public String getRandomVolumeName() {
@@ -1270,10 +1324,22 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         Long clusterId = storagePool.getClusterId();
         logger.trace("storage-pool {}/{} is associated with cluster {}",storagePool.getName(), storagePool.getUuid(), clusterId);
         Long hostId = vm.getHostId();
-        if (hostId == null && storagePool.isLocal()) {
-            List<StoragePoolHostVO> poolHosts = storagePoolHostDao.listByPoolId(storagePool.getId());
-            if (poolHosts.size() > 0) {
-                hostId = poolHosts.get(0).getHostId();
+        if (hostId == null && (storagePool.isLocal() || storagePool.getPoolType() == Storage.StoragePoolType.CLVM)) {
+            if (storagePool.getPoolType() == Storage.StoragePoolType.CLVM) {
+                hostId = getClvmLockHostFromVmVolumes(vm.getId());
+                if (hostId != null) {
+                    logger.debug("Using CLVM lock host {} from VM {}'s existing volumes for new volume creation",
+                            hostId, vm.getUuid());
+                }
+            }
+
+            if (hostId == null) {
+                List<StoragePoolHostVO> poolHosts = storagePoolHostDao.listByPoolId(storagePool.getId());
+                if (!poolHosts.isEmpty()) {
+                    hostId = poolHosts.get(0).getHostId();
+                    logger.debug("Selected host {} from storage pool {} for stopped VM {} volume creation",
+                            hostId, storagePool.getUuid(), vm.getUuid());
+                }
             }
         }
 
@@ -1935,9 +2001,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     if (poolVO != null && poolVO.getPoolType() == Storage.StoragePoolType.CLVM) {
                         Long hostId = vm.getVirtualMachine().getHostId();
                         if (hostId != null) {
-                            // Using CLVM_LOCK_HOST_ID which serves dual purpose: creation routing and lock tracking
                             volume.setDestinationHostId(hostId);
-                            setClvmLockHostId(volume.getId(), hostId);
+                            clvmLockManager.setClvmLockHostId(volume.getId(), hostId);
                             logger.info("CLVM pool detected during volume creation from template. Setting lock host {} for volume {} (persisted to DB) to route creation to correct host",
                                     hostId, volume.getUuid());
                         }
@@ -2058,12 +2123,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             throw new CloudRuntimeException(msg);
         }
 
-        // don't allow to start vm that doesn't have a root volume
         if (_volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT).isEmpty()) {
             throw new CloudRuntimeException(String.format("ROOT volume is missing, unable to prepare volumes for the VM [%s].", vm.getVirtualMachine()));
         }
 
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
+
+        VirtualMachine vmInstance = vm.getVirtualMachine();
+        VMInstanceVO vmInstanceVO = vmInstanceDao.findById(vmInstance.getId());
+        if (vmInstance.getState() == State.Starting && dest.getHost() != null) {
+            transferClvmLocksForVmStart(vols, dest.getHost().getId(), vmInstanceVO);
+        }
 
         List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks(), vm);
         Volume vol = null;
