@@ -16,47 +16,40 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.cloudstack.storage.feign.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Request body for the ONTAP Snapshot File Restore API.
+ *
+ * <p>ONTAP REST endpoint:
+ * {@code POST /api/storage/volumes/{volume.uuid}/snapshots/{snapshot.uuid}/files/{file.path}/restore}</p>
+ *
+ * <p>This API restores a single file or LUN from a FlexVolume snapshot to a
+ * specified destination path, without reverting the entire FlexVolume.</p>
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class FileClone {
-    @JsonProperty("source_path")
-    private String sourcePath;
+public class SnapshotFileRestoreRequest {
+
     @JsonProperty("destination_path")
     private String destinationPath;
-    @JsonProperty("volume")
-    private VolumeConcise volume;
-    @JsonProperty("overwrite_destination")
-    private Boolean overwriteDestination;
 
-    public VolumeConcise getVolume() {
-        return volume;
+    public SnapshotFileRestoreRequest() {
     }
-    public void setVolume(VolumeConcise volume) {
-        this.volume = volume;
+
+    public SnapshotFileRestoreRequest(String destinationPath) {
+        this.destinationPath = destinationPath;
     }
-    public String getSourcePath() {
-        return sourcePath;
-    }
-    public void setSourcePath(String sourcePath) {
-        this.sourcePath = sourcePath;
-    }
+
     public String getDestinationPath() {
         return destinationPath;
     }
+
     public void setDestinationPath(String destinationPath) {
         this.destinationPath = destinationPath;
-    }
-    public Boolean getOverwriteDestination() {
-        return overwriteDestination;
-    }
-    public void setOverwriteDestination(Boolean overwriteDestination) {
-        this.overwriteDestination = overwriteDestination;
     }
 }

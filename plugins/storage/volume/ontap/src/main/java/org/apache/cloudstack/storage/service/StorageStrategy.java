@@ -25,7 +25,9 @@ import org.apache.cloudstack.storage.feign.FeignClientFactory;
 import org.apache.cloudstack.storage.feign.client.AggregateFeignClient;
 import org.apache.cloudstack.storage.feign.client.JobFeignClient;
 import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
+import org.apache.cloudstack.storage.feign.client.NASFeignClient;
 import org.apache.cloudstack.storage.feign.client.SANFeignClient;
+import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
 import org.apache.cloudstack.storage.feign.client.SvmFeignClient;
 import org.apache.cloudstack.storage.feign.client.VolumeFeignClient;
 import org.apache.cloudstack.storage.feign.model.Aggregate;
@@ -67,6 +69,8 @@ public abstract class StorageStrategy {
     private final JobFeignClient jobFeignClient;
     private final NetworkFeignClient networkFeignClient;
     private final SANFeignClient sanFeignClient;
+    private final NASFeignClient nasFeignClient;
+    private final SnapshotFeignClient snapshotFeignClient;
 
     protected OntapStorage storage;
 
@@ -89,6 +93,8 @@ public abstract class StorageStrategy {
         this.jobFeignClient = feignClientFactory.createClient(JobFeignClient.class, baseURL);
         this.networkFeignClient = feignClientFactory.createClient(NetworkFeignClient.class, baseURL);
         this.sanFeignClient = feignClientFactory.createClient(SANFeignClient.class, baseURL);
+        this.nasFeignClient = feignClientFactory.createClient(NASFeignClient.class, baseURL);
+        this.snapshotFeignClient = feignClientFactory.createClient(SnapshotFeignClient.class, baseURL);
     }
 
     // Connect method to validate ONTAP cluster, credentials, protocol, and SVM
@@ -582,7 +588,39 @@ public abstract class StorageStrategy {
      */
     abstract public Map<String, String> getLogicalAccess(Map<String, String> values);
 
-    protected Boolean jobPollForSuccess(String jobUUID, int maxRetries, int sleepTimeInSecs) {
+    // ── FlexVolume Snapshot accessors ────────────────────────────────────────
+
+    /**
+     * Returns the {@link SnapshotFeignClient} for ONTAP FlexVolume snapshot operations.
+     */
+    public SnapshotFeignClient getSnapshotFeignClient() {
+        return snapshotFeignClient;
+    }
+
+    /**
+     * Returns the {@link NASFeignClient} for ONTAP NAS file operations
+     * (including file clone for single-file SnapRestore).
+     */
+    public NASFeignClient getNasFeignClient() {
+        return nasFeignClient;
+    }
+
+    /**
+     * Generates the Basic-auth header for ONTAP REST calls.
+     */
+    public String getAuthHeader() {
+        return Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+    }
+
+    /**
+     * Polls an ONTAP async job for successful completion.
+     *
+     * @param jobUUID          UUID of the ONTAP job to poll
+     * @param maxRetries       maximum number of poll attempts
+     * @param sleepTimeInSecs  seconds to sleep between poll attempts
+     * @return true if the job completed successfully
+     */
+    public Boolean jobPollForSuccess(String jobUUID, int maxRetries, int sleepTimeInSecs) {
         //Create URI for GET Job API
         int jobRetryCount = 0;
         Job jobResp = null;

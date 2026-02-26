@@ -97,4 +97,7 @@ public class Constants {
     public static final String ONTAP_SNAP_SIZE = "ontap_snap_size";
     public static final String FILE_PATH = "file_path";
     public static final int MAX_SNAPSHOT_NAME_LENGTH = 64;
+
+    /** vm_snapshot_details key for ONTAP FlexVolume-level VM snapshots. */
+    public static final String ONTAP_FLEXVOL_SNAPSHOT = "ontapFlexVolSnapshot";
 }
