@@ -24,6 +24,8 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
@@ -59,15 +61,14 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
         logger.debug("Updating default Network offerings for VPC to add Firewall service with VpcVirtualRouter provider");
 
         final List<String> defaultVpcOfferingUniqueNames = Arrays.asList(
-                "DefaultIsolatedNetworkOfferingForVpcNetworks",
-                "DefaultIsolatedNetworkOfferingForVpcNetworksNoLB",
-                "DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB",
-                "DefaultNATNSXNetworkOfferingForVpc",
-                "DefaultRoutedNSXNetworkOfferingForVpc",
-                "DefaultNATNSXNetworkOfferingForVpcWithInternalLB",
-                "DefaultRoutedNetrisNetworkOfferingForVpc",
-                "DefaultNATNetrisNetworkOfferingForVpc",
-                "DefaultNSXVPCNetworkOfferingforKubernetesService"
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB,
+                NetworkOffering.DEFAULT_NAT_NSX_OFFERING_FOR_VPC,
+                NetworkOffering.DEFAULT_ROUTED_NSX_OFFERING_FOR_VPC,
+                NetworkOffering.DEFAULT_NAT_NSX_OFFERING_FOR_VPC_WITH_ILB,
+                NetworkOffering.DEFAULT_ROUTED_NETRIS_OFFERING_FOR_VPC,
+                NetworkOffering.DEFAULT_NAT_NETRIS_OFFERING_FOR_VPC
         );
 
         try {
@@ -84,8 +85,8 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
                 rs.close();
                 pstmt.close();
 
-                // Insert into ntwk_offering_service_map (if not exists)
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ntwk_offering_service_map` " +
+                // Insert into ntwk_offering_service_map
+                pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`ntwk_offering_service_map` " +
                         "(network_offering_id, service, provider, created) " +
                         "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())");
                 pstmt.setLong(1, offeringId);
@@ -99,7 +100,7 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
                 rs = pstmt.executeQuery();
                 while (rs.next()) {
                     long networkId = rs.getLong(1);
-                    PreparedStatement insertService = conn.prepareStatement("INSERT INTO `cloud`.`ntwk_service_map` " +
+                    PreparedStatement insertService = conn.prepareStatement("INSERT INGORE INTO `cloud`.`ntwk_service_map` " +
                             "(network_id, service, provider, created) " +
                             "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())");
                     insertService.setLong(1, networkId);
@@ -120,13 +121,13 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
         logger.debug("Updating default VPC offerings to add Firewall service with VpcVirtualRouter provider");
 
         final List<String> vpcOfferingUniqueNames = Arrays.asList(
-                "Default VPC offering",
-                "Default VPC  offering with Netscaler",
-                "Redundant VPC offering",
-                "VPC offering with NSX - NAT Mode",
-                "VPC offering with NSX - Route Mode",
-                "VPC offering with Netris - Route Mode",
-                "VPC offering with Netris - NAT Mode"
+                VpcOffering.defaultVPCOfferingName,
+                VpcOffering.defaultVPCNSOfferingName,
+                VpcOffering.redundantVPCOfferingName,
+                VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME,
+                VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME,
+                VpcOffering.DEFAULT_VPC_ROUTE_NETRIS_OFFERING_NAME,
+                VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME
         );
 
         try {
@@ -143,8 +144,8 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
                 rs.close();
                 pstmt.close();
 
-                // Insert into vpc_offering_service_map (if not exists)
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vpc_offering_service_map` " +
+                // Insert into vpc_offering_service_map
+                pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`vpc_offering_service_map` " +
                         "(vpc_offering_id, service, provider, created) " +
                         "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())");
                 pstmt.setLong(1, vpcOfferingId);
@@ -158,7 +159,7 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
                 rs = pstmt.executeQuery();
                 while (rs.next()) {
                     long vpcId = rs.getLong(1);
-                    PreparedStatement insertService = conn.prepareStatement("INSERT INTO `cloud`.`vpc_service_map` " +
+                    PreparedStatement insertService = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`vpc_service_map` " +
                             "(vpc_id, service, provider, created) " +
                             "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())");
                     insertService.setLong(1, vpcId);
