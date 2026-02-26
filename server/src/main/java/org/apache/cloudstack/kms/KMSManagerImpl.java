@@ -969,11 +969,15 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw new InvalidParameterValueException("Protocol cannot be empty");
         }
 
+        KMSProvider provider;
         try {
-            getKMSProvider(protocol);
+            provider = getKMSProvider(protocol);
         } catch (CloudRuntimeException e) {
             throw new InvalidParameterValueException("No provider found for protocol: " + protocol);
         }
+
+        Map<String, String> details = cmd.getDetails() != null ? cmd.getDetails() : new HashMap<>();
+        provider.validateProfileConfig(details);
 
         boolean isSystem = cmd.isSystem();
         if (isSystem && !accountManager.isRootAdmin(caller.getId())) {

@@ -104,6 +104,18 @@ public interface KMSProvider extends Configurable, Adapter {
     void deleteKek(String kekId) throws KMSException;
 
     /**
+     * Validates the configuration details for this provider before saving an HSM
+     * profile.
+     * Implementations should override this to perform provider-specific validation.
+     *
+     * @param details the configuration details to validate
+     * @throws KMSException if validation fails
+     */
+    default void validateProfileConfig(java.util.Map<String, String> details) throws KMSException {
+        // default no-op
+    }
+
+    /**
      * Check if a KEK exists and is accessible
      *
      * @param kekId the KEK identifier to check

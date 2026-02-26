@@ -131,6 +131,9 @@ export default {
       return this.rootDiskSelected?.iscustomizediops || false
     },
     showKmsKeySelector () {
+      if (this.kmsKeys === null) {
+        return false
+      }
       const isRootDisk = this.inputDecorator === 'rootdisksize'
       const isDataDisk = this.inputDecorator === 'size'
 

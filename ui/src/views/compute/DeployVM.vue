@@ -2030,9 +2030,14 @@ export default {
         domainid: this.owner.domainid,
         projectid: this.owner.projectid
       }).then(response => {
-        this.options.kmsKeys = response.listkmskeysresponse.kmskey || []
-      }).catch(error => {
-        this.$notifyError(error)
+        const kmskeyMap = response.listkmskeysresponse.kmskey || []
+        if (kmskeyMap.length > 0) {
+          this.options.kmsKeys = kmskeyMap
+        } else {
+          this.options.kmsKeys = null
+        }
+      }).catch(() => {
+        this.options.kmsKeys = null
       }).finally(() => {
         this.loading.kmsKeys = false
       })

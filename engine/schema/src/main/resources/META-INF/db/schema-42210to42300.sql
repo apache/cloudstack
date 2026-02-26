@@ -145,6 +145,10 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_hsm_profiles` (
     CONSTRAINT `fk_kms_hsm_profiles__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='HSM profiles for KMS providers';
 
+-- Add default database HSM profile (disabled by default)
+INSERT INTO `cloud`.`kms_hsm_profiles` (`uuid`, `name`, `protocol`, `account_id`, `domain_id`, `enabled`, `system`, `created`)
+VALUES (UUID(), 'default', 'database', 1, 1, 0, 1, NOW());
+
 -- KMS HSM Profile Details (Protocol-specific configuration)
 CREATE TABLE IF NOT EXISTS `cloud`.`kms_hsm_profile_details` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

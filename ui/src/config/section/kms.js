@@ -22,6 +22,9 @@ export default {
   name: 'kms',
   title: 'label.kms',
   icon: 'hdd-outlined',
+  show: (record, store) => {
+    return ['Admin'].includes(store.getters.userInfo.roletype) || store.getters.features.hashsmprofiles
+  },
   children: [
     {
       name: 'kmskey',
@@ -157,6 +160,7 @@ export default {
       title: 'label.hsm.profile',
       icon: 'safety-outlined',
       permission: ['listHSMProfiles'],
+      show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
       resourceType: 'HSMProfile',
       columns: () => {
         const fields = ['name', 'enabled']

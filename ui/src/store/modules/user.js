@@ -480,6 +480,16 @@ const user = {
           commit('SET_CLOUDIAN', cloudian)
         }).catch(ignored => {
         })
+
+        if ('listHSMProfiles' in store.getters.apis) {
+          getAPI('listHSMProfiles', { listall: true }).then(response => {
+            const hasHsmProfiles = (response.listhsmprofilesresponse.count > 0)
+            const features = Object.assign({}, store.getters.features)
+            features.hashsmprofiles = hasHsmProfiles
+            commit('SET_FEATURES', features)
+          }).catch(ignored => {
+          })
+        }
       }).catch(error => {
         console.error(error)
       })
