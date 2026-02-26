@@ -446,6 +446,7 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
         )
         self.cleanup.append(service_offering)
 
+        self.services["vpc"]["cidr"] = "10.10.20.0/24"
         vpc = VPC.create(
             apiclient=self.apiclient,
             services=self.services["vpc"],
@@ -475,8 +476,8 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
         network_offering.update(self.apiclient, state="Enabled")
         self.cleanup.append(network_offering)
 
-        gateway_tier1 = "10.0.20.1"
-        netmask_tiers = "255.255.255.0"
+        gateway_tier1 = "10.10.20.1"
+        netmask_tiers = "255.255.255.240"
 
         self.services["network_offering"]["name"] = "tier1-" + vpc.id
         self.services["network_offering"]["displayname"] = "tier1-" + vpc.id
@@ -493,7 +494,7 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
         )
         self.cleanup.append(tier1)
 
-        gateway_tier2 = "10.0.30.1"
+        gateway_tier2 = "10.10.20.17"
         self.services["network_offering"]["name"] = "tier2-" + vpc.id
         self.services["network_offering"]["displayname"] = "tier2-" + vpc.id
         tier2 = Network.create(
