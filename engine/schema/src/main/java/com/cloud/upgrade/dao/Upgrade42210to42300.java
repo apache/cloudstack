@@ -73,47 +73,44 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
 
         try {
             for (String uniqueName : defaultVpcOfferingUniqueNames) {
-                PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`network_offerings` WHERE unique_name = ?");
-                pstmt.setString(1, uniqueName);
-
-                ResultSet rs = pstmt.executeQuery();
-                if (!rs.next()) {
-                    continue;
+                try (PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`network_offerings` WHERE unique_name = ?")) {
+                    pstmt.setString(1, uniqueName);
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (!rs.next()) {
+                            continue;
+                        }
+                        long offeringId = rs.getLong(1);
+                        // Insert into ntwk_offering_service_map
+                        try (PreparedStatement insertOfferingPstmt = conn.prepareStatement(
+                                "INSERT IGNORE INTO `cloud`.`ntwk_offering_service_map` " +
+                                        "(network_offering_id, service, provider, created) " +
+                                        "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())")) {
+                            insertOfferingPstmt.setLong(1, offeringId);
+                            insertOfferingPstmt.executeUpdate();
+                        }
+                        // Update existing networks (ntwk_service_map)
+                        try (PreparedStatement selectNetworksPstmt = conn.prepareStatement(
+                                "SELECT id FROM `cloud`.`networks` WHERE network_offering_id = ?")) {
+                            selectNetworksPstmt.setLong(1, offeringId);
+                            try (ResultSet networksRs = selectNetworksPstmt.executeQuery()) {
+                                while (networksRs.next()) {
+                                    long networkId = networksRs.getLong(1);
+                                    try (PreparedStatement insertService = conn.prepareStatement(
+                                            "INSERT INGORE INTO `cloud`.`ntwk_service_map` " +
+                                                    "(network_id, service, provider, created) " +
+                                                    "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())")) {
+                                        insertService.setLong(1, networkId);
+                                        insertService.executeUpdate();
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-
-                long offeringId = rs.getLong(1);
-                rs.close();
-                pstmt.close();
-
-                // Insert into ntwk_offering_service_map
-                pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`ntwk_offering_service_map` " +
-                        "(network_offering_id, service, provider, created) " +
-                        "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())");
-                pstmt.setLong(1, offeringId);
-                pstmt.executeUpdate();
-                pstmt.close();
-
-                // Update existing networks (ntwk_service_map)
-                pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`networks` WHERE network_offering_id = ?");
-                pstmt.setLong(1, offeringId);
-
-                rs = pstmt.executeQuery();
-                while (rs.next()) {
-                    long networkId = rs.getLong(1);
-                    PreparedStatement insertService = conn.prepareStatement("INSERT INGORE INTO `cloud`.`ntwk_service_map` " +
-                            "(network_id, service, provider, created) " +
-                            "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())");
-                    insertService.setLong(1, networkId);
-                    insertService.executeUpdate();
-                    insertService.close();
-                }
-
-                rs.close();
-                pstmt.close();
             }
 
         } catch (SQLException e) {
-            logger.warn("Exception while updating VPC default offerings with Firewall service: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Exception while updating VPC default offerings with Firewall service: " + e.getMessage(), e);
         }
     }
 
@@ -132,47 +129,47 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
 
         try {
             for (String uniqueName : vpcOfferingUniqueNames) {
-                PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vpc_offerings` WHERE unique_name = ?");
-                pstmt.setString(1, uniqueName);
 
-                ResultSet rs = pstmt.executeQuery();
-                if (!rs.next()) {
-                    continue;
+                try (PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vpc_offerings` WHERE unique_name = ?")) {
+                    pstmt.setString(1, uniqueName);
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (!rs.next()) {
+                            continue;
+                        }
+
+                        long vpcOfferingId = rs.getLong(1);
+                        // Insert into vpc_offering_service_map
+                        try (PreparedStatement insertOfferingPstmt = conn.prepareStatement(
+                                "INSERT IGNORE INTO `cloud`.`vpc_offering_service_map` " +
+                                        "(vpc_offering_id, service, provider, created) " +
+                                        "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())")) {
+
+                            insertOfferingPstmt.setLong(1, vpcOfferingId);
+                            insertOfferingPstmt.executeUpdate();
+                        }
+
+                        // Update existing VPCs (vpc_service_map)
+                        try (PreparedStatement selectVpcsPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vpcs` WHERE vpc_offering_id = ?")) {
+                            selectVpcsPstmt.setLong(1, vpcOfferingId);
+                            try (ResultSet vpcsRs = selectVpcsPstmt.executeQuery()) {
+                                while (vpcsRs.next()) {
+                                    long vpcId = vpcsRs.getLong(1);
+                                    try (PreparedStatement insertService = conn.prepareStatement(
+                                            "INSERT IGNORE INTO `cloud`.`vpc_service_map` " +
+                                                    "(vpc_id, service, provider, created) " +
+                                                    "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())")) {
+                                        insertService.setLong(1, vpcId);
+                                        insertService.executeUpdate();
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-
-                long vpcOfferingId = rs.getLong(1);
-                rs.close();
-                pstmt.close();
-
-                // Insert into vpc_offering_service_map
-                pstmt = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`vpc_offering_service_map` " +
-                        "(vpc_offering_id, service, provider, created) " +
-                        "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())");
-                pstmt.setLong(1, vpcOfferingId);
-                pstmt.executeUpdate();
-                pstmt.close();
-
-                // Update existing VPCs
-                pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vpcs` WHERE vpc_offering_id = ?");
-                pstmt.setLong(1, vpcOfferingId);
-
-                rs = pstmt.executeQuery();
-                while (rs.next()) {
-                    long vpcId = rs.getLong(1);
-                    PreparedStatement insertService = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`vpc_service_map` " +
-                            "(vpc_id, service, provider, created) " +
-                            "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())");
-                    insertService.setLong(1, vpcId);
-                    insertService.executeUpdate();
-                    insertService.close();
-                }
-
-                rs.close();
-                pstmt.close();
             }
 
         } catch (SQLException e) {
-            logger.warn("Exception while updating VPC offerings with Firewall service: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Exception while updating VPC offerings with Firewall service: " + e.getMessage(), e);
         }
     }
 }

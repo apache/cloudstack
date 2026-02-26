@@ -1259,8 +1259,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         serviceProviderMap.put(Service.UserData, routerProvider);
         if (forVpc) {
             serviceProviderMap.put(Service.NetworkACL, provider);
-            serviceProviderMap.put(Service.Firewall, provider);
         }
+        serviceProviderMap.put(Service.Firewall, provider);
         if (networkMode == NetworkOffering.NetworkMode.NATTED) {
             serviceProviderMap.put(Service.SourceNat, provider);
             serviceProviderMap.put(Service.StaticNat, provider);
