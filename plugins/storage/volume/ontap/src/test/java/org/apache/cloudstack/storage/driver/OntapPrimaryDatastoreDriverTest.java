@@ -135,8 +135,9 @@ class OntapPrimaryDatastoreDriverTest {
         Map<String, String> capabilities = driver.getCapabilities();
 
         assertNotNull(capabilities);
-        assertEquals(Boolean.TRUE.toString(), capabilities.get("STORAGE_SYSTEM_SNAPSHOT"));
-        assertEquals(Boolean.TRUE.toString(), capabilities.get("CAN_CREATE_VOLUME_FROM_SNAPSHOT"));
+        // Snapshot operations are now handled by OntapSnapshotStrategy, so driver capabilities are FALSE
+        assertEquals(Boolean.FALSE.toString(), capabilities.get("STORAGE_SYSTEM_SNAPSHOT"));
+        assertEquals(Boolean.FALSE.toString(), capabilities.get("CAN_CREATE_VOLUME_FROM_SNAPSHOT"));
     }
 
     @Test

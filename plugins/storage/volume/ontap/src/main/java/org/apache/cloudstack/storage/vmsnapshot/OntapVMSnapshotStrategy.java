@@ -373,7 +373,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     }
 
                     // Poll for job completion
-                    Boolean jobSucceeded = storageStrategy.pollJobForSuccess(jobResponse.getJob().getUuid(), 30, 2);
+                    Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2);
                     if (!jobSucceeded) {
                         throw new CloudRuntimeException("FlexVolume snapshot job failed on FlexVol UUID [" + flexVolUuid + "]");
                     }
@@ -716,7 +716,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
             JobResponse jobResponse = client.deleteSnapshot(authHeader, detail.flexVolUuid, detail.snapshotUuid);
             if (jobResponse != null && jobResponse.getJob() != null) {
-                storageStrategy.pollJobForSuccess(jobResponse.getJob().getUuid(), 10, 2);
+                storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 10, 2);
             }
         } catch (Exception e) {
             logger.error("Rollback of FlexVol snapshot failed: {}", e.getMessage(), e);
@@ -750,7 +750,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
                 JobResponse jobResponse = client.deleteSnapshot(authHeader, detail.flexVolUuid, detail.snapshotUuid);
                 if (jobResponse != null && jobResponse.getJob() != null) {
-                    storageStrategy.pollJobForSuccess(jobResponse.getJob().getUuid(), 30, 2);
+                    storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2);
                 }
 
                 deletedSnapshots.put(dedupeKey, Boolean.TRUE);
@@ -806,7 +806,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     authHeader, detail.flexVolUuid, detail.snapshotUuid, detail.volumePath, restoreRequest);
 
             if (jobResponse != null && jobResponse.getJob() != null) {
-                Boolean success = storageStrategy.pollJobForSuccess(jobResponse.getJob().getUuid(), 60, 2);
+                Boolean success = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 60, 2);
                 if (!success) {
                     throw new CloudRuntimeException("Snapshot file restore failed for volume path [" +
                             detail.volumePath + "] from snapshot [" + detail.snapshotName +
