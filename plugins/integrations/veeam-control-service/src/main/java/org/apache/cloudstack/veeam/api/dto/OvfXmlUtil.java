@@ -352,6 +352,7 @@ public class OvfXmlUtil {
         sb.append("<SpecParams><source>urandom</source></SpecParams>");
         sb.append("</Item>");
 
+        sb.append("</Section>");
         sb.append("</Content>");
         sb.append("</ovf:Envelope>");
 
