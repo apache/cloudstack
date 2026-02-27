@@ -386,8 +386,16 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     private void startNBDServer(String transferId, String direction, Long hostId, String exportName, String volumePath) {
         StartNBDServerAnswer nbdServerAnswer;
+        if (hostId == null) {
+            throw new CloudRuntimeException("Host cannot be determined for starting NBD server");
+        }
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            throw new CloudRuntimeException("Host cannot be found for starting NBD server with ID: " + hostId);
+        }
         StartNBDServerCommand nbdServerCmd = new StartNBDServerCommand(
                 transferId,
+                host.getPublicIpAddress(),
                 exportName,
                 volumePath,
                 transferId,
