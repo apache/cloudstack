@@ -45,7 +45,7 @@ public class HypervInvestigator extends AdapterBase implements Investigator {
         if (status == null) {
             throw new UnknownVM();
         }
-        return status == Status.Up ? true : null;
+        return status == Status.Up;
     }
 
     @Override

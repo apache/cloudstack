@@ -105,7 +105,7 @@ public class NsxNetworkCommand extends NsxCommand {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         NsxNetworkCommand that = (NsxNetworkCommand) o;
-        return networkResourceId == that.networkResourceId && vmId == that.vmId &&
+        return networkResourceId.equals(that.networkResourceId) && vmId.equals(that.vmId) &&
                 Objects.equals(networkResourceName, that.networkResourceName) && Objects.equals(publicIp, that.publicIp)
                 && Objects.equals(vmIp, that.vmIp);
     }

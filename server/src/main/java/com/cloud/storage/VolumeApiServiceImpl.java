@@ -3689,7 +3689,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             result = CollectionUtils.isSubCollection(Arrays.asList(newDiskOfferingTagsAsStringArray), storageTagsList);
         }
-        logger.debug(String.format("Destination storage pool [{}] accepts tags [{}]? {}", destPool.getUuid(), diskOfferingTags, result));
+        logger.debug("Destination storage pool [{}] accepts tags [{}]? {}", destPool.getUuid(), diskOfferingTags, result);
         return result;
     }
 

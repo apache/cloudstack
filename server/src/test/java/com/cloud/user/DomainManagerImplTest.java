@@ -319,11 +319,10 @@ public class DomainManagerImplTest {
 
     @Test
     public void validateNetworkDomainTestNullNetworkDomainDoesNotCallVerifyDomainName() {
-        try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
-            Mockito.when(NetUtils.verifyDomainName(Mockito.anyString())).thenReturn(true);
+        try (MockedStatic<NetUtils> mockedNetUtils = Mockito.mockStatic(NetUtils.class)) {
+            mockedNetUtils.when(() -> NetUtils.verifyDomainName(Mockito.anyString())).thenReturn(true);
             domainManager.validateNetworkDomain(null);
-            Mockito.verify(NetUtils.class, Mockito.never());
-            NetUtils.verifyDomainName(Mockito.anyString());
+            mockedNetUtils.verify(() -> NetUtils.verifyDomainName(Mockito.anyString()), Mockito.never());
         }
     }
 
