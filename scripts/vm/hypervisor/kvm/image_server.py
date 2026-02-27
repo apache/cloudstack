@@ -439,94 +439,6 @@ class _NbdConn:
             return
         raise RuntimeError("libnbd binding has no flush/fsync method")
 
-    def get_zero_extents(self) -> List[Dict[str, Any]]:
-        """
-        Query NBD block status (base:allocation) and return extents that are
-        hole or zero in imageio format: [{"start": ..., "length": ..., "zero": true}, ...].
-        Returns [] if block status is not supported; fallback to one full-image
-        zero extent when we have size but block status fails.
-        """
-        size = self.size()
-        if size == 0:
-            return []
-
-        if not hasattr(self._nbd, "block_status") and not hasattr(
-            self._nbd, "block_status_64"
-        ):
-            logging.error("get_zero_extents: no block_status/block_status_64")
-            return self._fallback_zero_extent(size)
-        if hasattr(self._nbd, "can_meta_context") and not self._nbd.can_meta_context(
-            "base:allocation"
-        ):
-            logging.error(
-                "get_zero_extents: server did not negotiate base:allocation"
-            )
-            return self._fallback_zero_extent(size)
-
-        zero_extents: List[Dict[str, Any]] = []
-        chunk = min(size, 64 * 1024 * 1024)  # 64 MiB
-        offset = 0
-
-        def extent_cb(*args: Any, **kwargs: Any) -> int:
-            # Binding typically passes (metacontext, offset, entries[, nr_entries][, error]).
-            metacontext = None
-            off = 0
-            entries = None
-            if len(args) >= 3:
-                metacontext, off, entries = args[0], args[1], args[2]
-            else:
-                for a in args:
-                    if isinstance(a, str):
-                        metacontext = a
-                    elif isinstance(a, int):
-                        off = a
-                    elif a is not None and hasattr(a, "__iter__"):
-                        entries = a
-            if metacontext != "base:allocation" or entries is None:
-                return 0
-            current = off
-            try:
-                flat = list(entries)
-                for i in range(0, len(flat), 2):
-                    if i + 1 >= len(flat):
-                        break
-                    length = int(flat[i])
-                    flags = int(flat[i + 1])
-                    if (flags & (_NBD_STATE_HOLE | _NBD_STATE_ZERO)) != 0:
-                        zero_extents.append(
-                            {"start": current, "length": length, "zero": True}
-                        )
-                    current += length
-            except (TypeError, ValueError, IndexError):
-                pass
-            return 0
-
-        block_status_fn = getattr(
-            self._nbd, "block_status_64", getattr(self._nbd, "block_status", None)
-        )
-        if block_status_fn is None:
-            return self._fallback_zero_extent(size)
-
-        try:
-            while offset < size:
-                count = min(chunk, size - offset)
-                # Try (count, offset, callback) then (offset, count, callback)
-                try:
-                    block_status_fn(count, offset, extent_cb)
-                except TypeError:
-                    block_status_fn(offset, count, extent_cb)
-                offset += count
-        except Exception as e:
-            logging.error("get_zero_extents block_status failed: %r", e)
-            return self._fallback_zero_extent(size)
-        if not zero_extents:
-            return self._fallback_zero_extent(size)
-        return zero_extents
-
-    def _fallback_zero_extent(self, size: int) -> List[Dict[str, Any]]:
-        """Return one zero extent covering the whole image when block status unavailable."""
-        return [{"start": 0, "length": size, "zero": True}]
-
     def get_allocation_extents(self) -> List[Dict[str, Any]]:
         """
         Query base:allocation and return all extents (allocated and hole/zero)
@@ -694,6 +606,7 @@ class _NbdConn:
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "imageio-poc/0.1"
+    server_protocol = "HTTP/1.1"
 
     # Keep BaseHTTPRequestHandler from printing noisy default logs
     def log_message(self, fmt: str, *args: Any) -> None:
@@ -1093,13 +1006,7 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_get_image(
             self, image_id: str, cfg: Dict[str, Any], range_header: Optional[str]
     ) -> None:
-        lock = _get_image_lock(image_id)
-        if not lock.acquire(blocking=False):
-            self._send_error_json(HTTPStatus.CONFLICT, "image busy")
-            return
-
         if not _READ_SEM.acquire(blocking=False):
-            lock.release()
             self._send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "too many parallel reads")
             return
 
@@ -1213,7 +1120,6 @@ class Handler(BaseHTTPRequestHandler):
                 pass
         finally:
             _READ_SEM.release()
-            lock.release()
             dur = _now_s() - start
             logging.info(
                 "GET end image_id=%s bytes=%d duration_s=%.3f", image_id, bytes_sent, dur
@@ -1340,7 +1246,7 @@ class Handler(BaseHTTPRequestHandler):
                     cfg.get("export"),
                     need_block_status=True,
                 ) as conn:
-                    extents = conn.get_zero_extents()
+                    extents = conn.get_allocation_extents()
             self._send_json(HTTPStatus.OK, extents)
         except Exception as e:
             logging.error("EXTENTS error image_id=%s err=%r", image_id, e)
