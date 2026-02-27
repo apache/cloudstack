@@ -275,10 +275,10 @@ public class ActionEventUtils {
         String entityUuid = null;
         Long entityId = null;
         Object param = context.getContextParameter(entityClass);
-        if(param != null){
+        if (param != null) {
             try {
                 entityUuid = getEntityUuid(entityClass, param);
-            } catch (Exception e){
+            } catch (Exception e) {
                 LOGGER.debug("Caught exception while finding entityUUID, moving on");
             }
         }
