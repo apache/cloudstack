@@ -160,9 +160,8 @@ public class VmwareHelper {
         }
     }
 
-    private static void registerActiveVmTask(long cmdSequence, String vmName, String commandType,
+    private static void registerActiveVmTask(String taskName, long cmdSequence, String vmName, String commandType,
                               ManagedObjectReference taskMor, VmwareContext context) {
-
         if (StringUtils.isBlank(vmName)) {
             LOGGER.debug("No active VM to registered VM task for sequence={}, command={}, task={}", cmdSequence, commandType, taskMor);
             return;
@@ -170,11 +169,10 @@ public class VmwareHelper {
 
         ActiveVmTaskInfo taskInfo = new ActiveVmTaskInfo(cmdSequence, vmName, commandType, taskMor, context);
         activeVmTasks.put(cmdSequence, taskInfo);
-
         vmNameToTaskSequences.computeIfAbsent(vmName, k -> ConcurrentHashMap.newKeySet()).add(cmdSequence);
 
-        LOGGER.debug("Registered active VM task: sequence={}, vm={}, command={}, task={}",
-                cmdSequence, vmName, commandType, taskMor.getValue());
+        LOGGER.debug("Registered active VM task: {} - sequence={}, vm={}, command={}, task={}",
+                taskName, cmdSequence, vmName, commandType, taskMor.getValue());
     }
 
     private static void unregisterActiveVmTask(long cmdSequence) {
@@ -209,13 +207,17 @@ public class VmwareHelper {
     }
 
     public static boolean isActiveVmTaskCancellable(long cmdSequence) {
+        LOGGER.info("Check if active vm task for sequence: {} is cancellable or not", cmdSequence);
         ActiveVmTaskInfo taskInfo = activeVmTasks.get(cmdSequence);
         if (taskInfo == null) {
+            LOGGER.debug("No active vm task registered for sequence: {}", cmdSequence);
             return true;
         }
 
         try {
-            return taskInfo.context.getVimClient().isTaskCancellable(taskInfo.taskMor);
+            boolean cancellable = taskInfo.context.getVimClient().isTaskCancellable(taskInfo.taskMor);
+            LOGGER.debug("Active vm task registered for sequence: {} is ", cmdSequence, cancellable ? "cancellable" : "not cancellable");
+            return cancellable;
         } catch (Exception e) {
             LOGGER.warn("Failed to verify vCenter task cancellability for sequence={}, vm={}, error={}",
                     cmdSequence, taskInfo.vmName, e.getMessage(), e);
@@ -224,21 +226,23 @@ public class VmwareHelper {
     }
 
     public static boolean cancelActiveVmTask(long cmdSequence) {
+        LOGGER.info("Cancel active vm tasks for sequence: {}", cmdSequence);
         ActiveVmTaskInfo taskInfo = activeVmTasks.get(cmdSequence);
         if (taskInfo == null) {
+            LOGGER.debug("No active vm tasks for sequence: {}", cmdSequence);
             return true;
         }
 
         try {
             if (!taskInfo.context.getVimClient().isTaskCancellable(taskInfo.taskMor)) {
-                LOGGER.info("Active vCenter VM task is not cancellable: sequence={}, vm={}, command={}",
+                LOGGER.debug("Active vCenter VM task is not cancellable: sequence={}, vm={}, command={}",
                         cmdSequence, taskInfo.vmName, taskInfo.commandType);
                 return false;
             }
 
             Pair<Boolean, String> cancellationResult = taskInfo.context.getVimClient().cancelTask(taskInfo.taskMor);
             if (!cancellationResult.first()) {
-                LOGGER.info("Unable to cancel vCenter VM task: sequence={}, vm={}, reason={}",
+                LOGGER.debug("Unable to cancel vCenter VM task: sequence={}, vm={}, reason={}",
                         cmdSequence, taskInfo.vmName, cancellationResult.second());
                 return false;
             }
@@ -287,8 +291,8 @@ public class VmwareHelper {
             this.commandType = commandType;
         }
 
-        public void registerTask(ManagedObjectReference taskMor, VmwareContext context) {
-            registerActiveVmTask(cmdSequence, vmName, commandType, taskMor, context);
+        public void registerTask(String taskName, ManagedObjectReference taskMor, VmwareContext context) {
+            registerActiveVmTask(taskName, cmdSequence, vmName, commandType, taskMor, context);
         }
 
         public void unregisterTask() {

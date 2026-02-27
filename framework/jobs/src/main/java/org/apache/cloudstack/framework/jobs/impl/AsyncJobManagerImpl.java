@@ -920,9 +920,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         return;
                     }
 
-                    List<SyncQueueItemVO> l = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
-                    if (l != null && l.size() > 0) {
-                        for (SyncQueueItemVO item : l) {
+                    List<SyncQueueItemVO> items = _queueMgr.dequeueFromAny(getMsid(), MAX_ONETIME_SCHEDULE_SIZE);
+                    if (items != null && items.size() > 0) {
+                        for (SyncQueueItemVO item : items) {
                             boolean isPurged = false;
                             if (item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
                                 AsyncJobVO job = _jobDao.findById(item.getContentId());
@@ -1011,7 +1011,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                                 if (item.getContentType().equalsIgnoreCase(SyncQueueItem.AsyncJobContentType)) {
                                     logger.info("Remove Job-{} from Queue-{} since it has been blocked for too long", item.getContentId(), item.getId());
                                     completeAsyncJob(item.getContentId(), Status.CANCELLED, 0, "Job is cancelled as it has been blocking others for too long");
-
                                     _jobMonitor.unregisterByJobId(item.getContentId());
                                 }
 
@@ -1031,7 +1030,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     for (AsyncJobVO job : unfinishedJobs) {
                         try {
                             logger.info("Expunging unfinished job-" + job.getId());
-
                             _jobMonitor.unregisterByJobId(job.getId());
                             expungeAsyncJob(job);
                         } catch (Throwable e) {
@@ -1044,7 +1042,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     for (AsyncJobVO job : completedJobs) {
                         try {
                             logger.info("Expunging completed job-" + job.getId());
-
                             expungeAsyncJob(job);
                         } catch (Throwable e) {
                             logger.error("Unexpected exception when trying to expunge job-" + job.getId(), e);
@@ -1471,21 +1468,23 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return errMessage;
         }
 
-        try {
-            Class<?> cmdClass = Class.forName(job.getCmd());
-            APICommand apiCommand = cmdClass.getAnnotation(APICommand.class);
-            if (apiCommand == null || !apiCommand.cancellable()) {
-                errMessage = "Cannot cancel, job " + job.getUuid() + " is not cancellable.";
-                logger.debug(errMessage);
+        if (isActiveJob(jobId)) {
+            try {
+                Class<?> cmdClass = Class.forName(job.getCmd());
+                APICommand apiCommand = cmdClass.getAnnotation(APICommand.class);
+                if (apiCommand == null || !apiCommand.cancellable()) {
+                    errMessage = "Cannot cancel, job " + job.getUuid() + " is not cancellable.";
+                    logger.debug(errMessage);
+                    return errMessage;
+                }
+            } catch (ClassNotFoundException e) {
+                errMessage = "Command " + job.getCmd() + " of jobid " + job.getUuid() + " not found.";
+                logger.error(errMessage, e);
                 return errMessage;
             }
-        } catch (ClassNotFoundException e) {
-            errMessage = "Command " + job.getCmd() + " of jobid " + job.getUuid() + " not found.";
-            logger.error(errMessage, e);
-            return errMessage;
         }
 
-        if (job.getStatus() != Status.IN_PROGRESS) {
+        if (job.getStatus() != null && job.getStatus().done()) {
             errMessage = "Cannot cancel, job-" + jobId + " is not running. Current job status is " + job.getStatus() + ".";
             logger.debug(errMessage);
             _queueMgr.purgeAsyncJobQueueItemId(jobId);
@@ -1497,7 +1496,6 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         try {
             completeAsyncJob(jobId, JobInfo.Status.CANCELLED, 0, "Job is cancelled due to " + reason, false);
             _jobMonitor.unregisterByJobId(jobId);
-            _queueMgr.purgeAsyncJobQueueItemId(jobId);
             return "";
         } catch (Throwable t) {
             errMessage = "Unexpected exception when cancelling async job with id: " + jobId;
@@ -1505,6 +1503,17 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         return errMessage;
+    }
+
+    private boolean isActiveJob(long jobId) {
+        // check if the job (and it's related job) is active or not.
+        // if not, it means the job is not running, and we can safely purge it from the queue.
+        final AsyncJobVO relatedJob = _jobDao.getRelatedJob(String.valueOf(jobId));
+        if (relatedJob != null) {
+            return _jobMonitor.isActiveJob(relatedJob.getId());
+        }
+
+        return _jobMonitor.isActiveJob(jobId);
     }
 
     @Override

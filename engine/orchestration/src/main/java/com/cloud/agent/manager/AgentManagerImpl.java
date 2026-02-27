@@ -43,6 +43,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.OperationCancelledException;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
@@ -63,7 +64,6 @@ import org.apache.cloudstack.maintenance.ManagementServerMaintenanceManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
-import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
@@ -165,7 +165,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected List<Long> _loadingAgents = new ArrayList<>();
     protected Map<String, Integer> _commandTimeouts = new HashMap<>();
     private int _monitorId = 0;
-    protected Map<Long, Pair<Long, Long>> _sequenceMap = new HashMap<>();
+    protected Map<Long, Pair<Long, Long>> _jobToHostIdAndReqSequenceMap = new HashMap<>();
 
     @Inject
     protected CAManager caService;
@@ -693,7 +693,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             final Request req = new Request(hostId, agent.getName(), _nodeId, cmds, commands.stopOnError(), true);
             req.setSequence(agent.getNextSequence());
             if (jobId != null) {
-                _sequenceMap.put(jobId, new Pair<>(hostId, req.getSequence()));
+                _jobToHostIdAndReqSequenceMap.put(jobId, new Pair<>(hostId, req.getSequence()));
             }
 
             reconcileCommandService.persistReconcileCommands(hostId, req.getSequence(), cmds);
@@ -707,7 +707,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             return answers;
         } finally {
             if (jobId != null) {
-                _sequenceMap.remove(jobId);
+                _jobToHostIdAndReqSequenceMap.remove(jobId);
             }
         }
     }
@@ -2104,26 +2104,29 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected class CancelledJobsCheckTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
+//            logger.info("Started cancelled jobs check task.");
             final List<AsyncJobVO> jobs = _asyncJobDao.getCancelledJobs();
             for (final AsyncJobVO job : jobs) {
-                Pair<Long, Long> sequence = _sequenceMap.get(job.getId());
-                if (sequence != null) {
+                logger.info("Job-{} with instance type: {}, id: {} cancelled.", job.getId(), job.getInstanceType(), job.getInstanceId());
+                Pair<Long, Long> hostAndSequence = _jobToHostIdAndReqSequenceMap.get(job.getId());
+                if (hostAndSequence != null) {
                     try {
-                        final AgentAttache agent = getAttache(sequence.first());
-                        if (agent.isExecutionCancellable(sequence.second())) {
-                            agent.cancel(sequence.second());
-                            if (job.getStatus() != JobInfo.Status.CANCELLED) {
-                                job.setStatus(JobInfo.Status.CANCELLED);
-                                _asyncJobDao.update(job.getId(), job);
-                            }
+                        final AgentAttache agent = getAttache(hostAndSequence.first());
+                        if (agent.isExecutionCancellable(hostAndSequence.second())) {
+                            logger.debug("Job-{} cancellation requested, sending cancel command to agent {} for sequence {}", job.getId(), hostAndSequence.first(), hostAndSequence.second());
+                            agent.cancel(hostAndSequence.second());
                         } else {
                             logger.info("Job {} cancellation requested but sequence {} on host {} is not cancellable, allowing execution to continue.",
-                                    job.getId(), sequence.second(), sequence.first());
+                                    job.getId(), hostAndSequence.second(), hostAndSequence.first());
                         }
                     } catch (AgentUnavailableException e) {
-                        logger.debug("Agent {} not found", sequence.first());
+                        logger.debug("Agent {} not found", hostAndSequence.first());
                     }
+                } else {
+                    logger.debug("Job-{} host and sequence not found", job.getId());
                 }
+                job.setRemoved(DateUtil.currentGMTTime());
+                _asyncJobDao.update(job.getId(), job);
             }
         }
     }
