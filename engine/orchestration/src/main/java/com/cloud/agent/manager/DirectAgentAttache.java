@@ -51,11 +51,11 @@ public class DirectAgentAttache extends AgentAttache {
     protected final ConfigKey<Integer> _HostPingRetryTimer = new ConfigKey<Integer>("Advanced", Integer.class, "host.ping.retry.timer", "5",
             "Interval to wait before retrying a host ping while waiting for check results", true);
     ServerResource _resource;
-    List<ScheduledFuture<?>> _futures = new ArrayList<ScheduledFuture<?>>();
+    List<ScheduledFuture<?>> _futures = new ArrayList<>();
     private final Map<Long, Future<?>> _taskFutures = new ConcurrentHashMap<>();
     private final Map<Long, Request> _taskRequests = new ConcurrentHashMap<>();
     long _seq = 0;
-    LinkedList<Task> tasks = new LinkedList<Task>();
+    LinkedList<Task> tasks = new LinkedList<>();
     AtomicInteger _outstandingTaskCount;
     AtomicInteger _outstandingCronTaskCount;
 
@@ -87,7 +87,7 @@ public class DirectAgentAttache extends AgentAttache {
         _taskRequests.clear();
 
         for (Future<?> future : _taskFutures.values()) {
-            boolean cancelled = future.cancel(true);
+            boolean cancelled = future.cancel(false);
             logger.debug("Running task {} for [id: {}, uuid: {}, name: {}]", cancelled ? "cancelled" : "not cancelled", _id, _uuid, _name);
         }
         _taskFutures.clear();
@@ -126,6 +126,8 @@ public class DirectAgentAttache extends AgentAttache {
         Request request = _taskRequests.get(seq);
         if (request != null) {
             request.cancel();
+            _taskRequests.remove(seq);
+            logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Removed task request.");
         }
 
         final Iterator<Task> iterator = tasks.iterator();
@@ -134,7 +136,6 @@ public class DirectAgentAttache extends AgentAttache {
             if (task._req.getSequence() == seq) {
                 task._req.cancel();
                 iterator.remove();
-                _taskRequests.remove(seq);
                 logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancelled queued task.");
                 super.cancel(seq);
                 return;
@@ -150,6 +151,7 @@ public class DirectAgentAttache extends AgentAttache {
             }
 
             if (resource != null) {
+                logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancel request sequence.");
                 resource.cancelRequestSequence(seq);
             }
 
@@ -158,7 +160,6 @@ public class DirectAgentAttache extends AgentAttache {
             _taskFutures.remove(seq);
         }
 
-        _taskRequests.remove(seq);
         super.cancel(seq);
     }
 
@@ -386,25 +387,15 @@ public class DirectAgentAttache extends AgentAttache {
                 Command[] cmds = _req.getCommands();
                 if (Thread.currentThread().isInterrupted() || _req.isCancelled()) {
                     throw new InterruptedException("Task execution cancelled");
-//                    Answer[] answers = new Answer[cmds.length];
-//                    for (int i = 0; i < cmds.length; i++) {
-//                        answers[i] = new Answer(cmds[i], false, "Task cancelled");
-//                    }
-//                    Response resp = new Response(_req, answers);
-//                    processAnswers(seq, resp);
-
-//                    handleCancellation(seq, false, "Request cancelled before execution");
-//                    return;
                 }
 
                 ServerResource resource = _resource;
                 boolean stopOnError = _req.stopOnError();
 
                 logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Executing request");
-                ArrayList<Answer> answers = new ArrayList<Answer>(cmds.length);
+                ArrayList<Answer> answers = new ArrayList<>(cmds.length);
                 for (int i = 0; i < cmds.length; i++) {
                     if (Thread.currentThread().isInterrupted() || _req.isCancelled()) {
-//                        throw new InterruptedException("Task execution cancelled");
                         for (int j = i; j < cmds.length; j++) {
                             answers.add(new Answer(cmds[j], false, "Command cancelled"));
                         }
@@ -437,24 +428,6 @@ public class DirectAgentAttache extends AgentAttache {
                         } else {
                             answer = new Answer(cmds[i], false, "Agent is disconnected");
                         }
-//                    } catch (InterruptedException e) {
-//                        logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Command interrupted: " + cmds[i].getClass().getSimpleName());
-//                        Thread.currentThread().interrupt();
-
-//                        boolean cancelled = resource.cancelActiveVmTask(cmds[i]); //cmdSequence
-//                        if (cancelled) {
-//                            logger.info("Successfully cancelled task: " + cmds[i]);
-//                        }
-//                        int cancelled = resource.cancelActiveVmTasks(vmName);
-//                        logger.info("Cancelled " + cancelled + " tasks for VM: " + vmName);
-
-//                        answer = new Answer(cmds[i], false, "Command execution cancelled: " + e.getMessage());
-//                        answers.add(answer);
-//
-//                        for (int j = i + 1; j < cmds.length; j++) {
-//                            answers.add(new Answer(cmds[j], false, "Command cancelled - previous command was interrupted"));
-//                        }
-//                        break;
                     } catch (Throwable t) {
                         // Catch Throwable as all exceptions will otherwise be eaten by the executor framework
                         logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Throwable caught while executing command", t);
@@ -477,7 +450,7 @@ public class DirectAgentAttache extends AgentAttache {
                 logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Task interrupted");
                 Thread.currentThread().interrupt();
                 // Send cancellation response
-                handleCancellation(seq, true, "Task interrupted: " + e.getMessage());
+                handleCancellation(seq, "Task interrupted: " + e.getMessage());
             } catch (Throwable t) {
                 // This is pretty serious as processAnswers might not be called and the calling process is stuck waiting for the full timeout
                 logger.error(LOG_SEQ_FORMATTED_STRING, seq, "Throwable caught in runInContext, this will cause the management to become unpredictable", t);
@@ -489,7 +462,7 @@ public class DirectAgentAttache extends AgentAttache {
             }
         }
 
-        private void handleCancellation(long seq, boolean isActive, String reason) {
+        private void handleCancellation(long seq, String reason) {
             try {
                 Command[] cmds = _req.getCommands();
                 ArrayList<Answer> answers = new ArrayList<>(cmds.length);
