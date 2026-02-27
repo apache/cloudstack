@@ -228,7 +228,7 @@ public class VirtualMachineMO extends BaseMO {
         ManagedObjectReference morTask = _context.getService().powerOnVMTask(_mor, null);
         VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
         if (taskCtx != null) {
-            taskCtx.registerTask(morTask, _context);
+            taskCtx.registerTask("powerOn", morTask, _context);
         }
 
         // Monitor VM questions
@@ -367,7 +367,7 @@ public class VirtualMachineMO extends BaseMO {
         ManagedObjectReference morTask = _context.getService().powerOffVMTask(_mor);
         VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
         if (taskCtx != null) {
-            taskCtx.registerTask(morTask, _context);
+            taskCtx.registerTask("powerOff", morTask, _context);
         }
 
         try {
@@ -449,7 +449,7 @@ public class VirtualMachineMO extends BaseMO {
         ManagedObjectReference morTask = _context.getService().resetVMTask(_mor);
         VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
         if (taskCtx != null) {
-            taskCtx.registerTask(morTask, _context);
+            taskCtx.registerTask("reset", morTask, _context);
         }
 
         try {
@@ -502,7 +502,7 @@ public class VirtualMachineMO extends BaseMO {
         ManagedObjectReference morTask = _context.getService().migrateVMTask(_mor, morRp, morTargetHost, VirtualMachineMovePriority.DEFAULT_PRIORITY, null);
         VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
         if (taskCtx != null) {
-            taskCtx.registerTask(morTask, _context);
+            taskCtx.registerTask("migrateVM", morTask, _context);
         }
 
         try {
@@ -607,7 +607,7 @@ public class VirtualMachineMO extends BaseMO {
         boolean result = _context.getVimClient().waitForTask(morTask);
         VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
         if (taskCtx != null) {
-            taskCtx.registerTask(morTask, _context);
+            taskCtx.registerTask("createSnapshot", morTask, _context);
         }
 
         try {
@@ -650,11 +650,11 @@ public class VirtualMachineMO extends BaseMO {
             return null;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.warn("powerOn interrupted for VM: " + getVmName() + ", cancelling task");
+            logger.warn("createSnapshot interrupted for VM: " + getVmName() + ", cancelling task");
             try {
                 _context.getVimClient().cancelTask(morTask);
             } catch (Exception ex) {
-                logger.warn("Failed to cancel powerOn task: " + ex.getMessage());
+                logger.warn("Failed to cancel createSnapshot task: " + ex.getMessage());
             }
             throw e;
         } finally {
@@ -674,7 +674,7 @@ public class VirtualMachineMO extends BaseMO {
         ManagedObjectReference morTask = _context.getService().removeSnapshotTask(morSnapshot, removeChildren, true);
         VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
         if (taskCtx != null) {
-            taskCtx.registerTask(morTask, _context);
+            taskCtx.registerTask("removeSnapshot", morTask, _context);
         }
 
         try {
@@ -712,7 +712,7 @@ public class VirtualMachineMO extends BaseMO {
         ManagedObjectReference morTask = _context.getService().revertToSnapshotTask(morSnapshot, _mor, null);
         VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
         if (taskCtx != null) {
-            taskCtx.registerTask(morTask, _context);
+            taskCtx.registerTask("revertToSnapshot", morTask, _context);
         }
 
         try {
@@ -1623,18 +1623,33 @@ public class VirtualMachineMO extends BaseMO {
             ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
             VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
             if (taskCtx != null) {
-                taskCtx.registerTask(morTask, _context);
+                taskCtx.registerTask("reconfigVM/attachDisk", morTask, _context);
             }
 
-            boolean result = _context.getVimClient().waitForTask(morTask);
+            try {
+                boolean result = _context.getVimClient().waitForTask(morTask);
 
-            if (!result) {
-                if (logger.isTraceEnabled())
-                    logger.trace("vCenter API trace - attachDisk() done(failed)");
-                throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+                if (!result) {
+                    if (logger.isTraceEnabled())
+                        logger.trace("vCenter API trace - attachDisk() done(failed)");
+                    throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+                }
+
+                _context.waitForTaskProgressDone(morTask);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warn("reconfigVM/attachDisk interrupted for VM: " + getVmName() + ", cancelling task");
+                try {
+                    _context.getVimClient().cancelTask(morTask);
+                } catch (Exception ex) {
+                    logger.warn("Failed to cancel reconfigVM/attachDisk task: " + ex.getMessage());
+                }
+                throw e;
+            } finally {
+                if (taskCtx != null) {
+                    taskCtx.unregisterTask();
+                }
             }
-
-            _context.waitForTaskProgressDone(morTask);
         }
 
         if (logger.isTraceEnabled())
@@ -1690,12 +1705,32 @@ public class VirtualMachineMO extends BaseMO {
         reConfigSpec.getDeviceChange().add(deviceConfigSpec);
 
         ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, reConfigSpec);
-        boolean result = _context.getVimClient().waitForTask(morTask);
-
-        if (!result) {
-            throw new CloudRuntimeException(String.format("Failed to detach disk from instance [%s] due to [%s].", getVmName(), TaskMO.getTaskFailureInfo(_context, morTask)));
+        VmwareHelper.TaskContext taskCtx = VmwareHelper.getCurrentTaskContext();
+        if (taskCtx != null) {
+            taskCtx.registerTask("reconfigVM/detachDisk", morTask, _context);
         }
-        _context.waitForTaskProgressDone(morTask);
+
+        try {
+            boolean result = _context.getVimClient().waitForTask(morTask);
+
+            if (!result) {
+                throw new CloudRuntimeException(String.format("Failed to detach disk from instance [%s] due to [%s].", getVmName(), TaskMO.getTaskFailureInfo(_context, morTask)));
+            }
+            _context.waitForTaskProgressDone(morTask);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("reconfigVM/detachDisk interrupted for VM: " + getVmName() + ", cancelling task");
+            try {
+                _context.getVimClient().cancelTask(morTask);
+            } catch (Exception ex) {
+                logger.warn("Failed to cancel reconfigVM/detachDisk task: " + ex.getMessage());
+            }
+            throw e;
+        } finally {
+            if (taskCtx != null) {
+                taskCtx.unregisterTask();
+            }
+        }
 
         // VMware does not update snapshot references to the detached disk, we have to work around it
         SnapshotDescriptor snapshotDescriptor = null;
