@@ -415,25 +415,26 @@ public abstract class BaseCmd {
      * display flag is used to control the display of the resource only to the end user. It doesn't affect Root Admin.
      * @return display flag
      */
-    public boolean isDisplay(){
+    public boolean isDisplay() {
         CallContext context = CallContext.current();
         Map<Object, Object> contextMap = context.getContextParameters();
         boolean isDisplay = true;
 
         // Iterate over all the first class entities in context and check their display property.
-        for(Map.Entry<Object, Object> entry : contextMap.entrySet()){
-            try{
+        for (Map.Entry<Object, Object> entry : contextMap.entrySet()) {
+            try {
                 Object key = entry.getKey();
                 Class clz = Class.forName((String)key);
-                if(Displayable.class.isAssignableFrom(clz)){
+                if (Displayable.class.isAssignableFrom(clz)) {
                     final Object objVO = getEntityVO(clz, entry.getValue());
                     isDisplay = ((Displayable) objVO).isDisplay();
                 }
 
-                // If the flag is false break immediately
-                if(!isDisplay)
+                // If the flag is false, break immediately
+                if (!isDisplay) {
                     break;
-            } catch (Exception e){
+                }
+            } catch (Exception e) {
                 logger.trace("Caught exception while checking first class entities for display property, continuing on", e);
             }
         }
@@ -443,19 +444,19 @@ public abstract class BaseCmd {
 
     }
 
-    private Object getEntityVO(Class entityType, Object entityId){
+    private Object getEntityVO(Class entityType, Object entityId) {
 
         // entityId can be internal db id or UUID so accordingly call findbyId or findByUUID
 
-        if (entityId instanceof Long){
+        if (entityId instanceof Long) {
             // Its internal db id - use findById
             return _entityMgr.findById(entityType, (Long)entityId);
-        } else if(entityId instanceof String){
-            try{
+        } else if (entityId instanceof String) {
+            try {
                 // In case its an async job the internal db id would be a string because of json deserialization
                 Long internalId = Long.valueOf((String) entityId);
                 return _entityMgr.findById(entityType, internalId);
-            } catch (NumberFormatException e){
+            } catch (NumberFormatException e) {
                // It is uuid - use findByUuid`
                return _entityMgr.findByUuid(entityType, (String)entityId);
             }
