@@ -823,11 +823,17 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     cpuCoreCap.setUsedCapacity(usedCpuCore);
                 }
             }
-            try {
-                _capacityDao.update(cpuCoreCap.getId(), cpuCoreCap);
-            } catch (Exception e) {
-                logger.error("Caught exception while updating cpucore capacity for the host {}", host, e);
-            }
+            final CapacityVO cpuCoreCapFinal = cpuCoreCap;
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    try {
+                        _capacityDao.update(cpuCoreCapFinal.getId(), cpuCoreCapFinal);
+                    } catch (Exception e) {
+                        logger.error("Caught exception while updating cpucore capacity for the host {}", host, e);
+                    }
+                }
+            });
         } else {
             final long usedCpuCoreFinal = usedCpuCore;
             final long reservedCpuCoreFinal = reservedCpuCore;
@@ -903,12 +909,19 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 }
             }
 
-            try {
-                _capacityDao.update(cpuCap.getId(), cpuCap);
-                _capacityDao.update(memCap.getId(), memCap);
-            } catch (Exception e) {
-                logger.error("Caught exception while updating cpu/memory capacity for the host {}", host, e);
-            }
+            final CapacityVO cpuCapFinal = cpuCap;
+            final CapacityVO memCapFinal = memCap;
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    try {
+                        _capacityDao.update(cpuCapFinal.getId(), cpuCapFinal);
+                        _capacityDao.update(memCapFinal.getId(), memCapFinal);
+                    } catch (Exception e) {
+                        logger.error("Caught exception while updating cpu/memory capacity for the host {}", host, e);
+                    }
+                }
+            });
         } else {
             final long usedMemoryFinal = usedMemory;
             final long reservedMemoryFinal = reservedMemory;
