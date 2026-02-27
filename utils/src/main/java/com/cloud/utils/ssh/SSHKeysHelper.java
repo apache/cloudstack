@@ -20,6 +20,7 @@
 package com.cloud.utils.ssh;
 
 import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.KeyPair;
@@ -30,6 +31,8 @@ import java.security.interfaces.RSAPublicKey;
 
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 
 public class SSHKeysHelper {
 
@@ -139,7 +142,12 @@ public class SSHKeysHelper {
 
     public String getPrivateKey() {
         try {
-            return CertUtils.privateKeyToPem(keyPair.getPrivate());
+            final PemObject pemObject = new PemObject("RSA PRIVATE KEY", keyPair.getPrivate().getEncoded());
+            final StringWriter sw = new StringWriter();
+            try (final PemWriter pw = new PemWriter(sw)) {
+                pw.writeObject(pemObject);
+            }
+            return sw.toString();
         } catch (Exception e) {
             e.printStackTrace();
         }
