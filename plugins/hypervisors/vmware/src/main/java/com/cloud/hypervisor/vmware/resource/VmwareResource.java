@@ -687,7 +687,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 }
             }
         } catch (InterruptedException e) {
-            logger.warn("Command execution interrupted: " + cmd.getClass().getSimpleName());
+            logger.warn("Command execution interrupted: {}", cmd.getClass().getSimpleName());
             Thread.currentThread().interrupt(); // Restore interrupt status
             return new Answer(cmd, false, "Command execution was cancelled: " + e.getMessage());
         } finally {
@@ -709,11 +709,13 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public boolean isRequestSequenceCancellable(long sequence) {
+        logger.info("Check if request sequence: {} is cancellable or not", sequence);
         return VmwareHelper.isActiveVmTaskCancellable(sequence);
     }
 
     @Override
     public boolean cancelRequestSequence(long sequence) {
+        logger.info("Cancel request sequence: {}", sequence);
         return VmwareHelper.cancelActiveVmTask(sequence);
     }
 

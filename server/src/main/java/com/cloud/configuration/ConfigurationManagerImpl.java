@@ -123,6 +123,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.jobs.AsyncJobService;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.PortableIp;
@@ -633,6 +634,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(VMLeaseManager.InstanceLeaseExpiryEventSchedulerInterval.key());
         configValuesForValidation.add(VMLeaseManager.InstanceLeaseExpiryEventDaysBefore.key());
         configValuesForValidation.add(AutoScaleManager.AutoScaleErroredInstanceThreshold.key());
+        configValuesForValidation.add(AsyncJobService.CancelledJobInterval.key());
     }
 
     protected void weightBasedParametersForValidation() {

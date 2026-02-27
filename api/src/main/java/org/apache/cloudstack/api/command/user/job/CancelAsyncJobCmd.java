@@ -90,7 +90,7 @@ public class CancelAsyncJobCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        String status = asyncJobService.cancelAsyncJob(id, "Cancel requested by {}" + CallContext.current().getCallingUser().toString());
+        String status = asyncJobService.cancelAsyncJob(id, "Cancel requested by " + CallContext.current().getCallingUser().toString());
         if (StringUtils.isBlank(status)) {
             AsyncJobResponse response = _responseGenerator.cancelJobResponse(this);
             response.setResponseName(getCommandName());
