@@ -20,6 +20,7 @@ import store from '@/store'
 import tungsten from '@/assets/icons/tungsten.svg?inline'
 import { isAdmin } from '@/role'
 import { isZoneCreated } from '@/utils/zone'
+import { vueProps } from '@/vue-app'
 
 export default {
   name: 'network',
@@ -171,7 +172,7 @@ export default {
             if (isGroupAction || record.vpcid == null) {
               fields.push('cleanup')
             }
-            if (!record.redundantrouter) {
+            if (!record.redundantrouter && vueProps.$config.allowMakingRouterRedundant) {
               fields.push('makeredundant')
             }
             fields.push('livepatch')

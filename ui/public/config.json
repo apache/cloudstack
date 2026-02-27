@@ -95,6 +95,7 @@
     ]
   },
   "plugins": [],
+  "allowMakingRouterRedundant": false,
   "apidocs": true,
   "basicZoneEnabled": true,
   "multipleServer": false,
