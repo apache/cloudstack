@@ -22,7 +22,7 @@ export default {
   name: 'kms',
   title: 'label.kms',
   icon: 'hdd-outlined',
-  show: (record, store) => {
+  show: () => {
     return ['Admin'].includes(store.getters.userInfo.roletype) || store.getters.features.hashsmprofiles
   },
   children: [
@@ -160,7 +160,7 @@ export default {
       title: 'label.hsm.profile',
       icon: 'safety-outlined',
       permission: ['listHSMProfiles'],
-      show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
+      show: () => { return ['Admin'].includes(store.getters.userInfo.roletype) },
       resourceType: 'HSMProfile',
       columns: () => {
         const fields = ['name', 'enabled']
