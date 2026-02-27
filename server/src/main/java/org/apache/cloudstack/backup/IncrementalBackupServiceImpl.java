@@ -395,7 +395,6 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         }
         StartNBDServerCommand nbdServerCmd = new StartNBDServerCommand(
                 transferId,
-                host.getPublicIpAddress(),
                 exportName,
                 volumePath,
                 transferId,

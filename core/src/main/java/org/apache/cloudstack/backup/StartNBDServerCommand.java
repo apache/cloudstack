@@ -21,7 +21,6 @@ import com.cloud.agent.api.Command;
 
 public class StartNBDServerCommand extends Command {
     private String transferId;
-    private String hostIpAddress;
     private String exportName;
     private String volumePath;
     private String socket;
@@ -30,17 +29,12 @@ public class StartNBDServerCommand extends Command {
     public StartNBDServerCommand() {
     }
 
-    protected StartNBDServerCommand(String transferId, String hostIpAddress, String exportName, String volumePath, String direction) {
+    protected StartNBDServerCommand(String transferId, String exportName, String volumePath, String socket, String direction) {
         this.transferId = transferId;
-        this.hostIpAddress = hostIpAddress;
+        this.socket = socket;
         this.exportName = exportName;
         this.volumePath = volumePath;
         this.direction = direction;
-    }
-
-    public StartNBDServerCommand(String transferId, String hostIpAddress, String exportName, String volumePath, String socket, String direction) {
-        this(transferId, hostIpAddress, exportName, volumePath, direction);
-        this.socket = socket;
     }
 
     public String getExportName() {
@@ -49,10 +43,6 @@ public class StartNBDServerCommand extends Command {
 
     public String getSocket() {
         return socket;
-    }
-
-    public String getHostIpAddress() {
-        return hostIpAddress;
     }
 
     public String getTransferId() {

@@ -39,7 +39,6 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
     public Answer execute(StartNBDServerCommand cmd, LibvirtComputingResource resource) {
         String volumePath = cmd.getVolumePath();
         String socket = cmd.getSocket();
-        String hostIpAddress = cmd.getHostIpAddress();
         String exportName = cmd.getExportName();
         String transferId = cmd.getTransferId();
 
@@ -48,9 +47,6 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
         }
         if (StringUtils.isBlank(exportName)) {
             return new StartNBDServerAnswer(cmd, false, "Export name is required for the nbd server");
-        }
-        if (StringUtils.isBlank(hostIpAddress)) {
-            return new StartNBDServerAnswer(cmd, false, "Host IP address is required for the nbd server");
         }
         if (StringUtils.isBlank(socket)) {
             return new StartNBDServerAnswer(cmd, false, "Socket is required for the nbd server");
