@@ -524,6 +524,29 @@ public abstract class StorageStrategy {
      */
     public abstract CloudStackVolume snapshotCloudStackVolume(CloudStackVolume cloudstackVolume);
 
+    /**
+     * Reverts a CloudStack volume to a snapshot using protocol-specific ONTAP APIs.
+     *
+     * <p>This method encapsulates the snapshot revert behavior based on protocol:</p>
+     * <ul>
+     *   <li><b>iSCSI/FC:</b> Uses {@code POST /api/storage/luns/{lun.uuid}/restore}
+     *       to restore LUN data from the FlexVolume snapshot.</li>
+     *   <li><b>NFS:</b> Uses {@code POST /api/storage/volumes/{vol.uuid}/snapshots/{snap.uuid}/files/{path}/restore}
+     *       to restore a single file from the FlexVolume snapshot.</li>
+     * </ul>
+     *
+     * @param snapshotName     The ONTAP FlexVolume snapshot name
+     * @param flexVolUuid      The FlexVolume UUID containing the snapshot
+     * @param snapshotUuid     The ONTAP snapshot UUID (used for NFS file restore)
+     * @param volumePath       The path of the file/LUN within the FlexVolume
+     * @param lunUuid          The LUN UUID (only for iSCSI, null for NFS)
+     * @param flexVolName      The FlexVolume name (only for iSCSI, for constructing destination path)
+     * @return JobResponse for the async restore operation
+     */
+    public abstract JobResponse revertSnapshotForCloudStackVolume(String snapshotName, String flexVolUuid,
+                                                                   String snapshotUuid, String volumePath,
+                                                                   String lunUuid, String flexVolName);
+
 
     /**
      * Method encapsulates the behavior based on the opted protocol in subclasses

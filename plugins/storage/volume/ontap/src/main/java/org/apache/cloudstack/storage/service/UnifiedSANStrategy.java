@@ -32,6 +32,8 @@ import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.feign.model.LunMap;
+import org.apache.cloudstack.storage.feign.model.LunRestoreRequest;
+import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
@@ -58,6 +60,11 @@ public class UnifiedSANStrategy extends SANStrategy {
         // Initialize FeignClientFactory and create SAN client
         this.feignClientFactory = new FeignClientFactory();
         this.sanFeignClient = feignClientFactory.createClient(SANFeignClient.class, baseURL);
+    }
+
+    @Override
+    public SANFeignClient getSanFeignClient() {
+        return sanFeignClient;
     }
 
     public void setOntapStorage(OntapStorage ontapStorage) {
@@ -132,32 +139,7 @@ public class UnifiedSANStrategy extends SANStrategy {
 
     @Override
     public void copyCloudStackVolume(CloudStackVolume cloudstackVolume) {
-        if (cloudstackVolume == null || cloudstackVolume.getLun() == null) {
-            s_logger.error("copyCloudStackVolume: Lun clone creation failed. Invalid request: {}", cloudstackVolume);
-            throw new CloudRuntimeException("copyCloudStackVolume : Failed to create Lun clone, invalid request");
-        }
-        s_logger.debug("copyCloudStackVolume: Creating clone of the cloudstack volume: {}", cloudstackVolume.getLun().getName());
 
-        try {
-            // Get AuthHeader
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
-            // Create URI for lun clone creation
-            Lun lunCloneRequest = cloudstackVolume.getLun();
-            Lun.Clone clone = new Lun.Clone();
-            Lun.Source source = new Lun.Source();
-            source.setName(cloudstackVolume.getLun().getName());
-            clone.setSource(source);
-            lunCloneRequest.setClone(clone);
-            String lunCloneName = cloudstackVolume.getLun().getName() + "_clone";
-            lunCloneRequest.setName(lunCloneName);
-            sanFeignClient.createLun(authHeader, true, lunCloneRequest);
-        } catch (FeignException e) {
-            s_logger.error("FeignException occurred while creating Lun clone: {}, Status: {}, Exception: {}", cloudstackVolume.getLun().getName(), e.status(), e.getMessage());
-            throw new CloudRuntimeException("Failed to create Lun clone: " + e.getMessage());
-        } catch (Exception e) {
-            s_logger.error("Exception occurred while creating Lun clone: {}, Exception: {}", cloudstackVolume.getLun().getName(), e.getMessage());
-            throw new CloudRuntimeException("Failed to create Lun clone: " + e.getMessage());
-        }
     }
 
     @Override
@@ -647,5 +629,57 @@ public class UnifiedSANStrategy extends SANStrategy {
         }
         s_logger.warn("validateInitiatorInAccessGroup: Initiator [{}] NOT found in igroup [{}]", hostInitiator, accessGroupName);
         return false;
+    }
+
+    /**
+     * Reverts a LUN to a snapshot using the ONTAP LUN restore API.
+     *
+     * <p>ONTAP REST API: {@code POST /api/storage/luns/{lun.uuid}/restore}</p>
+     *
+     * <p>Request payload:
+     * <pre>
+     * {
+     *   "snapshot": { "name": "snapshot_name" },
+     *   "destination": { "path": "/vol/volume_name/lun_name" }
+     * }
+     * </pre>
+     * </p>
+     *
+     * @param snapshotName  The ONTAP FlexVolume snapshot name
+     * @param flexVolUuid   The FlexVolume UUID (not used for LUN restore, but kept for interface consistency)
+     * @param snapshotUuid  The ONTAP snapshot UUID (not used for LUN restore)
+     * @param volumePath    The LUN name (used to construct destination path)
+     * @param lunUuid       The LUN UUID to restore
+     * @param flexVolName   The FlexVolume name (for constructing destination path)
+     * @return JobResponse for the async restore operation
+     */
+    @Override
+    public JobResponse revertSnapshotForCloudStackVolume(String snapshotName, String flexVolUuid,
+                                                          String snapshotUuid, String volumePath,
+                                                          String lunUuid, String flexVolName) {
+        s_logger.info("revertSnapshotForCloudStackVolume [iSCSI]: Restoring LUN [{}] (uuid={}) from snapshot [{}]",
+                volumePath, lunUuid, snapshotName);
+
+        if (lunUuid == null || lunUuid.isEmpty()) {
+            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: LUN UUID is required for iSCSI snapshot revert");
+        }
+        if (snapshotName == null || snapshotName.isEmpty()) {
+            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: Snapshot name is required for iSCSI snapshot revert");
+        }
+        if (flexVolName == null || flexVolName.isEmpty()) {
+            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: FlexVolume name is required for iSCSI snapshot revert");
+        }
+
+        String authHeader = getAuthHeader();
+
+        // Construct destination path: /vol/<volume_name>/<lun_name>
+        String destinationPath = "/vol/" + flexVolName + "/" + volumePath;
+
+        LunRestoreRequest restoreRequest = new LunRestoreRequest(snapshotName, destinationPath);
+
+        s_logger.debug("revertSnapshotForCloudStackVolume: Calling LUN restore API with lunUuid={}, snapshotName={}, destinationPath={}",
+                lunUuid, snapshotName, destinationPath);
+
+        return sanFeignClient.restoreLun(authHeader, lunUuid, restoreRequest);
     }
 }

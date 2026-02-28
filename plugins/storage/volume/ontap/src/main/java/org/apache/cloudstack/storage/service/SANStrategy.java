@@ -19,12 +19,20 @@
 
 package org.apache.cloudstack.storage.service;
 
+import org.apache.cloudstack.storage.feign.client.SANFeignClient;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 
 public abstract class SANStrategy extends StorageStrategy {
     public SANStrategy(OntapStorage ontapStorage) {
         super(ontapStorage);
     }
+
+    /**
+     * Returns the SAN Feign client for SAN-specific operations.
+     *
+     * @return the SANFeignClient instance
+     */
+    public abstract SANFeignClient getSanFeignClient();
 
     /**
      * Ensures the LUN is mapped to the specified access group (igroup).

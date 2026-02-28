@@ -33,7 +33,4 @@
     <bean id="ontapVMSnapshotStrategy"
         class="org.apache.cloudstack.storage.vmsnapshot.OntapVMSnapshotStrategy" />
 
-    <bean id="ontapSnapshotStrategy"
-        class="org.apache.cloudstack.storage.snapshot.OntapSnapshotStrategy" />
-
 </beans>

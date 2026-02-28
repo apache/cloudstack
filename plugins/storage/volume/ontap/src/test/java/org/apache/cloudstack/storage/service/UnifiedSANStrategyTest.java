@@ -30,6 +30,7 @@ import org.apache.cloudstack.storage.feign.model.Initiator;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.feign.model.LunMap;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
+import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
@@ -783,39 +784,6 @@ class UnifiedSANStrategyTest {
 
             // Verify
             assertFalse(result);
-        }
-    }
-
-    @Test
-    void testCopyCloudStackVolume_Success() {
-        // Setup
-        Lun lun = new Lun();
-        lun.setName("/vol/vol1/lun1");
-        CloudStackVolume request = new CloudStackVolume();
-        request.setLun(lun);
-
-        OntapResponse<Lun> response = new OntapResponse<>();
-        response.setRecords(List.of(new Lun()));
-
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
-
-            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
-                    .thenReturn(response);
-
-            // Execute
-            assertDoesNotThrow(() -> unifiedSANStrategy.copyCloudStackVolume(request));
-
-            // Verify
-            ArgumentCaptor<Lun> lunCaptor = ArgumentCaptor.forClass(Lun.class);
-            verify(sanFeignClient).createLun(eq(authHeader), eq(true), lunCaptor.capture());
-
-            Lun capturedLun = lunCaptor.getValue();
-            assertNotNull(capturedLun.getClone());
-            assertNotNull(capturedLun.getClone().getSource());
-            assertEquals("/vol/vol1/lun1", capturedLun.getClone().getSource().getName());
-            assertEquals("/vol/vol1/lun1_clone", capturedLun.getName());
         }
     }
 

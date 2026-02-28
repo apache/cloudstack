@@ -135,9 +135,10 @@ class OntapPrimaryDatastoreDriverTest {
         Map<String, String> capabilities = driver.getCapabilities();
 
         assertNotNull(capabilities);
-        // Snapshot operations are now handled by OntapSnapshotStrategy, so driver capabilities are FALSE
-        assertEquals(Boolean.FALSE.toString(), capabilities.get("STORAGE_SYSTEM_SNAPSHOT"));
-        assertEquals(Boolean.FALSE.toString(), capabilities.get("CAN_CREATE_VOLUME_FROM_SNAPSHOT"));
+        // With SIS clone approach, driver advertises storage system snapshot capability
+        // so StorageSystemSnapshotStrategy handles snapshot backup to secondary storage
+        assertEquals(Boolean.TRUE.toString(), capabilities.get("STORAGE_SYSTEM_SNAPSHOT"));
+        assertEquals(Boolean.TRUE.toString(), capabilities.get("CAN_CREATE_VOLUME_FROM_SNAPSHOT"));
     }
 
     @Test

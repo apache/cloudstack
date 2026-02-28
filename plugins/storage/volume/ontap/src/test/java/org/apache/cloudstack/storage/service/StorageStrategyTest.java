@@ -138,6 +138,7 @@ public class StorageStrategyTest {
 
         @Override
         public void copyCloudStackVolume(org.apache.cloudstack.storage.service.model.CloudStackVolume cloudstackVolume) {
+
         }
 
         @Override

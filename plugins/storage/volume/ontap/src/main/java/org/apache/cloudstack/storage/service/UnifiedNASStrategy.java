@@ -49,6 +49,7 @@ import org.apache.cloudstack.storage.feign.model.Volume;
 import org.apache.cloudstack.storage.feign.model.VolumeConcise;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
+import org.apache.cloudstack.storage.feign.model.SnapshotFileRestoreRequest;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.utils.Constants;
@@ -636,5 +637,51 @@ public class UnifiedNASStrategy extends NASStrategy {
         }
         s_logger.info("getFile: File retrieved successfully with name {}", filePath);
         return fileResponse.getRecords().get(0);
+    }
+
+    /**
+     * Reverts a file to a snapshot using the ONTAP single-file restore API.
+     *
+     * <p>ONTAP REST API:
+     * {@code POST /api/storage/volumes/{vol.uuid}/snapshots/{snap.uuid}/files/{path}/restore}</p>
+     *
+     * @param snapshotName  The ONTAP FlexVolume snapshot name (not used for NFS, but kept for interface consistency)
+     * @param flexVolUuid   The FlexVolume UUID containing the snapshot
+     * @param snapshotUuid  The ONTAP snapshot UUID
+     * @param volumePath    The file path within the FlexVolume
+     * @param lunUuid       Not used for NFS (null)
+     * @param flexVolName   Not used for NFS (null)
+     * @return JobResponse for the async restore operation
+     */
+    @Override
+    public JobResponse revertSnapshotForCloudStackVolume(String snapshotName, String flexVolUuid,
+                                                          String snapshotUuid, String volumePath,
+                                                          String lunUuid, String flexVolName) {
+        s_logger.info("revertSnapshotForCloudStackVolume [NFS]: Restoring file [{}] from snapshot [{}] on FlexVol [{}]",
+                volumePath, snapshotUuid, flexVolUuid);
+
+        if (flexVolUuid == null || flexVolUuid.isEmpty()) {
+            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: FlexVolume UUID is required for NFS snapshot revert");
+        }
+        if (snapshotUuid == null || snapshotUuid.isEmpty()) {
+            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: Snapshot UUID is required for NFS snapshot revert");
+        }
+        if (volumePath == null || volumePath.isEmpty()) {
+            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: File path is required for NFS snapshot revert");
+        }
+
+        String authHeader = getAuthHeader();
+
+        // Prepare the file path for ONTAP API (ensure it starts with "/")
+        String ontapFilePath = volumePath.startsWith("/") ? volumePath : "/" + volumePath;
+
+        // For single-file restore, destination_path is the same as source (restore in place)
+        SnapshotFileRestoreRequest restoreRequest = new SnapshotFileRestoreRequest(volumePath);
+
+        s_logger.debug("revertSnapshotForCloudStackVolume: Calling file restore API with flexVolUuid={}, snapshotUuid={}, filePath={}",
+                flexVolUuid, snapshotUuid, ontapFilePath);
+
+        return getSnapshotFeignClient().restoreFileFromSnapshot(authHeader, flexVolUuid, snapshotUuid,
+                ontapFilePath, restoreRequest);
     }
 }
