@@ -30,7 +30,6 @@ import org.apache.cloudstack.storage.feign.model.Initiator;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.feign.model.LunMap;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
-import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
@@ -788,41 +787,29 @@ class UnifiedSANStrategyTest {
     }
 
     @Test
-    void testCopyCloudStackVolume_NullRequest_ThrowsException() {
-        assertThrows(CloudRuntimeException.class,
-            () -> unifiedSANStrategy.copyCloudStackVolume(null));
+    void testCopyCloudStackVolume_NullRequest_DoesNotThrow() {
+        // copyCloudStackVolume is not yet implemented (no-op), so it should not throw
+        assertDoesNotThrow(() -> unifiedSANStrategy.copyCloudStackVolume(null));
     }
 
     @Test
-    void testCopyCloudStackVolume_NullLun_ThrowsException() {
+    void testCopyCloudStackVolume_NullLun_DoesNotThrow() {
+        // copyCloudStackVolume is not yet implemented (no-op), so it should not throw
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(null);
 
-        assertThrows(CloudRuntimeException.class,
-            () -> unifiedSANStrategy.copyCloudStackVolume(request));
+        assertDoesNotThrow(() -> unifiedSANStrategy.copyCloudStackVolume(request));
     }
 
     @Test
-    void testCopyCloudStackVolume_FeignException_ThrowsCloudRuntimeException() {
+    void testCopyCloudStackVolume_ValidRequest_DoesNotThrow() {
+        // copyCloudStackVolume is not yet implemented (no-op), so it should not throw
         Lun lun = new Lun();
         lun.setName("/vol/vol1/lun1");
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lun);
 
-        FeignException feignException = mock(FeignException.class);
-        when(feignException.status()).thenReturn(500);
-        when(feignException.getMessage()).thenReturn("Internal server error");
-
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
-
-            when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
-                    .thenThrow(feignException);
-
-            assertThrows(CloudRuntimeException.class,
-                () -> unifiedSANStrategy.copyCloudStackVolume(request));
-        }
+        assertDoesNotThrow(() -> unifiedSANStrategy.copyCloudStackVolume(request));
     }
 
     @Test

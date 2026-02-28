@@ -153,6 +153,11 @@ public class StorageStrategyTest {
         }
 
         @Override
+        public JobResponse revertSnapshotForCloudStackVolume(String snapshotName, String flexVolUuid, String snapshotUuid, String volumePath, String lunUuid, String flexVolName) {
+            return null;
+        }
+
+        @Override
         public AccessGroup createAccessGroup(
                 org.apache.cloudstack.storage.service.model.AccessGroup accessGroup) {
             return null;
