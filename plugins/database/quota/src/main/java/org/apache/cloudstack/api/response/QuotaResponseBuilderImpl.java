@@ -198,7 +198,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Account caller = CallContext.current().getCallingAccount();
 
         if (!accountTypesThatCanListAllQuotaSummaries.contains(caller.getType()) || !cmd.isListAll()) {
-            return getQuotaSummaryResponse(cmd.getEntityOwnerId(), null, null, null, cmd);
+            return getQuotaSummaryResponse(cmd.getEntityOwnerId(), null, null, cmd);
         }
 
         return getQuotaSummaryResponseWithListAll(cmd, caller);
@@ -221,12 +221,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             accountId = cmd.isListAll() ? null : caller.getAccountId();
         }
 
-        String keyword = null;
-        if (Account.Type.ADMIN.equals(caller.getType())) {
-            keyword = cmd.getKeyword();
-        }
-
-        return getQuotaSummaryResponse(accountId, keyword, domainId, domainPath, cmd);
+        return getQuotaSummaryResponse(accountId, domainId, domainPath, cmd);
     }
 
     /**
@@ -250,13 +245,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return domain.getPath();
     }
 
-    protected Pair<List<QuotaSummaryResponse>, Integer> getQuotaSummaryResponse(Long accountId, String accountName, Long domainId, String domainPath, QuotaSummaryCmd cmd) {
+    protected Pair<List<QuotaSummaryResponse>, Integer> getQuotaSummaryResponse(Long accountId, Long domainId, String domainPath, QuotaSummaryCmd cmd) {
         if (accountId != null && accountId == -1) {
             // Either no specific account as provided, or list all is disabled
             accountId = CallContext.current().getCallingAccountId();
         }
 
-        Pair<List<QuotaSummaryVO>, Integer> pairSummaries = quotaSummaryDao.listQuotaSummariesForAccountAndOrDomain(accountId, accountName, domainId, domainPath,
+        Pair<List<QuotaSummaryVO>, Integer> pairSummaries = quotaSummaryDao.listQuotaSummariesForAccountAndOrDomain(accountId, cmd.getKeyword(), domainId, domainPath,
                 cmd.getAccountStateToShow(), cmd.getStartIndex(), cmd.getPageSizeVal());
         List<QuotaSummaryVO> summaries = pairSummaries.first();
 

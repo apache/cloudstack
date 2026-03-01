@@ -550,7 +550,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
             Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
 
-            Mockito.doReturn(quotaSummaryResponseMock1).when(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.doReturn(quotaSummaryResponseMock1).when(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
             for (Account.Type type : Account.Type.values()) {
                 Mockito.doReturn(type).when(accountMock).getType();
@@ -559,7 +559,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
                 Assert.assertEquals(quotaSummaryResponseMock1, result);
             }
 
-            Mockito.verify(quotaResponseBuilderSpy, Mockito.times(Account.Type.values().length)).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+            Mockito.verify(quotaResponseBuilderSpy, Mockito.times(Account.Type.values().length)).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(),
                     Mockito.any());
         };
     }
