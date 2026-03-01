@@ -433,9 +433,9 @@ public class GuiThemeServiceImpl implements GuiThemeService {
     public void removeGuiTheme(RemoveGuiThemeCmd cmd) {
         Long guiThemeId = cmd.getId();
         GuiThemeVO guiThemeVO = guiThemeDao.findById(guiThemeId);
-        CallContext.current().setEventDetails(String.format("ID: %s", guiThemeId));
 
         if (guiThemeVO != null) {
+            CallContext.current().setEventDetails(String.format("ID: %s", guiThemeVO.getUuid()));
             guiThemeDao.remove(guiThemeId);
         } else {
             logger.error("Unable to find a GUI theme with the specified ID [{}].", guiThemeId);

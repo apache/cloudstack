@@ -156,7 +156,7 @@ public class UpdateIpv6FirewallRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        CallContext.current().setEventDetails("Rule Id: " + getId());
+        CallContext.current().setEventDetails("Rule ID: " + getResourceUuid(ApiConstants.ID));
         FirewallRule rules = ipv6Service.updateIpv6FirewallRule(this);
         FirewallResponse ruleResponse = _responseGenerator.createIpv6FirewallRuleResponse(rules);
         setResponseObject(ruleResponse);

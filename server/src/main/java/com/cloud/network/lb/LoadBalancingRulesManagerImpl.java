@@ -1896,7 +1896,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
                     logger.debug("Load balancer {} for Ip address: {}, public port {}, private port {} is added successfully.", newRule, ipAddr, srcPort, destPort);
-                    CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
+                    CallContext.current().setEventDetails("Load balancer ID: " + newRule.getUuid());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(),
                             null, LoadBalancingRule.class.getName(), newRule.getUuid());
 

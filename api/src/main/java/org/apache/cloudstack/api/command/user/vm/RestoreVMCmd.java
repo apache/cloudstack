@@ -90,14 +90,14 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restore an Instance to original Template or specific Snapshot";
+        return "Restoring Instance with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to original Template or specific Snapshot";
     }
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
             ResourceAllocationException {
         UserVm result;
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID));
         result = _userVmService.restoreVM(this);
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", result).get(0);

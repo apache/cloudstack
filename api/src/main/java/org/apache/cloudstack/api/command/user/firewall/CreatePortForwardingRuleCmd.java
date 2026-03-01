@@ -199,7 +199,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         boolean success = true;
         PortForwardingRule rule = null;
         try {
-            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
 
             if (getOpenFirewall()) {
                 success = success && _firewallService.applyIngressFirewallRules(ipAddressId, callerContext.getCallingAccount());
