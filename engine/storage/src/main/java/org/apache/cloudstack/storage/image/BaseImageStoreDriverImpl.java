@@ -230,8 +230,10 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             updateBuilder.setJobId(answer.getJobId());
             updateBuilder.setLocalDownloadPath(answer.getDownloadPath());
             updateBuilder.setInstallPath(answer.getInstallPath());
-            updateBuilder.setSize(answer.getTemplateSize());
-            updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
+            if (!VMTemplateStorageResourceAssoc.ERROR_DOWNLOAD_STATES.contains(answer.getDownloadStatus())) {
+                updateBuilder.setSize(answer.getTemplateSize());
+                updateBuilder.setPhysicalSize(answer.getTemplatePhySicalSize());
+            }
             _templateStoreDao.update(tmpltStoreVO.getId(), updateBuilder);
             // update size in vm_template table
             VMTemplateVO tmlptUpdater = _templateDao.createForUpdate();
@@ -241,8 +243,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
         AsyncCompletionCallback<CreateCmdResult> caller = context.getParentCallback();
 
-        if (answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR ||
-                answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.ABANDONED || answer.getDownloadStatus() == VMTemplateStorageResourceAssoc.Status.UNKNOWN) {
+        if (VMTemplateStorageResourceAssoc.ERROR_DOWNLOAD_STATES.contains(answer.getDownloadStatus())) {
             CreateCmdResult result = new CreateCmdResult(null, null);
             result.setSuccess(false);
             result.setResult(answer.getErrorString());
