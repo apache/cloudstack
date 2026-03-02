@@ -62,6 +62,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.projects.Project;
@@ -76,8 +77,8 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmVO;
+import com.cloud.vm.Nic;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -671,50 +672,21 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
     }
 
-    /**
-     * Helper method to handle both Register and Remove logic for Instance
-     */
-    private boolean processDnsRecordForInstance(Long instanceId, Long networkId, boolean isAdd) {
-        // 1. Fetch VM and verify access
-        UserVmVO instance = userVmDao.findById(instanceId);
-        if (instance == null) {
-            throw new InvalidParameterValueException("Provided Instance not found.");
-        }
-        accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, instance);
-
-        // 2. Resolve the NIC and Network
-        NicVO nic;
-        if (networkId != null) {
-            nic = nicDao.findByNtwkIdAndInstanceId(networkId, instance.getId());
-        } else {
-            nic = nicDao.findDefaultNicForVM(instance.getId());
-            networkId = nic != null ? nic.getNetworkId() : null;
-        }
-
-        // networkId may not be of Shared network type
-        // there might be multiple shared networks
-        // possible to have dns record for secondary ip
-
-        if (nic == null) {
-            throw new CloudRuntimeException("No valid NIC found for this Instance on the specified Network.");
-        }
-
-        // 3. Find if this network is linked to any DNS Zones
+    @Override
+    public boolean processDnsRecordForInstance(VirtualMachine instance, Network network, Nic nic, boolean isAdd) {
+        long networkId = network.getId();
         List<DnsZoneNetworkMapVO> mappings = dnsZoneNetworkMapDao.listByNetworkId(networkId);
         if (mappings == null || mappings.isEmpty()) {
-            throw new CloudRuntimeException("No DNS zones are mapped to this network. Please associate a zone first.");
+            logger.warn("No DNS zones are mapped to this network. Please associate a zone first.");
+            return false;
         }
-
         boolean atLeastOneSuccess = false;
-        // 4. Iterate over mapped zones and push the record
         for (DnsZoneNetworkMapVO map : mappings) {
             DnsZoneVO zone = dnsZoneDao.findById(map.getDnsZoneId());
             if (zone == null || zone.getState() != DnsZone.State.Active) {
                 continue;
             }
-
             DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
-
             // Construct FQDN Prefix (e.g., "instance-id" or "instance-id.subdomain")
             String recordName = String.valueOf(instance.getInstanceName());
             if (StringUtils.isNotBlank(map.getSubDomain())) {
@@ -753,11 +725,13 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                         zone.getName(),
                         ex
                 );
+                return false;
             }
         }
 
         if (!atLeastOneSuccess) {
-            throw new CloudRuntimeException("Failed to process DNS records. Ensure the Instance has a valid IP address.");
+            logger.error("Failed to process DNS records. Ensure the Instance has a valid IP address.");
+            return false;
         }
         return true;
     }

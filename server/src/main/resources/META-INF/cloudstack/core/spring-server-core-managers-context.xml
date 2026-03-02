@@ -402,4 +402,5 @@
     <bean id="dnsProviderManager" class="org.apache.cloudstack.dns.DnsProviderManagerImpl" >
         <property name="dnsProviders" value="#{dnsProvidersRegistry.registered}" />
     </bean>
+    <bean id="dnsVmLifecycleListener" class="org.apache.cloudstack.dns.DnsVmLifecycleListener" />
 </beans>
