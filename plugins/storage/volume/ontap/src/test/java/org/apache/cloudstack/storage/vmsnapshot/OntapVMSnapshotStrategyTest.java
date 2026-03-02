@@ -887,6 +887,7 @@ class OntapVMSnapshotStrategyTest {
         when(userVm.getGuestOSId()).thenReturn(GUEST_OS_ID);
         when(userVm.getInstanceName()).thenReturn(VM_INSTANCE_NAME);
         when(userVm.getUuid()).thenReturn(VM_UUID);
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
         when(userVmDao.findById(VM_ID)).thenReturn(userVm);
 
         GuestOSVO guestOS = mock(GuestOSVO.class);

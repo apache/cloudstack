@@ -198,9 +198,13 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             return false;
         }
 
-        if (!VirtualMachine.State.Running.equals(userVm.getState())) {
-            logger.debug("ONTAP VM snapshot strategy requires a running VM, VM [{}] is in state [{}]",
-                    vmId, userVm.getState());
+        // ONTAP VM snapshots work for both Running and Stopped VMs.
+        // Running VMs may be frozen/thawed (if quiesce is requested).
+        // Stopped VMs don't need freeze/thaw - just take the FlexVol snapshot directly.
+        VirtualMachine.State vmState = userVm.getState();
+        if (!VirtualMachine.State.Running.equals(vmState) && !VirtualMachine.State.Stopped.equals(vmState)) {
+            logger.info("allVolumesOnOntapManagedStorage: ONTAP VM snapshot strategy requires VM to be Running or Stopped, VM [{}] is in state [{}], returning false",
+                    vmId, vmState);
             return false;
         }
 
@@ -289,7 +293,14 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 quiescevm = options.needQuiesceVM();
             }
 
-            if (quiescevm) {
+            // Check if VM is actually running - freeze/thaw only makes sense for running VMs
+            boolean vmIsRunning = VirtualMachine.State.Running.equals(userVm.getState());
+            boolean shouldFreezeThaw = quiescevm && vmIsRunning;
+
+            if (!vmIsRunning) {
+                logger.info("VM [{}] is in state [{}] (not Running). Skipping freeze/thaw - " +
+                        "FlexVolume snapshot will be taken directly.", userVm.getInstanceName(), userVm.getState());
+            } else if (quiescevm) {
                 logger.info("Quiesce option is enabled for ONTAP VM Snapshot of VM [{}]. " +
                         "VM file systems will be frozen/thawed for application-consistent snapshots.", userVm.getInstanceName());
             } else {
@@ -324,8 +335,8 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             logger.info("VM [{}] has {} volumes across {} unique FlexVolume(s)",
                     userVm.getInstanceName(), volumeTOs.size(), flexVolGroups.size());
 
-            // ── Step 1: Freeze the VM (only if quiescing is requested) ──
-            if (quiescevm) {
+            // ── Step 1: Freeze the VM (only if quiescing is requested AND VM is running) ──
+            if (shouldFreezeThaw) {
                 FreezeThawVMCommand freezeCommand = new FreezeThawVMCommand(userVm.getInstanceName());
                 freezeCommand.setOption(FreezeThawVMCommand.FREEZE);
                 freezeAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, freezeCommand);
@@ -342,7 +353,8 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
                 logger.info("VM [{}] frozen successfully via QEMU guest agent", userVm.getInstanceName());
             } else {
-                logger.info("Skipping VM freeze for VM [{}] as quiesce is not requested", userVm.getInstanceName());
+                logger.info("Skipping VM freeze for VM [{}] (quiesce={}, vmIsRunning={})",
+                        userVm.getInstanceName(), quiescevm, vmIsRunning);
             }
 
             // ── Step 2: Create FlexVolume-level snapshots ──
