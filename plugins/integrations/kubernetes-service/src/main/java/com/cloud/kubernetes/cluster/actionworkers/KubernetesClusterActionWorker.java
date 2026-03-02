@@ -343,7 +343,7 @@ public class KubernetesClusterActionWorker {
 
     protected void deleteTemplateLaunchPermission() {
         if (isDefaultTemplateUsed() && owner != null) {
-            logger.info("Revoking launch permission for systemVM template");
+            logger.info("Revoking launch permission for systemVM Template");
             launchPermissionDao.removePermissions(clusterTemplate.getId(), Collections.singletonList(owner.getId()));
         }
     }
@@ -685,7 +685,7 @@ public class KubernetesClusterActionWorker {
 
         try {
             String command = String.format("sudo %s/%s -u '%s' -k '%s' -s '%s'",
-                    scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]);
+                scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.getApiServletPathValue(), keys[0], keys[1]);
             Account account = accountDao.findById(kubernetesCluster.getAccountId());
             if (account != null && account.getType() == Account.Type.PROJECT) {
                 String projectId = projectService.findByProjectAccountId(account.getId()).getUuid();

@@ -168,7 +168,7 @@ public class KVMStoragePoolManager {
             result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails(), isVMMigrate);
 
             if (!result) {
-                logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                logger.error("Failed to connect disks via Instance spec for Instance: " + vmName + " volume:" + vol.toString());
                 return result;
             }
         }
@@ -258,7 +258,7 @@ public class KVMStoragePoolManager {
                 boolean subResult = adaptor.disconnectPhysicalDisk(vol.getPath(), pool);
 
                 if (!subResult) {
-                    logger.error("Failed to disconnect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                    logger.error("Failed to disconnect disks via Instance spec for Instance: " + vmName + " volume:" + vol.toString());
 
                     result = false;
                 }

@@ -44,17 +44,21 @@ import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
 import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.reflections.ReflectionUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.api.ApiServlet;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.serializer.Param;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.component.PluggableService;
@@ -66,6 +70,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
     List<APIChecker> _apiAccessCheckers = null;
     List<PluggableService> _services = null;
     protected static Map<String, ApiDiscoveryResponse> s_apiNameDiscoveryResponseMap = null;
+    public static final List<String> APIS_ALLOWED_FOR_PASSWORD_CHANGE = Arrays.asList("login", "logout", "updateUser", "listApis");
 
     @Inject
     AccountService accountService;
@@ -189,7 +194,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         return responseResponse;
     }
 
-    private ApiDiscoveryResponse getCmdRequestMap(Class<?> cmdClass, APICommand apiCmdAnnotation) {
+    protected ApiDiscoveryResponse getCmdRequestMap(Class<?> cmdClass, APICommand apiCmdAnnotation) {
         String apiName = apiCmdAnnotation.name();
         ApiDiscoveryResponse response = new ApiDiscoveryResponse();
         response.setName(apiName);
@@ -197,6 +202,12 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         if (!apiCmdAnnotation.since().isEmpty()) {
             response.setSince(apiCmdAnnotation.since());
         }
+        String httpRequestType = apiCmdAnnotation.httpMethod();
+        if (StringUtils.isBlank(httpRequestType)) {
+            httpRequestType = ApiServlet.GET_REQUEST_COMMANDS.matcher(apiName.toLowerCase()).matches() ?
+                    "GET" : "POST";
+        }
+        response.setHttpRequestType(httpRequestType);
 
         Set<Field> fields = ReflectUtil.getAllFieldsForClass(cmdClass, new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
@@ -280,12 +291,20 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                         ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
             }
 
-            if (role.getRoleType() == RoleType.Admin && role.getId() == RoleType.Admin.getId()) {
-                logger.info(String.format("Account [%s] is Root Admin, all APIs are allowed.",
-                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
+            // Limit APIs on first login requiring password change
+            UserAccount userAccount = accountService.getUserAccountById(user.getId());
+            Map<String, String> userAccDetails = userAccount.getDetails();
+            if (MapUtils.isNotEmpty(userAccDetails) && !userAccDetails.containsKey(UserDetailVO.OauthLogin) &&
+                    "true".equalsIgnoreCase(userAccDetails.get(UserDetailVO.PasswordChangeRequired))) {
+                apisAllowed = APIS_ALLOWED_FOR_PASSWORD_CHANGE;
             } else {
-                for (APIChecker apiChecker : _apiAccessCheckers) {
-                    apisAllowed = apiChecker.getApisAllowedToUser(role, user, apisAllowed);
+                if (role.getRoleType() == RoleType.Admin && role.getId() == RoleType.Admin.getId()) {
+                    logger.info(String.format("Account [%s] is Root Admin, all APIs are allowed.",
+                            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
+                } else {
+                    for (APIChecker apiChecker : _apiAccessCheckers) {
+                        apisAllowed = apiChecker.getApisAllowedToUser(role, user, apisAllowed);
+                    }
                 }
             }
 

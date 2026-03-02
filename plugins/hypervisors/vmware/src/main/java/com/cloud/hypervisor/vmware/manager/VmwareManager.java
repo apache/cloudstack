@@ -35,7 +35,7 @@ public interface VmwareManager {
             "Wait timeout (milli seconds) for hot plugged NIC of VM to be detected by guest OS.", false, ConfigKey.Scope.Global);
 
     public static final ConfigKey<Long> templateCleanupInterval = new ConfigKey<Long>("Advanced", Long.class, "vmware.full.clone.template.cleanup.period", "0",
-            "period (in minutes) between the start of template cleanup jobs for vmware full cloned templates.", false, ConfigKey.Scope.Global);
+            "period (in minutes) between the start of template cleanup jobs for VMWare full cloned Templates.", false, ConfigKey.Scope.Global);
 
     public static final ConfigKey<Boolean> s_vmwareCleanOldWorderVMs = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.clean.old.worker.vms", "false",
             "If a worker vm is older then twice the 'job.expire.minutes' + 'job.cancel.threshold.minutes' , remove it.", true, ConfigKey.Scope.Global);

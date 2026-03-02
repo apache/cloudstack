@@ -27,6 +27,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.DomainHelper;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -97,6 +98,9 @@ public class CreateNetworkOfferingTest extends TestCase {
 
     @Mock
     LoadBalancerVMMapDao _loadBalancerVMMapDao;
+
+    @Mock
+    DomainHelper domainHelper;
 
     @Mock
     AnnotationDao annotationDao;
@@ -225,7 +229,6 @@ public class CreateNetworkOfferingTest extends TestCase {
         NetworkOfferingVO off =
             configMgr.createNetworkOffering("isolated", "isolated", TrafficType.Guest, null, true, Availability.Optional, 200, serviceProviderMap, false,
                 Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false,null, null, null, false, null, null, false);
-        // System.out.println("Creating Vpc Network Offering");
         assertNotNull("Vpc Isolated network offering with Vpc provider ", off);
     }
 
@@ -245,7 +248,6 @@ public class CreateNetworkOfferingTest extends TestCase {
         NetworkOfferingVO off =
             configMgr.createNetworkOffering("isolated", "isolated", TrafficType.Guest, null, true, Availability.Optional, 200, serviceProviderMap, false,
                 Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, false, false, false,null, null, null, false, null, null, false);
-        // System.out.println("Creating Vpc Network Offering");
         assertNotNull("Vpc Isolated network offering with Vpc and Netscaler provider ", off);
     }
 }

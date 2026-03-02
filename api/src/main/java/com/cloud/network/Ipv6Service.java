@@ -45,7 +45,7 @@ public interface Ipv6Service extends PluggableService, Configurable {
     static final ConfigKey<Boolean> Ipv6OfferingCreationEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
             "ipv6.offering.enabled",
             "false",
-            "Indicates whether creation of IPv6 network/VPC offering is enabled or not.",
+            "Indicates whether creation of IPv6 Network/VPC offering is enabled or not.",
             true);
 
     static final ConfigKey<Integer> Ipv6PrefixSubnetCleanupInterval = new ConfigKey<Integer>("Advanced", Integer.class,
