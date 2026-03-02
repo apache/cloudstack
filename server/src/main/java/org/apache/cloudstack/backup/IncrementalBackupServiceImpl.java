@@ -176,6 +176,12 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         return backupDao.persist(backup);
     }
 
+    protected void removedFailedBackup(BackupVO backup) {
+        backup.setStatus(Backup.Status.Error);
+        backupDao.update(backup.getId(), backup);
+        backupDao.remove(backup.getId());
+    }
+
     @Override
     public Backup startBackup(StartBackupCmd cmd) {
         BackupVO backup = backupDao.findById(cmd.getEntityId());
@@ -213,12 +219,14 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 answer = (StartBackupAnswer) agentManager.send(hostId, startCmd);
             }
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            backupDao.remove(backup.getId());
+            removedFailedBackup(backup);
+            logger.error("Failed to communicate with agent on {} for {} start", host, backup, e);
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
 
         if (!answer.getResult()) {
-            backupDao.remove(backup.getId());
+            removedFailedBackup(backup);
+            logger.error("Failed to start {} due to: {}", backup, answer.getDetails());
             throw new CloudRuntimeException("Failed to start backup: " + answer.getDetails());
         }
 
@@ -710,7 +718,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         response.setId(imageTransferVO.getUuid());
         Long backupId = imageTransferVO.getBackupId();
         if (backupId != null) {
-            Backup backup = backupDao.findById(backupId);
+            // ToDo: Orphan image transfer record if backup is deleted before transfer finalization, need to clean up
+            Backup backup = backupDao.findByIdIncludingRemoved(backupId);
             response.setBackupId(backup.getUuid());
         }
         Long volumeId = imageTransferVO.getDiskId();
