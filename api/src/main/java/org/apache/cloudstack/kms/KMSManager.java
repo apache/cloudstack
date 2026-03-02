@@ -119,17 +119,6 @@ public interface KMSManager extends Manager, Configurable {
     KMSProvider getKMSProvider(String name);
 
     /**
-     * Unwrap a DEK from a wrapped key
-     * SECURITY: Caller must zeroize returned byte array after use!
-     *
-     * @param wrappedKey the wrapped key from database
-     * @param zoneId     the zone ID
-     * @return plaintext DEK (caller must zeroize!)
-     * @throws KMSException if unwrap fails
-     */
-    byte[] unwrapVolumeKey(WrappedKey wrappedKey, Long zoneId) throws KMSException;
-
-    /**
      * Check if caller has permission to use a KMS key
      *
      * @param callerAccountId the caller's account ID

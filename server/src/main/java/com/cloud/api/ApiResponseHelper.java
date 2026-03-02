@@ -208,7 +208,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.gui.theme.GuiThemeJoin;
-import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
@@ -520,8 +519,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     private ASNumberRangeDao asNumberRangeDao;
     @Inject
     private ASNumberDao asNumberDao;
-    @Inject
-    private HSMProfileDao hsmProfileDao;
 
     @Inject
     ObjectStoreDao _objectStoreDao;

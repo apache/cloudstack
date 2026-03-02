@@ -75,8 +75,6 @@ public class KMSKekVersionVO {
     private Status status;
     @Column(name = "hsm_profile_id")
     private Long hsmProfileId;
-    @Column(name = "hsm_key_label")
-    private String hsmKeyLabel;
     @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date created;
@@ -84,12 +82,19 @@ public class KMSKekVersionVO {
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
-    public KMSKekVersionVO(Long kmsKeyId, Integer versionNumber, String kekLabel, Status status) {
+    public KMSKekVersionVO(Long kmsKeyId, Integer versionNumber, String kekLabel) {
         this();
         this.kmsKeyId = kmsKeyId;
         this.versionNumber = versionNumber;
         this.kekLabel = kekLabel;
-        this.status = status;
+        this.status = Status.Active;
+    }
+
+    public KMSKekVersionVO(Long kmsKeyId, String kekLabel) {
+        this();
+        this.kmsKeyId = kmsKeyId;
+        this.kekLabel = kekLabel;
+        this.status = Status.Active;
     }
 
     public KMSKekVersionVO() {
@@ -154,13 +159,6 @@ public class KMSKekVersionVO {
         this.hsmProfileId = hsmProfileId;
     }
 
-    public String getHsmKeyLabel() {
-        return hsmKeyLabel;
-    }
-
-    public void setHsmKeyLabel(String hsmKeyLabel) {
-        this.hsmKeyLabel = hsmKeyLabel;
-    }
 
     public Date getCreated() {
         return created;

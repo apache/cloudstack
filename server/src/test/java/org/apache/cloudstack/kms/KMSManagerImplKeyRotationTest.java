@@ -352,9 +352,9 @@ public class KMSManagerImplKeyRotationTest {
 
         // Verify current profile was used (not a different one)
         verify(kmsProvider).createKek(any(KeyPurpose.class), anyString(), eq(256), eq(currentProfileId));
+        verify(kmsKeyDao).update(kmsKeyId, kmsKey);
 
         // Verify KMS key was not updated (same profile)
         verify(kmsKey, never()).setHsmProfileId(currentProfileId);
-        verify(kmsKeyDao, never()).update(kmsKeyId, kmsKey);
     }
 }

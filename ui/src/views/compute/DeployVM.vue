@@ -2028,7 +2028,8 @@ export default {
         zoneid: this.zoneId,
         account: this.owner.account,
         domainid: this.owner.domainid,
-        projectid: this.owner.projectid
+        projectid: this.owner.projectid,
+        purpose: 'volume'
       }).then(response => {
         const kmskeyMap = response.listkmskeysresponse.kmskey || []
         if (kmskeyMap.length > 0) {

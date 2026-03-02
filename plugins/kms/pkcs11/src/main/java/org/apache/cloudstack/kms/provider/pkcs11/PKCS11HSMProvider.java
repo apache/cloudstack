@@ -26,7 +26,6 @@ import org.apache.cloudstack.framework.kms.KeyPurpose;
 import org.apache.cloudstack.framework.kms.WrappedKey;
 import org.apache.cloudstack.kms.HSMProfileDetailsVO;
 import org.apache.cloudstack.kms.KMSKekVersionVO;
-import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.kms.dao.HSMProfileDetailsDao;
 import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
 import org.apache.commons.lang3.StringUtils;
@@ -75,7 +74,7 @@ import java.util.concurrent.TimeUnit;
 public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
     private static final Logger logger = LogManager.getLogger(PKCS11HSMProvider.class);
     private static final String PROVIDER_NAME = "pkcs11";
-    // Security note (#7): AES-CBC provides confidentiality but not authenticity (no
+    // Security note: AES-CBC provides confidentiality but not authenticity (no
     // HMAC).
     // While AES-GCM is preferred, SunPKCS11 support for GCM is often buggy or
     // missing
@@ -88,8 +87,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
 
     private static final int[] VALID_KEY_SIZES = {128, 192, 256};
     private final Map<Long, HSMSessionPool> sessionPools = new ConcurrentHashMap<>();
-    @Inject
-    private HSMProfileDao hsmProfileDao;
     @Inject
     private HSMProfileDetailsDao hsmProfileDetailsDao;
     @Inject
@@ -123,6 +120,85 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
             session.deleteKey(kekId);
             return null;
         });
+    }
+
+    Long resolveProfileId(String kekLabel) throws KMSException {
+        KMSKekVersionVO version = kmsKekVersionDao.findByKekLabel(kekLabel);
+        if (version != null && version.getHsmProfileId() != null) {
+            return version.getHsmProfileId();
+        }
+        throw new KMSException(KMSException.ErrorType.KEK_NOT_FOUND,
+                "Could not resolve HSM profile for KEK: " + kekLabel);
+    }
+
+    /**
+     * Validates HSM profile configuration for PKCS#11 provider.
+     *
+     * <p>
+     * Validates:
+     * <ul>
+     * <li>{@code library}: Required, should point to PKCS#11 library</li>
+     * <li>{@code slot}, {@code slot_list_index}, or {@code token_label}: At least
+     * one required</li>
+     * <li>{@code pin}: Required for HSM authentication</li>
+     * <li>{@code max_sessions}: Optional, must be positive integer if provided</li>
+     * </ul>
+     *
+     * @param config Configuration map from HSM profile details
+     * @throws KMSException with {@code INVALID_PARAMETER} if validation fails
+     */
+    @Override
+    public void validateProfileConfig(Map<String, String> config) throws KMSException {
+        String libraryPath = config.get("library");
+        if (StringUtils.isBlank(libraryPath)) {
+            throw KMSException.invalidParameter("library is required for PKCS#11 HSM profile");
+        }
+
+        String slot = config.get("slot");
+        String slotListIndex = config.get("slot_list_index");
+        String tokenLabel = config.get("token_label");
+        if (StringUtils.isAllBlank(slot, slotListIndex, tokenLabel)) {
+            throw KMSException.invalidParameter(
+                    "One of 'slot', 'slot_list_index', or 'token_label' is required for PKCS#11 HSM profile");
+        }
+
+        if (StringUtils.isNotBlank(slot)) {
+            try {
+                Integer.parseInt(slot);
+            } catch (NumberFormatException e) {
+                throw KMSException.invalidParameter("slot must be a valid integer: " + slot);
+            }
+        }
+
+        if (StringUtils.isNotBlank(slotListIndex)) {
+            try {
+                int idx = Integer.parseInt(slotListIndex);
+                if (idx < 0) {
+                    throw KMSException.invalidParameter("slot_list_index must be a non-negative integer");
+                }
+            } catch (NumberFormatException e) {
+                throw KMSException.invalidParameter("slot_list_index must be a valid integer: " + slotListIndex);
+            }
+        }
+
+        File libraryFile = new File(libraryPath);
+        if (!libraryFile.exists() && !libraryFile.isAbsolute()) {
+            // The HSM library might be in the system library path
+            logger.debug("Library path {} does not exist as absolute path, will rely on system library path",
+                    libraryPath);
+        }
+
+        String max_sessions = config.get("max_sessions");
+        if (StringUtils.isNotBlank(max_sessions)) {
+            try {
+                int idx = Integer.parseInt(max_sessions);
+                if (idx <= 0) {
+                    throw KMSException.invalidParameter("max_sessions must be greater than 0");
+                }
+            } catch (NumberFormatException e) {
+                throw KMSException.invalidParameter("max_sessions must be a valid integer: " + max_sessions);
+            }
+        }
     }
 
     @Override
@@ -245,15 +321,6 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         logger.info("Invalidated HSM session pool for profile {}", profileId);
     }
 
-    Long resolveProfileId(String kekLabel) throws KMSException {
-        KMSKekVersionVO version = kmsKekVersionDao.findByKekLabel(kekLabel);
-        if (version != null && version.getHsmProfileId() != null) {
-            return version.getHsmProfileId();
-        }
-        throw new KMSException(KMSException.ErrorType.KEK_NOT_FOUND,
-                "Could not resolve HSM profile for KEK: " + kekLabel);
-    }
-
     /**
      * Executes an operation with a session from the pool, handling acquisition and release.
      *
@@ -295,80 +362,9 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
         return config;
     }
 
-    /**
-     * Validates HSM profile configuration for PKCS#11 provider.
-     *
-     * <p>
-     * Validates:
-     * <ul>
-     * <li>{@code library}: Required, should point to PKCS#11 library</li>
-     * <li>{@code slot}, {@code slot_list_index}, or {@code token_label}: At least
-     * one required</li>
-     * <li>{@code pin}: Required for HSM authentication</li>
-     * <li>{@code max_sessions}: Optional, must be positive integer if provided</li>
-     * </ul>
-     *
-     * @param config Configuration map from HSM profile details
-     * @throws KMSException with {@code INVALID_PARAMETER} if validation fails
-     */
-    @Override
-    public void validateProfileConfig(Map<String, String> config) throws KMSException {
-        String libraryPath = config.get("library");
-        if (StringUtils.isBlank(libraryPath)) {
-            throw KMSException.invalidParameter("library is required for PKCS#11 HSM profile");
-        }
-
-        String slot = config.get("slot");
-        String slotListIndex = config.get("slot_list_index");
-        String tokenLabel = config.get("token_label");
-        if (StringUtils.isAllBlank(slot, slotListIndex, tokenLabel)) {
-            throw KMSException.invalidParameter(
-                    "One of 'slot', 'slot_list_index', or 'token_label' is required for PKCS#11 HSM profile");
-        }
-
-        if (StringUtils.isNotBlank(slot)) {
-            try {
-                Integer.parseInt(slot);
-            } catch (NumberFormatException e) {
-                throw KMSException.invalidParameter("slot must be a valid integer: " + slot);
-            }
-        }
-
-        if (StringUtils.isNotBlank(slotListIndex)) {
-            try {
-                int idx = Integer.parseInt(slotListIndex);
-                if (idx < 0) {
-                    throw KMSException.invalidParameter("slot_list_index must be a non-negative integer");
-                }
-            } catch (NumberFormatException e) {
-                throw KMSException.invalidParameter("slot_list_index must be a valid integer: " + slotListIndex);
-            }
-        }
-
-        File libraryFile = new File(libraryPath);
-        if (!libraryFile.exists() && !libraryFile.isAbsolute()) {
-            // The HSM library might be in the system library path
-            logger.debug("Library path {} does not exist as absolute path, will rely on system library path",
-                    libraryPath);
-        }
-
-        String max_sessions = config.get("max_sessions");
-        if (StringUtils.isNotBlank(max_sessions)) {
-            try {
-                int idx = Integer.parseInt(max_sessions);
-                if (idx <= 0) {
-                    throw KMSException.invalidParameter("max_sessions must be greater than 0");
-                }
-            } catch (NumberFormatException e) {
-                throw KMSException.invalidParameter("max_sessions must be a valid integer: " + max_sessions);
-            }
-        }
-    }
-
     boolean isSensitiveKey(String key) {
         return KMSProvider.isSensitiveKey(key);
     }
-
 
 
     @Override
@@ -641,6 +637,17 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
                 throw KMSException.invalidParameter("One of 'slot', 'slot_list_index', or 'token_label' is required");
             }
 
+            // Explicitly configure SunPKCS11 to generate AES keys as Data Encryption Keys.
+            // Strict HSMs (like Thales Luna in FIPS mode) forbid a key from having both
+            // CKA_WRAP and CKA_ENCRYPT attributes. Because CloudStack uses Cipher.ENCRYPT_MODE
+            // (which maps to C_Encrypt) to protect the DEK, the KEK must have CKA_ENCRYPT=true.
+            configBuilder.append("\nattributes(generate, CKO_SECRET_KEY, CKK_AES) = {\n");
+            configBuilder.append("  CKA_ENCRYPT = true\n");
+            configBuilder.append("  CKA_DECRYPT = true\n");
+            configBuilder.append("  CKA_WRAP = false\n");
+            configBuilder.append("  CKA_UNWRAP = false\n");
+            configBuilder.append("}\n");
+
             return configBuilder.toString();
         }
 
@@ -823,9 +830,9 @@ public class PKCS11HSMProvider extends AdapterBase implements KMSProvider {
 
             } catch (KeyStoreException e) {
                 if (e.getMessage() != null
-                        && e.getMessage().contains("found multiple secret keys sharing same CKA_LABEL")) {
+                    && e.getMessage().contains("found multiple secret keys sharing same CKA_LABEL")) {
                     logger.warn("Multiple duplicate keys found with label '{}' in HSM. Reusing the existing key. " +
-                            "Please purge duplicate keys manually if possible.", label);
+                                "Please purge duplicate keys manually if possible.", label);
                     return label;
                 }
                 handlePKCS11Exception(e, "Failed to store key in HSM KeyStore");
