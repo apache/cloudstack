@@ -418,7 +418,7 @@ class TestDomainsVpcOfferings(cloudstackTestCase):
             "sg",
             "advancedns",
             "smoke"],
-        required_hardware="true")
+        required_hardware="false")
     def test_04_validate_vpc_offering_conserve_mode_disabled(self):
         """Test to create and validate vpc with conserve mode disabled for an existing domain specified vpc offering"""
 
