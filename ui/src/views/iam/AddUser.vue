@@ -133,11 +133,16 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item v-if="isAdminOrDomainAdmin() && !samlEnable" name="passwordChangeRequired" ref="passwordChangeRequired">
+            <a-checkbox v-model:checked="form.passwordChangeRequired">
+              {{ $t('label.change.password.onlogin') }}
+            </a-checkbox>
+        </a-form-item>
         <div v-if="samlAllowed">
-          <a-form-item name="samlenable" ref="samlenable" :label="$t('label.samlenable')">
-            <a-switch v-model:checked="form.samlenable" />
+          <a-form-item name="samlEnable" ref="samlEnable" :label="$t('label.samlenable')">
+            <a-switch v-model:checked="samlEnable" />
           </a-form-item>
-          <a-form-item name="samlentity" ref="samlentity" v-if="form.samlenable">
+          <a-form-item name="samlentity" ref="samlentity" v-if="samlEnable">
             <template #label>
               <tooltip-label :title="$t('label.samlentity')" :tooltip="apiParams.entityid.description"/>
             </template>
@@ -197,6 +202,13 @@ export default {
     this.apiParams = this.$getApiParams('createUser', 'authorizeSamlSso')
     this.initForm()
     this.fetchData()
+  },
+  watch: {
+    samlEnable (newVal) {
+      if (newVal) {
+        this.form.passwordChangeRequired = false
+      }
+    }
   },
   computed: {
     samlAllowed () {
@@ -291,9 +303,9 @@ export default {
         })
 
         const user = userCreationResponse?.createuserresponse?.user
-        if (values.samlenable && user) {
+        if (this.samlEnable && user) {
           await postAPI('authorizeSamlSso', {
-            enable: values.samlenable,
+            enable: this.samlEnable,
             entityid: values.samlentity,
             userid: user.id
           })
@@ -346,6 +358,9 @@ export default {
 
       if (this.isValidValueForKey(rawParams, 'timezone') && rawParams.timezone.length > 0) {
         params.timezone = rawParams.timezone
+      }
+      if (this.isAdminOrDomainAdmin() && rawParams.passwordChangeRequired === true) {
+        params.passwordchangerequired = rawParams.passwordChangeRequired
       }
 
       return postAPI('createUser', params)
