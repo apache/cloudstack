@@ -201,7 +201,7 @@ class TestVPCConserveModeRules(cloudstackTestCase):
     def tearDown(self):
         super(TestVPCConserveModeRules, self).tearDown()
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_01_vpc_conserve_mode_cross_tier_rules_allowed(self):
         """With conserveMode=True, LB rule on VPC Tier 1 and Port Forwarding rule on VPC Tier 2 can
         share the same public IP without a NetworkRuleConflictException.
@@ -257,7 +257,7 @@ class TestVPCConserveModeRules(cloudstackTestCase):
                 "conserveMode=True, but got exception: %s" % e
             )
 
-    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_02_vpc_conserve_mode_reuse_source_nat_ip_address(self):
         """With VPC conserve mode enabled, a NAT rule can be created on a VPC tier (conserve mode enabled)
         with a source NAT IP address
