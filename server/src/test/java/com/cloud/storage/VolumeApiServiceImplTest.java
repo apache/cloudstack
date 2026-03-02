@@ -1196,12 +1196,12 @@ public class VolumeApiServiceImplTest {
         Assert.assertTrue(result);
         Mockito.verify(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.verify(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
-        Mockito.verify(volumeDaoMock).remove(volumeMockId);
-        Mockito.verify(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
+        Mockito.verify(volumeDaoMock, Mockito.times(0)).remove(volumeMockId);
+        Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
 
-        Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
-        Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
-        Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).cleanVolumesCache(volumeVoMock);
+        Mockito.verify(volumeApiServiceImpl, Mockito.times(1)).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
+        Mockito.verify(volumeApiServiceImpl, Mockito.times(1)).expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
+        Mockito.verify(volumeApiServiceImpl, Mockito.times(1)).cleanVolumesCache(volumeVoMock);
     }
 
     @Test
