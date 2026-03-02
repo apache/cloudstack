@@ -157,7 +157,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
         // For new snapshots, check if Disk-only and all volumes on ONTAP
         if (vmSnapshotVO.getType() != VMSnapshot.Type.Disk) {
-            logger.error("ONTAP VM snapshot strategy cannot handle memory snapshots for VM [{}]", vmSnapshot.getVmId());
+            logger.error("canHandle: ONTAP VM snapshot strategy cannot handle memory snapshots for VM [{}]", vmSnapshot.getVmId());
             throw new CloudRuntimeException("ONTAP VM snapshot strategy cannot handle memory snapshots for VM [" + vmSnapshot.getVmId() + "]");
         }
 
@@ -171,7 +171,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
         if (snapshotMemory) {
-            logger.debug("ONTAP VM snapshot strategy cannot handle memory snapshots for VM [{}]", vmId);
+            logger.debug("canHandle: ONTAP VM snapshot strategy cannot handle memory snapshots for VM [{}]", vmId);
             return StrategyPriority.CANT_HANDLE;
         }
 
@@ -188,12 +188,12 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
     boolean allVolumesOnOntapManagedStorage(long vmId) {
         UserVm userVm = userVmDao.findById(vmId);
         if (userVm == null) {
-            logger.debug("VM with id [{}] not found", vmId);
+            logger.debug("allVolumesOnOntapManagedStorage: VM with id [{}] not found", vmId);
             return false;
         }
 
         if (!Hypervisor.HypervisorType.KVM.equals(userVm.getHypervisorType())) {
-            logger.debug("ONTAP VM snapshot strategy only supports KVM hypervisor, VM [{}] uses [{}]",
+            logger.debug("allVolumesOnOntapManagedStorage: ONTAP VM snapshot strategy only supports KVM hypervisor, VM [{}] uses [{}]",
                     vmId, userVm.getHypervisorType());
             return false;
         }
@@ -210,7 +210,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         if (volumes == null || volumes.isEmpty()) {
-            logger.debug("No volumes found for VM [{}]", vmId);
+            logger.debug("allVolumesOnOntapManagedStorage: No volumes found for VM [{}]", vmId);
             return false;
         }
 
@@ -223,18 +223,18 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 return false;
             }
             if (!pool.isManaged()) {
-                logger.debug("Volume [{}] is on non-managed storage pool [{}], not ONTAP",
+                logger.debug("allVolumesOnOntapManagedStorage: Volume [{}] is on non-managed storage pool [{}], not ONTAP",
                         volume.getId(), pool.getName());
                 return false;
             }
             if (!Constants.ONTAP_PLUGIN_NAME.equals(pool.getStorageProviderName())) {
-                logger.debug("Volume [{}] is on managed pool [{}] with provider [{}], not ONTAP",
+                logger.debug("allVolumesOnOntapManagedStorage: Volume [{}] is on managed pool [{}] with provider [{}], not ONTAP",
                         volume.getId(), pool.getName(), pool.getStorageProviderName());
                 return false;
             }
         }
 
-        logger.debug("All volumes of VM [{}] are on ONTAP managed storage, this strategy can handle", vmId);
+        logger.debug("allVolumesOnOntapManagedStorage: All volumes of VM [{}] are on ONTAP managed storage, this strategy can handle", vmId);
         return true;
     }
 
@@ -298,13 +298,13 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             boolean shouldFreezeThaw = quiescevm && vmIsRunning;
 
             if (!vmIsRunning) {
-                logger.info("VM [{}] is in state [{}] (not Running). Skipping freeze/thaw - " +
+                logger.info("takeVMSnapshot: VM [{}] is in state [{}] (not Running). Skipping freeze/thaw - " +
                         "FlexVolume snapshot will be taken directly.", userVm.getInstanceName(), userVm.getState());
             } else if (quiescevm) {
-                logger.info("Quiesce option is enabled for ONTAP VM Snapshot of VM [{}]. " +
+                logger.info("takeVMSnapshot: Quiesce option is enabled for ONTAP VM Snapshot of VM [{}]. " +
                         "VM file systems will be frozen/thawed for application-consistent snapshots.", userVm.getInstanceName());
             } else {
-                logger.info("Quiesce option is disabled for ONTAP VM Snapshot of VM [{}]. " +
+                logger.info("takeVMSnapshot: Quiesce option is disabled for ONTAP VM Snapshot of VM [{}]. " +
                         "Snapshots will be crash-consistent only.", userVm.getInstanceName());
             }
 
@@ -320,7 +320,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(
                     userVm.getInstanceName(), userVm.getUuid(), target, volumeTOs, guestOS.getDisplayName());
 
-            logger.info("Creating ONTAP FlexVolume VM Snapshot for VM [{}] with quiesce={}", userVm.getInstanceName(), quiescevm);
+            logger.info("takeVMSnapshot: Creating ONTAP FlexVolume VM Snapshot for VM [{}] with quiesce={}", userVm.getInstanceName(), quiescevm);
 
             // Prepare volume info list and calculate sizes
             for (VolumeObjectTO volumeObjectTO : volumeTOs) {
@@ -332,7 +332,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             // ── Group volumes by FlexVolume UUID ──
             Map<String, FlexVolGroupInfo> flexVolGroups = groupVolumesByFlexVol(volumeTOs);
 
-            logger.info("VM [{}] has {} volumes across {} unique FlexVolume(s)",
+            logger.info("takeVMSnapshot: VM [{}] has {} volumes across {} unique FlexVolume(s)",
                     userVm.getInstanceName(), volumeTOs.size(), flexVolGroups.size());
 
             // ── Step 1: Freeze the VM (only if quiescing is requested AND VM is running) ──
@@ -351,9 +351,9 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                             "] for ONTAP snapshot. Ensure qemu-guest-agent is installed and running. Details: " + detail);
                 }
 
-                logger.info("VM [{}] frozen successfully via QEMU guest agent", userVm.getInstanceName());
+                logger.info("takeVMSnapshot: VM [{}] frozen successfully via QEMU guest agent", userVm.getInstanceName());
             } else {
-                logger.info("Skipping VM freeze for VM [{}] (quiesce={}, vmIsRunning={})",
+                logger.info("takeVMSnapshot: Skipping VM freeze for VM [{}] (quiesce={}, vmIsRunning={})",
                         userVm.getInstanceName(), quiescevm, vmIsRunning);
             }
 
@@ -376,7 +376,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     FlexVolSnapshot snapshotRequest = new FlexVolSnapshot(snapshotNameBase,
                             "CloudStack VM snapshot " + vmSnapshot.getName() + " for VM " + userVm.getInstanceName());
 
-                    logger.info("Creating ONTAP FlexVolume snapshot [{}] on FlexVol UUID [{}] covering {} volume(s)",
+                    logger.info("takeVMSnapshot: Creating ONTAP FlexVolume snapshot [{}] on FlexVol UUID [{}] covering {} volume(s)",
                             snapshotNameBase, flexVolUuid, groupInfo.volumeIds.size());
 
                     JobResponse jobResponse = snapshotClient.createSnapshot(authHeader, flexVolUuid, snapshotRequest);
@@ -403,7 +403,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                         createdSnapshots.add(detail);
                     }
 
-                    logger.info("ONTAP FlexVolume snapshot [{}] (uuid={}) on FlexVol [{}] completed in {} ms. Covers volumes: {}",
+                    logger.info("takeVMSnapshot: ONTAP FlexVolume snapshot [{}] (uuid={}) on FlexVol [{}] completed in {} ms. Covers volumes: {}",
                             snapshotNameBase, snapshotUuid, flexVolUuid,
                             TimeUnit.MILLISECONDS.convert(System.nanoTime() - startSnapshot, TimeUnit.NANOSECONDS),
                             groupInfo.volumeIds);
@@ -414,15 +414,15 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     try {
                         thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
                         if (thawAnswer != null && thawAnswer.getResult()) {
-                            logger.info("VM [{}] thawed successfully. Total freeze duration: {} ms",
+                            logger.info("takeVMSnapshot: VM [{}] thawed successfully. Total freeze duration: {} ms",
                                     userVm.getInstanceName(),
                                     TimeUnit.MILLISECONDS.convert(System.nanoTime() - startFreeze, TimeUnit.NANOSECONDS));
                         } else {
-                            logger.warn("Failed to thaw VM [{}]: {}", userVm.getInstanceName(),
+                            logger.warn("takeVMSnapshot: Failed to thaw VM [{}]: {}", userVm.getInstanceName(),
                                     (thawAnswer != null) ? thawAnswer.getDetails() : "no response");
                         }
                     } catch (Exception thawEx) {
-                        logger.error("Exception while thawing VM [{}]: {}", userVm.getInstanceName(), thawEx.getMessage(), thawEx);
+                        logger.error("takeVMSnapshot: Exception while thawing VM [{}]: {}", userVm.getInstanceName(), thawEx.getMessage(), thawEx);
                     }
                 }
             }
@@ -438,7 +438,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             answer.setVolumeTOs(volumeTOs);
 
             processAnswer(vmSnapshotVO, userVm, answer, null);
-            logger.info("ONTAP FlexVolume VM Snapshot [{}] created successfully for VM [{}] ({} FlexVol snapshot(s))",
+            logger.info("takeVMSnapshot: ONTAP FlexVolume VM Snapshot [{}] created successfully for VM [{}] ({} FlexVol snapshot(s))",
                     vmSnapshot.getName(), userVm.getInstanceName(), createdSnapshots.size());
 
             long new_chain_size = 0;
@@ -453,10 +453,10 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             return vmSnapshot;
 
         } catch (OperationTimedoutException e) {
-            logger.error("ONTAP VM Snapshot [{}] timed out: {}", vmSnapshot.getName(), e.getMessage());
+            logger.error("takeVMSnapshot: ONTAP VM Snapshot [{}] timed out: {}", vmSnapshot.getName(), e.getMessage());
             throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " timed out: " + e.getMessage());
         } catch (AgentUnavailableException e) {
-            logger.error("ONTAP VM Snapshot [{}] failed, agent unavailable: {}", vmSnapshot.getName(), e.getMessage());
+            logger.error("takeVMSnapshot: ONTAP VM Snapshot [{}] failed, agent unavailable: {}", vmSnapshot.getName(), e.getMessage());
             throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.getMessage());
         } catch (CloudRuntimeException e) {
             throw e;
@@ -471,7 +471,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                             rollbackFlexVolSnapshot(detail);
                             rolledBack.put(dedupeKey, Boolean.TRUE);
                         } catch (Exception rollbackEx) {
-                            logger.error("Failed to rollback FlexVol snapshot [{}] on FlexVol [{}]: {}",
+                            logger.error("takeVMSnapshot: Failed to rollback FlexVol snapshot [{}] on FlexVol [{}]: {}",
                                     detail.snapshotUuid, detail.flexVolUuid, rollbackEx.getMessage());
                         }
                     }
@@ -480,10 +480,10 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 // Ensure VM is thawed if we haven't done so
                 if (thawAnswer == null && freezeAnswer != null && freezeAnswer.getResult()) {
                     try {
-                        logger.info("Thawing VM [{}] during error cleanup", userVm.getInstanceName());
+                        logger.info("takeVMSnapshot: Thawing VM [{}] during error cleanup", userVm.getInstanceName());
                         thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
                     } catch (Exception ex) {
-                        logger.error("Could not thaw VM during cleanup: {}", ex.getMessage());
+                        logger.error("takeVMSnapshot: Could not thaw VM during cleanup: {}", ex.getMessage());
                     }
                 }
 
@@ -497,7 +497,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     }
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    logger.error("Cannot set VM Snapshot state to OperationFailed: {}", e1.getMessage());
+                    logger.error("takeVMSnapshot: Cannot set VM Snapshot state to OperationFailed: {}", e1.getMessage());
                 }
             }
         }
@@ -601,8 +601,8 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             processAnswer(vmSnapshotVO, userVm, answer, null);
             result = true;
         } catch (CloudRuntimeException e) {
-            logger.error("Revert ONTAP VM Snapshot [{}] failed: {}", vmSnapshot.getName(), e.getMessage(), e);
-            throw new CloudRuntimeException(e);
+            logger.error("revertVMSnapshot: Revert ONTAP VM Snapshot [{}] failed: {}", vmSnapshot.getName(), e.getMessage(), e);
+            throw new CloudRuntimeException("Revert ONTAP VM Snapshot ["+ vmSnapshot.getName() +"] failed.");
         } finally {
             if (!result) {
                 try {
@@ -723,7 +723,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             SnapshotFeignClient client = storageStrategy.getSnapshotFeignClient();
             String authHeader = storageStrategy.getAuthHeader();
 
-            logger.info("Rolling back FlexVol snapshot [{}] (uuid={}) on FlexVol [{}]",
+            logger.info("rollbackFlexVolSnapshot: Rolling back FlexVol snapshot [{}] (uuid={}) on FlexVol [{}]",
                     detail.snapshotName, detail.snapshotUuid, detail.flexVolUuid);
 
             JobResponse jobResponse = client.deleteSnapshot(authHeader, detail.flexVolUuid, detail.snapshotUuid);
@@ -731,7 +731,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 10, 2);
             }
         } catch (Exception e) {
-            logger.error("Rollback of FlexVol snapshot failed: {}", e.getMessage(), e);
+            logger.error("rollbackFlexVolSnapshot: Rollback of FlexVol snapshot failed: {}", e.getMessage(), e);
         }
     }
 
@@ -757,7 +757,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 SnapshotFeignClient client = storageStrategy.getSnapshotFeignClient();
                 String authHeader = storageStrategy.getAuthHeader();
 
-                logger.info("Deleting ONTAP FlexVol snapshot [{}] (uuid={}) on FlexVol [{}]",
+                logger.info("deleteFlexVolSnapshots: Deleting ONTAP FlexVol snapshot [{}] (uuid={}) on FlexVol [{}]",
                         detail.snapshotName, detail.snapshotUuid, detail.flexVolUuid);
 
                 JobResponse jobResponse = client.deleteSnapshot(authHeader, detail.flexVolUuid, detail.snapshotUuid);
@@ -766,7 +766,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 }
 
                 deletedSnapshots.put(dedupeKey, Boolean.TRUE);
-                logger.info("Deleted ONTAP FlexVol snapshot [{}] on FlexVol [{}]", detail.snapshotName, detail.flexVolUuid);
+                logger.info("deleteFlexVolSnapshots: Deleted ONTAP FlexVol snapshot [{}] on FlexVol [{}]", detail.snapshotName, detail.flexVolUuid);
             }
 
             // Always remove the DB detail row
@@ -796,7 +796,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
             if (detail.volumePath == null || detail.volumePath.isEmpty()) {
                 // Legacy detail row without volumePath – cannot do single-file restore
-                logger.warn("FlexVol snapshot detail for FlexVol [{}] has no volumePath (legacy format). " +
+                logger.warn("revertFlexVolSnapshots: FlexVol snapshot detail for FlexVol [{}] has no volumePath (legacy format). " +
                         "Skipping single-file restore for this entry.", detail.flexVolUuid);
                 continue;
             }
@@ -806,8 +806,11 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             SnapshotFeignClient snapshotClient = storageStrategy.getSnapshotFeignClient();
             String authHeader = storageStrategy.getAuthHeader();
 
-            logger.info("Restoring volume [{}] from FlexVol snapshot [{}] (uuid={}) on FlexVol [{}] (protocol={})",
-                    detail.volumePath, detail.snapshotName, detail.snapshotUuid,
+            // Prepare the file path for ONTAP API (ensure it starts with "/")
+            String ontapFilePath = detail.volumePath.startsWith("/") ? detail.volumePath : "/" + detail.volumePath;
+
+            logger.info("revertFlexVolSnapshots: Restoring volume [{}] from FlexVol snapshot [{}] (uuid={}) on FlexVol [{}] (protocol={})",
+                    ontapFilePath, detail.snapshotName, detail.snapshotUuid,
                     detail.flexVolUuid, detail.protocol);
 
             // POST /api/storage/volumes/{vol}/snapshots/{snap}/files/{path}/restore
@@ -815,19 +818,19 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             SnapshotFileRestoreRequest restoreRequest = new SnapshotFileRestoreRequest(detail.volumePath);
 
             JobResponse jobResponse = snapshotClient.restoreFileFromSnapshot(
-                    authHeader, detail.flexVolUuid, detail.snapshotUuid, detail.volumePath, restoreRequest);
+                    authHeader, detail.flexVolUuid, detail.snapshotUuid, ontapFilePath, restoreRequest);
 
             if (jobResponse != null && jobResponse.getJob() != null) {
                 Boolean success = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 60, 2);
                 if (!success) {
                     throw new CloudRuntimeException("Snapshot file restore failed for volume path [" +
-                            detail.volumePath + "] from snapshot [" + detail.snapshotName +
+                            ontapFilePath + "] from snapshot [" + detail.snapshotName +
                             "] on FlexVol [" + detail.flexVolUuid + "]");
                 }
             }
 
-            logger.info("Successfully restored volume [{}] from snapshot [{}] on FlexVol [{}]",
-                    detail.volumePath, detail.snapshotName, detail.flexVolUuid);
+            logger.info("revertFlexVolSnapshots: Successfully restored volume [{}] from snapshot [{}] on FlexVol [{}]",
+                    ontapFilePath, detail.snapshotName, detail.flexVolUuid);
         }
     }
 
