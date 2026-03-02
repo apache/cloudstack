@@ -40,7 +40,7 @@ public class UpdateHostCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "the ID of the host to update")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "The ID of the host to update")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Change the name of host", since = "4.15", authorized = {RoleType.Admin})
@@ -49,7 +49,7 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.OS_CATEGORY_ID,
                type = CommandType.UUID,
                entityType = GuestOSCategoryResponse.class,
-               description = "the id of Os category to update the host with")
+               description = "The ID of OS category to update the host with")
     private Long osCategoryId;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE,
@@ -57,13 +57,13 @@ public class UpdateHostCmd extends BaseCmd {
                description = "Change resource state of host, valid values are [Enable, Disable]. Operation may failed if host in states not allowing Enable/Disable")
     private String allocationState;
 
-    @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list of tags to be added to the host")
+    @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "List of tags to be added to the host")
     private List<String> hostTags;
 
     @Parameter(name = ApiConstants.IS_TAG_A_RULE, type = CommandType.BOOLEAN, description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
     private Boolean isTagARule;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "the new uri for the secondary storage: nfs://host/path")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "The new URI for the secondary storage: nfs://host/path")
     private String url;
 
     @Parameter(name = ApiConstants.ANNOTATION, type = CommandType.STRING, description = "Add an annotation to this host", since = "4.11", authorized = {RoleType.Admin})

@@ -59,15 +59,15 @@ public class DeployNetscalerVpxCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "availability zone for the virtual machine")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "Availability zone for the Instance")
     private Long zoneId;
 
     @ACL
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the ID of the service offering for the virtual machine")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "The ID of the service offering for the Instance")
     private Long serviceOfferingId;
 
     @ACL
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the template for the virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "The ID of the template for the Instance")
     private Long templateId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
@@ -117,7 +117,7 @@ public class DeployNetscalerVpxCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Adding a netscaler load balancer device";
+        return "Adding a NetScaler load balancer device in zone: " + getResourceUuid(ApiConstants.ZONE_ID) ;
     }
 
     @Override

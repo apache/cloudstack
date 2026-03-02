@@ -30,7 +30,7 @@ import com.cloud.network.Network;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListNetworksCmdByAdmin extends ListNetworksCmd implements AdminCmd {
 
-    @Parameter(name= ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network", since = "4.17.0")
+    @Parameter(name= ApiConstants.VLAN, type=CommandType.STRING, description = "The ID or VID of the network", since = "4.17.0")
     private String vlan;
 
     /////////////////////////////////////////////////////

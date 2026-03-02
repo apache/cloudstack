@@ -71,7 +71,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "Creates the account under the specified role.")
     private Long roleId;
 
-    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
+    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "Details for account used to store specific parameters")
     private Map<String, String> details;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Specifies the domain to which the ldap users are to be "

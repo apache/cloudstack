@@ -67,7 +67,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq;
     protected SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq;
     private SearchBuilder<SnapshotDataStoreVO> stateSearch;
-    private SearchBuilder<SnapshotDataStoreVO> idStateNinSearch;
+    private SearchBuilder<SnapshotDataStoreVO> idStateNeqSearch;
     protected SearchBuilder<SnapshotVO> snapshotVOSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotCreatedSearch;
     private SearchBuilder<SnapshotDataStoreVO> dataStoreAndInstallPathSearch;
@@ -95,6 +95,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final String FIND_SNAPSHOT_IN_ZONE = "SELECT ssr.* FROM " +
             "snapshot_store_ref ssr, snapshots s " +
             "WHERE ssr.snapshot_id=? AND ssr.snapshot_id = s.id AND s.data_center_id=?;";
+
+    private static final String GET_PHYSICAL_SIZE_OF_SNAPSHOTS_ON_PRIMARY_BY_ACCOUNT = "SELECT SUM(s.physical_size) " +
+            "FROM cloud.snapshot_store_ref s " +
+            "LEFT JOIN cloud.snapshots ON s.snapshot_id = snapshots.id " +
+            "WHERE snapshots.account_id = ? " +
+            "AND snapshots.removed IS NULL " +
+            "AND s.state = 'Ready' " +
+            "AND s.store_role = 'Primary' " +
+            "AND NOT EXISTS (SELECT 1 FROM cloud.snapshot_store_ref i WHERE i.snapshot_id = s.snapshot_id AND i.store_role = 'Image')";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -137,10 +146,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         stateSearch.done();
 
 
-        idStateNinSearch = createSearchBuilder();
-        idStateNinSearch.and(SNAPSHOT_ID, idStateNinSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
-        idStateNinSearch.and(STATE, idStateNinSearch.entity().getState(), SearchCriteria.Op.NOTIN);
-        idStateNinSearch.done();
+        idStateNeqSearch = createSearchBuilder();
+        idStateNeqSearch.and(SNAPSHOT_ID, idStateNeqSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        idStateNeqSearch.and(STATE, idStateNeqSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        idStateNeqSearch.done();
 
         snapshotVOSearch = snapshotDao.createSearchBuilder();
         snapshotVOSearch.and(VOLUME_ID, snapshotVOSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
@@ -464,7 +473,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> findBySnapshotId(long snapshotId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = idStateNinSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> findBySnapshotIdWithNonDestroyedState(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = idStateNeqSearch.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STATE, State.Destroyed.name());
         return listBy(sc);
@@ -472,7 +488,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> findBySnapshotIdAndNotInDestroyedHiddenState(long snapshotId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = idStateNinSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = idStateNeqSearch.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STATE, State.Destroyed.name(), State.Hidden.name());
         return listBy(sc);
@@ -724,5 +740,24 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = sb.create();
         sc.setParameters("snapshotIds", snapshotIds.toArray());
         return batchExpunge(sc, batchSize);
+    }
+
+    @Override
+    public long getSnapshotsPhysicalSizeOnPrimaryStorageByAccountId(long accountId) {
+        long snapshotsPhysicalSize = 0;
+        try (TransactionLegacy transactionLegacy = TransactionLegacy.currentTxn()) {
+            try (PreparedStatement preparedStatement = transactionLegacy.prepareStatement(GET_PHYSICAL_SIZE_OF_SNAPSHOTS_ON_PRIMARY_BY_ACCOUNT)) {
+                preparedStatement.setLong(1, accountId);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        snapshotsPhysicalSize = resultSet.getLong(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            logger.warn("Failed to get the snapshots physical size for the account [{}] due to [{}].", accountId, e.getMessage(), e);
+        }
+        return snapshotsPhysicalSize;
     }
 }

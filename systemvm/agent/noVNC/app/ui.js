@@ -29,6 +29,14 @@ const UI = {
     connected: false,
     desktopName: "",
 
+    // Modifier key configuration
+    _modifierKeys: {
+        shift: { keysym: KeyTable.XK_Shift_L, code: "ShiftLeft", buttonId: 'noVNC_toggle_shift_button' },
+        ctrl: { keysym: KeyTable.XK_Control_L, code: "ControlLeft", buttonId: 'noVNC_toggle_ctrl_button' },
+        alt: { keysym: KeyTable.XK_Alt_L, code: "AltLeft", buttonId: 'noVNC_toggle_alt_button' },
+        windows: { keysym: KeyTable.XK_Super_L, code: "MetaLeft", buttonId: 'noVNC_toggle_windows_button' }
+    },
+
     statusTimeout: null,
     hideKeyboardTimeout: null,
     idleControlbarTimeout: null,
@@ -124,6 +132,11 @@ const UI = {
         UI.addSettingsHandlers();
         document.getElementById("noVNC_status")
             .addEventListener('click', UI.hideStatus);
+
+        // Handle tab/window close to release modifier keys
+        // This is critical for VMware VMs using websocket reverse proxy
+        window.addEventListener('beforeunload', UI.handleBeforeUnload);
+        window.addEventListener('pagehide', UI.handlePageHide);
 
         // Bootstrap fallback input handler
         UI.keyboardinputReset();
@@ -1740,6 +1753,39 @@ const UI = {
         UI.idleControlbar();
     },
 
+    _sendKeyUp(keysym, code) {
+        if (!UI.rfb) return;
+        UI.rfb.sendKey(keysym, code, false);
+    },
+
+    // Release a single modifier key if it's pressed
+    _releaseModifierKey(keyName) {
+        const keyConfig = UI._modifierKeys[keyName];
+        if (!keyConfig) return false;
+
+        const btn = document.getElementById(keyConfig.buttonId);
+        if (!btn || !btn.classList.contains("noVNC_selected")) {
+            return false;
+        }
+
+        UI._sendKeyUp(keyConfig.keysym, keyConfig.code);
+        btn.classList.remove("noVNC_selected");
+        return true;
+    },
+
+    // Release all currently pressed modifier keys
+    _releaseAllModifierKeys() {
+        let keysReleased = false;
+
+        // Release all modifier keys
+        for (const keyName in UI._modifierKeys) {
+            if (UI._releaseModifierKey(keyName)) {
+                keysReleased = true;
+            }
+        }
+        return keysReleased;
+    },
+
     // Move focus to the screen in order to be able to use the
     // keyboard right after these extra keys.
     // The exception is when a virtual keyboard is used, because
@@ -1834,6 +1880,20 @@ const UI = {
         optn.text = text;
         optn.value = value;
         selectbox.options.add(optn);
+    },
+
+    // Handle tab/window close events
+    // These fire when the user closes the tab, which doesn't call disconnect()
+    handleBeforeUnload(event) {
+        // Release modifier keys before tab closes
+        // This is critical for VMware VMs using websocket reverse proxy
+        UI._releaseAllModifierKeys();
+    },
+
+    handlePageHide(event) {
+        // Also handle pagehide as a fallback (fires in more browsers)
+        // Release modifier keys before page is hidden
+        UI._releaseAllModifierKeys();
     },
 
 /* ------^-------

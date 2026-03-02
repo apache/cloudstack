@@ -19,11 +19,8 @@
     under the License.
 
 -->
-<ruleset name="Maven Ruleset"
-  xmlns="http://pmd.sf.net/ruleset/1.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
-  xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
+<ruleset name="CloudStack PMD Ruleset"
+  xmlns="http://pmd.sourceforge.net/ruleset/2.0.0">
 
   <description>
     Ruleset that brings all the rulesets we want from the pmd jar, because
@@ -31,16 +28,16 @@
     to add our own future rulesets, if any.
   </description>
 
-  <rule ref="rulesets/java/basic.xml"/>
-  <rule ref="rulesets/java/braces.xml"/>
-  <rule ref="rulesets/java/clone.xml"/>
-  <rule ref="rulesets/java/codesize.xml"/>
-  <rule ref="rulesets/java/comments.xml">
+  <rule ref="category/java/basic.xml"/>
+  <rule ref="category/java/braces.xml"/>
+  <rule ref="category/java/clone.xml"/>
+  <rule ref="category/java/codesize.xml"/>
+  <rule ref="category/java/comments.xml">
     <!-- We shouldn't limit the number of lines in the header of a class -->
     <exclude name="CommentSize"/>
     <exclude name="CommentRequired" />
   </rule>
-  <rule ref="rulesets/java/controversial.xml">
+  <rule ref="category/java/controversial.xml">
     <!-- The rule is good, but is not properly applied. It forces you to statically declare it as ConcurrentHashMap -->
     <exclude name="UseConcurrentHashMap"/>
     <exclude name="CallSuperInConstructor"/>
@@ -50,35 +47,35 @@
     <exclude name="DataflowAnomalyAnalysis" />
     <exclude name="UseObjectForClearerAPI" />
   </rule>
-  <rule ref="rulesets/java/coupling.xml">
+  <rule ref="category/java/coupling.xml">
     <exclude name="ExcessiveImports" />
     <exclude name="LawOfDemeter"/>
   </rule>
-  <rule ref="rulesets/java/design.xml">
+  <rule ref="category/java/design.xml">
     <exclude name="ConstructorCallsOverridableMethod"/>
     <exclude name="AbstractClassWithoutAbstractMethod"/>
     <exclude name="AvoidSynchronizedAtMethodLevel"/>
   </rule>
-  <rule ref="rulesets/java/empty.xml"/>
-  <rule ref="rulesets/java/finalizers.xml"/>
-  <rule ref="rulesets/java/imports.xml"/>
-  <rule ref="rulesets/java/j2ee.xml"/>
-  <rule ref="rulesets/java/junit.xml"/>
-  <rule ref="rulesets/java/logging-java.xml"/>
-  <rule ref="rulesets/java/naming.xml">
+  <rule ref="category/java/empty.xml"/>
+  <rule ref="category/java/finalizers.xml"/>
+  <rule ref="category/java/imports.xml"/>
+  <rule ref="category/java/j2ee.xml"/>
+  <rule ref="category/java/junit.xml"/>
+  <rule ref="category/java/logging-java.xml"/>
+  <rule ref="category/java/naming.xml">
     <exclude name="ShortVariable"/>
     <exclude name="AbstractNaming"/>
   </rule>
-  <rule ref="rulesets/java/naming.xml/LongVariable">
+  <rule ref="category/java/naming.xml/LongVariable">
     <properties>
       <property name="minimum" value="32"/>
     </properties>
   </rule>
-  <rule ref="rulesets/java/optimizations.xml"/>
-  <rule ref="rulesets/java/strictexception.xml"/>
-  <rule ref="rulesets/java/strings.xml"/>
-  <rule ref="rulesets/java/sunsecure.xml"/>
-  <rule ref="rulesets/java/typeresolution.xml"/>
-  <rule ref="rulesets/java/unnecessary.xml"/>
-  <rule ref="rulesets/java/unusedcode.xml"/>
+  <rule ref="category/java/optimizations.xml"/>
+  <rule ref="category/java/strictexception.xml"/>
+  <rule ref="category/java/strings.xml"/>
+  <rule ref="category/java/sunsecure.xml"/>
+  <rule ref="category/java/typeresolution.xml"/>
+  <rule ref="category/java/unnecessary.xml"/>
+  <rule ref="category/java/unusedcode.xml"/>
 </ruleset>

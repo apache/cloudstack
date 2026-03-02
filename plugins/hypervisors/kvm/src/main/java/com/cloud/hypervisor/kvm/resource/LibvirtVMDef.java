@@ -860,6 +860,15 @@ public class LibvirtVMDef {
                 _bus = bus;
             }
 
+            public static DiskBus fromValue(String bus) {
+                for (DiskBus b : DiskBus.values()) {
+                    if (b.toString().equalsIgnoreCase(bus)) {
+                        return b;
+                    }
+                }
+                return null;
+            }
+
             @Override
             public String toString() {
                 return _bus;
@@ -1514,7 +1523,13 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder memBalloonBuilder = new StringBuilder();
-            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'>\n");
+            memBalloonBuilder.append("<memballoon model='" + memBalloonModel + "'");
+            /* Version integer format: major * 1,000,000 + minor * 1,000 + release.
+             * Require: libvirt 6.9.0, qemu 5.1.0 */
+            if (memBalloonModel != MemBalloonModel.NONE && s_qemuVersion >= 5001000 && s_libvirtVersion >= 6009000) {
+                memBalloonBuilder.append(" autodeflate='on' freePageReporting='on'");
+            }
+            memBalloonBuilder.append(">\n");
             if (StringUtils.isNotBlank(memBalloonStatsPeriod)) {
                 memBalloonBuilder.append("<stats period='" + memBalloonStatsPeriod +"'/>\n");
             }

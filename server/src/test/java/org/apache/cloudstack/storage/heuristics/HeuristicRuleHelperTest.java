@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.heuristics;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -29,6 +31,7 @@ import org.apache.cloudstack.storage.heuristics.presetvariables.PresetVariables;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -67,6 +70,19 @@ public class HeuristicRuleHelperTest {
     @Spy
     @InjectMocks
     HeuristicRuleHelper heuristicRuleHelperSpy = new HeuristicRuleHelper();
+
+    @Before
+    public void setUp() {
+        Mockito.doReturn("template-name").when(vmTemplateVOMock).getName();
+        Mockito.doReturn(Storage.ImageFormat.QCOW2).when(vmTemplateVOMock).getFormat();
+        Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(vmTemplateVOMock).getHypervisorType();
+        Mockito.doReturn("snapshot-name").when(snapshotInfoMock).getName();
+        Mockito.doReturn(1024L).when(snapshotInfoMock).getSize();
+        Mockito.doReturn(Hypervisor.HypervisorType.VMware).when(snapshotInfoMock).getHypervisorType();
+        Mockito.doReturn("volume-name").when(volumeVOMock).getName();
+        Mockito.doReturn(Storage.ImageFormat.RAW).when(volumeVOMock).getFormat();
+        Mockito.doReturn(2048L).when(volumeVOMock).getSize();
+    }
 
     @Test
     public void getImageStoreIfThereIsHeuristicRuleTestZoneDoesNotHaveHeuristicRuleShouldReturnNull() {

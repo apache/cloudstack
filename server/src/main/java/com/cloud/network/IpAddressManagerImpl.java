@@ -1454,7 +1454,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         throw ex;
 
                     }
-                    CallContext.current().setEventDetails("Ip Id: " + ip.getId());
+                    CallContext.current().setEventDetails("IP address ID: " + ip.getUuid());
                     Ip ipAddress = ip.getAddress();
 
                     logger.debug("Got {} to assign for account {} in zone {}", ipAddress, ipOwner, zone);
@@ -2409,7 +2409,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
                         nic.setFormat(AddressFormat.Ip4);
                         nic.setReservationId(String.valueOf(ip.getVlanTag()));
-                        if(nic.getMacAddress() == null) {
+                        if (nic.getMacAddress() == null) {
                             nic.setMacAddress(ip.getMacAddress());
                         }
                     }
@@ -2460,7 +2460,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                         nic.setBroadcastUri(network.getBroadcastUri());
                         nic.setFormat(AddressFormat.Ip4);
-                        if(nic.getMacAddress() == null) {
+                        if (nic.getMacAddress() == null || !_networkModel.isMACUnique(nic.getMacAddress(), network.getId())) {
                             nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
                         }
                     }

@@ -153,7 +153,7 @@ public class Upgrade222to224 extends DbUpgradeAbstractImpl {
             }
 
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to update the guest os type for default template as a part of 222 to 224 upgrade", e);
+            throw new CloudRuntimeException("Unable to update the guest os type for default Template as a part of 222 to 224 upgrade", e);
         }
     }
 

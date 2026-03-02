@@ -175,12 +175,12 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                 try {
                     is.close();
                 } catch (final IOException e) {
-                    logger.warn("Exception when closing , console proxy address : {}", proxyManagementIp);
+                    logger.warn("Exception when closing , console proxy address: {}", proxyManagementIp);
                     success = false;
                 }
             }
         } catch (final IOException e) {
-            logger.warn("Unable to open console proxy command port url, console proxy address : {}", proxyManagementIp);
+            logger.warn("Unable to open console proxy command port url, console proxy address: {}", proxyManagementIp);
             success = false;
         }
 
@@ -331,7 +331,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         final Object resource = this;
         logger.info("Building class loader for com.cloud.consoleproxy.ConsoleProxy");
         if (consoleProxyMain == null) {
-            logger.info("Running com.cloud.consoleproxy.ConsoleProxy with encryptor password={}", encryptorPassword);
+            logger.info("Running com.cloud.consoleproxy.ConsoleProxy");
             consoleProxyMain = new Thread(new ManagedContextRunnable() {
                 @Override
                 protected void runInContext() {

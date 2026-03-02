@@ -287,7 +287,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(dataObject.getId(), SolidFireUtil.VOLUME_ID);
 
             if (snapshotDetails == null || snapshotDetails.getValue() == null) {
-                throw new CloudRuntimeException("Unable to locate the volume ID associated with the following snapshot ID: " + dataObject.getId());
+                throw new CloudRuntimeException("Unable to locate the volume ID associated with the following Snapshot ID: " + dataObject.getId());
             }
 
             return Long.parseLong(snapshotDetails.getValue());
@@ -433,7 +433,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public long getUsedIops(StoragePool storagePool) {
         long usedIops = 0;
 
-        List<VolumeVO> volumes = volumeDao.findByPoolId(storagePool.getId(), null);
+        List<VolumeVO> volumes = volumeDao.findNonDestroyedVolumesByPoolId(storagePool.getId(), null);
 
         if (volumes != null) {
             for (VolumeVO volume : volumes) {
@@ -899,7 +899,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             // For the purpose of "charging" these bytes against storage_pool.capacity_bytes, we take the full size of the SolidFire volume
             // that is serving as the volume the snapshot is of (either a new SolidFire volume or a SolidFire snapshot).
             if (usedBytes > capacityBytes) {
-                throw new CloudRuntimeException("Insufficient amount of space remains in this primary storage to take a snapshot");
+                throw new CloudRuntimeException("Insufficient amount of space remains in this primary storage to take a Snapshot");
             }
 
             storagePool.setUsedBytes(usedBytes);
@@ -953,7 +953,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             result.setResult(null);
         }
         catch (Exception ex) {
-            logger.debug("{}Failed to take CloudStack snapshot: {}", SolidFireUtil.LOGGER_PREFIX, snapshotInfo.getSnapshotVO(), ex);
+            logger.debug("{}Failed to take CloudStack Snapshot: {}", SolidFireUtil.LOGGER_PREFIX, snapshotInfo.getSnapshotVO(), ex);
 
             result = new CreateCmdResult(null, new CreateObjectAnswer(ex.toString()));
 
@@ -1314,7 +1314,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             storagePoolDao.update(storagePoolId, storagePool);
         }
         catch (Exception ex) {
-            logger.debug("{}Issue in 'deleteSnapshot(SnapshotInfo, long)'. CloudStack snapshot: {}", SolidFireUtil.LOGGER_PREFIX, snapshotInfo.getSnapshotVO(), ex);
+            logger.debug("{}Issue in 'deleteSnapshot(SnapshotInfo, long)'. CloudStack Snapshot: {}", SolidFireUtil.LOGGER_PREFIX, snapshotInfo.getSnapshotVO(), ex);
 
             throw ex;
         }

@@ -46,7 +46,7 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = AutoScalePolicyResponse.class,
                required = true,
-               description = "the ID of the autoscale policy")
+               description = "The ID of the autoscale policy")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -79,12 +79,12 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "deleting AutoScale Policy: " + getId();
+        return "Deleting AutoScale Policy with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale Policy Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Policy ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _autoScaleService.deleteAutoScalePolicy(id);
 
         if (result) {
