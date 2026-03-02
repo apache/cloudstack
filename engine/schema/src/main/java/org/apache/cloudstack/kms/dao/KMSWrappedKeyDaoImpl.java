@@ -38,7 +38,6 @@ public class KMSWrappedKeyDaoImpl extends GenericDaoBase<KMSWrappedKeyVO, Long> 
         allFieldSearch.and("kmsKeyId", allFieldSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
         allFieldSearch.and("kekVersionId", allFieldSearch.entity().getKekVersionId(), SearchCriteria.Op.EQ);
         allFieldSearch.and("zoneId", allFieldSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-        allFieldSearch.and("kmsKeyId", allFieldSearch.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
         allFieldSearch.done();
     }
 

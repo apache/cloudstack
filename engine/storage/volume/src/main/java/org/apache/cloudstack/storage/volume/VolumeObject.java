@@ -29,6 +29,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.secret.PassphraseVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -971,8 +972,8 @@ public class VolumeObject implements VolumeInfo {
                 java.util.Arrays.fill(dekBytes, (byte) 0);
                 // Return UTF-8 bytes of the base64 string
                 return base64Dek.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-            } catch (org.apache.cloudstack.framework.kms.KMSException e) {
-                logger.error("Failed to unwrap KMS key for volume {}: {}", volumeVO.getId(), e.getMessage());
+            } catch (KMSException e) {
+                logger.error("Failed to unwrap KMS key for volume {}: {}", volumeVO, e.getMessage(), e);
                 return new byte[0];
             }
         }

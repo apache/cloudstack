@@ -404,6 +404,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("passphraseId", AllFieldsSearch.entity().getPassphraseId(), Op.EQ);
         AllFieldsSearch.and("iScsiName", AllFieldsSearch.entity().get_iScsiName(), Op.EQ);
         AllFieldsSearch.and("path", AllFieldsSearch.entity().getPath(), Op.EQ);
+        AllFieldsSearch.and("kmsKeyId", AllFieldsSearch.entity().getKmsKeyId(), Op.EQ);
         AllFieldsSearch.done();
 
         RootDiskStateSearch = createSearchBuilder();

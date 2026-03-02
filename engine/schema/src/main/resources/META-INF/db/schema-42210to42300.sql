@@ -199,7 +199,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_kek_versions` (
     `kek_label` VARCHAR(255) NOT NULL COMMENT 'Provider-specific KEK label/ID for this version',
     `status` VARCHAR(32) NOT NULL DEFAULT 'Active' COMMENT 'Active, Previous, Archived',
     `hsm_profile_id` BIGINT UNSIGNED COMMENT 'HSM profile where this KEK version is stored',
-    `hsm_key_label` VARCHAR(255) COMMENT 'Optional HSM-specific key label/alias',
     `created` DATETIME NOT NULL COMMENT 'Creation timestamp',
     `removed` DATETIME COMMENT 'Removal timestamp for soft delete',
     PRIMARY KEY (`id`),

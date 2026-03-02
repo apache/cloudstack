@@ -35,7 +35,7 @@ import static org.mockito.Mockito.doReturn;
 /**
  * Unit tests for KMSManagerImpl's retryOperation() logic, covering
  * timeout enforcement, retry-on-transient-failure, and non-retryable fast-fail.
- *
+ * <p>
  * Config values (retry count, delay, timeout) are spied on so tests remain
  * fast without needing a full management-server config context.
  */
@@ -46,7 +46,9 @@ public class KMSManagerImplRetryTest {
     @InjectMocks
     private KMSManagerImpl kmsManager;
 
-    /** Configure the spy to use a 1-second timeout, the given retry count, and no delay. */
+    /**
+     * Configure the spy to use a 1-second timeout, the given retry count, and no delay.
+     */
     private void useShortConfig(int retries) {
         doReturn(1).when(kmsManager).getOperationTimeoutSec();
         doReturn(retries).when(kmsManager).getRetryCount();

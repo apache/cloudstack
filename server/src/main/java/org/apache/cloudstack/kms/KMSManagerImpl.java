@@ -45,7 +45,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackWithException;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.kms.MigrateVolumesToKMSCmd;
@@ -87,7 +86,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -153,21 +151,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_UNWRAP, eventDescription = "unwrapping volume key")
-    public byte[] unwrapVolumeKey(WrappedKey wrappedKey, Long zoneId) throws KMSException {
-        String providerName = wrappedKey.getProviderName();
-        KMSProvider provider = getKMSProvider(providerName);
-
-        try {
-            logger.debug("Unwrapping {} key", wrappedKey.getPurpose());
-            return retryOperation(() -> provider.unwrapKey(wrappedKey));
-        } catch (Exception e) {
-            logger.error("Failed to unwrap key: {}", e.getMessage());
-            throw handleKmsException(e);
-        }
-    }
-
-    @Override
     public boolean hasPermission(Long callerAccountId, KMSKey key) {
         if (callerAccountId == null) {
             return false;
@@ -196,8 +179,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         if (kmsKeyId == null) {
             return;
         }
-        checkKmsKeyAccess(caller, kmsKeyId);
-        KMSKeyVO key = kmsKeyDao.findById(kmsKeyId);
+        KMSKeyVO key = findKMSKeyAndCheckAccess(kmsKeyId, caller);
         if (key.getZoneId() != null && zoneId != null && !key.getZoneId().equals(zoneId)) {
             throw new InvalidParameterValueException(
                     "KMS key belongs to zone " + key.getZoneId() +
@@ -211,30 +193,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw new InvalidParameterValueException(
                     "KMS key purpose must be volume encryption; key has purpose: " + key.getPurpose().getName());
         }
-    }
-
-    /**
-     * Validate that the caller has permission to use a KMS key.
-     * No-op if kmsKeyId is null.
-     *
-     * @param caller   the caller's account
-     * @param kmsKeyId the KMS key database ID
-     * @throws InvalidParameterValueException if key not found
-     * @throws PermissionDeniedException      if caller lacks access
-     */
-    public void checkKmsKeyAccess(Account caller, Long kmsKeyId) {
-        if (kmsKeyId == null) {
-            return;
-        }
-        KMSKeyVO key = kmsKeyDao.findById(kmsKeyId);
-        checkKmsKeyAccess(caller, key);
-    }
-
-    public void checkKmsKeyAccess(Account caller, KMSKeyVO key) {
-        if (key == null) {
-            throw new InvalidParameterValueException("KMS key not found");
-        }
-        accountManager.checkAccess(caller, null, true, key);
     }
 
     @Override
@@ -453,8 +411,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         kmsKey.setHsmProfileId(finalProfileId);
         kmsKey = kmsKeyDao.persist(kmsKey);
 
-        KMSKekVersionVO initialVersion = new KMSKekVersionVO(kmsKey.getId(), 1, providerKekLabel,
-                KMSKekVersionVO.Status.Active);
+        KMSKekVersionVO initialVersion = new KMSKekVersionVO(kmsKey.getId(), 1, providerKekLabel);
         initialVersion.setHsmProfileId(finalProfileId);
         initialVersion = kmsKekVersionDao.persist(initialVersion);
 
@@ -549,7 +506,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         return createKMSKeyResponse(updatedKey);
     }
 
-    private KMSKey updateUserKMSKey(KMSKeyVO key, String name, String description, Boolean enabled) {
+    KMSKey updateUserKMSKey(KMSKeyVO key, String name, String description, Boolean enabled) {
         boolean updated = false;
         if (name != null && !name.equals(key.getName())) {
             key.setName(name);
@@ -578,22 +535,39 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         KMSKeyVO key = findKMSKeyAndCheckAccess(cmd.getId(), caller);
 
-        deleteUserKMSKey(key, caller);
+        deleteUserKMSKey(key);
         return new SuccessResponse();
     }
 
-    private void deleteUserKMSKey(KMSKeyVO key, Account caller) throws KMSException {
+    void deleteUserKMSKey(KMSKeyVO key) throws KMSException {
         long wrappedKeyCount = kmsWrappedKeyDao.countByKmsKeyId(key.getId());
         if (wrappedKeyCount > 0) {
             throw new InvalidParameterValueException("Cannot delete KMS key: " + key + ". " + wrappedKeyCount +
                                                      " wrapped key(s) still reference this key");
         }
 
-        kmsKeyDao.remove(key.getId());
         if (volumeDao.existsWithKmsKey(key.getId())) {
             throw new InvalidParameterValueException("Cannot delete KMS key: " + key + ". " +
                                                      "There are Volumes which still reference this key");
         }
+
+        List<KMSKekVersionVO> kekVersions = kmsKekVersionDao.listByKmsKeyId(key.getId());
+        for (KMSKekVersionVO kekVersion : kekVersions) {
+            try {
+                HSMProfileVO hsmProfile = hsmProfileDao.findById(kekVersion.getHsmProfileId());
+                if (hsmProfile != null) {
+                    KMSProvider provider = getKMSProvider(hsmProfile.getProtocol());
+                    provider.deleteKek(kekVersion.getKekLabel());
+                    logger.info("Deleted KEK {} (v{}) from provider {}",
+                            kekVersion.getKekLabel(), kekVersion.getVersionNumber(), provider.getProviderName());
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to delete KEK {} (v{}) from provider during KMS key deletion: {}",
+                        kekVersion.getKekLabel(), kekVersion.getVersionNumber(), e.getMessage());
+            }
+        }
+
+        kmsKeyDao.remove(key.getId());
         logger.info("Deleted KMS key {}", key);
     }
 
@@ -663,13 +637,14 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         try {
             logger.info("Starting KEK rotation from {} to {} for kms key {}", oldKekLabel, newKekLabel, kmsKey);
 
-            final KMSKekVersionVO newVersionEntity = new KMSKekVersionVO();
             if (StringUtils.isEmpty(newKekLabel)) {
                 List<KMSKekVersionVO> existingVersions = kmsKekVersionDao.listByKmsKeyId(kmsKey.getId());
-                int nextVersion = existingVersions.stream().mapToInt(KMSKekVersionVO::getVersionNumber).max().orElse(0) + 1;
+                int nextVersion = existingVersions.stream().mapToInt(KMSKekVersionVO::getVersionNumber).max().orElse(0)
+                                  + 1;
                 newKekLabel = kmsKey.getPurpose().generateKekLabel(kmsKey.getDomainId(), kmsKey.getAccountId(),
                         kmsKey.getUuid(), nextVersion);
             }
+            final KMSKekVersionVO newVersionEntity = new KMSKekVersionVO(kmsKey.getId(), newKekLabel);
 
             String finalNewKekLabel = newKekLabel;
             Long newProfileId = newHSMProfile.getId();
@@ -679,20 +654,19 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
             try {
                 KMSKekVersionVO newVersion = Transaction
-                        .execute(new TransactionCallbackWithException<KMSKekVersionVO, KMSException>() {
-                            @Override
-                            public KMSKekVersionVO doInTransaction(TransactionStatus status) throws KMSException {
-                                newVersionEntity.setKmsKeyId(kmsKey.getId());
-                                newVersionEntity.setHsmProfileId(newProfileId);
-                                KMSKekVersionVO version = createKekVersion(newVersionEntity);
+                        .execute((TransactionCallbackWithException<KMSKekVersionVO, KMSException>) status -> {
+                            newVersionEntity.setKmsKeyId(kmsKey.getId());
+                            newVersionEntity.setHsmProfileId(newProfileId);
+                            newVersionEntity.setKekLabel(finalNewKekLabel);
+                            KMSKekVersionVO version = createKekVersion(newVersionEntity);
 
-                                if (!newProfileId.equals(kmsKey.getHsmProfileId())) {
-                                    kmsKey.setHsmProfileId(newProfileId);
-                                    kmsKeyDao.update(kmsKey.getId(), kmsKey);
-                                    logger.info("Updated KMS key {} to use HSM profile {}", kmsKey, finalHSMProfile);
-                                }
-                                return version;
+                            if (!newProfileId.equals(kmsKey.getHsmProfileId())) {
+                                kmsKey.setHsmProfileId(newProfileId);
+                                logger.info("Updated KMS key {} to use HSM profile {}", kmsKey, finalHSMProfile);
                             }
+                            kmsKey.setKekLabel(finalNewKekLabel);
+                            kmsKeyDao.update(kmsKey.getId(), kmsKey);
+                            return version;
                         });
 
                 logger.info("KEK rotation: KMS key {} now has {} versions (active: v{}, previous: v{})",
@@ -764,11 +738,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw new InvalidParameterValueException("kmsKeyId must be specified");
         }
 
-        KMSKeyVO kmsKey = kmsKeyDao.findById(kmsKeyId);
-        if (kmsKey == null) {
-            throw new InvalidParameterValueException("KMS key not found: " + kmsKeyId);
-        }
-        checkKmsKeyAccess(caller, kmsKey);
+        KMSKeyVO kmsKey = findKMSKeyAndCheckAccess(kmsKeyId, caller);
 
         if (!kmsKey.isEnabled()) {
             throw new InvalidParameterValueException("KMS key is not enabled: " + kmsKey.getUuid());
@@ -1255,18 +1225,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     /**
-     * Find a KMS key by ID and verify the caller has write access to it.
-     */
-    private KMSKeyVO findKMSKeyAndCheckAccess(Long keyId, Account caller) {
-        KMSKeyVO key = kmsKeyDao.findById(keyId);
-        if (key == null) {
-            throw new InvalidParameterValueException("KMS key not found: " + keyId);
-        }
-        accountManager.checkAccess(caller, null, true, key);
-        return key;
-    }
-
-    /**
      * Find an HSM profile by ID, throwing InvalidParameterValueException if not
      * found.
      */
@@ -1284,7 +1242,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
      * root admin.
      * For owned profiles: delegates to ACL checkAccess.
      */
-    private void checkHSMProfileAccess(Account caller, HSMProfileVO profile, boolean requireModifyAccess) {
+    void checkHSMProfileAccess(Account caller, HSMProfileVO profile, boolean requireModifyAccess) {
         if (profile.isSystem()) {
             if (requireModifyAccess && !accountManager.isRootAdmin(caller.getId())) {
                 throw new PermissionDeniedException("Only root admins can modify system HSM profiles");
@@ -1297,7 +1255,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     /**
      * Parse and validate a key purpose string. Returns null if the input is null.
      */
-    private KeyPurpose parseKeyPurpose(String purpose) {
+    KeyPurpose parseKeyPurpose(String purpose) {
         if (purpose == null) {
             return null;
         }
@@ -1382,6 +1340,22 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             return (KMSException) e;
         }
         return KMSException.transientError("KMS operation failed: " + e.getMessage(), e);
+    }
+
+    /**
+     * Find a KMS key by ID and verify the caller has access to it.
+     * Throws {@link InvalidParameterValueException} if the key does not exist
+     * and {@link PermissionDeniedException} if the caller lacks access.
+     *
+     * @return the resolved {@link KMSKeyVO}
+     */
+    KMSKeyVO findKMSKeyAndCheckAccess(Long keyId, Account caller) {
+        KMSKeyVO key = kmsKeyDao.findById(keyId);
+        if (key == null) {
+            throw new InvalidParameterValueException("KMS key not found: " + keyId);
+        }
+        accountManager.checkAccess(caller, null, true, key);
+        return key;
     }
 
     public void setKmsProviders(List<KMSProvider> kmsProviders) {

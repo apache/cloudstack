@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+    // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -32,7 +32,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.kms.KMSKekVersionVO;
 import org.apache.cloudstack.kms.KMSWrappedKeyVO;
 import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
-import org.apache.cloudstack.kms.dao.KMSKeyDao;
 import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -62,8 +61,6 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
     private VmDiskStatisticsDao vmDiskStatsDao;
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
-    @Inject
-    private KMSKeyDao kmsKeyDao;
     @Inject
     private KMSWrappedKeyDao kmsWrappedKeyDao;
     @Inject
