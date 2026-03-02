@@ -135,24 +135,39 @@ export default {
         return
       }
       if (this.resource && this.resource.vpcid) {
-        // VPC IPs with source nat have VPN and Firewall
+        // VPC IPs with source nat have VPN and Firewall (firewall only if associatednetworkid present)
         if (this.resource.issourcenat) {
-          this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
+          let tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+          if (this.resource.associatednetworkid) {
+            tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
+          }
+          this.tabs = tabs
           return
         }
 
-        // VPC IPs with static nat have firewall
+        // VPC IPs with static nat have firewall (only if associatednetworkid present)
         if (this.resource.isstaticnat) {
           if (this.resource.virtualmachinetype === 'DomainRouter') {
-            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
+            let tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+            if (this.resource.associatednetworkid) {
+              tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
+            }
+            this.tabs = tabs
           } else {
-            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'firewall'))
+            if (this.resource.associatednetworkid) {
+              this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'firewall'))
+            } else {
+              this.tabs = this.defaultTabs
+            }
           }
           return
         }
 
-        // VPC IPs now have firewall support
+        // VPC IPs have all tabs, but firewall only if associatednetworkid present
         let tabs = this.$route.meta.tabs
+        if (!this.resource.associatednetworkid) {
+          tabs = tabs.filter(tab => tab.name !== 'firewall')
+        }
 
         const network = await this.fetchNetwork()
         if (network && network.networkofferingconservemode) {
