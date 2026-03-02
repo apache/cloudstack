@@ -78,8 +78,9 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
         if (CollectionUtils.isNotEmpty(idAndSubPath)) {
             String id = idAndSubPath.get(0);
             if (idAndSubPath.size() == 1) {
-                if (!"GET".equalsIgnoreCase(method) && !"DELETE".equalsIgnoreCase(method)) {
-                    io.methodNotAllowed(resp, "GET, DELETE", outFormat);
+                if (!"GET".equalsIgnoreCase(method) && !"DELETE".equalsIgnoreCase(method) &&
+                        !"PUT".equalsIgnoreCase(method)) {
+                    io.methodNotAllowed(resp, "GET, DELETE, PUT", outFormat);
                     return;
                 }
                 if ("GET".equalsIgnoreCase(method)) {
@@ -88,6 +89,10 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
                 }
                 if ("DELETE".equalsIgnoreCase(method)) {
                     handleDeleteById(id, resp, outFormat, io);
+                    return;
+                }
+                if ("PUT".equalsIgnoreCase(method)) {
+                    handlePutById(id, req, resp, outFormat, io);
                     return;
                 }
             } else if (idAndSubPath.size() == 2) {
@@ -123,7 +128,6 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
     protected void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         String data = RouteHandler.getRequestData(req, logger);
-        logger.info("Received POST request on /api/disks endpoint. Request-data: {}", data); // ToDo: remove
         try {
             Disk request = io.getMapper().jsonMapper().readValue(data, Disk.class);
             Disk response = serverAdapter.handleCreateDisk(request);
@@ -148,6 +152,19 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
         try {
             serverAdapter.deleteDisk(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, "Deleted disk ID: " + id, outFormat);
+        } catch (InvalidParameterValueException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
+    }
+
+    protected void handlePutById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
+                         final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        String data = RouteHandler.getRequestData(req, logger);
+        try {
+            // ToDo: do what?
+//            serverAdapter.deleteDisk(id);
+            Disk response = serverAdapter.getDisk(id);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.badRequest(resp, e.getMessage(), outFormat);
         }

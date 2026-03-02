@@ -333,7 +333,6 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleUpdateById(final String id, final HttpServletRequest req, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                                     final VeeamControlServlet io) throws IOException {
         String data = RouteHandler.getRequestData(req, logger);
-        logger.info("Received PUT request. Request-data: {}", data);
         try {
             Vm request = io.getMapper().jsonMapper().readValue(data, Vm.class);
             Vm response = serverAdapter.updateInstance(id, request);
