@@ -43,17 +43,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
-import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -94,7 +90,6 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeDetailsDao volumeDetailsDao;
     @Inject private SnapshotDetailsDao snapshotDetailsDao;
-    @Inject private EndPointSelector epSelector;
 
     @Override
     public Map<String, String> getCapabilities() {
@@ -239,8 +234,7 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
      * Deletes a volume or snapshot from the ONTAP storage system.
      *
      * <p>For volumes, deletes the backend storage object (LUN for iSCSI, no-op for NFS).
-     * For snapshots, delegates to the hypervisor agent to delete the QCOW2 snapshot
-     * from the NFS-mounted ONTAP volume.</p>
+     * For snapshots, deletes the FlexVolume snapshot from ONTAP that was created by takeSnapshot.</p>
      */
     @Override
     public void deleteAsync(DataStore store, DataObject data, AsyncCompletionCallback<CommandResult> callback) {
@@ -266,23 +260,8 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
                 commandResult.setResult(null);
                 commandResult.setSuccess(true);
             } else if (data.getType() == DataObjectType.SNAPSHOT) {
-                // Delegate snapshot deletion to the hypervisor agent, same as
-                // CloudStackPrimaryDataStoreDriverImpl. The KVM host deletes the
-                // QCOW2 snapshot file from the NFS-mounted ONTAP volume.
-                DeleteCommand cmd = new DeleteCommand(data.getTO());
-                EndPoint ep = epSelector.select(data, StorageAction.DELETESNAPSHOT);
-                if (ep == null) {
-                    String errMsg = "No remote endpoint to send DeleteCommand for snapshot, check if host or ssvm is down?";
-                    s_logger.error(errMsg);
-                    commandResult.setResult(errMsg);
-                } else {
-                    Answer answer = ep.sendMessage(cmd);
-                    if (answer != null && !answer.getResult()) {
-                        commandResult.setResult(answer.getDetails());
-                    } else {
-                        commandResult.setSuccess(true);
-                    }
-                }
+                // Delete the ONTAP FlexVolume snapshot that was created by takeSnapshot
+                deleteOntapSnapshot((SnapshotInfo) data, commandResult);
             } else {
                 throw new CloudRuntimeException("deleteAsync: Unsupported data object type: " + data.getType());
             }
@@ -292,6 +271,82 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
             commandResult.setResult(e.getMessage());
         } finally {
             callback.complete(commandResult);
+        }
+    }
+
+    /**
+     * Deletes an ONTAP FlexVolume snapshot.
+     *
+     * <p>Retrieves the snapshot details stored during takeSnapshot and calls the ONTAP
+     * REST API to delete the FlexVolume snapshot.</p>
+     *
+     * @param snapshotInfo  The CloudStack snapshot to delete
+     * @param commandResult Result object to populate with success/failure
+     */
+    private void deleteOntapSnapshot(SnapshotInfo snapshotInfo, CommandResult commandResult) {
+        long snapshotId = snapshotInfo.getId();
+        s_logger.info("deleteOntapSnapshot: Deleting ONTAP FlexVolume snapshot for CloudStack snapshot [{}]", snapshotId);
+
+        try {
+            // Retrieve snapshot details stored during takeSnapshot
+            String flexVolUuid = getSnapshotDetail(snapshotId, Constants.BASE_ONTAP_FV_ID);
+            String ontapSnapshotUuid = getSnapshotDetail(snapshotId, Constants.ONTAP_SNAP_ID);
+            String snapshotName = getSnapshotDetail(snapshotId, Constants.ONTAP_SNAP_NAME);
+            String poolIdStr = getSnapshotDetail(snapshotId, Constants.PRIMARY_POOL_ID);
+
+            if (flexVolUuid == null || ontapSnapshotUuid == null) {
+                s_logger.warn("deleteOntapSnapshot: Missing ONTAP snapshot details for snapshot [{}]. " +
+                        "flexVolUuid={}, ontapSnapshotUuid={}. Snapshot may have been created by a different method or already deleted.",
+                        snapshotId, flexVolUuid, ontapSnapshotUuid);
+                // Consider this a success since there's nothing to delete on ONTAP
+                commandResult.setSuccess(true);
+                commandResult.setResult(null);
+                return;
+            }
+
+            long poolId = Long.parseLong(poolIdStr);
+            Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(poolId);
+
+            StorageStrategy storageStrategy = Utility.getStrategyByStoragePoolDetails(poolDetails);
+            SnapshotFeignClient snapshotClient = storageStrategy.getSnapshotFeignClient();
+            String authHeader = storageStrategy.getAuthHeader();
+
+            s_logger.info("deleteOntapSnapshot: Deleting ONTAP snapshot [{}] (uuid={}) from FlexVol [{}]",
+                    snapshotName, ontapSnapshotUuid, flexVolUuid);
+
+            // Call ONTAP REST API to delete the snapshot
+            JobResponse jobResponse = snapshotClient.deleteSnapshot(authHeader, flexVolUuid, ontapSnapshotUuid);
+
+            if (jobResponse != null && jobResponse.getJob() != null) {
+                // Poll for job completion
+                Boolean jobSucceeded = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 30, 2);
+                if (!jobSucceeded) {
+                    throw new CloudRuntimeException("deleteOntapSnapshot: Delete job failed for snapshot [" +
+                            snapshotName + "] on FlexVol [" + flexVolUuid + "]");
+                }
+            }
+
+            s_logger.info("deleteOntapSnapshot: Successfully deleted ONTAP snapshot [{}] (uuid={}) for CloudStack snapshot [{}]",
+                    snapshotName, ontapSnapshotUuid, snapshotId);
+
+            commandResult.setSuccess(true);
+            commandResult.setResult(null);
+
+        } catch (Exception e) {
+            // Check if the error indicates snapshot doesn't exist (already deleted)
+            String errorMsg = e.getMessage();
+            if (errorMsg != null && (errorMsg.contains("404") || errorMsg.contains("not found") ||
+                    errorMsg.contains("does not exist"))) {
+                s_logger.warn("deleteOntapSnapshot: ONTAP snapshot for CloudStack snapshot [{}] not found, " +
+                        "may have been already deleted. Treating as success.", snapshotId);
+                commandResult.setSuccess(true);
+                commandResult.setResult(null);
+            } else {
+                s_logger.error("deleteOntapSnapshot: Failed to delete ONTAP snapshot for CloudStack snapshot [{}]: {}",
+                        snapshotId, e.getMessage(), e);
+                commandResult.setSuccess(false);
+                commandResult.setResult(e.getMessage());
+            }
         }
     }
 
