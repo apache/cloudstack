@@ -105,9 +105,9 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     }
 
     @Override
-    public void deleteRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException {
+    public String deleteRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException {
         validateRequiredServerAndZoneFields(server, zone);
-        applyRecord(server.getUrl(),
+        return applyRecord(server.getUrl(),
                 server.getPort(),
                 server.getApiKey(),
                 server.getExternalServerId(),

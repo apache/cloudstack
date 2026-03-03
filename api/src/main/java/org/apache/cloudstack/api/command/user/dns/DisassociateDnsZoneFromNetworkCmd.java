@@ -45,13 +45,12 @@ import com.cloud.user.Account;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DisassociateDnsZoneFromNetworkCmd extends BaseCmd {
 
-    @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class,
-            required = true, description = "The ID of the DNS zone")
+    @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class, description = "The ID of the DNS zone")
     private Long dnsZoneId;
 
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
-            required = true, description = "The ID of the network")
+            required = true, description = "The ID of the Network")
     private Long networkId;
 
     @Override
@@ -78,7 +77,7 @@ public class DisassociateDnsZoneFromNetworkCmd extends BaseCmd {
         return dnsZoneId;
     }
 
-    public void setDnsZoneId(Long dnsZoneId) {
-        this.dnsZoneId = dnsZoneId;
+    public Long getNetworkId() {
+        return networkId;
     }
 }

@@ -223,7 +223,7 @@ public class PowerDnsClient implements AutoCloseable {
         HttpPatch request = new HttpPatch(buildUrl(baseUrl, port, "/servers/" + externalServerId + "/zones/" + encodedZone));
         request.setEntity(new org.apache.http.entity.StringEntity(root.toString(), StandardCharsets.UTF_8));
         execute(request, apiKey, 204);
-        return normalizedRecord;
+        return normalizedRecord.endsWith(".") ? normalizedRecord.substring(0, normalizedRecord.length() - 1) : normalizedRecord;
     }
 
     public Iterable<JsonNode> listRecords(String baseUrl, Integer port, String apiKey, String externalServerId, String zoneName) throws DnsProviderException {

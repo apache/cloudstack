@@ -40,5 +40,5 @@ public interface DnsProvider extends Adapter {
     String addRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException;
     List<DnsRecord> listRecords(DnsServer server, DnsZone zone) throws DnsProviderException;
     String updateRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException;
-    void deleteRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException;
+    String deleteRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException;
 }

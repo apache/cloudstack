@@ -41,6 +41,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,6 +61,8 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
     NicDao nicDao;
     @Inject
     DnsProviderManager providerManager;
+    @Inject
+    NicDetailsDao nicDetailsDao;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) {
@@ -69,6 +72,7 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
         }
         try {
             eventBus.subscribe(new EventTopic(null, EventTypes.EVENT_VM_CREATE, null, null, null), this);
+            eventBus.subscribe(new EventTopic(null, EventTypes.EVENT_VM_START, null, null, null), this);
             eventBus.subscribe(new EventTopic(null, EventTypes.EVENT_VM_STOP, null, null, null), this);
             eventBus.subscribe(new EventTopic(null, EventTypes.EVENT_VM_DESTROY, null, null, null), this);
             eventBus.subscribe(new EventTopic(null, EventTypes.EVENT_NIC_CREATE, null, null, null), this);
@@ -81,7 +85,6 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
 
     @Override
     public void onEvent(Event event) {
-        logger.debug("Received EventBus event: {}", event);
         JsonNode descJson = parseEventDescription(event);
         if (!isEventCompleted(descJson)) {
             return;
@@ -89,7 +92,6 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
 
         String eventType = event.getEventType();
         String resourceUuid = event.getResourceUUID();
-        logger.debug("Processing Event: {}", event);
         try {
             switch (eventType) {
                 case EventTypes.EVENT_VM_CREATE:
@@ -112,15 +114,13 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
         } catch (Exception ex) {
             logger.error("Failed to process DNS lifecycle event: type={}, resourceUuid={}",
                     eventType, event.getResourceUUID(), ex);
-
         }
     }
 
     private void handleNicEvent(JsonNode eventDesc, boolean isAddDnsRecord) {
         JsonNode nicUuid = eventDesc.get("Nic");
         JsonNode vmUuid = eventDesc.get("VirtualMachine");
-        JsonNode networkUuid = eventDesc.get("Network");
-        if (nicUuid == null || nicUuid.isNull() || vmUuid == null || vmUuid.isNull() || networkUuid == null || networkUuid.isNull()) {
+        if (nicUuid == null || nicUuid.isNull() || vmUuid == null || vmUuid.isNull()) {
             logger.warn("Event has missing data to work on: {}", eventDesc);
             return;
         }
@@ -129,22 +129,17 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
             logger.error("Unable to find Instance with ID: {}", vmUuid);
             return;
         }
-
-        Network network = networkDao.findByUuid(networkUuid.asText());
+        Nic nic = nicDao.findByUuidIncludingRemoved(nicUuid.asText());
+        if (nic == null) {
+            logger.error("NIC is not found for the ID: {}", nicUuid);
+            return;
+        }
+        Network network = networkDao.findById(nic.getNetworkId());
         if (network == null || !Network.GuestType.Shared.equals(network.getGuestType())) {
             logger.warn("Network is not eligible for DNS record registration");
             return;
         }
-        Nic nic = nicDao.findByUuid(nicUuid.asText());
-        if (nic == null) {
-            logger.error("NIC is not found for the ID: {}", nicUuid);
-        }
-
-        boolean dnsRecordAdded = providerManager.processDnsRecordForInstance(vmInstanceVO, network, nic, isAddDnsRecord);
-        if (!dnsRecordAdded) {
-            logger.error("Failure {} DNS record for Instance: {} for Network with ID: {}",
-                    isAddDnsRecord ? "adding" : "removing", vmUuid, networkUuid);
-        }
+        processEventForDnsRecord(vmInstanceVO, network, nic, isAddDnsRecord);
     }
 
     private void handleVmEvent(String vmUuid, boolean isAddDnsRecord) {
@@ -156,13 +151,24 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
         List<NicVO> vmNics = nicDao.listByVmId(vmInstanceVO.getId());
         for (NicVO nic : vmNics) {
             Network network = networkDao.findById(nic.getNetworkId());
-            if (Network.GuestType.Shared.equals(network.getGuestType())) {
-                boolean dnsRecordAdded = providerManager.processDnsRecordForInstance(vmInstanceVO, network, nic, isAddDnsRecord);
-                if (!dnsRecordAdded) {
-                    logger.error("Failure {} DNS record for Instance: {} for Network with ID: {}",
-                            isAddDnsRecord ? "adding" : "removing", vmUuid, network.getUuid());
-                }
+            if (network == null || !Network.GuestType.Shared.equals(network.getGuestType())) {
+                continue;
             }
+            processEventForDnsRecord(vmInstanceVO, network, nic, isAddDnsRecord);
+        }
+    }
+
+    void processEventForDnsRecord(VMInstanceVO vmInstanceVO, Network network, Nic nic, boolean isAddDnsRecord) {
+        String dnsRecordUrl = providerManager.processDnsRecordForInstance(vmInstanceVO, network, nic, isAddDnsRecord);
+        if (dnsRecordUrl != null) {
+            if (isAddDnsRecord) {
+                nicDetailsDao.addDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD, dnsRecordUrl, true);
+            } else {
+                nicDetailsDao.removeDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD);
+            }
+        } else {
+            logger.error("Failure {} DNS record for Instance: {} for Network with ID: {}",
+                    isAddDnsRecord ? "adding" : "removing", vmInstanceVO.getUuid(), network.getUuid());
         }
     }
 
@@ -188,6 +194,8 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
         if (statusNode == null || statusNode.isNull()) {
             return false;
         }
+
+        logger.debug("Processing Event: {}", descJson);
         return ApiConstants.COMPLETED.equalsIgnoreCase(statusNode.asText());
     }
 }

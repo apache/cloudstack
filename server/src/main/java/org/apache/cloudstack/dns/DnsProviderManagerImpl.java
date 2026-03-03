@@ -441,20 +441,15 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (zone == null) {
             throw new InvalidParameterValueException("DNS zone not found.");
         }
-
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, true, zone);
-
         DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
-
         try {
-            // Reconstruct the record DTO just for deletion criteria
             DnsRecord record = new DnsRecord();
             record.setName(cmd.getName());
             record.setType(cmd.getType());
             DnsProvider provider = getProviderByType(server.getProviderType());
-            provider.deleteRecord(server, zone, record);
-            return true;
+            return provider.deleteRecord(server, zone, record) != null;
         } catch (Exception ex) {
             logger.error("Failed to delete DNS record via provider", ex);
             throw new CloudRuntimeException(String.format("Failed to delete DNS record: %s", cmd.getName()));
@@ -610,30 +605,30 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     @Override
     public DnsZoneNetworkMapResponse associateZoneToNetwork(AssociateDnsZoneToNetworkCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
-        DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
-        if (zone == null) {
+        DnsZoneVO dnsZone = dnsZoneDao.findById(cmd.getDnsZoneId());
+        if (dnsZone == null) {
             throw new InvalidParameterValueException("DNS zone not found.");
         }
-        accountMgr.checkAccess(caller, null, true, zone);
+        accountMgr.checkAccess(caller, null, true, dnsZone);
 
         NetworkVO network = networkDao.findById(cmd.getNetworkId());
         if (network == null) {
             throw new InvalidParameterValueException("Network not found.");
         }
-
         if (!NetworkVO.GuestType.Shared.equals(network.getGuestType())) {
             throw new CloudRuntimeException(String.format("Operation is not permitted for network type: %s", network.getGuestType()));
         }
         accountMgr.checkAccess(caller, null, true, network);
-        DnsZoneNetworkMapVO existing = dnsZoneNetworkMapDao.findByZoneAndNetwork(zone.getId(), network.getId());
+
+        DnsZoneNetworkMapVO existing = dnsZoneNetworkMapDao.findByNetworkId(network.getId());
         if (existing != null) {
-            throw new InvalidParameterValueException("This DNS zone is already associated with this Network.");
+            throw new InvalidParameterValueException("Network has existing DNS zone associated to it.");
         }
-        DnsZoneNetworkMapVO mapping = new DnsZoneNetworkMapVO(zone.getId(), network.getId(), cmd.getSubDomain());
+        DnsZoneNetworkMapVO mapping = new DnsZoneNetworkMapVO(dnsZone.getId(), network.getId(), cmd.getSubDomain());
         dnsZoneNetworkMapDao.persist(mapping);
         DnsZoneNetworkMapResponse response = new DnsZoneNetworkMapResponse();
         response.setId(mapping.getUuid());
-        response.setDnsZoneId(zone.getUuid());
+        response.setDnsZoneId(dnsZone.getUuid());
         response.setNetworkId(network.getUuid());
         response.setSubDomain(mapping.getSubDomain());
         return response;
@@ -641,10 +636,9 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
     @Override
     public boolean disassociateZoneFromNetwork(DisassociateDnsZoneFromNetworkCmd cmd) {
-        // fix this method
-        DnsZoneNetworkMapVO mapping = dnsZoneNetworkMapDao.findById(cmd.getDnsZoneId());
+        DnsZoneNetworkMapVO mapping = dnsZoneNetworkMapDao.findByNetworkId(cmd.getNetworkId());
         if (mapping == null) {
-            throw new InvalidParameterValueException("The specified DNS zone to network mapping does not exist.");
+            throw new InvalidParameterValueException("No DNS zone is associated to specified network.");
         }
         DnsZoneVO zone = dnsZoneDao.findById(mapping.getDnsZoneId());
         if (zone == null) {
@@ -673,67 +667,58 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
-    public boolean processDnsRecordForInstance(VirtualMachine instance, Network network, Nic nic, boolean isAdd) {
+    public String processDnsRecordForInstance(VirtualMachine instance, Network network, Nic nic, boolean isAdd) {
         long networkId = network.getId();
-        List<DnsZoneNetworkMapVO> mappings = dnsZoneNetworkMapDao.listByNetworkId(networkId);
-        if (mappings == null || mappings.isEmpty()) {
-            logger.warn("No DNS zones are mapped to this network. Please associate a zone first.");
-            return false;
+        DnsZoneNetworkMapVO dnsZoneNetworkMap = dnsZoneNetworkMapDao.findByNetworkId(networkId);
+        if (dnsZoneNetworkMap == null) {
+            logger.warn("No DNS zone is mapped to this network. Please associate a zone first.");
+            return null;
         }
-        boolean atLeastOneSuccess = false;
-        for (DnsZoneNetworkMapVO map : mappings) {
-            DnsZoneVO zone = dnsZoneDao.findById(map.getDnsZoneId());
-            if (zone == null || zone.getState() != DnsZone.State.Active) {
-                continue;
-            }
-            DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
-            // Construct FQDN Prefix (e.g., "instance-id" or "instance-id.subdomain")
-            String recordName = String.valueOf(instance.getInstanceName());
-            if (StringUtils.isNotBlank(map.getSubDomain())) {
-                recordName = recordName + "." + map.getSubDomain();
-            }
+        DnsZoneVO dnsZone = dnsZoneDao.findById(dnsZoneNetworkMap.getDnsZoneId());
+        if (dnsZone == null || dnsZone.getState() != DnsZone.State.Active) {
+            return null;
+        }
+        DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
+        // Construct FQDN Prefix (e.g., "instance-id" or "instance-id.subdomain")
+        String recordName = String.valueOf(instance.getInstanceName());
+        if (StringUtils.isNotBlank(dnsZoneNetworkMap.getSubDomain())) {
+            recordName = recordName + "." + dnsZoneNetworkMap.getSubDomain();
+        }
 
-            try {
-                DnsProvider provider = getProviderByType(server.getProviderType());
-                // Handle IPv4 (A Record)
-                if (nic.getIPv4Address() != null) {
-                    DnsRecord recordA = new DnsRecord(recordName, DnsRecord.RecordType.A, Collections.singletonList(nic.getIPv4Address()), 3600);
-                    if (isAdd) {
-                        provider.addRecord(server, zone, recordA);
-                    } else {
-                        provider.deleteRecord(server, zone, recordA);
-                    }
-                    atLeastOneSuccess = true;
+        try {
+            DnsProvider provider = getProviderByType(server.getProviderType());
+            // Handle IPv4 (A Record)
+            String ipv4DnsRecord = null;
+            if (nic.getIPv4Address() != null) {
+                DnsRecord recordA = new DnsRecord(recordName, DnsRecord.RecordType.A, Collections.singletonList(nic.getIPv4Address()), 3600);
+                if (isAdd) {
+                    ipv4DnsRecord = provider.addRecord(server, dnsZone, recordA);
+                } else {
+                    ipv4DnsRecord = provider.deleteRecord(server, dnsZone, recordA);
                 }
-
-                // Handle IPv6 (AAAA Record) if it exists
-                if (nic.getIPv6Address() != null) {
-                    DnsRecord recordAAAA = new DnsRecord(recordName, DnsRecord.RecordType.AAAA, Collections.singletonList(nic.getIPv6Address()), 3600);
-                    if (isAdd) {
-                        provider.addRecord(server, zone, recordAAAA);
-                    } else {
-                        provider.deleteRecord(server, zone, recordAAAA);
-                    }
-                    atLeastOneSuccess = true;
-                }
-
-            } catch (Exception ex) {
-                logger.error(
-                        "Failed to {} DNS record for Instance {} in zone {}",
-                        isAdd ? "register" : "remove",
-                        instance.getHostName(),
-                        zone.getName(),
-                        ex
-                );
-                return false;
             }
-        }
 
-        if (!atLeastOneSuccess) {
-            logger.error("Failed to process DNS records. Ensure the Instance has a valid IP address.");
-            return false;
+            // Handle IPv6 (AAAA Record) if it exists
+            String ipv6DnsRecord = null;
+            if (nic.getIPv6Address() != null) {
+                DnsRecord recordAAAA = new DnsRecord(recordName, DnsRecord.RecordType.AAAA, Collections.singletonList(nic.getIPv6Address()), 3600);
+                if (isAdd) {
+                    ipv6DnsRecord = provider.addRecord(server, dnsZone, recordAAAA);
+                } else {
+                    ipv6DnsRecord = provider.deleteRecord(server, dnsZone, recordAAAA);
+                }
+            }
+            return ipv4DnsRecord != null ? ipv4DnsRecord : ipv6DnsRecord;
+        } catch (Exception ex) {
+            logger.error(
+                    "Failed to {} DNS record for Instance {} in zone {}",
+                    isAdd ? "register" : "remove",
+                    instance.getHostName(),
+                    dnsZone.getName(),
+                    ex
+            );
         }
-        return true;
+        return null;
     }
 
     @Override

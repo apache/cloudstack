@@ -77,5 +77,5 @@ public interface DnsProviderManager extends Manager, PluggableService {
 
     void checkDnsServerPermissions(Account caller, DnsServer server);
 
-    boolean processDnsRecordForInstance(VirtualMachine instance, Network network, Nic nic, boolean isAdd);
+    String processDnsRecordForInstance(VirtualMachine instance, Network network, Nic nic, boolean isAdd);
 }
