@@ -350,6 +350,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (host != null) {
             response.setHostId(host.getUuid());
             response.setHostName(host.getName());
+            response.setHypervisorVersion(host.getHypervisorVersion());
+        } else {
+            // In case the unmanaged instance is on an external host
+            if (instance.getHostName() != null) {
+                response.setHostName(instance.getHostName());
+            }
+            if (instance.getHostHypervisorVersion() != null) {
+                response.setHypervisorVersion(instance.getHostHypervisorVersion());
+            }
         }
         response.setPowerState(instance.getPowerState().toString());
         response.setCpuCores(instance.getCpuCores());
@@ -1145,7 +1154,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private UserVm importVirtualMachineInternal(final UnmanagedInstanceTO unmanagedInstance, final String instanceNameInternal, final DataCenter zone, final Cluster cluster, final HostVO host,
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                 final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
-                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
+                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final Long guestOsId,
                                                 final Map<String, String> details, final boolean migrateAllowed, final boolean forced, final boolean isImportUnmanagedFromSameHypervisor) {
         logger.debug(LogUtils.logGsonWithoutException("Trying to import VM [%s] with name [%s], in zone [%s], cluster [%s], and host [%s], using template [%s], service offering [%s], disks map [%s], NICs map [%s] and details [%s].",
                 unmanagedInstance, displayName, zone, cluster, host, template, serviceOffering, dataDiskOfferingMap, nicNetworkMap, details));
@@ -1231,7 +1240,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             userVm = userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
-                    validatedServiceOffering, null, hostName,
+                    validatedServiceOffering, null, guestOsId, hostName,
                     cluster.getHypervisorType(), allDetails, powerState, null);
         } catch (InsufficientCapacityException ice) {
             String errorMsg = String.format("Failed to import VM [%s] due to [%s].", displayName, ice.getMessage());
@@ -1632,7 +1641,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 userVm = importVirtualMachineInternal(unmanagedInstance, instanceName, zone, cluster, host,
                         template, displayName, hostName, CallContext.current().getCallingAccount(), owner, userId,
                         serviceOffering, dataDiskOfferingMap,
-                        nicNetworkMap, nicIpAddressMap,
+                        nicNetworkMap, nicIpAddressMap, null,
                         details, migrateAllowed, forced, true);
                 break;
             }
@@ -1712,6 +1721,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Long convertStoragePoolId = cmd.getConvertStoragePoolId();
         String extraParams = cmd.getExtraParams();
         boolean forceConvertToPool = cmd.getForceConvertToPool();
+        Long guestOsId = cmd.getGuestOsId();
 
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
@@ -1799,7 +1809,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             UserVm userVm = importVirtualMachineInternal(convertedInstance, null, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
                     serviceOffering, dataDiskOfferingMap,
-                    nicNetworkMap, nicIpAddressMap,
+                    nicNetworkMap, nicIpAddressMap, guestOsId,
                     details, false, forced, false);
             long timeElapsedInSecs = (System.currentTimeMillis() - importStartTime) / 1000;
             logger.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
@@ -2676,7 +2686,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
-                    serviceOffering, null, hostName,
+                    serviceOffering, null, null, hostName,
                     Hypervisor.HypervisorType.KVM, allDetails, powerState, null);
         } catch (InsufficientCapacityException ice) {
             logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
@@ -2814,7 +2824,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
-                    serviceOffering, null, hostName,
+                    serviceOffering, null, null, hostName,
                     Hypervisor.HypervisorType.KVM, allDetails, powerState, networkNicMap);
         } catch (InsufficientCapacityException ice) {
             logger.error(String.format("Failed to import vm name: %s", instanceName), ice);

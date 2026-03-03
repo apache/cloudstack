@@ -46,7 +46,7 @@ public class BaseMO {
     protected ManagedObjectReference _mor;
 
     protected static String[] propertyPathsForUnmanagedVmsThinListing = new String[] {"name", "config.template",
-            "runtime.powerState", "config.guestId", "config.guestFullName", "runtime.host",
+            "runtime.powerState", "summary.guest.guestId", "summary.guest.guestFullName", "runtime.host",
             "config.bootOptions", "config.firmware"};
 
     private String _name;
@@ -219,9 +219,9 @@ public class BaseMO {
             } else if (objProp.getName().equals("runtime.powerState")) {
                 VirtualMachinePowerState powerState = (VirtualMachinePowerState) objProp.getVal();
                 vm.setPowerState(convertPowerState(powerState));
-            } else if (objProp.getName().equals("config.guestFullName")) {
+            } else if (objProp.getName().equals("summary.guest.guestFullName")) {
                 vm.setOperatingSystem((String) objProp.getVal());
-            } else if (objProp.getName().equals("config.guestId")) {
+            } else if (objProp.getName().equals("summary.guest.guestId")) {
                 vm.setOperatingSystemId((String) objProp.getVal());
             } else if (objProp.getName().equals("config.bootOptions")) {
                 VirtualMachineBootOptions bootOptions = (VirtualMachineBootOptions) objProp.getVal();

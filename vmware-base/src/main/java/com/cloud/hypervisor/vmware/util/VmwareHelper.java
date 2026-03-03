@@ -833,6 +833,7 @@ public class VmwareHelper {
             }
 
             instance.setHostName(hyperHost.getHyperHostName());
+            instance.setHostHypervisorVersion(getVmwareHostVersion(hyperHost));
 
             if (StringUtils.isEmpty(instance.getOperatingSystemId()) && configSummary != null) {
                 instance.setOperatingSystemId(configSummary.getGuestId());
@@ -864,6 +865,17 @@ public class VmwareHelper {
             LOGGER.error("Unable to retrieve unmanaged instance info, due to: " + e.getMessage());
         }
         return instance;
+    }
+
+    protected static String getVmwareHostVersion(VmwareHypervisorHost hyperHost) {
+        if (hyperHost instanceof HostMO) {
+            try {
+                return ((HostMO) hyperHost).getProductVersion();
+            } catch (Exception e) {
+                LOGGER.warn("Unable to get unmanaged instance host version, due to: " + e.getMessage(), e);
+            }
+        }
+        return null;
     }
 
     protected static List<UnmanagedInstanceTO.Disk> getUnmanageInstanceDisks(VirtualMachineMO vmMo) {

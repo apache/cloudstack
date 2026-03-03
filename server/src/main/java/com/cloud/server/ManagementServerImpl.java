@@ -43,6 +43,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.network.vpc.VpcVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -832,7 +833,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLifecycle;
-import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
@@ -875,7 +875,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
-public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
+public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implements ManagementServer, Configurable {
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
     static final String FOR_SYSTEMVMS = "forsystemvms";
@@ -2898,7 +2898,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(final ListGuestOsCmd cmd) {
-        final Long id = cmd.getId();
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         final Long osCategoryId = cmd.getOsCategoryId();
         final String description = cmd.getDescription();
         final String keyword = cmd.getKeyword();
@@ -2906,7 +2906,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long pageSize = cmd.getPageSizeVal();
         Boolean forDisplay = cmd.getDisplay();
 
-        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, id, osCategoryId, description, keyword, forDisplay);
+        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, ids, osCategoryId, description, keyword, forDisplay);
     }
 
     @Override

@@ -4803,12 +4803,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private UserVmVO commitUserVm(final boolean isImport, final DataCenter zone, final Host host, final Host lastHost, final VirtualMachineTemplate template, final String hostName, final String displayName, final Account owner,
                                   final Long diskOfferingId, final Long diskSize, final String userData, Long userDataId, String userDataDetails, final Boolean isDisplayVm, final String keyboard,
-                                  final long accountId, final long userId, final ServiceOffering offering, final boolean isIso, final String sshPublicKeys, final LinkedHashMap<String, List<NicProfile>> networkNicMap,
+                                  final long accountId, final long userId, final ServiceOffering offering, final boolean isIso, final Long guestOsId, final String sshPublicKeys, final LinkedHashMap<String, List<NicProfile>> networkNicMap,
                                   final long id, final String instanceName, final String uuidName, final HypervisorType hypervisorType, final Map<String, String> customParameters,
                                   final Map<String, Map<Integer, String>> extraDhcpOptionMap, final Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
                                   final Map<String, String> userVmOVFPropertiesMap, final VirtualMachine.PowerState powerState, final boolean dynamicScalingEnabled, String vmType, final Long rootDiskOfferingId, String sshkeypairs,
                                   List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
-        UserVmVO vm = new UserVmVO(id, instanceName, displayName, template.getId(), hypervisorType, template.getGuestOSId(), offering.isOfferHA(),
+        Long selectedGuestOsId = guestOsId != null ? guestOsId : template.getGuestOSId();
+        UserVmVO vm = new UserVmVO(id, instanceName, displayName, template.getId(), hypervisorType, selectedGuestOsId, offering.isOfferHA(),
                 offering.getLimitCpuUse(), owner.getDomainId(), owner.getId(), userId, offering.getId(), userData, userDataId, userDataDetails, hostName);
         vm.setUuid(uuidName);
         vm.setDynamicallyScalable(dynamicScalingEnabled);
@@ -4834,8 +4835,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             vm.setIsoId(template.getId());
         }
 
-        long guestOSId = template.getGuestOSId();
-        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+        GuestOSVO guestOS = _guestOSDao.findById(selectedGuestOsId);
         long guestOSCategoryId = guestOS.getCategoryId();
         GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
         if (hypervisorType.equals(HypervisorType.VMware)) {
@@ -5093,7 +5093,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                   List<VmDiskInfo> dataDiskInfoList, Volume volume, Snapshot snapshot) throws InsufficientCapacityException {
         return commitUserVm(false, zone, null, null, template, hostName, displayName, owner,
                 diskOfferingId, diskSize, userData, userDataId, userDataDetails, isDisplayVm, keyboard,
-                accountId, userId, offering, isIso, sshPublicKeys, networkNicMap,
+                accountId, userId, offering, isIso, null, sshPublicKeys, networkNicMap,
                 id, instanceName, uuidName, hypervisorType, customParameters,
                 extraDhcpOptionMap, dataDiskTemplateToDiskOfferingMap,
                 userVmOVFPropertiesMap, null, dynamicScalingEnabled, vmType, rootDiskOfferingId, sshkeypairs, dataDiskInfoList, volume, snapshot);
@@ -9498,7 +9498,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceNameInternal, final String displayName,
                            final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
-                           final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKeys,
+                           final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKeys, final Long guestOsId,
                            final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters,
                            final VirtualMachine.PowerState powerState, final LinkedHashMap<String, List<NicProfile>> networkNicMap) throws InsufficientCapacityException {
         return Transaction.execute((TransactionCallbackWithException<UserVm, InsufficientCapacityException>) status -> {
@@ -9524,7 +9524,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final Boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, template, zone.getId());
             return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
                     null, null, userData, null, null, isDisplayVm, keyboard,
-                    accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKeys, networkNicMap,
+                    accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), guestOsId, sshPublicKeys, networkNicMap,
                     id, instanceName, uuidName, hypervisorType, customParameters,
                     null, null, null, powerState, dynamicScalingEnabled, null, serviceOffering.getDiskOfferingId(), null, null, null, null);
         });

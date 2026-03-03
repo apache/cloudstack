@@ -171,6 +171,12 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(only for importing VMs from VMware to KVM) optional - if true, forces virt-v2v conversions to write directly on the provided storage pool (avoid using temporary conversion pool).")
     private Boolean forceConvertToPool;
 
+    @Parameter(name = ApiConstants.OS_ID,
+            type = CommandType.UUID,
+            since = "4.22.1",
+            description = "(only for importing VMs from VMware to KVM) optional - the ID of the guest OS for the imported VM.")
+    private Long guestOsId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -266,6 +272,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     public boolean getForceConvertToPool() {
         return BooleanUtils.toBooleanDefaultIfNull(forceConvertToPool, false);
+    }
+
+    public Long getGuestOsId() {
+        return guestOsId;
     }
 
     @Override

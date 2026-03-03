@@ -360,7 +360,7 @@ public class UnmanagedVMsManagerImplTest {
         when(primaryDataStoreDao.listPoolByHostPath(Mockito.anyString(), Mockito.anyString())).thenReturn(pools);
         when(userVmManager.importVM(nullable(DataCenter.class), nullable(Host.class), nullable(VirtualMachineTemplate.class), nullable(String.class), nullable(String.class),
                 nullable(Account.class), nullable(String.class), nullable(Account.class), nullable(Boolean.class), nullable(String.class),
-                nullable(Long.class), nullable(Long.class), nullable(ServiceOffering.class), nullable(String.class),
+                nullable(Long.class), nullable(Long.class), nullable(ServiceOffering.class), nullable(String.class), nullable(Long.class),
                 nullable(String.class), nullable(Hypervisor.HypervisorType.class), nullable(Map.class), nullable(VirtualMachine.PowerState.class), nullable(LinkedHashMap.class))).thenReturn(userVm);
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
         when(networkVO.getGuestType()).thenReturn(Network.GuestType.L2);
