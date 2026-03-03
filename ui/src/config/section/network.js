@@ -1487,6 +1487,47 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
+    },
+    {
+      name: 'dnsrecords',
+      title: 'label.dns.records',
+      icon: 'global-outlined',
+      hidden: true,
+      permission: ['listDnsRecords'],
+      columns: ['name', 'url', 'provider'],
+      details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers'],
+      related: [{
+        name: 'vm',
+        title: 'label.dns.zone',
+        param: 'dnszoneid'
+      }]
+    },
+    {
+      name: 'dnszones',
+      title: 'label.dns.zones',
+      icon: 'global-outlined',
+      hidden: true,
+      permission: ['listDnsZones'],
+      columns: ['name', 'state', 'dnsservername', 'dnsserveraccount'],
+      details: ['name', 'state', 'dnsservername', 'dnsserveraccount'],
+      related: [{
+        name: 'dnsrecords',
+        title: 'label.dns.records',
+        param: 'dnszoneid'
+      }]
+    },
+    {
+      name: 'dnsservers',
+      title: 'label.dns.server',
+      icon: 'global-outlined',
+      permission: ['listDnsServers'],
+      columns: ['name', 'url', 'provider'],
+      details: ['name', 'url', 'ispublic', 'port', 'nameservers', 'domain', 'account'],
+      related: [{
+        name: 'dnszones',
+        title: 'label.dns.zone',
+        param: 'dnsserverid'
+      }]
     }
   ]
 }
