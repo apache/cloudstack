@@ -20,6 +20,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.domain.Domain;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
@@ -126,7 +127,7 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
                 String name = authenticator.getName();
                 authenticatorPluginNames.add(name);
             }
-            if (OAuth2AuthManager.OAuth2IsPluginEnabled.valueIn(result.getDomainId()) && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
+            if (Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, result.getDomainId(), true)) && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {
                 r.setEnabled(false);

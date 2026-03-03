@@ -50,6 +50,8 @@ import java.util.List;
 import java.util.Map;
 import java.net.InetAddress;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import static org.apache.cloudstack.oauth2.OAuth2AuthManager.OAuth2IsPluginEnabled;
 
 @APICommand(name = "oauthlogin", description = "Logs a user into the CloudStack after successful verification of OAuth secret code from the particular provider." +
@@ -142,7 +144,7 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
             domainId = userDomain.getId();
         }
 
-        if (!OAuth2IsPluginEnabled.valueIn(domainId)) {
+        if (!Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true))) {
             throw new CloudAuthenticationException("OAuth is not enabled, users cannot login using OAuth");
         }
 

@@ -27,6 +27,7 @@ import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import javax.inject.Inject;
 import java.util.Map;
@@ -91,6 +92,6 @@ public class OAuth2UserAuthenticator extends AdapterBase implements UserAuthenti
     }
 
     protected boolean isOAuthPluginEnabled(Long domainId) {
-        return OAuth2IsPluginEnabled.valueIn(domainId);
+        return Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true));
     }
 }
