@@ -80,5 +80,4 @@ public class PowerDnsClientTest {
         result = client.normalizeRecordName("www", "example.com.");
         assertEquals("www.example.com.", result);
     }
-
 }
