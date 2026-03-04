@@ -374,11 +374,13 @@ public class EventTypes {
 
     // Service Offerings
     public static final String EVENT_SERVICE_OFFERING_CREATE = "SERVICE.OFFERING.CREATE";
+    public static final String EVENT_SERVICE_OFFERING_CLONE = "SERVICE.OFFERING.CLONE";
     public static final String EVENT_SERVICE_OFFERING_EDIT = "SERVICE.OFFERING.EDIT";
     public static final String EVENT_SERVICE_OFFERING_DELETE = "SERVICE.OFFERING.DELETE";
 
     // Disk Offerings
     public static final String EVENT_DISK_OFFERING_CREATE = "DISK.OFFERING.CREATE";
+    public static final String EVENT_DISK_OFFERING_CLONE = "DISK.OFFERING.CLONE";
     public static final String EVENT_DISK_OFFERING_EDIT = "DISK.OFFERING.EDIT";
     public static final String EVENT_DISK_OFFERING_DELETE = "DISK.OFFERING.DELETE";
 
@@ -399,6 +401,7 @@ public class EventTypes {
 
     // Network offerings
     public static final String EVENT_NETWORK_OFFERING_CREATE = "NETWORK.OFFERING.CREATE";
+    public static final String EVENT_NETWORK_OFFERING_CLONE = "NETWORK.OFFERING.CLONE";
     public static final String EVENT_NETWORK_OFFERING_ASSIGN = "NETWORK.OFFERING.ASSIGN";
     public static final String EVENT_NETWORK_OFFERING_EDIT = "NETWORK.OFFERING.EDIT";
     public static final String EVENT_NETWORK_OFFERING_REMOVE = "NETWORK.OFFERING.REMOVE";
@@ -598,6 +601,7 @@ public class EventTypes {
 
     // VPC offerings
     public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";
+    public static final String EVENT_VPC_OFFERING_CLONE = "VPC.OFFERING.CLONE";
     public static final String EVENT_VPC_OFFERING_UPDATE = "VPC.OFFERING.UPDATE";
     public static final String EVENT_VPC_OFFERING_DELETE = "VPC.OFFERING.DELETE";
 
@@ -630,6 +634,7 @@ public class EventTypes {
 
     // Backup and Recovery events
     public static final String EVENT_VM_BACKUP_IMPORT_OFFERING = "BACKUP.IMPORT.OFFERING";
+    public static final String EVENT_VM_BACKUP_OFFERING_CLONE = "BACKUP.OFFERING.CLONE";
     public static final String EVENT_VM_BACKUP_OFFERING_ASSIGN = "BACKUP.OFFERING.ASSIGN";
     public static final String EVENT_VM_BACKUP_OFFERING_REMOVE = "BACKUP.OFFERING.REMOVE";
     public static final String EVENT_VM_BACKUP_CREATE = "BACKUP.CREATE";
@@ -1045,11 +1050,13 @@ public class EventTypes {
 
         // Service Offerings
         entityEventDetails.put(EVENT_SERVICE_OFFERING_CREATE, ServiceOffering.class);
+        entityEventDetails.put(EVENT_SERVICE_OFFERING_CLONE, ServiceOffering.class);
         entityEventDetails.put(EVENT_SERVICE_OFFERING_EDIT, ServiceOffering.class);
         entityEventDetails.put(EVENT_SERVICE_OFFERING_DELETE, ServiceOffering.class);
 
         // Disk Offerings
         entityEventDetails.put(EVENT_DISK_OFFERING_CREATE, DiskOffering.class);
+        entityEventDetails.put(EVENT_DISK_OFFERING_CLONE, DiskOffering.class);
         entityEventDetails.put(EVENT_DISK_OFFERING_EDIT, DiskOffering.class);
         entityEventDetails.put(EVENT_DISK_OFFERING_DELETE, DiskOffering.class);
 
@@ -1070,6 +1077,7 @@ public class EventTypes {
 
         // Network offerings
         entityEventDetails.put(EVENT_NETWORK_OFFERING_CREATE, NetworkOffering.class);
+        entityEventDetails.put(EVENT_NETWORK_OFFERING_CLONE, NetworkOffering.class);
         entityEventDetails.put(EVENT_NETWORK_OFFERING_ASSIGN, NetworkOffering.class);
         entityEventDetails.put(EVENT_NETWORK_OFFERING_EDIT, NetworkOffering.class);
         entityEventDetails.put(EVENT_NETWORK_OFFERING_REMOVE, NetworkOffering.class);
