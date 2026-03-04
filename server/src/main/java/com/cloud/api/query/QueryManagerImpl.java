@@ -4965,15 +4965,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }
+
             if (!template.isPublicTemplate() && caller.getType() == Account.Type.DOMAIN_ADMIN) {
                 Account template_acc = accountMgr.getAccount(template.getAccountId());
                 DomainVO domain = _domainDao.findById(template_acc.getDomainId());
                 accountMgr.checkAccess(caller, domain);
-            }
-
-            // if template is not public, perform permission check here
-            else if (!template.isPublicTemplate() && caller.getType() != Account.Type.ADMIN) {
-                accountMgr.checkAccess(caller, null, false, template);
+            } else if (!template.isPublicTemplate() && caller.getType() != Account.Type.ADMIN) { // if template is not public, perform permission check here
+                accountMgr.checkAccess(caller, null, true, template);
             } else if (template.isPublicTemplate()) {
                 accountMgr.checkAccess(caller, null, false, template);
             }
