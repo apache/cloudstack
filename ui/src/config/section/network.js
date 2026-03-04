@@ -20,6 +20,7 @@ import store from '@/store'
 import tungsten from '@/assets/icons/tungsten.svg?inline'
 import { isAdmin } from '@/role'
 import { isZoneCreated } from '@/utils/zone'
+import { hasNoItems } from '@/utils/advisory'
 
 export default {
   name: 'network',
@@ -397,6 +398,66 @@ export default {
       tabs: [{
         component: shallowRef(defineAsyncComponent(() => import('@/views/compute/InstanceTab.vue')))
       }],
+      advisories: [
+        {
+          id: 'vnfapp-image-check',
+          severity: 'warning',
+          message: 'message.advisory.vnf.appliance.template.missing',
+          condition: async (store) => {
+            return await hasNoItems(store,
+              'listVnfTemplates',
+              { isvnf: true, templatefilter: 'executable', isready: true })
+          },
+          actions: [
+            {
+              label: 'label.register.template',
+              show: (store) => { return ('registerTemplate' in store.getters.apis) },
+              primary: true,
+              run: (store, router) => {
+                router.push({ name: 'template', query: { action: 'registerTemplate' } })
+                return false
+              }
+            },
+            {
+              label: 'label.go.to.templates',
+              show: (store) => { return ('listTemplates' in store.getters.apis) },
+              primary: false,
+              run: (store, router) => {
+                router.push({ name: 'template' })
+                return false
+              }
+            }
+          ]
+        },
+        {
+          id: 'vnfapp-compute-offering-check',
+          severity: 'warning',
+          message: 'message.advisory.vnf.appliance.compute.offering.missing',
+          condition: async (store) => {
+            return await hasNoItems(store, 'listServiceOfferings', { issystem: false })
+          },
+          actions: [
+            {
+              label: 'label.add.compute.offering',
+              show: (store) => { return ('createServiceOffering' in store.getters.apis) },
+              primary: true,
+              run: (store, router) => {
+                router.push({ name: 'computeoffering', query: { action: 'createServiceOffering' } })
+                return false
+              }
+            },
+            {
+              label: 'label.go.to.compute.offerings',
+              show: (store) => { return ('listServiceOfferings' in store.getters.apis) },
+              primary: false,
+              run: (store, router) => {
+                router.push({ name: 'computeoffering' })
+                return false
+              }
+            }
+          ]
+        }
+      ],
       actions: [
         {
           api: 'deployVnfAppliance',
