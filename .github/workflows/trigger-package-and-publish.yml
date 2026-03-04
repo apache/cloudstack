@@ -1,0 +1,93 @@
+name: Trigger Package and Publish
+
+on:
+  push:
+    branches:
+      - "att/**"
+  workflow_dispatch:
+    inputs:
+      trigger-type:
+        description: "How to trigger the target workflow"
+        required: true
+        type: choice
+        options:
+        - api
+        - workflow-run
+
+jobs:
+  trigger:
+    runs-on: concordia-linux-cpu4-ram14gi
+    env:
+      target_owner: "${{ secrets.TARGET_OWNER }}"
+      target_name: "${{ secrets.TARGET_NAME }}"
+      target_workflow: "${{ secrets.TARGET_WORKFLOW }}"
+      event_type: "${{ secrets.TARGET_EVENT_TYPE }}"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Install DNF Config Manager
+        run: |
+          sudo dnf -y install 'dnf-command(config-manager)'
+
+      - name: Install GitHub CLI
+        run: |
+          sudo dnf -y config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+          sudo dnf -y install gh
+
+      - name: Install gettext (for envsubvst)
+        run: |
+          sudo dnf -y install gettext
+
+      - name: Install YQ
+        run: |
+          sudo curl -L -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod a+x /usr/local/bin/yq   
+
+      - name: Authenticate GitHub CLI Using Access Token
+        run: |
+          echo "${{ secrets.TARGET_REPOSITORY_ACCESS_TOKEN }}" | gh auth login --with-token
+          gh auth status
+
+      # Triggering workflows via the API is meant to be used by external systems.
+      - name: Trigger Workflow in Target Repository (api)
+        if: "${{ github.event.inputs.trigger-type == 'api'}}"
+        run: |
+          event_data=$(cat <<EOM | yq -o json -I 0 '.'
+          event_type: "${{ env.event_type }}"
+          client_payload:
+            reference:
+              name: "${{ github.ref_name }}"
+              ref: "${{ github.ref }}"
+              type: "${{ github.ref_type }}"
+              sha: "${{ github.sha }}"
+            repository:
+              name: "${{ github.repository }}"
+              url: "${{ github.repositoryUrl }}"
+            run:
+              id: "${{ github.run_id }}"
+              iteration: "${{ github.run_number }}"
+            workflow:
+              name:  "${{ github.workflow }}"
+              ref: "${{ github.workflow_ref }}"
+              sha: "${{ github.workflow_sha }}"
+          EOM
+          )
+          echo "${event_data}" | \
+            gh api --verbose \
+              -X POST \
+              --input - \
+              /repos/${{ env.target_owner }}/${{ env.target_name }}/dispatches \
+              ;
+
+      # Triggering workflows via workflow execution is preferred when within the GitHub ecosystem.
+      - name: Trigger Workflow in Target Repository (workflow run)
+        if: "${{ github.event.inputs.trigger-type == 'workflow-run' }}"
+        run: |
+          gh workflow run \
+            ${{ env.target_workflow }} \
+            --repo ${{ env.target_owner }}/${{ env.target_name }} \
+            --ref 4.22 \
+            --field branch-name=${{ github.ref_name }} \
+            ;
