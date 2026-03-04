@@ -32,7 +32,7 @@ import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.feign.model.LunMap;
-import org.apache.cloudstack.storage.feign.model.LunRestoreRequest;
+import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
@@ -632,54 +632,52 @@ public class UnifiedSANStrategy extends SANStrategy {
     }
 
     /**
-     * Reverts a LUN to a snapshot using the ONTAP LUN restore API.
+     * Reverts a LUN to a snapshot using the ONTAP CLI-based snapshot file restore API.
      *
-     * <p>ONTAP REST API: {@code POST /api/storage/luns/{lun.uuid}/restore}</p>
+     * <p>ONTAP REST API (CLI passthrough):
+     * {@code POST /api/private/cli/volume/snapshot/restore-file}</p>
      *
-     * <p>Request payload:
-     * <pre>
-     * {
-     *   "snapshot": { "name": "snapshot_name" },
-     *   "destination": { "path": "/vol/volume_name/lun_name" }
-     * }
-     * </pre>
-     * </p>
+     * <p>This method uses the CLI native API which is more reliable and works
+     * consistently for both NFS files and iSCSI LUNs.</p>
      *
      * @param snapshotName  The ONTAP FlexVolume snapshot name
-     * @param flexVolUuid   The FlexVolume UUID (not used for LUN restore, but kept for interface consistency)
-     * @param snapshotUuid  The ONTAP snapshot UUID (not used for LUN restore)
-     * @param volumePath    The LUN name (used to construct destination path)
-     * @param lunUuid       The LUN UUID to restore
-     * @param flexVolName   The FlexVolume name (for constructing destination path)
+     * @param flexVolUuid   The FlexVolume UUID (not used in CLI API, kept for interface consistency)
+     * @param snapshotUuid  The ONTAP snapshot UUID (not used in CLI API, kept for interface consistency)
+     * @param volumePath    The LUN name (used to construct the path)
+     * @param lunUuid       The LUN UUID (not used in CLI API, kept for interface consistency)
+     * @param flexVolName   The FlexVolume name (required for CLI API)
      * @return JobResponse for the async restore operation
      */
     @Override
     public JobResponse revertSnapshotForCloudStackVolume(String snapshotName, String flexVolUuid,
                                                           String snapshotUuid, String volumePath,
                                                           String lunUuid, String flexVolName) {
-        s_logger.info("revertSnapshotForCloudStackVolume [iSCSI]: Restoring LUN [{}] (uuid={}) from snapshot [{}]",
-                volumePath, lunUuid, snapshotName);
+        s_logger.info("revertSnapshotForCloudStackVolume [iSCSI]: Restoring LUN [{}] from snapshot [{}] on FlexVol [{}]",
+                volumePath, snapshotName, flexVolName);
 
-        if (lunUuid == null || lunUuid.isEmpty()) {
-            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: LUN UUID is required for iSCSI snapshot revert");
-        }
         if (snapshotName == null || snapshotName.isEmpty()) {
             throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: Snapshot name is required for iSCSI snapshot revert");
         }
         if (flexVolName == null || flexVolName.isEmpty()) {
             throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: FlexVolume name is required for iSCSI snapshot revert");
         }
+        if (volumePath == null || volumePath.isEmpty()) {
+            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: LUN path is required for iSCSI snapshot revert");
+        }
 
         String authHeader = getAuthHeader();
+        String svmName = storage.getSvmName();
 
-        // Construct destination path: /vol/<volume_name>/<lun_name>
-        String destinationPath = "/vol/" + flexVolName + "/" + volumePath;
+        // Prepare the LUN path for ONTAP CLI API (ensure it starts with "/")
+        String ontapLunPath = volumePath.startsWith("/") ? volumePath : "/" + volumePath;
 
-        LunRestoreRequest restoreRequest = new LunRestoreRequest(snapshotName, destinationPath);
+        // Create CLI snapshot restore request
+        CliSnapshotRestoreRequest restoreRequest = new CliSnapshotRestoreRequest(
+                svmName, flexVolName, snapshotName, ontapLunPath);
 
-        s_logger.debug("revertSnapshotForCloudStackVolume: Calling LUN restore API with lunUuid={}, snapshotName={}, destinationPath={}",
-                lunUuid, snapshotName, destinationPath);
+        s_logger.info("revertSnapshotForCloudStackVolume: Calling CLI file restore API with vserver={}, volume={}, snapshot={}, path={}",
+                svmName, flexVolName, snapshotName, ontapLunPath);
 
-        return sanFeignClient.restoreLun(authHeader, lunUuid, restoreRequest);
+        return getSnapshotFeignClient().restoreFileFromSnapshotCli(authHeader, restoreRequest);
     }
 }

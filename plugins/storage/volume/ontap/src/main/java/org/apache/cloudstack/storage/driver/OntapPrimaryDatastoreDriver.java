@@ -829,16 +829,16 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
             StorageStrategy storageStrategy = Utility.getStrategyByStoragePoolDetails(poolDetails);
 
-            // Prepare protocol-specific parameters
-            String lunUuid = null;
-            String flexVolName = null;
+            // Get the FlexVolume name (required for CLI-based restore API for all protocols)
+            String flexVolName = poolDetails.get(Constants.VOLUME_NAME);
+            if (flexVolName == null || flexVolName.isEmpty()) {
+                throw new CloudRuntimeException("revertSnapshot: FlexVolume name not found in pool details for pool " + poolId);
+            }
 
+            // Prepare protocol-specific parameters (lunUuid is only needed for backward compatibility)
+            String lunUuid = null;
             if (ProtocolType.ISCSI.name().equalsIgnoreCase(protocol)) {
                 lunUuid = getSnapshotDetail(snapshotId, Constants.LUN_DOT_UUID);
-                if (lunUuid == null || lunUuid.isEmpty()) {
-                    throw new CloudRuntimeException("revertSnapshot: LUN UUID not found in snapshot details for iSCSI snapshot " + snapshotId);
-                }
-                flexVolName = poolDetails.get(Constants.VOLUME_NAME);
             }
 
             // Delegate to strategy class for protocol-specific restore

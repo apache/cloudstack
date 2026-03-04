@@ -22,6 +22,7 @@ import feign.Headers;
 import feign.Param;
 import feign.QueryMap;
 import feign.RequestLine;
+import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
 import org.apache.cloudstack.storage.feign.model.FlexVolSnapshot;
 import org.apache.cloudstack.storage.feign.model.SnapshotFileRestoreRequest;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
@@ -151,4 +152,33 @@ public interface SnapshotFeignClient {
                                         @Param("snapshotUuid") String snapshotUuid,
                                         @Param("filePath") String filePath,
                                         SnapshotFileRestoreRequest request);
+
+    /**
+     * Restores a single file or LUN from a FlexVolume snapshot using the CLI native API.
+     *
+     * <p>ONTAP REST (CLI passthrough):
+     * {@code POST /api/private/cli/volume/snapshot/restore-file}</p>
+     *
+     * <p>This CLI-based API is more reliable and works for both NFS files and iSCSI LUNs.
+     * The request body contains all required parameters: vserver, volume, snapshot, and path.</p>
+     *
+     * <p>Example payload:
+     * <pre>
+     * {
+     *   "vserver": "vs0",
+     *   "volume": "rajiv_ONTAP_SP1",
+     *   "snapshot": "DATA-3-428726fe-7440-4b41-8d47-3f654e5d9814",
+     *   "path": "/d266bb2c-d479-47ad-81c3-a070e8bb58c0"
+     * }
+     * </pre>
+     * </p>
+     *
+     * @param authHeader  Basic auth header
+     * @param request     CLI snapshot restore request containing vserver, volume, snapshot, and path
+     * @return JobResponse containing the async job reference (if applicable)
+     */
+    @RequestLine("POST /api/private/cli/volume/snapshot/restore-file")
+    @Headers({"Authorization: {authHeader}", "Content-Type: application/json"})
+    JobResponse restoreFileFromSnapshotCli(@Param("authHeader") String authHeader,
+                                           CliSnapshotRestoreRequest request);
 }

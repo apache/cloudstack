@@ -49,7 +49,7 @@ import org.apache.cloudstack.storage.feign.model.Volume;
 import org.apache.cloudstack.storage.feign.model.VolumeConcise;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
-import org.apache.cloudstack.storage.feign.model.SnapshotFileRestoreRequest;
+import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.utils.Constants;
@@ -640,17 +640,20 @@ public class UnifiedNASStrategy extends NASStrategy {
     }
 
     /**
-     * Reverts a file to a snapshot using the ONTAP single-file restore API.
+     * Reverts a file to a snapshot using the ONTAP CLI-based snapshot file restore API.
      *
-     * <p>ONTAP REST API:
-     * {@code POST /api/storage/volumes/{vol.uuid}/snapshots/{snap.uuid}/files/{path}/restore}</p>
+     * <p>ONTAP REST API (CLI passthrough):
+     * {@code POST /api/private/cli/volume/snapshot/restore-file}</p>
      *
-     * @param snapshotName  The ONTAP FlexVolume snapshot name (not used for NFS, but kept for interface consistency)
-     * @param flexVolUuid   The FlexVolume UUID containing the snapshot
-     * @param snapshotUuid  The ONTAP snapshot UUID
+     * <p>This method uses the CLI native API which is more reliable and works
+     * consistently for both NFS files and iSCSI LUNs.</p>
+     *
+     * @param snapshotName  The ONTAP FlexVolume snapshot name
+     * @param flexVolUuid   The FlexVolume UUID (not used in CLI API, kept for interface consistency)
+     * @param snapshotUuid  The ONTAP snapshot UUID (not used in CLI API, kept for interface consistency)
      * @param volumePath    The file path within the FlexVolume
      * @param lunUuid       Not used for NFS (null)
-     * @param flexVolName   Not used for NFS (null)
+     * @param flexVolName   The FlexVolume name (required for CLI API)
      * @return JobResponse for the async restore operation
      */
     @Override
@@ -658,30 +661,31 @@ public class UnifiedNASStrategy extends NASStrategy {
                                                           String snapshotUuid, String volumePath,
                                                           String lunUuid, String flexVolName) {
         s_logger.info("revertSnapshotForCloudStackVolume [NFS]: Restoring file [{}] from snapshot [{}] on FlexVol [{}]",
-                volumePath, snapshotUuid, flexVolUuid);
+                volumePath, snapshotName, flexVolName);
 
-        if (flexVolUuid == null || flexVolUuid.isEmpty()) {
-            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: FlexVolume UUID is required for NFS snapshot revert");
-        }
-        if (snapshotUuid == null || snapshotUuid.isEmpty()) {
-            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: Snapshot UUID is required for NFS snapshot revert");
+        if (snapshotName == null || snapshotName.isEmpty()) {
+            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: Snapshot name is required for NFS snapshot revert");
         }
         if (volumePath == null || volumePath.isEmpty()) {
             throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: File path is required for NFS snapshot revert");
         }
+        if (flexVolName == null || flexVolName.isEmpty()) {
+            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: FlexVolume name is required for NFS snapshot revert");
+        }
 
         String authHeader = getAuthHeader();
+        String svmName = storage.getSvmName();
 
-        // Prepare the file path for ONTAP API (ensure it starts with "/")
+        // Prepare the file path for ONTAP CLI API (ensure it starts with "/")
         String ontapFilePath = volumePath.startsWith("/") ? volumePath : "/" + volumePath;
 
-        // For single-file restore, destination_path is the same as source (restore in place)
-        SnapshotFileRestoreRequest restoreRequest = new SnapshotFileRestoreRequest(volumePath);
+        // Create CLI snapshot restore request
+        CliSnapshotRestoreRequest restoreRequest = new CliSnapshotRestoreRequest(
+                svmName, flexVolName, snapshotName, ontapFilePath);
 
-        s_logger.debug("revertSnapshotForCloudStackVolume: Calling file restore API with flexVolUuid={}, snapshotUuid={}, filePath={}",
-                flexVolUuid, snapshotUuid, ontapFilePath);
+        s_logger.info("revertSnapshotForCloudStackVolume: Calling CLI file restore API with vserver={}, volume={}, snapshot={}, path={}",
+                svmName, flexVolName, snapshotName, ontapFilePath);
 
-        return getSnapshotFeignClient().restoreFileFromSnapshot(authHeader, flexVolUuid, snapshotUuid,
-                ontapFilePath, restoreRequest);
+        return getSnapshotFeignClient().restoreFileFromSnapshotCli(authHeader, restoreRequest);
     }
 }

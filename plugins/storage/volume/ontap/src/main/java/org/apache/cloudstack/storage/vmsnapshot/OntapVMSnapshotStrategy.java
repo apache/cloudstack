@@ -32,8 +32,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
+import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
 import org.apache.cloudstack.storage.feign.model.FlexVolSnapshot;
-import org.apache.cloudstack.storage.feign.model.SnapshotFileRestoreRequest;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.StorageStrategy;
@@ -157,8 +157,10 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
         // For new snapshots, check if Disk-only and all volumes on ONTAP
         if (vmSnapshotVO.getType() != VMSnapshot.Type.Disk) {
-            logger.error("canHandle: ONTAP VM snapshot strategy cannot handle memory snapshots for VM [{}]", vmSnapshot.getVmId());
-            throw new CloudRuntimeException("ONTAP VM snapshot strategy cannot handle memory snapshots for VM [" + vmSnapshot.getVmId() + "]");
+            // Memory snapshots are not supported by ONTAP strategy - return CANT_HANDLE
+            // so other strategies can be tried or proper error handling can occur
+            logger.debug("canHandle: ONTAP VM snapshot strategy cannot handle memory snapshots for VM [{}]", vmSnapshot.getVmId());
+            return StrategyPriority.CANT_HANDLE;
         }
 
         if (allVolumesOnOntapManagedStorage(vmSnapshot.getVmId())) {
@@ -775,14 +777,14 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
     }
 
     /**
-     * Reverts all volumes of a VM snapshot using ONTAP Snapshot File Restore.
+     * Reverts all volumes of a VM snapshot using ONTAP CLI-based Snapshot File Restore.
      *
      * <p>Instead of restoring the entire FlexVolume to a snapshot (which would affect
      * other VMs/files on the same FlexVol), this method restores <b>only the individual
-     * files or LUNs</b> belonging to this VM using the dedicated ONTAP snapshot file
+     * files or LUNs</b> belonging to this VM using the dedicated ONTAP CLI snapshot file
      * restore API:</p>
      *
-     * <p>{@code POST /api/storage/volumes/{volume.uuid}/snapshots/{snapshot.uuid}/files/{file.path}/restore}</p>
+     * <p>{@code POST /api/private/cli/volume/snapshot/restore-file}</p>
      *
      * <p>For each persisted detail row (one per CloudStack volume):</p>
      * <ul>
@@ -806,31 +808,40 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             SnapshotFeignClient snapshotClient = storageStrategy.getSnapshotFeignClient();
             String authHeader = storageStrategy.getAuthHeader();
 
-            // Prepare the file path for ONTAP API (ensure it starts with "/")
+            // Get SVM name and FlexVolume name from pool details
+            String svmName = poolDetails.get(Constants.SVM_NAME);
+            String flexVolName = poolDetails.get(Constants.VOLUME_NAME);
+
+            if (svmName == null || svmName.isEmpty()) {
+                throw new CloudRuntimeException("revertFlexVolSnapshots: SVM name not found in pool details for pool [" + detail.poolId + "]");
+            }
+            if (flexVolName == null || flexVolName.isEmpty()) {
+                throw new CloudRuntimeException("revertFlexVolSnapshots: FlexVolume name not found in pool details for pool [" + detail.poolId + "]");
+            }
+
+            // The path must start with "/" for the ONTAP CLI API
             String ontapFilePath = detail.volumePath.startsWith("/") ? detail.volumePath : "/" + detail.volumePath;
 
-            logger.info("revertFlexVolSnapshots: Restoring volume [{}] from FlexVol snapshot [{}] (uuid={}) on FlexVol [{}] (protocol={})",
-                    ontapFilePath, detail.snapshotName, detail.snapshotUuid,
-                    detail.flexVolUuid, detail.protocol);
+            logger.info("revertFlexVolSnapshots: Restoring volume [{}] from FlexVol snapshot [{}] on FlexVol [{}] (protocol={})",
+                    ontapFilePath, detail.snapshotName, flexVolName, detail.protocol);
 
-            // POST /api/storage/volumes/{vol}/snapshots/{snap}/files/{path}/restore
-            // with body: { "destination_path": "<volumePath>" }
-            SnapshotFileRestoreRequest restoreRequest = new SnapshotFileRestoreRequest(detail.volumePath);
+            // Use CLI-based restore API: POST /api/private/cli/volume/snapshot/restore-file
+            CliSnapshotRestoreRequest restoreRequest = new CliSnapshotRestoreRequest(
+                    svmName, flexVolName, detail.snapshotName, ontapFilePath);
 
-            JobResponse jobResponse = snapshotClient.restoreFileFromSnapshot(
-                    authHeader, detail.flexVolUuid, detail.snapshotUuid, ontapFilePath, restoreRequest);
+            JobResponse jobResponse = snapshotClient.restoreFileFromSnapshotCli(authHeader, restoreRequest);
 
             if (jobResponse != null && jobResponse.getJob() != null) {
                 Boolean success = storageStrategy.jobPollForSuccess(jobResponse.getJob().getUuid(), 60, 2);
                 if (!success) {
                     throw new CloudRuntimeException("Snapshot file restore failed for volume path [" +
                             ontapFilePath + "] from snapshot [" + detail.snapshotName +
-                            "] on FlexVol [" + detail.flexVolUuid + "]");
+                            "] on FlexVol [" + flexVolName + "]");
                 }
             }
 
             logger.info("revertFlexVolSnapshots: Successfully restored volume [{}] from snapshot [{}] on FlexVol [{}]",
-                    ontapFilePath, detail.snapshotName, detail.flexVolUuid);
+                    ontapFilePath, detail.snapshotName, flexVolName);
         }
     }
 
