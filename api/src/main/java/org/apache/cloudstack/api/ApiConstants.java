@@ -982,6 +982,7 @@ public class ApiConstants {
     public static final String REGION_ID = "regionid";
     public static final String VPC_OFF_ID = "vpcofferingid";
     public static final String VPC_OFF_NAME = "vpcofferingname";
+    public static final String VPC_OFFERING_CONSERVE_MODE = "vpcofferingconservemode";
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
     public static final String VPC_NAME = "vpcname";

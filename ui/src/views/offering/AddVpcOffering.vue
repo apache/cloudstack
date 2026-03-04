@@ -194,6 +194,14 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item
+          name="conservemode"
+          ref="conservemode">
+          <template #label>
+            <tooltip-label :title="$t('label.conservemode')" :tooltip="apiParams.conservemode.description"/>
+          </template>
+          <a-switch v-model:checked="form.conservemode" />
+        </a-form-item>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
@@ -282,7 +290,6 @@ export default {
     return {
       selectedDomains: [],
       selectedZones: [],
-      isConserveMode: true,
       internetProtocolValue: 'ipv4',
       domains: [],
       domainLoading: false,
@@ -328,7 +335,8 @@ export default {
         description: 'Netris',
         enabled: true
       },
-      nsxSupportedServicesMap: {}
+      nsxSupportedServicesMap: {},
+      conservemode: false
     }
   },
   beforeCreate () {
@@ -719,6 +727,7 @@ export default {
           params.provider = 'Netris'
         }
         params.networkmode = values.networkmode
+        params.conservemode = values.conservemode
         if (!values.forVpc) {
           params.specifyasnumber = values.specifyasnumber
         }

@@ -24,13 +24,18 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkRuleApplier;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ComponentContext;
@@ -43,6 +48,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -76,6 +82,10 @@ public class FirewallManagerTest {
     IpAddressManager _ipAddrMgr;
     @Mock
     FirewallRulesDao _firewallDao;
+    @Mock
+    NetworkDao _networkDao;
+    @Mock
+    VpcOfferingDao vpcOfferingDao;
 
     @Spy
     @InjectMocks
@@ -163,48 +173,100 @@ public class FirewallManagerTest {
         }
     }
 
-    @Test
-    public void testDetectRulesConflict() {
-        List<FirewallRuleVO> ruleList = new ArrayList<FirewallRuleVO>();
-        FirewallRuleVO rule1 = spy(new FirewallRuleVO("rule1", 3, 500, "UDP", 1, 2, 1, Purpose.Vpn, null, null, null, null));
-        FirewallRuleVO rule2 = spy(new FirewallRuleVO("rule2", 3, 1701, "UDP", 1, 2, 1, Purpose.Vpn, null, null, null, null));
-        FirewallRuleVO rule3 = spy(new FirewallRuleVO("rule3", 3, 4500, "UDP", 1, 2, 1, Purpose.Vpn, null, null, null, null));
+    private List<FirewallRuleVO> createExistingFirewallListRulesList(long existingNetworkId) {
+        List<FirewallRuleVO> ruleList = new ArrayList<>();
+        FirewallRuleVO rule1 = spy(new FirewallRuleVO("rule1", 3, 500, "UDP", existingNetworkId, 2, 1, Purpose.Vpn, null, null, null, null));
+        FirewallRuleVO rule2 = spy(new FirewallRuleVO("rule2", 3, 1701, "UDP", existingNetworkId, 2, 1, Purpose.Vpn, null, null, null, null));
+        FirewallRuleVO rule3 = spy(new FirewallRuleVO("rule3", 3, 4500, "UDP", existingNetworkId, 2, 1, Purpose.Vpn, null, null, null, null));
 
         List<String> sString = Arrays.asList("10.1.1.1/24","192.168.1.1/24");
         List<String> dString1 = Arrays.asList("10.1.1.1/25");
-        List<String> dString2 = Arrays.asList("10.1.1.128/25");
 
-        FirewallRuleVO rule4 = spy(new FirewallRuleVO("rule4", 3L, 10, 20, "TCP", 1, 2, 1, Purpose.Firewall, sString, dString1, null, null,
+        FirewallRuleVO rule4 = spy(new FirewallRuleVO("rule4", 3L, 10, 20, "TCP", existingNetworkId, 2, 1, Purpose.Firewall, sString, dString1, null, null,
                 null, FirewallRule.TrafficType.Egress));
+
+        when(rule1.getId()).thenReturn(1L);
+        when(rule2.getId()).thenReturn(2L);
+        when(rule3.getId()).thenReturn(3L);
+        when(rule4.getId()).thenReturn(4L);
 
         ruleList.add(rule1);
         ruleList.add(rule2);
         ruleList.add(rule3);
         ruleList.add(rule4);
 
-        FirewallManagerImpl firewallMgr = (FirewallManagerImpl)_firewallMgr;
+        return ruleList;
+    }
 
-        when(firewallMgr._firewallDao.listByIpAndPurposeAndNotRevoked(3,null)).thenReturn(ruleList);
-        when(rule1.getId()).thenReturn(1L);
-        when(rule2.getId()).thenReturn(2L);
-        when(rule3.getId()).thenReturn(3L);
-        when(rule4.getId()).thenReturn(4L);
+    private List<FirewallRule> createNewRuleList(long newNetworkId) {
+        List<String> sString = Arrays.asList("10.1.1.1/24","192.168.1.1/24");
+        List<String> dString2 = Arrays.asList("10.1.1.128/25");
 
-        FirewallRule newRule1 = new FirewallRuleVO("newRule1", 3, 500, "TCP", 1, 2, 1, Purpose.PortForwarding, null, null, null, null);
-        FirewallRule newRule2 = new FirewallRuleVO("newRule2", 3, 1701, "TCP", 1, 2, 1, Purpose.PortForwarding, null, null, null, null);
-        FirewallRule newRule3 = new FirewallRuleVO("newRule3", 3, 4500, "TCP", 1, 2, 1, Purpose.PortForwarding, null, null, null, null);
-        FirewallRule newRule4 = new FirewallRuleVO("newRule4", 3L, 15, 25, "TCP", 1, 2, 1, Purpose.Firewall, sString, dString2, null, null,
+        FirewallRule newRule1 = new FirewallRuleVO("newRule1", 3, 500, "TCP", newNetworkId, 2, 1, Purpose.PortForwarding, null, null, null, null);
+        FirewallRule newRule2 = new FirewallRuleVO("newRule2", 3, 1701, "TCP", newNetworkId, 2, 1, Purpose.PortForwarding, null, null, null, null);
+        FirewallRule newRule3 = new FirewallRuleVO("newRule3", 3, 4500, "TCP", newNetworkId, 2, 1, Purpose.PortForwarding, null, null, null, null);
+        FirewallRule newRule4 = new FirewallRuleVO("newRule4", 3L, 15, 25, "TCP", newNetworkId, 2, 1, Purpose.Firewall, sString, dString2, null, null,
                 null, FirewallRule.TrafficType.Egress);
+        return Arrays.asList(newRule1, newRule2, newRule3, newRule4);
+    }
+
+    @Test
+    public void testDetectRulesConflictIsolatedNetwork() {
+        List<FirewallRuleVO> ruleList = createExistingFirewallListRulesList(1L);
+        when(_firewallMgr._firewallDao.listByIpAndPurposeAndNotRevoked(3,null)).thenReturn(ruleList);
+
+        List<FirewallRule> newRuleList = createNewRuleList(1L);
+
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        when(_firewallMgr._networkDao.findById(1L)).thenReturn(networkVO);
+        when(networkVO.getVpcId()).thenReturn(null);
 
         try {
-            firewallMgr.detectRulesConflict(newRule1);
-            firewallMgr.detectRulesConflict(newRule2);
-            firewallMgr.detectRulesConflict(newRule3);
-            firewallMgr.detectRulesConflict(newRule4);
+            for (FirewallRule newRule : newRuleList) {
+                _firewallMgr.detectRulesConflict(newRule);
+            }
         }
         catch (NetworkRuleConflictException ex) {
             Assert.fail();
         }
+    }
+
+    private void testDetectRulesConflictVpcBase(boolean vpcConserveMode) throws NetworkRuleConflictException {
+        long existingNetworkId = 1L;
+        long newNetworkId = 2L;
+        long vpcId = 10L;
+
+        List<FirewallRuleVO> ruleList = createExistingFirewallListRulesList(existingNetworkId);
+        when(_firewallMgr._firewallDao.listByIpAndPurposeAndNotRevoked(3,null)).thenReturn(ruleList);
+
+        List<FirewallRule> newRuleList = createNewRuleList(newNetworkId);
+
+        NetworkVO newNetworkVO = Mockito.mock(NetworkVO.class);
+        Vpc vpc = Mockito.mock(Vpc.class);
+        VpcOfferingVO vpcOffering = Mockito.mock(VpcOfferingVO.class);
+
+        when(_firewallMgr._networkDao.findById(2L)).thenReturn(newNetworkVO);
+        when(newNetworkVO.getVpcId()).thenReturn(vpcId);
+        when(_vpcMgr.getActiveVpc(vpcId)).thenReturn(vpc);
+        when(vpc.getVpcOfferingId()).thenReturn(1L);
+        when(vpcOfferingDao.findById(1L)).thenReturn(vpcOffering);
+        when(vpcOffering.isConserveMode()).thenReturn(vpcConserveMode);
+
+        for (FirewallRule newRule : newRuleList) {
+            _firewallMgr.detectRulesConflict(newRule);
+        }
+    }
+
+    @Test
+    public void testDetectRulesConflictVpcConserveMode() throws NetworkRuleConflictException {
+        // When VPC conserve mode is enabled, rules can be created for multiple network tiers
+        testDetectRulesConflictVpcBase(true);
+    }
+
+    @Test(expected = NetworkRuleConflictException.class)
+    public void testDetectRulesConflictVpcConserveModeFalse() throws NetworkRuleConflictException {
+        // When VPC conserve mode is disabled, an exception should be thrown when attempting to create rules on different network tiers
+        testDetectRulesConflictVpcBase(false);
     }
 
     @Test
