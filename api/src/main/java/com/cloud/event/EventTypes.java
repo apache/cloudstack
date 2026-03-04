@@ -864,8 +864,10 @@ public class EventTypes {
 
     // DNS Framework Events
     public static final String EVENT_DNS_SERVER_ADD = "DNS.SERVER.ADD";
+    public static final String EVENT_DNS_SERVER_UPDATE = "DNS.SERVER.UPDATE";
     public static final String EVENT_DNS_SERVER_DELETE = "DNS.SERVER.DELETE";
     public static final String EVENT_DNS_ZONE_CREATE = "DNS.ZONE.CREATE";
+    public static final String EVENT_DNS_ZONE_UPDATE = "DNS.ZONE.UPDATE";
     public static final String EVENT_DNS_ZONE_DELETE = "DNS.ZONE.DELETE";
     public static final String EVENT_DNS_RECORD_CREATE = "DNS.RECORD.CREATE";
     public static final String EVENT_DNS_RECORD_DELETE = "DNS.RECORD.DELETE";

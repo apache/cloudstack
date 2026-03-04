@@ -55,8 +55,8 @@ public class AddDnsServerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "API URL of the provider")
     private String url;
 
-    @Parameter(name = ApiConstants.PROVIDER_TYPE, type = CommandType.STRING, required = true, description = "Provider type (e.g., PowerDNS)")
-    private String providerType;
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, required = true, description = "Provider type (e.g., PowerDNS)")
+    private String provider;
 
     @Parameter(name = ApiConstants.DNS_USER_NAME, type = CommandType.STRING,
             description = "Username or email associated with the external DNS provider account (used for authentication)")
@@ -109,8 +109,8 @@ public class AddDnsServerCmd extends BaseCmd {
         return nameServers;
     }
 
-    public DnsProviderType getProviderType() {
-        DnsProviderType dnsProviderType = EnumUtils.getEnumIgnoreCase(DnsProviderType.class, providerType, DnsProviderType.PowerDNS);
+    public DnsProviderType getProvider() {
+        DnsProviderType dnsProviderType = EnumUtils.getEnumIgnoreCase(DnsProviderType.class, provider, DnsProviderType.PowerDNS);
         if (dnsProviderType == null) {
             throw new InvalidParameterValueException(String.format("Invalid value passed for provider type, valid values are: %s",
                     EnumUtils.listValues(DnsProviderType.values())));

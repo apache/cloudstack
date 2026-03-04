@@ -60,22 +60,20 @@ import org.apache.cloudstack.dns.vo.DnsZoneVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.projects.Project;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
@@ -119,6 +117,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DNS_SERVER_ADD, eventDescription = "Adding a DNS Server")
     public DnsServer addDnsServer(AddDnsServerCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         DnsServer existing = dnsServerDao.findByUrlAndAccount(cmd.getUrl(), caller.getId());
@@ -139,7 +138,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             publicDomainSuffix = DnsProviderUtil.normalizeDomain(publicDomainSuffix);
         }
 
-        DnsProviderType type = cmd.getProviderType();
+        DnsProviderType type = cmd.getProvider();
         DnsServerVO server = new DnsServerVO(cmd.getName(), cmd.getUrl(), cmd.getPort(), cmd.getExternalServerId(), type,
                 cmd.getDnsUserName(), cmd.getCredentials(), isDnsPublic, publicDomainSuffix, cmd.getNameServers(),
                 caller.getAccountId(), caller.getDomainId());
@@ -159,12 +158,15 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     @Override
     public ListResponse<DnsServerResponse> listDnsServers(ListDnsServersCmd cmd) {
         Pair<List<DnsServerVO>, Integer> result = searchForDnsServerInternal(cmd);
+        ListResponse<DnsServerResponse> response = new ListResponse<>();
+        if (result == null) {
+            return response;
+        }
         List<String> serverIds = new ArrayList<>();
         for (DnsServer server : result.first()) {
             serverIds.add(server.getUuid());
         }
         List<DnsServerJoinVO> joinResult = dnsServerJoinDao.listByUuids(serverIds);
-        ListResponse<DnsServerResponse> response = new ListResponse<>();
         List<DnsServerResponse> serverResponses = new ArrayList<>();
         for (DnsServerJoinVO server : joinResult) {
             serverResponses.add(createDnsServerResponse(server));
@@ -176,64 +178,20 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     private Pair<List<DnsServerVO>, Integer> searchForDnsServerInternal(ListDnsServersCmd cmd) {
         Long dnsServerId = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
-        Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
-
-        // Step 1: Build ACL search parameters based on caller permissions
-        List<Long> permittedAccountIds = new ArrayList<>();
-        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(
-                domainId, isRecursive, null);
-        accountMgr.buildACLSearchParameters(caller, dnsServerId, cmd.getAccountName(), null, permittedAccountIds,
-                domainIdRecursiveListProject, cmd.listAll(), false);
-
-        domainId = domainIdRecursiveListProject.first();
-        isRecursive = domainIdRecursiveListProject.second();
-        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        Filter searchFilter = new Filter(DnsServerVO.class, ApiConstants.ID, true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        // Step 2: Search for caller's own DNS servers using standard ACL pattern
-        SearchBuilder<DnsServerVO> sb = dnsServerDao.createSearchBuilder();
-        accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
-        sb.and(ApiConstants.STATE, sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and(ApiConstants.PROVIDER_TYPE, sb.entity().getProviderType(), SearchCriteria.Op.EQ);
-        sb.done();
-
-        SearchCriteria<DnsServerVO> sc = sb.create();
-        accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccountIds, listProjectResourcesCriteria);
-        sc.setParameters(ApiConstants.STATE, DnsServer.State.Enabled);
-        sc.setParameters(ApiConstants.PROVIDER_TYPE, cmd.getProviderType());
-
-        Pair<List<DnsServerVO>, Integer> ownServersPair = dnsServerDao.searchAndCount(sc, searchFilter);
-        List<DnsServerVO> dnsServers = new ArrayList<>(ownServersPair.first());
-        int count = ownServersPair.second();
-        if (cmd.getId() == null) {
-            Set<Long> parentDomainIds = domainDao.getDomainParentIds(caller.getDomainId());
-            if (!parentDomainIds.isEmpty()) {
-                SearchBuilder<DnsServerVO> publicSb = dnsServerDao.createSearchBuilder();
-                publicSb.and(ApiConstants.IS_PUBLIC, publicSb.entity().isPublicServer(), SearchCriteria.Op.EQ);
-                publicSb.and(ApiConstants.DOMAIN_IDS, publicSb.entity().getDomainId(), SearchCriteria.Op.IN);
-                publicSb.and(ApiConstants.STATE, publicSb.entity().getState(), SearchCriteria.Op.EQ);
-                publicSb.and(ApiConstants.PROVIDER_TYPE, publicSb.entity().getProviderType(), SearchCriteria.Op.EQ);
-                publicSb.done();
-                SearchCriteria<DnsServerVO> publicSc = publicSb.create();
-                publicSc.setParameters(ApiConstants.IS_PUBLIC, 1);
-                publicSc.setParameters(ApiConstants.DOMAIN_IDS, parentDomainIds.toArray());
-                publicSc.setParameters(ApiConstants.STATE, DnsServer.State.Enabled);
-                publicSc.setParameters(ApiConstants.PROVIDER_TYPE, cmd.getProviderType());
-                List<DnsServerVO> publicServers = dnsServerDao.search(publicSc, null);
-                List<Long> ownServerIds = dnsServers.stream().map(DnsServerVO::getId).collect(Collectors.toList());
-                for (DnsServerVO publicServer : publicServers) {
-                    if (!ownServerIds.contains(publicServer.getId())) {
-                        dnsServers.add(publicServer);
-                        count++;
-                    }
-                }
+        if (dnsServerId != null) {
+            DnsServerVO dnsServerVO = dnsServerDao.findById(dnsServerId);
+            if (dnsServerVO == null) {
+                return null;
             }
+            return new Pair<>(Collections.singletonList(dnsServerVO), 1);
         }
-        return new Pair<>(dnsServers, count);
+        Set<Long> parentDomainIds = domainDao.getDomainParentIds(caller.getDomainId());
+        Filter searchFilter = new Filter(DnsServerVO.class, ApiConstants.ID, true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        return dnsServerDao.searchDnsServer(dnsServerId, caller.getAccountId(), parentDomainIds, cmd.getProviderType(), cmd.getKeyword(), searchFilter);
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DNS_SERVER_UPDATE, eventDescription = "Updating DNS Server")
     public DnsServer updateDnsServer(UpdateDnsServerCmd cmd) {
         Long dnsServerId = cmd.getId();
         DnsServerVO dnsServer = dnsServerDao.findById(dnsServerId);
@@ -242,7 +200,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         Account caller = CallContext.current().getCallingAccount();
-        accountMgr.checkAccess(caller, null, true, dnsServer);
+        accountMgr.checkAccess(caller, dnsServer);
 
         boolean validationRequired = false;
         String originalUrl = dnsServer.getUrl();
@@ -305,6 +263,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DNS_SERVER_DELETE, eventDescription = "Deleting DNS Server")
     public boolean deleteDnsServer(DeleteDnsServerCmd cmd) {
         Long dnsServerId = cmd.getId();
         DnsServerVO dnsServer = dnsServerDao.findById(dnsServerId);
@@ -312,11 +271,12 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             throw new InvalidParameterValueException(String.format("DNS server with ID: %s not found.", dnsServerId));
         }
         Account caller = CallContext.current().getCallingAccount();
-        accountMgr.checkAccess(caller, null, true, dnsServer);
+        accountMgr.checkAccess(caller, dnsServer);
         return dnsServerDao.remove(dnsServerId);
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DNS_ZONE_DELETE, eventDescription = "Deleting DNS Zone")
     public boolean deleteDnsZone(Long zoneId) {
         DnsZoneVO zone = dnsZoneDao.findById(zoneId);
         if (zone == null) {
@@ -340,6 +300,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DNS_ZONE_UPDATE, eventDescription = "Updating DNS Zone")
     public DnsZone updateDnsZone(UpdateDnsZoneCmd cmd) {
         DnsZoneVO dnsZone = dnsZoneDao.findById(cmd.getId());
         if (dnsZone == null) {
@@ -396,7 +357,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Account caller = CallContext.current().getCallingAccount();
         if (cmd.getDnsServerId() != null) {
             DnsServer dnsServer = dnsServerDao.findById(cmd.getDnsServerId());
-            accountMgr.checkAccess(caller, null, false, dnsServer);
+            accountMgr.checkAccess(caller, dnsServer);
         }
         List<Long> ownDnsServerIds = dnsServerDao.listDnsServerIdsByAccountId(caller.getAccountId());
         String keyword = cmd.getKeyword();
@@ -408,6 +369,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DNS_RECORD_CREATE, eventDescription = "Creating DNS Record")
     public DnsRecordResponse createDnsRecord(CreateDnsRecordCmd cmd) {
         String recordName = StringUtils.trimToEmpty(cmd.getName()).toLowerCase();
         if (StringUtils.isBlank(recordName)) {
@@ -436,6 +398,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DNS_RECORD_DELETE, eventDescription = "Deleting DNS Record")
     public boolean deleteDnsRecord(DeleteDnsRecordCmd cmd) {
         DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
         if (zone == null) {
@@ -649,21 +612,6 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, true, zone);
         return dnsZoneNetworkMapDao.remove(mapping.getId());
-    }
-
-
-    @Override
-    public void checkDnsServerPermissions(Account caller, DnsServer server) {
-        if (caller.getId() == server.getAccountId()) {
-            return;
-        }
-        if (!server.isPublicServer()) {
-            throw new PermissionDeniedException(caller + "is not allowed to access the DNS server " + server.getName());
-        }
-        Account owner = accountMgr.getAccount(server.getAccountId());
-        if (!domainDao.isChildDomain(caller.getDomainId(), owner.getDomainId())) {
-            throw new PermissionDeniedException(caller + "is not allowed to access the DNS server " + server.getName());
-        }
     }
 
     @Override

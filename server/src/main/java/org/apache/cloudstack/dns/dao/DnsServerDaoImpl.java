@@ -18,10 +18,13 @@
 package org.apache.cloudstack.dns.dao;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsServer;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.Pair;
@@ -94,6 +97,46 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
         if (accountId != null) {
             sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
         }
+        return searchAndCount(sc, filter);
+    }
+
+    @Override
+    public Pair<List<DnsServerVO>, Integer> searchDnsServer(Long dnsServerId, Long accountId, Set<Long> domainIds, DnsProviderType providerType,
+                                                            String keyword, Filter filter) {
+
+        SearchBuilder<DnsServerVO> sb = createSearchBuilder();
+        sb.and(ApiConstants.ID, sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and(ApiConstants.NAME, sb.entity().getName(), SearchCriteria.Op.LIKE);
+
+        sb.and().op(ApiConstants.ACCOUNT_ID, sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        if (!CollectionUtils.isEmpty(domainIds)) {
+            sb.or().op(ApiConstants.IS_PUBLIC, sb.entity().isPublicServer(), SearchCriteria.Op.EQ);
+            sb.and(ApiConstants.DOMAIN_IDS, sb.entity().getDomainId(), SearchCriteria.Op.IN);
+            sb.cp();
+        }
+        sb.cp();
+        sb.and(ApiConstants.PROVIDER_TYPE, sb.entity().getProviderType(), SearchCriteria.Op.EQ);
+        sb.and(ApiConstants.STATE, sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.done();
+
+        SearchCriteria<DnsServerVO> sc = sb.create();
+        if (dnsServerId != null) {
+            sc.setParameters(ApiConstants.ID, dnsServerId);
+        }
+        if (accountId != null) {
+            sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
+        }
+        if (!CollectionUtils.isEmpty(domainIds)) {
+            sc.setParameters(ApiConstants.IS_PUBLIC, true);
+            sc.setParameters(ApiConstants.DOMAIN_IDS, domainIds.toArray());
+        }
+        if (providerType != null) {
+            sc.setParameters(ApiConstants.PROVIDER_TYPE, providerType);
+        }
+        if (keyword != null) {
+            sc.setParameters(ApiConstants.NAME, "%" + keyword + "%");
+        }
+        sc.setParameters(ApiConstants.STATE, DnsServer.State.Enabled);
         return searchAndCount(sc, filter);
     }
 }

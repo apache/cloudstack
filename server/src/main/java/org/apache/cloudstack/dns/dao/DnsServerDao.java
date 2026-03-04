@@ -18,7 +18,9 @@
 package org.apache.cloudstack.dns.dao;
 
 import java.util.List;
+import java.util.Set;
 
+import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsServer;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
 
@@ -32,4 +34,6 @@ public interface DnsServerDao extends GenericDao<DnsServerVO, Long> {
     List<Long> listDnsServerIdsByAccountId(Long accountId);
 
     Pair<List<DnsServerVO>, Integer> searchDnsServers(Long id, String keyword, String provider, Long accountId, Filter filter);
+
+    Pair<List<DnsServerVO>, Integer> searchDnsServer(Long dnsServerId, Long accountId, Set<Long> domainIds, DnsProviderType providerType, String keyword, Filter filter);
 }
