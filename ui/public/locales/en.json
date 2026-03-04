@@ -4134,6 +4134,7 @@
 "message.warn.importing.instance.without.nic": "WARNING: This Instance is being imported without NICs and many Network resources will not be available. Consider creating a NIC via vCenter before importing or as soon as the Instance is imported. For KVM host, allocate a NIC to Instance after import.",
 "message.warn.select.template": "Please select a Template for Registration.",
 "message.warn.zone.mtu.update": "Please note that this limit won't affect pre-existing Network's MTU settings",
+"message.warn.vpc.offerings": "VPC offerings will be shown only if the selected account has at least one VPC.",
 "message.webhook.deliveries.time.filter": "Webhook deliveries list can be filtered based on date-time. Select 'Custom' for specifying start and end date range.",
 "message.zone.creation.complete": "Zone creation complete.",
 "message.zone.detail.description": "Populate Zone details.",
