@@ -4919,6 +4919,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return new ConfigKey<?>[]{NetworkGcWait, NetworkGcInterval, NetworkLockTimeout, DeniedRoutes,
                 GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion,
                 PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RollingRestartEnabled,
-                TUNGSTEN_ENABLED, NSX_ENABLED, NETRIS_ENABLED, NETWORK_LB_HAPROXY_MAX_CONN};
+                TUNGSTEN_ENABLED, NSX_ENABLED, NETRIS_ENABLED, NETWORK_LB_HAPROXY_MAX_CONN, VmNetworkThrottlingRate};
     }
 }
