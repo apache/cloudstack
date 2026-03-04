@@ -1413,6 +1413,25 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return userPasswordResetManager.validateAndResetPassword(userAccount, token, password);
     }
 
+    @Override
+    public String getDomainId(Map<String, Object[]> params) {
+        if (MapUtils.isEmpty(params)) {
+            return null;
+        }
+
+        String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (domainIdArr == null) {
+            // Fallback to support clients using the camelCase parameter name "domainId"
+            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
+        }
+
+        if (domainIdArr == null || domainIdArr.length == 0) {
+            return null;
+        }
+
+        return domainIdArr[0];
+    }
+
     private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
         if (user == null) {
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
