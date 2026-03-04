@@ -16,7 +16,7 @@ on:
 
 jobs:
   trigger:
-    runs-on: concordia-linux-cpu4-ram14gi
+    runs-on: flexcloud-rocky
     env:
       target_owner: "${{ secrets.TARGET_OWNER }}"
       target_name: "${{ secrets.TARGET_NAME }}"
