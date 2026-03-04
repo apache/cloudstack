@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
+
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
@@ -74,6 +76,7 @@ import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.projects.ProjectVO;
 
 public class AccountManagerImplTest extends AccountManagentImplTestBase {
 
@@ -1622,6 +1625,23 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManagerImpl).checkRoleEscalation(callingAccount, accountMock);
 
         accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+    }
+
+    @Test
+    public void testCheckIfAccountManagesOnlyDeletedProjectsDoesNotThrow() {
+        long accountId = 42L;
+        long projectId = 100L;
+
+        Mockito.when(projectAccountDao.listAdministratedProjectIds(accountId))
+                .thenReturn(List.of(projectId));
+
+        ProjectVO deletedProject = Mockito.mock(ProjectVO.class);
+        Mockito.when(deletedProject.getRemoved()).thenReturn(new Date());
+
+        Mockito.when(projectDao.findById(projectId))
+                .thenReturn(deletedProject);
+
+        accountManager.checkIfAccountManagesProjects(accountId);
     }
 
     @Test(expected = InvalidParameterValueException.class)
