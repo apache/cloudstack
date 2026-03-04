@@ -532,6 +532,8 @@ public class ApiConstants {
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERIAL = "serial";
     public static final String SERVICE_IP = "serviceip";
+    public static final String SERVICE_OFFERING_CATEGORY_ID = "categoryid";
+    public static final String SERVICE_OFFERING_CATEGORY_NAME = "categoryname";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String SERVICE_OFFERING_NAME = "serviceofferingname";
     public static final String SESSIONKEY = "sessionkey";
