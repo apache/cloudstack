@@ -596,7 +596,7 @@ public class AgentProperties{
      * Default value: <code>true</code>
      */
     public static final Property<Boolean> REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT
-        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
+        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", false);
 
     /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
