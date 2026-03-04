@@ -134,7 +134,6 @@ public abstract class StorageStrategy {
                 return false;
             }
 
-            this.aggregates = aggrs;
             s_logger.info("Successfully connected to ONTAP cluster and validated ONTAP details provided");
         } catch (Exception e) {
             s_logger.error("Failed to connect to ONTAP cluster: " + e.getMessage(), e);

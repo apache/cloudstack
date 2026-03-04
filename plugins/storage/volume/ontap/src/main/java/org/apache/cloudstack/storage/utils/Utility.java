@@ -30,6 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.util.Base64Utils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class Utility {
@@ -40,7 +41,7 @@ public class Utility {
     private static final String AUTH_HEADER_COLON = ":";
 
     public static String generateAuthHeader (String username, String password) {
-        byte[] encodedBytes = Base64Utils.encode((username + AUTH_HEADER_COLON + password).getBytes());
+        byte[] encodedBytes = Base64Utils.encode((username + AUTH_HEADER_COLON + password).getBytes(StandardCharsets.UTF_8));
         return BASIC + StringUtils.SPACE + new String(encodedBytes);
     }
 
