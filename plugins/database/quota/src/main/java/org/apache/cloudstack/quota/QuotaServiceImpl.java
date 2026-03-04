@@ -26,6 +26,8 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.projects.ProjectManager;
+import com.cloud.user.AccountService;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
@@ -75,6 +77,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     @Inject
     private AccountDao _accountDao;
     @Inject
+    private AccountService accountService;
+    @Inject
     private QuotaAccountDao _quotaAcc;
     @Inject
     private QuotaUsageDao _quotaUsageDao;
@@ -86,6 +90,8 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private QuotaResponseBuilder _respBldr;
+    @Inject
+    private ProjectManager projectMgr;
 
     private TimeZone _usageTimezone;
 
