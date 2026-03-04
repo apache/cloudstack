@@ -141,6 +141,10 @@ public class UnifiedNASStrategy extends NASStrategy {
             String svmName = storage.getSvmName();
             String exportPolicyName = primaryDataStoreInfo.getDetails().get(Constants.EXPORT_POLICY_NAME);
             String exportPolicyId = primaryDataStoreInfo.getDetails().get(Constants.EXPORT_POLICY_ID);
+            if (exportPolicyId == null || exportPolicyId.isEmpty()) {
+                s_logger.warn("deleteAccessGroup: Export policy ID not found in storage pool details for storage pool {}. Cannot delete export policy.", primaryDataStoreInfo.getName());
+                throw new CloudRuntimeException("Export policy ID not found for storage pool: " + primaryDataStoreInfo.getName());
+            }
 
             try {
                 nasFeignClient.deleteExportPolicyById(authHeader,exportPolicyId);

@@ -87,6 +87,11 @@ public class OntapHostListener implements HypervisorHostListener {
                         "Unable to establish a connection from agent to storage pool %s due to %s", pool, answer.getDetails()));
             }
 
+            if (!(answer instanceof ModifyStoragePoolAnswer)) {
+                logger.error("Received unexpected answer type {} for storage pool {}", answer.getClass().getName(), pool.getName());
+                throw new CloudRuntimeException("Failed to connect to storage pool. Please check agent logs for details.");
+            }
+
             ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
             StoragePoolInfo poolInfo = mspAnswer.getPoolInfo();
             if (poolInfo == null) {
