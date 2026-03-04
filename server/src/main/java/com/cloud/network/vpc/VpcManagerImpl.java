@@ -329,7 +329,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
-    private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
+    private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup);
     private final List<Provider> supportedProviders = Arrays.asList(Provider.VPCVirtualRouter, Provider.NiciraNvp, Provider.InternalLbVm, Provider.Netscaler,
             Provider.JuniperContrailVpcRouter, Provider.Ovs, Provider.BigSwitchBcf, Provider.ConfigDrive, Provider.Nsx, Provider.Netris);
 
@@ -438,7 +438,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     final Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
                     final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
                     for (final Service svc : getSupportedServices()) {
-                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns, Service.Firewall).contains(svc)) {
                             final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
                             svcProviderMap.put(svc, userDataProvider);
                         } else {
@@ -456,7 +456,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     final Map<Service, Set<Provider>> svcProviderMap = new HashMap<>();
                     final Set<Provider> defaultProviders = Set.of(Provider.Nsx);
                     for (final Service svc : getSupportedServices()) {
-                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns, Service.Firewall).contains(svc)) {
                             final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
                             svcProviderMap.put(svc, userDataProvider);
                         } else if (List.of(Service.SourceNat, Service.NetworkACL).contains(svc)){
@@ -474,7 +474,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     final Map<Service, Set<Provider>> svcProviderMap = new HashMap<>();
                     final Set<Provider> defaultProviders = Set.of(Provider.Netris);
                     for (final Service svc : getSupportedServices()) {
-                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns, Service.Firewall).contains(svc)) {
                             final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
                             svcProviderMap.put(svc, userDataProvider);
                         } else if (List.of(Service.SourceNat, Service.NetworkACL).contains(svc)){
@@ -492,7 +492,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     final Map<Service, Set<Provider>> svcProviderMap = new HashMap<>();
                     final Set<Provider> defaultProviders = Set.of(Provider.Netris);
                     for (final Service svc : getSupportedServices()) {
-                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns, Service.Vpn).contains(svc)) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns, Service.Vpn, Service.Firewall).contains(svc)) {
                             final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
                             svcProviderMap.put(svc, userDataProvider);
                         } else {
@@ -1973,6 +1973,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         services.add(Network.Service.StaticNat);
         services.add(Network.Service.Gateway);
         services.add(Network.Service.Vpn);
+        services.add(Network.Service.Firewall);
         return services;
     }
 

@@ -526,6 +526,12 @@ export default {
           ]
         })
         services.push({
+          name: 'Firewall',
+          provider: [
+            { name: 'VpcVirtualRouter' }
+          ]
+        })
+        services.push({
           name: 'Lb',
           provider: [
             { name: 'VpcVirtualRouter' },

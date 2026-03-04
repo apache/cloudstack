@@ -1134,6 +1134,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 defaultVpcNetworkOfferingProviders.put(Service.StaticNat, Provider.VPCVirtualRouter);
                 defaultVpcNetworkOfferingProviders.put(Service.PortForwarding, Provider.VPCVirtualRouter);
                 defaultVpcNetworkOfferingProviders.put(Service.Vpn, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProviders.put(Service.Firewall, Provider.VPCVirtualRouter);
 
                 for (Map.Entry<Service,Provider> entry : defaultVpcNetworkOfferingProviders.entrySet()) {
                      NetworkOfferingServiceMapVO offService =
@@ -1161,6 +1162,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 defaultVpcNetworkOfferingProvidersNoLB.put(Service.StaticNat, Provider.VPCVirtualRouter);
                 defaultVpcNetworkOfferingProvidersNoLB.put(Service.PortForwarding, Provider.VPCVirtualRouter);
                 defaultVpcNetworkOfferingProvidersNoLB.put(Service.Vpn, Provider.VPCVirtualRouter);
+                defaultVpcNetworkOfferingProvidersNoLB.put(Service.Firewall, Provider.VPCVirtualRouter);
 
                 for (Map.Entry<Service,Provider> entry : defaultVpcNetworkOfferingProvidersNoLB.entrySet()) {
                     NetworkOfferingServiceMapVO offService =
@@ -1186,6 +1188,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 internalLbOffProviders.put(Service.Gateway, Provider.VPCVirtualRouter);
                 internalLbOffProviders.put(Service.Lb, Provider.InternalLbVm);
                 internalLbOffProviders.put(Service.SourceNat, Provider.VPCVirtualRouter);
+                internalLbOffProviders.put(Service.Firewall, Provider.VPCVirtualRouter);
 
                 for (Service service : internalLbOffProviders.keySet()) {
                     NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(internalLbOff.getId(), service, internalLbOffProviders.get(service));
@@ -1256,9 +1259,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         serviceProviderMap.put(Service.UserData, routerProvider);
         if (forVpc) {
             serviceProviderMap.put(Service.NetworkACL, provider);
-        } else {
-            serviceProviderMap.put(Service.Firewall, provider);
         }
+        serviceProviderMap.put(Service.Firewall, routerProvider);
         if (networkMode == NetworkOffering.NetworkMode.NATTED) {
             serviceProviderMap.put(Service.SourceNat, provider);
             serviceProviderMap.put(Service.StaticNat, provider);

@@ -17,7 +17,15 @@
 package com.cloud.upgrade.dao;
 
 import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
@@ -41,5 +49,127 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
         }
 
         return new InputStream[] {script};
+    }
+
+    @Override
+    public void performDataMigration(Connection conn) {
+        updateNetworkDefaultOfferingsForVPCWithFirewallService(conn);
+        updateVpcOfferingsWithFirewallService(conn);
+    }
+
+    private void updateNetworkDefaultOfferingsForVPCWithFirewallService(Connection conn) {
+        logger.debug("Updating default Network offerings for VPC to add Firewall service with VpcVirtualRouter provider");
+
+        final List<String> defaultVpcOfferingUniqueNames = Arrays.asList(
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB,
+                NetworkOffering.DEFAULT_NAT_NSX_OFFERING_FOR_VPC,
+                NetworkOffering.DEFAULT_ROUTED_NSX_OFFERING_FOR_VPC,
+                NetworkOffering.DEFAULT_NAT_NSX_OFFERING_FOR_VPC_WITH_ILB,
+                NetworkOffering.DEFAULT_ROUTED_NETRIS_OFFERING_FOR_VPC,
+                NetworkOffering.DEFAULT_NAT_NETRIS_OFFERING_FOR_VPC
+        );
+
+        try {
+            for (String uniqueName : defaultVpcOfferingUniqueNames) {
+                try (PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`network_offerings` WHERE unique_name = ?")) {
+                    pstmt.setString(1, uniqueName);
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (!rs.next()) {
+                            continue;
+                        }
+                        long offeringId = rs.getLong(1);
+                        // Insert into ntwk_offering_service_map
+                        try (PreparedStatement insertOfferingPstmt = conn.prepareStatement(
+                                "INSERT IGNORE INTO `cloud`.`ntwk_offering_service_map` " +
+                                        "(network_offering_id, service, provider, created) " +
+                                        "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())")) {
+                            insertOfferingPstmt.setLong(1, offeringId);
+                            insertOfferingPstmt.executeUpdate();
+                        }
+                        // Update existing networks (ntwk_service_map)
+                        try (PreparedStatement selectNetworksPstmt = conn.prepareStatement(
+                                "SELECT id FROM `cloud`.`networks` WHERE network_offering_id = ?")) {
+                            selectNetworksPstmt.setLong(1, offeringId);
+                            try (ResultSet networksRs = selectNetworksPstmt.executeQuery()) {
+                                while (networksRs.next()) {
+                                    long networkId = networksRs.getLong(1);
+                                    try (PreparedStatement insertService = conn.prepareStatement(
+                                            "INSERT INGORE INTO `cloud`.`ntwk_service_map` " +
+                                                    "(network_id, service, provider, created) " +
+                                                    "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())")) {
+                                        insertService.setLong(1, networkId);
+                                        insertService.executeUpdate();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while updating VPC default offerings with Firewall service: " + e.getMessage(), e);
+        }
+    }
+
+    private void updateVpcOfferingsWithFirewallService(Connection conn) {
+        logger.debug("Updating default VPC offerings to add Firewall service with VpcVirtualRouter provider");
+
+        final List<String> vpcOfferingUniqueNames = Arrays.asList(
+                VpcOffering.defaultVPCOfferingName,
+                VpcOffering.defaultVPCNSOfferingName,
+                VpcOffering.redundantVPCOfferingName,
+                VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME,
+                VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME,
+                VpcOffering.DEFAULT_VPC_ROUTE_NETRIS_OFFERING_NAME,
+                VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME
+        );
+
+        try {
+            for (String uniqueName : vpcOfferingUniqueNames) {
+
+                try (PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vpc_offerings` WHERE unique_name = ?")) {
+                    pstmt.setString(1, uniqueName);
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (!rs.next()) {
+                            continue;
+                        }
+
+                        long vpcOfferingId = rs.getLong(1);
+                        // Insert into vpc_offering_service_map
+                        try (PreparedStatement insertOfferingPstmt = conn.prepareStatement(
+                                "INSERT IGNORE INTO `cloud`.`vpc_offering_service_map` " +
+                                        "(vpc_offering_id, service, provider, created) " +
+                                        "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())")) {
+
+                            insertOfferingPstmt.setLong(1, vpcOfferingId);
+                            insertOfferingPstmt.executeUpdate();
+                        }
+
+                        // Update existing VPCs (vpc_service_map)
+                        try (PreparedStatement selectVpcsPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vpcs` WHERE vpc_offering_id = ?")) {
+                            selectVpcsPstmt.setLong(1, vpcOfferingId);
+                            try (ResultSet vpcsRs = selectVpcsPstmt.executeQuery()) {
+                                while (vpcsRs.next()) {
+                                    long vpcId = vpcsRs.getLong(1);
+                                    try (PreparedStatement insertService = conn.prepareStatement(
+                                            "INSERT IGNORE INTO `cloud`.`vpc_service_map` " +
+                                                    "(vpc_id, service, provider, created) " +
+                                                    "VALUES (?, 'Firewall', 'VpcVirtualRouter', now())")) {
+                                        insertService.setLong(1, vpcId);
+                                        insertService.executeUpdate();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while updating VPC offerings with Firewall service: " + e.getMessage(), e);
+        }
     }
 }
