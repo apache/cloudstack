@@ -150,9 +150,64 @@
           </a-select>
         </a-form-item>
       </a-tab-pane>
+      <a-tab-pane key="oauth" :disabled="!socialLogin">
+        <template #tab>
+          <span>
+            <img src="/assets/github.svg" style="width: 16px; vertical-align: middle" />
+            <img src="/assets/google.svg" style="width: 16px; vertical-align: middle" />
+            External
+          </span>
+        </template>
+        <a-form-item name="oauthDomain">
+          <a-input
+            size="large"
+            type="text"
+            :placeholder="$t('label.domain')"
+            v-model:value="form.oauthDomain"
+            @pressEnter="handleOauthDomainSubmit"
+            @blur="handleOauthDomainSubmit"
+          >
+            <template #prefix>
+              <project-outlined />
+            </template>
+          </a-input>
+        </a-form-item>
+        <div class="center" v-if="oauthGithubProvider || oauthGoogleProvider">
+          <div class="social-auth" v-if="oauthGithubProvider">
+            <a-button
+              @click="handleGithubProviderAndDomain"
+              tag="a"
+              color="primary"
+              :href="getGitHubUrl(from)"
+              class="auth-btn github-auth"
+              style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
+              <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
+              <a-typography-text>Sign in with Github</a-typography-text>
+            </a-button>
+          </div>
+          <div class="social-auth" v-if="oauthGoogleProvider">
+            <a-button
+              @click="handleGoogleProviderAndDomain"
+              tag="a"
+              color="primary"
+              :href="getGoogleUrl(from)"
+              class="auth-btn google-auth"
+              style="height: 38px; width: 185px; padding: 0" >
+              <img src="/assets/google.svg" style="width: 32px; padding: 5px" />
+              <a-typography-text>Sign in with Google</a-typography-text>
+            </a-button>
+          </div>
+        </div>
+        <div v-else-if="oauthLoading" style="text-align: center; padding: 20px 0;">
+          <a-spin />
+        </div>
+        <div v-else style="text-align: center; color: #999; padding: 20px 0;">
+          <span v-if="form.oauthDomain">No OAuth providers configured for this domain</span>
+        </div>
+      </a-tab-pane>
     </a-tabs>
 
-    <a-form-item>
+    <a-form-item v-if="customActiveKey !== 'oauth'">
       <a-button
         size="large"
         type="primary"
@@ -174,35 +229,6 @@
         </router-link>
       </a-col>
     </a-row>
-    <div class="content" v-if="socialLogin">
-      <p class="or">or</p>
-    </div>
-    <div class="center">
-      <div class="social-auth" v-if="githubprovider">
-        <a-button
-          @click="handleGithubProviderAndDomain"
-          tag="a"
-          color="primary"
-          :href="getGitHubUrl(from)"
-          class="auth-btn github-auth"
-          style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
-          <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
-          <a-typography-text>Sign in with Github</a-typography-text>
-        </a-button>
-      </div>
-      <div class="social-auth" v-if="googleprovider">
-        <a-button
-          @click="handleGoogleProviderAndDomain"
-          tag="a"
-          color="primary"
-          :href="getGoogleUrl(from)"
-          class="auth-btn google-auth"
-          style="height: 38px; width: 185px; padding: 0" >
-          <img src="/assets/google.svg" style="width: 32px; padding: 5px" />
-          <a-typography-text>Sign in with Google</a-typography-text>
-        </a-button>
-      </div>
-    </div>
   </a-form>
 </template>
 
@@ -235,6 +261,13 @@ export default {
       githubredirecturi: '',
       googleclientid: '',
       githubclientid: '',
+      oauthGoogleProvider: false,
+      oauthGithubProvider: false,
+      oauthGoogleClientId: '',
+      oauthGithubClientId: '',
+      oauthGoogleRedirectUri: '',
+      oauthGithubRedirectUri: '',
+      oauthLoading: false,
       loginType: 0,
       state: {
         time: 60,
@@ -269,6 +302,7 @@ export default {
         server: (this.server.apiHost || '') + this.server.apiBase,
         username: this.$route.query?.username || '',
         domain: this.$route.query?.domain || '',
+        oauthDomain: '',
         project: null
       })
       this.rules = reactive({})
@@ -322,24 +356,56 @@ export default {
         }
       })
     },
-    fetchOauthProviders () {
-      getAPI('listOauthProvider', {}).then(response => {
+    fetchOauthProviders (domain) {
+      const params = {}
+      if (domain) {
+        params.domain = domain
+      }
+      if (domain) {
+        this.oauthLoading = true
+      }
+      getAPI('listOauthProvider', params).then(response => {
         if (response) {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
-          oauthproviders.forEach(item => {
-            if (item.provider === 'google') {
-              this.googleprovider = item.enabled
-              this.googleclientid = item.clientid
-              this.googleredirecturi = item.redirecturi
-            }
-            if (item.provider === 'github') {
-              this.githubprovider = item.enabled
-              this.githubclientid = item.clientid
-              this.githubredirecturi = item.redirecturi
-            }
-          })
-          this.socialLogin = this.googleprovider || this.githubprovider
+          if (!domain) {
+            oauthproviders.forEach(item => {
+              if (item.provider === 'google') {
+                this.googleprovider = item.enabled
+                this.googleclientid = item.clientid
+                this.googleredirecturi = item.redirecturi
+              }
+              if (item.provider === 'github') {
+                this.githubprovider = item.enabled
+                this.githubclientid = item.clientid
+                this.githubredirecturi = item.redirecturi
+              }
+            })
+            this.socialLogin = oauthproviders.some(item => item.enabled)
+            this.oauthGithubProvider = this.githubprovider
+            this.oauthGoogleProvider = this.googleprovider
+            this.oauthGithubClientId = this.githubclientid
+            this.oauthGoogleClientId = this.googleclientid
+            this.oauthGithubRedirectUri = this.githubredirecturi
+            this.oauthGoogleRedirectUri = this.googleredirecturi
+          } else {
+            this.oauthGithubProvider = false
+            this.oauthGoogleProvider = false
+            oauthproviders.forEach(item => {
+              if (item.provider === 'google') {
+                this.oauthGoogleProvider = item.enabled
+                this.oauthGoogleClientId = item.clientid
+                this.oauthGoogleRedirectUri = item.redirecturi
+              }
+              if (item.provider === 'github') {
+                this.oauthGithubProvider = item.enabled
+                this.oauthGithubClientId = item.clientid
+                this.oauthGithubRedirectUri = item.redirecturi
+              }
+            })
+          }
         }
+      }).finally(() => {
+        this.oauthLoading = false
       })
     },
     // handler
@@ -355,7 +421,28 @@ export default {
     },
     handleTabClick (key) {
       this.customActiveKey = key
+      if (key === 'oauth') {
+        this.oauthGithubProvider = this.githubprovider
+        this.oauthGoogleProvider = this.googleprovider
+        this.oauthGithubClientId = this.githubclientid
+        this.oauthGoogleClientId = this.googleclientid
+        this.oauthGithubRedirectUri = this.githubredirecturi
+        this.oauthGoogleRedirectUri = this.googleredirecturi
+      }
       this.setRules()
+    },
+    handleOauthDomainSubmit () {
+      const domain = this.form.oauthDomain
+      if (domain) {
+        this.fetchOauthProviders(domain)
+      } else {
+        this.oauthGithubProvider = this.githubprovider
+        this.oauthGoogleProvider = this.googleprovider
+        this.oauthGithubClientId = this.githubclientid
+        this.oauthGoogleClientId = this.googleclientid
+        this.oauthGithubRedirectUri = this.githubredirecturi
+        this.oauthGoogleRedirectUri = this.googleredirecturi
+      }
     },
     handleGithubProviderAndDomain () {
       this.handleDomain()
@@ -367,16 +454,25 @@ export default {
     },
     handleDomain () {
       const values = toRaw(this.form)
-      if (!values.domain) {
-        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', '/')
+      if (this.customActiveKey === 'oauth') {
+        if (!values.oauthDomain) {
+          this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', '/')
+        } else {
+          this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', values.oauthDomain)
+        }
       } else {
-        this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', values.domain)
+        if (!values.domain) {
+          this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', '/')
+        } else {
+          this.$store.commit('SET_DOMAIN_USED_TO_LOGIN', values.domain)
+        }
       }
     },
     getGitHubUrl (from) {
       const rootURl = 'https://github.com/login/oauth/authorize'
+      const clientId = this.customActiveKey === 'oauth' ? this.oauthGithubClientId : this.githubclientid
       const options = {
-        client_id: this.githubclientid,
+        client_id: clientId,
         scope: 'user:email',
         state: 'cloudstack'
       }
@@ -387,9 +483,11 @@ export default {
     },
     getGoogleUrl (from) {
       const rootUrl = 'https://accounts.google.com/o/oauth2/v2/auth'
+      const redirectUri = this.customActiveKey === 'oauth' ? this.oauthGoogleRedirectUri : this.googleredirecturi
+      const clientId = this.customActiveKey === 'oauth' ? this.oauthGoogleClientId : this.googleclientid
       const options = {
-        redirect_uri: this.googleredirecturi,
-        client_id: this.googleclientid,
+        redirect_uri: redirectUri,
+        client_id: clientId,
         access_type: 'offline',
         response_type: 'code',
         prompt: 'consent',
@@ -525,6 +623,12 @@ export default {
   min-width: 260px;
   width: 368px;
   margin: 0 auto;
+
+  :deep(.tab-center .ant-tabs-tab) {
+    padding: 12px 4px;
+    font-size: 13px;
+    margin: 0 !important;
+  }
 
   .mobile & {
     max-width: 368px;
