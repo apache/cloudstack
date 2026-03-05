@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -110,6 +111,9 @@ public class SSHKeysHelper {
     }
 
     public String getPublicKey() {
+        if (keyPair == null || keyPair.getPublic() == null) {
+            return null;
+        }
         try {
             RSAPublicKey rsaPublicKey = (RSAPublicKey) keyPair.getPublic();
 
@@ -129,7 +133,7 @@ public class SSHKeysHelper {
     }
 
     private static void writeString(ByteArrayOutputStream out, String str) throws Exception {
-        byte[] data = str.getBytes("UTF-8");
+        byte[] data = str.getBytes(StandardCharsets.UTF_8);
         out.write(ByteBuffer.allocate(4).putInt(data.length).array());
         out.write(data);
     }
@@ -141,6 +145,9 @@ public class SSHKeysHelper {
     }
 
     public String getPrivateKey() {
+        if (keyPair == null || keyPair.getPrivate() == null) {
+            return null;
+        }
         try {
             final PemObject pemObject = new PemObject("RSA PRIVATE KEY", keyPair.getPrivate().getEncoded());
             final StringWriter sw = new StringWriter();
