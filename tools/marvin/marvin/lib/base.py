@@ -567,7 +567,8 @@ class VirtualMachine:
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
                properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
                userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None,
-               leaseduration=None, leaseexpiryaction=None, volumeid=None, snapshotid=None):
+               leaseduration=None, leaseexpiryaction=None, volumeid=None, snapshotid=None,
+               rootdiskkmskeyid=None):
 
         """Create the instance"""
 
@@ -743,6 +744,9 @@ class VirtualMachine:
 
         if snapshotid:
             cmd.snapshotid = snapshotid
+
+        if rootdiskkmskeyid:
+            cmd.rootdiskkmskeyid = rootdiskkmskeyid
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 

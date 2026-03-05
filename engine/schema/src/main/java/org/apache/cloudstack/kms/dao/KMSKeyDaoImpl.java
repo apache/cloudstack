@@ -33,6 +33,7 @@ public class KMSKeyDaoImpl extends GenericDaoBase<KMSKeyVO, Long> implements KMS
 
     public KMSKeyDaoImpl() {
         allFieldSearch = createSearchBuilder();
+        allFieldSearch.and("name", allFieldSearch.entity().getName(), SearchCriteria.Op.EQ);
         allFieldSearch.and("kekLabel", allFieldSearch.entity().getKekLabel(), SearchCriteria.Op.EQ);
         allFieldSearch.and("domainId", allFieldSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         allFieldSearch.and("accountId", allFieldSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -70,5 +71,13 @@ public class KMSKeyDaoImpl extends GenericDaoBase<KMSKeyVO, Long> implements KMS
         sc.setParameters("hsmProfileId", hsmProfileId);
         Integer count = getCount(sc);
         return count != null ? count : 0;
+    }
+
+    @Override
+    public KMSKeyVO findByNameAndAccountId(String name, long accountId) {
+        SearchCriteria<KMSKeyVO> sc = allFieldSearch.create();
+        sc.setParameters("name", name);
+        sc.setParameters("accountId", accountId);
+        return findOneBy(sc);
     }
 }

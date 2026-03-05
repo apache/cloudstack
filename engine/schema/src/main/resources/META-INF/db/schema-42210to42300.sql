@@ -164,7 +164,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_keys` (
     `name` VARCHAR(255) NOT NULL COMMENT 'User-friendly name',
     `description` VARCHAR(1024) COMMENT 'User description',
     `kek_label` VARCHAR(255) NOT NULL COMMENT 'Provider-specific KEK label/ID',
-    `purpose` VARCHAR(32) NOT NULL COMMENT 'Key purpose (VOLUME_ENCRYPTION, TLS_CERT, CONFIG_SECRET)',
+    `purpose` VARCHAR(32) NOT NULL COMMENT 'Key purpose (VOLUME_ENCRYPTION, TLS_CERT)',
     `account_id` BIGINT UNSIGNED NOT NULL COMMENT 'Owning account',
     `domain_id` BIGINT UNSIGNED NOT NULL COMMENT 'Owning domain',
     `zone_id` BIGINT UNSIGNED NOT NULL COMMENT 'Zone where key is valid',
@@ -261,7 +261,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_database_kek_objects` (
     `always_sensitive` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_ALWAYS_SENSITIVE - key was always sensitive',
     `never_extractable` BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'PKCS#11 CKA_NEVER_EXTRACTABLE - key was never extractable',
     -- Key Metadata
-    `purpose` VARCHAR(32) NOT NULL COMMENT 'Key purpose (VOLUME_ENCRYPTION, TLS_CERT, CONFIG_SECRET)',
+    `purpose` VARCHAR(32) NOT NULL COMMENT 'Key purpose (VOLUME_ENCRYPTION, TLS_CERT)',
     `key_bits` INT NOT NULL COMMENT 'Key size in bits (128, 192, 256)',
     `algorithm` VARCHAR(64) NOT NULL DEFAULT 'AES/GCM/NoPadding' COMMENT 'Encryption algorithm',
     -- Validity Dates (PKCS#11 CKA_START_DATE, CKA_END_DATE)

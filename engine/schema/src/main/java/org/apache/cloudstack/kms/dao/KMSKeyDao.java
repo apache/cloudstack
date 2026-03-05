@@ -30,4 +30,6 @@ public interface KMSKeyDao extends GenericDao<KMSKeyVO, Long> {
     List<KMSKeyVO> listByZone(Long zoneId, KeyPurpose purpose, Boolean enabled);
 
     long countByHsmProfileId(Long hsmProfileId);
+
+    KMSKeyVO findByNameAndAccountId(String name, long accountId);
 }
