@@ -3240,8 +3240,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     private void validateAccessToApiKey(ApiKeyPair keyPair) {
-        logger.debug("Verifying if caller has access to API key pair whose ID is [{}].", keyPair.getUuid());
         Account caller = getCurrentCallingAccount();
+        logger.debug("Verifying if caller [{}] has access to API key pair whose ID is [{}].", caller.getAccountName(), keyPair.getUuid());
         Account account = _accountDao.findById(keyPair.getAccountId());
         checkAccess(caller, null, false, account);
         _accountService.validateCallingUserHasAccessToDesiredUser(keyPair.getUserId());
