@@ -116,7 +116,7 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
 
         boolean domainRequested = ArrayUtils.isNotEmpty((String[])params.get(ApiConstants.DOMAIN_ID))
                 || ArrayUtils.isNotEmpty((String[])params.get(ApiConstants.DOMAIN));
-        domainId = resolveDomainId(params);
+        domainId = _oauth2mgr.resolveDomainId(params);
 
         if (domainRequested && domainId == null) {
             ListResponse<OauthProviderResponse> response = new ListResponse<>();
@@ -159,10 +159,6 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         setResponseObject(response);
 
         return ApiResponseSerializer.toSerializedString(response, responseType);
-    }
-
-    private Long resolveDomainId(Map<String, Object[]> params) {
-        return _oauth2mgr.resolveDomainId(params);
     }
 
     @Override

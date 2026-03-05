@@ -110,7 +110,7 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         if (ArrayUtils.isNotEmpty(providerArray)) {
             provider = providerArray[0];
         }
-        domainId = resolveDomainId(params);
+        domainId = _oauth2mgr.resolveDomainId(params);
 
         String email = _oauth2mgr.verifyCodeAndFetchEmail(secretCode, provider, domainId);
         if (email != null) {
@@ -123,10 +123,6 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         }
 
         throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to verify the code provided");
-    }
-
-    private Long resolveDomainId(Map<String, Object[]> params) {
-        return _oauth2mgr.resolveDomainId(params);
     }
 
     @Override
