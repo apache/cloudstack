@@ -272,6 +272,15 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     "Please use snapshotmemory=false for disk-only snapshots.",
                     userVm.getInstanceName());
             logger.error("takeVMSnapshot: {}", errorMsg);
+            // Clean up the VM snapshot record that was created in Allocated state before throwing
+            // This prevents orphaned snapshot records from showing in the UI
+            try {
+                vmSnapshotDao.remove(vmSnapshotVO.getId());
+                logger.debug("takeVMSnapshot: Removed VM snapshot record [{}] after memory snapshot validation failure", vmSnapshotVO.getId());
+            } catch (Exception cleanupEx) {
+                logger.warn("takeVMSnapshot: Failed to remove VM snapshot record [{}] during cleanup: {}",
+                        vmSnapshotVO.getId(), cleanupEx.getMessage());
+            }
             throw new CloudRuntimeException(errorMsg);
         }
 
