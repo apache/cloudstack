@@ -27,8 +27,12 @@ import org.apache.cloudstack.oauth2.api.command.UpdateOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableService {
+    String GLOBAL_DOMAIN_FILTER = "-1";
+    Long GLOBAL_DOMAIN_ID = -1L;
+
     public static ConfigKey<Boolean> OAuth2IsPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "oauth2.enabled", "false",
             "Indicates whether OAuth plugin is enabled or not. Can be configured at domain level.", true, ConfigKey.Scope.Domain);
     public static final ConfigKey<String> OAuth2Plugins = new ConfigKey<String>("Advanced", String.class, "oauth2.plugins", "google,github",
@@ -58,4 +62,6 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
     boolean deleteOauthProvider(Long id);
 
     OauthProviderVO updateOauthProvider(UpdateOAuthProviderCmd cmd);
+
+    Long resolveDomainId(Map<String, Object[]> params);
 }

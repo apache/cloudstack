@@ -19,13 +19,9 @@ package org.apache.cloudstack.oauth2.api.command;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
-import com.cloud.utils.component.ComponentContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,8 +41,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 @APICommand(name = "verifyOAuthCodeAndGetUser", description = "Verify the OAuth Code and fetch the corresponding user from provider", responseObject = OauthProviderResponse.class, entityType = {},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
@@ -94,8 +89,6 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
 
     protected OAuth2AuthManager _oauth2mgr;
 
-    DomainDao _domainDao;
-
     @Override
     public long getEntityOwnerId() {
         return Account.Type.NORMAL.ordinal();
@@ -133,30 +126,7 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
     }
 
     private Long resolveDomainId(Map<String, Object[]> params) {
-        final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
-        if (ArrayUtils.isNotEmpty(domainIdArray)) {
-            DomainVO domain = _domainDao.findByUuid(domainIdArray[0]);
-            if (Objects.nonNull(domain)) {
-                return domain.getId();
-            }
-        }
-        final String[] domainArray = (String[])params.get(ApiConstants.DOMAIN);
-        if (ArrayUtils.isNotEmpty(domainArray)) {
-            String path = domainArray[0];
-            if (StringUtils.isNotEmpty(path)) {
-                if (!path.startsWith("/")) {
-                    path = "/" + path;
-                }
-                if (!path.endsWith("/")) {
-                    path += "/";
-                }
-                DomainVO domain = _domainDao.findDomainByPath(path);
-                if (Objects.nonNull(domain)) {
-                    return domain.getId();
-                }
-            }
-        }
-        return null;
+        return _oauth2mgr.resolveDomainId(params);
     }
 
     @Override
@@ -173,10 +143,6 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         }
         if (_oauth2mgr == null) {
             logger.error("No suitable Pluggable Authentication Manager found for listing OAuth providers");
-        }
-        _domainDao = (DomainDao) ComponentContext.getComponent(DomainDao.class);
-        if (Objects.isNull(_domainDao)) {
-            logger.error("Could not get DomainDao component");
         }
     }
 }

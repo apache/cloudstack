@@ -20,14 +20,11 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.domain.Domain;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
-import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -45,7 +42,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -70,6 +67,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             description = "List OAuth providers for a specific domain. Use -1 for global providers only.")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+            description = "Domain path for domain-specific OAuth provider lookup")
+    private String domainPath;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -90,8 +91,6 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
     /////////////////////////////////////////////////////
 
     OAuth2AuthManager _oauth2mgr;
-
-    DomainDao _domainDao;
 
     @Override
     public long getEntityOwnerId() {
@@ -114,20 +113,26 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         if (ArrayUtils.isNotEmpty(providerArray)) {
             provider = providerArray[0];
         }
-        final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
-        if (ArrayUtils.isNotEmpty(domainIdArray)) {
-            String domainUuid = domainIdArray[0];
-            if ("-1".equals(domainUuid)) {
-                domainId = -1L;  // Special case for global-only filter
-            } else {
-                Domain domain = _domainDao.findByUuid(domainUuid);
-                if (Objects.nonNull(domain)) {
-                    domainId = domain.getId();
-                }
-            }
+
+        boolean domainRequested = ArrayUtils.isNotEmpty((String[])params.get(ApiConstants.DOMAIN_ID))
+                || ArrayUtils.isNotEmpty((String[])params.get(ApiConstants.DOMAIN));
+        domainId = resolveDomainId(params);
+
+        if (domainRequested && domainId == null) {
+            ListResponse<OauthProviderResponse> response = new ListResponse<>();
+            response.setResponses(new ArrayList<>(), 0);
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+            return ApiResponseSerializer.toSerializedString(response, responseType);
         }
 
         List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id, domainId);
+        if (domainRequested && domainId != null && domainId > 0) {
+            resultList.removeIf(p -> p.getDomainId() == null);
+        } else if (!domainRequested) {
+            resultList.removeIf(p -> p.getDomainId() != null);
+        }
+
         List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauth2mgr.listUserOAuth2AuthenticationProviders();
         List<String> authenticatorPluginNames = new ArrayList<>();
         for (UserOAuth2Authenticator authenticator : userOAuth2AuthenticatorPlugins) {
@@ -156,6 +161,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         return ApiResponseSerializer.toSerializedString(response, responseType);
     }
 
+    private Long resolveDomainId(Map<String, Object[]> params) {
+        return _oauth2mgr.resolveDomainId(params);
+    }
+
     @Override
     public APIAuthenticationType getAPIType() {
         return null;
@@ -170,10 +179,6 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         }
         if (_oauth2mgr == null) {
             logger.error("No suitable Pluggable Authentication Manager found for listing OAuth providers");
-        }
-        _domainDao = (DomainDao) ComponentContext.getComponent(DomainDao.class);
-        if (Objects.isNull(_domainDao)) {
-            logger.error("Could not get DomainDao component");
         }
     }
 }

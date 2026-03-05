@@ -18,10 +18,13 @@
 //
 package org.apache.cloudstack.oauth2;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -35,12 +38,15 @@ import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.lang3.StringUtils;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthManager, Manager, Configurable {
     @Inject
@@ -48,6 +54,9 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Inject
     protected OauthProviderDao _oauthProviderDao;
+
+    @Inject
+    private DomainDao _domainDao;
 
     protected static Map<String, UserOAuth2Authenticator> userOAuth2AuthenticationProvidersMap = new HashMap<>();
 
@@ -225,6 +234,38 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     @Override
     public boolean deleteOauthProvider(Long id) {
         return _oauthProviderDao.remove(id);
+    }
+
+    @Override
+    public Long resolveDomainId(Map<String, Object[]> params) {
+        final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (ArrayUtils.isNotEmpty(domainIdArray)) {
+            String domainUuid = domainIdArray[0];
+            if (GLOBAL_DOMAIN_FILTER.equals(domainUuid)) {
+                return GLOBAL_DOMAIN_ID;
+            }
+            DomainVO domain = _domainDao.findByUuid(domainUuid);
+            if (Objects.nonNull(domain)) {
+                return domain.getId();
+            }
+        }
+        final String[] domainArray = (String[])params.get(ApiConstants.DOMAIN);
+        if (ArrayUtils.isNotEmpty(domainArray)) {
+            String path = domainArray[0];
+            if (StringUtils.isNotEmpty(path)) {
+                if (!path.startsWith("/")) {
+                    path = "/" + path;
+                }
+                if (!path.endsWith("/")) {
+                    path += "/";
+                }
+                DomainVO domain = _domainDao.findDomainByPath(path);
+                if (Objects.nonNull(domain)) {
+                    return domain.getId();
+                }
+            }
+        }
+        return null;
     }
 
     @Override
