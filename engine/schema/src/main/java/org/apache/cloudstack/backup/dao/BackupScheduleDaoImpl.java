@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.DB;
@@ -33,13 +32,8 @@ import org.apache.cloudstack.backup.BackupScheduleVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.dao.VMInstanceDao;
 
 public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long> implements BackupScheduleDao {
-
-    @Inject
-    VMInstanceDao vmInstanceDao;
-
     private SearchBuilder<BackupScheduleVO> backupScheduleSearch;
     private SearchBuilder<BackupScheduleVO> executableSchedulesSearch;
 
@@ -93,6 +87,7 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
             preparedStatement.executeUpdate();
             return super.remove(id);
         } catch (SQLException e) {
+            logger.warn("Unable to clean up backup schedules references from the backups table.", e);
             return false;
         }
     }
