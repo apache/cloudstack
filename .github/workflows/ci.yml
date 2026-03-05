@@ -278,7 +278,7 @@ jobs:
           # https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2004-Readme.md#mysql
           sudo apt-get install -y mysql-server
           sudo systemctl start mysql
-          sudo mysql -uroot -proot -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY ''; FLUSH PRIVILEGES;"
+          sudo mysql -uroot -proot -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY ''; FLUSH PRIVILEGES;"
           sudo systemctl restart mysql
           sudo mysql -uroot -e "SELECT VERSION();"
 
