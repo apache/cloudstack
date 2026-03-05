@@ -34,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
 
+    public static final List<StoragePoolType> STORAGE_POOL_TYPES_WITH_HA_SUPPORT = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint);
+
     private final Map<String, HAStoragePool> storagePool = new ConcurrentHashMap<>();
     private final boolean rebootHostAndAlertManagementOnHeartbeatTimeout;
 
@@ -86,7 +88,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             Set<String> removedPools = new HashSet<>();
             for (String uuid : storagePool.keySet()) {
                 HAStoragePool primaryStoragePool = storagePool.get(uuid);
-                if (primaryStoragePool.getPool().getType() == StoragePoolType.NetworkFilesystem) {
+                if (STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(primaryStoragePool.getPool().getType())) {
                     checkForNotExistingPools(removedPools, uuid);
                     if (removedPools.contains(uuid)) {
                         continue;

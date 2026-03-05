@@ -32,6 +32,7 @@ import com.cloud.agent.api.to.HostTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
+import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -320,13 +321,16 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean isPoolSupportHA() {
-        return type == StoragePoolType.NetworkFilesystem;
+        return KVMHAMonitor.STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
     }
 
     public String getHearthBeatPath() {
-        if (type == StoragePoolType.NetworkFilesystem) {
+        if (StoragePoolType.NetworkFilesystem.equals(type)) {
             String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
             return Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
+        } else if (StoragePoolType.SharedMountPoint.equals(type)) {
+            String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
+            return Script.findScript(kvmScriptsDir, "kvmsmpheartbeat.sh");
         }
         return null;
     }
@@ -409,5 +413,10 @@ public class LibvirtStoragePool implements KVMStoragePool {
         } else {
             return true;
         }
+    }
+
+    @Override
+    public void setType(StoragePoolType type) {
+        this.type = type;
     }
 }

@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.datastore.driver;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -99,6 +100,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     protected Logger logger = LogManager.getLogger(getClass());
     private static final String NO_REMOTE_ENDPOINT_WITH_ENCRYPTION = "No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s";
+
+    private static final List<StoragePoolType> STORAGE_POOL_TYPES_WITH_HA_SUPPORT = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint);
 
     @Inject
     DiskOfferingDao diskOfferingDao;
@@ -587,7 +590,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public boolean isStorageSupportHA(StoragePoolType type) {
-        return StoragePoolType.NetworkFilesystem == type;
+        return type != null && STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
     }
 
     @Override

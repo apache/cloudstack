@@ -91,6 +91,9 @@ public interface KVMStoragePool {
 
     public StoragePoolType getType();
 
+    default void setType(StoragePoolType type) {
+    }
+
     public boolean delete();
 
     PhysicalDiskFormat getDefaultFormat();
