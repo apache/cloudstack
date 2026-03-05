@@ -33,3 +33,6 @@ UPDATE `cloud`.`alert` SET type = 34 WHERE name = 'ALERT.VR.PRIVATE.IFACE.MTU';
 
 -- Update configuration 'kvm.ssh.to.agent' description and is_dynamic fields
 UPDATE `cloud`.`configuration` SET description = 'True if the management server will restart the agent service via SSH into the KVM hosts after or during maintenance operations', is_dynamic = 1 WHERE name = 'kvm.ssh.to.agent';
+
+-- Drops the unused "backup_interval_type" column of the "cloud.backups" table
+ALTER TABLE `cloud`.`backups` DROP COLUMN `backup_interval_type`;
