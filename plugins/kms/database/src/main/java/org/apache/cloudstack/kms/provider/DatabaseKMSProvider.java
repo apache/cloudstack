@@ -26,9 +26,14 @@ import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.framework.kms.KMSProvider;
 import org.apache.cloudstack.framework.kms.KeyPurpose;
 import org.apache.cloudstack.framework.kms.WrappedKey;
+import org.apache.cloudstack.kms.HSMProfileVO;
+import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.kms.provider.database.KMSDatabaseKekObjectVO;
 import org.apache.cloudstack.kms.provider.database.dao.KMSDatabaseKekObjectDao;
 import org.apache.commons.lang3.StringUtils;
+
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,6 +43,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Database-backed KMS provider that stores master KEKs in a PKCS#11-like object table.
@@ -56,9 +62,22 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
     private static final String CKO_SECRET_KEY = "CKO_SECRET_KEY";
     private static final String CKK_AES = "CKK_AES";
 
+    private static final String DEFAULT_PROFILE_NAME = "default";
+    private static final long SYSTEM_ACCOUNT_ID = 1L;
+    private static final long ROOT_DOMAIN_ID = 1L;
+
     private final SecureRandom secureRandom = new SecureRandom();
     @Inject
     private KMSDatabaseKekObjectDao kekObjectDao;
+    @Inject
+    private HSMProfileDao hsmProfileDao;
+
+    @Override
+    public boolean start() {
+        super.start();
+        ensureDefaultHSMProfile();
+        return true;
+    }
 
     @Override
     public String getProviderName() {
@@ -318,6 +337,43 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
             }
         } catch (Exception e) {
             logger.debug("Failed to update last used timestamp for KEK {}: {}", kekLabel, e.getMessage());
+        }
+    }
+
+    /**
+     * Seeds the default database HSM profile if it does not already exist.
+     * This runs at provider startup to avoid FK constraint issues that occur
+     * when the INSERT is placed in the schema upgrade SQL script (the account
+     * table may not yet be populated when the upgrade script executes on a
+     * fresh install).
+     */
+    private void ensureDefaultHSMProfile() {
+        try {
+            SearchBuilder<HSMProfileVO> sb = hsmProfileDao.createSearchBuilder();
+            sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+            sb.and("system", sb.entity().isSystem(), SearchCriteria.Op.EQ);
+            sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
+            sb.done();
+
+            SearchCriteria<HSMProfileVO> sc = sb.create();
+            sc.setParameters("name", DEFAULT_PROFILE_NAME);
+            sc.setParameters("system", true);
+            sc.setParameters("protocol", PROVIDER_NAME);
+
+            List<HSMProfileVO> existing = hsmProfileDao.customSearchIncludingRemoved(sc, null);
+            if (existing != null && !existing.isEmpty()) {
+                logger.debug("Default database HSM profile already exists (id={})", existing.get(0).getId());
+                return;
+            }
+
+            HSMProfileVO profile = new HSMProfileVO(DEFAULT_PROFILE_NAME, PROVIDER_NAME,
+                    SYSTEM_ACCOUNT_ID, ROOT_DOMAIN_ID, null, null);
+            profile.setEnabled(false);
+            profile.setSystem(true);
+            hsmProfileDao.persist(profile);
+            logger.info("Seeded default database HSM profile (id={}, uuid={})", profile.getId(), profile.getUuid());
+        } catch (Exception e) {
+            logger.warn("Failed to seed default database HSM profile: {}", e.getMessage(), e);
         }
     }
 
