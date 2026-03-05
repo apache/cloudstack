@@ -19,6 +19,8 @@
 
 package org.apache.cloudstack.oauth2.api.command;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -71,7 +73,8 @@ public class VerifyOAuthCodeAndGetUserCmdTest {
         params.put("secretcode", secretcodeArray);
         params.put("provider", providerArray);
 
-        when(oauth2mgr.verifyCodeAndFetchEmail("secretcode", "provider", null)).thenReturn("test@example.com");
+        when(oauth2mgr.resolveDomainId(any())).thenReturn(null);
+        when(oauth2mgr.verifyCodeAndFetchEmail(eq("secretcode"), eq("provider"), any())).thenReturn("test@example.com");
 
         String response = cmd.authenticate("command", params, session, remoteAddress, responseType, auditTrailSb, req, resp);
 
@@ -89,7 +92,8 @@ public class VerifyOAuthCodeAndGetUserCmdTest {
         params.put("secretcode", secretcodeArray);
         params.put("provider", providerArray);
 
-        when(oauth2mgr.verifyCodeAndFetchEmail("invalidcode", "provider", null)).thenReturn(null);
+        when(oauth2mgr.resolveDomainId(any())).thenReturn(null);
+        when(oauth2mgr.verifyCodeAndFetchEmail(eq("invalidcode"), eq("provider"), any())).thenReturn(null);
 
         cmd.authenticate("command", params, session, remoteAddress, responseType, auditTrailSb, req, resp);
     }
