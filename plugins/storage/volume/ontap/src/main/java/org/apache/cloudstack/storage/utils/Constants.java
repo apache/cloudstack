@@ -102,4 +102,8 @@ public class Constants {
 
     /** vm_snapshot_details key for ONTAP FlexVolume-level VM snapshots. */
     public static final String ONTAP_FLEXVOL_SNAPSHOT = "ontapFlexVolSnapshot";
+
+    /** vm_snapshot_details key for memory file path in ONTAP memory snapshots.
+     * Format: &lt;memoryFilePath&gt;::&lt;poolId&gt; */
+    public static final String ONTAP_MEMORY_FILE = "ontapMemoryFile";
 }
