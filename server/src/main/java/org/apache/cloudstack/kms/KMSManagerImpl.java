@@ -392,6 +392,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         if (profile == null) {
             throw KMSException.invalidParameter("HSM Profile not found");
         }
+        if (kmsKeyDao.findByNameAndAccountId(name, accountId) != null) {
+            throw new InvalidParameterValueException("A KMS key with name " + name + " already exists in this account");
+        }
 
         KMSKeyVO kmsKey = new KMSKeyVO(name, description, "", purpose,
                 accountId, domainId, zoneId, "AES/GCM/NoPadding", keyBits);
