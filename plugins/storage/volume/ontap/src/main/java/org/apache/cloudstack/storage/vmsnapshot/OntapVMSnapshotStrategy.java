@@ -51,12 +51,8 @@ import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.FreezeThawVMAnswer;
 import com.cloud.agent.api.FreezeThawVMCommand;
-import com.cloud.agent.api.RestoreVMFromMemoryFileAnswer;
-import com.cloud.agent.api.RestoreVMFromMemoryFileCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
-import com.cloud.agent.api.SaveVMMemoryToFileAnswer;
-import com.cloud.agent.api.SaveVMMemoryToFileCommand;
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
@@ -250,41 +246,34 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
      * {@code POST /api/storage/volumes/{uuid}/snapshots}. This means if a VM has
      * ROOT and DATA disks on the same FlexVolume, only one snapshot is created.</p>
      *
-     * <p><b>Memory Snapshots (DiskAndMemory):</b> For running VMs with snapshotmemory=true,
-     * this strategy saves the VM memory state to a file on the FlexVolume before taking
-     * the storage snapshot. The memory file is saved using virsh save, and the FlexVol
-     * snapshot captures both disk and memory atomically. During revert, the FlexVol is
-     * restored first, then the VM memory is restored using virsh restore.</p>
+     * <p><b>Memory Snapshots Not Supported:</b> This strategy only supports disk-only
+     * (crash-consistent) snapshots. Memory snapshots (snapshotmemory=true) are rejected
+     * with a clear error message. This is because ONTAP FlexVolume snapshots capture disk
+     * state only, and allowing mixed snapshot chains (ONTAP disk + libvirt memory) would
+     * cause issues during revert operations.</p>
      *
-     * <p><b>Protocol Support:</b></p>
-     * <ul>
-     *   <li><b>NFS:</b> Supports both disk-only and memory snapshots. Memory files are
-     *       stored on the NFS mount alongside the disk images.</li>
-     *   <li><b>iSCSI:</b> Only supports disk-only (crash-consistent) snapshots. Memory
-     *       snapshots are not supported because iSCSI uses block devices which cannot
-     *       store arbitrary files. Attempting a memory snapshot on iSCSI will throw
-     *       a CloudRuntimeException with a clear error message.</li>
-     * </ul>
+     * @throws CloudRuntimeException if memory snapshot is requested
      */
     @Override
     public VMSnapshot takeVMSnapshot(VMSnapshot vmSnapshot) {
-        VMSnapshotVO vmSnapshotVO = (VMSnapshotVO) vmSnapshot;
+        Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
         UserVm userVm = userVmDao.findById(vmSnapshot.getVmId());
+        VMSnapshotVO vmSnapshotVO = (VMSnapshotVO) vmSnapshot;
 
-        boolean isMemorySnapshot = vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory;
-        boolean vmIsRunning = VirtualMachine.State.Running.equals(userVm.getState());
-
-        // Memory snapshots require the VM to be running
-        if (isMemorySnapshot && !vmIsRunning) {
+        // ── Reject memory snapshots with a clear error message ──
+        // Memory snapshots (snapshotmemory=true) are not supported for VMs on ONTAP storage.
+        // This is because ONTAP uses FlexVolume-level snapshots which capture disk state only.
+        // To avoid mixed snapshot chains (ONTAP disk + libvirt memory), we reject memory
+        // snapshots outright rather than falling back to libvirt which would cause issues.
+        if (vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory) {
             String errorMsg = String.format(
-                    "Memory snapshots (snapshotmemory=true) require the VM to be running. " +
-                    "VM [%s] is in state [%s]. Please start the VM or use snapshotmemory=false.",
-                    userVm.getInstanceName(), userVm.getState());
+                    "Memory snapshots (snapshotmemory=true) are not supported for VMs on ONTAP managed storage. " +
+                    "VM [%s] uses ONTAP storage which only supports disk-only (crash-consistent) snapshots. " +
+                    "Please use snapshotmemory=false for disk-only snapshots.",
+                    userVm.getInstanceName());
             logger.error("takeVMSnapshot: {}", errorMsg);
             throw new CloudRuntimeException(errorMsg);
         }
-
-        Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
 
         FreezeThawVMAnswer freezeAnswer = null;
         FreezeThawVMCommand thawCmd = null;
@@ -293,11 +282,6 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
         // Track which FlexVolume snapshots were created (for rollback)
         List<FlexVolSnapshotDetail> createdSnapshots = new ArrayList<>();
-
-        // Memory snapshot state (tracked for rollback)
-        String memoryFilePath = null;
-        long memoryFilePoolId = 0;
-        boolean memoryFileSaved = false;
 
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.CreateRequested);
@@ -328,8 +312,8 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             }
 
             // Check if VM is actually running - freeze/thaw only makes sense for running VMs
-            // Note: vmIsRunning was already set above
-            boolean shouldFreezeThaw = quiescevm && vmIsRunning && !isMemorySnapshot;
+            boolean vmIsRunning = VirtualMachine.State.Running.equals(userVm.getState());
+            boolean shouldFreezeThaw = quiescevm && vmIsRunning;
 
             if (!vmIsRunning) {
                 logger.info("takeVMSnapshot: VM [{}] is in state [{}] (not Running). Skipping freeze/thaw - " +
@@ -369,80 +353,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             logger.info("takeVMSnapshot: VM [{}] has {} volumes across {} unique FlexVolume(s)",
                     userVm.getInstanceName(), volumeTOs.size(), flexVolGroups.size());
 
-            // ── Memory Snapshot: Save VM memory to a file on the FlexVolume ──
-            // For memory snapshots, we save the VM's memory state to a file on one of the
-            // FlexVolumes. This file will be captured by the FlexVol snapshot, allowing
-            // us to restore both disk and memory state atomically during revert.
-            //
-            // NOTE: Memory snapshots only work with NFS protocol because we need a file-system
-            // path to save the memory file. iSCSI uses block devices which cannot store arbitrary files.
-
-            if (isMemorySnapshot && vmIsRunning) {
-                // Pick the first FlexVol (typically ROOT disk) to store the memory file
-                Map.Entry<String, FlexVolGroupInfo> firstFlexVol = flexVolGroups.entrySet().iterator().next();
-                FlexVolGroupInfo memoryFlexVolGroup = firstFlexVol.getValue();
-                memoryFilePoolId = memoryFlexVolGroup.poolId;
-
-                // Check protocol - memory snapshots only supported for NFS
-                String protocol = memoryFlexVolGroup.poolDetails.get(Constants.PROTOCOL);
-                if (ProtocolType.ISCSI.name().equalsIgnoreCase(protocol)) {
-                    String errorMsg = String.format(
-                            "Memory snapshots (snapshotmemory=true) are not supported for VMs on iSCSI storage. " +
-                            "VM [%s] uses iSCSI protocol which does not support file-based memory storage. " +
-                            "Please use snapshotmemory=false for crash-consistent disk-only snapshots, or migrate " +
-                            "the VM to NFS storage to enable memory snapshots.",
-                            userVm.getInstanceName());
-                    logger.error("takeVMSnapshot: {}", errorMsg);
-                    throw new CloudRuntimeException(errorMsg);
-                }
-
-                // Build the memory file path on the FlexVolume mount point (NFS only)
-                // Memory file name: vmsnap_<vmSnapshotId>_<timestamp>.mem
-                String memoryFileName = "vmsnap_" + vmSnapshot.getId() + "_" + System.currentTimeMillis() + ".mem";
-                StoragePoolVO pool = storagePool.findById(memoryFilePoolId);
-                if (pool == null) {
-                    throw new CloudRuntimeException("Storage pool [" + memoryFilePoolId + "] not found for memory file storage");
-                }
-                memoryFilePath = pool.getPath() + "/" + memoryFileName;
-
-                logger.info("takeVMSnapshot: Memory snapshot enabled for VM [{}]. Saving memory to [{}]",
-                        userVm.getInstanceName(), memoryFilePath);
-
-                // Save VM memory using virsh save (VM will be stopped after this)
-                // We set resumeAfterSave=false because we'll resume after the FlexVol snapshot
-                SaveVMMemoryToFileCommand saveMemCmd = new SaveVMMemoryToFileCommand(
-                        userVm.getInstanceName(), userVm.getUuid(), memoryFilePath, false);
-
-                try {
-                    com.cloud.agent.api.Answer rawAnswer = agentMgr.send(hostId, saveMemCmd);
-
-                    // Check if agent supports this command
-                    if (rawAnswer instanceof com.cloud.agent.api.UnsupportedAnswer) {
-                        throw new CloudRuntimeException("Memory snapshots are not supported by this KVM agent. " +
-                                "Please ensure the agent is updated and restarted with memory snapshot support. " +
-                                "Alternatively, use snapshotmemory=false for disk-only snapshots.");
-                    }
-
-                    if (!(rawAnswer instanceof SaveVMMemoryToFileAnswer)) {
-                        throw new CloudRuntimeException("Unexpected response from agent for SaveVMMemoryToFileCommand: " +
-                                (rawAnswer != null ? rawAnswer.getClass().getName() : "null"));
-                    }
-
-                    SaveVMMemoryToFileAnswer saveMemAnswer = (SaveVMMemoryToFileAnswer) rawAnswer;
-                    if (!saveMemAnswer.getResult()) {
-                        throw new CloudRuntimeException("Failed to save VM memory for snapshot. " +
-                                "Ensure the VM is running and the storage is accessible. Details: " + saveMemAnswer.getDetails());
-                    }
-                    memoryFileSaved = true;
-                    logger.info("takeVMSnapshot: VM [{}] memory saved successfully to [{}] (size: {} bytes)",
-                            userVm.getInstanceName(), memoryFilePath, saveMemAnswer.getMemoryFileSize());
-                } catch (AgentUnavailableException | OperationTimedoutException e) {
-                    throw new CloudRuntimeException("Failed to save VM memory: " + e.getMessage(), e);
-                }
-            }
-
-            // ── Step 1: Freeze the VM (only if quiescing is requested AND VM is running AND not memory snapshot) ──
-            // For memory snapshots, the VM is already stopped after virsh save, so no freeze/thaw needed
+            // ── Step 1: Freeze the VM (only if quiescing is requested AND VM is running) ──
             if (shouldFreezeThaw) {
                 FreezeThawVMCommand freezeCommand = new FreezeThawVMCommand(userVm.getInstanceName());
                 freezeCommand.setOption(FreezeThawVMCommand.FREEZE);
@@ -532,58 +443,12 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                         logger.error("takeVMSnapshot: Exception while thawing VM [{}]: {}", userVm.getInstanceName(), thawEx.getMessage(), thawEx);
                     }
                 }
-
-                // ── Step 3.5: Resume VM from memory file (for memory snapshots) ──
-                // After the FlexVol snapshot is taken, restore the VM so it continues running
-                if (memoryFileSaved && memoryFilePath != null) {
-                    try {
-                        logger.info("takeVMSnapshot: Resuming VM [{}] from memory file [{}]",
-                                userVm.getInstanceName(), memoryFilePath);
-
-                        RestoreVMFromMemoryFileCommand restoreCmd = new RestoreVMFromMemoryFileCommand(
-                                userVm.getInstanceName(), userVm.getUuid(), memoryFilePath, false);
-
-                        com.cloud.agent.api.Answer rawRestoreAnswer = agentMgr.send(hostId, restoreCmd);
-
-                        // Check if agent supports this command
-                        if (rawRestoreAnswer instanceof com.cloud.agent.api.UnsupportedAnswer) {
-                            throw new CloudRuntimeException("RestoreVMFromMemoryFile is not supported by this KVM agent. " +
-                                    "Please ensure the agent is updated and restarted.");
-                        }
-
-                        if (!(rawRestoreAnswer instanceof RestoreVMFromMemoryFileAnswer)) {
-                            throw new CloudRuntimeException("Unexpected response from agent for RestoreVMFromMemoryFileCommand: " +
-                                    (rawRestoreAnswer != null ? rawRestoreAnswer.getClass().getName() : "null"));
-                        }
-
-                        RestoreVMFromMemoryFileAnswer restoreAnswer = (RestoreVMFromMemoryFileAnswer) rawRestoreAnswer;
-                        if (!restoreAnswer.getResult()) {
-                            throw new CloudRuntimeException("Failed to resume VM after memory snapshot. " +
-                                    "The memory file was saved but VM could not be restored. Details: " + restoreAnswer.getDetails());
-                        }
-
-                        logger.info("takeVMSnapshot: VM [{}] resumed successfully from memory file, state: {}",
-                                userVm.getInstanceName(), restoreAnswer.getVmPowerState());
-                    } catch (AgentUnavailableException | OperationTimedoutException e) {
-                        throw new CloudRuntimeException("Failed to resume VM from memory file: " + e.getMessage(), e);
-                    }
-                }
             }
 
             // ── Step 4: Persist FlexVolume snapshot details (one row per CloudStack volume) ──
             for (FlexVolSnapshotDetail detail : createdSnapshots) {
                 vmSnapshotDetailsDao.persist(new VMSnapshotDetailsVO(
                         vmSnapshot.getId(), Constants.ONTAP_FLEXVOL_SNAPSHOT, detail.toString(), true));
-            }
-
-            // ── Step 4.5: Persist memory file path (for memory snapshots) ──
-            if (isMemorySnapshot && memoryFilePath != null) {
-                // Format: <memoryFilePath>::<poolId>
-                String memoryDetail = memoryFilePath + DETAIL_SEPARATOR + memoryFilePoolId;
-                vmSnapshotDetailsDao.persist(new VMSnapshotDetailsVO(
-                        vmSnapshot.getId(), Constants.ONTAP_MEMORY_FILE, memoryDetail, true));
-                logger.info("takeVMSnapshot: Persisted memory file path [{}] for VM snapshot [{}]",
-                        memoryFilePath, vmSnapshot.getName());
             }
 
             // ── Step 5: Finalize via parent processAnswer ──
@@ -630,17 +495,6 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     }
                 }
 
-                // Clean up memory file if it was created (for memory snapshots)
-                if (memoryFileSaved && memoryFilePath != null) {
-                    try {
-                        logger.info("takeVMSnapshot: Cleaning up memory file [{}] during error rollback", memoryFilePath);
-                        deleteMemoryFile(memoryFilePath, hostId);
-                    } catch (Exception memCleanupEx) {
-                        logger.error("takeVMSnapshot: Failed to cleanup memory file [{}]: {}",
-                                memoryFilePath, memCleanupEx.getMessage());
-                    }
-                }
-
                 // Ensure VM is thawed if we haven't done so
                 if (thawAnswer == null && freezeAnswer != null && freezeAnswer.getResult()) {
                     try {
@@ -655,8 +509,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 try {
                     List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshot.getId());
                     for (VMSnapshotDetailsVO detail : vmSnapshotDetails) {
-                        if (Constants.ONTAP_FLEXVOL_SNAPSHOT.equals(detail.getName()) ||
-                            Constants.ONTAP_MEMORY_FILE.equals(detail.getName())) {
+                        if (Constants.ONTAP_FLEXVOL_SNAPSHOT.equals(detail.getName())) {
                             vmSnapshotDetailsDao.remove(detail.getId());
                         }
                     }
@@ -704,24 +557,6 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             List<VMSnapshotDetailsVO> legacyDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), STORAGE_SNAPSHOT);
             if (CollectionUtils.isNotEmpty(legacyDetails)) {
                 deleteDiskSnapshot(vmSnapshot);
-            }
-
-            // Delete memory file if this was a memory snapshot
-            List<VMSnapshotDetailsVO> memoryDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), Constants.ONTAP_MEMORY_FILE);
-            if (CollectionUtils.isNotEmpty(memoryDetails)) {
-                for (VMSnapshotDetailsVO memDetail : memoryDetails) {
-                    // Parse memory file details: <memoryFilePath>::<poolId>
-                    String memoryDetailValue = memDetail.getValue();
-                    String[] parts = memoryDetailValue.split(DETAIL_SEPARATOR);
-                    if (parts.length >= 1) {
-                        String memoryFilePath = parts[0];
-                        logger.info("deleteVMSnapshot: Deleting memory file [{}] for VM snapshot [{}]",
-                                memoryFilePath, vmSnapshot.getName());
-                        deleteMemoryFile(memoryFilePath, null);
-                    }
-                    // Remove the detail entry
-                    vmSnapshotDetailsDao.remove(memDetail.getId());
-                }
             }
 
             processAnswer(vmSnapshotVO, userVm, new DeleteVMSnapshotAnswer(deleteSnapshotCommand, volumeTOs), null);
@@ -779,57 +614,8 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 revertDiskSnapshot(vmSnapshot);
             }
 
-            // Check for memory snapshot and restore VM memory state
-            List<VMSnapshotDetailsVO> memoryDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), Constants.ONTAP_MEMORY_FILE);
-            VirtualMachine.PowerState vmPowerState = VirtualMachine.PowerState.PowerOff;
-            if (CollectionUtils.isNotEmpty(memoryDetails)) {
-                // Parse memory file details: <memoryFilePath>::<poolId>
-                String memoryDetailValue = memoryDetails.get(0).getValue();
-                String[] parts = memoryDetailValue.split(DETAIL_SEPARATOR);
-                if (parts.length >= 1) {
-                    String memoryFilePath = parts[0];
-                    Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
-
-                    logger.info("revertVMSnapshot: Restoring VM [{}] from memory file [{}]",
-                            userVm.getInstanceName(), memoryFilePath);
-
-                    // Restore VM from memory file (VM will resume running)
-                    RestoreVMFromMemoryFileCommand restoreCmd = new RestoreVMFromMemoryFileCommand(
-                            userVm.getInstanceName(), userVm.getUuid(), memoryFilePath, false);
-
-                    try {
-                        com.cloud.agent.api.Answer rawRestoreAnswer = agentMgr.send(hostId, restoreCmd);
-
-                        // Check if agent supports this command
-                        if (rawRestoreAnswer instanceof com.cloud.agent.api.UnsupportedAnswer) {
-                            throw new CloudRuntimeException("RestoreVMFromMemoryFile is not supported by this KVM agent. " +
-                                    "Please ensure the agent is updated and restarted.");
-                        }
-
-                        if (!(rawRestoreAnswer instanceof RestoreVMFromMemoryFileAnswer)) {
-                            throw new CloudRuntimeException("Unexpected response from agent for RestoreVMFromMemoryFileCommand: " +
-                                    (rawRestoreAnswer != null ? rawRestoreAnswer.getClass().getName() : "null"));
-                        }
-
-                        RestoreVMFromMemoryFileAnswer restoreAnswer = (RestoreVMFromMemoryFileAnswer) rawRestoreAnswer;
-                        if (!restoreAnswer.getResult()) {
-                            throw new CloudRuntimeException("Failed to restore VM from memory file during revert. Details: " + restoreAnswer.getDetails());
-                        }
-
-                        vmPowerState = restoreAnswer.getVmPowerState();
-                        logger.info("revertVMSnapshot: VM [{}] restored from memory file, state: {}",
-                                userVm.getInstanceName(), vmPowerState);
-                    } catch (AgentUnavailableException | OperationTimedoutException e) {
-                        throw new CloudRuntimeException("Failed to restore VM from memory file: " + e.getMessage(), e);
-                    }
-                }
-            }
-
             RevertToVMSnapshotAnswer answer = new RevertToVMSnapshotAnswer(revertToSnapshotCommand, true, "");
             answer.setVolumeTOs(volumeTOs);
-            if (vmPowerState == VirtualMachine.PowerState.PowerOn) {
-                answer.setVmState(vmPowerState);
-            }
             processAnswer(vmSnapshotVO, userVm, answer, null);
             result = true;
         } catch (CloudRuntimeException e) {
@@ -964,38 +750,6 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             }
         } catch (Exception e) {
             logger.error("rollbackFlexVolSnapshot: Rollback of FlexVol snapshot failed: {}", e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Deletes a memory file from shared storage.
-     *
-     * <p>This is used during rollback of failed memory snapshots and when
-     * deleting VM snapshots that include memory state.</p>
-     *
-     * @param memoryFilePath the absolute path to the memory file
-     * @param hostId the host ID to send the delete command to (or null to delete locally)
-     */
-    void deleteMemoryFile(String memoryFilePath, Long hostId) {
-        if (memoryFilePath == null || memoryFilePath.isEmpty()) {
-            return;
-        }
-
-        try {
-            // For NFS-mounted storage, we can delete the file directly from the management server
-            // or send a command to the host. Since the storage is shared NFS, a simple file delete works.
-            java.io.File memFile = new java.io.File(memoryFilePath);
-            if (memFile.exists()) {
-                if (memFile.delete()) {
-                    logger.info("deleteMemoryFile: Successfully deleted memory file [{}]", memoryFilePath);
-                } else {
-                    logger.warn("deleteMemoryFile: Failed to delete memory file [{}]", memoryFilePath);
-                }
-            } else {
-                logger.debug("deleteMemoryFile: Memory file [{}] does not exist (may have been cleaned up already)", memoryFilePath);
-            }
-        } catch (Exception e) {
-            logger.error("deleteMemoryFile: Error deleting memory file [{}]: {}", memoryFilePath, e.getMessage(), e);
         }
     }
 

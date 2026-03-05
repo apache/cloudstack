@@ -98,15 +98,22 @@ public class LibvirtRestoreVMFromMemoryFileCommandWrapper
             }
 
             // Restore VM from memory file using virsh restore
-            String virshPath = Script.getExecutableAbsolutePath("virsh");
-            String restoreResult = Script.runSimpleBashScript(
-                    virshPath + " restore " + memoryFilePath + " --bypass-cache");
+            // Use Script class for better error handling - it returns null on success
+            Script restoreScript = new Script(Script.getExecutableAbsolutePath("virsh"),
+                    serverResource.getCmdsTimeout(), logger);
+            restoreScript.add("restore");
+            restoreScript.add(memoryFilePath);
+            restoreScript.add("--bypass-cache");
 
-            if (restoreResult != null && !restoreResult.isEmpty()) {
+            String restoreResult = restoreScript.execute();
+            // Script.execute() returns null on success, error message on failure
+            if (restoreResult != null) {
                 logger.error("virsh restore failed for VM " + vmName + ": " + restoreResult);
                 return new RestoreVMFromMemoryFileAnswer(cmd, false,
                         "Failed to restore VM from memory file: " + restoreResult);
             }
+
+            logger.info("RestoreVMFromMemoryFileCommandWrapper: virsh restore completed successfully for VM " + vmName);
 
             // Verify VM is now running
             Domain restoredDomain = null;

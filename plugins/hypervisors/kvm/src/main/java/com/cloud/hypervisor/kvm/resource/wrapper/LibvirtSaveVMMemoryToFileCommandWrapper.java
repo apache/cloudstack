@@ -94,11 +94,18 @@ public class LibvirtSaveVMMemoryToFileCommandWrapper
             // Save VM memory using virsh save with --running flag
             // --running: When restored, the VM will resume running (not stay paused)
             // --bypass-cache: Avoid caching for large memory files
-            String virshPath = Script.getExecutableAbsolutePath("virsh");
-            String saveResult = Script.runSimpleBashScript(
-                    virshPath + " save " + vmName + " " + memoryFilePath + " --running --bypass-cache");
+            // Use Script class for better error handling - it returns null on success
+            Script saveScript = new Script(Script.getExecutableAbsolutePath("virsh"),
+                    serverResource.getCmdsTimeout(), logger);
+            saveScript.add("save");
+            saveScript.add(vmName);
+            saveScript.add(memoryFilePath);
+            saveScript.add("--running");
+            saveScript.add("--bypass-cache");
 
-            if (saveResult != null && !saveResult.isEmpty()) {
+            String saveResult = saveScript.execute();
+            // Script.execute() returns null on success, error message on failure
+            if (saveResult != null) {
                 logger.error("virsh save failed for VM " + vmName + ": " + saveResult);
                 // Clean up partial file if it exists
                 if (memoryFile.exists()) {
@@ -107,6 +114,8 @@ public class LibvirtSaveVMMemoryToFileCommandWrapper
                 return new SaveVMMemoryToFileAnswer(cmd, false,
                         "Failed to save VM memory: " + saveResult);
             }
+
+            logger.info("SaveVMMemoryToFileCommandWrapper: virsh save completed successfully for VM " + vmName);
 
             // Verify the memory file was created
             if (!memoryFile.exists()) {
@@ -121,10 +130,15 @@ public class LibvirtSaveVMMemoryToFileCommandWrapper
             // After virsh save, the VM is stopped. If resumeAfterSave is true,
             // we need to restore the VM immediately so it continues running.
             if (cmd.isResumeAfterSave()) {
-                String restoreResult = Script.runSimpleBashScript(
-                        virshPath + " restore " + memoryFilePath + " --bypass-cache");
+                Script restoreScript = new Script(Script.getExecutableAbsolutePath("virsh"),
+                        serverResource.getCmdsTimeout(), logger);
+                restoreScript.add("restore");
+                restoreScript.add(memoryFilePath);
+                restoreScript.add("--bypass-cache");
 
-                if (restoreResult != null && !restoreResult.isEmpty()) {
+                String restoreResult = restoreScript.execute();
+                // Script.execute() returns null on success, error message on failure
+                if (restoreResult != null) {
                     logger.error("virsh restore failed for VM " + vmName + ": " + restoreResult);
                     return new SaveVMMemoryToFileAnswer(cmd, false,
                             "Memory saved but failed to restore VM: " + restoreResult);
