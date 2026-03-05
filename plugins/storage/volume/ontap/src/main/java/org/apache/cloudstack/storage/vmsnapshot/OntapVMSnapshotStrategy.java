@@ -255,6 +255,16 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
      * the storage snapshot. The memory file is saved using virsh save, and the FlexVol
      * snapshot captures both disk and memory atomically. During revert, the FlexVol is
      * restored first, then the VM memory is restored using virsh restore.</p>
+     *
+     * <p><b>Protocol Support:</b></p>
+     * <ul>
+     *   <li><b>NFS:</b> Supports both disk-only and memory snapshots. Memory files are
+     *       stored on the NFS mount alongside the disk images.</li>
+     *   <li><b>iSCSI:</b> Only supports disk-only (crash-consistent) snapshots. Memory
+     *       snapshots are not supported because iSCSI uses block devices which cannot
+     *       store arbitrary files. Attempting a memory snapshot on iSCSI will throw
+     *       a CloudRuntimeException with a clear error message.</li>
+     * </ul>
      */
     @Override
     public VMSnapshot takeVMSnapshot(VMSnapshot vmSnapshot) {
@@ -363,6 +373,9 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             // For memory snapshots, we save the VM's memory state to a file on one of the
             // FlexVolumes. This file will be captured by the FlexVol snapshot, allowing
             // us to restore both disk and memory state atomically during revert.
+            //
+            // NOTE: Memory snapshots only work with NFS protocol because we need a file-system
+            // path to save the memory file. iSCSI uses block devices which cannot store arbitrary files.
 
             if (isMemorySnapshot && vmIsRunning) {
                 // Pick the first FlexVol (typically ROOT disk) to store the memory file
@@ -370,7 +383,20 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 FlexVolGroupInfo memoryFlexVolGroup = firstFlexVol.getValue();
                 memoryFilePoolId = memoryFlexVolGroup.poolId;
 
-                // Build the memory file path on the FlexVolume mount point
+                // Check protocol - memory snapshots only supported for NFS
+                String protocol = memoryFlexVolGroup.poolDetails.get(Constants.PROTOCOL);
+                if (ProtocolType.ISCSI.name().equalsIgnoreCase(protocol)) {
+                    String errorMsg = String.format(
+                            "Memory snapshots (snapshotmemory=true) are not supported for VMs on iSCSI storage. " +
+                            "VM [%s] uses iSCSI protocol which does not support file-based memory storage. " +
+                            "Please use snapshotmemory=false for crash-consistent disk-only snapshots, or migrate " +
+                            "the VM to NFS storage to enable memory snapshots.",
+                            userVm.getInstanceName());
+                    logger.error("takeVMSnapshot: {}", errorMsg);
+                    throw new CloudRuntimeException(errorMsg);
+                }
+
+                // Build the memory file path on the FlexVolume mount point (NFS only)
                 // Memory file name: vmsnap_<vmSnapshotId>_<timestamp>.mem
                 String memoryFileName = "vmsnap_" + vmSnapshot.getId() + "_" + System.currentTimeMillis() + ".mem";
                 StoragePoolVO pool = storagePool.findById(memoryFilePoolId);
@@ -388,11 +414,24 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                         userVm.getInstanceName(), userVm.getUuid(), memoryFilePath, false);
 
                 try {
-                    SaveVMMemoryToFileAnswer saveMemAnswer = (SaveVMMemoryToFileAnswer) agentMgr.send(hostId, saveMemCmd);
-                    if (saveMemAnswer == null || !saveMemAnswer.getResult()) {
-                        String detail = (saveMemAnswer != null) ? saveMemAnswer.getDetails() : "no response from agent";
+                    com.cloud.agent.api.Answer rawAnswer = agentMgr.send(hostId, saveMemCmd);
+
+                    // Check if agent supports this command
+                    if (rawAnswer instanceof com.cloud.agent.api.UnsupportedAnswer) {
+                        throw new CloudRuntimeException("Memory snapshots are not supported by this KVM agent. " +
+                                "Please ensure the agent is updated and restarted with memory snapshot support. " +
+                                "Alternatively, use snapshotmemory=false for disk-only snapshots.");
+                    }
+
+                    if (!(rawAnswer instanceof SaveVMMemoryToFileAnswer)) {
+                        throw new CloudRuntimeException("Unexpected response from agent for SaveVMMemoryToFileCommand: " +
+                                (rawAnswer != null ? rawAnswer.getClass().getName() : "null"));
+                    }
+
+                    SaveVMMemoryToFileAnswer saveMemAnswer = (SaveVMMemoryToFileAnswer) rawAnswer;
+                    if (!saveMemAnswer.getResult()) {
                         throw new CloudRuntimeException("Failed to save VM memory for snapshot. " +
-                                "Ensure the VM is running and the storage is accessible. Details: " + detail);
+                                "Ensure the VM is running and the storage is accessible. Details: " + saveMemAnswer.getDetails());
                     }
                     memoryFileSaved = true;
                     logger.info("takeVMSnapshot: VM [{}] memory saved successfully to [{}] (size: {} bytes)",
@@ -504,13 +543,23 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                         RestoreVMFromMemoryFileCommand restoreCmd = new RestoreVMFromMemoryFileCommand(
                                 userVm.getInstanceName(), userVm.getUuid(), memoryFilePath, false);
 
-                        RestoreVMFromMemoryFileAnswer restoreAnswer =
-                                (RestoreVMFromMemoryFileAnswer) agentMgr.send(hostId, restoreCmd);
+                        com.cloud.agent.api.Answer rawRestoreAnswer = agentMgr.send(hostId, restoreCmd);
 
-                        if (restoreAnswer == null || !restoreAnswer.getResult()) {
-                            String detail = (restoreAnswer != null) ? restoreAnswer.getDetails() : "no response from agent";
+                        // Check if agent supports this command
+                        if (rawRestoreAnswer instanceof com.cloud.agent.api.UnsupportedAnswer) {
+                            throw new CloudRuntimeException("RestoreVMFromMemoryFile is not supported by this KVM agent. " +
+                                    "Please ensure the agent is updated and restarted.");
+                        }
+
+                        if (!(rawRestoreAnswer instanceof RestoreVMFromMemoryFileAnswer)) {
+                            throw new CloudRuntimeException("Unexpected response from agent for RestoreVMFromMemoryFileCommand: " +
+                                    (rawRestoreAnswer != null ? rawRestoreAnswer.getClass().getName() : "null"));
+                        }
+
+                        RestoreVMFromMemoryFileAnswer restoreAnswer = (RestoreVMFromMemoryFileAnswer) rawRestoreAnswer;
+                        if (!restoreAnswer.getResult()) {
                             throw new CloudRuntimeException("Failed to resume VM after memory snapshot. " +
-                                    "The memory file was saved but VM could not be restored. Details: " + detail);
+                                    "The memory file was saved but VM could not be restored. Details: " + restoreAnswer.getDetails());
                         }
 
                         logger.info("takeVMSnapshot: VM [{}] resumed successfully from memory file, state: {}",
@@ -749,12 +798,22 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                             userVm.getInstanceName(), userVm.getUuid(), memoryFilePath, false);
 
                     try {
-                        RestoreVMFromMemoryFileAnswer restoreAnswer =
-                                (RestoreVMFromMemoryFileAnswer) agentMgr.send(hostId, restoreCmd);
+                        com.cloud.agent.api.Answer rawRestoreAnswer = agentMgr.send(hostId, restoreCmd);
 
-                        if (restoreAnswer == null || !restoreAnswer.getResult()) {
-                            String detail = (restoreAnswer != null) ? restoreAnswer.getDetails() : "no response from agent";
-                            throw new CloudRuntimeException("Failed to restore VM from memory file during revert. Details: " + detail);
+                        // Check if agent supports this command
+                        if (rawRestoreAnswer instanceof com.cloud.agent.api.UnsupportedAnswer) {
+                            throw new CloudRuntimeException("RestoreVMFromMemoryFile is not supported by this KVM agent. " +
+                                    "Please ensure the agent is updated and restarted.");
+                        }
+
+                        if (!(rawRestoreAnswer instanceof RestoreVMFromMemoryFileAnswer)) {
+                            throw new CloudRuntimeException("Unexpected response from agent for RestoreVMFromMemoryFileCommand: " +
+                                    (rawRestoreAnswer != null ? rawRestoreAnswer.getClass().getName() : "null"));
+                        }
+
+                        RestoreVMFromMemoryFileAnswer restoreAnswer = (RestoreVMFromMemoryFileAnswer) rawRestoreAnswer;
+                        if (!restoreAnswer.getResult()) {
+                            throw new CloudRuntimeException("Failed to restore VM from memory file during revert. Details: " + restoreAnswer.getDetails());
                         }
 
                         vmPowerState = restoreAnswer.getVmPowerState();
