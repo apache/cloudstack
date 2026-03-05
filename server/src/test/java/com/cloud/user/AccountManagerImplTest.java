@@ -24,9 +24,11 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -1583,5 +1585,157 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManagerImpl).checkRoleEscalation(callingAccount, accountMock);
 
         accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+    }
+
+    // --- Tests for checkRoleEscalation ---
+
+    private void setPrivateField(Object target, String fieldName, Object value) throws Exception {
+        Class<?> clazz = target.getClass();
+        while (clazz != null) {
+            try {
+                java.lang.reflect.Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(target, value);
+                return;
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        throw new NoSuchFieldException(fieldName);
+    }
+
+    @Test
+    public void testCheckRoleEscalationSamePermissionsShouldPass() throws Exception {
+        APIChecker checker = Mockito.mock(APIChecker.class);
+        List<String> apis = Arrays.asList("api1", "api2", "api3");
+        Mockito.when(checker.isEnabled()).thenReturn(true);
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.any(Account.class), Mockito.anyList())).thenReturn(apis);
+
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getAccountName()).thenReturn("caller");
+        Mockito.when(caller.getUuid()).thenReturn("caller-uuid");
+        Mockito.when(caller.getRoleId()).thenReturn(4L);
+
+        Account requested = Mockito.mock(Account.class);
+        Mockito.when(requested.getAccountName()).thenReturn("requested");
+        Mockito.when(requested.getUuid()).thenReturn("requested-uuid");
+        Mockito.when(requested.getRoleId()).thenReturn(4L);
+
+        accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
+        setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(apis));
+
+        accountManagerImpl.checkRoleEscalation(caller, requested);
+    }
+
+    @Test
+    public void testCheckRoleEscalationCallerHasMorePermissionsShouldPass() throws Exception {
+        List<String> allApis = Arrays.asList("api1", "api2", "api3");
+        List<String> requestedApis = Arrays.asList("api1", "api2");
+
+        APIChecker checker = Mockito.mock(APIChecker.class);
+        Mockito.when(checker.isEnabled()).thenReturn(true);
+
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getAccountName()).thenReturn("caller");
+        Mockito.when(caller.getUuid()).thenReturn("caller-uuid");
+        Mockito.when(caller.getRoleId()).thenReturn(4L);
+
+        Account requested = Mockito.mock(Account.class);
+        Mockito.when(requested.getAccountName()).thenReturn("requested");
+        Mockito.when(requested.getUuid()).thenReturn("requested-uuid");
+        Mockito.when(requested.getRoleId()).thenReturn(5L);
+
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(requested), Mockito.anyList())).thenReturn(requestedApis);
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(caller), Mockito.anyList())).thenReturn(requestedApis);
+
+        accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
+        setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(allApis));
+
+        accountManagerImpl.checkRoleEscalation(caller, requested);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckRoleEscalationRequestedHasMorePermissionsShouldThrow() throws Exception {
+        List<String> allApis = Arrays.asList("api1", "api2", "api3");
+        List<String> requestedApis = Arrays.asList("api1", "api2", "api3");
+        List<String> callerApis = Arrays.asList("api1");
+
+        APIChecker checker = Mockito.mock(APIChecker.class);
+        Mockito.when(checker.isEnabled()).thenReturn(true);
+
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getAccountName()).thenReturn("caller");
+        Mockito.when(caller.getUuid()).thenReturn("caller-uuid");
+        Mockito.when(caller.getRoleId()).thenReturn(4L);
+        Mockito.when(caller.getDomainId()).thenReturn(1L);
+
+        Account requested = Mockito.mock(Account.class);
+        Mockito.when(requested.getAccountName()).thenReturn("requested");
+        Mockito.when(requested.getUuid()).thenReturn("requested-uuid");
+        Mockito.when(requested.getRoleId()).thenReturn(5L);
+
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(requested), Mockito.anyList())).thenReturn(requestedApis);
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(caller), Mockito.anyList())).thenReturn(callerApis);
+
+        accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
+        setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(allApis));
+
+        accountManagerImpl.checkRoleEscalation(caller, requested);
+    }
+
+    @Test
+    public void testCheckRoleEscalationEmptyApiListShouldPass() throws Exception {
+        APIChecker checker = Mockito.mock(APIChecker.class);
+        Mockito.when(checker.isEnabled()).thenReturn(true);
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.any(Account.class), Mockito.anyList())).thenReturn(Collections.emptyList());
+
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getAccountName()).thenReturn("caller");
+        Mockito.when(caller.getUuid()).thenReturn("caller-uuid");
+        Mockito.when(caller.getRoleId()).thenReturn(4L);
+
+        Account requested = Mockito.mock(Account.class);
+        Mockito.when(requested.getAccountName()).thenReturn("requested");
+        Mockito.when(requested.getUuid()).thenReturn("requested-uuid");
+        Mockito.when(requested.getRoleId()).thenReturn(5L);
+
+        accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
+        setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>());
+
+        accountManagerImpl.checkRoleEscalation(caller, requested);
+    }
+
+    @Test
+    public void testCheckRoleEscalationMultipleCheckersAppliedSequentially() throws Exception {
+        List<String> allApis = Arrays.asList("api1", "api2", "api3");
+        List<String> afterChecker1 = Arrays.asList("api1", "api2");
+        List<String> afterChecker2 = Arrays.asList("api1");
+
+        APIChecker checker1 = Mockito.mock(APIChecker.class);
+        Mockito.when(checker1.isEnabled()).thenReturn(true);
+        APIChecker checker2 = Mockito.mock(APIChecker.class);
+        Mockito.when(checker2.isEnabled()).thenReturn(true);
+
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getAccountName()).thenReturn("caller");
+        Mockito.when(caller.getUuid()).thenReturn("caller-uuid");
+        Mockito.when(caller.getRoleId()).thenReturn(4L);
+
+        Account requested = Mockito.mock(Account.class);
+        Mockito.when(requested.getAccountName()).thenReturn("requested");
+        Mockito.when(requested.getUuid()).thenReturn("requested-uuid");
+        Mockito.when(requested.getRoleId()).thenReturn(5L);
+
+        // requested: checker1 filters to [api1, api2], checker2 further filters to [api1]
+        Mockito.when(checker1.getApisAllowedToAccount(Mockito.eq(requested), Mockito.eq(allApis))).thenReturn(afterChecker1);
+        Mockito.when(checker2.getApisAllowedToAccount(Mockito.eq(requested), Mockito.eq(afterChecker1))).thenReturn(afterChecker2);
+        // caller: same filtering, so no escalation
+        Mockito.when(checker1.getApisAllowedToAccount(Mockito.eq(caller), Mockito.eq(afterChecker2))).thenReturn(afterChecker2);
+        Mockito.when(checker2.getApisAllowedToAccount(Mockito.eq(caller), Mockito.eq(afterChecker2))).thenReturn(afterChecker2);
+
+        accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker1, checker2));
+        setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(allApis));
+
+        accountManagerImpl.checkRoleEscalation(caller, requested);
     }
 }
