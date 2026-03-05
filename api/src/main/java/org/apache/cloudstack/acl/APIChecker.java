@@ -21,6 +21,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Adapter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -42,5 +43,19 @@ public interface APIChecker extends Adapter {
      * @return the list of allowed apis for the given user
      */
     List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException;
+
+    default List<String> getApisAllowedToAccount(Account account, List<String> apiNames) {
+        List<String> allowedApis = new ArrayList<>();
+        for (String apiName : apiNames) {
+            try {
+                checkAccess(account, apiName);
+                allowedApis.add(apiName);
+            } catch (PermissionDeniedException e) {
+                // not allowed, skip
+            }
+        }
+        return allowedApis;
+    }
+
     boolean isEnabled();
 }

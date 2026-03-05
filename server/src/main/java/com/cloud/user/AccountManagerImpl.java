@@ -1435,40 +1435,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     requested.getRoleId()));
         }
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
-        for (String command : apiNameList) {
-            try {
-                checkApiAccess(apiCheckers, requested, command);
-            } catch (PermissionDeniedException pde) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format(
-                            "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
-                            command,
-                            requested.getAccountName(),
-                            requested.getUuid()
-                        )
-                    );
-                }
-                continue;
-            }
-            // so requested can, now make sure caller can as well
-            try {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("permission to \"%s\" is requested",
-                            command));
-                }
-                checkApiAccess(apiCheckers, caller, command);
-            } catch (PermissionDeniedException pde) {
-                String msg = String.format("User of Account %s and domain %s can not create an account with access to more privileges they have themself.",
-                        caller, _domainMgr.getDomain(caller.getDomainId()));
-                logger.warn(msg);
-                throw new PermissionDeniedException(msg,pde);
-            }
-        }
-    }
-
-    private void checkApiAccess(List<APIChecker> apiCheckers, Account caller, String command) {
+        List<String> allApis = new ArrayList<>(apiNameList);
+        List<String> requestedAllowed = allApis;
         for (final APIChecker apiChecker : apiCheckers) {
-            apiChecker.checkAccess(caller, command);
+            requestedAllowed = apiChecker.getApisAllowedToAccount(requested, requestedAllowed);
+        }
+        List<String> callerAllowed = requestedAllowed;
+        for (final APIChecker apiChecker : apiCheckers) {
+            callerAllowed = apiChecker.getApisAllowedToAccount(caller, callerAllowed);
+        }
+        if (callerAllowed.size() < requestedAllowed.size()) {
+            List<String> escalatedApis = new ArrayList<>(requestedAllowed);
+            escalatedApis.removeAll(callerAllowed);
+            String msg = String.format("User of Account %s and domain %s cannot create an account with access to more privileges than they have. Escalated APIs: %s",
+                    caller, _domainMgr.getDomain(caller.getDomainId()), escalatedApis);
+            s_logger.warn(msg);
+            throw new PermissionDeniedException(msg);
         }
     }
 
