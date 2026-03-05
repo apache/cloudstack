@@ -2484,7 +2484,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else if ((poolType == StoragePoolType.NetworkFilesystem
                 || poolType == StoragePoolType.SharedMountPoint
                 || poolType == StoragePoolType.Filesystem
-                || poolType == StoragePoolType.Gluster)
+                || poolType == StoragePoolType.Gluster
+                || poolType == StoragePoolType.CLVM_NG)
                 && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
         } else if (poolType == StoragePoolType.Linstor) {
@@ -3680,13 +3681,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     final String glusterVolume = pool.getSourceDir().replace("/", "");
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
                             null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
-                } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
+                } else if (pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
+                    // CLVM and CLVM_NG use block devices (/dev/vgname/volume)
                     if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
-                    }
-                    else {
+                    } else {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
                     }
+
+                    // CLVM_NG uses QCOW2 format on block devices, override the default RAW format
+                    if (pool.getType() == StoragePoolType.CLVM_NG) {
+                        disk.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
+                    }
+
                     if (pool.getType() == StoragePoolType.Linstor && isQemuDiscardBugFree(diskBusType)) {
                         disk.setDiscard(DiscardType.UNMAP);
                     }
@@ -6566,26 +6573,59 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (isClvmVolume(disk, resource, vmSpec)) {
                 String volumePath = disk.getDiskPath();
                 try {
-                    LOGGER.info("[CLVM Migration] {} for volume [{}]",
-                            state.getLogMessage(), volumePath);
-
-                    Script cmd = new Script("lvchange", Duration.standardSeconds(300), LOGGER);
-                    cmd.add(state.getLvchangeFlag());
-                    cmd.add(volumePath);
-
-                    String result = cmd.execute();
-                    if (result != null) {
-                        LOGGER.error("[CLVM Migration] Failed to set volume [{}] to {} state. Command result: {}",
-                                volumePath, state.getDescription(), result);
-                    } else {
-                        LOGGER.info("[CLVM Migration] Successfully set volume [{}] to {} state.",
-                                volumePath, state.getDescription());
-                    }
+                    modifyClvmVolumeState(volumePath, state.getLvchangeFlag(), state.getDescription(), state.getLogMessage());
                 } catch (Exception e) {
                     LOGGER.error("[CLVM Migration] Exception while setting volume [{}] to {} state: {}",
                             volumePath, state.getDescription(), e.getMessage(), e);
                 }
             }
+        }
+    }
+
+    private static void modifyClvmVolumeState(String volumePath, String lvchangeFlag,
+                                       String stateDescription, String logMessage) {
+        try {
+            LOGGER.info("[CLVM Migration] {} for volume [{}]", logMessage, volumePath);
+
+            Script cmd = new Script("lvchange", Duration.standardSeconds(300), LOGGER);
+            cmd.add(lvchangeFlag);
+            cmd.add(volumePath);
+
+            String result = cmd.execute();
+            if (result != null) {
+                String errorMsg = String.format(
+                        "[CLVM Migration] Failed to set volume [%s] to %s state. Command result: %s",
+                        volumePath, stateDescription, result);
+                LOGGER.error(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
+            } else {
+                LOGGER.info("[CLVM Migration] Successfully set volume [{}] to {} state.",
+                        volumePath, stateDescription);
+            }
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            String errorMsg = String.format(
+                    "[CLVM Migration] Exception while setting volume [%s] to %s state: %s",
+                    volumePath, stateDescription, e.getMessage());
+            LOGGER.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg, e);
+        }
+    }
+
+    public static void activateClvmVolumeExclusive(String volumePath) {
+        modifyClvmVolumeState(volumePath, ClvmVolumeState.EXCLUSIVE.getLvchangeFlag(),
+                ClvmVolumeState.EXCLUSIVE.getDescription(),
+                "Activating CLVM volume in exclusive mode for copy");
+    }
+
+    public static void deactivateClvmVolume(String volumePath) {
+        try {
+            modifyClvmVolumeState(volumePath, ClvmVolumeState.DEACTIVATE.getLvchangeFlag(),
+                    ClvmVolumeState.DEACTIVATE.getDescription(),
+                    "Deactivating CLVM volume after copy");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to deactivate CLVM volume {}: {}", volumePath, e.getMessage());
         }
     }
 
@@ -6613,8 +6653,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                             DataStoreTO dataStore = volumeTO.getDataStore();
                             if (dataStore instanceof PrimaryDataStoreTO) {
                                 PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) dataStore;
-                                boolean isClvm = StoragePoolType.CLVM == primaryStore.getPoolType();
-                                LOGGER.debug("Disk {} identified as CLVM={} via VirtualMachineTO pool type: {}",
+                                boolean isClvm = StoragePoolType.CLVM == primaryStore.getPoolType() ||
+                                                StoragePoolType.CLVM_NG == primaryStore.getPoolType();
+                                LOGGER.debug("Disk {} identified as CLVM/CLVM_NG={} via VirtualMachineTO pool type: {}",
                                             diskPath, isClvm, primaryStore.getPoolType());
                                 return isClvm;
                             }

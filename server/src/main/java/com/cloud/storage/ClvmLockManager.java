@@ -18,6 +18,7 @@
  */
 package com.cloud.storage;
 
+import java.util.Arrays;
 import javax.inject.Inject;
 
 import com.cloud.agent.AgentManager;
@@ -45,6 +46,10 @@ public class ClvmLockManager {
     private HostDao _hostDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
+
+    public static boolean isClvmPoolType(Storage.StoragePoolType poolType) {
+        return Arrays.asList(Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM_NG).contains(poolType);
+    }
 
     public Long getClvmLockHostId(Long volumeId, String volumeUuid) {
         VolumeDetailVO detail = _volsDetailsDao.findDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID);

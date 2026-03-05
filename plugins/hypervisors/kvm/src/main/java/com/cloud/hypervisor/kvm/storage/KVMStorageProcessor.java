@@ -344,15 +344,28 @@ public class KVMStorageProcessor implements StorageProcessor {
                     path = destTempl.getUuid();
                 }
 
-                if (path != null && !storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
-                    logger.warn("Failed to connect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
-                    return new PrimaryStorageDownloadAnswer("Failed to spool template disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
-                }
+                if (primaryPool.getType() == StoragePoolType.CLVM_NG) {
+                    logger.info("Copying template {} to CLVM_NG pool {}",
+                                destTempl.getUuid(), primaryPool.getUuid());
 
-                primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, path != null ? path : destTempl.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
+                    try {
+                        storagePoolMgr.createTemplateOnClvmNg(tmplVol.getPath(), path, cmd.getWaitInMillSeconds(), primaryPool);
+                        primaryVol = primaryPool.getPhysicalDisk("template-" + path);
+                    } catch (Exception e) {
+                        logger.error("Failed to create CLVM_NG template: {}", e.getMessage(), e);
+                        return new PrimaryStorageDownloadAnswer("Failed to create CLVM_NG template: " + e.getMessage());
+                    }
+                } else {
+                    if (path != null && !storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
+                        logger.warn("Failed to connect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
+                        return new PrimaryStorageDownloadAnswer("Failed to spool template disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
+                    }
 
-                if (!storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path)) {
-                    logger.warn("Failed to disconnect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
+                    primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, path != null ? path : destTempl.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
+
+                    if (!storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path)) {
+                        logger.warn("Failed to disconnect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
+                    }
                 }
             } else {
                 primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(), primaryPool, cmd.getWaitInMillSeconds());

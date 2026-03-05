@@ -710,7 +710,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         StoragePool pool = (StoragePool) dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
-        if (pool == null || pool.getPoolType() != StoragePoolType.CLVM) {
+        if (pool == null || pool.getPoolType() != StoragePoolType.CLVM || pool.getPoolType() != StoragePoolType.CLVM_NG) {
             return false;
         }
 

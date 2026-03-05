@@ -288,10 +288,32 @@ public class KVMStoragePoolManager {
         }
 
         if (pool instanceof LibvirtStoragePool) {
-            addPoolDetails(uuid, (LibvirtStoragePool) pool);
+            LibvirtStoragePool libvirtPool = (LibvirtStoragePool) pool;
+            addPoolDetails(uuid, libvirtPool);
+
+            updatePoolTypeIfApplicable(libvirtPool, pool, type, uuid);
         }
 
         return pool;
+    }
+
+    private void updatePoolTypeIfApplicable(LibvirtStoragePool libvirtPool, KVMStoragePool pool,
+                                            StoragePoolType type, String uuid) {
+        StoragePoolType correctType = type;
+        if (correctType == null || correctType == StoragePoolType.CLVM) {
+            StoragePoolInformation info = _storagePools.get(uuid);
+            if (info != null && info.getPoolType() != null) {
+                correctType = info.getPoolType();
+            }
+        }
+
+        if (correctType != null && correctType != pool.getType() &&
+                (correctType == StoragePoolType.CLVM || correctType == StoragePoolType.CLVM_NG) &&
+                (pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG)) {
+            logger.debug("Correcting pool type from {} to {} for pool {} based on caller/cached information",
+                    pool.getType(), correctType, uuid);
+            libvirtPool.setType(correctType);
+        }
     }
 
     /**
@@ -450,6 +472,10 @@ public class KVMStoragePoolManager {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.RAW, provisioningType,
                     size, destPool, timeout, passphrase);
+        } else if (destPool.getType() == StoragePoolType.CLVM_NG) {
+            return adaptor.createDiskFromTemplate(template, name,
+                    PhysicalDiskFormat.QCOW2, provisioningType,
+                    size, destPool, timeout, passphrase);
         } else if (template.getFormat() == PhysicalDiskFormat.DIR) {
             return adaptor.createDiskFromTemplate(template, name,
                     PhysicalDiskFormat.DIR, provisioningType,
@@ -489,6 +515,11 @@ public class KVMStoragePoolManager {
     public KVMPhysicalDisk createPhysicalDiskFromDirectDownloadTemplate(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
         return adaptor.createTemplateFromDirectDownloadFile(templateFilePath, destTemplatePath, destPool, format, timeout);
+    }
+
+    public void createTemplateOnClvmNg(String templatePath, String templateUuid, int timeout, KVMStoragePool pool) {
+        LibvirtStorageAdaptor adaptor = (LibvirtStorageAdaptor) getStorageAdaptor(pool.getType());
+        adaptor.createTemplateOnClvmNg(templatePath, templateUuid, timeout, pool);
     }
 
     public Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {

@@ -3382,7 +3382,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         for (VolumeVO volume : volumes) {
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-            if (pool != null && pool.getPoolType() == Storage.StoragePoolType.CLVM) {
+            if (pool != null && ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
                 clvmLockManager.setClvmLockHostId(volume.getId(), destHostId);
             }
         }
