@@ -77,6 +77,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.kms.KMSManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
@@ -315,6 +316,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private NetworkPermissionDao networkPermissionDao;
     @Inject
     private SslCertDao sslCertDao;
+    @Inject
+    private KMSManager kmsManager;
 
     private List<QuerySelector> _querySelectors;
 
@@ -1203,6 +1206,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             // Delete Webhooks
             deleteWebhooksForAccount(accountId);
+
+            // Delete KMS keys
+            try {
+                if (!kmsManager.deleteKMSKeysByAccountId(accountId)) {
+                    logger.warn("Failed to delete all KMS keys for account {}", account);
+                    accountCleanupNeeded = true;
+                }
+            } catch (Exception e) {
+                logger.error("Error deleting KMS keys for account {}: {}", account, e.getMessage(), e);
+                accountCleanupNeeded = true;
+            }
 
             return true;
         } catch (Exception ex) {

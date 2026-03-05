@@ -40,12 +40,14 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -126,11 +128,19 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
             since = "4.4")
     private Long rootdisksize;
 
+    @ACL
+    @Parameter(name = ApiConstants.ROOT_DISK_KMS_KEY_ID,
+            type = CommandType.UUID,
+            entityType = KMSKeyResponse.class,
+            description = "ID of the KMS Key to use for root disk encryption",
+            since = "4.23.0")
+    private Long rootDiskKmsKeyId;
+
     @Parameter(name = ApiConstants.DATADISKS_DETAILS,
             type = CommandType.MAP,
             since = "4.21.0",
             description = "Disk offering details for creating multiple data volumes. Mutually exclusive with diskOfferingId." +
-                    " Example: datadisksdetails[0].diskofferingid=a2a73a84-19db-4852-8930-dfddef053341&datadisksdetails[0].size=10&datadisksdetails[0].miniops=100&datadisksdetails[0].maxiops=200")
+                    " Example: datadisksdetails[0].diskofferingid=a2a73a84-19db-4852-8930-dfddef053341&datadisksdetails[0].size=10&datadisksdetails[0].miniops=100&datadisksdetails[0].maxiops=200&datadisksdetails[0].kmskeyid=<uuid>")
     private Map dataDisksDetails;
 
     @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "an optional group for the virtual machine")
@@ -298,6 +308,10 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     public Long getDiskOfferingId() {
         return diskOfferingId;
+    }
+
+    public Long getRootDiskKmsKeyId() {
+        return rootDiskKmsKeyId;
     }
 
     public String getDeploymentPlanner() {
@@ -581,7 +595,19 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
                 minIops = Long.parseLong(dataDisk.get(ApiConstants.MIN_IOPS));
                 maxIops = Long.parseLong(dataDisk.get(ApiConstants.MAX_IOPS));
             }
-            VmDiskInfo vmDiskInfo = new VmDiskInfo(diskOffering, size, minIops, maxIops, deviceId);
+
+            // Extract KMS key ID if provided
+            Long kmsKeyId = null;
+            String kmsKeyUuid = dataDisk.get(ApiConstants.KMS_KEY_ID);
+            if (kmsKeyUuid != null) {
+                KMSKey kmsKey = _entityMgr.findByUuid(org.apache.cloudstack.kms.KMSKey.class, kmsKeyUuid);
+                if (kmsKey == null) {
+                    throw new InvalidParameterValueException("Unable to find KMS key " + kmsKeyUuid);
+                }
+                kmsKeyId = kmsKey.getId();
+            }
+
+            VmDiskInfo vmDiskInfo = new VmDiskInfo(diskOffering, size, minIops, maxIops, deviceId, kmsKeyId);
             vmDiskInfoList.add(vmDiskInfo);
         }
         this.dataDiskInfoList = vmDiskInfoList;

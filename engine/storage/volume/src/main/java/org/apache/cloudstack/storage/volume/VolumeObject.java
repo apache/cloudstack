@@ -29,6 +29,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.secret.PassphraseVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -46,6 +47,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.kms.KMSManager;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
@@ -97,6 +100,10 @@ public class VolumeObject implements VolumeInfo {
     VolumeDao volumeDao;
     @Inject
     VolumeDataStoreDao volumeStoreDao;
+    @Inject
+    KMSManager kmsManager;
+    @Inject
+    KMSWrappedKeyDao kmsWrappedKeyDao;
     @Inject
     ObjectInDataStoreManager objectInStoreMgr;
     @Inject
@@ -900,6 +907,26 @@ public class VolumeObject implements VolumeInfo {
         volumeVO.setPassphraseId(id);
     }
 
+    @Override
+    public Long getKmsKeyId() {
+        return volumeVO.getKmsKeyId();
+    }
+
+    @Override
+    public void setKmsKeyId(Long id) {
+        volumeVO.setKmsKeyId(id);
+    }
+
+    @Override
+    public Long getKmsWrappedKeyId() {
+        return volumeVO.getKmsWrappedKeyId();
+    }
+
+    @Override
+    public void setKmsWrappedKeyId(Long id) {
+        volumeVO.setKmsWrappedKeyId(id);
+    }
+
     /**
      * Removes passphrase reference from underlying volume. Also removes the associated passphrase entry if it is the last user.
      */
@@ -929,9 +956,29 @@ public class VolumeObject implements VolumeInfo {
 
     /**
      * Looks up passphrase from underlying volume.
-     * @return passphrase as bytes
+     * Supports both legacy passphrase-based encryption and KMS-based encryption.
+     * @return passphrase/DEK as base64-encoded bytes (UTF-8 bytes of base64 string)
      */
     public byte[] getPassphrase() {
+        // First check for KMS-encrypted volume
+        if (volumeVO.getKmsWrappedKeyId() != null) {
+            try {
+                // Unwrap the DEK from KMS (returns raw binary bytes)
+                byte[] dekBytes = kmsManager.unwrapKey(volumeVO.getKmsWrappedKeyId());
+                // Base64-encode the DEK for consistency with legacy passphrases
+                // and for use with qemu-img which expects base64 format
+                String base64Dek = java.util.Base64.getEncoder().encodeToString(dekBytes);
+                // Zeroize the raw DEK bytes
+                java.util.Arrays.fill(dekBytes, (byte) 0);
+                // Return UTF-8 bytes of the base64 string
+                return base64Dek.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            } catch (KMSException e) {
+                logger.error("Failed to unwrap KMS key for volume {}: {}", volumeVO, e.getMessage(), e);
+                return new byte[0];
+            }
+        }
+
+        // Fallback to legacy passphrase-based encryption
         PassphraseVO passphrase = passphraseDao.findById(volumeVO.getPassphraseId());
         if (passphrase != null) {
             return passphrase.getPassphrase();

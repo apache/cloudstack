@@ -189,7 +189,7 @@
           <div>{{ dataResource[item].rbd_default_data_pool }}</div>
         </div>
       </a-list-item>
-      <a-list-item v-else-if="item === 'details' && ['extension', 'customaction'].includes($route.meta.name) && dataResource[item] && Object.keys(dataResource[item]).length > 0">
+      <a-list-item v-else-if="item === 'details' && ['extension', 'customaction', 'hsmprofile'].includes($route.meta.name) && dataResource[item] && Object.keys(dataResource[item]).length > 0">
         <div>
           <strong>{{ $t('label.configuration.details') }}</strong>
           <br/>

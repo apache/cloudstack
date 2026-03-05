@@ -2636,6 +2636,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long clusterId = cmd.getClusterId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Long diskOfferingId = cmd.getDiskOfferingId();
+        Long kmsKeyId = cmd.getKmsKeyId();
         Boolean display = cmd.getDisplay();
         String state = cmd.getState();
         boolean shouldListSystemVms = shouldListSystemVms(cmd, caller.getId());
@@ -2672,6 +2673,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         volumeSearchBuilder.and("uuid", volumeSearchBuilder.entity().getUuid(), SearchCriteria.Op.NNULL);
         volumeSearchBuilder.and("instanceId", volumeSearchBuilder.entity().getInstanceId(), SearchCriteria.Op.EQ);
         volumeSearchBuilder.and("dataCenterId", volumeSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        volumeSearchBuilder.and("kmsKeyId", volumeSearchBuilder.entity().getKmsKeyId(), SearchCriteria.Op.EQ);
         if (cmd.isEncrypted() != null) {
             if (cmd.isEncrypted()) {
                 volumeSearchBuilder.and("encryptFormat", volumeSearchBuilder.entity().getEncryptFormat(), SearchCriteria.Op.NNULL);
@@ -2795,6 +2797,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (vmInstanceId != null) {
             sc.setParameters("instanceId", vmInstanceId);
+        }
+        if (kmsKeyId != null) {
+            sc.setParameters("kmsKeyId", kmsKeyId);
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);

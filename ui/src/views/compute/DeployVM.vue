@@ -341,15 +341,19 @@
                               @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                             ></disk-offering-selection>
                             <disk-size-selection
-                              v-if="overrideDiskOffering && (overrideDiskOffering.iscustomized || overrideDiskOffering.iscustomizediops)"
+                              v-if="overrideDiskOffering && (overrideDiskOffering.iscustomized || overrideDiskOffering.iscustomizediops || overrideDiskOffering.encrypt || (serviceOffering && serviceOffering.encryptroot))"
                               input-decorator="rootdisksize"
                               :preFillContent="dataPreFill"
                               :minDiskSize="dataPreFill.minrootdisksize"
                               :rootDiskSelected="overrideDiskOffering"
                               :isCustomized="overrideDiskOffering.iscustomized"
+                              :kmsKeys="options.kmsKeys"
+                              :loadingKmsKeys="loading.kmsKeys"
+                              :computeOfferingEncryptRoot="serviceOffering && serviceOffering.encryptroot"
                               @handler-error="handlerError"
                               @update-disk-size="updateFieldValue"
-                              @update-root-disk-iops-value="updateIOPSValue"/>
+                              @update-root-disk-iops-value="updateIOPSValue"
+                              @update-root-kms-key="updateRootKmsKey"/>
                             <a-form-item class="form-item-hidden">
                               <a-input v-model:value="form.rootdisksize"/>
                             </a-form-item>
@@ -394,14 +398,17 @@
                       @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
                     ></disk-offering-selection>
                     <disk-size-selection
-                      v-if="diskOffering && (diskOffering.iscustomized || diskOffering.iscustomizediops)"
+                      v-if="diskOffering && (diskOffering.iscustomized || diskOffering.iscustomizediops || diskOffering.encrypt)"
                       input-decorator="size"
                       :preFillContent="dataPreFill"
                       :diskSelected="diskSelected"
                       :isCustomized="diskOffering.iscustomized"
+                      :kmsKeys="options.kmsKeys"
+                      :loadingKmsKeys="loading.kmsKeys"
                       @handler-error="handlerError"
                       @update-disk-size="updateFieldValue"
-                      @update-iops-value="updateIOPSValue"/>
+                      @update-iops-value="updateIOPSValue"
+                      @update-data-kms-key="updateDataKmsKey"/>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.size"/>
                     </a-form-item>
@@ -1050,7 +1057,8 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: []
+        ioPolicyTypes: [],
+        kmsKeys: []
       },
       rowCount: {},
       loading: {
@@ -1071,7 +1079,8 @@ export default {
         pods: false,
         clusters: false,
         hosts: false,
-        groups: false
+        groups: false,
+        kmsKeys: false
       },
       owner: {
         projectid: store.getters.project?.id,
@@ -1726,6 +1735,22 @@ export default {
   serviceOffering (oldValue, newValue) {
     if (oldValue && newValue && oldValue.id !== newValue.id) {
       this.dynamicscalingenabled = this.isDynamicallyScalable()
+      // Fetch KMS keys if encryption is enabled
+      if (newValue && newValue.encryptroot && this.zoneId) {
+        this.fetchKmsKeys()
+      }
+    }
+  },
+  diskOffering (newValue) {
+    // Fetch KMS keys if encryption is enabled
+    if (newValue && newValue.encrypt && this.zoneId) {
+      this.fetchKmsKeys()
+    }
+  },
+  overrideDiskOffering (newValue) {
+    // Fetch KMS keys if encryption is enabled
+    if (newValue && newValue.encrypt && this.zoneId) {
+      this.fetchKmsKeys()
     }
   },
   template (oldValue, newValue) {
@@ -1993,6 +2018,31 @@ export default {
       const param = this.params.networks
       this.fetchOptions(param, 'networks')
     },
+    fetchKmsKeys () {
+      if (!this.zoneId) {
+        return
+      }
+      this.loading.kmsKeys = true
+      this.options.kmsKeys = []
+      getAPI('listKMSKeys', {
+        zoneid: this.zoneId,
+        account: this.owner.account,
+        domainid: this.owner.domainid,
+        projectid: this.owner.projectid,
+        purpose: 'volume'
+      }).then(response => {
+        const kmskeyMap = response.listkmskeysresponse.kmskey || []
+        if (kmskeyMap.length > 0) {
+          this.options.kmsKeys = kmskeyMap
+        } else {
+          this.options.kmsKeys = null
+        }
+      }).catch(() => {
+        this.options.kmsKeys = null
+      }).finally(() => {
+        this.loading.kmsKeys = false
+      })
+    },
     resetData () {
       this.vm = {
         name: null,
@@ -2016,6 +2066,12 @@ export default {
       this.zoneSelected = false
       this.formRef.value.resetFields()
       this.fetchData()
+    },
+    updateRootKmsKey (value) {
+      this.form.rootkmskeyid = value
+    },
+    updateDataKmsKey (value) {
+      this.form.datakmskeyid = value
     },
     updateFieldValue (name, value) {
       if (name === 'templateid') {
@@ -2380,6 +2436,10 @@ export default {
             deployVmData['details[0].memory'] = values.memory
           }
         }
+        // Add root disk KMS key if selected (optional - falls back to legacy passphrase if not provided)
+        if (values.rootkmskeyid) {
+          deployVmData.rootdiskkmskeyid = values.rootkmskeyid
+        }
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
@@ -2406,12 +2466,29 @@ export default {
             })
           }
         } else {
-          deployVmData.diskofferingid = values.diskofferingid
-          if (values.size) {
-            deployVmData.size = values.size
+          // When a KMS key is selected for data disk, we must use datadisksdetails format
+          if (values.datakmskeyid) {
+            deployVmData['datadisksdetails[0].diskofferingid'] = values.diskofferingid
+            deployVmData['datadisksdetails[0].deviceid'] = 1 // Device ID 1 for first data disk (0=root, 3=CD-ROM reserved)
+            if (values.size) {
+              deployVmData['datadisksdetails[0].size'] = values.size
+            }
+            deployVmData['datadisksdetails[0].kmskeyid'] = values.datakmskeyid
+            // Add IOPS if customized
+            if (this.isCustomizedDiskIOPS) {
+              deployVmData['datadisksdetails[0].miniops'] = this.diskIOpsMin
+              deployVmData['datadisksdetails[0].maxiops'] = this.diskIOpsMax
+            }
+          } else {
+            // Legacy format when no KMS key
+            deployVmData.diskofferingid = values.diskofferingid
+            if (values.size) {
+              deployVmData.size = values.size
+            }
           }
         }
-        if (this.isCustomizedDiskIOPS) {
+        // IOPS for non-KMS data disks (KMS data disks IOPS handled above in datadisksdetails)
+        if (this.isCustomizedDiskIOPS && !values.datakmskeyid) {
           deployVmData['details[0].minIopsDo'] = this.diskIOpsMin
           deployVmData['details[0].maxIopsDo'] = this.diskIOpsMax
         }
@@ -3087,6 +3164,7 @@ export default {
       this.selectedBackupOffering = null
       this.fetchZoneOptions()
       this.updateZoneAllowsBackupOperations()
+      this.fetchKmsKeys()
     },
     onSelectPodId (value) {
       this.podId = value
