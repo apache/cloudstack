@@ -68,6 +68,9 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     protected SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq;
     private SearchBuilder<SnapshotDataStoreVO> stateSearch;
     private SearchBuilder<SnapshotDataStoreVO> idStateNeqSearch;
+
+    private SearchBuilder<SnapshotDataStoreVO> idStateNinSearch;
+    private SearchBuilder<SnapshotDataStoreVO> idEqRoleEqStateInSearch;
     protected SearchBuilder<SnapshotVO> snapshotVOSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotCreatedSearch;
     private SearchBuilder<SnapshotDataStoreVO> dataStoreAndInstallPathSearch;
@@ -150,6 +153,16 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         idStateNeqSearch.and(SNAPSHOT_ID, idStateNeqSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         idStateNeqSearch.and(STATE, idStateNeqSearch.entity().getState(), SearchCriteria.Op.NEQ);
         idStateNeqSearch.done();
+
+        idStateNinSearch = createSearchBuilder();
+        idStateNinSearch.and(SNAPSHOT_ID, idStateNinSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        idStateNinSearch.and(STATE, idStateNinSearch.entity().getState(), SearchCriteria.Op.NOTIN);
+        idStateNinSearch.done();
+
+        idEqRoleEqStateInSearch = createSearchBuilder();
+        idEqRoleEqStateInSearch.and(SNAPSHOT_ID, idEqRoleEqStateInSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        idEqRoleEqStateInSearch.and(STORE_ROLE, idEqRoleEqStateInSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        idEqRoleEqStateInSearch.and(STATE, idEqRoleEqStateInSearch.entity().getState(), SearchCriteria.Op.IN);
 
         snapshotVOSearch = snapshotDao.createSearchBuilder();
         snapshotVOSearch.and(VOLUME_ID, snapshotVOSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
@@ -388,6 +401,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
+    public List<SnapshotDataStoreVO> findBySnapshotIdAndDataStoreRoleAndStateIn(long snapshotId, DataStoreRole role, State... state) {
+        SearchCriteria<SnapshotDataStoreVO> sc = idEqRoleEqStateInSearch.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(STORE_ROLE, role);
+        sc.setParameters(STATE, (Object[])state);
+        return listBy(sc);
+    }
+
+    @Override
     public SnapshotDataStoreVO findOneBySnapshotId(long snapshotId, long zoneId) {
         try (TransactionLegacy transactionLegacy = TransactionLegacy.currentTxn()) {
             try (PreparedStatement preparedStatement = transactionLegacy.prepareStatement(FIND_SNAPSHOT_IN_ZONE)) {
@@ -488,7 +510,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
     @Override
     public List<SnapshotDataStoreVO> findBySnapshotIdAndNotInDestroyedHiddenState(long snapshotId) {
-        SearchCriteria<SnapshotDataStoreVO> sc = idStateNeqSearch.create();
+        SearchCriteria<SnapshotDataStoreVO> sc = idStateNinSearch.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STATE, State.Destroyed.name(), State.Hidden.name());
         return listBy(sc);
