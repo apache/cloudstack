@@ -153,8 +153,8 @@
       <a-tab-pane key="oauth" :disabled="!socialLogin">
         <template #tab>
           <span style="display: inline-flex; align-items: center; gap: 4px;">
-            <img src="/assets/github.svg" style="width: 16px; height: 16px; display: block;" />
-            <img src="/assets/google.svg" style="width: 16px; height: 16px; display: block;" />
+            <img src="/assets/github.svg" alt="GitHub" style="width: 16px; height: 16px; display: block;" />
+            <img src="/assets/google.svg" alt="Google" style="width: 16px; height: 16px; display: block;" />
             <span>External</span>
           </span>
         </template>
@@ -181,8 +181,8 @@
               :href="getGitHubUrl(from)"
               class="auth-btn github-auth"
               style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
-              <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
-              <a-typography-text>Sign in with Github</a-typography-text>
+              <img src="/assets/github.svg" alt="GitHub" style="width: 32px; padding: 5px" />
+              <a-typography-text>Sign in with GitHub</a-typography-text>
             </a-button>
           </div>
           <div class="social-auth" v-if="oauthGoogleProvider">
@@ -193,7 +193,7 @@
               :href="getGoogleUrl(from)"
               class="auth-btn google-auth"
               style="height: 38px; width: 185px; padding: 0" >
-              <img src="/assets/google.svg" style="width: 32px; padding: 5px" />
+              <img src="/assets/google.svg" alt="Google" style="width: 32px; padding: 5px" />
               <a-typography-text>Sign in with Google</a-typography-text>
             </a-button>
           </div>
@@ -361,8 +361,6 @@ export default {
       const params = {}
       if (domain) {
         params.domain = domain
-      }
-      if (domain) {
         this.oauthLoading = true
       }
       getAPI('listOauthProvider', params).then(response => {
