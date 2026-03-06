@@ -16,10 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -44,9 +43,10 @@ import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.apache.cloudstack.query.QueryService;
 
 import com.cloud.user.Account;
+import org.apache.commons.collections.CollectionUtils;
 
 /**
- * a short flow, use plantuml to view (see http://plantuml.com)
+ * a short flow, use plantuml to view (see <a href="http://plantuml.com">the plantuml site</a>)
  * @startuml
  * start
  * :list ldap users request;
@@ -84,14 +84,12 @@ public class LdapListUsersCmd extends BaseListCmd {
 
     @Parameter(name = "listtype",
             type = CommandType.STRING,
-            required = false,
             description = "Determines whether all ldap users are returned or just non-cloudstack users. This option is deprecated in favour for the more option rich 'userfilter' parameter")
     @Deprecated
     private String listType;
 
     @Parameter(name = ApiConstants.USER_FILTER,
             type = CommandType.STRING,
-            required = false,
             since = "4.13",
             description = "Determines what type of filter is applied on the list of users returned from LDAP.\n"
                     + "\tvalid values are\n"
@@ -102,7 +100,7 @@ public class LdapListUsersCmd extends BaseListCmd {
                     + " including those that are already in cloudstack, the later will be annotated with their userSource")
     private String userFilter;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Linked Domain")
     private Long domainId;
 
     public LdapListUsersCmd() {
@@ -121,7 +119,7 @@ public class LdapListUsersCmd extends BaseListCmd {
      * @return a (filtered?) list of user response objects
      */
     private List<LdapUserResponse> createLdapUserResponse(final List<LdapUser> users) {
-        final List<LdapUserResponse> ldapResponses = new ArrayList<LdapUserResponse>();
+        final List<LdapUserResponse> ldapResponses = new ArrayList<>();
         for (final LdapUser user : users) {
             final LdapUserResponse ldapResponse = _ldapManager.createLdapUserResponse(user);
             ldapResponse.setObjectName("LdapUser");
@@ -135,8 +133,8 @@ public class LdapListUsersCmd extends BaseListCmd {
     @Override
     public void execute() throws ServerApiException {
         cloudstackUsers = null;
-        List<LdapUserResponse> ldapResponses = new ArrayList<LdapUserResponse>();
-        final ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();
+        List<LdapUserResponse> ldapResponses = new ArrayList<>();
+        final ListResponse<LdapUserResponse> response = new ListResponse<>();
         try {
             final List<LdapUser> users = _ldapManager.getUsers(domainId);
             ldapResponses = createLdapUserResponse(users);
@@ -177,16 +175,13 @@ public class LdapListUsersCmd extends BaseListCmd {
                 users.append(user.getUsername());
             }
 
-            logger.trace(String.format("checking against %d cloudstackusers: %s.", this.cloudstackUsers.size(), users.toString()));
+            logger.trace("checking against {} cloudstackusers: {}.", this.cloudstackUsers.size(), users);
         }
     }
 
     private List<LdapUserResponse> applyUserFilter(List<LdapUserResponse> ldapResponses) {
-        if(logger.isTraceEnabled()) {
-            logger.trace(String.format("applying filter: %s or %s.", this.getListTypeString(), this.getUserFilter()));
-        }
-        List<LdapUserResponse> responseList = getUserFilter().filter(this,ldapResponses);
-        return responseList;
+        logger.trace("applying filter: {} or {}.", this.getListTypeString(), this.getUserFilter());
+        return getUserFilter().filter(this,ldapResponses);
     }
 
     @Override
@@ -211,48 +206,34 @@ public class LdapListUsersCmd extends BaseListCmd {
         return UserFilter.fromString(getUserFilterString());
     }
 
-    boolean isACloudstackUser(final LdapUser ldapUser) {
+    boolean isACloudStackUser(final LdapUser ldapUser) {
+        String username = ldapUser.getUsername();
+        return isACloudStackUser(username);
+    }
+
+    boolean isACloudStackUser(final LdapUserResponse ldapUser) {
+        logger.trace("checking response : {}", ldapUser.toString());
+        String username = ldapUser.getUsername();
+        return isACloudStackUser(username);
+    }
+
+    private boolean isACloudStackUser(String username) {
         boolean rc = false;
         final List<UserResponse> cloudstackUsers = getCloudstackUsers();
-        if (cloudstackUsers != null) {
+        if (CollectionUtils.isNotEmpty(cloudstackUsers)) {
             for (final UserResponse cloudstackUser : cloudstackUsers) {
-                if (ldapUser.getUsername().equals(cloudstackUser.getUsername())) {
-                    if(logger.isTraceEnabled()) {
-                        logger.trace(String.format("found user %s in cloudstack", ldapUser.getUsername()));
-                    }
-
+                if (username.equals(cloudstackUser.getUsername())) {
+                    logger.trace("Found user {} in CloudStack", cloudstackUser.getUsername());
                     rc = true;
+                    break;
                 } else {
-                    if(logger.isTraceEnabled()) {
-                        logger.trace(String.format("ldap user %s does not match cloudstack user %s", ldapUser.getUsername(), cloudstackUser.getUsername()));
-                    }
+                    logger.trace("ldap user {} does not match cloudstack user {}", username, cloudstackUser.getUsername());
                 }
             }
         }
         return rc;
     }
 
-    boolean isACloudstackUser(final LdapUserResponse ldapUser) {
-        if(logger.isTraceEnabled()) {
-            logger.trace("checking response : " + ldapUser.toString());
-        }
-        final List<UserResponse> cloudstackUsers = getCloudstackUsers();
-        if (cloudstackUsers != null && cloudstackUsers.size() != 0) {
-            for (final UserResponse cloudstackUser : cloudstackUsers) {
-                if (ldapUser.getUsername().equals(cloudstackUser.getUsername())) {
-                    if(logger.isTraceEnabled()) {
-                        logger.trace(String.format("found user %s in cloudstack user %s", ldapUser.getUsername(), cloudstackUser.getUsername()));
-                    }
-                    return true;
-                } else {
-                    if(logger.isTraceEnabled()) {
-                        logger.trace(String.format("ldap user %s does not match cloudstack user %s", ldapUser.getUsername(), cloudstackUser.getUsername()));
-                    }
-                }
-            }
-        }
-        return false;
-    }
     /**
      * typecheck for userfilter values and filter type dependend functionalities.
      * This could have been in two switch statements elsewhere in the code.
@@ -363,7 +344,7 @@ public class LdapListUsersCmd extends BaseListCmd {
         if(logger.isTraceEnabled()) {
             logger.trace("filtering existing users");
         }
-        final List<LdapUserResponse> ldapResponses = new ArrayList<LdapUserResponse>();
+        final List<LdapUserResponse> ldapResponses = new ArrayList<>();
         for (final LdapUserResponse user : input) {
             if (isNotAlreadyImportedInTheCurrentDomain(user)) {
                 ldapResponses.add(user);
@@ -396,7 +377,7 @@ public class LdapListUsersCmd extends BaseListCmd {
         if(logger.isTraceEnabled()) {
             logger.trace("filtering local domain users");
         }
-        final List<LdapUserResponse> ldapResponses = new ArrayList<LdapUserResponse>();
+        final List<LdapUserResponse> ldapResponses = new ArrayList<>();
         String domainId = getCurrentDomainId();
         for (final LdapUserResponse user : input) {
             UserResponse cloudstackUser = getCloudstackUser(user);
@@ -412,7 +393,7 @@ public class LdapListUsersCmd extends BaseListCmd {
     }
 
     private String getCurrentDomainId() {
-        String domainId = null;
+        String domainId;
         if (this.domainId != null) {
             Domain domain = _domainService.getDomain(this.domainId);
             domainId = domain.getUuid();
@@ -433,10 +414,10 @@ public class LdapListUsersCmd extends BaseListCmd {
             logger.trace("should be filtering potential imports!!!");
         }
         // functional possibility do not add only users not yet in cloudstack but include users that would be moved if they are so in ldap?
-        // this means if they are part of a account linked to an ldap group/ou
+        // This means if they are part of an Account linked to an LDAP Group/OU
         input.removeIf(ldapUser ->
                 (
-                        (isACloudstackUser(ldapUser))
+                        (isACloudStackUser(ldapUser))
                         && (getCloudstackUser(ldapUser).getUserSource().equalsIgnoreCase(User.Source.LDAP.toString()))
                 )
         );
@@ -466,7 +447,7 @@ public class LdapListUsersCmd extends BaseListCmd {
             for (final UserResponse cloudstackUser : cloudstackUsers) {
                 if (user.getUsername().equals(cloudstackUser.getUsername())) {
                     returnObject = cloudstackUser;
-                    if (returnObject.getDomainId() == this.getCurrentDomainId()) {
+                    if (Objects.equals(returnObject.getDomainId(), this.getCurrentDomainId())) {
                         break;
                     }
                 }
@@ -474,31 +455,4 @@ public class LdapListUsersCmd extends BaseListCmd {
         }
         return returnObject;
     }
-
-    private void checkFilterMethodType(Type returnType) {
-        String msg = null;
-        if (returnType instanceof ParameterizedType) {
-            ParameterizedType type = (ParameterizedType) returnType;
-            if(type.getRawType().equals(List.class)) {
-                Type[] typeArguments = type.getActualTypeArguments();
-                if (typeArguments.length == 1) {
-                    if (typeArguments[0].equals(LdapUserResponse.class)) {
-                        // we're good'
-                    } else {
-                        msg = new String("list of return type contains " + typeArguments[0].getTypeName());
-                    }
-                } else {
-                    msg = String.format("type %s has to the wrong number of arguments", type.getRawType());
-                }
-            } else {
-                msg = String.format("type %s is not a List<>", type.getTypeName());
-            }
-        } else {
-            msg = new String("can't even begin to explain; review your method signature");
-        }
-        if(msg != null) {
-            throw new IllegalArgumentException(msg);
-        }
-    }
-
 }

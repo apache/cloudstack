@@ -37,7 +37,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.RemoteAccessVpn;
 
-@APICommand(name = "createRemoteAccessVpn", description = "Creates a l2tp/ipsec remote access vpn", responseObject = RemoteAccessVpnResponse.class, entityType = {RemoteAccessVpn.class},
+@APICommand(name = "createRemoteAccessVpn", description = "Creates a l2tp/ipsec remote access VPN", responseObject = RemoteAccessVpnResponse.class, entityType = {RemoteAccessVpn.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
@@ -49,32 +49,32 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = IPAddressResponse.class,
                required = true,
-               description = "public ip address id of the vpn server")
+               description = "Public IP address id of the VPN server")
     private Long publicIpId;
 
     @Parameter(name = "iprange",
                type = CommandType.STRING,
                required = false,
-               description = "the range of ip addresses to allocate to vpn clients. The first ip in the range will be taken by the vpn server")
+               description = "The range of IP addresses to allocate to VPN clients. The first IP in the range will be taken by the VPN server")
     private String ipRange;
 
     @Deprecated
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the VPN. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account for the VPN. Must be used with domainId.")
     private String accountName;
 
     @Deprecated
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "an optional domainId for the VPN. If the account parameter is used, domainId must also be used.")
+               description = "An optional domainId for the VPN. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL,
                type = CommandType.BOOLEAN,
-               description = "if true, firewall rule for source/end public port is automatically created; if false - firewall rule has to be created explicitly. Has value true by default")
+               description = "If true, firewall rule for source/end public port is automatically created; if false - firewall rule has to be created explicitly. Has value true by default")
     private Boolean openFirewall;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "An optional field, whether to the display the VPN to the end User or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -127,7 +127,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Create Remote Access VPN for account " + getEntityOwnerId() + " using public ip id=" + publicIpId;
+        return "Create Remote Access VPN for Account " + getEntityOwnerId() + " using public ip id=" + publicIpId;
     }
 
     @Override
@@ -143,10 +143,10 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
                 setEntityId(vpn.getId());
                 setEntityUuid(vpn.getUuid());
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access vpn");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access VPN");
             }
         } catch (NetworkRuleConflictException e) {
-            logger.info("Network rule conflict: " + e.getMessage());
+            logger.info("Network rule conflict: {}", e.getMessage());
             logger.trace("Network Rule Conflict: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
@@ -161,7 +161,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access vpn");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access VPN");
             }
         } catch (ResourceUnavailableException ex) {
             logger.warn("Exception: ", ex);

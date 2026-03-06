@@ -26,7 +26,8 @@ import org.apache.cloudstack.quota.QuotaService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "quotaIsEnabled", responseObject = QuotaEnabledResponse.class, description = "Return true if the plugin is enabled", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaIsEnabled", responseObject = QuotaEnabledResponse.class, description = "Return true if the plugin is enabled", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        httpMethod = "GET")
 public class QuotaEnabledCmd extends BaseCmd {
 
 

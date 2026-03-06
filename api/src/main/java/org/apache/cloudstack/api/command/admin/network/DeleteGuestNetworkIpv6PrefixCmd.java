@@ -63,7 +63,7 @@ public class DeleteGuestNetworkIpv6PrefixCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting guest IPv6 prefix " + getId();
+        return "Deleting guest IPv6 prefix with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

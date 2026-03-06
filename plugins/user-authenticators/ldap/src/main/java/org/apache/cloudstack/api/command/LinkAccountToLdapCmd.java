@@ -43,30 +43,30 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
-@APICommand(name = "linkAccountToLdap", description = "link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
+@APICommand(name = "linkAccountToLdap", description = "Link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin,RoleType.DomainAdmin})
 public class LinkAccountToLdapCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "The id of the domain that is to contain the linked account.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = false, description = "type of the ldap name. GROUP or OU, defaults to GROUP")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "Type of the LDAP name. GROUP or OU, defaults to GROUP")
     private String type;
 
-    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = true, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = true, description = "Name of the group or OU in LDAP")
     private String ldapDomain;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "name of the account, it will be created if it does not exist")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "Name of the account, it will be created if it does not exist")
     private String accountName;
 
-    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
+    @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, description = "Domain admin username in LDAP ")
     private String admin;
 
-    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, required = false, description = "Type of the account to auto import. Specify 0 for user and 2 for "
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, description = "Type of the account to auto import. Specify 0 for user and 2 for "
             + "domain admin")
     private Integer accountType;
 
-    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, required = false, description = "Creates the account under the specified role.", since="4.19.1")
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "Creates the account under the specified role.", since="4.19.1")
     private Long roleId;
 
     @Inject
@@ -81,7 +81,7 @@ public class LinkAccountToLdapCmd extends BaseCmd {
                 try {
                     ldapUser = _ldapManager.getUser(admin, type, ldapDomain, domainId);
                 } catch (NoLdapUserMatchingQueryException e) {
-                    logger.debug("no ldap user matching username " + admin + " in the given group/ou", e);
+                    logger.debug("no ldap user matching username {} in the given group/ou", admin, e);
                 }
                 if (ldapUser != null && !ldapUser.isDisabled()) {
                     Account account = _accountService.getActiveAccountByName(admin, domainId);
@@ -99,7 +99,7 @@ public class LinkAccountToLdapCmd extends BaseCmd {
                         logger.debug("an account with name {} already exists in the domain {} with id {}", admin, _domainService.getDomain(domainId), domainId);
                     }
                 } else {
-                    logger.debug("ldap user with username " + admin + " is disabled in the given group/ou");
+                    logger.debug("ldap user with username {} is disabled in the given group/ou", admin);
                 }
             }
             response.setObjectName(this.getActualCommandName());
@@ -139,7 +139,7 @@ public class LinkAccountToLdapCmd extends BaseCmd {
         if (accountType == null) {
             return RoleType.getAccountTypeByRole(roleService.findRole(roleId), null);
         }
-        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), Account.Type.getFromValue(accountType.intValue()));
+        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), Account.Type.getFromValue(accountType));
     }
 
     public Long getRoleId() {

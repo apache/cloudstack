@@ -69,9 +69,11 @@ import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VnfTemplateDetailVO;
 import com.cloud.storage.VnfTemplateNicVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VnfTemplateDetailsDao;
 import com.cloud.storage.dao.VnfTemplateNicDao;
 import com.cloud.user.Account;
@@ -124,6 +126,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private ServiceOfferingDao serviceOfferingDao;
     @Inject
     private VgpuProfileDao vgpuProfileDao;
+    @Inject
+    VMTemplateDao vmTemplateDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -464,6 +468,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDetails(resourceDetails);
             if (caller.getType() != Account.Type.ADMIN) {
                 userVmResponse.setReadOnlyDetails(QueryService.UserVMReadOnlyDetails.value());
+            }
+            VMTemplateVO template = vmTemplateDao.findByIdIncludingRemoved(userVm.getTemplateId());
+            if (template != null && template.isDeployAsIs() && UserVmManager.VmwareAdditionalDetailsFromOvaEnabled.valueIn(userVm.getDataCenterId())) {
+                userVmResponse.setAllowedDetails(UserVmManager.VmwareAllowedAdditionalDetailsFromOva.valueIn(userVm.getDataCenterId()));
             }
         }
 

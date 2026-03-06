@@ -224,17 +224,18 @@ export const notifierPlugin = {
         if (error.response.status) {
           msg = `${i18n.global.t('message.request.failed')} (${error.response.status})`
         }
-        if (error.message) {
-          desc = error.message
-        }
-        if (error.response.headers && 'x-description' in error.response.headers) {
+        if (error.response.headers?.['x-description']) {
           desc = error.response.headers['x-description']
-        }
-        if (desc === '' && error.response.data) {
+        } else if (error.response.data) {
           const responseKey = _.findKey(error.response.data, 'errortext')
           if (responseKey) {
             desc = error.response.data[responseKey].errortext
+          } else if (typeof error.response.data === 'string') {
+            desc = error.response.data
           }
+        }
+        if (!desc && error.message) {
+          desc = error.message
         }
       }
       let countNotify = store.getters.countNotify
@@ -549,6 +550,17 @@ export const dialogUtilPlugin = {
         onOk: () => callback(configRecord)
       })
     }
+
+    app.config.globalProperties.$notifyConfigurationValueChange = function (configRecord) {
+      if (!configRecord || configRecord.isdynamic || store.getters.userInfo?.roletype !== 'Admin') {
+        return
+      }
+      const server = configRecord.group === 'Usage Server' ? 'usage' : 'mgmt'
+      this.$notification.warning({
+        message: this.$t('label.status'),
+        description: this.$t('message.restart.' + server + '.server')
+      })
+    }
   }
 }
 
@@ -557,7 +569,8 @@ export const cpuArchitectureUtilPlugin = {
     app.config.globalProperties.$fetchCpuArchitectureTypes = function () {
       const architectures = [
         { id: 'x86_64', name: 'Intel/AMD 64 bits (x86_64)' },
-        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' }
+        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' },
+        { id: 's390x', name: 'IBM Z 64 bits (s390x)' }
       ]
       return architectures.map(item => ({ ...item, description: item.name }))
     }

@@ -37,7 +37,7 @@ import com.cloud.network.CiscoNexusVSMDevice;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
 
-@APICommand(name = "disableCiscoNexusVSM", responseObject = CiscoNexusVSMResponse.class, description = "disable a Cisco Nexus VSM device",
+@APICommand(name = "disableCiscoNexusVSM", responseObject = CiscoNexusVSMResponse.class, description = "Disable a Cisco Nexus VSM device",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DisableCiscoNexusVSMCmd extends BaseAsyncCmd {
 

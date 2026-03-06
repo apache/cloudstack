@@ -48,7 +48,7 @@ public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = ProviderResponse.class,
                required = true,
-               description = "the network service provider ID of the internal load balancer element")
+               description = "The network service provider ID of the internal load balancer element")
     private Long nspId;
 
     /////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ public class CreateInternalLoadBalancerElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Virtual router element Id: " + getEntityId());
+        CallContext.current().setEventDetails("Virtual router element ID: " + getEntityUuid());
         InternalLoadBalancerElementService service = _networkService.getInternalLoadBalancerElementByNetworkServiceProviderId(getNspId());
         VirtualRouterProvider result = service.getInternalLoadBalancerElement(getEntityId());
         if (result != null) {

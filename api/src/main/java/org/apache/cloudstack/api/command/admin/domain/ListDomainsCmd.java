@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
@@ -39,7 +39,7 @@ import com.cloud.server.ResourceTag;
 
 @APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class, responseView = ResponseView.Restricted, entityType = {Domain.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListDomainsCmd extends BaseListCmd implements UserCmd {
+public class ListDomainsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     private static final String s_name = "listdomainsresponse";
 
@@ -64,11 +64,11 @@ public class ListDomainsCmd extends BaseListCmd implements UserCmd {
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
-               description = "comma separated list of domain details requested, value can be a list of [ all, resource, min]")
+               description = "Comma separated list of domain details requested, value can be a list of [ all, resource, min]")
     private List<String> viewDetails;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
-            description = "flag to display the resource icon for domains")
+            description = "Flag to display the resource icon for domains")
     private Boolean showIcon;
 
     @Parameter(name = ApiConstants.TAG, type = CommandType.STRING, description = "Tag for resource type to return usage", since = "4.20.0")
