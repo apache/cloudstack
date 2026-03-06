@@ -358,6 +358,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // Secondary storage resource count is not incremented for BareMetalTemplateAdapter
         // Note: checking the file size before registering will require the Management Server host to have access to the Internet and a DNS server
+        // If it does not, UriUtils.getRemoteSize will return 0L.
         long secondaryStorageUsage = adapter instanceof HypervisorTemplateAdapter && !cmd.isDirectDownload() ?
                 UriUtils.getRemoteSize(cmd.getUrl(), StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
 
@@ -366,7 +367,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             TemplateProfile profile = adapter.prepare(cmd);
             VMTemplateVO template = adapter.create(profile);
 
-            // Secondary storage resource usage will be recalculated in com.cloud.template.HypervisorTemplateAdapter.createTemplateAsyncCallBack
+            // Secondary storage resource usage will be incremented in com.cloud.template.HypervisorTemplateAdapter.createTemplateAsyncCallBack
             _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
             if (secondaryStorageUsage > 0) {
                 _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.secondary_storage, secondaryStorageUsage);
@@ -406,7 +407,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateProfile profile = adapter.prepare(cmd);
         VMTemplateVO template = adapter.create(profile);
 
-        // Secondary storage resource usage will be recalculated in com.cloud.template.HypervisorTemplateAdapter.createTemplateAsyncCallBack
+        // Secondary storage resource usage will be incremented in com.cloud.template.HypervisorTemplateAdapter.createTemplateAsyncCallBack
         // for HypervisorTemplateAdapter
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
         if (secondaryStorageUsage > 0) {

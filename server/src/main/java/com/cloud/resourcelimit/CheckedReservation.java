@@ -20,13 +20,16 @@ package com.cloud.resourcelimit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.user.ResourceReservation;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,12 +51,15 @@ public class CheckedReservation implements Reserver {
     ReservationDao reservationDao;
 
     ResourceLimitService resourceLimitService;
-    private final Account account;
+    private Account account;
     private Long domainId;
-    private final ResourceType resourceType;
-    private Long amount;
+    private ResourceType resourceType;
+    private Long resourceId;
+    private Long reservationAmount;
+    private List<String> reservationTags;
+    private Long existingAmount;
+    private List<String> existingLimitTags;
     private List<ResourceReservation> reservations;
-    private List<String> resourceLimitTags;
 
     private String getContextParameterKey() {
         return getResourceReservationContextParameterKey(resourceType);
@@ -100,9 +106,25 @@ public class CheckedReservation implements Reserver {
         this.reservations.add(reservation);
     }
 
-    public CheckedReservation(Account account, ResourceType resourceType, List<String> resourceLimitTags, Long amount,
-            ReservationDao reservationDao, ResourceLimitService resourceLimitService) throws ResourceAllocationException {
-        this(account, resourceType, null, resourceLimitTags, amount, reservationDao, resourceLimitService);
+    // TODO: refactor these into a Builder to avoid having so many constructors
+    public CheckedReservation(Account account, ResourceType resourceType, List<String> resourceLimitTags, Long reservationAmount,
+                              ReservationDao reservationDao, ResourceLimitService resourceLimitService) throws ResourceAllocationException {
+        this(account, resourceType, null, resourceLimitTags, null, reservationAmount, null, reservationDao, resourceLimitService);
+    }
+
+    public CheckedReservation(Account account, ResourceType resourceType, Long resourceId, List<String> reservedTags,
+                              List<String> existingTags, Long reservationAmount, Long existingAmount, ReservationDao reservationDao,
+                              ResourceLimitService resourceLimitService) throws ResourceAllocationException {
+        this(account, null, resourceType, resourceId, reservedTags, existingTags, reservationAmount, existingAmount, reservationDao, resourceLimitService);
+    }
+
+    public CheckedReservation(Account account, Long domainId, ResourceType resourceType, Long resourceId, List<String> reservedTags,
+                              Long reservationAmount, ReservationDao reservationDao, ResourceLimitService resourceLimitService) throws ResourceAllocationException {
+        this(account, domainId, resourceType, resourceId, reservedTags, null, reservationAmount, null, reservationDao, resourceLimitService);
+    }
+
+    public CheckedReservation(Account account, ResourceType resourceType, Long resourceId, List<String> reservedTags, Long reservationAmount, ReservationDao reservationDao, ResourceLimitService resourceLimitService) throws ResourceAllocationException {
+        this(account, null, resourceType, resourceId, reservedTags, null, reservationAmount, null, reservationDao, resourceLimitService);
     }
 
     /**
@@ -110,36 +132,43 @@ public class CheckedReservation implements Reserver {
      * - create DB entry for reservation
      * - hold the id of this record as a ticket for implementation
      *
-     * @param amount positive number of the resource type to reserve
+     * @param reservationAmount positive number of the resource type to reserve
      * @throws ResourceAllocationException
      */
-    public CheckedReservation(Account account, ResourceType resourceType, Long resourceId, List<String> resourceLimitTags, Long amount,
-                              ReservationDao reservationDao, ResourceLimitService resourceLimitService) throws ResourceAllocationException {
-        this(account, account.getDomainId(), resourceType, resourceId, resourceLimitTags, amount, reservationDao, resourceLimitService);
-    }
+    public CheckedReservation(Account account, Long domainId, ResourceType resourceType, Long resourceId, List<String> reservedTags,
+                              List<String> existingTags, Long reservationAmount, Long existingAmount, ReservationDao reservationDao,
+                              ResourceLimitService resourceLimitService) throws ResourceAllocationException {
 
-    public CheckedReservation(Account account, Long domainId, ResourceType resourceType, Long resourceId, List<String> resourceLimitTags, Long amount,
-                ReservationDao reservationDao, ResourceLimitService resourceLimitService) throws ResourceAllocationException {
+        if (ObjectUtils.allNull(account, domainId)) {
+            logger.debug("Not reserving any {} resources, as no account/domain was provided.", resourceType);
+            return;
+        }
+
         this.reservationDao = reservationDao;
         this.resourceLimitService = resourceLimitService;
         this.account = account;
 
-        this.domainId = domainId;
         if (domainId == null) {
-            this.domainId = account.getDomainId();
+            domainId = account.getDomainId();
         }
+        this.domainId = domainId;
 
         this.resourceType = resourceType;
-        this.amount = amount;
+        this.reservationAmount = reservationAmount;
+        this.existingAmount = existingAmount;
         this.reservations = new ArrayList<>();
-        this.resourceLimitTags = resourceLimitTags;
 
-        if (this.amount != null && this.amount != 0) {
-            if (amount > 0) {
+        this.reservationTags = getTagsWithoutNull(reservedTags);
+        this.existingLimitTags = getTagsWithoutNull(existingTags);
+
+        // TODO: refactor me
+        if (this.reservationAmount != null && this.reservationAmount != 0) {
+            if (reservationAmount > 0) {
                 setGlobalLock();
                 if (quotaLimitLock.lock(TRY_TO_GET_LOCK_TIME)) {
                     try {
-                        checkLimitAndPersistReservations(account, this.domainId, resourceType, resourceId, resourceLimitTags, amount);
+                        adjustCountToNotConsiderExistingAmount();
+                        checkLimitAndPersistReservations(account, this.domainId, resourceType, resourceId, reservationTags, reservationAmount);
                         CallContext.current().putContextParameter(getContextParameterKey(), getIds());
                     } catch (NullPointerException npe) {
                         throw new CloudRuntimeException("not enough means to check limits", npe);
@@ -150,12 +179,26 @@ public class CheckedReservation implements Reserver {
                     throw new ResourceAllocationException(String.format("unable to acquire resource reservation \"%s\"", quotaLimitLock.getName()), resourceType);
                 }
             } else {
-                checkLimitAndPersistReservations(account, this.domainId, resourceType, resourceId, resourceLimitTags, amount);
+                checkLimitAndPersistReservations(account, this.domainId, resourceType, resourceId, reservationTags, reservationAmount);
             }
         } else {
             logger.debug("not reserving any amount of resources for {} in domain {}, type: {}, tag: {}",
                     account.getAccountName(), this.domainId, resourceType, getResourceLimitTagsAsString());
         }
+    }
+
+    protected List<String> getTagsWithoutNull(List<String> tags) {
+        if (tags == null) {
+            return null;
+        }
+        return tags.stream().filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    protected void adjustCountToNotConsiderExistingAmount() throws ResourceAllocationException {
+        if (existingAmount == null || existingAmount == 0) {
+            return;
+        }
+        checkLimitAndPersistReservations(account, domainId, resourceType, resourceId, existingLimitTags, -1 * existingAmount);
     }
 
     public CheckedReservation(Account account, ResourceType resourceType, Long amount, ReservationDao reservationDao,
@@ -183,11 +226,11 @@ public class CheckedReservation implements Reserver {
     }
 
     public String getResourceLimitTagsAsString() {
-        return CollectionUtils.isNotEmpty(resourceLimitTags) ? StringUtils.join(resourceLimitTags) : null;
+        return CollectionUtils.isNotEmpty(reservationTags) ? StringUtils.join(reservationTags) : null;
     }
 
     public Long getReservedAmount() {
-        return amount;
+        return reservationAmount;
     }
 
     public List<ResourceReservation> getReservations() {

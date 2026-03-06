@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.resourcelimit.ReservationHelper;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -93,6 +94,7 @@ import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -425,9 +427,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
 
-        validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
+        VolumeVO volume;
 
-        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, format, diskOfferingId, Volume.State.Allocated);
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+
+        validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId, reservations);
+        volume = persistVolume(owner, zoneId, volumeName, url, format, diskOfferingId, Volume.State.Allocated);
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
 
@@ -467,7 +477,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
 
-        validateVolume(caller, ownerId, zoneId, volumeName, null, format, diskOfferingId);
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+        validateVolume(caller, ownerId, zoneId, volumeName, null, format, diskOfferingId, reservations);
 
         return Transaction.execute(new TransactionCallbackWithException<GetUploadParamsResponse, MalformedURLException>() {
             @Override
@@ -535,9 +547,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 return response;
             }
         });
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
     }
 
-    private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format, Long diskOfferingId) throws ResourceAllocationException {
+    private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format, Long diskOfferingId, List<Reserver> reservations) throws ResourceAllocationException {
 
         // permission check
         Account volumeOwner = _accountMgr.getActiveAccountById(ownerId);
@@ -548,7 +564,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _accountMgr.checkAccess(caller, null, true, volumeOwner);
 
         // Check that the resource limit for volumes won't be exceeded
-        _resourceLimitMgr.checkVolumeResourceLimit(volumeOwner, true, null, diskOffering);
+        _resourceLimitMgr.checkVolumeResourceLimit(volumeOwner, true, null, diskOffering, reservations);
 
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -926,8 +942,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (tags.size() == 1 && tags.get(0) == null) {
             tags = new ArrayList<>();
         }
-        try (CheckedReservation volumeReservation = new CheckedReservation(owner, ResourceType.volume, null, tags, 1L, reservationDao, _resourceLimitMgr);
-             CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, null, tags, size, reservationDao, _resourceLimitMgr)) {
+
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+        _resourceLimitMgr.checkVolumeResourceLimit(owner, displayVolume, size, diskOffering, reservations);
 
         // Verify that zone exists
         DataCenterVO zone = _dcDao.findById(zoneId);
@@ -950,9 +968,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         return commitVolume(cmd, caller, owner, displayVolume, zoneId, diskOfferingId, provisioningType, size, minIops, maxIops, parentVolume, userSpecifiedName,
                 _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()), details);
-         } catch (Exception e) {
-            logger.error(e);
-            throw new RuntimeException(e);
+        } finally {
+            ReservationHelper.closeAll(reservations);
         }
     }
 
@@ -1278,7 +1295,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (dataStore != null && dataStore.getDriver() instanceof PrimaryDataStoreDriver) {
             newSize = ((PrimaryDataStoreDriver) dataStore.getDriver()).getVolumeSizeRequiredOnPool(newSize, null, isEncryptionRequired);
         }
-        validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk, diskOffering, newDiskOffering);
+
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+        validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk, diskOffering, newDiskOffering, reservations);
 
         // Note: The storage plug-in in question should perform validation on the IOPS to check if a sufficient number of IOPS is available to perform
         // the requested change
@@ -1406,6 +1426,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, newDiskOffering != null ? cmd.getNewDiskOfferingId() : null,
                 shrinkOk);
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
     }
 
     /**
@@ -1839,12 +1863,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Please specify a volume in Destroy state.");
         }
 
+        DiskOffering diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+
+        List<Reserver> reservations = new ArrayList<>();
         try {
-            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()), ResourceType.primary_storage, volume.isDisplayVolume(), volume.getSize());
-        } catch (ResourceAllocationException e) {
-            logger.error("primary storage resource limit check failed", e);
-            throw new InvalidParameterValueException(e.getMessage());
-        }
+        _resourceLimitMgr.checkVolumeResourceLimit(_accountMgr.getAccount(volume.getAccountId()), volume.isDisplayVolume(), volume.getSize(), diskOffering, reservations);
 
         try {
             _volsDao.detachVolume(volume.getId());
@@ -1856,6 +1879,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _resourceLimitMgr.incrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(),
                 volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
 
+        } catch (ResourceAllocationException e) {
+            logger.error("primary storage resource limit check failed", e);
+            throw new InvalidParameterValueException(e.getMessage());
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
 
         publishVolumeCreationUsageEvent(volume);
 
@@ -2085,7 +2114,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             newSize = ((PrimaryDataStoreDriver) dataStore.getDriver()).getVolumeSizeRequiredOnPool(newSize, null, newDiskOffering.getEncrypt());
         }
 
-        validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk, existingDiskOffering, newDiskOffering);
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+        validateVolumeResizeWithSize(volume, currentSize, newSize, shrinkOk, existingDiskOffering, newDiskOffering, reservations);
 
         /* If this volume has never been beyond allocated state, short circuit everything and simply update the database. */
         // We need to publish this event to usage_volume table
@@ -2175,6 +2206,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
     }
 
     private void updateStorageWithTheNewDiskOffering(VolumeVO volume, DiskOfferingVO newDiskOffering) {
@@ -2380,7 +2415,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private void validateVolumeResizeWithSize(VolumeVO volume, long currentSize, Long newSize, boolean shrinkOk,
-            DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering) throws ResourceAllocationException {
+            DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering, List<Reserver> reservations) throws ResourceAllocationException {
 
         // if the caller is looking to change the size of the volume
         if (newSize != null && currentSize != newSize) {
@@ -2450,7 +2485,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         /* Check resource limit for this account */
         _resourceLimitMgr.checkVolumeResourceLimitForDiskOfferingChange(_accountMgr.getAccount(volume.getAccountId()),
                 volume.isDisplayVolume(), currentSize, newSize != null ? newSize : currentSize,
-                existingDiskOffering, newDiskOffering);
+                existingDiskOffering, newDiskOffering, reservations);
     }
 
     @Override
@@ -2622,7 +2657,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         checkForBackups(vm, true);
 
-        checkRightsToAttach(caller, volumeToAttach, vm);
+        _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
 
         HypervisorType rootDiskHyperType = vm.getHypervisorType();
         HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
@@ -2649,6 +2684,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Volume's disk offering has encryption enabled, but volume encryption is not supported for hypervisor type " + rootDiskHyperType);
         }
 
+        Account owner = _accountDao.findById(volumeToAttach.getAccountId());
+        List<String> resourceLimitStorageTags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering);
+        Long requiredPrimaryStorageSpace = getRequiredPrimaryStorageSizeForVolumeAttach(resourceLimitStorageTags, volumeToAttach);
+
+        try (CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, resourceLimitStorageTags, requiredPrimaryStorageSpace, reservationDao, _resourceLimitMgr)) {
+
         _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
 
         if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
@@ -2656,9 +2697,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             return getVolumeAttachJobResult(vmId, volumeId, deviceId);
         }
+
+        } catch (ResourceAllocationException e) {
+            logger.error("primary storage resource limit check failed", e);
+            throw new InvalidParameterValueException(e.getMessage());
+        }
     }
 
-    @Nullable private Volume getVolumeAttachJobResult(Long vmId, Long volumeId, Long deviceId) {
+    protected Long getRequiredPrimaryStorageSizeForVolumeAttach(List<String> resourceLimitStorageTags, VolumeInfo volumeToAttach) {
+        if (CollectionUtils.isEmpty(resourceLimitStorageTags) || Arrays.asList(Volume.State.Allocated, Volume.State.Ready).contains(volumeToAttach.getState())) {
+            return 0L;
+        }
+        return volumeToAttach.getSize();
+    }
+
+    @Nullable protected Volume getVolumeAttachJobResult(Long vmId, Long volumeId, Long deviceId) {
         Outcome<Volume> outcome = attachVolumeToVmThroughJobQueue(vmId, volumeId, deviceId);
 
         Volume vol = null;
@@ -2704,21 +2757,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private void checkForMatchingHypervisorTypesIf(boolean checkNeeded, HypervisorType rootDiskHyperType, HypervisorType volumeToAttachHyperType) {
         if (checkNeeded && volumeToAttachHyperType != HypervisorType.None && rootDiskHyperType != volumeToAttachHyperType) {
             throw new InvalidParameterValueException("Can't attach a volume created by: " + volumeToAttachHyperType + " to a " + rootDiskHyperType + " vm");
-        }
-    }
-
-    private void checkRightsToAttach(Account caller, VolumeInfo volumeToAttach, UserVmVO vm) {
-        _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
-
-        Account owner = _accountDao.findById(volumeToAttach.getAccountId());
-
-        if (!Arrays.asList(Volume.State.Allocated, Volume.State.Ready).contains(volumeToAttach.getState())) {
-            try {
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumeToAttach.getSize());
-            } catch (ResourceAllocationException e) {
-                logger.error("primary storage resource limit check failed", e);
-                throw new InvalidParameterValueException(e.getMessage());
-            }
         }
     }
 
@@ -4207,7 +4245,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _accountMgr.checkAccess(caller, null, true, oldAccount);
         _accountMgr.checkAccess(caller, null, true, newAccount);
 
-        _resourceLimitMgr.checkVolumeResourceLimit(newAccount, true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
+        List<Reserver> reservations = new ArrayList<>();
+        try {
+        _resourceLimitMgr.checkVolumeResourceLimit(newAccount, true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()), reservations);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
@@ -4217,6 +4257,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         });
 
         return volume;
+
+        } finally {
+            ReservationHelper.closeAll(reservations);
+        }
     }
 
     protected void updateVolumeAccount(Account oldAccount, VolumeVO volume, Account newAccount) {
