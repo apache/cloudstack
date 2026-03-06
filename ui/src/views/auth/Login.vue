@@ -203,6 +203,7 @@
         </div>
         <div v-else style="text-align: center; color: #999; padding: 20px 0;">
           <span v-if="form.oauthDomain">No OAuth providers configured for this domain</span>
+          <span v-else>Enter your domain to see available providers</span>
         </div>
       </a-tab-pane>
     </a-tabs>
@@ -380,7 +381,8 @@ export default {
                 this.githubredirecturi = item.redirecturi
               }
             })
-            this.socialLogin = oauthproviders.some(item => item.enabled)
+            const totalCount = response.listoauthproviderresponse.count || 0
+            this.socialLogin = totalCount > 0
             this.oauthGithubProvider = this.githubprovider
             this.oauthGoogleProvider = this.googleprovider
             this.oauthGithubClientId = this.githubclientid

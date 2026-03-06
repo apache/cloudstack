@@ -127,9 +127,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         }
 
         List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id, domainId);
+        boolean isAuthenticated = session != null && session.getAttribute(ApiConstants.USER_ID) != null;
         if (domainRequested && domainId != null && domainId > 0) {
             resultList.removeIf(p -> p.getDomainId() == null);
-        } else if (!domainRequested) {
+        } else if (!domainRequested && !isAuthenticated) {
             resultList.removeIf(p -> p.getDomainId() != null);
         }
 
@@ -153,8 +154,20 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             responses.add(r);
         }
 
+        int totalEnabledCount = responses.size();
+        if (!domainRequested && !isAuthenticated) {
+            List<OauthProviderVO> allProviders = _oauth2mgr.listOauthProviders(null, null, null);
+            for (OauthProviderVO domainProvider : allProviders) {
+                if (domainProvider.getDomainId() != null && domainProvider.isEnabled()
+                        && Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainProvider.getDomainId(), true))
+                        && authenticatorPluginNames.contains(domainProvider.getProvider())) {
+                    totalEnabledCount++;
+                }
+            }
+        }
+
         ListResponse<OauthProviderResponse> response = new ListResponse<>();
-        response.setResponses(responses, resultList.size());
+        response.setResponses(responses, totalEnabledCount);
         response.setResponseName(getCommandName());
         setResponseObject(response);
 
