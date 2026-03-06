@@ -808,25 +808,31 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     /**
-     * If snapshot was taken with a different service offering than actual used in vm, should change it back to it
-     * @param userVm vm to change service offering (if necessary)
+     * If snapshot was taken with a different service offering than actual used in vm, should change it back to it.
+     * We also call <code>changeUserVmServiceOffering</code> in case the service offering is dynamic in order to
+     * perform resource limit validation, as the amount of CPUs or memory may have been changed.
      * @param vmSnapshotVo vm snapshot
      */
     protected void updateUserVmServiceOffering(UserVm userVm, VMSnapshotVO vmSnapshotVo) {
         if (vmSnapshotVo.getServiceOfferingId() != userVm.getServiceOfferingId()) {
+            changeUserVmServiceOffering(userVm, vmSnapshotVo);
+            return;
+        }
+        ServiceOfferingVO serviceOffering = _serviceOfferingDao.findById(userVm.getServiceOfferingId());
+        if (serviceOffering.isDynamic()) {
             changeUserVmServiceOffering(userVm, vmSnapshotVo);
         }
     }
 
     /**
      * Get user vm details as a map
-     * @param userVm user vm
+     * @param vmSnapshotVo snapshot to get the details from
      * @return map
      */
-    protected Map<String, String> getVmMapDetails(UserVm userVm) {
-        List<VMInstanceDetailVO> userVmDetails = _vmInstanceDetailsDao.listDetails(userVm.getId());
+    protected Map<String, String> getVmMapDetails(VMSnapshotVO vmSnapshotVo) {
+        List<VMSnapshotDetailsVO> vmSnapshotDetails = _vmSnapshotDetailsDao.listDetails(vmSnapshotVo.getId());
         Map<String, String> details = new HashMap<String, String>();
-        for (VMInstanceDetailVO detail : userVmDetails) {
+        for (VMSnapshotDetailsVO detail : vmSnapshotDetails) {
             details.put(detail.getName(), detail.getValue());
         }
         return details;
@@ -838,7 +844,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
      * @param vmSnapshotVo vm snapshot
      */
     protected void changeUserVmServiceOffering(UserVm userVm, VMSnapshotVO vmSnapshotVo) {
-        Map<String, String> vmDetails = getVmMapDetails(userVm);
+        Map<String, String> vmDetails = getVmMapDetails(vmSnapshotVo);
         boolean result = upgradeUserVmServiceOffering(userVm, vmSnapshotVo.getServiceOfferingId(), vmDetails);
         if (! result){
             throw new CloudRuntimeException("VM Snapshot reverting failed due to vm service offering couldn't be changed to the one used when snapshot was taken");
@@ -935,8 +941,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
-                    revertUserVmDetailsFromVmSnapshot(userVm, vmSnapshotVo);
                     updateUserVmServiceOffering(userVm, vmSnapshotVo);
+                    revertUserVmDetailsFromVmSnapshot(userVm, vmSnapshotVo);
                 }
             });
             return userVm;

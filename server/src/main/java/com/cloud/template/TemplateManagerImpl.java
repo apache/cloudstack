@@ -86,6 +86,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
@@ -150,6 +151,7 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ImageStoreUploadMonitorImpl;
@@ -199,6 +201,7 @@ import com.cloud.utils.EncryptionUtil;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -301,6 +304,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     private VMTemplateDetailsDao _tmpltDetailsDao;
     @Inject
     private HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    ReservationDao reservationDao;
 
     private List<TemplateAdapter> _adapters;
 
@@ -350,14 +355,30 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @ActionEvent(eventType = EventTypes.EVENT_ISO_CREATE, eventDescription = "creating iso")
     public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException {
         TemplateAdapter adapter = getAdapter(HypervisorType.None);
-        TemplateProfile profile = adapter.prepare(cmd);
-        VMTemplateVO template = adapter.create(profile);
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
-        if (template != null) {
-            CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
-            return template;
-        } else {
-            throw new CloudRuntimeException("Failed to create ISO");
+        // Secondary storage resource count is not incremented for BareMetalTemplateAdapter
+        // Note: checking the file size before registering will require the Management Server host to have access to the Internet and a DNS server
+        // If it does not, UriUtils.getRemoteSize will return 0L.
+        long secondaryStorageUsage = adapter instanceof HypervisorTemplateAdapter && !cmd.isDirectDownload() ?
+                UriUtils.getRemoteSize(cmd.getUrl(), StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+
+        try (CheckedReservation templateReservation = new CheckedReservation(owner, ResourceType.template, null, null, 1L, reservationDao, _resourceLimitMgr);
+             CheckedReservation secondaryStorageReservation = new CheckedReservation(owner, ResourceType.secondary_storage, null, null, secondaryStorageUsage, reservationDao, _resourceLimitMgr)) {
+            TemplateProfile profile = adapter.prepare(cmd);
+            VMTemplateVO template = adapter.create(profile);
+
+            // Secondary storage resource usage will be incremented in com.cloud.template.HypervisorTemplateAdapter.createTemplateAsyncCallBack
+            _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
+            if (secondaryStorageUsage > 0) {
+                _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.secondary_storage, secondaryStorageUsage);
+            }
+            if (template != null) {
+                CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
+                return template;
+            } else {
+                throw new CloudRuntimeException("Failed to create ISO");
+            }
         }
     }
 
@@ -377,17 +398,32 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
-        TemplateProfile profile = adapter.prepare(cmd);
-        VMTemplateVO template = adapter.create(profile);
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
 
-        if (template != null) {
-            CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
-            if (cmd instanceof RegisterVnfTemplateCmd) {
-                vnfTemplateManager.persistVnfTemplate(template.getId(), (RegisterVnfTemplateCmd) cmd);
+        long secondaryStorageUsage = adapter instanceof HypervisorTemplateAdapter && !cmd.isDirectDownload() ?
+                UriUtils.getRemoteSize(cmd.getUrl(), StorageManager.DataStoreDownloadFollowRedirects.value()) : 0L;
+
+        try (CheckedReservation templateReservation = new CheckedReservation(owner, ResourceType.template, null, null, 1L, reservationDao, _resourceLimitMgr);
+             CheckedReservation secondaryStorageReservation = new CheckedReservation(owner, ResourceType.secondary_storage, null, null, secondaryStorageUsage, reservationDao, _resourceLimitMgr)) {
+            TemplateProfile profile = adapter.prepare(cmd);
+            VMTemplateVO template = adapter.create(profile);
+
+            // Secondary storage resource usage will be incremented in com.cloud.template.HypervisorTemplateAdapter.createTemplateAsyncCallBack
+            // for HypervisorTemplateAdapter
+            _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
+            if (secondaryStorageUsage > 0) {
+                _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.secondary_storage, secondaryStorageUsage);
             }
-            return template;
-        } else {
-            throw new CloudRuntimeException("Failed to create a template");
+
+            if (template != null) {
+                CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
+                if (cmd instanceof RegisterVnfTemplateCmd) {
+                    vnfTemplateManager.persistVnfTemplate(template.getId(), (RegisterVnfTemplateCmd) cmd);
+                }
+                return template;
+            } else {
+                throw new CloudRuntimeException("Failed to create a template");
+            }
         }
     }
 

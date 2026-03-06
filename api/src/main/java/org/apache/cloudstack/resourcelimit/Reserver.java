@@ -15,8 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.resourcelimit;
+package org.apache.cloudstack.resourcelimit;
 
+/**
+ * Interface implemented by <code>CheckedReservation</code>.
+ * </br></br>
+ * This is defined in <code>cloud-api</code> to allow methods declared in modules that do not depend on <code>cloud-server</code>
+ * to receive <code>CheckedReservations</code> as parameters.
+ */
 public interface Reserver extends AutoCloseable {
 
     void close();

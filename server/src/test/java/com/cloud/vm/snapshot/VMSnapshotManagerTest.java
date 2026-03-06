@@ -352,13 +352,13 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr.updateUserVmServiceOffering(userVm, vmSnapshotVO);
 
         verify(_vmSnapshotMgr).changeUserVmServiceOffering(userVm, vmSnapshotVO);
-        verify(_vmSnapshotMgr).getVmMapDetails(userVm);
+        verify(_vmSnapshotMgr).getVmMapDetails(vmSnapshotVO);
         verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(userVm), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
     }
 
     @Test
     public void testGetVmMapDetails() {
-        Map<String, String> result = _vmSnapshotMgr.getVmMapDetails(userVm);
+        Map<String, String> result = _vmSnapshotMgr.getVmMapDetails(vmSnapshotVO);
         assert(result.containsKey(userVmDetailCpuNumber.getName()));
         assert(result.containsKey(userVmDetailMemory.getName()));
         assertEquals(userVmDetails.size(), result.size());
@@ -370,7 +370,7 @@ public class VMSnapshotManagerTest {
     public void testChangeUserVmServiceOffering() throws ConcurrentOperationException, ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException {
         when(_userVmManager.upgradeVirtualMachine(ArgumentMatchers.eq(TEST_VM_ID), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture())).thenReturn(true);
         _vmSnapshotMgr.changeUserVmServiceOffering(userVm, vmSnapshotVO);
-        verify(_vmSnapshotMgr).getVmMapDetails(userVm);
+        verify(_vmSnapshotMgr).getVmMapDetails(vmSnapshotVO);
         verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(userVm), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
     }
 
@@ -378,7 +378,7 @@ public class VMSnapshotManagerTest {
     public void testChangeUserVmServiceOfferingFailOnUpgradeVMServiceOffering() throws ConcurrentOperationException, ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException {
         when(_userVmManager.upgradeVirtualMachine(ArgumentMatchers.eq(TEST_VM_ID), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture())).thenReturn(false);
         _vmSnapshotMgr.changeUserVmServiceOffering(userVm, vmSnapshotVO);
-        verify(_vmSnapshotMgr).getVmMapDetails(userVm);
+        verify(_vmSnapshotMgr).getVmMapDetails(vmSnapshotVO);
         verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(userVm), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
     }
 

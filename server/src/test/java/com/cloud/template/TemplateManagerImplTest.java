@@ -91,6 +91,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
@@ -207,6 +208,8 @@ public class TemplateManagerImplTest {
     VnfTemplateManager vnfTemplateManager;
     @Inject
     SnapshotJoinDao snapshotJoinDao;
+    @Inject
+    ReservationDao reservationDao;
 
     @Inject
     HeuristicRuleHelper heuristicRuleHelperMock;
@@ -957,6 +960,11 @@ public class TemplateManagerImplTest {
         @Bean
         public VnfTemplateManager vnfTemplateManager() {
             return Mockito.mock(VnfTemplateManager.class);
+        }
+
+        @Bean
+        public ReservationDao reservationDao() {
+            return Mockito.mock(ReservationDao.class);
         }
 
         @Bean
