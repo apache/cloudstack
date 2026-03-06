@@ -20,6 +20,8 @@ package org.apache.cloudstack.backup;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.storage.Volume;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.capacity.Capacity;
 import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
@@ -37,11 +39,9 @@ import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDiskInfo;
 
 /**
@@ -57,7 +57,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     ConfigKey<String> BackupProviderPlugin = new ValidatedConfigKey<>("Advanced", String.class,
             "backup.framework.provider.plugin",
             "dummy",
-            "The backup and recovery provider plugin. Valid plugin values: dummy, veeam, networker and nas",
+            "The backup and recovery provider plugin. Valid plugin values: dummy, veeam, networker, nas and knib",
             true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key(), value -> validateBackupProviderConfig((String)value));
 
     ConfigKey<Long> BackupSyncPollingInterval = new ConfigKey<>("Advanced", Long.class,
@@ -204,7 +204,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * Restore a full VM from backup
      */
-    boolean restoreBackup(final Long backupId);
+    boolean restoreBackup(final Long backupId, boolean quickRestore, Long hostId);
 
     Map<Long, Network.IpAddresses> getIpToNetworkMapFromBackup(Backup backup, boolean preserveIps, List<Long> networkIds);
 
@@ -215,12 +215,12 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * Restore a backup to a new Instance
      */
-    boolean restoreBackupToVM(Long backupId, Long vmId) throws ResourceUnavailableException;
+    boolean restoreBackupToVM(Long backupId, Long vmId, boolean quickrestore) throws ResourceUnavailableException;
 
     /**
      * Restore a backed up volume and attach it to a VM
      */
-    boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId) throws Exception;
+    boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId, boolean isQuickRestore, Long hostId) throws Exception;
 
     /**
      * Deletes a backup
@@ -256,7 +256,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
         if (value != null && (value.contains(",") || value.trim().contains(" "))) {
             throw new IllegalArgumentException("Multiple backup provider plugins are not supported. Please provide a single plugin value.");
         }
-        List<String> validPlugins = List.of("dummy", "veeam", "networker", "nas");
+        List<String> validPlugins = List.of("dummy", "veeam", "networker", "nas", "knib");
         if (value != null && !validPlugins.contains(value)) {
             throw new IllegalArgumentException("Invalid backup provider plugin: " + value + ". Valid plugin values are: " + String.join(", ", validPlugins));
         }

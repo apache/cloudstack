@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
@@ -73,6 +74,14 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
             description = "ID of the Instance where to attach the restored volume")
     private Long vmId;
 
+    @Parameter(name = ApiConstants.QUICK_RESTORE, type = CommandType.BOOLEAN, description = "Whether to use the quick restore process or not. " +
+            "Currently this parameter is only supported by the KNIB provider.", since = "4.23.0")
+    private Boolean quickRestore;
+
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "If quickrestore is true, which host to start the VM on;" +
+            " otherwise, ignored. Currently this parameter is only supported by the KNIB provider.", since = "4.23.0")
+    private Long hostId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -89,6 +98,14 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
         return backupId;
     }
 
+    public boolean isQuickRestore() {
+        return org.apache.commons.lang3.BooleanUtils.isTrue(quickRestore);
+    }
+
+    public Long getHostId() {
+        return hostId;
+    }
+
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
@@ -101,7 +118,7 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(volumeUuid, backupId, vmId);
+            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(volumeUuid, backupId, vmId, isQuickRestore(), getHostId());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

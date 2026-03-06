@@ -129,4 +129,7 @@ public interface VmDetailConstants {
     String EXTERNAL_DETAIL_PREFIX = "External:";
     String CLOUDSTACK_VM_DETAILS = "cloudstack.vm.details";
     String CLOUDSTACK_VLAN = "cloudstack.vlan";
+
+    // KNIB specific
+    String LINKED_VOLUMES_SECONDARY_STORAGE_UUIDS = "linkedVolumesSecondaryStorageUuids";
 }

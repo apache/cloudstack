@@ -71,9 +71,17 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "Backup protected (virtual) size in bytes")
     private Long protectedSize;
 
+    @SerializedName(ApiConstants.UNCOMPRESSED_SIZE)
+    @Param(description = "backup uncompressed size in bytes. Only set if backup is compressed")
+    private Long uncompressedSize;
+
     @SerializedName(ApiConstants.STATUS)
     @Param(description = "Backup status")
     private Backup.Status status;
+
+    @SerializedName(ApiConstants.COMPRESSION_STATUS)
+    @Param(description = "backup compression status")
+    private Backup.CompressionStatus compressionStatus;
 
     @SerializedName(ApiConstants.VOLUMES)
     @Param(description = "Backed up volumes")
@@ -207,12 +215,28 @@ public class BackupResponse extends BaseResponse {
         this.protectedSize = protectedSize;
     }
 
+    public Long getUncompressedSize() {
+        return uncompressedSize;
+    }
+
+    public void setUncompressedSize(Long uncompressedSize) {
+        this.uncompressedSize = uncompressedSize;
+    }
+
     public Backup.Status getStatus() {
         return status;
     }
 
     public void setStatus(Backup.Status status) {
         this.status = status;
+    }
+
+    public Backup.CompressionStatus getCompressionStatus() {
+        return compressionStatus;
+    }
+
+    public void setCompressionStatus(Backup.CompressionStatus compressionStatus) {
+        this.compressionStatus = compressionStatus;
     }
 
     public String getVolumes() {

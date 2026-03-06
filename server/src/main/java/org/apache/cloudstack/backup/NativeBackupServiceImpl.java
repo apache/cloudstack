@@ -1,0 +1,276 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
+package org.apache.cloudstack.backup;
+
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.ReflectionUse;
+import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmWork;
+import com.cloud.vm.VmWorkDeleteBackup;
+import com.cloud.vm.VmWorkJobHandler;
+import com.cloud.vm.VmWorkJobHandlerProxy;
+import com.cloud.vm.VmWorkRestoreBackup;
+import com.cloud.vm.VmWorkRestoreVolumeBackupAndAttach;
+import com.cloud.vm.VmWorkTakeBackup;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupDetailsDao;
+import org.apache.cloudstack.backup.dao.NativeBackupJoinDao;
+import org.apache.cloudstack.backup.dao.NativeBackupStoragePoolDao;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.RevertSnapshotCommand;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.List;
+
+public class NativeBackupServiceImpl extends ComponentLifecycleBase implements NativeBackupService, VmWorkJobHandler {
+    protected Logger logger = LogManager.getLogger(getClass());
+
+    @Inject
+    private NativeBackupStoragePoolDao nativeBackupStoragePoolDao;
+
+    @Inject
+    private BackupManager backupManager;
+    @Inject
+    private BackupDao backupDao;
+    @Inject
+    private AsyncJobManager jobManager;
+    @Inject
+    private UserVmDao userVmDao;
+    @Inject
+    private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private VolumeDao volumeDao;
+    @Inject
+    private NativeBackupJoinDao nativeBackupJoinDao;
+    @Inject
+    private BackupDetailsDao backupDetailDao;
+
+    private VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
+    private HashMap<String, NativeBackupProvider> nativeBackupProviderMap = new HashMap<>();
+    private List<NativeBackupProvider> nativeBackupProviders;
+
+    public void setNativeBackupProviders(final List<NativeBackupProvider> nativeBackupProviders) {
+        this.nativeBackupProviders = nativeBackupProviders;
+    }
+
+    @Override
+    public boolean start() {
+        super.start();
+
+        if (nativeBackupProviders != null) {
+            for (NativeBackupProvider nativeBackupProvider : nativeBackupProviders) {
+                nativeBackupProviderMap.put(nativeBackupProvider.getName().toLowerCase(), nativeBackupProvider);
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void configureChainInfo(DataTO volumeTo, Command cmd) {
+        if (!(volumeTo instanceof VolumeObjectTO)) {
+            return;
+        }
+        VolumeObjectTO volumeObjectTO = (VolumeObjectTO) volumeTo;
+        NativeBackupStoragePoolVO backupDelta = nativeBackupStoragePoolDao.findOneByVolumeId(volumeObjectTO.getVolumeId());
+        if (backupDelta == null) {
+            return;
+        }
+        volumeObjectTO.setChainInfo(backupDelta.getBackupDeltaParentPath());
+        if (cmd instanceof DeleteCommand) {
+            ((DeleteCommand) cmd).setDeleteChain(true);
+        }
+        if (cmd instanceof RevertSnapshotCommand) {
+            ((RevertSnapshotCommand) cmd).setDeleteChain(true);
+        }
+        logger.debug("Configured chain info for volume [{}]. Set it as [{}].", volumeObjectTO.getUuid(), volumeObjectTO.getChainInfo());
+    }
+
+    @Override
+    public void cleanupBackupMetadata(long volumeId) {
+        logger.debug("Cleaning up backup metadata for volume [{}].", volumeId);
+        NativeBackupStoragePoolVO delta = nativeBackupStoragePoolDao.findOneByVolumeId(volumeId);
+        if (delta == null) {
+            return;
+        }
+        nativeBackupStoragePoolDao.expungeByVolumeId(volumeId);
+        if (CollectionUtils.isNotEmpty(nativeBackupStoragePoolDao.listByBackupId(delta.getBackupId()))) {
+            return;
+        }
+
+        NativeBackupJoinVO joinVO = nativeBackupJoinDao.findById(delta.getBackupId());
+        logger.debug("Volume [{}] was the last volume with deltas in backup [{}]. Setting the backup as not current and not END_OF_CHAIN.", volumeId, joinVO.getUuid());
+        backupDetailDao.removeDetail(joinVO.getId(), BackupDetailsDao.CURRENT);
+        if (!joinVO.getEndOfChain()) {
+            backupDetailDao.persist(new BackupDetailVO(joinVO.getId(), BackupDetailsDao.END_OF_CHAIN, Boolean.TRUE.toString(), true));
+        }
+    }
+
+
+    @Override
+    public void prepareVolumeForDetach(Volume volume, VirtualMachine virtualMachine) {
+        if (!backupManager.BackupFrameworkEnabled.valueIn(virtualMachine.getDataCenterId())) {
+            return;
+        }
+
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(virtualMachine.getDataCenterId());
+        if (nativeBackupProvider == null) {
+            return;
+        }
+        nativeBackupProvider.prepareVolumeForDetach(volume, virtualMachine);
+    }
+
+    @Override
+    public void prepareVolumeForMigration(Volume volume) {
+        if (volume.getInstanceId() == null) {
+            return;
+        }
+        VirtualMachine virtualMachine = virtualMachineManager.findById(volume.getInstanceId());
+        if (!backupManager.BackupFrameworkEnabled.valueIn(virtualMachine.getDataCenterId())) {
+            return;
+        }
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(volume.getDataCenterId());
+        if (nativeBackupProvider == null) {
+            return;
+        }
+        nativeBackupProvider.prepareVolumeForMigration(volume, virtualMachine);
+    }
+
+    @Override
+    public void updateVolumeId(long oldVolumeId, long newVolumeId) {
+        VolumeVO volumeVO = volumeDao.findById(newVolumeId);
+        if (volumeVO.getInstanceId() == null) {
+            return;
+        }
+        VirtualMachine virtualMachine = virtualMachineManager.findById(volumeVO.getInstanceId());
+        if (!backupManager.BackupFrameworkEnabled.valueIn(virtualMachine.getDataCenterId())) {
+            return;
+        }
+
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(virtualMachine.getDataCenterId());
+        if (nativeBackupProvider == null) {
+            return;
+        }
+        nativeBackupProvider.updateVolumeId(virtualMachine, oldVolumeId, newVolumeId);
+    }
+
+    @Override
+    public void prepareVmForSnapshotRevert(VMSnapshot vmSnapshot) {
+        VirtualMachine virtualMachine = virtualMachineManager.findById(vmSnapshot.getVmId());
+        if (!backupManager.BackupFrameworkEnabled.valueIn(virtualMachine.getDataCenterId())) {
+            return;
+        }
+
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(virtualMachine.getDataCenterId());
+        if (nativeBackupProvider == null) {
+            return;
+        }
+        nativeBackupProvider.prepareVmForSnapshotRevert(vmSnapshot, virtualMachine);
+    }
+
+    @Override
+    public boolean startBackupCompression(long backupId, long hostId, long zoneId) {
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(zoneId);
+        if (nativeBackupProvider == null) {
+            return false;
+        }
+        return nativeBackupProvider.startBackupCompression(backupId, hostId);
+    }
+
+    @Override
+    public boolean finalizeBackupCompression(long backupId, long hostId, long zoneId) {
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(zoneId);
+        if (nativeBackupProvider == null) {
+            return false;
+        }
+        return nativeBackupProvider.finalizeBackupCompression(backupId, hostId);
+    }
+
+    @Override
+    public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
+        return jobHandlerProxy.handleVmWorkJob(work);
+    }
+
+    @ReflectionUse
+    public Pair<JobInfo.Status, String> orchestrateTakeBackup(VmWorkTakeBackup work) {
+        BackupVO backupVO = backupDao.findById(work.getBackupId());
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(backupVO.getZoneId());
+        if (nativeBackupProvider == null) {
+            return new Pair<>(JobInfo.Status.FAILED, jobManager.marshallResultObject(Boolean.FALSE));
+        }
+        return new Pair<>(JobInfo.Status.SUCCEEDED, jobManager.marshallResultObject(nativeBackupProvider.orchestrateTakeBackup(backupVO, work.isQuiesceVm(), work.isIsolated())));
+    }
+
+    @ReflectionUse
+    public Pair<JobInfo.Status, String> orchestrateDeleteBackup(VmWorkDeleteBackup work) {
+        BackupVO backupVO = backupDao.findById(work.getBackupId());
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(backupVO.getZoneId());
+        if (nativeBackupProvider == null) {
+            return new Pair<>(JobInfo.Status.FAILED, jobManager.marshallResultObject(Boolean.FALSE));
+        }
+        return new Pair<>(JobInfo.Status.SUCCEEDED, jobManager.marshallResultObject(nativeBackupProvider.orchestrateDeleteBackup(backupVO, work.isForced())));
+    }
+
+    @ReflectionUse
+    public Pair<JobInfo.Status, String> orchestrateRestoreVMFromBackup(VmWorkRestoreBackup work) {
+        BackupVO backupVO = backupDao.findById(work.getBackupId());
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(backupVO.getZoneId());
+        if (nativeBackupProvider == null) {
+            return new Pair<>(JobInfo.Status.FAILED, jobManager.marshallResultObject(Boolean.FALSE));
+        }
+        return new Pair<>(JobInfo.Status.SUCCEEDED, jobManager.marshallResultObject(nativeBackupProvider.orchestrateRestoreVMFromBackup(backupVO,
+                userVmDao.findById(work.getVmId()), work.isQuickRestore(), work.getHostId(), true)));
+    }
+
+    @ReflectionUse
+    public Pair<JobInfo.Status, String> orchestrateRestoreBackupVolumeAndAttachToVM(VmWorkRestoreVolumeBackupAndAttach work) {
+        BackupVO backupVO = backupDao.findById(work.getBackupId());
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(backupVO.getZoneId());
+        if (nativeBackupProvider == null) {
+            return new Pair<>(JobInfo.Status.FAILED, jobManager.marshallResultObject(Boolean.FALSE));
+        }
+        return new Pair<>(JobInfo.Status.SUCCEEDED, jobManager.marshallResultObject(nativeBackupProvider.orchestrateRestoreBackedUpVolume(backupVO, userVmDao.findById(work.getVmId()),
+                work.getBackupVolumeInfo(), work.getHostIp(), work.isQuickRestore())));
+    }
+
+    protected NativeBackupProvider getNativeBackupProviderForZone(long zoneId) {
+        return Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<NativeBackupProvider>)status -> {
+            BackupProvider backupProvider = backupManager.getBackupProvider(zoneId);
+            return nativeBackupProviderMap.get(backupProvider.getName());
+        });
+    }
+}

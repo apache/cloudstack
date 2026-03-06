@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import { isAdmin } from '@/role'
 
 export default {
   name: 'storage',
@@ -473,7 +474,7 @@ export default {
       icon: 'cloud-upload-outlined',
       permission: ['listBackups'],
       params: { listvmdetails: 'true' },
-      columns: ['name', 'status', 'size', 'virtualsize', 'virtualmachinename', 'backupofferingname', 'intervaltype', 'type', 'created', 'account', 'domain', 'zone'],
+      columns: ['name', 'status', 'compressionstatus', 'size', 'virtualsize', 'virtualmachinename', 'backupofferingname', 'intervaltype', 'type', 'created', 'account', 'domain', 'zone'],
       details: ['name', 'description', 'virtualmachinename', 'id', 'intervaltype', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
       searchFilters: () => {
         var filters = ['name', 'zoneid', 'domainid', 'account', 'backupofferingid']
@@ -497,7 +498,14 @@ export default {
           label: 'label.backup.restore',
           message: 'message.backup.restore',
           dataView: true,
-          show: (record) => { return record.status === 'BackedUp' }
+          show: (record) => { return record.status === 'BackedUp' },
+          args: () => {
+            const fields = ['quickrestore']
+            if (isAdmin()) {
+              fields.push('hostid')
+            }
+            return fields
+          }
         },
         {
           api: 'restoreVolumeFromBackupAndAttachToVM',

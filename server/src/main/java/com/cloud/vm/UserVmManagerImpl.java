@@ -62,6 +62,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.dao.SnapshotPolicyDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -107,6 +108,7 @@ import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupScheduleVO;
 import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.NativeBackupService;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
@@ -531,6 +533,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private VMSnapshotDao _vmSnapshotDao;
     @Inject
+    private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+    @Inject
     private VMSnapshotManager _vmSnapshotMgr;
     @Inject
     private AffinityGroupVMMapDao _affinityGroupVMMapDao;
@@ -592,6 +596,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private BackupDao backupDao;
     @Inject
     private BackupManager backupManager;
+    @Inject
+    private NativeBackupService nativeBackupService;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
@@ -3381,7 +3387,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             additonalParams.put(VirtualMachineProfile.Param.ConsiderLastHost, cmd.getConsiderLastHost().toString());
         }
 
-        return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
+        return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner(), false).first();
     }
 
     @Override
@@ -5276,7 +5282,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
 
         try {
-            vmParamPair = startVirtualMachine(vmId, podId, clusterId, hostId, additonalParams, deploymentPlannerToUse);
+            vmParamPair = startVirtualMachine(vmId, podId, clusterId, hostId, additonalParams, deploymentPlannerToUse, false);
             vm = vmParamPair.first();
 
             // At this point VM should be in "Running" state
@@ -5667,20 +5673,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, @NotNull Map<VirtualMachineProfile.Param, Object> additionalParams,
-            String deploymentPlannerToUse) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        return startVirtualMachine(vmId, null, null, hostId, additionalParams, deploymentPlannerToUse);
+            String deploymentPlannerToUse, boolean quickRestore) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        return startVirtualMachine(vmId, null, null, hostId, additionalParams, deploymentPlannerToUse, quickRestore);
     }
 
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId,
-            @NotNull Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse)
+            @NotNull Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean quickRestore)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        return startVirtualMachine(vmId, podId, clusterId, hostId, additionalParams, deploymentPlannerToUse, true);
+        return startVirtualMachine(vmId, podId, clusterId, hostId, additionalParams, deploymentPlannerToUse, true, quickRestore);
     }
 
     @Override
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId,
-            @NotNull Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean isExplicitHost)
+            @NotNull Map<VirtualMachineProfile.Param, Object> additionalParams, String deploymentPlannerToUse, boolean isExplicitHost, boolean quickRestore)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
         // Input validation
         final Account callerAccount = CallContext.current().getCallingAccount();
@@ -5739,7 +5745,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isRootAdmin = _accountService.isRootAdmin(callerAccount.getId());
         Pod destinationPod = getDestinationPod(podId, isRootAdmin);
         Cluster destinationCluster = getDestinationCluster(clusterId, isRootAdmin);
-        HostVO destinationHost = getDestinationHost(hostId, isRootAdmin, isExplicitHost);
+        HostVO destinationHost = getDestinationHost(hostId, isRootAdmin, isExplicitHost, quickRestore);
         DataCenterDeployment plan = null;
         boolean deployOnGivenHost = false;
         if (destinationHost != null) {
@@ -5922,10 +5928,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return destinationCluster;
     }
 
-    private HostVO getDestinationHost(Long hostId, boolean isRootAdmin, boolean isExplicitHost) {
+    private HostVO getDestinationHost(Long hostId, boolean isRootAdmin, boolean isExplicitHost, boolean quickRestore) {
         HostVO destinationHost = null;
         if (hostId != null) {
-            if (isExplicitHost && !isRootAdmin) {
+            if (isExplicitHost && !isRootAdmin && !quickRestore) {
                 throw new PermissionDeniedException(
                         "Parameter " + ApiConstants.HOST_ID + " can only be specified by a Root Admin, permission denied");
             }
@@ -6449,7 +6455,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isRootAdmin = _accountService.isRootAdmin(callerId);
 
         Long hostId = cmd.getHostId();
-        getDestinationHost(hostId, isRootAdmin, true);
+        getDestinationHost(hostId, isRootAdmin, true, false);
 
         String ipAddress = cmd.getIpAddress();
         String ip6Address = cmd.getIp6Address();
@@ -8894,6 +8900,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (needRestart) {
             try {
                 _itMgr.stop(vm.getUuid());
+                vm.setState(State.Stopped);
             } catch (ResourceUnavailableException e) {
                 logger.debug("Stop vm {} failed", vm, e);
                 CloudRuntimeException ex = new CloudRuntimeException("Stop vm failed for specified vmId");
@@ -8969,6 +8976,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         newVol.getDiskOfferingId(), newVol.getTemplateId(), newVol.getSize(), Volume.class.getName(), newVol.getUuid(), vmId, newVol.isDisplay());
 
                 // Detach, destroy and create the usage event for the old root volume.
+                nativeBackupService.prepareVolumeForDetach(root, vm);
                 _volsDao.detachVolume(root.getId());
                 destroyVolumeInContext(vm, Volume.State.Allocated.equals(root.getState()) || expunge, root);
 
@@ -9740,7 +9748,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         try {
             Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmParamPair = null;
-            vmParamPair = startVirtualMachine(vmId, null, null, null, additonalParams, null);
+            vmParamPair = startVirtualMachine(vmId, null, null, null, additonalParams, null, false);
             vm = vmParamPair.first();
 
             Long isoId = vm.getIsoId();
@@ -9750,7 +9758,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 _vmDao.update(vm.getId(), vmVO);
             }
 
-            backupManager.restoreBackupToVM(cmd.getBackupId(), vmId);
+            backupManager.restoreBackupToVM(cmd.getBackupId(), vmId, cmd.getQuickRestore());
 
         } catch (CloudRuntimeException | ResourceUnavailableException | ResourceAllocationException | InsufficientCapacityException  e) {
             UserVmVO vmVO = _vmDao.findById(vmId);
@@ -9771,7 +9779,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             vm = resetVMSSHKeyInternal(userVm, owner, sshKeyPairNames);
         }
 
-        if (cmd.getStartVm()) {
+        if (cmd.getStartVm() && !cmd.getQuickRestore()) {
             Long podId = null;
             Long clusterId = null;
             if (cmd instanceof CreateVMFromBackupCmdByAdmin) {

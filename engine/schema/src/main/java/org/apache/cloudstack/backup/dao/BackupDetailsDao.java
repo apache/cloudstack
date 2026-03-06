@@ -23,4 +23,15 @@ import com.cloud.utils.db.GenericDao;
 
 public interface BackupDetailsDao extends GenericDao<BackupDetailVO, Long>, ResourceDetailsDao<BackupDetailVO> {
 
+    String END_OF_CHAIN = "end_of_chain";
+
+    String CURRENT = "current";
+
+    String IMAGE_STORE_ID = "image_store_id";
+
+    String PARENT_ID = "parent_id";
+
+    String ISOLATED = "isolated";
+
+    void removeDetailsExcept(long backupId, String exception);
 }

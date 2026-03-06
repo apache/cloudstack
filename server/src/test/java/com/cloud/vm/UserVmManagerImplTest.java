@@ -79,6 +79,7 @@ import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
@@ -413,6 +414,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     SSHKeyPairDao sshKeyPairDao;
+
+    @Mock
+    private BackupProvider backupProviderMock;
 
     @Mock
     private VMInstanceVO vmInstanceMock;
@@ -3632,12 +3636,12 @@ public class UserVmManagerImplTest {
         when(vm.getState()).thenReturn(VirtualMachine.State.Running);
         when(vm.getTemplateId()).thenReturn(templateId);
 
-        when(backupManager.restoreBackupToVM(backupId, vmId)).thenReturn(true);
+        when(backupManager.restoreBackupToVM(backupId, vmId, false)).thenReturn(true);
 
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmPair = new Pair<>(vm, params);
-        doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), isNull(), anyMap(), isNull());
-        doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), anyLong(), anyMap(), isNull());
+        doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), isNull(), anyMap(), isNull(), anyBoolean());
+        doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), anyLong(), anyMap(), isNull(), anyBoolean());
         when(userVmDao.findById(vmId)).thenReturn(vm);
         when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(mock(VMTemplateVO.class));
 
@@ -3645,7 +3649,7 @@ public class UserVmManagerImplTest {
 
         assertNotNull(result);
         assertEquals(vm, result);
-        Mockito.verify(backupManager).restoreBackupToVM(backupId, vmId);
+        Mockito.verify(backupManager).restoreBackupToVM(backupId, vmId, false);
     }
 
     @Test

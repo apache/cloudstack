@@ -34,4 +34,5 @@ public interface BackupSchedule extends ControlledEntity, InternalIdentity {
     Boolean getQuiesceVM();
     int getMaxBackups();
     String getUuid();
+    boolean isIsolated();
 }

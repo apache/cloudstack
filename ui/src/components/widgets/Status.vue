@@ -135,6 +135,7 @@ export default {
         case 'primary':
         case 'managed':
         case 'yes':
+        case 'compressed':
           status = 'success'
           break
         case 'alert':
@@ -151,6 +152,7 @@ export default {
         case 'failed':
         case 'unmanaged':
         case 'no':
+        case 'compressionerror':
           status = 'error'
           break
         case 'migrating':
@@ -159,6 +161,7 @@ export default {
         case 'stopping':
         case 'upgrading':
         case 'inprogress':
+        case 'compressing':
           status = 'processing'
           break
         case 'allocated':
@@ -175,6 +178,7 @@ export default {
         case 'warning':
         case 'backup':
         case 'partiallyallocated':
+        case 'uncompressed':
           status = 'warning'
           break
       }
