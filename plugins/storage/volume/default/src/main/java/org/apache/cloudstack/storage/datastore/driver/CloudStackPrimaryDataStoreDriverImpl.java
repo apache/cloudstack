@@ -422,12 +422,19 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         CommandResult result = new CommandResult();
         try {
             EndPoint ep = null;
-            if (snapshotOnPrimaryStore != null) {
-                ep = epSelector.select(snapshotOnPrimaryStore);
-            } else {
-                VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
+            VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
+
+            StoragePoolVO storagePool = primaryStoreDao.findById(volumeInfo.getPoolId());
+            if (storagePool != null && storagePool.getPoolType() == StoragePoolType.CLVM) {
                 ep = epSelector.select(volumeInfo);
+            } else {
+                if (snapshotOnPrimaryStore != null) {
+                    ep = epSelector.select(snapshotOnPrimaryStore);
+                } else {
+                    ep = epSelector.select(volumeInfo);
+                }
             }
+
             if ( ep == null ){
                 String errMsg = "No remote endpoint to send RevertSnapshotCommand, check if host or ssvm is down?";
                 logger.error(errMsg);

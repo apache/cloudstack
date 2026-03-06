@@ -344,15 +344,28 @@ public class KVMStorageProcessor implements StorageProcessor {
                     path = destTempl.getUuid();
                 }
 
-                if (path != null && !storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
-                    logger.warn("Failed to connect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
-                    return new PrimaryStorageDownloadAnswer("Failed to spool template disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
-                }
+                if (primaryPool.getType() == StoragePoolType.CLVM_NG) {
+                    logger.info("Copying template {} to CLVM_NG pool {}",
+                                destTempl.getUuid(), primaryPool.getUuid());
 
-                primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, path != null ? path : destTempl.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
+                    try {
+                        storagePoolMgr.createTemplateOnClvmNg(tmplVol.getPath(), path, cmd.getWaitInMillSeconds(), primaryPool);
+                        primaryVol = primaryPool.getPhysicalDisk("template-" + path);
+                    } catch (Exception e) {
+                        logger.error("Failed to create CLVM_NG template: {}", e.getMessage(), e);
+                        return new PrimaryStorageDownloadAnswer("Failed to create CLVM_NG template: " + e.getMessage());
+                    }
+                } else {
+                    if (path != null && !storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
+                        logger.warn("Failed to connect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
+                        return new PrimaryStorageDownloadAnswer("Failed to spool template disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
+                    }
 
-                if (!storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path)) {
-                    logger.warn("Failed to disconnect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
+                    primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, path != null ? path : destTempl.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
+
+                    if (!storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path)) {
+                        logger.warn("Failed to disconnect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
+                    }
                 }
             } else {
                 primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, UUID.randomUUID().toString(), primaryPool, cmd.getWaitInMillSeconds());
@@ -1115,7 +1128,14 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             } else {
                 final Script command = new Script(_manageSnapshotPath, cmd.getWaitInMillSeconds(), logger);
-                command.add("-b", isCreatedFromVmSnapshot ? snapshotDisk.getPath() : snapshot.getPath());
+                String backupPath;
+                if (primaryPool.getType() == StoragePoolType.CLVM) {
+                    backupPath = snapshotDisk.getPath();
+                    logger.debug("Using snapshotDisk path for CLVM backup: " + backupPath);
+                } else {
+                    backupPath = isCreatedFromVmSnapshot ? snapshotDisk.getPath() : snapshot.getPath();
+                }
+                command.add("-b", backupPath);
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
 
@@ -1160,6 +1180,76 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
+    /**
+     * Delete a CLVM snapshot using comprehensive cleanup.
+     * For CLVM, the snapshot path stored in DB is: /dev/vgname/volumeuuid/snapshotuuid
+     * the actual snapshot LV created by CLVM is: /dev/vgname/md5(snapshotuuid)
+     *
+     * @param snapshotPath The snapshot path from database
+     * @param checkExistence If true, checks if snapshot exists before cleanup (for explicit deletion)
+     *                       If false, always performs cleanup (for post-backup cleanup)
+     * @return true if cleanup was performed, false if snapshot didn't exist (when checkExistence=true)
+     */
+    private boolean deleteClvmSnapshot(String snapshotPath, boolean checkExistence) {
+        logger.info("Starting CLVM snapshot deletion for path: {}, checkExistence: {}", snapshotPath, checkExistence);
+
+        try {
+            // Parse the snapshot path: /dev/acsvg/volume-uuid/snapshot-uuid
+            String[] pathParts = snapshotPath.split("/");
+            if (pathParts.length < 5) {
+                logger.warn("Invalid CLVM snapshot path format: {}, expected format: /dev/vgname/volume-uuid/snapshot-uuid", snapshotPath);
+                return false;
+            }
+
+            String vgName = pathParts[2];
+            String volumeUuid = pathParts[3];
+            String snapshotUuid = pathParts[4];
+
+            logger.info("Parsed snapshot path - VG: {}, Volume: {}, Snapshot: {}", vgName, volumeUuid, snapshotUuid);
+
+            // Compute MD5 hash of snapshot UUID (same as managesnapshot.sh does)
+            String md5Hash = computeMd5Hash(snapshotUuid);
+            logger.debug("Computed MD5 hash for snapshot UUID {}: {}", snapshotUuid, md5Hash);
+            String snapshotLvPath = vgName + "/" + md5Hash;
+            String actualSnapshotPath = "/dev/" + snapshotLvPath;
+
+            // Check if snapshot exists (if requested)
+            if (checkExistence) {
+                Script checkSnapshot = new Script("/usr/sbin/lvs", 5000, logger);
+                checkSnapshot.add("--noheadings");
+                checkSnapshot.add(snapshotLvPath);
+                String checkResult = checkSnapshot.execute();
+
+                if (checkResult != null) {
+                    // Snapshot doesn't exist - was already cleaned up
+                    logger.info("CLVM snapshot {} was already deleted, no cleanup needed", md5Hash);
+                    return false;
+                }
+                logger.info("CLVM snapshot still exists for {}, performing cleanup", md5Hash);
+            }
+
+            // Use native LVM command to remove snapshot (handles all cleanup automatically)
+            Script removeSnapshot = new Script("lvremove", 10000, logger);
+            removeSnapshot.add("-f");
+            removeSnapshot.add(snapshotLvPath);
+
+            logger.info("Executing: lvremove -f {}", snapshotLvPath);
+            String removeResult = removeSnapshot.execute();
+
+            if (removeResult == null) {
+                logger.info("Successfully deleted CLVM snapshot: {} (actual path: {})", snapshotPath, actualSnapshotPath);
+                return true;
+            } else {
+                logger.warn("Failed to delete CLVM snapshot {}: {}", snapshotPath, removeResult);
+                return false;
+            }
+
+        } catch (Exception ex) {
+            logger.error("Exception while deleting CLVM snapshot {}", snapshotPath, ex);
+            return false;
+        }
+    }
+
     private void deleteSnapshotOnPrimary(final CopyCommand cmd, final SnapshotObjectTO snapshot,
             KVMStoragePool primaryPool) {
         String snapshotPath = snapshot.getPath();
@@ -1172,12 +1262,39 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         if ((backupSnapshotAfterTakingSnapshot == null || BooleanUtils.toBoolean(backupSnapshotAfterTakingSnapshot)) && deleteSnapshotOnPrimary) {
             try {
-                Files.deleteIfExists(Paths.get(snapshotPath));
+                if (primaryPool.getType() == StoragePoolType.CLVM) {
+                    boolean cleanedUp = deleteClvmSnapshot(snapshotPath, false);
+                    if (!cleanedUp) {
+                        logger.info("No need to delete CLVM snapshot on primary as it doesn't exist: {}", snapshotPath);
+                    }
+                } else {
+                    Files.deleteIfExists(Paths.get(snapshotPath));
+                }
             } catch (IOException ex) {
                 logger.error("Failed to delete snapshot [{}] on primary storage [{}].", snapshot.getId(), snapshot.getName(), ex);
             }
         } else {
             logger.debug("This backup is temporary, not deleting snapshot [{}] on primary storage [{}]", snapshot.getId(), snapshot.getName());
+        }
+    }
+
+
+    /**
+     * Compute MD5 hash of a string, matching what managesnapshot.sh does:
+     * echo "${snapshot}" | md5sum -t | awk '{ print $1 }'
+     */
+    private String computeMd5Hash(String input) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            byte[] array = md.digest((input + "\n").getBytes("UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : array) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            logger.error("Failed to compute MD5 hash for: {}", input, e);
+            return input;
         }
     }
 
@@ -1842,8 +1959,10 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
 
-            if (DomainInfo.DomainState.VIR_DOMAIN_RUNNING.equals(state) && volume.requiresEncryption()) {
-                throw new CloudRuntimeException("VM is running, encrypted volume snapshots aren't supported");
+            if (DomainInfo.DomainState.VIR_DOMAIN_RUNNING.equals(state)) {
+                if (volume.requiresEncryption()) {
+                    throw new CloudRuntimeException("VM is running, encrypted volume snapshots aren't supported");
+                }
             }
 
             KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
@@ -2879,6 +2998,25 @@ public class KVMStorageProcessor implements StorageProcessor {
                 deleteSnapshotFile(snapshotTO);
                 if (snapshotTO.isKvmIncrementalSnapshot()) {
                     deleteCheckpoint(snapshotTO);
+                }
+            } else if (primaryPool.getType() == StoragePoolType.CLVM) {
+                // For CLVM, snapshots are typically already deleted from primary storage during backup
+                // via deleteSnapshotOnPrimary in the backupSnapshot finally block.
+                // This is called when the user explicitly deletes the snapshot via UI/API.
+                // We check if the snapshot still exists and clean it up if needed.
+                logger.info("Processing CLVM snapshot deletion (id={}, name={}, path={}) on primary storage",
+                        snapshotTO.getId(), snapshotTO.getName(), snapshotTO.getPath());
+
+                String snapshotPath = snapshotTO.getPath();
+                if (snapshotPath != null && !snapshotPath.isEmpty()) {
+                    boolean wasDeleted = deleteClvmSnapshot(snapshotPath, true);
+                    if (wasDeleted) {
+                        logger.info("Successfully cleaned up CLVM snapshot {} from primary storage", snapshotName);
+                    } else {
+                        logger.info("CLVM snapshot {} was already deleted from primary storage during backup, no cleanup needed", snapshotName);
+                    }
+                } else {
+                    logger.debug("CLVM snapshot path is null or empty, assuming already cleaned up");
                 }
             } else {
                 logger.warn("Operation not implemented for storage pool type of " + primaryPool.getType().toString());

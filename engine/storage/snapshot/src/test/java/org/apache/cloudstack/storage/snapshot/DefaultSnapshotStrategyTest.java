@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -326,5 +327,237 @@ public class DefaultSnapshotStrategyTest {
         Mockito.when(volumeVO.getDataCenterId()).thenReturn(100L);
         prepareMocksForIsSnapshotStoredOnSameZoneStoreForQCOW2VolumeTest(100L);
         Assert.assertTrue(defaultSnapshotStrategySpy.isSnapshotStoredOnSameZoneStoreForQCOW2Volume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_NullVolume() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, null));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_NullPoolId() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(null);
+
+        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_NullPool() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+        Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn(null);
+
+        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_NonCLVMPool() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+
+        StoragePool pool = Mockito.mock(StoragePool.class, Mockito.withSettings().extraInterfaces(DataStore.class));
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+
+        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_RBDPool() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+
+        StoragePool pool = Mockito.mock(StoragePool.class, Mockito.withSettings().extraInterfaces(DataStore.class));
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+
+        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_CLVMPoolNoSnapshotStores() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getId()).thenReturn(1L);
+
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+
+        StoragePool pool = Mockito.mock(StoragePool.class, Mockito.withSettings().extraInterfaces(DataStore.class));
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+
+        Mockito.when(snapshotDataStoreDao.listReadyBySnapshot(1L, DataStoreRole.Image)).thenReturn(new ArrayList<>());
+
+        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_CLVMPoolSnapshotInDifferentZone() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getId()).thenReturn(1L);
+
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+        Mockito.when(volumeVO.getDataCenterId()).thenReturn(100L);
+
+        StoragePool pool = Mockito.mock(StoragePool.class, Mockito.withSettings().extraInterfaces(DataStore.class));
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+
+        SnapshotDataStoreVO snapshotStore1 = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStore1.getDataStoreId()).thenReturn(201L);
+        Mockito.when(snapshotStore1.getRole()).thenReturn(DataStoreRole.Image);
+
+        SnapshotDataStoreVO snapshotStore2 = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStore2.getDataStoreId()).thenReturn(202L);
+        Mockito.when(snapshotStore2.getRole()).thenReturn(DataStoreRole.Image);
+
+        Mockito.when(snapshotDataStoreDao.listReadyBySnapshot(1L, DataStoreRole.Image))
+            .thenReturn(List.of(snapshotStore1, snapshotStore2));
+
+        Mockito.when(dataStoreManager.getStoreZoneId(201L, DataStoreRole.Image)).thenReturn(111L);
+        Mockito.when(dataStoreManager.getStoreZoneId(202L, DataStoreRole.Image)).thenReturn(112L);
+
+        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_CLVMPoolSnapshotInSameZone() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getId()).thenReturn(1L);
+
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+        Mockito.when(volumeVO.getDataCenterId()).thenReturn(100L);
+
+        StoragePool pool = Mockito.mock(StoragePool.class, Mockito.withSettings().extraInterfaces(DataStore.class));
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+
+        SnapshotDataStoreVO snapshotStore = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStore.getDataStoreId()).thenReturn(201L);
+        Mockito.when(snapshotStore.getRole()).thenReturn(DataStoreRole.Image);
+
+        Mockito.when(snapshotDataStoreDao.listReadyBySnapshot(1L, DataStoreRole.Image))
+            .thenReturn(List.of(snapshotStore));
+
+        Mockito.when(dataStoreManager.getStoreZoneId(201L, DataStoreRole.Image)).thenReturn(100L);
+
+        Assert.assertTrue(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_CLVMPoolMultipleSnapshotsOneMatches() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getId()).thenReturn(1L);
+
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+        Mockito.when(volumeVO.getDataCenterId()).thenReturn(100L);
+
+        StoragePool pool = Mockito.mock(StoragePool.class, Mockito.withSettings().extraInterfaces(DataStore.class));
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+
+        SnapshotDataStoreVO snapshotStore1 = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStore1.getDataStoreId()).thenReturn(201L);
+        Mockito.when(snapshotStore1.getRole()).thenReturn(DataStoreRole.Image);
+
+        SnapshotDataStoreVO snapshotStore2 = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStore2.getDataStoreId()).thenReturn(202L);
+        Mockito.when(snapshotStore2.getRole()).thenReturn(DataStoreRole.Image);
+
+        SnapshotDataStoreVO snapshotStore3 = Mockito.mock(SnapshotDataStoreVO.class);
+
+        Mockito.when(snapshotDataStoreDao.listReadyBySnapshot(1L, DataStoreRole.Image))
+            .thenReturn(List.of(snapshotStore1, snapshotStore2, snapshotStore3));
+
+        Mockito.when(dataStoreManager.getStoreZoneId(201L, DataStoreRole.Image)).thenReturn(111L);
+        Mockito.when(dataStoreManager.getStoreZoneId(202L, DataStoreRole.Image)).thenReturn(100L);
+
+        Assert.assertTrue(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_CLVMPoolNullZoneIds() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getId()).thenReturn(1L);
+
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+        Mockito.when(volumeVO.getDataCenterId()).thenReturn(100L);
+
+        StoragePool pool = Mockito.mock(StoragePool.class, Mockito.withSettings().extraInterfaces(DataStore.class));
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+
+        SnapshotDataStoreVO snapshotStore = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStore.getDataStoreId()).thenReturn(201L);
+        Mockito.when(snapshotStore.getRole()).thenReturn(DataStoreRole.Image);
+
+        Mockito.when(snapshotDataStoreDao.listReadyBySnapshot(1L, DataStoreRole.Image))
+            .thenReturn(List.of(snapshotStore));
+
+        Mockito.when(dataStoreManager.getStoreZoneId(201L, DataStoreRole.Image)).thenReturn(null);
+
+        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_CLVMPoolVolumeNullDataCenter() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getId()).thenReturn(1L);
+
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+        Mockito.when(volumeVO.getDataCenterId()).thenReturn(1L);
+
+        StoragePool pool = Mockito.mock(StoragePool.class, Mockito.withSettings().extraInterfaces(DataStore.class));
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+
+        SnapshotDataStoreVO snapshotStore = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStore.getDataStoreId()).thenReturn(201L);
+        Mockito.when(snapshotStore.getRole()).thenReturn(DataStoreRole.Image);
+
+        Mockito.when(snapshotDataStoreDao.listReadyBySnapshot(1L, DataStoreRole.Image))
+            .thenReturn(List.of(snapshotStore));
+
+        Mockito.when(dataStoreManager.getStoreZoneId(201L, DataStoreRole.Image)).thenReturn(100L);
+
+        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
+    }
+
+    @Test
+    public void testIsSnapshotStoredOnSecondaryForCLVMVolume_CLVMPoolMultipleSnapshotsAllInSameZone() {
+        Snapshot snapshot = Mockito.mock(Snapshot.class);
+        Mockito.when(snapshot.getId()).thenReturn(1L);
+
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+        Mockito.when(volumeVO.getDataCenterId()).thenReturn(100L);
+
+        StoragePool pool = Mockito.mock(StoragePool.class, Mockito.withSettings().extraInterfaces(DataStore.class));
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+        Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+
+        SnapshotDataStoreVO snapshotStore1 = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStore1.getDataStoreId()).thenReturn(201L);
+        Mockito.when(snapshotStore1.getRole()).thenReturn(DataStoreRole.Image);
+
+        SnapshotDataStoreVO snapshotStore2 = Mockito.mock(SnapshotDataStoreVO.class);
+
+        Mockito.when(snapshotDataStoreDao.listReadyBySnapshot(1L, DataStoreRole.Image))
+            .thenReturn(List.of(snapshotStore1, snapshotStore2));
+
+        Mockito.when(dataStoreManager.getStoreZoneId(201L, DataStoreRole.Image)).thenReturn(100L);
+
+        Assert.assertTrue(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
     }
 }

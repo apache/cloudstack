@@ -643,6 +643,10 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 return StrategyPriority.DEFAULT;
             }
 
+            if (isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO)) {
+                return StrategyPriority.DEFAULT;
+            }
+
             return StrategyPriority.CANT_HANDLE;
         }
         if (zoneId != null && SnapshotOperation.DELETE.equals(op)) {
@@ -689,6 +693,34 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         return CollectionUtils.isNotEmpty(snapshotStores) &&
                 snapshotStores.stream().anyMatch(s -> Objects.equals(
                         dataStoreMgr.getStoreZoneId(s.getDataStoreId(), s.getRole()), volumeVO.getDataCenterId()));
+    }
+
+    /**
+     * Checks if a CLVM volume snapshot is stored on secondary storage in the same zone.
+     * CLVM snapshots are backed up to secondary storage and removed from primary storage.
+     */
+    protected boolean isSnapshotStoredOnSecondaryForCLVMVolume(Snapshot snapshot, VolumeVO volumeVO) {
+        if (volumeVO == null) {
+            return false;
+        }
+
+        Long poolId = volumeVO.getPoolId();
+        if (poolId == null) {
+            return false;
+        }
+
+        StoragePool pool = (StoragePool) dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+        if (pool == null || pool.getPoolType() != StoragePoolType.CLVM || pool.getPoolType() != StoragePoolType.CLVM_NG) {
+            return false;
+        }
+
+        List<SnapshotDataStoreVO> snapshotStores = snapshotStoreDao.listReadyBySnapshot(snapshot.getId(), DataStoreRole.Image);
+        if (CollectionUtils.isEmpty(snapshotStores)) {
+            return false;
+        }
+
+        return snapshotStores.stream().anyMatch(s -> Objects.equals(
+                dataStoreMgr.getStoreZoneId(s.getDataStoreId(), s.getRole()), volumeVO.getDataCenterId()));
     }
 
 }

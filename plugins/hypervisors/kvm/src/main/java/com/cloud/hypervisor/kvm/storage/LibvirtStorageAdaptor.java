@@ -34,6 +34,9 @@ import java.util.stream.Collectors;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.utils.script.OutputInterpreter;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuImageOptions;
@@ -47,6 +50,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.joda.time.Duration;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.Secret;
@@ -254,9 +258,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             try {
                 vol = pool.storageVolLookupByName(volName);
-                logger.debug("Found volume " + volName + " in storage pool " + pool.getName() + " after refreshing the pool");
+                if (vol != null) {
+                    logger.debug("Found volume " + volName + " in storage pool " + pool.getName() + " after refreshing the pool");
+                }
             } catch (LibvirtException e) {
-                throw new CloudRuntimeException("Could not find volume " + volName + ": " + e.getMessage());
+                logger.debug("Volume " + volName + " still not found after pool refresh: " + e.getMessage());
+                return null;
             }
         }
 
@@ -663,6 +670,17 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         try {
             StorageVol vol = getVolume(libvirtPool.getPool(), volumeUuid);
+
+            // Check if volume was found - if null, treat as not found and trigger fallback for CLVM/CLVM_NG
+            if (vol == null) {
+                logger.debug("Volume " + volumeUuid + " not found in libvirt, will check for CLVM/CLVM_NG fallback");
+                if (pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG) {
+                    return getPhysicalDisk(volumeUuid, pool, libvirtPool);
+                }
+
+                throw new CloudRuntimeException("Volume " + volumeUuid + " not found in libvirt pool");
+            }
+
             KVMPhysicalDisk disk;
             LibvirtStorageVolumeDef voldef = getStorageVolumeDef(libvirtPool.getPool().getConnect(), vol);
             disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
@@ -693,8 +711,164 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
             return disk;
         } catch (LibvirtException e) {
-            logger.debug("Failed to get physical disk:", e);
+            logger.debug("Failed to get volume from libvirt: " + e.getMessage());
+            // For CLVM/CLVM_NG, try direct block device access as fallback
+            if (pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG) {
+                return getPhysicalDisk(volumeUuid, pool, libvirtPool);
+            }
+
             throw new CloudRuntimeException(e.toString());
+        }
+    }
+
+    private KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool, LibvirtStoragePool libvirtPool) {
+        logger.info("CLVM volume not visible to libvirt, attempting direct block device access for volume: {}", volumeUuid);
+
+        try {
+            logger.debug("Refreshing libvirt storage pool: {}", pool.getUuid());
+            libvirtPool.getPool().refresh(0);
+
+            StorageVol vol = getVolume(libvirtPool.getPool(), volumeUuid);
+            if (vol != null) {
+                logger.info("Volume found after pool refresh: {}", volumeUuid);
+                KVMPhysicalDisk disk;
+                LibvirtStorageVolumeDef voldef = getStorageVolumeDef(libvirtPool.getPool().getConnect(), vol);
+                disk = new KVMPhysicalDisk(vol.getPath(), vol.getName(), pool);
+                disk.setSize(vol.getInfo().allocation);
+                disk.setVirtualSize(vol.getInfo().capacity);
+                disk.setFormat(voldef.getFormat() == LibvirtStorageVolumeDef.VolumeFormat.QCOW2 ?
+                        PhysicalDiskFormat.QCOW2 : PhysicalDiskFormat.RAW);
+                return disk;
+            }
+        } catch (LibvirtException refreshEx) {
+            logger.debug("Pool refresh failed or volume still not found: {}", refreshEx.getMessage());
+        }
+
+        // Still not found after refresh, try direct block device access
+        return getPhysicalDiskViaDirectBlockDevice(volumeUuid, pool);
+    }
+
+    private String getVgName(String sourceDir) {
+        String vgName = sourceDir;
+        if (vgName.startsWith("/")) {
+            String[] parts = vgName.split("/");
+            List<String> tokens = Arrays.stream(parts)
+                    .filter(s -> !s.isEmpty()).collect(Collectors.toList());
+
+            vgName = tokens.size() > 1 ? tokens.get(1)
+                    : tokens.size() == 1 ? tokens.get(0)
+                      : "";
+        }
+        return vgName;
+    }
+
+    /**
+     * For CLVM volumes that exist in LVM but are not visible to libvirt,
+     * access them directly via block device path.
+     */
+    private KVMPhysicalDisk getPhysicalDiskViaDirectBlockDevice(String volumeUuid, KVMStoragePool pool) {
+        try {
+            // For CLVM, pool sourceDir contains the VG path (e.g., "/dev/acsvg")
+            // Extract the VG name
+            String sourceDir = pool.getLocalPath();
+            if (sourceDir == null || sourceDir.isEmpty()) {
+                throw new CloudRuntimeException("CLVM pool sourceDir is not set, cannot determine VG name");
+            }
+            String vgName = getVgName(sourceDir);
+            logger.debug("Using VG name: {} (from sourceDir: {}) ", vgName, sourceDir);
+
+            // Check if the LV exists in LVM using lvs command
+            logger.debug("Checking if volume {} exists in VG {}", volumeUuid, vgName);
+            Script checkLvCmd = new Script("/usr/sbin/lvs", 5000, logger);
+            checkLvCmd.add("--noheadings");
+            checkLvCmd.add("--unbuffered");
+            checkLvCmd.add(vgName + "/" + volumeUuid);
+
+            String checkResult = checkLvCmd.execute();
+            if (checkResult != null) {
+                logger.debug("Volume {} does not exist in VG {}: {}", volumeUuid, vgName, checkResult);
+                throw new CloudRuntimeException(String.format("Storage volume not found: no storage vol with matching name '%s'", volumeUuid));
+            }
+
+            logger.info("Volume {} exists in LVM but not visible to libvirt, accessing directly",  volumeUuid);
+
+            // Try standard device path first
+            String lvPath = "/dev/" + vgName + "/" + volumeUuid;
+            File lvDevice = new File(lvPath);
+
+            if (!lvDevice.exists()) {
+                // Try device-mapper path with escaped hyphens
+                String vgNameEscaped = vgName.replace("-", "--");
+                String volumeUuidEscaped = volumeUuid.replace("-", "--");
+                lvPath = "/dev/mapper/" + vgNameEscaped + "-" + volumeUuidEscaped;
+                lvDevice = new File(lvPath);
+
+                if (!lvDevice.exists()) {
+                    logger.warn("Volume exists in LVM but device node not found: {}", volumeUuid);
+                    throw new CloudRuntimeException(String.format("Could not find volume %s " +
+                            "in VG %s - volume exists in LVM but device node not accessible", volumeUuid, vgName));
+                }
+            }
+
+            long size = 0;
+            try {
+                Script lvsCmd = new Script("/usr/sbin/lvs", 5000, logger);
+                lvsCmd.add("--noheadings");
+                lvsCmd.add("--units");
+                lvsCmd.add("b");
+                lvsCmd.add("-o");
+                lvsCmd.add("lv_size");
+                lvsCmd.add(lvPath);
+
+                OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+                String result = lvsCmd.execute(parser);
+
+                String output = null;
+                if (result == null) {
+                    output = parser.getLines();
+                } else {
+                    output = result;
+                }
+
+                if (output != null && !output.isEmpty()) {
+                    String sizeStr = output.trim().replaceAll("[^0-9]", "");
+                    if (!sizeStr.isEmpty()) {
+                        size = Long.parseLong(sizeStr);
+                    }
+                }
+            } catch (Exception sizeEx) {
+                logger.warn("Failed to get size for CLVM volume via lvs: {}", sizeEx.getMessage());
+                if (lvDevice.isFile()) {
+                    size = lvDevice.length();
+                }
+            }
+
+            KVMPhysicalDisk disk = new KVMPhysicalDisk(lvPath, volumeUuid, pool);
+
+            // Detect correct format based on pool type
+            PhysicalDiskFormat diskFormat = PhysicalDiskFormat.RAW; // Default for legacy CLVM
+            if (pool.getType() == StoragePoolType.CLVM_NG) {
+                // CLVM_NG uses QCOW2 format on LVM block devices
+                diskFormat = PhysicalDiskFormat.QCOW2;
+                logger.debug("CLVM_NG pool detected, setting disk format to QCOW2 for volume {}", volumeUuid);
+            } else {
+                logger.debug("CLVM pool detected, setting disk format to RAW for volume {}", volumeUuid);
+            }
+
+            disk.setFormat(diskFormat);
+            disk.setSize(size);
+            disk.setVirtualSize(size);
+
+            logger.info("Successfully accessed CLVM/CLVM_NG volume via direct block device: {} " +
+                    "with format: {} and size: {} bytes", lvPath, diskFormat, size);
+
+            return disk;
+
+        } catch (CloudRuntimeException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            logger.error("Failed to access CLVM volume via direct block device: {}",volumeUuid, ex);
+            throw new CloudRuntimeException(String.format("Could not find volume %s: %s ",volumeUuid, ex.getMessage()));
         }
     }
 
@@ -822,7 +996,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 try {
                     sp = createNetfsStoragePool(PoolType.GLUSTERFS, conn, name, host, path, null);
                 } catch (LibvirtException e) {
-                    logger.error("Failed to create glusterfs mount: " + host + ":" + path , e);
+                    logger.error("Failed to create glusterlvm_fs mount: " + host + ":" + path , e);
                     logger.error(e.getStackTrace());
                     throw new CloudRuntimeException(e.toString());
                 }
@@ -830,7 +1004,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 sp = createSharedStoragePool(conn, name, host, path);
             } else if (type == StoragePoolType.RBD) {
                 sp = createRBDStoragePool(conn, name, host, port, userInfo, path);
-            } else if (type == StoragePoolType.CLVM) {
+            } else if (type == StoragePoolType.CLVM || type == StoragePoolType.CLVM_NG) {
                 sp = createCLVMStoragePool(conn, name, host, path);
             }
         }
@@ -1116,6 +1290,17 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean connectPhysicalDisk(String name, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         // this is for managed storage that needs to prep disks prior to use
+        if ((pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG) && isVMMigrate) {
+            logger.info("Activating CLVM/CLVM_NG volume {} at location: {} in shared mode for VM migration", name, pool.getLocalPath() + File.separator + name);
+            Script activateVolInSharedMode = new Script("lvchange", 5000, logger);
+            activateVolInSharedMode.add("-asy");
+            activateVolInSharedMode.add(pool.getLocalPath() + File.separator + name);
+            String result = activateVolInSharedMode.execute();
+            if (result != null) {
+                logger.error("Failed to activate CLVM/CLVM_NG volume {} in shared mode for VM migration. Command output: {}", name, result);
+                return false;
+            }
+        }
         return true;
     }
 
@@ -1224,10 +1409,21 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         }
 
+        // For CLVM/CLVM_NG pools, always use direct LVM cleanup to ensure secure zero-fill
+        if (pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG) {
+            logger.info("CLVM/CLVM_NG pool detected - using direct LVM cleanup with secure zero-fill for volume {}", uuid);
+            return cleanupCLVMVolume(uuid, pool);
+        }
+
+        // For non-CLVM pools, use libvirt deletion
         LibvirtStoragePool libvirtPool = (LibvirtStoragePool)pool;
         try {
             StorageVol vol = getVolume(libvirtPool.getPool(), uuid);
-            logger.debug("Instructing libvirt to remove volume " + uuid + " from pool " + pool.getUuid());
+            if (vol == null) {
+                logger.warn("Volume {} not found in libvirt pool {}, it may have been already deleted", uuid, pool.getUuid());
+                return true;
+            }
+            logger.debug("Instructing libvirt to remove volume {} from pool {}", uuid, pool.getUuid());
             if(Storage.ImageFormat.DIR.equals(format)){
                 deleteDirVol(libvirtPool, vol);
             } else {
@@ -1237,6 +1433,86 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return true;
         } catch (LibvirtException e) {
             throw new CloudRuntimeException(e.toString());
+        }
+    }
+
+    private boolean shouldSecureZeroFill(KVMStoragePool pool) {
+        Map<String, String> details = pool.getDetails();
+        String secureZeroFillStr = (details != null) ? details.get(KVMStoragePool.CLVM_SECURE_ZERO_FILL) : null;
+        return Boolean.parseBoolean(secureZeroFillStr);
+    }
+
+    /**
+     * Clean up CLVM volume and its snapshots directly using LVM commands.
+     * This is used as a fallback when libvirt cannot find or delete the volume.
+     */
+    private boolean cleanupCLVMVolume(String uuid, KVMStoragePool pool) {
+        logger.info("Starting direct LVM cleanup for CLVM volume: {} in pool: {}", uuid, pool.getUuid());
+
+        try {
+            String sourceDir = pool.getLocalPath();
+            if (sourceDir == null || sourceDir.isEmpty()) {
+                logger.debug("Source directory is null or empty, cannot determine VG name for CLVM pool {}, skipping direct cleanup", pool.getUuid());
+                return true;
+            }
+            String vgName = getVgName(sourceDir);
+            logger.info("Determined VG name: {} for pool: {}", vgName, pool.getUuid());
+
+            if (vgName == null || vgName.isEmpty()) {
+                logger.warn("Cannot determine VG name for CLVM pool {}, skipping direct cleanup", pool.getUuid());
+                return true;
+            }
+
+            String lvPath = "/dev/" + vgName + "/" + uuid;
+            logger.debug("Volume path: {}", lvPath);
+
+            // Check if the LV exists
+            Script checkLvs = new Script("lvs", 5000, logger);
+            checkLvs.add("--noheadings");
+            checkLvs.add("--unbuffered");
+            checkLvs.add(lvPath);
+
+            logger.info("Checking if volume exists: lvs --noheadings --unbuffered {}", lvPath);
+            String checkResult = checkLvs.execute();
+
+            if (checkResult != null) {
+                logger.info("CLVM volume {} does not exist in LVM (check returned: {}), considering it as already deleted", uuid, checkResult);
+                return true;
+            }
+
+            logger.info("Volume {} exists, proceeding with cleanup", uuid);
+
+            boolean secureZeroFillEnabled = shouldSecureZeroFill(pool);
+
+            if (secureZeroFillEnabled) {
+                logger.info("Step 1: Zero-filling volume {} for security", uuid);
+                secureZeroFillVolume(lvPath, uuid);
+            } else {
+                logger.info("Secure zero-fill is disabled, skipping zero-filling for volume {}", uuid);
+            }
+
+            logger.info("Step 2: Removing volume {}", uuid);
+            Script removeLv = new Script("lvremove", 10000, logger);
+            removeLv.add("-f");
+            removeLv.add(lvPath);
+
+            logger.info("Executing command: lvremove -f {}", lvPath);
+            String removeResult = removeLv.execute();
+
+            if (removeResult == null) {
+                logger.info("Successfully removed CLVM volume {} using direct LVM cleanup", uuid);
+                return true;
+            } else {
+                logger.warn("Command 'lvremove -f {}' returned error: {}", lvPath, removeResult);
+                if (removeResult.contains("not found") || removeResult.contains("Failed to find")) {
+                    logger.info("CLVM volume {} not found during cleanup, considering it as already deleted", uuid);
+                    return true;
+                }
+                return false;
+            }
+        } catch (Exception ex) {
+            logger.error("Exception during CLVM volume cleanup for {}: {}", uuid, ex.getMessage(), ex);
+            return true;
         }
     }
 
@@ -1276,6 +1552,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     Script.runSimpleBashScript("chmod 755 " + disk.getPath());
                     Script.runSimpleBashScript("tar -x -f " + template.getPath() + "/*.tar -C " + disk.getPath(), timeout);
                 } else if (format == PhysicalDiskFormat.QCOW2) {
+                    if (destPool.getType() == StoragePoolType.CLVM_NG) {
+                        logger.info("Creating CLVM_NG volume {} with backing file from template {}", newUuid, template.getName());
+                        String backingFile = getClvmBackingFile(template, destPool);
+
+                        disk = createClvmNgDiskWithBacking(newUuid, timeout, size, backingFile, destPool);
+                        return disk;
+                    }
+
                     QemuImg qemu = new QemuImg(timeout);
                     QemuImgFile destFile = new QemuImgFile(disk.getPath(), format);
                     if (size > template.getVirtualSize()) {
@@ -1336,6 +1620,92 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         return disk;
+    }
+
+    private String getClvmBackingFile(KVMPhysicalDisk template, KVMStoragePool destPool) {
+        String templateLvName = "template-" + template.getName();
+        KVMPhysicalDisk templateOnPrimary = null;
+
+        try {
+            templateOnPrimary = destPool.getPhysicalDisk(templateLvName);
+        } catch (CloudRuntimeException e) {
+            logger.warn("Template {} not found on CLVM_NG pool {}.", templateLvName, destPool.getUuid());
+        }
+
+        String backingFile;
+        if (templateOnPrimary != null) {
+            backingFile = templateOnPrimary.getPath();
+            logger.info("Using template on primary storage as backing file: {}", backingFile);
+
+            ensureTemplateLvInSharedMode(backingFile);
+        } else {
+            logger.error("Template {} should be on primary storage before creating volumes from it", templateLvName);
+            throw new CloudRuntimeException(String.format("Template not found on CLVM_NG primary storage: {}." +
+                    "Template must be copied to primary storage first.", templateLvName));
+        }
+        return backingFile;
+    }
+
+    /**
+     * Ensures a template LV is activated in shared mode so multiple VMs can use it as a backing file.
+     *
+     * @param templatePath The full path to the template LV (e.g., /dev/vgname/template-uuid)
+     * @param throwOnFailure If true, throws CloudRuntimeException on failure; if false, logs warning and continues
+     */
+    private void ensureTemplateLvInSharedMode(String templatePath, boolean throwOnFailure) {
+        try {
+            Script checkLvs = new Script("lvs", Duration.millis(5000), logger);
+            checkLvs.add("--noheadings");
+            checkLvs.add("-o", "lv_attr");
+            checkLvs.add(templatePath);
+
+            OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+            String result = checkLvs.execute(parser);
+
+            if (result == null && parser.getLines() != null && !parser.getLines().isEmpty()) {
+                String lvAttr = parser.getLines().trim();
+                if (lvAttr.length() >= 6) {
+                    char activeChar = lvAttr.charAt(4);  // 'a' = active, '-' = inactive
+                    char sharedChar = lvAttr.charAt(5);  // 's' = shared, 'e' = exclusive, '-' = not set
+
+                    if (activeChar != 'a' || sharedChar != 's') {
+                        logger.info("Template LV {} is not in shared mode (attr: {}). Activating in shared mode.",
+                                   templatePath, lvAttr);
+
+                        Script lvchange = new Script("lvchange", Duration.millis(5000), logger);
+                        lvchange.add("-asy");
+                        lvchange.add(templatePath);
+                        result = lvchange.execute();
+
+                        if (result != null) {
+                            String errorMsg = "Failed to activate template LV " + templatePath + " in shared mode: " + result;
+                            if (throwOnFailure) {
+                                throw new CloudRuntimeException(errorMsg);
+                            } else {
+                                logger.warn(errorMsg);
+                            }
+                        } else {
+                            logger.info("Successfully activated template LV {} in shared mode", templatePath);
+                        }
+                    } else {
+                        logger.debug("Template LV {} is already in shared mode", templatePath);
+                    }
+                }
+            }
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            String errorMsg = "Failed to check/ensure template LV shared mode for " + templatePath + ": " + e.getMessage();
+            if (throwOnFailure) {
+                throw new CloudRuntimeException(errorMsg, e);
+            } else {
+                logger.warn(errorMsg, e);
+            }
+        }
+    }
+
+    private void ensureTemplateLvInSharedMode(String templatePath) {
+        ensureTemplateLvInSharedMode(templatePath, false);
     }
 
     private KVMPhysicalDisk createDiskFromTemplateOnRBD(KVMPhysicalDisk template,
@@ -1737,7 +2107,269 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         vol.delete(0);
     }
 
+    /**
+     * Securely zero-fill a volume before deletion to prevent data leakage.
+     * Uses blkdiscard (fast TRIM) as primary method, with dd zero-fill as fallback.
+     *
+     * @param lvPath The full path to the logical volume (e.g., /dev/vgname/lvname)
+     * @param volumeUuid The UUID of the volume for logging purposes
+     */
+    private void secureZeroFillVolume(String lvPath, String volumeUuid) {
+        logger.info("Starting secure zero-fill for CLVM volume: {} at path: {}", volumeUuid, lvPath);
+
+        boolean blkdiscardSuccess = false;
+
+        // Try blkdiscard first (fast - sends TRIM commands)
+        try {
+            Script blkdiscard = new Script("blkdiscard", 300000, logger); // 5 minute timeout
+            blkdiscard.add("-f"); // Force flag to suppress confirmation prompts
+            blkdiscard.add(lvPath);
+
+            String result = blkdiscard.execute();
+            if (result == null) {
+                logger.info("Successfully zero-filled CLVM volume {} using blkdiscard (TRIM)", volumeUuid);
+                blkdiscardSuccess = true;
+            } else {
+                if (result.contains("Operation not supported") || result.contains("BLKDISCARD ioctl failed")) {
+                    logger.info("blkdiscard not supported for volume {} (device doesn't support TRIM/DISCARD), using dd fallback", volumeUuid);
+                } else {
+                    logger.warn("blkdiscard failed for volume {}: {}, will try dd fallback", volumeUuid, result);
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Exception during blkdiscard for volume {}: {}, will try dd fallback", volumeUuid, e.getMessage());
+        }
+
+        // Fallback to dd zero-fill (slow)
+        if (!blkdiscardSuccess) {
+            logger.info("Attempting zero-fill using dd for CLVM volume: {}", volumeUuid);
+            try {
+                // nice -n 19: lowest CPU priority
+                // ionice -c 2 -n 7: best-effort I/O scheduling with lowest priority
+                // oflag=direct: bypass cache for more predictable performance
+                String command = String.format(
+                    "nice -n 19 ionice -c 2 -n 7 dd if=/dev/zero of=%s bs=1M oflag=direct 2>&1 || true",
+                    lvPath
+                );
+
+                Script ddZeroFill = new Script("/bin/bash", 3600000, logger); // 60 minute timeout for large volumes
+                ddZeroFill.add("-c");
+                ddZeroFill.add(command);
+
+                OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+                String ddResult = ddZeroFill.execute(parser);
+                String output = parser.getLines();
+
+                if (output != null && (output.contains("copied") || output.contains("records in") ||
+                    output.contains("No space left on device"))) {
+                    logger.info("Successfully zero-filled CLVM volume {} using dd", volumeUuid);
+                } else if (ddResult == null) {
+                    logger.info("Zero-fill completed for CLVM volume {}", volumeUuid);
+                } else {
+                    logger.warn("dd zero-fill for volume {} completed with output: {}", volumeUuid,
+                        output != null ? output : ddResult);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to zero-fill CLVM volume {} before deletion: {}. Proceeding with deletion anyway.",
+                        volumeUuid, e.getMessage());
+            }
+        }
+    }
+
     private void deleteDirVol(LibvirtStoragePool pool, StorageVol vol) throws LibvirtException {
         Script.runSimpleBashScript("rm -r --interactive=never " + vol.getPath());
     }
+
+    /**
+     * Get Physical Extent (PE) from the volume group
+     * @param vgName Volume group name
+     * @return PE size in bytes, defauts to 4MiB if it cannot be determined
+     */
+    private long getVgPhysicalExtentSize(String vgName) {
+        String warningMessage = String.format("Failed to get PE size for VG %s, defaulting to 4MiB", vgName);
+        try {
+            Script vgDisplay = new Script("vgdisplay", 300000, logger);
+            vgDisplay.add("--units", "b");  // Output in bytes
+            vgDisplay.add("-C");            // Columnar output
+            vgDisplay.add("--noheadings");
+            vgDisplay.add("-o", "vg_extent_size");
+            vgDisplay.add(vgName);
+
+            String output = vgDisplay.execute();
+            if (output != null) {
+                output = output.trim();
+                if (output.endsWith("B")) {
+                    output = output.substring(0, output.length() - 1);
+                }
+                logger.debug("Physical Extent size for VG {} is {} bytes", vgName, output);
+                return Long.parseLong(output);
+            } else {
+                logger.warn(warningMessage);
+            }
+        } catch (Exception e) {
+            logger.warn(warningMessage, e.getMessage());
+        }
+        final long DEFAULT_PE_SIZE = 4 * 1024 * 1024L;
+        logger.info("Using default PE size for VG {}: {} bytes (4 MiB)", vgName, DEFAULT_PE_SIZE);
+        return DEFAULT_PE_SIZE;
+    }
+
+    /**
+     * Calculate LVM LV size for QCOW2 image accounting for metadata overhead
+     * @param qcow2PhysicalSize Physical size in bytes from qemu-img info
+     * @param vgName Volume group name to query PE size
+     * @return Size in bytes to allocate for LV
+     */
+    private long calculateClvmNgLvSize(long qcow2PhysicalSize, String vgName) {
+        long peSize = getVgPhysicalExtentSize(vgName);
+        long roundedSize = ((qcow2PhysicalSize + peSize - 1) / peSize) * peSize;
+
+        long finalSize = roundedSize + peSize;
+        logger.info("Calculated LV size for QCOW2 physical size {} bytes: {} bytes " +
+                        "(rounded to {} PEs + 1 PE overhead, PE size = {} bytes)",
+                qcow2PhysicalSize, finalSize,
+                roundedSize / peSize, peSize);
+
+        return finalSize;
+    }
+
+
+    /**
+     * Get physical size of QCOW2 image
+     */
+    private long getQcow2PhysicalSize(String imagePath) {
+        Script qemuImg = new Script("qemu-img", 300000, logger);
+        qemuImg.add("info");
+        qemuImg.add("--output=json");
+        qemuImg.add(imagePath);
+        String output = qemuImg.execute();
+
+        JsonObject info = JsonParser.parseString(output).getAsJsonObject();
+        return info.get("actual-size").getAsLong();
+    }
+
+    private KVMPhysicalDisk createClvmNgDiskWithBacking(String volumeUuid, int timeout, long virtualSize, String backingFile, KVMStoragePool pool) {
+        String vgName = getVgName(pool.getLocalPath());
+        long lvSize = calculateClvmNgLvSize(virtualSize, vgName);
+        String volumePath = "/dev/" + vgName + "/" + volumeUuid;
+
+        logger.debug("Creating CLVM_NG volume {} with LV size {} bytes (virtual size: {} bytes)", volumeUuid, lvSize, virtualSize);
+
+        Script lvcreate = new Script("lvcreate", Duration.millis(timeout), logger);
+        lvcreate.add("-n", volumeUuid);
+        lvcreate.add("-L", lvSize + "B");
+        lvcreate.add(vgName);
+
+        String result = lvcreate.execute();
+        if (result != null) {
+            throw new CloudRuntimeException("Failed to create LV for CLVM_NG volume: " + result);
+        }
+
+        Script qemuImg = new Script("qemu-img", Duration.millis(timeout), logger);
+        qemuImg.add("create");
+        qemuImg.add("-f", "qcow2");
+
+        StringBuilder qcow2Options = new StringBuilder();
+        qcow2Options.append("preallocation=metadata");
+        qcow2Options.append(",extended_l2=on");
+        qcow2Options.append(",cluster_size=128k");
+
+        if (backingFile != null && !backingFile.isEmpty()) {
+            qcow2Options.append(",backing_file=").append(backingFile);
+            qcow2Options.append(",backing_fmt=qcow2");
+            logger.debug("Creating CLVM_NG volume with backing file: {}", backingFile);
+        }
+
+        qemuImg.add("-o", qcow2Options.toString());
+        qemuImg.add(volumePath);
+        qemuImg.add(virtualSize + "");
+
+        result = qemuImg.execute();
+        if (result != null) {
+            removeLvOnFailure(volumePath, timeout);
+            throw new CloudRuntimeException("Failed to create QCOW2 on CLVM_NG volume: " + result);
+        }
+
+        KVMPhysicalDisk disk = new KVMPhysicalDisk(volumePath, volumeUuid, pool);
+        disk.setFormat(PhysicalDiskFormat.QCOW2);
+        disk.setSize(lvSize);
+        disk.setVirtualSize(virtualSize);
+
+        logger.info("Successfully created CLVM_NG volume {} with backing file (LV size: {}, virtual size: {})",
+                    volumeUuid, lvSize, virtualSize);
+
+        return disk;
+    }
+
+    public void createTemplateOnClvmNg(String templatePath, String templateUuid, int timeout, KVMStoragePool pool) {
+        String vgName = getVgName(pool.getLocalPath());
+        String lvName = "template-" + templateUuid;
+        String lvPath = "/dev/" + vgName + "/" + lvName;
+
+        if (lvExists(lvPath)) {
+            logger.info("Template LV {} already exists in VG {}. Skipping creation.", lvName, vgName);
+            return;
+        }
+
+        logger.info("Creating new template LV {} in VG {} for template {}", lvName, vgName, templateUuid);
+
+        long physicalSize = getQcow2PhysicalSize(templatePath);
+        long lvSize = calculateClvmNgLvSize(physicalSize, vgName);
+
+        Script lvcreate = new Script("lvcreate", Duration.millis(timeout), logger);
+        lvcreate.add("-n", lvName);
+        lvcreate.add("-L", lvSize + "B");
+        lvcreate.add(vgName);
+        String result = lvcreate.execute();
+        if (result != null) {
+            throw new CloudRuntimeException("Failed to create LV for CLVM_NG template: " + result);
+        }
+
+
+        Script qemuImgConvert = new Script("qemu-img", Duration.millis(timeout), logger);
+        qemuImgConvert.add("convert");
+        qemuImgConvert.add(templatePath);
+        qemuImgConvert.add("-O", "qcow2");
+        qemuImgConvert.add(lvPath);
+        result = qemuImgConvert.execute();
+
+        if (result != null) {
+            removeLvOnFailure(lvPath, timeout);
+            throw new CloudRuntimeException("Failed to convert template to CLVM_NG volume: " + result);
+        }
+
+        logger.info("Created template LV {} with size {} bytes (physical: {}, overhead: {})",
+                lvName, lvSize, physicalSize, lvSize - physicalSize);
+
+        try {
+            ensureTemplateLvInSharedMode(lvPath, true);
+        } catch (CloudRuntimeException e) {
+            logger.error("Failed to activate template LV {} in shared mode. Cleaning up.", lvPath);
+            removeLvOnFailure(lvPath, timeout);
+            throw e;
+        }
+
+        KVMPhysicalDisk templateDisk = new KVMPhysicalDisk(lvPath, lvName, pool);
+        templateDisk.setFormat(PhysicalDiskFormat.QCOW2);
+        templateDisk.setVirtualSize(physicalSize);
+        templateDisk.setSize(lvSize);
+
+    }
+
+    private boolean lvExists(String lvPath) {
+        Script checkLv = new Script("lvs", Duration.millis(5000), logger);
+        checkLv.add("--noheadings");
+        checkLv.add("--unbuffered");
+        checkLv.add(lvPath);
+        String checkResult = checkLv.execute();
+        return checkResult == null;
+    }
+
+    private void removeLvOnFailure(String lvPath, int timeout) {
+        Script lvremove = new Script("lvremove", Duration.millis(timeout), logger);
+        lvremove.add("-f");
+        lvremove.add(lvPath);
+        lvremove.execute();
+    }
+
 }

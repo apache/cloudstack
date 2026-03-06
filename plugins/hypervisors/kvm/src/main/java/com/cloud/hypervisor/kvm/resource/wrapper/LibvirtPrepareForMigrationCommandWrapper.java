@@ -21,6 +21,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
@@ -122,6 +123,20 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
             if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vm, true)) {
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
+            }
+
+            // Activate CLVM volumes in shared mode on destination host for live migration
+            try {
+                List<LibvirtVMDef.DiskDef> disks = libvirtComputingResource.getDisks(conn, vm.getName());
+                LibvirtComputingResource.modifyClvmVolumesStateForMigration(
+                    disks,
+                    libvirtComputingResource,
+                    vm,
+                    LibvirtComputingResource.ClvmVolumeState.SHARED
+                );
+            } catch (Exception e) {
+                logger.warn("Failed to activate CLVM volumes in shared mode on destination for VM {}: {}",
+                    vm.getName(), e.getMessage(), e);
             }
 
             logger.info("Successfully prepared destination host for migration of VM {}", vm.getName());

@@ -212,7 +212,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean isExternalSnapshot() {
-        if (this.type == StoragePoolType.CLVM || type == StoragePoolType.RBD) {
+        if (this.type == StoragePoolType.CLVM || this.type == StoragePoolType.CLVM_NG || type == StoragePoolType.RBD) {
             return true;
         }
         return false;
@@ -275,6 +275,10 @@ public class LibvirtStoragePool implements KVMStoragePool {
     @Override
     public StoragePoolType getType() {
         return this.type;
+    }
+
+    public void setType(StoragePoolType type) {
+        this.type = type;
     }
 
     public StoragePool getPool() {

@@ -50,6 +50,8 @@ import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
 
+import com.cloud.agent.api.PostMigrationCommand;
+import com.cloud.storage.ClvmLockManager;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -135,6 +137,7 @@ import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.PreMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RecreateCheckpointsCommand;
@@ -264,6 +267,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -358,6 +362,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private GuestOSDao _guestOsDao;
     @Inject
     private VolumeDao _volsDao;
+    @Inject
+    private VolumeDetailsDao _volsDetailsDao;
     @Inject
     private HighAvailabilityManager _haMgr;
     @Inject
@@ -461,6 +467,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ExtensionsManager extensionsManager;
     @Inject
     ExtensionDetailsDao extensionDetailsDao;
+    @Inject
+    ClvmLockManager clvmLockManager;
 
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
@@ -3107,6 +3115,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         updateOverCommitRatioForVmProfile(profile, dest.getHost().getClusterId());
 
         final VirtualMachineTO to = toVmTO(profile);
+
+        logger.info("Sending PreMigrationCommand to source host {} for VM {}", srcHostId, vm.getInstanceName());
+        final PreMigrationCommand preMigCmd = new PreMigrationCommand(to, vm.getInstanceName());
+        Answer preMigAnswer = null;
+        try {
+            preMigAnswer = _agentMgr.send(srcHostId, preMigCmd);
+            if (preMigAnswer == null || !preMigAnswer.getResult()) {
+                final String details = preMigAnswer != null ? preMigAnswer.getDetails() : "null answer returned";
+                final String msg = "Failed to prepare source host for migration: " + details;
+                logger.error("Failed to prepare source host {} for migration of VM {}: {}", srcHostId, vm.getInstanceName(), details);
+                throw new CloudRuntimeException(msg);
+            }
+            logger.info("Successfully prepared source host {} for migration of VM {}", srcHostId, vm.getInstanceName());
+        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Failed to send PreMigrationCommand to source host {}: {}", srcHostId, e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to prepare source host for migration: " + e.getMessage(), e);
+        }
+
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
         setVmNetworkDetails(vm, to);
 
@@ -3238,6 +3264,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 logger.warn("Error while checking the vm {} on host {}", vm, dest.getHost(), e);
             }
             migrated = true;
+            try {
+                logger.info("Executing post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostId);
+                final PostMigrationCommand postMigrationCommand = new PostMigrationCommand(to, vm.getInstanceName());
+                final Answer postMigrationAnswer = _agentMgr.send(dstHostId, postMigrationCommand);
+
+                if (postMigrationAnswer == null || !postMigrationAnswer.getResult()) {
+                    final String details = postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
+                    logger.warn("Post-migration tasks failed for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
+                        vm.getInstanceName(), dstHostId, details);
+                } else {
+                    logger.info("Successfully completed post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostId);
+                }
+            } catch (Exception e) {
+                logger.warn("Exception during post-migration tasks for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
+                    vm.getInstanceName(), dstHostId, e.getMessage(), e);
+            }
+
+            updateClvmLockHostForVmVolumes(vm.getId(), dstHostId);
         } finally {
             if (!migrated) {
                 logger.info("Migration was unsuccessful. Cleaning up: {}", vm);
@@ -3321,6 +3365,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VMInstanceVO newVm = _vmDao.findById(vm.getId());
         newVm.setPodIdToDeployIn(host.getPodId());
         _vmDao.persist(newVm);
+    }
+
+    /**
+     * Updates CLVM_LOCK_HOST_ID for all CLVM volumes attached to a VM after VM migration.
+     * This ensures that subsequent operations on CLVM volumes are routed to the correct host.
+     *
+     * @param vmId The ID of the VM that was migrated
+     * @param destHostId The destination host ID where the VM now resides
+     */
+    private void updateClvmLockHostForVmVolumes(long vmId, long destHostId) {
+        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+        if (volumes == null || volumes.isEmpty()) {
+            return;
+        }
+
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+            if (pool != null && ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
+                clvmLockManager.setClvmLockHostId(volume.getId(), destHostId);
+            }
+        }
     }
 
     /**
@@ -4897,6 +4962,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         volumeMgr.prepareForMigration(profile, dest);
 
         final VirtualMachineTO to = toVmTO(profile);
+
+        // Step 1: Send PreMigrationCommand to source host to convert CLVM volumes to shared mode
+        // This must happen BEFORE PrepareForMigrationCommand on destination to avoid lock conflicts
+        logger.info("Sending PreMigrationCommand to source host {} for VM {}", srcHostId, vm.getInstanceName());
+        final PreMigrationCommand preMigCmd = new PreMigrationCommand(to, vm.getInstanceName());
+        Answer preMigAnswer = null;
+        try {
+            preMigAnswer = _agentMgr.send(srcHostId, preMigCmd);
+            if (preMigAnswer == null || !preMigAnswer.getResult()) {
+                final String details = preMigAnswer != null ? preMigAnswer.getDetails() : "null answer returned";
+                final String msg = "Failed to prepare source host for migration: " + details;
+                logger.error("Failed to prepare source host {} for migration of VM {}: {}", srcHostId, vm.getInstanceName(), details);
+                throw new CloudRuntimeException(msg);
+            }
+            logger.info("Successfully prepared source host {} for migration of VM {}", srcHostId, vm.getInstanceName());
+        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Failed to send PreMigrationCommand to source host {}: {}", srcHostId, e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to prepare source host for migration: " + e.getMessage(), e);
+        }
+
+        // Step 2: Send PrepareForMigrationCommand to destination host
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Migrating, vm.getType(), vm.getId());
