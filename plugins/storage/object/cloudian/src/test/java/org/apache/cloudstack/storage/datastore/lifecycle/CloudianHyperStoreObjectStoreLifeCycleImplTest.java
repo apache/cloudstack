@@ -106,13 +106,13 @@ public class CloudianHyperStoreObjectStoreLifeCycleImplTest {
         cloudianHyperStoreObjectStoreLifeCycleImpl.objectStoreHelper = objectStoreHelper;
         cloudianHyperStoreObjectStoreLifeCycleImpl.objectStoreMgr = objectStoreMgr;
 
-        guiDetailMap = new HashMap<String, String>();
+        guiDetailMap = new HashMap<>();
         guiDetailMap.put("accesskey", TEST_ADMIN_USERNAME);
         guiDetailMap.put("secretkey", TEST_ADMIN_PASSWORD);
         guiDetailMap.put("validateSSL", TEST_VALIDATE_SSL);
         guiDetailMap.put("s3Url", TEST_S3_URL);
         guiDetailMap.put("iamUrl", TEST_IAM_URL);
-        guiDataStoreMap = new HashMap<String, Object>();
+        guiDataStoreMap = new HashMap<>();
         guiDataStoreMap.put("name", TEST_STORE_NAME);
         guiDataStoreMap.put("url", TEST_ADMIN_URL);
         guiDataStoreMap.put("providerName", TEST_PROVIDER_NAME);
@@ -130,7 +130,7 @@ public class CloudianHyperStoreObjectStoreLifeCycleImplTest {
         mockStatic.when(() -> CloudianHyperStoreUtil.getCloudianClient(anyString(), anyString(), anyString(), anyBoolean())).thenReturn(cloudianClient);
         mockStatic.when(() -> CloudianHyperStoreUtil.getS3Client(anyString(), anyString(), anyString())).thenReturn(s3Client);
         mockStatic.when(() -> CloudianHyperStoreUtil.getIAMClient(anyString(), anyString(), anyString())).thenReturn(iamClient);
-        // Ensure real validation methods are called (as everything was mocked). These ones we need.
+        // Ensure real validation methods are called (as everything was mocked). These we need.
         mockStatic.when(() -> CloudianHyperStoreUtil.validateS3Url(anyString())).thenCallRealMethod();
         mockStatic.when(() -> CloudianHyperStoreUtil.validateIAMUrl(anyString())).thenCallRealMethod();
 
