@@ -1759,16 +1759,13 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), storeResourceType, volume.getSize());
         return snapshot;
-        } catch (Exception e) {
-            if (e instanceof ResourceAllocationException) {
-                if (snapshotType != Type.MANUAL) {
-                    String msg = String.format("Snapshot resource limit exceeded for account id : %s. Failed to create recurring snapshots", owner.getId());
-                    logger.warn(msg);
-                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, msg + ". Please, use updateResourceLimit to increase the limit");
-                }
-                throw (ResourceAllocationException) e;
+        } catch (ResourceAllocationException e) {
+            if (snapshotType != Type.MANUAL) {
+                String msg = String.format("Snapshot resource limit exceeded for account id : %s. Failed to create recurring snapshots", owner.getId());
+                logger.warn(msg);
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, msg + ". Please, use updateResourceLimit to increase the limit");
             }
-            throw new CloudRuntimeException(e);
+            throw e;
         }
     }
 

@@ -52,6 +52,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -167,6 +168,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private ResourceLimitDao _resourceLimitDao;
     @Inject
     private ReservationDao reservationDao;
+    @Inject
+    private ResourceLimitService resourceLimitService;
     @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
@@ -1662,54 +1665,53 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException {
+    public void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering, List<Reserver> reservations) throws ResourceAllocationException {
         List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
-        for (String tag : tags) {
-            checkResourceLimitWithTag(owner, ResourceType.volume, tag);
-            if (size != null) {
-                checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, size);
-            }
+
+        CheckedReservation volumeReservation = new CheckedReservation(owner, ResourceType.volume, tags, 1L, reservationDao, resourceLimitService);
+        reservations.add(volumeReservation);
+
+        if (size != null) {
+            CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, tags, size, reservationDao, resourceLimitService);
+            reservations.add(primaryStorageReservation);
         }
     }
 
     @Override
-    public void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException {
+    public void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering, List<Reserver> reservations) throws ResourceAllocationException {
         List<String> tags = getResourceLimitStorageTagsForResourceCountOperation(display, diskOffering);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
-        if (size != null) {
-            for (String tag : tags) {
-                checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, size);
-            }
-        }
+        CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, tags, size, reservationDao, resourceLimitService);
+        reservations.add(primaryStorageReservation);
     }
 
     @Override
     public void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
-            DiskOffering currentOffering, DiskOffering newOffering
+            DiskOffering currentOffering, DiskOffering newOffering, List<Reserver> reservations
     ) throws ResourceAllocationException {
         Ternary<Set<String>, Set<String>, Set<String>> updatedResourceLimitStorageTags = getResourceLimitStorageTagsForDiskOfferingChange(display, currentOffering, newOffering);
         if (updatedResourceLimitStorageTags == null) {
             return;
         }
 
-        Set<String> sameTags = updatedResourceLimitStorageTags.first();
-        Set<String> newTags = updatedResourceLimitStorageTags.second();
-
-        if (newSize > currentSize) {
-            for (String tag : sameTags) {
-                checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, newSize - currentSize);
-            }
+        List<String> currentTags = getResourceLimitStorageTagsForResourceCountOperation(true, currentOffering);
+        List<String> tagsAfterUpdate = getResourceLimitStorageTagsForResourceCountOperation(true, newOffering);
+        if (currentTags.isEmpty() && tagsAfterUpdate.isEmpty()) {
+            return;
         }
 
-        for (String tag : newTags) {
-            checkResourceLimitWithTag(owner, ResourceType.volume, tag, 1L);
-            checkResourceLimitWithTag(owner, ResourceType.primary_storage, tag, newSize);
-        }
+        CheckedReservation volumeReservation = new CheckedReservation(owner, ResourceType.volume, null, tagsAfterUpdate,
+                currentTags, 1L, 1L, reservationDao, resourceLimitService);
+        reservations.add(volumeReservation);
+
+        CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, null,
+                tagsAfterUpdate, currentTags, newSize, currentSize, reservationDao, resourceLimitService);
+        reservations.add(primaryStorageReservation);
     }
 
     @DB
@@ -1932,18 +1934,23 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) throws ResourceAllocationException {
+    public void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Reserver> reservations) throws ResourceAllocationException {
         List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
         if (CollectionUtils.isEmpty(tags)) {
             return;
         }
+
+        CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, tags, 1L, reservationDao, resourceLimitService);
+        reservations.add(vmReservation);
+
         Long cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
+        CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, tags, cpu, reservationDao, resourceLimitService);
+        reservations.add(cpuReservation);
+
         Long ram = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
-        for (String tag : tags) {
-            checkResourceLimitWithTag(owner, ResourceType.user_vm, tag);
-            checkResourceLimitWithTag(owner, ResourceType.cpu, tag, cpu);
-            checkResourceLimitWithTag(owner, ResourceType.memory, tag, ram);
-        }
+        CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, tags, ram, reservationDao, resourceLimitService);
+        reservations.add(memReservation);
+
     }
 
     @Override
@@ -1989,28 +1996,33 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @Override
     public void checkVmResourceLimitsForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
-            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate, List<Reserver> reservations) throws ResourceAllocationException {
         checkVmResourceLimitsForServiceOfferingAndTemplateChange(owner, display, null, null,
-                null, null, offering, offering, currentTemplate, newTemplate);
+                null, null, offering, offering, currentTemplate, newTemplate, reservations);
     }
 
     @Override
     public void checkVmResourceLimitsForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory,
-            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template
+            ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template, List<Reserver> reservations
     ) throws ResourceAllocationException {
         checkVmResourceLimitsForServiceOfferingAndTemplateChange(owner, display, currentCpu, newCpu, currentMemory, newMemory, currentOffering,
-                newOffering != null ? newOffering : currentOffering, template, template);
+                newOffering != null ? newOffering : currentOffering, template, template, reservations);
     }
 
     private void checkVmResourceLimitsForServiceOfferingAndTemplateChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
-            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate
+            VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate, List<Reserver> reservations
     ) throws ResourceAllocationException {
-        Ternary<Set<String>, Set<String>, Set<String>> updatedResourceLimitHostTags = getResourceLimitHostTagsForVmServiceOfferingAndTemplateChange(display, currentOffering, newOffering, currentTemplate, newTemplate);
-        if (updatedResourceLimitHostTags == null) {
+        List<String> currentTags = getResourceLimitHostTagsForResourceCountOperation(true, currentOffering, currentTemplate);
+        List<String> tagsAfterUpdate = getResourceLimitHostTagsForResourceCountOperation(true, newOffering, newTemplate);
+        if (currentTags.isEmpty() && tagsAfterUpdate.isEmpty()) {
             return;
         }
+
+        CheckedReservation vmReservation = new CheckedReservation(owner, ResourceType.user_vm, null, tagsAfterUpdate,
+                currentTags, 1L, 1L, reservationDao, resourceLimitService);
+        reservations.add(vmReservation);
 
         if (currentCpu == null) {
             currentCpu = currentOffering.getCpu() != null ? Long.valueOf(currentOffering.getCpu()) : 0L;
@@ -2018,47 +2030,19 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (newCpu == null) {
             newCpu = newOffering.getCpu() != null ? Long.valueOf(newOffering.getCpu()) : 0L;
         }
+        CheckedReservation cpuReservation = new CheckedReservation(owner, ResourceType.cpu, null, tagsAfterUpdate,
+                currentTags, newCpu, currentCpu, reservationDao, resourceLimitService);
+        reservations.add(cpuReservation);
+
         if (currentMemory == null) {
             currentMemory = currentOffering.getRamSize() != null ? Long.valueOf(currentOffering.getRamSize()) : 0L;
         }
         if (newMemory == null) {
             newMemory = newOffering.getRamSize() != null ? Long.valueOf(newOffering.getRamSize()) : 0L;
         }
-
-        Set<String> sameTags = updatedResourceLimitHostTags.first();
-        Set<String> newTags = updatedResourceLimitHostTags.second();
-
-        if (newCpu - currentCpu > 0 || newMemory - currentMemory > 0) {
-            for (String tag : sameTags) {
-                if (newCpu - currentCpu > 0) {
-                    checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu - currentCpu);
-                }
-
-                if (newMemory - currentMemory > 0) {
-                    checkResourceLimitWithTag(owner, ResourceType.memory, tag, newMemory - currentMemory);
-                }
-            }
-        }
-
-        for (String tag : newTags) {
-            checkResourceLimitWithTag(owner, ResourceType.user_vm, tag, 1L);
-            checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu);
-            checkResourceLimitWithTag(owner, ResourceType.memory, tag, newMemory);
-        }
-    }
-
-    @Override
-    public void checkVmCpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu) throws ResourceAllocationException {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
-        if (CollectionUtils.isEmpty(tags)) {
-            return;
-        }
-        if (cpu == null) {
-            cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
-        }
-        for (String tag : tags) {
-            checkResourceLimitWithTag(owner, ResourceType.cpu, tag, cpu);
-        }
+        CheckedReservation memReservation = new CheckedReservation(owner, ResourceType.memory, null, tagsAfterUpdate,
+                currentTags, newMemory, currentMemory, reservationDao, resourceLimitService);
+        reservations.add(memReservation);
     }
 
     @Override
@@ -2086,20 +2070,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         for (String tag : tags) {
             decrementResourceCountWithTag(accountId, ResourceType.cpu, tag, cpu);
-        }
-    }
-
-    @Override
-    public void checkVmMemoryResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) throws ResourceAllocationException {
-        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
-        if (CollectionUtils.isEmpty(tags)) {
-            return;
-        }
-        if (memory == null) {
-            memory = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
-        }
-        for (String tag : tags) {
-            checkResourceLimitWithTag(owner, ResourceType.memory, tag, memory);
         }
     }
 
