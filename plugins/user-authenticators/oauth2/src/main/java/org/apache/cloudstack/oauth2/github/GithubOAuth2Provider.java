@@ -55,17 +55,27 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
 
     @Override
     public boolean verifyUser(String email, String secretCode) {
+        return verifyUser(email, secretCode, null);
+    }
+
+    @Override
+    public String verifyCodeAndFetchEmail(String secretCode) {
+        return verifyCodeAndFetchEmail(secretCode, null);
+    }
+
+    @Override
+    public boolean verifyUser(String email, String secretCode, Long domainId) {
         if (StringUtils.isAnyEmpty(email, secretCode)) {
             throw new CloudRuntimeException(String.format("Either email or secretcode should not be null/empty"));
         }
 
-        OauthProviderVO providerVO = _oauthProviderDao.findByProvider(getName());
+        OauthProviderVO providerVO = _oauthProviderDao.findByProviderAndDomainWithGlobalFallback(getName(), domainId);
         if (providerVO == null) {
             throw new CloudRuntimeException("Github provider is not registered, so user cannot be verified");
         }
 
-        String verifiedEmail = getUserEmailAddress();
-        if (verifiedEmail == null || !email.equals(verifiedEmail)) {
+        String verifiedEmail = verifyCodeAndFetchEmail(secretCode, domainId);
+        if (StringUtils.isEmpty(verifiedEmail) || !email.equals(verifiedEmail)) {
             throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
         }
 
@@ -75,16 +85,19 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
     }
 
     @Override
-    public String verifyCodeAndFetchEmail(String secretCode) {
-        String accessToken = getAccessToken(secretCode);
-        if (accessToken == null) {
+    public String verifyCodeAndFetchEmail(String secretCode, Long domainId) {
+        String accessToken = getAccessToken(secretCode, domainId);
+        if (StringUtils.isEmpty(accessToken)) {
             return null;
         }
         return getUserEmailAddress();
     }
 
-    protected String getAccessToken(String secretCode) throws CloudRuntimeException {
-        OauthProviderVO githubProvider = _oauthProviderDao.findByProvider(getName());
+    protected String getAccessToken(String secretCode, Long domainId) throws CloudRuntimeException {
+        if (StringUtils.isNotEmpty(accessToken)) {
+            return accessToken;
+        }
+        OauthProviderVO githubProvider = _oauthProviderDao.findByProviderAndDomainWithGlobalFallback(getName(), domainId);
         String tokenUrl = "https://github.com/login/oauth/access_token";
         String generatedAccessToken = null;
         try {
@@ -130,7 +143,7 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
     }
 
     public String getUserEmailAddress() throws CloudRuntimeException {
-        if (accessToken == null) {
+        if (StringUtils.isEmpty(accessToken)) {
             throw new CloudRuntimeException("Access Token not found to fetch the email address");
         }
 

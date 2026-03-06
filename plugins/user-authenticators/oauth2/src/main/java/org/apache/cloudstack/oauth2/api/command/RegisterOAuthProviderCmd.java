@@ -27,8 +27,11 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 
 import java.util.Collection;
@@ -55,6 +58,10 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider", required = true)
     private String redirectUri;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "Domain ID for domain-specific OAuth provider. If not provided, registers as global provider")
+    private Long domainId;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "Any OAuth provider details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].clientsecret=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")
@@ -85,6 +92,10 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
         return redirectUri;
     }
 
+    public Long getDomainId() {
+        return domainId;
+    }
+
     public Map getDetails() {
         if (MapUtils.isEmpty(details)) {
             return null;
@@ -100,8 +111,9 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     public void execute() throws ServerApiException, ConcurrentOperationException, EntityExistsException {
         OauthProviderVO provider = _oauth2mgr.registerOauthProvider(this);
 
+        Domain domain = provider.getDomainId() != null ? ApiDBUtils.findDomainById(provider.getDomainId()) : null;
         OauthProviderResponse response = new OauthProviderResponse(provider.getUuid(), provider.getProvider(),
-                provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri());
+                provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri(), domain);
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.OAUTH_PROVIDER);
         setResponseObject(response);

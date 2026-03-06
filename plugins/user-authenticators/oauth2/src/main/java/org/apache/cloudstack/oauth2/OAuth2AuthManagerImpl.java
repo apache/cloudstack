@@ -18,10 +18,13 @@
 //
 package org.apache.cloudstack.oauth2;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -35,12 +38,15 @@ import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.lang3.StringUtils;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthManager, Manager, Configurable {
     @Inject
@@ -48,6 +54,9 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Inject
     protected OauthProviderDao _oauthProviderDao;
+
+    @Inject
+    private DomainDao _domainDao;
 
     protected static Map<String, UserOAuth2Authenticator> userOAuth2AuthenticationProvidersMap = new HashMap<>();
 
@@ -64,17 +73,13 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
 
     @Override
     public boolean start() {
-        if (isOAuthPluginEnabled()) {
-            logger.info("OAUTH plugin loaded");
-            initializeUserOAuth2AuthenticationProvidersMap();
-        } else {
-            logger.info("OAUTH plugin not enabled so not loading");
-        }
+        initializeUserOAuth2AuthenticationProvidersMap();
+        logger.info("OAUTH plugin loaded");
         return true;
     }
 
-    protected boolean isOAuthPluginEnabled() {
-        return OAuth2IsPluginEnabled.value();
+    protected boolean isOAuthPluginEnabled(Long domainId) {
+        return Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true));
     }
 
     @Override
@@ -125,9 +130,9 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     }
 
     @Override
-    public String verifyCodeAndFetchEmail(String code, String provider) {
+    public String verifyCodeAndFetchEmail(String code, String provider, Long domainId) {
         UserOAuth2Authenticator authenticator = getUserOAuth2AuthenticationProvider(provider);
-        String email = authenticator.verifyCodeAndFetchEmail(code);
+        String email = authenticator.verifyCodeAndFetchEmail(code, domainId);
 
         return email;
     }
@@ -139,25 +144,36 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String clientId = StringUtils.trim(cmd.getClientId());
         String redirectUri = StringUtils.trim(cmd.getRedirectUri());
         String secretKey = StringUtils.trim(cmd.getSecretKey());
+        Long domainId = cmd.getDomainId();
 
-        if (!isOAuthPluginEnabled()) {
+        if (!isOAuthPluginEnabled(domainId)) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
         }
-        OauthProviderVO providerVO = _oauthProviderDao.findByProvider(provider);
+
+        // Check for existing provider with same name and domain
+        OauthProviderVO providerVO = _oauthProviderDao.findByProviderAndDomain(provider, domainId);
         if (providerVO != null) {
-            throw new CloudRuntimeException(String.format("Provider with the name %s is already registered", provider));
+            if (domainId == null) {
+                throw new CloudRuntimeException(String.format("Global provider with the name %s is already registered", provider));
+            } else {
+                throw new CloudRuntimeException(String.format("Provider with the name %s is already registered for domain %d", provider, domainId));
+            }
         }
 
-        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri);
+        return saveOauthProvider(provider, description, clientId, secretKey, redirectUri, domainId);
     }
 
     @Override
-    public List<OauthProviderVO> listOauthProviders(String provider, String uuid) {
+    public List<OauthProviderVO> listOauthProviders(String provider, String uuid, Long domainId) {
         List<OauthProviderVO> providers;
         if (uuid != null) {
             providers = Collections.singletonList(_oauthProviderDao.findByUuid(uuid));
+        } else if (StringUtils.isNotBlank(provider) && domainId != null) {
+            providers = Collections.singletonList(_oauthProviderDao.findByProviderAndDomain(provider, domainId));
         } else if (StringUtils.isNotBlank(provider)) {
-            providers = Collections.singletonList(_oauthProviderDao.findByProvider(provider));
+            providers = Collections.singletonList(_oauthProviderDao.findByProviderAndDomain(provider, null));
+        } else if (domainId != null) {
+            providers = _oauthProviderDao.listByDomainIncludingGlobal(domainId);
         } else {
             providers = _oauthProviderDao.listAll();
         }
@@ -199,7 +215,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         return _oauthProviderDao.findById(id);
     }
 
-    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri) {
+    private OauthProviderVO saveOauthProvider(String provider, String description, String clientId, String secretKey, String redirectUri, Long domainId) {
         final OauthProviderVO oauthProviderVO = new OauthProviderVO();
 
         oauthProviderVO.setProvider(provider);
@@ -207,6 +223,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         oauthProviderVO.setClientId(clientId);
         oauthProviderVO.setSecretKey(secretKey);
         oauthProviderVO.setRedirectUri(redirectUri);
+        oauthProviderVO.setDomainId(domainId);
         oauthProviderVO.setEnabled(true);
 
         _oauthProviderDao.persist(oauthProviderVO);
@@ -217,6 +234,38 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     @Override
     public boolean deleteOauthProvider(Long id) {
         return _oauthProviderDao.remove(id);
+    }
+
+    @Override
+    public Long resolveDomainId(Map<String, Object[]> params) {
+        final String[] domainIdArray = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (ArrayUtils.isNotEmpty(domainIdArray)) {
+            String domainUuid = domainIdArray[0];
+            if (GLOBAL_DOMAIN_FILTER.equals(domainUuid)) {
+                return GLOBAL_DOMAIN_ID;
+            }
+            DomainVO domain = _domainDao.findByUuid(domainUuid);
+            if (Objects.nonNull(domain)) {
+                return domain.getId();
+            }
+        }
+        final String[] domainArray = (String[])params.get(ApiConstants.DOMAIN);
+        if (ArrayUtils.isNotEmpty(domainArray)) {
+            String path = domainArray[0];
+            if (StringUtils.isNotEmpty(path)) {
+                if (!path.startsWith("/")) {
+                    path = "/" + path;
+                }
+                if (!path.endsWith("/")) {
+                    path += "/";
+                }
+                DomainVO domain = _domainDao.findDomainByPath(path);
+                if (Objects.nonNull(domain)) {
+                    return domain.getId();
+                }
+            }
+        }
+        return null;
     }
 
     @Override

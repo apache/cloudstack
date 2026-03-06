@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -33,12 +35,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -59,6 +63,14 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
     @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Name of the provider")
     private String provider;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "List OAuth providers for a specific domain. Use -1 for global providers only.")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+            description = "Domain path for domain-specific OAuth provider lookup")
+    private String domainPath;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -68,6 +80,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
 
     public String getProvider() {
         return provider;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     /////////////////////////////////////////////////////
@@ -98,7 +114,26 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             provider = providerArray[0];
         }
 
-        List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id);
+        boolean domainRequested = ArrayUtils.isNotEmpty((String[])params.get(ApiConstants.DOMAIN_ID))
+                || ArrayUtils.isNotEmpty((String[])params.get(ApiConstants.DOMAIN));
+        domainId = _oauth2mgr.resolveDomainId(params);
+
+        if (domainRequested && domainId == null) {
+            ListResponse<OauthProviderResponse> response = new ListResponse<>();
+            response.setResponses(new ArrayList<>(), 0);
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+            return ApiResponseSerializer.toSerializedString(response, responseType);
+        }
+
+        List<OauthProviderVO> resultList = _oauth2mgr.listOauthProviders(provider, id, domainId);
+        boolean isAuthenticated = session != null && session.getAttribute(ApiConstants.USER_ID) != null;
+        if (domainRequested && domainId != null && domainId > 0) {
+            resultList.removeIf(p -> p.getDomainId() == null);
+        } else if (!domainRequested && !isAuthenticated) {
+            resultList.removeIf(p -> p.getDomainId() != null);
+        }
+
         List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauth2mgr.listUserOAuth2AuthenticationProviders();
         List<String> authenticatorPluginNames = new ArrayList<>();
         for (UserOAuth2Authenticator authenticator : userOAuth2AuthenticatorPlugins) {
@@ -107,9 +142,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
         }
         List<OauthProviderResponse> responses = new ArrayList<>();
         for (OauthProviderVO result : resultList) {
+            Domain domain = result.getDomainId() != null ? ApiDBUtils.findDomainById(result.getDomainId()) : null;
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
-                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri());
-            if (OAuth2AuthManager.OAuth2IsPluginEnabled.value() && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
+                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), domain);
+            if (Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, result.getDomainId(), true)) && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {
                 r.setEnabled(false);
@@ -118,8 +154,20 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             responses.add(r);
         }
 
+        int totalEnabledCount = responses.size();
+        if (!domainRequested && !isAuthenticated) {
+            List<OauthProviderVO> allProviders = _oauth2mgr.listOauthProviders(null, null, null);
+            for (OauthProviderVO domainProvider : allProviders) {
+                if (domainProvider.getDomainId() != null && domainProvider.isEnabled()
+                        && Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainProvider.getDomainId(), true))
+                        && authenticatorPluginNames.contains(domainProvider.getProvider())) {
+                    totalEnabledCount++;
+                }
+            }
+        }
+
         ListResponse<OauthProviderResponse> response = new ListResponse<>();
-        response.setResponses(responses, resultList.size());
+        response.setResponses(responses, totalEnabledCount);
         response.setResponseName(getCommandName());
         setResponseObject(response);
 

@@ -66,7 +66,7 @@ public class OAuth2AuthManagerImplTest {
 
     @Test
     public void testRegisterOauthProvider() {
-        when(_authManager.isOAuthPluginEnabled()).thenReturn(false);
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(false);
         RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
         try {
             _authManager.registerOauthProvider(cmd);
@@ -76,25 +76,27 @@ public class OAuth2AuthManagerImplTest {
         }
 
         // Test when provider is already registered
-        when(_authManager.isOAuthPluginEnabled()).thenReturn(true);
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
         OauthProviderVO providerVO = new OauthProviderVO();
         providerVO.setProvider("testProvider");
-        when(_authManager._oauthProviderDao.findByProvider(Mockito.anyString())).thenReturn(providerVO);
+        when(_authManager._oauthProviderDao.findByProviderAndDomain(Mockito.anyString(), Mockito.isNull())).thenReturn(providerVO);
         when(cmd.getProvider()).thenReturn("testProvider");
+        when(cmd.getDomainId()).thenReturn(null);
 
         try {
             _authManager.registerOauthProvider(cmd);
             Assert.fail("Expected CloudRuntimeException was not thrown");
         } catch (CloudRuntimeException e) {
-            assertEquals("Provider with the name testProvider is already registered", e.getMessage());
+            assertEquals("Global provider with the name testProvider is already registered", e.getMessage());
         }
 
         // Test when provider is github and secret key is not null
         when(cmd.getSecretKey()).thenReturn("testSecretKey");
         providerVO = null;
-        when(_authManager._oauthProviderDao.findByProvider(Mockito.anyString())).thenReturn(providerVO);
+        when(_authManager._oauthProviderDao.findByProviderAndDomain(Mockito.anyString(), Mockito.isNull())).thenReturn(providerVO);
         OauthProviderVO savedProviderVO = new OauthProviderVO();
         when(cmd.getProvider()).thenReturn("github");
+        when(cmd.getDomainId()).thenReturn(null);
         when(_authManager._oauthProviderDao.persist(Mockito.any(OauthProviderVO.class))).thenReturn(savedProviderVO);
         OauthProviderVO result = _authManager.registerOauthProvider(cmd);
         assertEquals("github", result.getProvider());
@@ -150,17 +152,17 @@ public class OAuth2AuthManagerImplTest {
 
         // Test when uuid is not null
         when(_oauthProviderDao.findByUuid(uuid)).thenReturn(providerVO);
-        List<OauthProviderVO> result = _authManager.listOauthProviders(null, uuid);
+        List<OauthProviderVO> result = _authManager.listOauthProviders(null, uuid, null);
         assertEquals(providerList, result);
 
         // Test when provider is not blank
-        when(_oauthProviderDao.findByProvider(provider)).thenReturn(providerVO);
-        result = _authManager.listOauthProviders(provider, null);
+        when(_oauthProviderDao.findByProviderAndDomain(provider, null)).thenReturn(providerVO);
+        result = _authManager.listOauthProviders(provider, null, null);
         assertEquals(providerList, result);
 
         // Test when both uuid and provider are null
         when(_oauthProviderDao.listAll()).thenReturn(providerList);
-        result = _authManager.listOauthProviders(null, null);
+        result = _authManager.listOauthProviders(null, null, null);
         assertEquals(providerList, result);
     }
 
@@ -178,12 +180,12 @@ public class OAuth2AuthManagerImplTest {
 
     @Test
     public void testStart() {
-        when(_authManager.isOAuthPluginEnabled()).thenReturn(true);
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
         doNothing().when(_authManager).initializeUserOAuth2AuthenticationProvidersMap();
         boolean result = _authManager.start();
         assertTrue(result);
 
-        when(_authManager.isOAuthPluginEnabled()).thenReturn(false);
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(false);
         result = _authManager.start();
         assertTrue(result);
     }
