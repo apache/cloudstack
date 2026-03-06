@@ -146,6 +146,10 @@ public class NicResponse extends BaseResponse {
     @Param(description = "Public IP address associated with this NIC via Static NAT rule")
     private String publicIp;
 
+    @SerializedName("dnsrecordurl")
+    @Param(description = "Public IP address associated with this NIC via Static NAT rule")
+    private String dnsRecordUrl;
+
     public void setVmId(String vmId) {
         this.vmId = vmId;
     }
@@ -415,5 +419,9 @@ public class NicResponse extends BaseResponse {
 
     public void setPublicIp(String publicIp) {
         this.publicIp = publicIp;
+    }
+
+    public void setDnsRecordUrl(String dnsRecordUrl) {
+        this.dnsRecordUrl = dnsRecordUrl;
     }
 }

@@ -72,6 +72,7 @@ import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.DnsServer;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -178,9 +179,9 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UuidUtils;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -3632,6 +3633,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         assert false : "How can all of the security checkers pass on checking this caller?";
         throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + bof);
+    }
+
+    @Override
+    public void checkAccess(Account caller, DnsServer dnsServer) throws PermissionDeniedException {
+        if (caller.getId() == dnsServer.getAccountId()) {
+            return;
+        }
+        if (!dnsServer.isPublicServer()) {
+            throw new PermissionDeniedException(caller + "is not allowed to access the DNS server " + dnsServer.getName());
+        }
+        Account owner = getAccount(dnsServer.getAccountId());
+        if (!_domainDao.isChildDomain(owner.getDomainId(), caller.getDomainId())) {
+            throw new PermissionDeniedException(caller + "is not allowed to access the DNS server " + dnsServer.getName());
+        }
     }
 
     @Override

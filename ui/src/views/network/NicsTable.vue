@@ -57,6 +57,10 @@
           <a-descriptions-item :label="$t('label.isolationuri')" v-if="record.isolationuri">
             {{ record.isolationuri }}
           </a-descriptions-item>
+
+          <a-descriptions-item :label="$t('label.dns_url')" v-if="record.dns_url">
+            {{ record.dns_url }}
+          </a-descriptions-item>
         </template>
       </a-descriptions>
     </template>

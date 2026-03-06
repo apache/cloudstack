@@ -1491,6 +1491,83 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
+    },
+    {
+      name: 'dnsrecords',
+      title: 'label.dns.records',
+      icon: 'global-outlined',
+      hidden: true,
+      permission: ['listDnsRecords'],
+      columns: ['name', 'url', 'provider'],
+      details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers'],
+      related: [{
+        name: 'vm',
+        title: 'label.dns.zone',
+        param: 'dnszoneid'
+      }]
+    },
+    {
+      name: 'dnszones',
+      title: 'label.dns.zones',
+      icon: 'global-outlined',
+      hidden: true,
+      permission: ['listDnsZones'],
+      columns: ['name', 'state', 'dnsservername', 'dnsserveraccount'],
+      details: ['name', 'state', 'dnsservername', 'dnsserveraccount'],
+      tabs: [{
+        name: 'details',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+      },
+      {
+        name: 'dnsrecords',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/InternalLBAssignedVmTab.vue'))),
+        show: () => true
+      }]
+    },
+    {
+      name: 'dnsserver',
+      title: 'label.dns.server',
+      icon: 'global-outlined',
+      permission: ['listDnsServers'],
+      columns: ['name', 'url', 'provider'],
+      details: ['name', 'url', 'abc', 'provider', 'ispublic', 'port', 'nameservers', 'domain', 'account'],
+      related: [{
+        name: 'dnszones',
+        title: 'label.dns.zone',
+        param: 'dnsserverid'
+      }],
+      actions: [
+        {
+          api: 'addDnsServer',
+          icon: 'plus-outlined',
+          label: 'label.dns.add.server',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AddDnsServer.vue'))),
+          show: () => {
+            return true
+          }
+        },
+        {
+          api: 'updateDnsServer',
+          icon: 'edit-outlined',
+          label: 'label.dns.update.server',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AddDnsServer.vue'))),
+          show: (record) => { return true }
+        },
+        {
+          api: 'deleteDnsServer',
+          icon: 'delete-outlined',
+          label: 'label.dns.delete.server',
+          message: 'message.action.delete.dns.server',
+          dataView: true,
+          groupAction: true,
+          show: (record) => { return true },
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
     }
   ]
 }
