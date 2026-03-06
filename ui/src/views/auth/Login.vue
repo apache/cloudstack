@@ -152,7 +152,7 @@
       </a-tab-pane>
       <a-tab-pane key="oauth" :disabled="!socialLogin">
         <template #tab>
-          <span style="display: inline-flex; align-items: center; gap: 4px;">
+          <span style="display: inline-flex; align-items: center; gap: 4px; color: inherit;">
             <img src="/assets/github.svg" alt="GitHub" style="width: 16px; height: 16px; display: block;" />
             <img src="/assets/google.svg" alt="Google" style="width: 16px; height: 16px; display: block;" />
             <span>External</span>
