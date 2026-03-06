@@ -29,16 +29,16 @@ public class MigrateSnapshotsBetweenSecondaryStoragesCommand extends Command {
     DataStoreTO srcDataStore;
     DataStoreTO destDataStore;
     List<DataTO> snapshotChain;
-    Set<Long> snapshotsIdToMigrate;
+    Set<Long> snapshotIdsToMigrate;
 
     public MigrateSnapshotsBetweenSecondaryStoragesCommand() {
     }
 
-    public MigrateSnapshotsBetweenSecondaryStoragesCommand(List<DataTO> snapshotChain, DataStoreTO srcDataStore, DataStoreTO destDataStore, Set<Long> snapshotsIdToMigrate) {
+    public MigrateSnapshotsBetweenSecondaryStoragesCommand(List<DataTO> snapshotChain, DataStoreTO srcDataStore, DataStoreTO destDataStore, Set<Long> snapshotIdsToMigrate) {
         this.srcDataStore = srcDataStore;
         this.destDataStore = destDataStore;
         this.snapshotChain = snapshotChain;
-        this.snapshotsIdToMigrate = snapshotsIdToMigrate;
+        this.snapshotIdsToMigrate = snapshotIdsToMigrate;
     }
 
     @Override
@@ -50,8 +50,8 @@ public class MigrateSnapshotsBetweenSecondaryStoragesCommand extends Command {
         return snapshotChain;
     }
 
-    public Set<Long> getSnapshotsIdToMigrate() {
-        return snapshotsIdToMigrate;
+    public Set<Long> getSnapshotIdsToMigrate() {
+        return snapshotIdsToMigrate;
     }
 
     public DataStoreTO getSrcDataStore() {

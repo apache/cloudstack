@@ -179,7 +179,7 @@ public class SnapshotObject implements SnapshotInfo {
         if (vo == null) {
             return null;
         }
-        return snapshotFactory.getSnapshot(vo.getSnapshotId(), vo.getDataStoreId(), DataStoreRole.Image);
+        return snapshotFactory.getSnapshot(vo.getSnapshotId(), vo.getDataStoreId(), vo.getRole());
     }
 
     @Override

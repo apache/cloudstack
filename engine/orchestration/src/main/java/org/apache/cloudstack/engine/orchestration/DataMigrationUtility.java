@@ -311,11 +311,16 @@ public class DataMigrationUtility {
                 logger.debug("Not migrating snapshot [{}] because its hypervisor type is simulator.", snapshot);
                 continue;
             }
-            if (snapshot.getParentSnapshotId() != 0) {
+            boolean isKvmIncrementalSnapshot = snapshot.getKvmCheckpointPath() != null;
+            if (snapshot.getParentSnapshotId() != 0 && !isKvmIncrementalSnapshot) {
                 continue; // The child snapshot will be migrated in the for loop below.
             }
+            if (snapshotIdsAlreadyInChain.contains(snapshotVO.getId())) {
+                logger.debug("Skipping snapshot {} since it is already in snapshot chain.", snapshot);
+                continue;
+            }
 
-            if (snapshotVO.getHypervisorType() == Hypervisor.HypervisorType.KVM && snapshot.getKvmCheckpointPath() != null && !snapshotIdsAlreadyInChain.contains(snapshotVO.getId())) {
+            if (isKvmIncrementalSnapshot) {
                 List<SnapshotInfo> kvmIncrementalSnapshotChain = createKvmIncrementalSnapshotChain(snapshot);
                 SnapshotInfo parent = kvmIncrementalSnapshotChain.get(0);
                 snapshotIdsAlreadyInChain.addAll(kvmIncrementalSnapshotChain.stream().map(DataObject::getId).collect(Collectors.toSet()));

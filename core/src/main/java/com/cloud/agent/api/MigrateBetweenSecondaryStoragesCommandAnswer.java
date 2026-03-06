@@ -25,17 +25,17 @@ import java.util.List;
 
 public class MigrateBetweenSecondaryStoragesCommandAnswer extends Answer {
 
-    List<Pair<Long, String>> migratedResourcesIdAndCheckpointPath;
+    List<Pair<Long, String>> migratedResourceIdsAndCheckpointPaths;
 
     public MigrateBetweenSecondaryStoragesCommandAnswer() {
     }
 
-    public MigrateBetweenSecondaryStoragesCommandAnswer(MigrateSnapshotsBetweenSecondaryStoragesCommand cmd, boolean success, String result, List<Pair<Long, String>> migratedResourcesIdAndCheckpointPath) {
+    public MigrateBetweenSecondaryStoragesCommandAnswer(MigrateSnapshotsBetweenSecondaryStoragesCommand cmd, boolean success, String result, List<Pair<Long, String>> migratedResourceIdsAndCheckpointPaths) {
         super(cmd, success, result);
-        this.migratedResourcesIdAndCheckpointPath = migratedResourcesIdAndCheckpointPath;
+        this.migratedResourceIdsAndCheckpointPaths = migratedResourceIdsAndCheckpointPaths;
     }
 
     public List<Pair<Long, String>> getMigratedResources() {
-        return migratedResourcesIdAndCheckpointPath;
+        return migratedResourceIdsAndCheckpointPaths;
     }
 }

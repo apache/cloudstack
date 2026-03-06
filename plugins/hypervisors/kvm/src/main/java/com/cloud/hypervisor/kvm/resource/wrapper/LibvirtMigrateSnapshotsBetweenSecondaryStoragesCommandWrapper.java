@@ -52,7 +52,6 @@ public class LibvirtMigrateSnapshotsBetweenSecondaryStoragesCommandWrapper exten
 
     protected Set<String> filesToRemove;
     protected List<Pair<Long, String>> resourcesToUpdate;
-    protected String resourceType;
     protected int wait;
 
     @Override
@@ -74,7 +73,7 @@ public class LibvirtMigrateSnapshotsBetweenSecondaryStoragesCommandWrapper exten
 
         String parentSnapshotPath = null;
         boolean parentSnapshotWasMigrated = false;
-        Set<Long> snapshotsIdToMigrate = command.getSnapshotsIdToMigrate();
+        Set<Long> snapshotIdsToMigrate = command.getSnapshotIdsToMigrate();
 
         DataTO currentSnapshot = null;
 
@@ -87,14 +86,14 @@ public class LibvirtMigrateSnapshotsBetweenSecondaryStoragesCommandWrapper exten
 
                 String resourceCurrentPath = imagePool.getLocalPathFor(snapshot.getPath());
 
-                if (imagePoolUrl.equals(srcDataStore.getUrl()) && snapshotsIdToMigrate.contains(snapshot.getId())) {
+                if (imagePoolUrl.equals(srcDataStore.getUrl()) && snapshotIdsToMigrate.contains(snapshot.getId())) {
                     logger.debug("Migrating snapshot [{}] to destination storage pool [{}].", snapshot.getId(), destImagePool.getUuid());
                     parentSnapshotPath = copyResourceToDestDataStore(snapshot, resourceCurrentPath, destImagePool, parentSnapshotPath);
-                    parentSnapshotWasMigrated = true;
-                    logger.debug("Snapshot [{}] migrated successfully. New parent path: [{}]", snapshot.getId(), parentSnapshotPath);
+                    parentSnapshotWasMigrated = !parentSnapshotPath.equals(resourceCurrentPath);
+                    logger.debug("Snapshot [{}] migrated successfully. New parent path: [{}].", snapshot.getId(), parentSnapshotPath);
                 } else {
                     if (parentSnapshotWasMigrated) {
-                        logger.debug("Rebasing snapshot [{}] to new parent path: [{}]", snapshot.getId(), parentSnapshotPath);
+                        logger.debug("Rebasing snapshot [{}] to new parent path: [{}].", snapshot.getId(), parentSnapshotPath);
                         parentSnapshotPath = rebaseResourceToNewParentPath(resourceCurrentPath, parentSnapshotPath);
                     } else {
                         logger.debug("Skipping migration/rebase for snapshot [{}]. Keeping current path.", snapshot.getId());
@@ -132,32 +131,36 @@ public class LibvirtMigrateSnapshotsBetweenSecondaryStoragesCommandWrapper exten
             parentResource = new QemuImgFile(resourceParentPath, QemuImg.PhysicalDiskFormat.QCOW2);
         }
 
-        logger.debug("Migrating {} [{}] to [{}] with {}", resourceType, resourceOrigin, resourceDestination, parentResource == null ? "no parent." : String.format("parent [%s].", parentResource));
-
         long resourceId = resource.getId();
 
         createDirsIfNeeded(resourceDestDataStoreFullPath, resourceId);
-
+        logger.debug("Migrating snapshot [{}] to [{}] with {}", resourceOrigin, resourceDestination, parentResource == null ? "no parent." : String.format("parent [%s].", parentResource));
         QemuImg qemuImg = new QemuImg(wait);
         qemuImg.convert(resourceOrigin, resourceDestination, parentResource, null, null,  new QemuImageOptions(resourceOrigin.getFormat(), resourceOrigin.getFileName(), null), null, true, false);
 
-        filesToRemove.add(resourceCurrentPath);
-
         String resourceCurrentCheckpointPath = resourceCurrentPath.replace("snapshots", "checkpoints");
         createDirsIfNeeded(resourceDestCheckpointPath, resourceId);
-        migrateCheckpointFile(resourceCurrentPath, resourceDestDataStoreFullPath);
-        filesToRemove.add(resourceCurrentCheckpointPath);
-        resourcesToUpdate.add(new Pair<>(resourceId, resourceDestCheckpointPath));
+        logger.debug("Migrating snapshot [{}] checkpoint file.", resourceOrigin);
+        boolean checkpointMigrated = migrateCheckpointFile(resourceCurrentPath, resourceDestDataStoreFullPath);
 
-        return resourceDestDataStoreFullPath;
+        if (checkpointMigrated) {
+            filesToRemove.add(resourceCurrentPath);
+            filesToRemove.add(resourceCurrentCheckpointPath);
+            resourcesToUpdate.add(new Pair<>(resourceId, resourceDestCheckpointPath));
+            return resourceDestDataStoreFullPath;
+        }
+
+        filesToRemove.add(resourceDestDataStoreFullPath);
+        logger.warn("Checkpoint migration failed for snapshot [{}]. Skipping deletion of source checkpoint [{}] and metadata update.", resourceId, resourceCurrentCheckpointPath);
+        return resourceCurrentPath;
     }
 
-    private void migrateCheckpointFile(String resourceCurrentPath, String resourceDestDataStoreFullPath) {
-        resourceCurrentPath = resourceCurrentPath.replace("snapshots", "checkpoints");
-        resourceDestDataStoreFullPath = resourceDestDataStoreFullPath.replace("snapshots", "checkpoints");
+    private boolean migrateCheckpointFile(String resourceCurrentPath, String resourceDestDataStoreFullPath) {
+        resourceCurrentPath = sanitizeBashCommandArgument(resourceCurrentPath.replace("snapshots", "checkpoints"));
+        resourceDestDataStoreFullPath = sanitizeBashCommandArgument(resourceDestDataStoreFullPath.replace("snapshots", "checkpoints"));
 
         String copyCommand = String.format("cp %s %s", resourceCurrentPath, resourceDestDataStoreFullPath);
-        Script.runSimpleBashScript(copyCommand);
+        return Script.runSimpleBashScriptForExitValue(copyCommand) == 0;
     }
 
     public void removeResourceFromSourceDataStore(String resourcePath) {
@@ -165,7 +168,7 @@ public class LibvirtMigrateSnapshotsBetweenSecondaryStoragesCommandWrapper exten
         try {
             Files.deleteIfExists(Path.of(resourcePath));
         } catch (IOException ex) {
-            logger.error("Failed to remove {} [{}].", resourceType, resourcePath, ex);
+            logger.error("Failed to remove snapshot [{}].", resourcePath, ex);
         }
     }
 
@@ -184,7 +187,7 @@ public class LibvirtMigrateSnapshotsBetweenSecondaryStoragesCommandWrapper exten
         try {
             Files.createDirectories(Path.of(dirs));
         } catch (IOException e) {
-            throw new CloudRuntimeException(String.format("Error while creating directories for migration of %s [%s].", resourceType, resourceId), e);
+            throw new CloudRuntimeException(String.format("Error while creating directories for migration of snapshot [%s].", resourceId), e);
         }
     }
 }

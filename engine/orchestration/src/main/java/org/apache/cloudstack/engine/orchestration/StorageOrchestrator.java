@@ -32,9 +32,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -147,7 +146,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
 
     private final Map<Long, ThreadPoolExecutor> zoneExecutorMap = new HashMap<>();
     private final Map<Long, Integer> zonePendingWorkCountMap = new HashMap<>();
-    private final Map<Long, ExecutorService> zoneKvmIncrementalExecutorMap = new ConcurrentHashMap<>();
+    private final Map<Long, ThreadPoolExecutor> zoneKvmIncrementalResourcesExecutorMap = new ConcurrentHashMap<>();
 
     @Override
     public String getConfigComponentName() {
@@ -399,8 +398,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         return storageCapacities;
     }
 
-    private AsyncCallFuture<DataObjectResult> migrateKvmIncrementalSnapshotChain(DataObject chosenFileForMigration, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, DataStore srcDatastore, DataStore destDataStore, Set<Long> snapshotIdsToMigrate) {
-        return Transaction.execute((TransactionCallback<AsyncCallFuture<DataObjectResult>>) status -> {
+    private void migrateKvmIncrementalSnapshotChain(DataObject chosenFileForMigration, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, DataStore srcDatastore, DataStore destDataStore, Set<Long> snapshotIdsToMigrate) {
+        Transaction.execute((TransactionCallback<AsyncCallFuture<DataObjectResult>>) status -> {
             MigrateBetweenSecondaryStoragesCommandAnswer answer = null;
             AsyncCallFuture<DataObjectResult> future = new AsyncCallFuture<>();
             DataObjectResult result = new DataObjectResult(chosenFileForMigration);
@@ -454,10 +453,9 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
     }
 
     protected <T> Future<T> submitKvmIncrementalMigration(Long zoneId, Callable<T> task) {
-        if (!zoneKvmIncrementalExecutorMap.containsKey(zoneId)) {
-            zoneKvmIncrementalExecutorMap.put(zoneId, Executors.newSingleThreadExecutor());
-        }
-        return zoneKvmIncrementalExecutorMap.get(zoneId).submit(task);
+        ThreadPoolExecutor threadPoolExecutor = zoneKvmIncrementalResourcesExecutorMap.computeIfAbsent(zoneId, id -> new ThreadPoolExecutor(1, 1, 0L,
+                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>()));
+        return threadPoolExecutor.submit(task);
     }
 
     private HostVO getAvailableHost(long zoneId) throws AgentUnavailableException, OperationTimedoutException {
@@ -527,6 +525,28 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         zoneExecutorMap.remove(zoneId);
         executor.shutdown();
     }
+
+    protected void tryCleaningUpKvmIncrementalExecutor(Long zoneId) {
+        if (!zoneKvmIncrementalResourcesExecutorMap.containsKey(zoneId)) {
+            logger.debug("No executor for KVM incremental resources exists for zone [{}].", zoneId);
+            return;
+        }
+
+        synchronized (zoneKvmIncrementalResourcesExecutorMap) {
+            ThreadPoolExecutor executor = zoneKvmIncrementalResourcesExecutorMap.get(zoneId);
+
+            int activeTasks = executor.getActiveCount();
+            if (activeTasks > 1) {
+                logger.debug("Not cleaning executor for KVM incremental resources of zone [{}] yet, as there are [{}] active tasks.", zoneId, activeTasks);
+                return;
+            }
+
+            logger.debug("Cleaning executor for KVM incremental resources of zone [{}].", zoneId);
+            zoneKvmIncrementalResourcesExecutorMap.remove(zoneId);
+            executor.shutdown();
+        }
+    }
+
 
     private MigrationResponse handleResponse(List<Future<DataObjectResult>> futures, MigrationPolicy migrationPolicy, String message, boolean success) {
         int successCount = 0;
@@ -799,6 +819,8 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 DataObjectResult result = new DataObjectResult(chosenFile);
                 result.setResult(e.toString());
                 return result;
+            } finally {
+                tryCleaningUpKvmIncrementalExecutor(srcDataStore.getScope().getScopeId());
             }
         }
     }
