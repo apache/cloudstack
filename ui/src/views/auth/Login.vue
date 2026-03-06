@@ -152,10 +152,10 @@
       </a-tab-pane>
       <a-tab-pane key="oauth" :disabled="!socialLogin">
         <template #tab>
-          <span>
-            <img src="/assets/github.svg" style="width: 16px; vertical-align: middle" />
-            <img src="/assets/google.svg" style="width: 16px; vertical-align: middle" />
-            External
+          <span style="display: inline-flex; align-items: center; gap: 4px;">
+            <img src="/assets/github.svg" style="width: 16px; height: 16px; display: block;" />
+            <img src="/assets/google.svg" style="width: 16px; height: 16px; display: block;" />
+            <span>External</span>
           </span>
         </template>
         <a-form-item name="oauthDomain">
@@ -622,18 +622,16 @@ export default {
 
 <style lang="less" scoped>
 .user-layout-login {
-  min-width: 260px;
-  width: 368px;
+  min-width: 300px;
+  width: 500px;
   margin: 0 auto;
 
   :deep(.tab-center .ant-tabs-tab) {
-    padding: 12px 4px;
-    font-size: 13px;
-    margin: 0 !important;
+    margin: 0 16px 0 0;
   }
 
   .mobile & {
-    max-width: 368px;
+    max-width: 500px;
     width: 98%;
   }
 
