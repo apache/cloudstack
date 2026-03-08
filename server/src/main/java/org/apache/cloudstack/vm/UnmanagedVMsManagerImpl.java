@@ -2489,13 +2489,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
         }
         String rootVolumeName = String.format("ROOT-%s", userVm.getId());
-        DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null);
+        DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null, false);
 
         DiskProfile[] dataDiskProfiles = new DiskProfile[dataDisks.size()];
         int diskSeq = 0;
         for (UnmanagedInstanceTO.Disk disk : dataDisks) {
             DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
-            DiskProfile dataDiskProfile = volumeManager.allocateRawVolume(Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), offering, null, null, null, userVm, template, owner, null);
+            DiskProfile dataDiskProfile = volumeManager.allocateRawVolume(Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), offering, null, null, null, userVm, template, owner, null, false);
             dataDiskProfiles[diskSeq++] = dataDiskProfile;
         }
 
@@ -2653,7 +2653,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         reservations.add(volumeReservation);
 
         String rootVolumeName = String.format("ROOT-%s", userVm.getId());
-        DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null);
+        DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null, false);
 
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
         ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
@@ -2696,14 +2696,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new CloudRuntimeException("Disk not found or is invalid");
         }
         diskProfile.setSize(checkVolumeAnswer.getSize());
-        try {
-            CheckedReservation primaryStorageReservation = new CheckedReservation(owner, Resource.ResourceType.primary_storage, resourceLimitStorageTags,
-                    CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? diskProfile.getSize() : 0L, reservationDao, resourceLimitService);
-            reservations.add(primaryStorageReservation);
-        } catch (ResourceAllocationException e) {
-            cleanupFailedImportVM(userVm);
-            throw e;
-        }
+
+        CheckedReservation primaryStorageReservation = new CheckedReservation(owner, Resource.ResourceType.primary_storage, resourceLimitStorageTags,
+                CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? diskProfile.getSize() : 0L, reservationDao, resourceLimitService);
+        reservations.add(primaryStorageReservation);
 
         List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
         try {
@@ -2724,6 +2720,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
         return userVm;
 
+        } catch (ResourceAllocationException e) {
+            cleanupFailedImportVM(userVm);
+            throw e;
         } finally {
             ReservationHelper.closeAll(reservations);
         }
