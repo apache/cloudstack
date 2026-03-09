@@ -64,7 +64,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -450,7 +449,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             Account account = _accountDao.findById(accountId);
             Domain domain = _domainDao.findById(account.getDomainId());
 
-            payload.setDefaultMaxSecondaryStorageInGB(ByteScaleUtils.bytesToGibibytes(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null)));
+            payload.setDefaultMaxSecondaryStorageInBytes(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
             payload.setAccountId(accountId);
             payload.setRemoteEndPoint(ep.getPublicAddr());
             payload.setRequiresHvm(template.requiresHvm());
