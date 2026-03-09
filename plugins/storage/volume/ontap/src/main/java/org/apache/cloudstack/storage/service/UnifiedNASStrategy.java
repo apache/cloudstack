@@ -33,20 +33,14 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.feign.FeignClientFactory;
-import org.apache.cloudstack.storage.feign.client.JobFeignClient;
-import org.apache.cloudstack.storage.feign.client.NASFeignClient;
-import org.apache.cloudstack.storage.feign.client.VolumeFeignClient;
 import org.apache.cloudstack.storage.feign.model.ExportPolicy;
 import org.apache.cloudstack.storage.feign.model.ExportRule;
-import org.apache.cloudstack.storage.feign.model.FileClone;
 import org.apache.cloudstack.storage.feign.model.FileInfo;
 import org.apache.cloudstack.storage.feign.model.Job;
 import org.apache.cloudstack.storage.feign.model.Nas;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.Volume;
-import org.apache.cloudstack.storage.feign.model.VolumeConcise;
 import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
@@ -212,7 +206,7 @@ public class UnifiedNASStrategy extends NASStrategy {
 
     @Override
     public AccessGroup getAccessGroup(Map<String, String> values) {
-        return null; 
+        return null;
     }
 
     @Override

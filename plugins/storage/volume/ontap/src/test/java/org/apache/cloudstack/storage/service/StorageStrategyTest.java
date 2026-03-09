@@ -148,11 +148,6 @@ public class StorageStrategyTest {
         }
 
         @Override
-        public CloudStackVolume snapshotCloudStackVolume(CloudStackVolume cloudstackVolume) {
-            return null;
-        }
-
-        @Override
         public JobResponse revertSnapshotForCloudStackVolume(String snapshotName, String flexVolUuid, String snapshotUuid, String volumePath, String lunUuid, String flexVolName) {
             return null;
         }

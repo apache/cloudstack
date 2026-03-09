@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.storage.service;
 
-import org.apache.cloudstack.storage.feign.client.SANFeignClient;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 
 public abstract class SANStrategy extends StorageStrategy {
