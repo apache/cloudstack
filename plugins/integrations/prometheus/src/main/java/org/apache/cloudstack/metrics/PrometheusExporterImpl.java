@@ -17,6 +17,7 @@
 package org.apache.cloudstack.metrics;
 
 import java.math.BigDecimal;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.commons.lang3.StringUtils;
@@ -133,6 +135,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
     private ResourceCountDao _resourceCountDao;
     @Inject
     private HostTagsDao _hostTagsDao;
+    @Inject
+    private CAManager caManager;
 
     public PrometheusExporterImpl() {
         super();
@@ -216,6 +220,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             }
 
             metricsList.add(new ItemHostVM(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), vmDao.listByHostId(host.getId()).size()));
+
+            addSSLCertificateExpirationMetrics(metricsList, zoneName, zoneUuid, host);
+
             final CapacityVO coreCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU_CORE);
 
             if (coreCapacity == null && !host.isInMaintenanceStates()){
@@ -251,6 +258,18 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         metricsList.add(new ItemHost(zoneName, zoneUuid, TOTAL, total, null));
 
         addHostTagsMetrics(metricsList, dcId, zoneName, zoneUuid, totalHosts, upHosts, downHosts, total, up, down);
+    }
+
+    private void addSSLCertificateExpirationMetrics(List<Item> metricsList, String zoneName, String zoneUuid, HostVO host) {
+        if (caManager == null || caManager.getActiveCertificatesMap() == null) {
+            return;
+        }
+        X509Certificate cert = caManager.getActiveCertificatesMap().getOrDefault(host.getPrivateIpAddress(), null);
+        if (cert == null) {
+            return;
+        }
+        long certExpiryEpoch = cert.getNotAfter().getTime() / 1000; // Convert to epoch seconds
+        metricsList.add(new ItemHostCertExpiry(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), certExpiryEpoch));
     }
 
     private String markTagMaps(HostVO host, Map<String, Integer> totalHosts, Map<String, Integer> upHosts, Map<String, Integer> downHosts) {
@@ -1047,6 +1066,30 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         @Override
         public String toMetricsString() {
             return String.format("%s{zone=\"%s\",cpu=\"%d\",memory=\"%d\"} %d", name, zoneName, cpu, memory, total);
+        }
+    }
+
+    class ItemHostCertExpiry extends Item {
+        String zoneName;
+        String zoneUuid;
+        String hostName;
+        String hostUuid;
+        String hostIp;
+        long expiryTimestamp;
+
+        public ItemHostCertExpiry(final String zoneName, final String zoneUuid, final String hostName, final String hostUuid, final String hostIp, final long expiry) {
+            super("cloudstack_host_cert_expiry_timestamp");
+            this.zoneName = zoneName;
+            this.zoneUuid = zoneUuid;
+            this.hostName = hostName;
+            this.hostUuid = hostUuid;
+            this.hostIp = hostIp;
+            this.expiryTimestamp = expiry;
+        }
+
+        @Override
+        public String toMetricsString() {
+            return String.format("%s{zone=\"%s\",hostname=\"%s\",ip=\"%s\"} %d", name, zoneName, hostName, hostIp, expiryTimestamp);
         }
     }
 }

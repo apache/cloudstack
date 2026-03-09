@@ -16,7 +16,10 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -30,10 +33,10 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.Answer;
-
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
@@ -48,14 +51,17 @@ import com.cloud.storage.template.FtpTemplateUploader;
 import com.cloud.storage.template.TemplateUploader;
 import com.cloud.storage.template.TemplateUploader.Status;
 import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
+import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 public class UploadManagerImpl extends ManagerBase implements UploadManager {
+
+    protected static final String EXTRACT_USERDATA_DIR = "userdata";
+    protected static final String BASE_EXTRACT_PATH = String.format("/var/www/html/%s/", EXTRACT_USERDATA_DIR);
 
     public class Completion implements UploadCompleteCallback {
         private final String jobId;
@@ -266,7 +272,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
         // Create the directory structure so that its visible under apache server root
-        String extractDir = "/var/www/html/userdata/";
+        String extractDir = BASE_EXTRACT_PATH;
         extractDir = extractDir + cmd.getFilepathInExtractURL() + File.separator;
         Script command = new Script("/bin/su", logger);
         command.add("-s");
@@ -330,12 +336,20 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         String extractUrl = cmd.getExtractUrl();
         String result;
         if (extractUrl != null) {
-            command.add("unlink /var/www/html/userdata/" + extractUrl.substring(extractUrl.lastIndexOf(File.separator) + 1));
+            URI uri = URI.create(extractUrl);
+            String uriPath = uri.getPath();
+            String marker = String.format("/%s/", EXTRACT_USERDATA_DIR);
+            String linkPath = uriPath.startsWith(marker)
+                    ? uriPath.substring(marker.length())
+                    : uriPath.substring(uriPath.indexOf(marker) + marker.length());
+            command.add("unlink " + BASE_EXTRACT_PATH + linkPath);
             result = command.execute();
             if (result != null) {
                 // FIXME - Ideally should bail out if you can't delete symlink. Not doing it right now.
                 // This is because the ssvm might already be destroyed and the symlinks do not exist.
                 logger.warn("Error in deleting symlink :" + result);
+            } else {
+                deleteEntitySymlinkRootDirectoryIfNeeded(cmd, linkPath);
             }
         }
 
@@ -354,6 +368,30 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
 
         return new Answer(cmd, true, "");
+    }
+
+    protected void deleteEntitySymlinkRootDirectoryIfNeeded(DeleteEntityDownloadURLCommand cmd, String linkPath) {
+        if (StringUtils.isEmpty(linkPath)) {
+            return;
+        }
+        String[] parts = linkPath.split("/");
+        if (parts.length == 0) {
+            return;
+        }
+        String rootDir = parts[0];
+        if (StringUtils.isEmpty(rootDir) || !UuidUtils.isUuid(rootDir)) {
+            return;
+        }
+        logger.info("Deleting symlink root directory: {} for {}", rootDir, cmd.getExtractUrl());
+        Path rootDirPath = Path.of(BASE_EXTRACT_PATH, rootDir);
+        String failMsg = "Failed to delete symlink root directory: {} for {}";
+        try {
+            if (!FileUtil.deleteRecursively(rootDirPath)) {
+                logger.warn(failMsg, rootDir, cmd.getExtractUrl());
+            }
+        } catch (IOException e) {
+            logger.warn(failMsg, rootDir, cmd.getExtractUrl(), e);
+        }
     }
 
     private String getInstallPath(String jobId) {
