@@ -34,5 +34,5 @@ UPDATE `cloud`.`alert` SET type = 34 WHERE name = 'ALERT.VR.PRIVATE.IFACE.MTU';
 -- Update configuration 'kvm.ssh.to.agent' description and is_dynamic fields
 UPDATE `cloud`.`configuration` SET description = 'True if the management server will restart the agent service via SSH into the KVM hosts after or during maintenance operations', is_dynamic = 1 WHERE name = 'kvm.ssh.to.agent';
 
--- Set default value for vm_template.type to "USER" and update existing records with NULL type to "USER"
+-- Update existing vm_template records with NULL type to "USER"
 UPDATE `cloud`.`vm_template` SET `type` = 'USER' WHERE `type` IS NULL;
