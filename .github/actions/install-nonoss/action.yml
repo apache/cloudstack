@@ -15,29 +15,17 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: License Check
-on:
-  - push
-  - pull_request
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-permissions:
-  contents: read
-jobs:
-  build:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - name: Setup Environment
-        uses: ./.github/actions/setup-env
-      - name: Install Non-OSS
-        uses: ./.github/actions/install-nonoss
-      - name: RAT licence checks
-        run: |
-          mvn -P developer,systemvm -Dsimulator -Dnoredist -pl . org.apache.rat:apache-rat-plugin:0.12:check
-      - name: Rat Report
-        if: always()
-        run: |
-          echo -e "Printing RAT report\n"
-          cat target/rat.txt || true
+name: 'Install CloudStack Non-OSS'
+description: 'Clones and installs the shapeblue/cloudstack-nonoss repository.'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install cloudstack-nonoss
+      shell: bash
+      run: |
+        git clone --depth 1 https://github.com/shapeblue/cloudstack-nonoss.git nonoss
+        cd nonoss
+        bash -x install-non-oss.sh
+        cd ..
+        rm -fr nonoss

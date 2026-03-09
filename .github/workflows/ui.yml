@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v6
@@ -37,6 +37,8 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 16
+          cache: 'npm'
+          cache-dependency-path: 'ui/package-lock.json'
 
       - name: Env details
         run: |
