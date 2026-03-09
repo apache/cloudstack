@@ -2407,6 +2407,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new InvalidParameterValueException(String.format("Please specify a valid templatetype: %s",
                         org.apache.commons.lang3.StringUtils.join(",", TemplateType.values())));
             }
+        } else if (cmd instanceof GetUploadParamsForTemplateCmd) {
+            templateType = ((GetUploadParamsForTemplateCmd) cmd).isRoutingType() ? TemplateType.ROUTING : TemplateType.USER;
         }
         if (templateType != null) {
             if (isRoutingType != null && (TemplateType.ROUTING.equals(templateType) != isRoutingType)) {
