@@ -97,7 +97,7 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Unmanaging Instance. Instance ID = " + vmId;
+        return "Unmanaging Instance with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     public Long getHostId() {
@@ -121,7 +121,7 @@ public class UnmanageVMInstanceCmd extends BaseAsyncCmd {
             ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         UnmanageVMInstanceResponse response = new UnmanageVMInstanceResponse();
         try {
-            CallContext.current().setEventDetails("VM ID = " + vmId);
+            CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.ID));
             Pair<Boolean, String> result = unmanagedVMsManager.unmanageVMInstance(vmId, hostId, isForced());
             if (result.first()) {
                 response.setSuccess(true);

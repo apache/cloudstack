@@ -78,7 +78,9 @@ public interface UserPasswordResetManager {
 
     ConfigKey<String> UserPasswordResetDomainURL = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
             String.class, "user.password.reset.mail.domain.url", null,
-            "Domain URL for reset password links sent to the user via email", true,
+            "Domain URL (along with scheme - http:// or https:// and port as applicable) for reset password links sent to the user via email. " +
+                    "If this is not set, CloudStack would determine the domain url based on the first management server from 'host' setting " +
+                    "and http scheme based on the https.enabled flag from server.properties file in the management server.", true,
             ConfigKey.Scope.Global);
 
     void setResetTokenAndSend(UserAccount userAccount);

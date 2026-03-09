@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.network.bgp;
 
 import com.cloud.event.EventTypes;
 import org.apache.cloudstack.api.response.BgpPeerResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
@@ -28,6 +29,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.UUID;
+
 @RunWith(MockitoJUnitRunner.class)
 public class ReleaseDedicatedBgpPeerCmdTest {
 
@@ -36,15 +39,18 @@ public class ReleaseDedicatedBgpPeerCmdTest {
     @Test
     public void testReleaseDedicatedBgpPeerCmd() {
         Long id = 1L;
+        UUID uuid = UUID.randomUUID();
 
         ReleaseDedicatedBgpPeerCmd cmd = new ReleaseDedicatedBgpPeerCmd();
         ReflectionTestUtils.setField(cmd, "id", id);
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
 
+        CallContext.current().putApiResourceUuid("id", uuid);
+
         Assert.assertEquals(id, cmd.getId());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_BGP_PEER_RELEASE, cmd.getEventType());
-        Assert.assertEquals(String.format("Releasing a dedicated Bgp Peer %s", id), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Releasing dedicated BGP Peer with ID: %s", uuid), cmd.getEventDescription());
 
         BgpPeer bgpPeer = Mockito.mock(BgpPeer.class);
         Mockito.when(routedIpv4Manager.releaseDedicatedBgpPeer(cmd)).thenReturn(bgpPeer);

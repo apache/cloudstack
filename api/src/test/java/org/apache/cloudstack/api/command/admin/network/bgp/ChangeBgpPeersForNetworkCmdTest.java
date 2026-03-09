@@ -23,6 +23,7 @@ import com.cloud.network.Network;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,6 +34,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ChangeBgpPeersForNetworkCmdTest {
@@ -44,6 +46,7 @@ public class ChangeBgpPeersForNetworkCmdTest {
     @Test
     public void testChangeBgpPeersForNetworkCmd() {
         Long networkId = 10L;
+        UUID networkUuid = UUID.randomUUID();
         List<Long> bgpPeerIds = Arrays.asList(20L, 21L);
 
         ChangeBgpPeersForNetworkCmd cmd = new ChangeBgpPeersForNetworkCmd();
@@ -52,11 +55,13 @@ public class ChangeBgpPeersForNetworkCmdTest {
         ReflectionTestUtils.setField(cmd,"routedIpv4Manager", routedIpv4Manager);
         ReflectionTestUtils.setField(cmd,"_responseGenerator", _responseGenerator);
 
+        CallContext.current().putApiResourceUuid("networkid", networkUuid);
+
         Assert.assertEquals(networkId, cmd.getNetworkId());
         Assert.assertEquals(bgpPeerIds, cmd.getBgpPeerIds());
         Assert.assertEquals(1L, cmd.getEntityOwnerId());
         Assert.assertEquals(EventTypes.EVENT_NETWORK_BGP_PEER_UPDATE, cmd.getEventType());
-        Assert.assertEquals(String.format("Changing Bgp Peers for network %s", networkId), cmd.getEventDescription());
+        Assert.assertEquals(String.format("Changing BGP Peers for Network with ID: %s", networkUuid), cmd.getEventDescription());
 
         Network network = Mockito.mock(Network.class);
         Mockito.when(routedIpv4Manager.changeBgpPeersForNetwork(cmd)).thenReturn(network);

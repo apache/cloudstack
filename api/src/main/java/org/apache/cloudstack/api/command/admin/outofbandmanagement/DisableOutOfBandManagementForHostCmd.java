@@ -70,7 +70,7 @@ public class DisableOutOfBandManagementForHostCmd extends BaseAsyncCmd {
 
         OutOfBandManagementResponse response = outOfBandManagementService.disableOutOfBandManagement(host);
 
-        CallContext.current().setEventDetails("Host Id:" + host.getId() + " out-of-band management enabled: false");
+        CallContext.current().setEventDetails("Host ID:" + host.getUuid() + " out-of-band management enabled: false");
         CallContext.current().putContextParameter(Host.class, host.getUuid());
 
         response.setId(host.getUuid());
@@ -94,7 +94,7 @@ public class DisableOutOfBandManagementForHostCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "disable out-of-band management password for host: " + getHostId();
+        return "Disabling out-of-band management password for host with ID: " + getResourceUuid(ApiConstants.HOST_ID);
     }
 
     @Override

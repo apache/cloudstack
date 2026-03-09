@@ -298,8 +298,9 @@ public class EventTypes {
     public static final String EVENT_REGISTER_CNI_CONFIG = "REGISTER.CNI.CONFIG";
     public static final String EVENT_DELETE_CNI_CONFIG = "DELETE.CNI.CONFIG";
 
-    //register for user API and secret keys
+    //user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
+    public static final String EVENT_DELETE_SECRET_API_KEY = "DELETE.USER.KEY";
     public static final String API_KEY_ACCESS_UPDATE = "API.KEY.ACCESS.UPDATE";
 
     // Template Events
@@ -583,6 +584,7 @@ public class EventTypes {
 
     // Network ACL
     public static final String EVENT_NETWORK_ACL_CREATE = "NETWORK.ACL.CREATE";
+    public static final String EVENT_NETWORK_ACL_IMPORT = "NETWORK.ACL.IMPORT";
     public static final String EVENT_NETWORK_ACL_DELETE = "NETWORK.ACL.DELETE";
     public static final String EVENT_NETWORK_ACL_REPLACE = "NETWORK.ACL.REPLACE";
     public static final String EVENT_NETWORK_ACL_UPDATE = "NETWORK.ACL.UPDATE";

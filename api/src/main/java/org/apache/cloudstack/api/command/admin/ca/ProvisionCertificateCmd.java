@@ -108,7 +108,7 @@ public class ProvisionCertificateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Provisioning certificate for host id=" + hostId + " using provider=" + provider;
+        return "Provisioning certificate for host with ID: " + getResourceUuid(ApiConstants.HOST_ID) + " using provider: " + provider;
     }
 
     @Override

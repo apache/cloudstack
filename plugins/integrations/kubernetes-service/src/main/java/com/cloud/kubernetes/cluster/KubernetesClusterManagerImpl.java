@@ -49,6 +49,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.Resource;
 import com.cloud.user.ResourceLimitService;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermissionEntity;
@@ -477,7 +478,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             logger.warn("Network offering: {} does not have necessary services to provision Kubernetes cluster", networkOffering);
             return false;
         }
-        if (!networkOffering.isEgressDefaultPolicy()) {
+        if (!networkOffering.isForVpc() && !networkOffering.isEgressDefaultPolicy()) {
             logger.warn("Network offering: {} has egress default policy turned off should be on to provision Kubernetes cluster", networkOffering);
             return false;
         }
@@ -1172,9 +1173,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
             CallContext networkContext = CallContext.register(CallContext.current(), ApiCommandResourceType.Network);
             try {
+                Long zoneId = zone.getId();
+                Integer publicMTU = NetworkService.VRPublicInterfaceMtu.valueIn(zoneId);
+                Integer privateMTU = NetworkService.VRPrivateInterfaceMtu.valueIn(zoneId);
                 network = networkService.createGuestNetwork(networkOffering.getId(), clusterName + "-network",
-                        owner.getAccountName() + "-network", owner, physicalNetwork, zone.getId(),
-                        ControlledEntity.ACLType.Account);
+                        owner.getAccountName() + "-network", owner, physicalNetwork, zoneId,
+                        ControlledEntity.ACLType.Account, new Pair<>(publicMTU, privateMTU));
                 if (!networkOffering.isForVpc() && NetworkOffering.RoutingMode.Dynamic == networkOffering.getRoutingMode()) {
                     bgpService.allocateASNumber(zone.getId(), asNumber, network.getId(), null);
                 }
@@ -1383,8 +1387,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
 
         totalAdditionalVms += additional;
-        long effectiveCpu = (long) so.getCpu() * so.getSpeed();
-        totalAdditionalCpuUnits += effectiveCpu * additional;
+        totalAdditionalCpuUnits += so.getCpu() * additional;
         totalAdditionalRamMb += so.getRamSize() * additional;
 
         try {
@@ -1888,12 +1891,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     KUBEADMIN_ACCOUNT_NAME, "kubeadmin", null, UUID.randomUUID().toString(), User.Source.UNKNOWN));
             keys = createUserApiKeyAndSecretKey(kube.getId());
         } else {
-            String apiKey = kubeadmin.getApiKey();
-            String secretKey = kubeadmin.getSecretKey();
-            if (StringUtils.isAnyEmpty(apiKey, secretKey)) {
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(kubeadmin.getId());
+
+            if (latestKeypair == null) {
                 keys = createUserApiKeyAndSecretKey(kubeadmin.getId());
             } else {
-                keys = new String[]{apiKey, secretKey};
+                keys = new String[]{latestKeypair.getApiKey(), latestKeypair.getSecretKey()};
             }
         }
         return keys;

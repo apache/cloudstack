@@ -280,6 +280,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private static final ConfigKey<Boolean> AllowEmptyStartEndIpAddress = new ConfigKey<>("Advanced", Boolean.class,
             "allow.empty.start.end.ipaddress", "true", "Allow creating network without mentioning start and end IP address",
             true, ConfigKey.Scope.Account);
+    public static final ConfigKey<Boolean> AllowUsersToMakeNetworksRedundant = new ConfigKey<>("Advanced", Boolean.class,
+            "allow.users.to.make.networks.redundant", "true", "Allow Users to make Networks Redundant",
+            true, ConfigKey.Scope.Global);
     private static final long MIN_VLAN_ID = 0L;
     private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1
     private static final long MIN_GRE_KEY = 0L;
@@ -1886,6 +1889,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 null, null, null, null, null, null, null, null, null, null);
     }
 
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_NETWORK_CREATE, eventDescription = "creating network")
+    public Network createGuestNetwork(long networkOfferingId, String name, String displayText, Account owner,
+                                      PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Pair<Integer, Integer> vrIfaceMTUs) throws
+            InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
+        return _networkMgr.createGuestNetwork(networkOfferingId, name, displayText,
+                null, null, null, false, null, owner, null, physicalNetwork, zoneId,
+                aclType, null, null, null, null, true, null,
+                null, null, null, null, null, null, null, null, vrIfaceMTUs, null);
+    }
+
     void checkAndSetRouterSourceNatIp(Account owner, CreateNetworkCmd cmd, Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
         String sourceNatIp = cmd.getSourceNatIP();
         if (sourceNatIp == null) {
@@ -2986,8 +3001,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throwInvalidIdException("Cannot restart a VPC tier with cleanup, please restart the whole VPC.", network.getUuid(), "network tier");
         }
         boolean makeRedundant = cmd.getMakeRedundant();
-        boolean livePatch = cmd.getLivePatch();
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+        if (makeRedundant && !_accountMgr.isRootAdmin(callerUser.getAccountId()) && !AllowUsersToMakeNetworksRedundant.value() ) {
+            throw new InvalidParameterValueException("Could not make the network redundant. Please contact administrator.");
+        }
+
+        boolean livePatch = cmd.getLivePatch();
         return restartNetwork(network, cleanup, makeRedundant, livePatch, callerUser);
     }
 
@@ -6266,7 +6285,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
+        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, AllowUsersToMakeNetworksRedundant, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
     }
 
     public boolean isDefaultAcl(Long aclId) {

@@ -111,7 +111,9 @@ public class LibvirtDomainXMLParser {
                     def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
                         DiskDef.DiskBus.valueOf(bus.toUpperCase()),
                         DiskDef.DiskProtocol.valueOf(protocol.toUpperCase()), fmt);
-                    def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                    if (StringUtils.isNotBlank(diskCacheMode)) {
+                        def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
+                    }
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);
                     String diskCacheMode = getAttrValue("driver", "cache", disk);

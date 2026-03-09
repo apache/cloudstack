@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.lb;
 
+import com.cloud.api.ApiDBUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,6 +32,7 @@ import javax.inject.Inject;
 
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -347,15 +349,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             if (user == null) {
                 throw new InvalidParameterValueException("Unable to find user by id " + autoscaleUserId);
             }
-            apiKey = user.getApiKey();
-            secretKey = user.getSecretKey();
-            if (apiKey == null) {
-                throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
+
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+
+            if (latestKeypair == null) {
+                throw new InvalidParameterValueException(String.format("No API keypair for user [%s]. Please generate it.", user.getUsername()));
             }
 
-            if (secretKey == null) {
-                throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
-            }
+            apiKey = latestKeypair.getApiKey();
+            secretKey = latestKeypair.getSecretKey();
 
             ApiServiceConfiguration.validateEndpointUrl();
         }
@@ -1909,7 +1911,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
                     logger.debug("Load balancer {} for Ip address: {}, public port {}, private port {} is added successfully.", newRule, ipAddr, srcPort, destPort);
-                    CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
+                    CallContext.current().setEventDetails("Load balancer ID: " + newRule.getUuid());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(),
                             null, LoadBalancingRule.class.getName(), newRule.getUuid());
 

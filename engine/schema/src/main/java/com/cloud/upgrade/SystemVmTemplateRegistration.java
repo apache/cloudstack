@@ -606,7 +606,7 @@ public class SystemVmTemplateRegistration {
         template.setBits(64);
         template.setAccountId(Account.ACCOUNT_ID_SYSTEM);
         template.setUrl(details.getUrl());
-        template.setChecksum(details.getChecksum());
+        template.setChecksum(DigestHelper.prependAlgorithm(details.getChecksum()));
         template.setEnablePassword(false);
         template.setDisplayText(details.getName());
         template.setFormat(details.getFormat());
@@ -1079,7 +1079,7 @@ public class SystemVmTemplateRegistration {
     protected void updateTemplateUrlChecksumAndGuestOsId(VMTemplateVO templateVO,
                MetadataTemplateDetails templateDetails) {
         templateVO.setUrl(templateDetails.getUrl());
-        templateVO.setChecksum(templateDetails.getChecksum());
+        templateVO.setChecksum(DigestHelper.prependAlgorithm(templateDetails.getChecksum()));
         GuestOSVO guestOS = guestOSDao.findOneByDisplayName(templateDetails.getGuestOs());
         if (guestOS != null) {
             templateVO.setGuestOSId(guestOS.getId());
