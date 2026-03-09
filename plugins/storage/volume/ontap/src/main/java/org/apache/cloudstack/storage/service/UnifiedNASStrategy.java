@@ -66,21 +66,12 @@ import java.util.Map;
 public class UnifiedNASStrategy extends NASStrategy {
 
     private static final Logger s_logger = LogManager.getLogger(UnifiedNASStrategy.class);
-    private final FeignClientFactory feignClientFactory;
-    private final NASFeignClient nasFeignClient;
-    private final VolumeFeignClient volumeFeignClient;
-    private final JobFeignClient jobFeignClient;
     @Inject private VolumeDao volumeDao;
     @Inject private EndPointSelector epSelector;
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
 
     public UnifiedNASStrategy(OntapStorage ontapStorage) {
         super(ontapStorage);
-        String baseURL = Constants.HTTPS + ontapStorage.getStorageIP();
-        this.feignClientFactory = new FeignClientFactory();
-        this.nasFeignClient = feignClientFactory.createClient(NASFeignClient.class, baseURL);
-        this.volumeFeignClient = feignClientFactory.createClient(VolumeFeignClient.class, baseURL);
-        this.jobFeignClient = feignClientFactory.createClient(JobFeignClient.class, baseURL );
     }
 
     public void setOntapStorage(OntapStorage ontapStorage) {
@@ -153,59 +144,6 @@ public class UnifiedNASStrategy extends NASStrategy {
     }
 
     @Override
-    public CloudStackVolume snapshotCloudStackVolume(CloudStackVolume cloudstackVolumeArg) {
-        s_logger.info("snapshotCloudStackVolume: Get cloudstack volume " + cloudstackVolumeArg);
-        CloudStackVolume cloudStackVolume = null;
-        String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
-        JobResponse jobResponse = null;
-
-        FileClone fileClone = new FileClone();
-        VolumeConcise volumeConcise = new VolumeConcise();
-        volumeConcise.setUuid(cloudstackVolumeArg.getFlexVolumeUuid());
-        fileClone.setVolume(volumeConcise);
-
-        fileClone.setSourcePath(cloudstackVolumeArg.getFile().getPath());
-        fileClone.setDestinationPath(cloudstackVolumeArg.getDestinationPath());
-
-        try {
-            /** Clone file call to storage */
-            jobResponse = nasFeignClient.cloneFile(authHeader, fileClone);
-            if (jobResponse == null || jobResponse.getJob() == null) {
-                throw new CloudRuntimeException("Failed to initiate file clone" + cloudstackVolumeArg.getFile().getPath());
-            }
-            String jobUUID = jobResponse.getJob().getUuid();
-
-            /** Create URI for GET Job API */
-            Boolean jobSucceeded = jobPollForSuccess(jobUUID,3,2);
-            if (!jobSucceeded) {
-                s_logger.error("snapshotCloudStackVolume: File clone failed: " + cloudstackVolumeArg.getFile().getPath());
-                throw new CloudRuntimeException("File clone failed: " + cloudstackVolumeArg.getFile().getPath());
-            }
-            s_logger.info("snapshotCloudStackVolume: File clone job completed successfully for file: " + cloudstackVolumeArg.getFile().getPath());
-
-        } catch (FeignException e) {
-            s_logger.error("snapshotCloudStackVolume: Failed to clone file response: " + cloudstackVolumeArg.getFile().getPath(), e);
-            throw new CloudRuntimeException("File not found: " + e.getMessage());
-        } catch (Exception e) {
-            s_logger.error("snapshotCloudStackVolume: Exception to get file: {}", cloudstackVolumeArg.getFile().getPath(), e);
-            throw new CloudRuntimeException("Failed to get the file: " + e.getMessage());
-        }
-
-        FileInfo clonedFileInfo = null;
-        try {
-            /** Get cloned file call from storage */
-            clonedFileInfo = getFile(cloudstackVolumeArg.getFlexVolumeUuid(), cloudstackVolumeArg.getDestinationPath());
-        } catch (Exception e) {
-            s_logger.error("snapshotCloudStackVolume: Exception to get cloned file: {}", cloudstackVolumeArg.getDestinationPath(), e);
-            throw new CloudRuntimeException("Failed to get the cloned file: " + e.getMessage());
-        }
-        cloudStackVolume = new CloudStackVolume();
-        cloudStackVolume.setFlexVolumeUuid(cloudstackVolumeArg.getFlexVolumeUuid());
-        cloudStackVolume.setFile(clonedFileInfo);
-        return cloudStackVolume;
-    }
-
-    @Override
     public AccessGroup createAccessGroup(AccessGroup accessGroup) {
         s_logger.info("createAccessGroup: Create access group {}: " , accessGroup);
         Map<String, String> details = accessGroup.getPrimaryDataStoreInfo().getDetails();
@@ -237,13 +175,13 @@ public class UnifiedNASStrategy extends NASStrategy {
         s_logger.info("deleteAccessGroup: Deleting export policy");
 
         if (accessGroup == null) {
-            throw new CloudRuntimeException("deleteAccessGroup: Invalid accessGroup object - accessGroup is null");
+            throw new CloudRuntimeException("Invalid accessGroup object - accessGroup is null");
         }
 
         // Get PrimaryDataStoreInfo from accessGroup
         PrimaryDataStoreInfo primaryDataStoreInfo = accessGroup.getPrimaryDataStoreInfo();
         if (primaryDataStoreInfo == null) {
-            throw new CloudRuntimeException("deleteAccessGroup: PrimaryDataStoreInfo is null in accessGroup");
+            throw new CloudRuntimeException("PrimaryDataStoreInfo is null in accessGroup");
         }
         s_logger.info("deleteAccessGroup: Deleting export policy for the storage pool {}", primaryDataStoreInfo.getName());
         try {
@@ -274,47 +212,8 @@ public class UnifiedNASStrategy extends NASStrategy {
 
     @Override
     public AccessGroup getAccessGroup(Map<String, String> values) {
-        return null; //TODO: This method need to be rewritten according to the signature in StorageStrategy interface
+        return null; 
     }
-
-//    @Override
-//    public AccessGroup getAccessGroup(AccessGroup accessGroup) {
-//        s_logger.info("getAccessGroup: Get export policy");
-//
-//        if (accessGroup == null) {
-//            throw new CloudRuntimeException("getAccessGroup: Invalid accessGroup object - accessGroup is null");
-//        }
-//
-//        // Get PrimaryDataStoreInfo from accessGroup
-//        PrimaryDataStoreInfo primaryDataStoreInfo = accessGroup.getPrimaryDataStoreInfo();
-//        if (primaryDataStoreInfo == null) {
-//            throw new CloudRuntimeException("getAccessGroup: PrimaryDataStoreInfo is null in accessGroup");
-//        }
-//        s_logger.info("getAccessGroup: Get export policy for the storage pool {}", primaryDataStoreInfo.getName());
-//        try {
-//            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
-//            // Determine export policy attached to the storage pool
-//            String exportPolicyName = primaryDataStoreInfo.getDetails().get(Constants.EXPORT_POLICY_NAME);
-//            String exportPolicyId = primaryDataStoreInfo.getDetails().get(Constants.EXPORT_POLICY_ID);
-//
-//            try {
-//               ExportPolicy exportPolicy =  nasFeignClient.getExportPolicyById(authHeader,exportPolicyId);
-//               if(exportPolicy==null){
-//                   s_logger.error("getAccessGroup: Failed to retrieve export policy for export policy");
-//                   throw new CloudRuntimeException("getAccessGroup: Failed to retrieve export policy for export policy");
-//               }
-//               accessGroup.setPolicy(exportPolicy);
-//                s_logger.info("getAccessGroup: Successfully fetched export policy '{}'", exportPolicyName);
-//            } catch (Exception e) {
-//                s_logger.error("getAccessGroup: Failed to delete export policy. Exception: {}", e.getMessage(), e);
-//                throw new CloudRuntimeException("Failed to delete export policy: " + e.getMessage(), e);
-//            }
-//        } catch (Exception e) {
-//            s_logger.error("getAccessGroup: Failed to delete export policy. Exception: {}", e.getMessage(), e);
-//            throw new CloudRuntimeException("Failed to delete export policy: " + e.getMessage(), e);
-//        }
-//        return accessGroup;
-//    }
 
     @Override
     public Map<String, String> enableLogicalAccess(Map<String, String> values) {
@@ -664,13 +563,13 @@ public class UnifiedNASStrategy extends NASStrategy {
                 volumePath, snapshotName, flexVolName);
 
         if (snapshotName == null || snapshotName.isEmpty()) {
-            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: Snapshot name is required for NFS snapshot revert");
+            throw new CloudRuntimeException("Snapshot name is required for NFS snapshot revert");
         }
         if (volumePath == null || volumePath.isEmpty()) {
-            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: File path is required for NFS snapshot revert");
+            throw new CloudRuntimeException("File path is required for NFS snapshot revert");
         }
         if (flexVolName == null || flexVolName.isEmpty()) {
-            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: FlexVolume name is required for NFS snapshot revert");
+            throw new CloudRuntimeException("FlexVolume name is required for NFS snapshot revert");
         }
 
         String authHeader = getAuthHeader();

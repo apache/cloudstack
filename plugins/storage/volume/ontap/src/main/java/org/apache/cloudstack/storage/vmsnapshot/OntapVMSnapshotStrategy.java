@@ -828,10 +828,10 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             String flexVolName = poolDetails.get(Constants.VOLUME_NAME);
 
             if (svmName == null || svmName.isEmpty()) {
-                throw new CloudRuntimeException("revertFlexVolSnapshots: SVM name not found in pool details for pool [" + detail.poolId + "]");
+                throw new CloudRuntimeException("SVM name not found in pool details for pool [" + detail.poolId + "]");
             }
             if (flexVolName == null || flexVolName.isEmpty()) {
-                throw new CloudRuntimeException("revertFlexVolSnapshots: FlexVolume name not found in pool details for pool [" + detail.poolId + "]");
+                throw new CloudRuntimeException("FlexVolume name not found in pool details for pool [" + detail.poolId + "]");
             }
 
             // The path must start with "/" for the ONTAP CLI API

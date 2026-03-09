@@ -28,13 +28,6 @@ public abstract class SANStrategy extends StorageStrategy {
     }
 
     /**
-     * Returns the SAN Feign client for SAN-specific operations.
-     *
-     * @return the SANFeignClient instance
-     */
-    public abstract SANFeignClient getSanFeignClient();
-
-    /**
      * Ensures the LUN is mapped to the specified access group (igroup).
      * If a mapping already exists, returns the existing LUN number.
      * If not, creates a new mapping and returns the assigned LUN number.

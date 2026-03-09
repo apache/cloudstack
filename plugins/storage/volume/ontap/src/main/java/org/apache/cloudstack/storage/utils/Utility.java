@@ -93,7 +93,7 @@ public class Utility {
                 cloudStackVolumeRequest.setLun(lunRequest);
                 break;
             default:
-                throw new CloudRuntimeException("createCloudStackVolumeRequestByProtocol: Unsupported protocol " + protocol);
+                throw new CloudRuntimeException("Unsupported protocol " + protocol);
 
         }
         return cloudStackVolumeRequest;
@@ -122,7 +122,7 @@ public class Utility {
     public static StorageStrategy getStrategyByStoragePoolDetails(Map<String, String> details) {
         if (details == null || details.isEmpty()) {
             s_logger.error("getStrategyByStoragePoolDetails: Storage pool details are null or empty");
-            throw new CloudRuntimeException("getStrategyByStoragePoolDetails: Storage pool details are null or empty");
+            throw new CloudRuntimeException("Storage pool details are null or empty");
         }
         String protocol = details.get(Constants.PROTOCOL);
         OntapStorage ontapStorage = new OntapStorage(details.get(Constants.USERNAME), details.get(Constants.PASSWORD),
@@ -135,7 +135,7 @@ public class Utility {
             return storageStrategy;
         } else {
             s_logger.error("getStrategyByStoragePoolDetails: Connection to Ontap SVM [" + details.get(Constants.SVM_NAME) + "] failed");
-            throw new CloudRuntimeException("getStrategyByStoragePoolDetails: Connection to Ontap SVM [" + details.get(Constants.SVM_NAME) + "] failed");
+            throw new CloudRuntimeException("Connection to Ontap SVM [" + details.get(Constants.SVM_NAME) + "] failed");
         }
     }
 

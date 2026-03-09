@@ -307,7 +307,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                 strategy.createAccessGroup(accessGroupRequest);
             } catch (Exception e) {
                 s_logger.error("attachCluster: Failed to create access group on storage system for cluster: " + primaryStore.getClusterId() + ". Exception: " + e.getMessage());
-                throw new CloudRuntimeException("attachCluster: Failed to create access group on storage system for cluster: " + primaryStore.getClusterId() + ". Exception: " + e.getMessage());
+                throw new CloudRuntimeException("Failed to create access group on storage system for cluster: " + primaryStore.getClusterId() + ". Exception: " + e.getMessage());
             }
         }
         logger.debug("attachCluster: Attaching the pool to each of the host in the cluster: {}", primaryStore.getClusterId());
@@ -370,7 +370,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                 strategy.createAccessGroup(accessGroupRequest);
             } catch (Exception e) {
                 s_logger.error("attachZone: Failed to create access group on storage system for zone with Exception: " + e.getMessage());
-                throw new CloudRuntimeException("attachZone: Failed to create access group on storage system for zone with Exception: " + e.getMessage());
+                throw new CloudRuntimeException("Failed to create access group on storage system for zone with Exception: " + e.getMessage());
             }
         }
         for (HostVO host : hostsToConnect) {

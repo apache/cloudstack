@@ -62,15 +62,15 @@ import java.util.Objects;
  */
 public abstract class StorageStrategy {
     // Replace @Inject Feign clients with FeignClientFactory
-    private final FeignClientFactory feignClientFactory;
-    private final AggregateFeignClient aggregateFeignClient;
-    private final VolumeFeignClient volumeFeignClient;
-    private final SvmFeignClient svmFeignClient;
-    private final JobFeignClient jobFeignClient;
-    private final NetworkFeignClient networkFeignClient;
-    private final SANFeignClient sanFeignClient;
-    private final NASFeignClient nasFeignClient;
-    private final SnapshotFeignClient snapshotFeignClient;
+    protected final FeignClientFactory feignClientFactory;
+    protected final AggregateFeignClient aggregateFeignClient;
+    protected final VolumeFeignClient volumeFeignClient;
+    protected final SvmFeignClient svmFeignClient;
+    protected final JobFeignClient jobFeignClient;
+    protected final NetworkFeignClient networkFeignClient;
+    protected final SANFeignClient sanFeignClient;
+    protected final NASFeignClient nasFeignClient;
+    protected final SnapshotFeignClient snapshotFeignClient;
 
     protected OntapStorage storage;
 
@@ -511,18 +511,6 @@ public abstract class StorageStrategy {
      * @return the retrieved CloudStackVolume object
      */
     abstract public CloudStackVolume getCloudStackVolume(Map<String, String> cloudStackVolumeMap);
-
-    /**
-     * Method encapsulates the behavior based on the opted protocol in subclasses.
-     * it is going to mimic
-     * snapshotLun       for iSCSI, FC protocols
-     * snapshotFile      for NFS3.0 and NFS4.1 protocols
-     *
-     *
-     * @param cloudstackVolume the source CloudStack volume
-     * @return the retrieved snapshot CloudStackVolume object
-     */
-    public abstract CloudStackVolume snapshotCloudStackVolume(CloudStackVolume cloudstackVolume);
 
     /**
      * Reverts a CloudStack volume to a snapshot using protocol-specific ONTAP APIs.

@@ -50,21 +50,10 @@ import java.util.Map;
 public class UnifiedSANStrategy extends SANStrategy {
 
     private static final Logger s_logger = LogManager.getLogger(UnifiedSANStrategy.class);
-    // Replace @Inject Feign client with FeignClientFactory
-    private final FeignClientFactory feignClientFactory;
-    private final SANFeignClient sanFeignClient;
 
     public UnifiedSANStrategy(OntapStorage ontapStorage) {
         super(ontapStorage);
         String baseURL = Constants.HTTPS + ontapStorage.getStorageIP();
-        // Initialize FeignClientFactory and create SAN client
-        this.feignClientFactory = new FeignClientFactory();
-        this.sanFeignClient = feignClientFactory.createClient(SANFeignClient.class, baseURL);
-    }
-
-    @Override
-    public SANFeignClient getSanFeignClient() {
-        return sanFeignClient;
     }
 
     public void setOntapStorage(OntapStorage ontapStorage) {
@@ -185,11 +174,6 @@ public class UnifiedSANStrategy extends SANStrategy {
     }
 
     @Override
-    public CloudStackVolume snapshotCloudStackVolume(CloudStackVolume cloudstackVolume) {
-        return null;
-    }
-
-    @Override
     public AccessGroup createAccessGroup(AccessGroup accessGroup) {
         s_logger.info("createAccessGroup : Create Igroup");
         String igroupName = "unknown";
@@ -296,13 +280,13 @@ public class UnifiedSANStrategy extends SANStrategy {
         s_logger.info("deleteAccessGroup: Deleting iGroup");
 
         if (accessGroup == null) {
-            throw new CloudRuntimeException("deleteAccessGroup: Invalid accessGroup object - accessGroup is null");
+            throw new CloudRuntimeException("Invalid accessGroup object - accessGroup is null");
         }
 
         // Get PrimaryDataStoreInfo from accessGroup
         PrimaryDataStoreInfo primaryDataStoreInfo = accessGroup.getPrimaryDataStoreInfo();
         if (primaryDataStoreInfo == null) {
-            throw new CloudRuntimeException("deleteAccessGroup: PrimaryDataStoreInfo is null in accessGroup");
+            throw new CloudRuntimeException("PrimaryDataStoreInfo is null in accessGroup");
         }
 
         try {
@@ -340,7 +324,7 @@ public class UnifiedSANStrategy extends SANStrategy {
                 String igroupUuid = igroup.getUuid();
 
                 if (igroupUuid == null || igroupUuid.isEmpty()) {
-                    throw new CloudRuntimeException("deleteAccessGroup: iGroup UUID is null or empty for iGroup: " + igroupName);
+                    throw new CloudRuntimeException("iGroup UUID is null or empty for iGroup: " + igroupName);
                 }
 
                 s_logger.info("deleteAccessGroup: Deleting iGroup '{}' with UUID '{}'", igroupName, igroupUuid);
@@ -593,7 +577,7 @@ public class UnifiedSANStrategy extends SANStrategy {
         );
         Map<String, String> response = enableLogicalAccess(enableMap);
         if (response == null || !response.containsKey(Constants.LOGICAL_UNIT_NUMBER)) {
-            throw new CloudRuntimeException("ensureLunMapped: Failed to map LUN [" + lunName + "] to iGroup [" + accessGroupName + "]");
+            throw new CloudRuntimeException("Failed to map LUN [" + lunName + "] to iGroup [" + accessGroupName + "]");
         }
         s_logger.info("ensureLunMapped: Successfully mapped LUN [{}] to igroup [{}] with LUN number [{}]", lunName, accessGroupName, response.get(Constants.LOGICAL_UNIT_NUMBER));
         return response.get(Constants.LOGICAL_UNIT_NUMBER);
@@ -656,13 +640,13 @@ public class UnifiedSANStrategy extends SANStrategy {
                 volumePath, snapshotName, flexVolName);
 
         if (snapshotName == null || snapshotName.isEmpty()) {
-            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: Snapshot name is required for iSCSI snapshot revert");
+            throw new CloudRuntimeException("Snapshot name is required for iSCSI snapshot revert");
         }
         if (flexVolName == null || flexVolName.isEmpty()) {
-            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: FlexVolume name is required for iSCSI snapshot revert");
+            throw new CloudRuntimeException("FlexVolume name is required for iSCSI snapshot revert");
         }
         if (volumePath == null || volumePath.isEmpty()) {
-            throw new CloudRuntimeException("revertSnapshotForCloudStackVolume: LUN path is required for iSCSI snapshot revert");
+            throw new CloudRuntimeException("LUN path is required for iSCSI snapshot revert");
         }
 
         String authHeader = getAuthHeader();
