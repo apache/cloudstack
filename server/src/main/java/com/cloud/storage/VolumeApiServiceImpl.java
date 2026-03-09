@@ -542,7 +542,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 Account account = _accountDao.findById(accountId);
                 Domain domain = domainDao.findById(account.getDomainId());
 
+                // one of the two following might have to be removed
                 command.setDefaultMaxSecondaryStorageInGB(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
+                command.setDefaultMaxSecondaryStorageInBytes(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null));
                 command.setAccountId(accountId);
                 Gson gson = new GsonBuilder().create();
                 String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);

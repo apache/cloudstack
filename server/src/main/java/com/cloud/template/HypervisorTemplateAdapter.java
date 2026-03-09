@@ -500,9 +500,9 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 boolean dataDiskDeletetionResult = true;
                 List<VMTemplateVO> dataDiskTemplates = templateDao.listByParentTemplatetId(template.getId());
                 if (CollectionUtils.isNotEmpty(dataDiskTemplates)) {
-                    logger.info("Template: {} has Datadisk template(s) associated with it. Delete Datadisk templates before deleting the template", template);
+                    logger.info("Template: {} has Datadisk template(s) associated with it. Delete Datadisk Templates before deleting the Template", template);
                     for (VMTemplateVO dataDiskTemplate : dataDiskTemplates) {
-                        logger.info("Delete Datadisk template: {} from image store: {}", dataDiskTemplate, imageStore);
+                        logger.info("Delete Datadisk Template: {} from image store: {}", dataDiskTemplate, imageStore);
                         AsyncCallFuture<TemplateApiResult> future = imageService.deleteTemplateAsync(imageFactory.getTemplate(dataDiskTemplate.getId(), imageStore));
                         try {
                             TemplateApiResult result = future.get();
