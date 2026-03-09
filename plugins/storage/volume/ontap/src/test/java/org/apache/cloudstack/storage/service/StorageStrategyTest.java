@@ -138,11 +138,17 @@ public class StorageStrategyTest {
 
         @Override
         public void copyCloudStackVolume(org.apache.cloudstack.storage.service.model.CloudStackVolume cloudstackVolume) {
+
         }
 
         @Override
         public CloudStackVolume getCloudStackVolume(
                 Map<String, String> cloudStackVolumeMap) {
+            return null;
+        }
+
+        @Override
+        public JobResponse revertSnapshotForCloudStackVolume(String snapshotName, String flexVolUuid, String snapshotUuid, String volumePath, String lunUuid, String flexVolName) {
             return null;
         }
 

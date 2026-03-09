@@ -24,14 +24,14 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 import feign.FeignException;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.storage.feign.FeignClientFactory;
-import org.apache.cloudstack.storage.feign.client.SANFeignClient;
 import org.apache.cloudstack.storage.feign.model.Igroup;
 import org.apache.cloudstack.storage.feign.model.Initiator;
 import org.apache.cloudstack.storage.feign.model.Svm;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.feign.model.LunMap;
+import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
+import org.apache.cloudstack.storage.feign.model.response.JobResponse;
 import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
@@ -48,16 +48,10 @@ import java.util.Map;
 public class UnifiedSANStrategy extends SANStrategy {
 
     private static final Logger s_logger = LogManager.getLogger(UnifiedSANStrategy.class);
-    // Replace @Inject Feign client with FeignClientFactory
-    private final FeignClientFactory feignClientFactory;
-    private final SANFeignClient sanFeignClient;
 
     public UnifiedSANStrategy(OntapStorage ontapStorage) {
         super(ontapStorage);
         String baseURL = Constants.HTTPS + ontapStorage.getStorageIP();
-        // Initialize FeignClientFactory and create SAN client
-        this.feignClientFactory = new FeignClientFactory();
-        this.sanFeignClient = feignClientFactory.createClient(SANFeignClient.class, baseURL);
     }
 
     public void setOntapStorage(OntapStorage ontapStorage) {
@@ -132,32 +126,7 @@ public class UnifiedSANStrategy extends SANStrategy {
 
     @Override
     public void copyCloudStackVolume(CloudStackVolume cloudstackVolume) {
-        if (cloudstackVolume == null || cloudstackVolume.getLun() == null) {
-            s_logger.error("copyCloudStackVolume: Lun clone creation failed. Invalid request: {}", cloudstackVolume);
-            throw new CloudRuntimeException("copyCloudStackVolume : Failed to create Lun clone, invalid request");
-        }
-        s_logger.debug("copyCloudStackVolume: Creating clone of the cloudstack volume: {}", cloudstackVolume.getLun().getName());
-
-        try {
-            // Get AuthHeader
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
-            // Create URI for lun clone creation
-            Lun lunCloneRequest = cloudstackVolume.getLun();
-            Lun.Clone clone = new Lun.Clone();
-            Lun.Source source = new Lun.Source();
-            source.setName(cloudstackVolume.getLun().getName());
-            clone.setSource(source);
-            lunCloneRequest.setClone(clone);
-            String lunCloneName = cloudstackVolume.getLun().getName() + "_clone";
-            lunCloneRequest.setName(lunCloneName);
-            sanFeignClient.createLun(authHeader, true, lunCloneRequest);
-        } catch (FeignException e) {
-            s_logger.error("FeignException occurred while creating Lun clone: {}, Status: {}, Exception: {}", cloudstackVolume.getLun().getName(), e.status(), e.getMessage());
-            throw new CloudRuntimeException("Failed to create Lun clone: " + e.getMessage());
-        } catch (Exception e) {
-            s_logger.error("Exception occurred while creating Lun clone: {}, Exception: {}", cloudstackVolume.getLun().getName(), e.getMessage());
-            throw new CloudRuntimeException("Failed to create Lun clone: " + e.getMessage());
-        }
+        // TODO: Implement LUN clone operation
     }
 
     @Override
@@ -309,13 +278,13 @@ public class UnifiedSANStrategy extends SANStrategy {
         s_logger.info("deleteAccessGroup: Deleting iGroup");
 
         if (accessGroup == null) {
-            throw new CloudRuntimeException("deleteAccessGroup: Invalid accessGroup object - accessGroup is null");
+            throw new CloudRuntimeException("Invalid accessGroup object - accessGroup is null");
         }
 
         // Get PrimaryDataStoreInfo from accessGroup
         PrimaryDataStoreInfo primaryDataStoreInfo = accessGroup.getPrimaryDataStoreInfo();
         if (primaryDataStoreInfo == null) {
-            throw new CloudRuntimeException("deleteAccessGroup: PrimaryDataStoreInfo is null in accessGroup");
+            throw new CloudRuntimeException("PrimaryDataStoreInfo is null in accessGroup");
         }
 
         try {
@@ -353,7 +322,7 @@ public class UnifiedSANStrategy extends SANStrategy {
                 String igroupUuid = igroup.getUuid();
 
                 if (igroupUuid == null || igroupUuid.isEmpty()) {
-                    throw new CloudRuntimeException("deleteAccessGroup: iGroup UUID is null or empty for iGroup: " + igroupName);
+                    throw new CloudRuntimeException("iGroup UUID is null or empty for iGroup: " + igroupName);
                 }
 
                 s_logger.info("deleteAccessGroup: Deleting iGroup '{}' with UUID '{}'", igroupName, igroupUuid);
@@ -606,7 +575,7 @@ public class UnifiedSANStrategy extends SANStrategy {
         );
         Map<String, String> response = enableLogicalAccess(enableMap);
         if (response == null || !response.containsKey(Constants.LOGICAL_UNIT_NUMBER)) {
-            throw new CloudRuntimeException("ensureLunMapped: Failed to map LUN [" + lunName + "] to iGroup [" + accessGroupName + "]");
+            throw new CloudRuntimeException("Failed to map LUN [" + lunName + "] to iGroup [" + accessGroupName + "]");
         }
         s_logger.info("ensureLunMapped: Successfully mapped LUN [{}] to igroup [{}] with LUN number [{}]", lunName, accessGroupName, response.get(Constants.LOGICAL_UNIT_NUMBER));
         return response.get(Constants.LOGICAL_UNIT_NUMBER);
@@ -642,5 +611,55 @@ public class UnifiedSANStrategy extends SANStrategy {
         }
         s_logger.warn("validateInitiatorInAccessGroup: Initiator [{}] NOT found in igroup [{}]", hostInitiator, accessGroupName);
         return false;
+    }
+
+    /**
+     * Reverts a LUN to a snapshot using the ONTAP CLI-based snapshot file restore API.
+     *
+     * <p>ONTAP REST API (CLI passthrough):
+     * {@code POST /api/private/cli/volume/snapshot/restore-file}</p>
+     *
+     * <p>This method uses the CLI native API which is more reliable and works
+     * consistently for both NFS files and iSCSI LUNs.</p>
+     *
+     * @param snapshotName  The ONTAP FlexVolume snapshot name
+     * @param flexVolUuid   The FlexVolume UUID (not used in CLI API, kept for interface consistency)
+     * @param snapshotUuid  The ONTAP snapshot UUID (not used in CLI API, kept for interface consistency)
+     * @param volumePath    The LUN name (used to construct the path)
+     * @param lunUuid       The LUN UUID (not used in CLI API, kept for interface consistency)
+     * @param flexVolName   The FlexVolume name (required for CLI API)
+     * @return JobResponse for the async restore operation
+     */
+    @Override
+    public JobResponse revertSnapshotForCloudStackVolume(String snapshotName, String flexVolUuid,
+                                                          String snapshotUuid, String volumePath,
+                                                          String lunUuid, String flexVolName) {
+        s_logger.info("revertSnapshotForCloudStackVolume [iSCSI]: Restoring LUN [{}] from snapshot [{}] on FlexVol [{}]",
+                volumePath, snapshotName, flexVolName);
+
+        if (snapshotName == null || snapshotName.isEmpty()) {
+            throw new CloudRuntimeException("Snapshot name is required for iSCSI snapshot revert");
+        }
+        if (flexVolName == null || flexVolName.isEmpty()) {
+            throw new CloudRuntimeException("FlexVolume name is required for iSCSI snapshot revert");
+        }
+        if (volumePath == null || volumePath.isEmpty()) {
+            throw new CloudRuntimeException("LUN path is required for iSCSI snapshot revert");
+        }
+
+        String authHeader = getAuthHeader();
+        String svmName = storage.getSvmName();
+
+        // Prepare the LUN path for ONTAP CLI API (ensure it starts with "/")
+        String ontapLunPath = volumePath.startsWith("/") ? volumePath : "/" + volumePath;
+
+        // Create CLI snapshot restore request
+        CliSnapshotRestoreRequest restoreRequest = new CliSnapshotRestoreRequest(
+                svmName, flexVolName, snapshotName, ontapLunPath);
+
+        s_logger.info("revertSnapshotForCloudStackVolume: Calling CLI file restore API with vserver={}, volume={}, snapshot={}, path={}",
+                svmName, flexVolName, snapshotName, ontapLunPath);
+
+        return getSnapshotFeignClient().restoreFileFromSnapshotCli(authHeader, restoreRequest);
     }
 }

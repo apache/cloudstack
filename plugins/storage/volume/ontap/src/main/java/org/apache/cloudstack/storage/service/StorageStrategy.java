@@ -25,7 +25,9 @@ import org.apache.cloudstack.storage.feign.FeignClientFactory;
 import org.apache.cloudstack.storage.feign.client.AggregateFeignClient;
 import org.apache.cloudstack.storage.feign.client.JobFeignClient;
 import org.apache.cloudstack.storage.feign.client.NetworkFeignClient;
+import org.apache.cloudstack.storage.feign.client.NASFeignClient;
 import org.apache.cloudstack.storage.feign.client.SANFeignClient;
+import org.apache.cloudstack.storage.feign.client.SnapshotFeignClient;
 import org.apache.cloudstack.storage.feign.client.SvmFeignClient;
 import org.apache.cloudstack.storage.feign.client.VolumeFeignClient;
 import org.apache.cloudstack.storage.feign.model.Aggregate;
@@ -60,13 +62,15 @@ import java.util.Objects;
  */
 public abstract class StorageStrategy {
     // Replace @Inject Feign clients with FeignClientFactory
-    private final FeignClientFactory feignClientFactory;
-    private final AggregateFeignClient aggregateFeignClient;
-    private final VolumeFeignClient volumeFeignClient;
-    private final SvmFeignClient svmFeignClient;
-    private final JobFeignClient jobFeignClient;
-    private final NetworkFeignClient networkFeignClient;
-    private final SANFeignClient sanFeignClient;
+    protected FeignClientFactory feignClientFactory;
+    protected AggregateFeignClient aggregateFeignClient;
+    protected VolumeFeignClient volumeFeignClient;
+    protected SvmFeignClient svmFeignClient;
+    protected JobFeignClient jobFeignClient;
+    protected NetworkFeignClient networkFeignClient;
+    protected SANFeignClient sanFeignClient;
+    protected NASFeignClient nasFeignClient;
+    protected SnapshotFeignClient snapshotFeignClient;
 
     protected OntapStorage storage;
 
@@ -89,6 +93,8 @@ public abstract class StorageStrategy {
         this.jobFeignClient = feignClientFactory.createClient(JobFeignClient.class, baseURL);
         this.networkFeignClient = feignClientFactory.createClient(NetworkFeignClient.class, baseURL);
         this.sanFeignClient = feignClientFactory.createClient(SANFeignClient.class, baseURL);
+        this.nasFeignClient = feignClientFactory.createClient(NASFeignClient.class, baseURL);
+        this.snapshotFeignClient = feignClientFactory.createClient(SnapshotFeignClient.class, baseURL);
     }
 
     // Connect method to validate ONTAP cluster, credentials, protocol, and SVM
@@ -507,6 +513,30 @@ public abstract class StorageStrategy {
     abstract public CloudStackVolume getCloudStackVolume(Map<String, String> cloudStackVolumeMap);
 
     /**
+     * Reverts a CloudStack volume to a snapshot using protocol-specific ONTAP APIs.
+     *
+     * <p>This method encapsulates the snapshot revert behavior based on protocol:</p>
+     * <ul>
+     *   <li><b>iSCSI/FC:</b> Uses {@code POST /api/storage/luns/{lun.uuid}/restore}
+     *       to restore LUN data from the FlexVolume snapshot.</li>
+     *   <li><b>NFS:</b> Uses {@code POST /api/storage/volumes/{vol.uuid}/snapshots/{snap.uuid}/files/{path}/restore}
+     *       to restore a single file from the FlexVolume snapshot.</li>
+     * </ul>
+     *
+     * @param snapshotName     The ONTAP FlexVolume snapshot name
+     * @param flexVolUuid      The FlexVolume UUID containing the snapshot
+     * @param snapshotUuid     The ONTAP snapshot UUID (used for NFS file restore)
+     * @param volumePath       The path of the file/LUN within the FlexVolume
+     * @param lunUuid          The LUN UUID (only for iSCSI, null for NFS)
+     * @param flexVolName      The FlexVolume name (only for iSCSI, for constructing destination path)
+     * @return JobResponse for the async restore operation
+     */
+    public abstract JobResponse revertSnapshotForCloudStackVolume(String snapshotName, String flexVolUuid,
+                                                                   String snapshotUuid, String volumePath,
+                                                                   String lunUuid, String flexVolName);
+
+
+    /**
      * Method encapsulates the behavior based on the opted protocol in subclasses
      *     createiGroup       for iSCSI and FC protocols
      *     createExportPolicy for NFS 3.0 and NFS 4.1 protocols
@@ -569,7 +599,39 @@ public abstract class StorageStrategy {
      */
     abstract public Map<String, String> getLogicalAccess(Map<String, String> values);
 
-    private Boolean jobPollForSuccess(String jobUUID, int maxRetries, int sleepTimeInSecs) {
+    // ── FlexVolume Snapshot accessors ────────────────────────────────────────
+
+    /**
+     * Returns the {@link SnapshotFeignClient} for ONTAP FlexVolume snapshot operations.
+     */
+    public SnapshotFeignClient getSnapshotFeignClient() {
+        return snapshotFeignClient;
+    }
+
+    /**
+     * Returns the {@link NASFeignClient} for ONTAP NAS file operations
+     * (including file clone for single-file SnapRestore).
+     */
+    public NASFeignClient getNasFeignClient() {
+        return nasFeignClient;
+    }
+
+    /**
+     * Generates the Basic-auth header for ONTAP REST calls.
+     */
+    public String getAuthHeader() {
+        return Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+    }
+
+    /**
+     * Polls an ONTAP async job for successful completion.
+     *
+     * @param jobUUID          UUID of the ONTAP job to poll
+     * @param maxRetries       maximum number of poll attempts
+     * @param sleepTimeInSecs  seconds to sleep between poll attempts
+     * @return true if the job completed successfully
+     */
+    public Boolean jobPollForSuccess(String jobUUID, int maxRetries, int sleepTimeInSecs) {
         //Create URI for GET Job API
         int jobRetryCount = 0;
         Job jobResp = null;
