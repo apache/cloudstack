@@ -155,10 +155,13 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             return StrategyPriority.CANT_HANDLE;
         }
 
-        // For new snapshots on ONTAP storage, we handle ALL snapshot types to prevent
-        // mixed snapshot chains. Memory snapshots will be rejected in takeVMSnapshot()
-        // with a clear error message rather than falling back to libvirt snapshots.
+        // For new snapshots (Allocated state), check if we can handle this VM
+        // ONTAP only supports disk-only snapshots, not memory snapshots
         if (allVolumesOnOntapManagedStorage(vmSnapshot.getVmId())) {
+            if (vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory) {
+                logger.debug("canHandle: Memory snapshots (DiskAndMemory) are not supported for VMs on ONTAP storage. VMSnapshot [{}]", vmSnapshot.getId());
+                return StrategyPriority.CANT_HANDLE;
+            }
             return StrategyPriority.HIGHEST;
         }
 
@@ -167,9 +170,17 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
-        // For VMs on ONTAP storage, we handle ALL snapshot types to prevent mixed
-        // snapshot chains. Memory snapshots will be rejected in takeVMSnapshot()
-        // with a clear error message rather than falling back to libvirt snapshots.
+        // ONTAP FlexVolume snapshots only support disk-only (crash-consistent) snapshots.
+        // Memory snapshots (snapshotMemory=true) are not supported because:
+        // 1. ONTAP snapshots capture disk state only, not VM memory
+        // 2. Allowing memory snapshots would require falling back to libvirt snapshots,
+        //    creating mixed snapshot chains that would cause issues during revert
+        // Return CANT_HANDLE so VMSnapshotManagerImpl can provide a clear error message.
+        if (snapshotMemory) {
+            logger.debug("canHandle: Memory snapshots (snapshotMemory=true) are not supported for VMs on ONTAP storage. VM [{}]", vmId);
+            return StrategyPriority.CANT_HANDLE;
+        }
+
         if (allVolumesOnOntapManagedStorage(vmId)) {
             return StrategyPriority.HIGHEST;
         }
@@ -260,28 +271,13 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
         UserVm userVm = userVmDao.findById(vmSnapshot.getVmId());
         VMSnapshotVO vmSnapshotVO = (VMSnapshotVO) vmSnapshot;
 
-        // ── Reject memory snapshots with a clear error message ──
-        // Memory snapshots (snapshotmemory=true) are not supported for VMs on ONTAP storage.
-        // This is because ONTAP uses FlexVolume-level snapshots which capture disk state only.
-        // To avoid mixed snapshot chains (ONTAP disk + libvirt memory), we reject memory
-        // snapshots outright rather than falling back to libvirt which would cause issues.
-        if (vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory) {
-            String errorMsg = String.format(
-                    "Memory snapshots (snapshotmemory=true) are not supported for VMs on ONTAP managed storage. " +
-                    "VM [%s] uses ONTAP storage which only supports disk-only (crash-consistent) snapshots. " +
-                    "Please use snapshotmemory=false for disk-only snapshots.",
-                    userVm.getInstanceName());
-            logger.error("takeVMSnapshot: {}", errorMsg);
-            // Clean up the VM snapshot record that was created in Allocated state before throwing
-            // This prevents orphaned snapshot records from showing in the UI
-            try {
-                vmSnapshotDao.remove(vmSnapshotVO.getId());
-                logger.debug("takeVMSnapshot: Removed VM snapshot record [{}] after memory snapshot validation failure", vmSnapshotVO.getId());
-            } catch (Exception cleanupEx) {
-                logger.warn("takeVMSnapshot: Failed to remove VM snapshot record [{}] during cleanup: {}",
-                        vmSnapshotVO.getId(), cleanupEx.getMessage());
-            }
-            throw new CloudRuntimeException(errorMsg);
+        // Transition to Creating state FIRST - this is required so that the finally block
+        // can properly transition to Error state via OperationFailed event if anything fails.
+        // (OperationFailed can only transition FROM Creating state, not from Allocated)
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.CreateRequested);
+        } catch (NoTransitionException e) {
+            throw new CloudRuntimeException(e.getMessage());
         }
 
         FreezeThawVMAnswer freezeAnswer = null;
@@ -291,12 +287,6 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
 
         // Track which FlexVolume snapshots were created (for rollback)
         List<FlexVolSnapshotDetail> createdSnapshots = new ArrayList<>();
-
-        try {
-            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.CreateRequested);
-        } catch (NoTransitionException e) {
-            throw new CloudRuntimeException(e.getMessage());
-        }
 
         boolean result = false;
         try {
