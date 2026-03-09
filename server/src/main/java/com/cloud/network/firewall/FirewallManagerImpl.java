@@ -31,7 +31,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
@@ -401,8 +400,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         NetworkVO newRuleNetwork = getNewRuleNetwork(newRule);
-        boolean newRuleIsOnVpcNetwork = isNewRuleOnVpcNetwork(newRuleNetwork);
-        boolean vpcConserveModeEnabled = isVpcConserveModeEnabled(newRuleNetwork);
+        boolean newRuleIsOnVpcNetwork = newRuleNetwork.getVpcId() != null;
+        boolean vpcConserveModeEnabled = _vpcMgr.isNetworkOnVpcEnabledConserveMode(newRuleNetwork);
 
         for (FirewallRuleVO rule : rules) {
             if (rule.getId() == newRule.getId()) {
@@ -507,19 +506,6 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         if (logger.isDebugEnabled()) {
             logger.debug("No network rule conflicts detected for " + newRule + " against " + (rules.size() - 1) + " existing rules");
         }
-    }
-
-    protected boolean isVpcConserveModeEnabled(NetworkVO newRuleNetwork) {
-        if (isNewRuleOnVpcNetwork(newRuleNetwork)) {
-            Vpc vpc = _vpcMgr.getActiveVpc(newRuleNetwork.getVpcId());
-            VpcOfferingVO vpcOffering = vpc != null ? vpcOfferingDao.findById(vpc.getVpcOfferingId()) : null;
-            return vpcOffering != null && vpcOffering.isConserveMode();
-        }
-        return false;
-    }
-
-    protected boolean isNewRuleOnVpcNetwork(NetworkVO newRuleNetwork) {
-        return newRuleNetwork.getVpcId() != null;
     }
 
     protected NetworkVO getNewRuleNetwork(FirewallRule newRule) {

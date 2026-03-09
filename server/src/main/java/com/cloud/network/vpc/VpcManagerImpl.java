@@ -2956,6 +2956,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return true;
     }
 
+    protected boolean isNetworkOnVpc(Network network) {
+        return network.getVpcId() != null;
+    }
+
+    @Override
+    public boolean isNetworkOnVpcEnabledConserveMode(Network newRuleNetwork) {
+        if (isNetworkOnVpc(newRuleNetwork)) {
+            Vpc vpc = getActiveVpc(newRuleNetwork.getVpcId());
+            VpcOfferingVO vpcOffering = vpc != null ? _vpcOffDao.findById(vpc.getVpcOfferingId()) : null;
+            return vpcOffering != null && vpcOffering.isConserveMode();
+        }
+        return false;
+    }
+
     protected boolean applyStaticRoutes(final List<StaticRouteVO> routes, final Account caller, final boolean updateRoutesInDB) throws ResourceUnavailableException {
         final boolean success = true;
         final List<StaticRouteProfile> staticRouteProfiles = getVpcStaticRoutes(routes);
