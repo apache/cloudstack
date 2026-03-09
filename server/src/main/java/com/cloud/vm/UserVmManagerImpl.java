@@ -60,6 +60,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
@@ -134,6 +135,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -656,6 +658,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private Map<Long, VmAndCountDetails> vmIdCountMap = new ConcurrentHashMap<>();
 
     protected static long ROOT_DEVICE_ID = 0;
+
+    private final Type jobParamsType = new TypeToken<HashMap<String, String>>() {}.getType();
 
     public List<KubernetesServiceHelper> getKubernetesServiceHelpers() {
         return kubernetesServiceHelpers;
@@ -3465,14 +3469,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return AllowUserExpungeRecoverVm.valueIn(accountId);
     }
 
-    protected void checkExpungeVmPermission (Account callingAccount) {
+    protected void checkExpungeVmPermission(Account callingAccount, String apiKey) {
         logger.debug(String.format("Checking if [%s] has permission for expunging VMs.", callingAccount));
         if (!_accountMgr.isAdmin(callingAccount.getId()) && !getConfigAllowUserExpungeRecoverVm(callingAccount.getId())) {
             logger.error(String.format("Parameter [%s] can only be passed by Admin accounts or when the allow.user.expunge.recover.vm key is true.", ApiConstants.EXPUNGE));
             throw new PermissionDeniedException("Account does not have permission for expunging.");
         }
         try {
-            _accountMgr.checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class));
+            _accountMgr.checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class), apiKey);
         } catch (PermissionDeniedException ex) {
             logger.error(String.format("Role [%s] of [%s] does not have permission for expunging VMs.", callingAccount.getRoleId(), callingAccount));
             throw new PermissionDeniedException("Account does not have permission for expunging.");
@@ -3497,7 +3501,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean expunge = cmd.getExpunge();
 
         if (expunge) {
-            checkExpungeVmPermission(ctx.getCallingAccount());
+            String jobParamsString = ((AsyncJobVO) cmd.getJob()).getCmdInfo();
+            HashMap<String,String> jobParams = GsonHelper.getGson().fromJson(jobParamsString, jobParamsType);
+            String apiKey = jobParams.get("apiKey");
+            checkExpungeVmPermission(ctx.getCallingAccount(), apiKey);
         }
 
         // check if VM exists
