@@ -5796,6 +5796,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Set parameters
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
+        params.putAll(additionalParams);
         if (vm.isUpdateParameters()) {
             _vmDao.loadDetails(vm);
 
@@ -5809,18 +5810,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // use it to encrypt & save the vm password
             encryptAndStorePassword(vm, password);
 
-            params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.VmPassword, password);
+            // overwrite VmPassword
+            params = createParameterInParameterMap(params, VirtualMachineProfile.Param.VmPassword, password);
         }
 
         if(additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoSetup)) {
             if (! HypervisorType.VMware.equals(vm.getHypervisorType())) {
                 throw new InvalidParameterValueException(ApiConstants.BOOT_INTO_SETUP + " makes no sense for " + vm.getHypervisorType());
             }
+
+            //overwrite BootIntoSetup
             Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoSetup);
-            if (logger.isTraceEnabled()) {
-                    logger.trace("It was specified whether to enter setup mode: " + paramValue.toString());
-            }
-            params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoSetup, paramValue);
+            logger.trace("It was specified whether to enter setup mode: {}", paramValue.toString());
+            params = createParameterInParameterMap(params, VirtualMachineProfile.Param.BootIntoSetup, paramValue);
         }
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
@@ -5888,20 +5890,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return password;
     }
 
-    private Map<VirtualMachineProfile.Param, Object> createParameterInParameterMap(Map<VirtualMachineProfile.Param, Object> params, Map<VirtualMachineProfile.Param, Object> parameterMap, VirtualMachineProfile.Param parameter,
+    /**
+     * Create or overwrite a parameter in the list
+     * @param params the list of parameters
+     * @param parameter the parameter to creat/overwrite
+     * @param parameterValue the value to give to the parameter
+     * @return the resulting updated list of parameters
+     */
+    private Map<VirtualMachineProfile.Param, Object> createParameterInParameterMap(
+            Map<VirtualMachineProfile.Param, Object> params,
+            VirtualMachineProfile.Param parameter,
             Object parameterValue) {
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("createParameterInParameterMap(%s, %s)", parameter, parameterValue));
-        }
-        if (params == null) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("creating new Parameter map");
-            }
-            params = new HashMap<>();
-            if (parameterMap != null) {
-                params.putAll(parameterMap);
-            }
-        }
+        logger.trace("createParameterInParameterMap({}, {})", parameter, parameterValue);
         params.put(parameter, parameterValue);
         return params;
     }
