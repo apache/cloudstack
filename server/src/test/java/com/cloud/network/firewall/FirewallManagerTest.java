@@ -34,8 +34,6 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcOfferingVO;
-import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.utils.component.ComponentContext;
@@ -84,8 +82,6 @@ public class FirewallManagerTest {
     FirewallRulesDao _firewallDao;
     @Mock
     NetworkDao _networkDao;
-    @Mock
-    VpcOfferingDao vpcOfferingDao;
 
     @Spy
     @InjectMocks
@@ -243,14 +239,10 @@ public class FirewallManagerTest {
 
         NetworkVO newNetworkVO = Mockito.mock(NetworkVO.class);
         Vpc vpc = Mockito.mock(Vpc.class);
-        VpcOfferingVO vpcOffering = Mockito.mock(VpcOfferingVO.class);
-
         when(_firewallMgr._networkDao.findById(2L)).thenReturn(newNetworkVO);
         when(newNetworkVO.getVpcId()).thenReturn(vpcId);
-        when(_vpcMgr.getActiveVpc(vpcId)).thenReturn(vpc);
-        when(vpc.getVpcOfferingId()).thenReturn(1L);
-        when(vpcOfferingDao.findById(1L)).thenReturn(vpcOffering);
-        when(vpcOffering.isConserveMode()).thenReturn(vpcConserveMode);
+        when(_vpcMgr.getActiveVpc(Mockito.eq(vpcId))).thenReturn(vpc);
+        when(_vpcMgr.isNetworkOnVpcEnabledConserveMode(Mockito.eq(newNetworkVO))).thenReturn(vpcConserveMode);
 
         for (FirewallRule newRule : newRuleList) {
             _firewallMgr.detectRulesConflict(newRule);
