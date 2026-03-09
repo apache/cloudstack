@@ -226,7 +226,7 @@ public class BaseMO {
             } else if (objProp.getName().equals("config.bootOptions")) {
                 VirtualMachineBootOptions bootOptions = (VirtualMachineBootOptions) objProp.getVal();
                 String bootMode = "LEGACY";
-                if (bootOptions != null && bootOptions.isEfiSecureBootEnabled()) {
+                if (bootOptions != null && Boolean.TRUE.equals(bootOptions.isEfiSecureBootEnabled())) {
                     bootMode = "SECURE";
                 }
                 vm.setBootMode(bootMode);
