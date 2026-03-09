@@ -96,9 +96,9 @@ class UnifiedSANStrategyTest {
 
         unifiedSANStrategy = new UnifiedSANStrategy(ontapStorage);
 
-        // Use reflection to inject the mock SANFeignClient
+        // Use reflection to inject the mock SANFeignClient (field is in parent StorageStrategy class)
         try {
-            java.lang.reflect.Field sanFeignClientField = UnifiedSANStrategy.class.getDeclaredField("sanFeignClient");
+            java.lang.reflect.Field sanFeignClientField = StorageStrategy.class.getDeclaredField("sanFeignClient");
             sanFeignClientField.setAccessible(true);
             sanFeignClientField.set(unifiedSANStrategy, sanFeignClient);
 

@@ -147,27 +147,14 @@ public class UnifiedNASStrategyTest {
                                           NetworkFeignClient networkFeignClient,
                                           SANFeignClient sanFeignClient) {
             super(ontapStorage);
-            // Inject mocked Feign clients immediately after super() call
-            injectMockedClient("nasFeignClient", nasFeignClient);
-            injectMockedClient("volumeFeignClient", volumeFeignClient);
-            injectMockedClient("jobFeignClient", jobFeignClient);
-            // Inject parent class (StorageStrategy) mocked clients
-            injectParentMockedClient("aggregateFeignClient", aggregateFeignClient);
+            // All Feign clients are in StorageStrategy parent class
+            injectParentMockedClient("nasFeignClient", nasFeignClient);
             injectParentMockedClient("volumeFeignClient", volumeFeignClient);
-            injectParentMockedClient("svmFeignClient", svmFeignClient);
             injectParentMockedClient("jobFeignClient", jobFeignClient);
+            injectParentMockedClient("aggregateFeignClient", aggregateFeignClient);
+            injectParentMockedClient("svmFeignClient", svmFeignClient);
             injectParentMockedClient("networkFeignClient", networkFeignClient);
             injectParentMockedClient("sanFeignClient", sanFeignClient);
-        }
-
-        private void injectMockedClient(String fieldName, Object mockedClient) {
-            try {
-                Field field = UnifiedNASStrategy.class.getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(this, mockedClient);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException("Failed to inject mocked client: " + fieldName, e);
-            }
         }
 
         private void injectParentMockedClient(String fieldName, Object mockedClient) {

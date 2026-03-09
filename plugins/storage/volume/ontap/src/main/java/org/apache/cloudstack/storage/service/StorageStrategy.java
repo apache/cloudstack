@@ -62,15 +62,15 @@ import java.util.Objects;
  */
 public abstract class StorageStrategy {
     // Replace @Inject Feign clients with FeignClientFactory
-    protected final FeignClientFactory feignClientFactory;
-    protected final AggregateFeignClient aggregateFeignClient;
-    protected final VolumeFeignClient volumeFeignClient;
-    protected final SvmFeignClient svmFeignClient;
-    protected final JobFeignClient jobFeignClient;
-    protected final NetworkFeignClient networkFeignClient;
-    protected final SANFeignClient sanFeignClient;
-    protected final NASFeignClient nasFeignClient;
-    protected final SnapshotFeignClient snapshotFeignClient;
+    protected FeignClientFactory feignClientFactory;
+    protected AggregateFeignClient aggregateFeignClient;
+    protected VolumeFeignClient volumeFeignClient;
+    protected SvmFeignClient svmFeignClient;
+    protected JobFeignClient jobFeignClient;
+    protected NetworkFeignClient networkFeignClient;
+    protected SANFeignClient sanFeignClient;
+    protected NASFeignClient nasFeignClient;
+    protected SnapshotFeignClient snapshotFeignClient;
 
     protected OntapStorage storage;
 
