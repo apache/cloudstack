@@ -28,15 +28,17 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v6
 
       - name: Set up Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 16
+          cache: 'npm'
+          cache-dependency-path: 'ui/package-lock.json'
 
       - name: Env details
         run: |
@@ -55,7 +57,7 @@ jobs:
           npm run lint
           npm run test:unit
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         if: github.repository == 'apache/cloudstack'
         with:
           working-directory: ui
