@@ -103,13 +103,21 @@
               </a-select>
             </a-form-item>
           </a-col>
+          <a-col :md="24" :lg="24" v-if="hasOstypeidChanged()">
+            <a-form-item name="forceupdateostype" ref="forceupdateostype">
+              <template #label>
+                <tooltip-label :title="$t('label.force.update.os.type')" :tooltip="apiParams.forceupdateostype.description"/>
+              </template>
+              <a-switch v-model:checked="form.forceupdateostype" />
+            </a-form-item>
+          </a-col>
         </a-row>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item
               name="userdataid"
               ref="userdataid"
-              :label="$t('label.userdata')">
+              :label="$t('label.user.data')">
               <a-select
                 showSearch
                 optionFilterProp="label"
@@ -128,7 +136,7 @@
           <a-col :md="24" :lg="12">
             <a-form-item ref="userdatapolicy" name="userdatapolicy">
               <template #label>
-                <tooltip-label :title="$t('label.userdatapolicy')" :tooltip="$t('label.userdatapolicy.tooltip')"/>
+                <tooltip-label :title="$t('label.user.data.policy')" :tooltip="$t('label.user.data.policy.tooltip')"/>
               </template>
               <a-select
                 showSearch
@@ -178,8 +186,8 @@
             v-model:value="form.templatetype"
             :placeholder="apiParams.templatetype.description"
             @change="val => { selectedTemplateType = val }">
-            <a-select-option v-for="opt in templatetypes" :key="opt">
-              {{ opt }}
+            <a-select-option v-for="opt in templatetypes" :key="opt.id">
+              {{ opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -239,7 +247,7 @@ export default {
   },
   data () {
     return {
-      templatetypes: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING', 'VNF'],
+      templatetypes: [],
       emptyAllowedFields: ['templatetag'],
       rootDisk: {},
       nicAdapterType: {},
@@ -251,7 +259,10 @@ export default {
       userdataid: null,
       userdatapolicy: null,
       userdatapolicylist: {},
-      architectureTypes: {}
+      architectureTypes: {},
+      originalOstypeid: null,
+      detailsFields: [],
+      details: {}
     }
   },
   beforeCreate () {
@@ -261,6 +272,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.templatetypes = this.$fetchTemplateTypes(this.resource.hypervisor)
     this.rootDisk.loading = false
     this.rootDisk.opts = []
     this.nicAdapterType.loading = false
@@ -295,23 +307,20 @@ export default {
             case 'userdatapolicy':
               this.userdatapolicy = fieldValue
               break
+            case 'ostypeid':
+              this.form[field] = fieldValue
+              this.originalOstypeid = fieldValue
+              break
             default:
               this.form[field] = fieldValue
               break
           }
         }
       }
-      const resourceDetailsFields = []
       if (this.resource.hypervisor === 'KVM') {
-        resourceDetailsFields.push('rootDiskController')
+        this.detailsFields.push('rootDiskController')
       } else if (this.resource.hypervisor === 'VMware' && !this.resource.deployasis) {
-        resourceDetailsFields.push(...['rootDiskController', 'nicAdapter', 'keyboard'])
-      }
-      for (var detailsField of resourceDetailsFields) {
-        var detailValue = this.resource?.details?.[detailsField] || null
-        if (detailValue) {
-          this.form[detailValue] = fieldValue
-        }
+        this.detailsFields.push(...['rootDiskController', 'nicAdapter', 'keyboard'])
       }
     },
     fetchData () {
@@ -322,6 +331,7 @@ export default {
       this.fetchKeyboardTypes()
       this.fetchUserdata()
       this.fetchUserdataPolicy()
+      this.fetchDetails()
     },
     isValidValueForKey (obj, key) {
       if (this.emptyAllowedFields.includes(key) && obj[key] === '') {
@@ -365,6 +375,10 @@ export default {
         controller.push({
           id: 'virtio',
           description: 'virtio'
+        })
+        controller.push({
+          id: 'virtio-blk',
+          description: 'virtio-blk'
         })
       } else if (hyperVisor === 'VMware') {
         controller.push({
@@ -492,6 +506,25 @@ export default {
         this.userdata.loading = false
       })
     },
+    fetchDetails () {
+      const params = {}
+      params.id = this.resource.id
+      params.templatefilter = 'all'
+
+      getAPI('listTemplates', params).then(response => {
+        if (response?.listtemplatesresponse?.template?.length > 0) {
+          this.details = response.listtemplatesresponse.template[0].details
+          if (this.details) {
+            for (var detailsField of this.detailsFields) {
+              var detailValue = this.details?.[detailsField] || null
+              if (detailValue) {
+                this.form[detailsField] = detailValue
+              }
+            }
+          }
+        }
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -501,15 +534,20 @@ export default {
         const params = {
           id: this.resource.id
         }
-        const detailsField = ['rootDiskController', 'nicAdapter', 'keyboard']
+        if (this.details) {
+          Object.keys(this.details).forEach((detail, index) => {
+            params['details[0].' + detail] = this.details[detail]
+          })
+        }
         for (const key in values) {
           if (!this.isValidValueForKey(values, key)) continue
-          if (detailsField.includes(key)) {
+          if (this.detailsFields.includes(key)) {
             params['details[0].' + key] = values[key]
             continue
           }
           params[key] = values[key]
         }
+        params.forceupdateostype = this.form.forceupdateostype || false
         postAPI('updateTemplate', params).then(json => {
           if (this.userdataid !== null) {
             this.linkUserdataToTemplate(this.userdataid, json.updatetemplateresponse.template.id, this.userdatapolicy)
@@ -546,6 +584,9 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    hasOstypeidChanged () {
+      return this.form.ostypeid !== this.originalOstypeid
     }
   }
 }

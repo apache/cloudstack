@@ -54,8 +54,10 @@ public class ConnectedAgentAttache extends AgentAttache {
     @Override
     public void disconnect(final Status state) {
         synchronized (this) {
-            logger.debug("Processing Disconnect.");
+            logger.debug("Processing disconnect [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
+
             if (_link != null) {
+                logger.debug("Disconnecting from {}, Socket Address: {}", _link.getIpAddress(), _link.getSocketAddress());
                 _link.close();
                 _link.terminated();
             }

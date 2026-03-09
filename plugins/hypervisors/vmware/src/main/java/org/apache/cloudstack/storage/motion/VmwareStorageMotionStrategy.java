@@ -433,6 +433,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
                     volumeVO.setFolder(pool.getPath());
                     volumeVO.setPodId(pool.getPodId());
                     volumeVO.setPoolId(pool.getId());
+                    volumeVO.setPoolType(pool.getPoolType());
                     volDao.update(volume.getId(), volumeVO);
                     updated = true;
                     break;

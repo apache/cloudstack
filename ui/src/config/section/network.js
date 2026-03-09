@@ -20,6 +20,7 @@ import store from '@/store'
 import tungsten from '@/assets/icons/tungsten.svg?inline'
 import { isAdmin } from '@/role'
 import { isZoneCreated } from '@/utils/zone'
+import { vueProps } from '@/vue-app'
 
 export default {
   name: 'network',
@@ -171,18 +172,21 @@ export default {
             if (isGroupAction || record.vpcid == null) {
               fields.push('cleanup')
             }
+            if (!record.redundantrouter && vueProps.$config.allowMakingRouterRedundant) {
+              fields.push('makeredundant')
+            }
             fields.push('livepatch')
             return fields
           },
           show: (record) => record.type !== 'L2',
           groupAction: true,
           popup: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup } }) }
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup, makeredundant: values.makeredundant } }) }
         },
         {
           api: 'replaceNetworkACLList',
           icon: 'swap-outlined',
-          label: 'label.replace.acl.list',
+          label: 'label.replace.acl',
           message: 'message.confirm.replace.acl.new.one',
           docHelp: 'adminguide/networking_and_traffic.html#configuring-network-access-control-list',
           dataView: true,
@@ -356,7 +360,10 @@ export default {
       permission: ['listVnfAppliances'],
       resourceType: 'UserVm',
       params: () => {
-        return { details: 'servoff,tmpl,nics', isvnf: true }
+        return {
+          details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff,vnfnics',
+          isvnf: true
+        }
       },
       columns: () => {
         const fields = ['name', 'state', 'ipaddress']
@@ -698,7 +705,7 @@ export default {
         {
           api: 'resetUserDataForVirtualMachine',
           icon: 'solution-outlined',
-          label: 'label.reset.userdata.on.vm',
+          label: 'label.reset.user.data.on.vm',
           message: 'message.desc.reset.userdata',
           docHelp: 'adminguide/virtual_machines.html#resetting-userdata',
           dataView: true,
@@ -800,7 +807,7 @@ export default {
       }, {
         name: 'vpn',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/VpnDetails.vue'))),
-        show: (record) => { return record.issourcenat }
+        show: (record) => { return record.issourcenat || record.virtualmachinetype === 'DomainRouter' || !record.hasrules }
       },
       {
         name: 'events',
@@ -965,7 +972,7 @@ export default {
         {
           api: 'replaceNetworkACLList',
           icon: 'swap-outlined',
-          label: 'label.replace.acl.list',
+          label: 'label.replace.acl',
           message: 'message.confirm.replace.acl.new.one',
           docHelp: 'adminguide/networking_and_traffic.html#acl-on-private-gateway',
           dataView: true,
@@ -1021,7 +1028,6 @@ export default {
       title: 'label.site.to.site.vpn.connections',
       docHelp: 'adminguide/networking_and_traffic.html#setting-up-a-site-to-site-vpn-connection',
       icon: 'sync-outlined',
-      hidden: true,
       permission: ['listVpnConnections'],
       columns: ['publicip', 'state', 'gateway', 'ipsecpsk', 'ikepolicy', 'esppolicy'],
       details: ['publicip', 'gateway', 'passive', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'esppolicy', 'ikelifetime', 'ikeversion', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'created'],
@@ -1062,10 +1068,9 @@ export default {
     },
     {
       name: 'acllist',
-      title: 'label.network.acl.lists',
+      title: 'label.network.acls',
       icon: 'bars-outlined',
       docHelp: 'adminguide/networking_and_traffic.html#configuring-network-access-control-list',
-      hidden: true,
       permission: ['listNetworkACLLists'],
       columns: ['name', 'description', 'id'],
       details: ['name', 'description', 'id'],
@@ -1073,15 +1078,15 @@ export default {
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
-        name: 'acl.list.rules',
-        component: shallowRef(defineAsyncComponent(() => import('@/views/network/AclListRulesTab.vue'))),
+        name: 'acl.rules',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/AclRulesTab.vue'))),
         show: () => true
       }],
       actions: [
         {
           api: 'createNetworkACLList',
           icon: 'plus-outlined',
-          label: 'label.add.acl.list',
+          label: 'label.add.acl',
           docHelp: 'adminguide/networking_and_traffic.html#creating-acl-lists',
           listView: true,
           args: ['name', 'description', 'vpcid']
@@ -1089,15 +1094,15 @@ export default {
         {
           api: 'updateNetworkACLList',
           icon: 'edit-outlined',
-          label: 'label.edit.acl.list',
+          label: 'label.edit.acl',
           dataView: true,
           args: ['name', 'description']
         },
         {
           api: 'deleteNetworkACLList',
           icon: 'delete-outlined',
-          label: 'label.delete.acl.list',
-          message: 'message.confirm.delete.acl.list',
+          label: 'label.delete.acl',
+          message: 'message.confirm.delete.acl',
           dataView: true
         }
       ]
@@ -1265,15 +1270,11 @@ export default {
         {
           api: 'updateVpnCustomerGateway',
           icon: 'edit-outlined',
-          label: 'label.edit',
+          label: 'label.update.vpn.customer.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#updating-and-removing-a-vpn-customer-gateway',
           dataView: true,
-          args: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap'],
-          mapping: {
-            ikeversion: {
-              options: ['ike', 'ikev1', 'ikev2']
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateVpnCustomerGateway.vue')))
         },
         {
           api: 'deleteVpnCustomerGateway',

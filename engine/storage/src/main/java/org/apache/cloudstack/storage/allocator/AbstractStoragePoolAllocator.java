@@ -241,7 +241,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
         String volumeAllocationAlgorithm = VolumeOrchestrationService.VolumeAllocationAlgorithm.value();
         logger.debug("Using volume allocation algorithm {} to reorder pools.", volumeAllocationAlgorithm);
-        if (volumeAllocationAlgorithm.equals("random") || volumeAllocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
+        if (volumeAllocationAlgorithm.equals("random") || (account == null)) {
             reorderRandomPools(pools);
         } else if (StringUtils.equalsAny(volumeAllocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {
             if (logger.isTraceEnabled()) {
@@ -378,7 +378,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                     return false;
                 }
             } catch (StorageUnavailableException e) {
-                logger.warn(String.format("Could not verify storage policy complaince against storage pool %s due to exception %s", pool.getUuid(), e.getMessage()));
+                logger.warn(String.format("Could not verify storage policy compliance against storage pool %s due to exception %s", pool.getUuid(), e.getMessage()));
                 return false;
             }
         }

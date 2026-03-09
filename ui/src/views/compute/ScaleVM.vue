@@ -142,6 +142,7 @@ export default {
         keyword: options.keyword,
         page: options.page,
         pageSize: options.pageSize,
+        gpuenabled: options.gpuenabled,
         details: 'min',
         response: 'json'
       }).then(response => {
@@ -188,6 +189,7 @@ export default {
       return new Promise((resolve, reject) => {
         getAPI('listTemplates', {
           templatefilter: 'all',
+          isready: true,
           id: this.resource.templateid
         }).then(response => {
           var template = response?.listtemplatesresponse?.template?.[0] || null
@@ -226,8 +228,8 @@ export default {
         getAPI('listDiskOfferings', {
           id: this.selectedOffering.diskofferingid
         }).then(response => {
-          const diskOfferings = response.listdiskofferingsresponse.diskoffering || []
-          if (this.diskOfferings) {
+          const diskOfferings = response?.listdiskofferingsresponse?.diskoffering || []
+          if (diskOfferings?.length > 0) {
             this.selectedDiskOffering = diskOfferings[0]
           }
         }).catch(error => {

@@ -28,30 +28,41 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = BackupSchedule.class)
 public class BackupScheduleResponse extends BaseResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "ID of the backup schedule.", since = "4.21.0")
+    private String id;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
-    @Param(description = "name of the VM")
+    @Param(description = "Name of the Instance")
     private String vmName;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "ID of the VM")
+    @Param(description = "ID of the Instance")
     private String vmId;
 
     @SerializedName(ApiConstants.SCHEDULE)
-    @Param(description = "time the backup is scheduled to be taken.")
+    @Param(description = "The time the backup is scheduled to be taken.")
     private String schedule;
 
     @SerializedName(ApiConstants.INTERVAL_TYPE)
-    @Param(description = "the interval type of the backup schedule")
+    @Param(description = "The interval type of the backup schedule")
     private DateUtil.IntervalType intervalType;
 
     @SerializedName(ApiConstants.TIMEZONE)
-    @Param(description = "the time zone of the backup schedule")
+    @Param(description = "The time zone of the backup schedule")
     private String timezone;
 
     @SerializedName(ApiConstants.MAX_BACKUPS)
     @Param(description = "maximum number of backups retained")
-    private Integer maxBakups;
+    private Integer maxBackups;
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @SerializedName(ApiConstants.QUIESCE_VM)
+    @Param(description = "quiesce the instance before checkpointing the disks for backup")
+    private Boolean quiesceVM;
 
     public String getVmName() {
         return vmName;
@@ -93,7 +104,11 @@ public class BackupScheduleResponse extends BaseResponse {
         this.timezone = timezone;
     }
 
-    public void setMaxBakups(Integer maxBakups) {
-        this.maxBakups = maxBakups;
+    public void setMaxBackups(Integer maxBackups) {
+        this.maxBackups = maxBackups;
+    }
+
+    public void setQuiesceVM(Boolean quiesceVM) {
+        this.quiesceVM = quiesceVM;
     }
 }

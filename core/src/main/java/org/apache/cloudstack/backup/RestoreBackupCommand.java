@@ -22,6 +22,7 @@ package org.apache.cloudstack.backup;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import java.util.List;
 
@@ -30,11 +31,14 @@ public class RestoreBackupCommand extends Command  {
     private String backupPath;
     private String backupRepoType;
     private String backupRepoAddress;
-    private List<String> volumePaths;
+    private List<String> backupVolumesUUIDs;
+    private List<PrimaryDataStoreTO> restoreVolumePools;
+    private List<String> restoreVolumePaths;
+    private List<String> backupFiles;
     private String diskType;
     private Boolean vmExists;
-    private String restoreVolumeUUID;
     private VirtualMachine.State vmState;
+    private Integer mountTimeout;
 
     protected RestoreBackupCommand() {
         super();
@@ -72,12 +76,28 @@ public class RestoreBackupCommand extends Command  {
         this.backupRepoAddress = backupRepoAddress;
     }
 
-    public List<String> getVolumePaths() {
-        return volumePaths;
+    public List<PrimaryDataStoreTO> getRestoreVolumePools() {
+        return restoreVolumePools;
     }
 
-    public void setVolumePaths(List<String> volumePaths) {
-        this.volumePaths = volumePaths;
+    public void setRestoreVolumePools(List<PrimaryDataStoreTO> restoreVolumePools) {
+        this.restoreVolumePools = restoreVolumePools;
+    }
+
+    public List<String> getRestoreVolumePaths() {
+        return restoreVolumePaths;
+    }
+
+    public void setRestoreVolumePaths(List<String> restoreVolumePaths) {
+        this.restoreVolumePaths = restoreVolumePaths;
+    }
+
+    public List<String> getBackupFiles() {
+        return backupFiles;
+    }
+
+    public void setBackupFiles(List<String> backupFiles) {
+        this.backupFiles = backupFiles;
     }
 
     public Boolean isVmExists() {
@@ -104,14 +124,6 @@ public class RestoreBackupCommand extends Command  {
         this.mountOptions = mountOptions;
     }
 
-    public String getRestoreVolumeUUID() {
-        return restoreVolumeUUID;
-    }
-
-    public void setRestoreVolumeUUID(String restoreVolumeUUID) {
-        this.restoreVolumeUUID = restoreVolumeUUID;
-    }
-
     public VirtualMachine.State getVmState() {
         return vmState;
     }
@@ -126,5 +138,21 @@ public class RestoreBackupCommand extends Command  {
 
     public boolean executeInSequence() {
         return true;
+    }
+
+    public List<String> getBackupVolumesUUIDs() {
+        return backupVolumesUUIDs;
+    }
+
+    public void setBackupVolumesUUIDs(List<String> backupVolumesUUIDs) {
+        this.backupVolumesUUIDs = backupVolumesUUIDs;
+    }
+
+    public Integer getMountTimeout() {
+        return this.mountTimeout == null ? 0 : this.mountTimeout;
+    }
+
+    public void setMountTimeout(Integer mountTimeout) {
+        this.mountTimeout = mountTimeout;
     }
 }

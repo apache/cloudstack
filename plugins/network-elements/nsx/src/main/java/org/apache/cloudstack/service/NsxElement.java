@@ -45,6 +45,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.SDNProviderNetworkRule;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -110,7 +111,7 @@ import org.apache.cloudstack.api.command.admin.internallb.ListInternalLoadBalanc
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.resource.NsxNetworkRule;
-import org.apache.cloudstack.resource.NsxOpObject;
+import com.cloud.network.SDNProviderOpObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
@@ -554,12 +555,12 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                 if (vm == null && rule.getState() != FirewallRule.State.Revoke) {
                     continue;
                 }
-                NsxOpObject nsxObject = getNsxOpObject(network);
-                String publicPort = getPublicPortRange(rule);
+                SDNProviderOpObject nsxObject = getNsxOpObject(network);
+                String publicPort = PortForwardingServiceProvider.getPublicPortRange(rule);
 
-                String privatePort = getPrivatePFPortRange(rule);
+                String privatePort = PortForwardingServiceProvider.getPrivatePFPortRange(rule);
 
-                NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
+                SDNProviderNetworkRule networkRule = new SDNProviderNetworkRule.Builder()
                         .setDomainId(nsxObject.getDomainId())
                         .setAccountId(nsxObject.getAccountId())
                         .setZoneId(nsxObject.getZoneId())
@@ -574,12 +575,16 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                         .setRuleId(rule.getId())
                         .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
                         .build();
+
+                NsxNetworkRule nsxNetworkRule = new NsxNetworkRule();
+                nsxNetworkRule.setBaseRule(networkRule);
+
                 FirewallRuleDetailVO ruleDetail = firewallRuleDetailsDao.findDetail(rule.getId(), ApiConstants.FOR_NSX);
                 if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(rule.getState())) {
                     if ((ruleDetail == null && FirewallRule.State.Add == rule.getState()) || (ruleDetail != null && !ruleDetail.getValue().equalsIgnoreCase("true"))) {
                         logger.debug("Creating port forwarding rule on NSX for VM {} to ports {} - {}",
                                 vm, rule.getDestinationPortStart(), rule.getDestinationPortEnd());
-                        NsxAnswer answer = nsxService.createPortForwardRule(networkRule);
+                        NsxAnswer answer = nsxService.createPortForwardRule(nsxNetworkRule);
                         boolean pfRuleResult = answer.getResult();
                         if (pfRuleResult && !answer.isObjectExistent()) {
                             logger.debug("Port forwarding rule {} created on NSX, adding detail on firewall rules details", rule);
@@ -596,7 +601,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
                     }
                 } else if (rule.getState() == FirewallRule.State.Revoke) {
                     if (ruleDetail == null || (ruleDetail != null && ruleDetail.getValue().equalsIgnoreCase("true"))) {
-                        boolean pfRuleResult = nsxService.deletePortForwardRule(networkRule);
+                        boolean pfRuleResult = nsxService.deletePortForwardRule(nsxNetworkRule);
                         if (pfRuleResult && ruleDetail != null) {
                             logger.debug("Updating firewall rule detail {} () for rule {}, set to false", ruleDetail.getId(), ruleDetail.getName(), rule);
                             ruleDetail.setValue("false");
@@ -635,30 +640,6 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         return new Pair<>(vpc, network);
     }
 
-    private static String getPublicPortRange(PortForwardingRule rule) {
-        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
-                String.valueOf(rule.getSourcePortStart()) :
-                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
-    }
-
-    private static String getPrivatePFPortRange(PortForwardingRule rule) {
-        return rule.getDestinationPortStart() == rule.getDestinationPortEnd() ?
-                String.valueOf(rule.getDestinationPortStart()) :
-                String.valueOf(rule.getDestinationPortStart()).concat("-").concat(String.valueOf(rule.getDestinationPortEnd()));
-    }
-
-    private static String getPrivatePortRange(FirewallRule rule) {
-        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
-                String.valueOf(rule.getSourcePortStart()) :
-                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
-    }
-
-    private static String getPrivatePortRangeForACLRule(NetworkACLItem rule) {
-        return Objects.equals(rule.getSourcePortStart(), rule.getSourcePortEnd()) ?
-                String.valueOf(rule.getSourcePortStart()) :
-                String.valueOf(rule.getSourcePortStart()).concat("-").concat(String.valueOf(rule.getSourcePortEnd()));
-    }
-
     private long getResourceId(String resource, VpcVO vpc, NetworkVO network) {
         switch (resource) {
             case "domain":
@@ -672,7 +653,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         }
     }
 
-    private NsxOpObject getNsxOpObject(Network network) {
+    private SDNProviderOpObject getNsxOpObject(Network network) {
         Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(network.getVpcId(), network.getId());
         VpcVO vpc = vpcOrNetwork.first();
         NetworkVO networkVO = vpcOrNetwork.second();
@@ -680,7 +661,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         long accountId = getResourceId("account", vpc, networkVO);
         long zoneId = getResourceId("zone", vpc, networkVO);
 
-        return new NsxOpObject.Builder()
+        return new SDNProviderOpObject.Builder()
                 .vpcVO(vpc)
                 .networkVO(networkVO)
                 .domainId(domainId)
@@ -695,25 +676,27 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         for (LoadBalancingRule loadBalancingRule : rules) {
             IPAddressVO publicIp = ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
                     loadBalancingRule.getSourceIp().addr());
-            NsxOpObject nsxObject = getNsxOpObject(network);
+            SDNProviderOpObject nsxObject = getNsxOpObject(network);
 
             List<NsxLoadBalancerMember> lbMembers = getLoadBalancerMembers(loadBalancingRule);
-            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
-                    .setDomainId(nsxObject.getDomainId())
-                    .setAccountId(nsxObject.getAccountId())
-                    .setZoneId(nsxObject.getZoneId())
-                    .setNetworkResourceId(nsxObject.getNetworkResourceId())
-                    .setNetworkResourceName(nsxObject.getNetworkResourceName())
-                    .setVpcResource(nsxObject.isVpcResource())
-                    .setMemberList(lbMembers)
-                    .setPublicIp(LoadBalancerContainer.Scheme.Public == loadBalancingRule.getScheme() ?
+            SDNProviderNetworkRule baseNetRule = new SDNProviderNetworkRule.Builder()
+            .setDomainId(nsxObject.getDomainId())
+            .setAccountId(nsxObject.getAccountId())
+            .setZoneId(nsxObject.getZoneId())
+            .setNetworkResourceId(nsxObject.getNetworkResourceId())
+            .setNetworkResourceName(nsxObject.getNetworkResourceName())
+            .setVpcResource(nsxObject.isVpcResource())
+            .setPublicIp(LoadBalancerContainer.Scheme.Public == loadBalancingRule.getScheme() ?
                             publicIp.getAddress().addr() : loadBalancingRule.getSourceIp().addr())
-                    .setPublicPort(String.valueOf(loadBalancingRule.getSourcePortStart()))
-                    .setPrivatePort(String.valueOf(loadBalancingRule.getDefaultPortStart()))
-                    .setRuleId(loadBalancingRule.getId())
-                    .setProtocol(loadBalancingRule.getLbProtocol().toUpperCase(Locale.ROOT))
-                    .setAlgorithm(loadBalancingRule.getAlgorithm())
+            .setPublicPort(String.valueOf(loadBalancingRule.getSourcePortStart()))
+            .setPrivatePort(String.valueOf(loadBalancingRule.getDefaultPortStart()))
+            .setRuleId(loadBalancingRule.getId())
+            .setProtocol(loadBalancingRule.getLbProtocol().toUpperCase(Locale.ROOT))
+            .setAlgorithm(loadBalancingRule.getAlgorithm())
                     .build();
+            NsxNetworkRule networkRule = new NsxNetworkRule();
+            networkRule.setBaseRule(baseNetRule);
+            networkRule.setMemberList(lbMembers);
             if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(loadBalancingRule.getState())) {
                 result &= nsxService.createLbRule(networkRule);
             } else if (loadBalancingRule.getState() == FirewallRule.State.Revoke) {
@@ -758,7 +741,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         List<NsxNetworkRule> nsxDelNetworkRules = new ArrayList<>();
         boolean success = true;
         for (NetworkACLItem rule : rules) {
-            String privatePort = getPrivatePortRangeForACLRule(rule);
+            String privatePort = PortForwardingServiceProvider.getPrivatePortRangeForACLRule(rule);
             NsxNetworkRule networkRule = getNsxNetworkRuleForAcl(rule, privatePort);
             if (Arrays.asList(NetworkACLItem.State.Active, NetworkACLItem.State.Add).contains(rule.getState())) {
                 success = success && nsxService.addFirewallRules(network, List.of(networkRule));
@@ -780,7 +763,7 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
         List<NsxNetworkRule> aclRulesList = new ArrayList<>();
         for (NetworkACLItem rule : networkACLItems) {
-            String privatePort = getPrivatePortRangeForACLRule(rule);
+            String privatePort = PortForwardingServiceProvider.getPrivatePortRangeForACLRule(rule);
             aclRulesList.add(getNsxNetworkRuleForAcl(rule, privatePort));
         }
         for (Network network: networks) {
@@ -796,18 +779,20 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     }
 
     private NsxNetworkRule getNsxNetworkRuleForAcl(NetworkACLItem rule, String privatePort) {
-        return new NsxNetworkRule.Builder()
-                .setRuleId(rule.getId())
-                .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
-                .setAclAction(transformActionValue(rule.getAction()))
-                .setTrafficType(rule.getTrafficType().toString())
-                .setProtocol(rule.getProtocol().toUpperCase())
-                .setPublicPort(String.valueOf(rule.getSourcePortStart()))
-                .setPrivatePort(privatePort)
-                .setIcmpCode(rule.getIcmpCode())
-                .setIcmpType(rule.getIcmpType())
-                .setService(Network.Service.NetworkACL)
-                .build();
+        NsxNetworkRule nsxNetworkRule = new NsxNetworkRule();
+        SDNProviderNetworkRule networkRule = new SDNProviderNetworkRule.Builder()
+        .setRuleId(rule.getId())
+        .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
+        .setTrafficType(rule.getTrafficType().toString())
+        .setProtocol(rule.getProtocol().toUpperCase())
+        .setPublicPort(String.valueOf(rule.getSourcePortStart()))
+        .setPrivatePort(privatePort)
+        .setIcmpCode(rule.getIcmpCode())
+        .setIcmpType(rule.getIcmpType())
+        .setService(Network.Service.NetworkACL).build();
+        nsxNetworkRule.setBaseRule(networkRule);
+        nsxNetworkRule.setAclAction(transformActionValue(rule.getAction()));
+        return nsxNetworkRule;
     }
         @Override
     public boolean applyFWRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
@@ -818,20 +803,21 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
         List<NsxNetworkRule> nsxAddNetworkRules = new ArrayList<>();
         List<NsxNetworkRule> nsxDelNetworkRules = new ArrayList<>();
         for (FirewallRule rule : rules) {
-            NsxNetworkRule networkRule = new NsxNetworkRule.Builder()
-                    .setRuleId(rule.getId())
-                    .setAclAction(NsxNetworkRule.NsxRuleAction.ALLOW)
-                    .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ?
-                            transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
-                    .setDestinationCidrList(Objects.nonNull(rule.getDestinationCidrList()) ?
-                            transformCidrListValues(rule.getDestinationCidrList()) : List.of("ANY"))
-                    .setIcmpCode(rule.getIcmpCode())
-                    .setIcmpType(rule.getIcmpType())
-                    .setPrivatePort(getPrivatePortRange(rule))
-                    .setTrafficType(rule.getTrafficType().toString())
-                    .setService(Network.Service.Firewall)
-                    .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
-                    .build();
+            NsxNetworkRule networkRule = new NsxNetworkRule();
+            SDNProviderNetworkRule baseNetRule = new SDNProviderNetworkRule.Builder()
+            .setRuleId(rule.getId())
+            .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ?
+                        transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
+            .setDestinationCidrList(Objects.nonNull(rule.getDestinationCidrList()) ?
+                        transformCidrListValues(rule.getDestinationCidrList()) : List.of("ANY"))
+            .setIcmpCode(rule.getIcmpCode())
+            .setIcmpType(rule.getIcmpType())
+            .setPrivatePort(PortForwardingServiceProvider.getPrivatePortRange(rule))
+            .setTrafficType(rule.getTrafficType().toString())
+            .setService(Network.Service.Firewall)
+            .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT)).build();
+            networkRule.setBaseRule(baseNetRule);
+            networkRule.setAclAction(NsxNetworkRule.NsxRuleAction.ALLOW);
             if (rule.getState() == FirewallRule.State.Add) {
                 nsxAddNetworkRules.add(networkRule);
             } else if (rule.getState() == FirewallRule.State.Revoke) {

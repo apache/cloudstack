@@ -232,7 +232,13 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
         // assumption, at least one of scope should be zone, find the least
         // scope
-        if (srcScope.getScopeType() != ScopeType.ZONE) {
+        if (srcScope.getScopeType() == ScopeType.HOST) {
+            selectedScope = srcScope;
+            poolId = srcStore.getId();
+        } else if (destScope.getScopeType() == ScopeType.HOST) {
+            selectedScope = destScope;
+            poolId = destStore.getId();
+        } else if (srcScope.getScopeType() != ScopeType.ZONE) {
             selectedScope = srcScope;
             poolId = srcStore.getId();
         } else if (destScope.getScopeType() != ScopeType.ZONE) {

@@ -60,9 +60,6 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "default")
     boolean isDefault = false;
 
-    @Column(name = "for_nsx")
-    boolean forNsx = false;
-
     @Column(name = "network_mode")
     NetworkOffering.NetworkMode networkMode;
 
@@ -157,14 +154,6 @@ public class VpcOfferingVO implements VpcOffering {
     @Override
     public boolean isDefault() {
         return isDefault;
-    }
-
-    public boolean isForNsx() {
-        return forNsx;
-    }
-
-    public void setForNsx(boolean forNsx) {
-        this.forNsx = forNsx;
     }
 
     public NetworkOffering.NetworkMode getNetworkMode() {

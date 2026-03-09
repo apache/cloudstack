@@ -536,65 +536,6 @@ export default {
           details: ['name', 'state', 'id', 'servicelist', 'physicalnetworkid']
         },
         {
-          title: 'F5BigIp',
-          actions: [
-            {
-              api: 'addF5LoadBalancer',
-              listView: true,
-              icon: 'plus-outlined',
-              label: 'label.add.f5.device',
-              component: shallowRef(defineAsyncComponent(() => import('@/views/infra/network/providers/AddF5LoadBalancer.vue')))
-            },
-            {
-              api: 'updateNetworkServiceProvider',
-              icon: 'stop-outlined',
-              listView: true,
-              label: 'label.disable.provider',
-              confirm: 'message.confirm.disable.provider',
-              show: (record) => { return record && record.id && record.state === 'Enabled' },
-              mapping: {
-                state: {
-                  value: (record) => { return 'Disabled' }
-                }
-              }
-            },
-            {
-              api: 'updateNetworkServiceProvider',
-              icon: 'play-circle-outlined',
-              listView: true,
-              label: 'label.enable.provider',
-              confirm: 'message.confirm.enable.provider',
-              show: (record) => { return record && record.id && record.state === 'Disabled' },
-              mapping: {
-                state: {
-                  value: (record) => { return 'Enabled' }
-                }
-              }
-            },
-            {
-              api: 'deleteNetworkServiceProvider',
-              listView: true,
-              icon: 'poweroff-outlined',
-              label: 'label.shutdown.provider',
-              confirm: 'message.confirm.delete.provider',
-              show: (record) => { return record && record.id }
-            }
-          ],
-          details: ['name', 'state', 'id', 'servicelist'],
-          lists: [
-            {
-              title: 'label.devices',
-              api: 'listF5LoadBalancers',
-              mapping: {
-                physicalnetworkid: {
-                  value: (record) => { return record.physicalnetworkid }
-                }
-              },
-              columns: ['ipaddress', 'lbdevicestate', 'actions']
-            }
-          ]
-        },
-        {
           title: 'GloboDns',
           actions: [
             {
@@ -1118,7 +1059,7 @@ export default {
           ],
           lists: [
             {
-              title: 'label.nsx.controller',
+              title: 'label.nsx.provider',
               api: 'listNsxControllers',
               mapping: {
                 zoneid: {
@@ -1126,6 +1067,50 @@ export default {
                 }
               },
               columns: ['name', 'hostname', 'port', 'tier0gateway', 'edgecluster', 'transportzone']
+            }
+          ]
+        },
+        {
+          title: 'Netris',
+          details: ['name', 'state', 'id', 'physicalnetworkid', 'servicelist'],
+          actions: [
+            {
+              api: 'updateNetworkServiceProvider',
+              icon: 'stop-outlined',
+              listView: true,
+              label: 'label.disable.provider',
+              confirm: 'message.confirm.disable.provider',
+              show: (record) => { return (record && record.id && record.state === 'Enabled') },
+              mapping: {
+                state: {
+                  value: (record) => { return 'Disabled' }
+                }
+              }
+            },
+            {
+              api: 'updateNetworkServiceProvider',
+              icon: 'play-circle-outlined',
+              listView: true,
+              label: 'label.enable.provider',
+              confirm: 'message.confirm.enable.provider',
+              show: (record) => { return (record && record.id && record.state === 'Disabled') },
+              mapping: {
+                state: {
+                  value: (record) => { return 'Enabled' }
+                }
+              }
+            }
+          ],
+          lists: [
+            {
+              title: 'label.netris.provider',
+              api: 'listNetrisProviders',
+              mapping: {
+                zoneid: {
+                  value: (record) => { return record.zoneid }
+                }
+              },
+              columns: ['name', 'netrisurl', 'site', 'tenantname', 'netristag']
             }
           ]
         }
@@ -1168,7 +1153,6 @@ export default {
       this.fetchLoading = true
       getAPI('listNetworkServiceProviders', { physicalnetworkid: this.resource.id, name: name }).then(json => {
         const sps = json.listnetworkserviceprovidersresponse.networkserviceprovider || []
-        console.log(sps)
         if (sps.length > 0) {
           for (const sp of sps) {
             this.nsps[sp.name] = sp

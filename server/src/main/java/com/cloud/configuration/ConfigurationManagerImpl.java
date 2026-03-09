@@ -43,13 +43,17 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.utils.DomainHelper;
+import com.cloud.vm.VirtualMachineManager;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -103,6 +107,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.ValidatedConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
@@ -201,11 +206,15 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.gpu.GPU;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
+import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
@@ -224,10 +233,12 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.UserIpv6AddressVO;
+import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NsxProviderDao;
@@ -236,7 +247,9 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
+import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.network.netris.NetrisService;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -286,6 +299,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
@@ -303,6 +317,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicIpAlias;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicIpAliasVO;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -355,6 +370,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     DiskOfferingDetailsDao diskOfferingDetailsDao;
     @Inject
+    VgpuProfileDao vgpuProfileDao;
+    @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
     NetworkOfferingJoinDao networkOfferingJoinDao;
@@ -384,7 +401,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     ClusterDao _clusterDao;
     @Inject
     AlertManager _alertMgr;
+    @Inject
+    DomainHelper domainHelper;
     List<SecurityChecker> _secChecker;
+    List<ExternalProvisioner> externalProvisioners;
 
     @Inject
     CapacityDao _capacityDao;
@@ -467,6 +487,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     NsxProviderDao nsxProviderDao;
     @Inject
+    NetrisProviderDao netrisProviderDao;
+    @Inject
+    private javax.inject.Provider<NetrisService> netrisServiceProvider;
+    @Inject
     VMLeaseManager vmLeaseManager;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
@@ -495,22 +519,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             "Indicates whether the host will be added back to cloudstack after restarting agent service on host. If false it won't be added back even after service restart",
             true, ConfigKey.Scope.Global, null);
     public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
-            "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
+            "Indicates whether the host in down state can be put into maintenance state so that it's not enabled after it comes back.",
             true, ConfigKey.Scope.Zone, null);
     public static final ConfigKey<Boolean> ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN = new ConfigKey<>(Boolean.class, "enable.account.settings.for.domain", "Advanced", "false",
-            "Indicates whether to add account settings for domain. If true, account settings will be added to domain settings, all accounts in the domain will inherit the domain setting if account setting is not set.", true, ConfigKey.Scope.Global, null);
+            "Indicates whether to add Account settings for domain. If True, Account settings will be added to domain settings, all Accounts in the domain will inherit the domain setting if Account setting is not set.", true, ConfigKey.Scope.Global, null);
     public static final ConfigKey<Boolean> ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN = new ConfigKey<>(Boolean.class, "enable.domain.settings.for.child.domain", "Advanced", "false",
             "Indicates whether the settings of parent domain should be applied for child domain. If true, the child domain will get value from parent domain if its not configured in child domain else global value is taken.",
             true, ConfigKey.Scope.Global, null);
 
     public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_CPU_CORES = new ConfigKey<>("Advanced", Integer.class, "vm.serviceoffering.cpu.cores.max", "0", "Maximum CPU cores "
-            + "for vm service offering. If 0 - no limitation", true);
+            + "for Instance service offering. If 0 - no limitation", true);
 
     public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_RAM_SIZE = new ConfigKey<>("Advanced", Integer.class, "vm.serviceoffering.ram.size.max", "0", "Maximum RAM size in "
-            + "MB for vm service offering. If 0 - no limitation", true);
+            + "MB for Instance service offering. If 0 - no limitation", true);
 
     public static final ConfigKey<Boolean> MIGRATE_VM_ACROSS_CLUSTERS = new ConfigKey<>(Boolean.class, "migrate.vm.across.clusters", "Advanced", "false",
-            "Indicates whether the VM can be migrated to different cluster if no host is found in same cluster", true, ConfigKey.Scope.Zone, null);
+            "Indicates whether the Instance can be migrated to different cluster if no host is found in same cluster",true, ConfigKey.Scope.Zone, null);
 
     public static final ConfigKey<Boolean> ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS = new ConfigKey<>(Boolean.class, "allow.domain.admins.to.create.tagged.offerings", "Advanced",
             "false", "Allow domain admins to create offerings with tags.", true, ConfigKey.Scope.Account, null);
@@ -518,7 +542,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public static final ConfigKey<Long> DELETE_QUERY_BATCH_SIZE = new ConfigKey<>("Advanced", Long.class, "delete.query.batch.size", "0",
             "Indicates the limit applied while deleting entries in bulk. With this, the delete query will apply the limit as many times as necessary," +
                     " to delete all the entries. This is advised when retaining several days of records, which can lead to slowness. <= 0 means that no limit will " +
-                    "be applied. Default value is 0. For now, this is used for deletion of vm & volume stats only.", true);
+                    "be applied. Default value is 0. For now, this is used for deletion of VM stats, volume stats, and usage records.", true);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -532,6 +556,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private static final List<String> SUPPORTED_ROUTING_MODE_STRS = Arrays.asList(Static.toString().toLowerCase(), Dynamic.toString().toLowerCase());
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
+
+    public List<ExternalProvisioner> getExternalProvisioners() {
+        return externalProvisioners;
+    }
+
+    public void setExternalProvisioners(final List<ExternalProvisioner> externalProvisioners) {
+        this.externalProvisioners = externalProvisioners;
+    }
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -550,7 +582,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add("event.purge.interval");
         configValuesForValidation.add("account.cleanup.interval");
         configValuesForValidation.add("alert.wait");
-        configValuesForValidation.add("consoleproxy.capacityscan.interval");
+        configValuesForValidation.add(ConsoleProxyManager.ConsoleProxyCapacityScanInterval.key());
         configValuesForValidation.add("expunge.interval");
         configValuesForValidation.add("host.stats.interval");
         configValuesForValidation.add("network.gc.interval");
@@ -578,6 +610,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(VMLeaseManager.InstanceLeaseSchedulerInterval.key());
         configValuesForValidation.add(VMLeaseManager.InstanceLeaseExpiryEventSchedulerInterval.key());
         configValuesForValidation.add(VMLeaseManager.InstanceLeaseExpiryEventDaysBefore.key());
+        configValuesForValidation.add(AutoScaleManager.AutoScaleErroredInstanceThreshold.key());
     }
 
     protected void weightBasedParametersForValidation() {
@@ -601,6 +634,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(CapacityManager.SecondaryStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceThreshold.key());
         weightBasedParametersForValidation.add(ClusterDrsService.ClusterDrsImbalanceSkipThreshold.key());
+        weightBasedParametersForValidation.add(ConfigurationManager.HostCapacityTypeCpuMemoryWeight.key());
     }
 
     protected void overProvisioningFactorsForValidation() {
@@ -612,6 +646,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected void populateConfigKeysAllowedOnlyForDefaultAdmin() {
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key());
         configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key());
+
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualMachineManager.SystemVmEnableUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(ConsoleProxyManager.ConsoleProxyVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(SecondaryStorageVmManager.SecondaryStorageVmUserData.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(VirtualNetworkApplianceManager.VirtualRouterUserData.key());
     }
 
     private void initMessageBusListener() {
@@ -726,6 +765,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(validationMsg);
         }
 
+        ConfigKey<?> configKey = _configDepot.get(name);
+        if (configKey instanceof ValidatedConfigKey) {
+            ValidatedConfigKey<?> validatedConfigKey = (ValidatedConfigKey<?>) configKey;
+            validatedConfigKey.validateValue(value);
+        }
+
         // If scope of the parameter is given then it needs to be updated in the
         // corresponding details table,
         // if scope is mentioned as global or not mentioned then it is normal
@@ -794,7 +839,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             case Account:
                 final AccountVO account = _accountDao.findById(resourceId);
                 if (account == null) {
-                    throw new InvalidParameterValueException("unable to find account by id " + resourceId);
+                    throw new InvalidParameterValueException("Unable to find Account by id " + resourceId);
                 }
                 resourceType = ApiCommandResourceType.Account;
                 AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(resourceId, name);
@@ -956,6 +1001,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
+    protected String getNormalizedEmptyValueForConfig(final String name, final String inputValue,
+                          final Long configStorageId) {
+        String value = inputValue.trim();
+        if (!value.isEmpty() && !value.equals("null")) {
+            return value;
+        }
+        if (configStorageId != null) {
+            return "";
+        }
+        ConfigKey<?> key = _configDepot.get(name);
+        return (key != null && key.type() == String.class) ? "" : null;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, eventDescription = "updating configuration")
     public Configuration updateConfiguration(final UpdateCfgCmd cmd) throws InvalidParameterValueException {
@@ -996,16 +1054,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             category = config.getCategory();
         }
 
+        if (value == null) {
+            throw new InvalidParameterValueException(String.format("The new value for the [%s] configuration must be given.", name));
+        }
+
         validateIpAddressRelatedConfigValues(name, value);
         validateConflictingConfigValue(name, value);
 
         if (CATEGORY_SYSTEM.equals(category) && !_accountMgr.isRootAdmin(caller.getId())) {
             logger.warn("Only Root Admin is allowed to edit the configuration {}", name);
             throw new CloudRuntimeException("Only Root Admin is allowed to edit this configuration.");
-        }
-
-        if (value == null) {
-            return _configDao.findByName(name);
         }
 
         ConfigKey.Scope scope = null;
@@ -1050,11 +1108,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
 
-        value = value.trim();
-
-        if (value.isEmpty() || value.equals("null")) {
-            value = (id == null) ? null : "";
-        }
+        value = getNormalizedEmptyValueForConfig(name, value, id);
 
         String currentValueInScope = getConfigurationValueInScope(config, name, scope, id);
         final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
@@ -1210,7 +1264,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             case Account:
                 final AccountVO account = _accountDao.findById(id);
                 if (account == null) {
-                    throw new InvalidParameterValueException("unable to find account by id " + id);
+                    throw new InvalidParameterValueException("Unable to find Account by id " + id);
                 }
                 AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(id, name);
                 if (accountDetailVO != null) {
@@ -1719,7 +1773,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if there are any non-removed vms in the pod.
         if (!_vmInstanceDao.listByPodId(podId).isEmpty()) {
-            throw new CloudRuntimeException(errorMsg + "there are virtual machines in this pod.");
+            throw new CloudRuntimeException(errorMsg + "there are Instances in this pod.");
         }
 
         // Check if there are any non-removed clusters in the pod.
@@ -1763,7 +1817,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Don't allow gateway to overlap with start/endIp
         if (!skipGatewayOverlapCheck) {
             if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
-                throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+                throw new InvalidParameterValueException("The gateway shouldn't overlap start/end IP addresses");
             }
         }
 
@@ -1817,7 +1871,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 final List<DataCenterIpAddressVO> privateIps = _privateIpAddressDao.listByPodIdDcId(podId, pod.getDataCenterId());
                 if (!privateIps.isEmpty()) {
                     if (!_privateIpAddressDao.deleteIpAddressByPod(podId)) {
-                        throw new CloudRuntimeException(String.format("Failed to cleanup private ip addresses for pod %s", pod));
+                        throw new CloudRuntimeException(String.format("Failed to cleanup private IP addresses for pod %s", pod));
                     }
                 }
 
@@ -1825,7 +1879,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 final List<DataCenterLinkLocalIpAddressVO> localIps = _linkLocalIpAllocDao.listByPodIdDcId(podId, pod.getDataCenterId());
                 if (!localIps.isEmpty()) {
                     if (!_linkLocalIpAllocDao.deleteIpAddressByPod(podId)) {
-                        throw new CloudRuntimeException(String.format("Failed to cleanup private ip addresses for pod %s", pod));
+                        throw new CloudRuntimeException(String.format("Failed to cleanup private IP addresses for pod %s", pod));
                     }
                 }
 
@@ -1887,7 +1941,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Account account = CallContext.current().getCallingAccount();
 
         if(!_accountMgr.isRootAdmin(account.getId())) {
-            throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling account is not root admin: %s", account));
+            throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling Account is not root admin: %s", account));
         }
 
         final long podId = cmd.getPodId();
@@ -1954,7 +2008,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
-            throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+            throw new InvalidParameterValueException("The gateway shouldn't overlap start/end IP addresses");
         }
 
         final String[] existingPodIpRanges = pod.getDescription().split(",");
@@ -1998,7 +2052,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         lock = _podDao.acquireInLockTable(podId);
 
                         if (lock == null) {
-                            String msg = String.format("Unable to acquire lock on table to update the ip range of POD: %s, Creation failed.", pod);
+                            String msg = String.format("Unable to acquire lock on table to update the IP range of POD: %s, Creation failed.", pod);
                             logger.warn(msg);
                             throw new CloudRuntimeException(msg);
                         }
@@ -2111,7 +2165,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         lock = _podDao.acquireInLockTable(podId);
 
                         if (lock == null) {
-                            String msg = String.format("Unable to acquire lock on table to update the ip range of POD: %s, Deletion failed.", pod);
+                            String msg = String.format("Unable to acquire lock on table to update the IP range of POD: %s, Deletion failed.", pod);
                             logger.warn(msg);
                             throw new CloudRuntimeException(msg);
                         }
@@ -2125,7 +2179,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                     for(long ipAddr = NetUtils.ip2Long(startIp); ipAddr <= NetUtils.ip2Long(endIp); ipAddr++) {
                         if (!_privateIpAddressDao.deleteIpAddressByPodDc(NetUtils.long2Ip(ipAddr), podId, pod.getDataCenterId())) {
-                            throw new CloudRuntimeException(String.format("Failed to cleanup private ip address: %s of Pod: %s DC: %s", NetUtils.long2Ip(ipAddr), pod, _zoneDao.findById(pod.getDataCenterId())));
+                            throw new CloudRuntimeException(String.format("Failed to cleanup private IP address: %s of Pod: %s DC: %s", NetUtils.long2Ip(ipAddr), pod, _zoneDao.findById(pod.getDataCenterId())));
                         }
                     }
                 }
@@ -2232,7 +2286,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         try {
             lock = _podDao.acquireInLockTable(podId);
             if (lock == null) {
-                String msg = String.format("Unable to acquire lock on table to update the ip range of POD: %s, Update failed.", pod);
+                String msg = String.format("Unable to acquire lock on table to update the IP range of POD: %s, Update failed.", pod);
                 logger.warn(msg);
                 throw new CloudRuntimeException(msg);
             }
@@ -2247,7 +2301,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (currentIpRange.size() > 0) {
                     for (Long startIP: currentIpRange) {
                         if (!_privateIpAddressDao.deleteIpAddressByPodDc(NetUtils.long2Ip(startIP),podId,zoneId)) {
-                            throw new CloudRuntimeException(String.format("Failed to remove private ip address: %s of Pod: %s DC: %s", NetUtils.long2Ip(startIP), pod, _zoneDao.findById(pod.getDataCenterId())));
+                            throw new CloudRuntimeException(String.format("Failed to remove private IP address: %s of Pod: %s DC: %s", NetUtils.long2Ip(startIP), pod, _zoneDao.findById(pod.getDataCenterId())));
                         }
                     }
                 }
@@ -2465,7 +2519,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 if (NetUtils.ipRangesOverlap(existingPodIpRange[0], existingPodIpRange[1], gateway, gateway)) {
-                    throw new InvalidParameterValueException("The gateway shouldn't overlap some start/end ip addresses");
+                    throw new InvalidParameterValueException("The gateway shouldn't overlap some start/end IP addresses");
                 }
             }
         }
@@ -2806,10 +2860,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 final boolean success = _zoneDao.remove(zoneId);
 
                 if (success) {
-                    NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
-                    if (Objects.nonNull(nsxProvider)) {
-                        nsxProviderDao.remove(nsxProvider.getId());
-                    }
+                    deleteExternalProviderIfAny(zoneId);
 
                     // delete template refs for this zone
                     templateZoneDao.deleteByZoneId(zoneId);
@@ -2833,6 +2884,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 return success;
             }
         });
+    }
+
+    private void deleteExternalProviderIfAny(Long zoneId) {
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(nsxProvider)) {
+            nsxProviderDao.remove(nsxProvider.getId());
+        }
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(netrisProvider)) {
+            netrisProviderDao.remove(netrisProvider.getId());
+        }
     }
 
     @Override
@@ -2992,7 +3054,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             mgmtPhyNetwork = _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Management);
                             if (NetworkType.Advanced == zone.getNetworkType() && !zone.isSecurityGroupEnabled()) {
                                 // advanced zone without SG should have a physical
-                                // network with public Thpe
+                                // network with public Type
                                 _networkModel.getDefaultPhysicalNetworkByZoneAndTrafficType(zoneId, TrafficType.Public);
                             }
 
@@ -3073,7 +3135,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true, domainId, allocationStateStr, ip6Dns1, ip6Dns2);
 
         final byte[] bytes = (zoneName + System.currentTimeMillis()).getBytes();
-        final String zoneToken = UUID.nameUUIDFromBytes(bytes).toString();
+        final String zoneToken = UuidUtils.nameUUIDFromBytes(bytes).toString();
 
         // Create the new zone in the database
         final DataCenterVO zoneFinal = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain,
@@ -3377,7 +3439,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             isCustomizedIops = false;
 
             if (cmd.getHypervisorSnapshotReserve() != null) {
-                throw new InvalidParameterValueException("Hypervisor snapshot reserve is not a valid parameter for a system VM.");
+                throw new InvalidParameterValueException("Hypervisor Snapshot reserve is not a valid parameter for a system VM.");
             }
         } else {
             allowNetworkRate = true;
@@ -3423,6 +3485,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Integer leaseDuration = cmd.getLeaseDuration();
         VMLeaseManager.ExpiryAction leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
 
+        final Long vgpuProfileId = cmd.getVgpuProfileId();
+        Integer gpuCount = validateVgpuProfileAndGetGpuCount(vgpuProfileId, cmd.getGpuCount());
+
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, cmd.getRootDiskSize(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
@@ -3431,7 +3496,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
                 cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
-                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
+                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), vgpuProfileId, gpuCount, cmd.getGpuDisplay(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
+    }
+
+    private Integer validateVgpuProfileAndGetGpuCount(final Long vgpuProfileId, Integer gpuCount) {
+        Integer finalGpuCount = gpuCount;
+        if (vgpuProfileId != null) {
+            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(vgpuProfileId);
+            if (vgpuProfile == null) {
+                throw new InvalidParameterValueException("Please specify a valid vgpu profile.");
+            }
+            if (gpuCount != null && gpuCount < 1) {
+                throw new InvalidParameterValueException("GPU count must be greater than 0.");
+            }
+            if (gpuCount == null) {
+                finalGpuCount = 1;
+            }
+        }
+        return finalGpuCount;
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -3444,10 +3526,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                       Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
                                                       final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
                                                       final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
-                                                      final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
+                                                      final boolean isCustomized, final boolean encryptRoot, Long vgpuProfileId, Integer gpuCount, Boolean gpuDisplay, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -3526,6 +3608,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         serviceOffering.setDiskOfferingStrictness(diskOfferingStrictness);
+        serviceOffering.setVgpuProfileId(vgpuProfileId);
+        serviceOffering.setGpuCount(gpuCount);
+        serviceOffering.setGpuDisplay(gpuDisplay);
 
         DiskOfferingVO diskOffering = null;
         if (diskOfferingId == null) {
@@ -3572,7 +3657,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 _serviceOfferingDetailsDao.saveDetails(detailsVOList);
             }
 
-            CallContext.current().setEventDetails("Service offering id=" + serviceOffering.getId());
+            CallContext.current().setEventDetails("Service offering ID: " + serviceOffering.getUuid());
             CallContext.current().putContextParameter(ServiceOffering.class, serviceOffering.getId());
             return serviceOffering;
         } else {
@@ -3741,6 +3826,34 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
     }
 
+    protected boolean serviceOfferingExternalDetailsNeedUpdate(final Map<String, String> offeringDetails,
+               final Map<String, String> externalDetails, final boolean cleanupExternalDetails) {
+        if (MapUtils.isEmpty(externalDetails) && !cleanupExternalDetails) {
+            return false;
+        }
+
+        Map<String, String> existingExternalDetails = offeringDetails.entrySet().stream()
+                .filter(detail -> detail.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+       if (cleanupExternalDetails) {
+           return !MapUtils.isEmpty(existingExternalDetails);
+       }
+
+        if (MapUtils.isEmpty(existingExternalDetails) || existingExternalDetails.size() != externalDetails.size()) {
+            return true;
+        }
+
+        for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (!value.equals(existingExternalDetails.get(key))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SERVICE_OFFERING_EDIT, eventDescription = "updating service offering")
     public ServiceOffering updateServiceOffering(final UpdateServiceOfferingCmd cmd) {
@@ -3755,6 +3868,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String hostTags = cmd.getHostTags();
         ServiceOffering.State state = cmd.getState();
         boolean purgeResources = cmd.isPurgeResources();
+        final Map<String, String> externalDetails = cmd.getExternalDetails();
+        final boolean cleanupExternalDetails = cmd.isCleanupExternalDetails();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -3772,7 +3887,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         List<Long> existingZoneIds = _serviceOfferingDetailsDao.findZoneIds(id);
         Collections.sort(existingZoneIds);
 
-        String purgeResourceStr = _serviceOfferingDetailsDao.getDetail(id, ServiceOffering.PURGE_DB_ENTITIES_KEY);
+        Map<String, String> offeringDetails = _serviceOfferingDetailsDao.listDetailsKeyPairs(id);
+        String purgeResourceStr = offeringDetails.get(ServiceOffering.PURGE_DB_ENTITIES_KEY);
         boolean existingPurgeResources = false;
         if (StringUtils.isNotBlank(purgeResourceStr)) {
             existingPurgeResources = Boolean.parseBoolean(purgeResourceStr);
@@ -3802,8 +3918,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Account account = _accountDao.findById(user.getAccountId());
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
+
+        // avoid domain update of service offering if any instance is associated to it
+        int instanceCount = _vmInstanceDao.getVmCountByOfferingNotInDomain(offeringHandle.getId(), filteredDomainIds);
+        if (instanceCount > 0) {
+            throw new UnsupportedServiceException("There are Instances associated to this service offering outside of the specified domains.");
+        }
 
         List<Long> filteredZoneIds = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(zoneIds)) {
@@ -3846,8 +3968,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final boolean updateNeeded = name != null || displayText != null || sortKey != null || storageTags != null || hostTags != null || state != null;
+        final boolean serviceOfferingExternalDetailsNeedUpdate =
+                serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, cleanupExternalDetails);
         final boolean detailsUpdateNeeded = !filteredDomainIds.equals(existingDomainIds) ||
-                !filteredZoneIds.equals(existingZoneIds) || purgeResources != existingPurgeResources;
+                !filteredZoneIds.equals(existingZoneIds) || purgeResources != existingPurgeResources ||
+                serviceOfferingExternalDetailsNeedUpdate;
         if (!updateNeeded && !detailsUpdateNeeded) {
             return _serviceOfferingDao.findById(id);
         }
@@ -3889,6 +4014,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             SearchBuilder<ServiceOfferingDetailsVO> sb = _serviceOfferingDetailsDao.createSearchBuilder();
             sb.and("offeringId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
             sb.and("detailName", sb.entity().getName(), SearchCriteria.Op.EQ);
+            sb.and("detailNameLike", sb.entity().getName(), SearchCriteria.Op.LIKE);
             sb.done();
             SearchCriteria<ServiceOfferingDetailsVO> sc = sb.create();
             sc.setParameters("offeringId", String.valueOf(id));
@@ -3914,6 +4040,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             "true", false));
                 }
             }
+            if (serviceOfferingExternalDetailsNeedUpdate) {
+                SearchCriteria<ServiceOfferingDetailsVO> externalDetailsRemoveSC = sb.create();
+                externalDetailsRemoveSC.setParameters("detailNameLike", VmDetailConstants.EXTERNAL_DETAIL_PREFIX + "%");
+                _serviceOfferingDetailsDao.remove(externalDetailsRemoveSC);
+                if (!cleanupExternalDetails) {
+                    for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+                        detailsVO.add(new ServiceOfferingDetailsVO(id, entry.getKey(), entry.getValue(), true));
+                    }
+                }
+            }
         }
         if (!detailsVO.isEmpty()) {
             for (ServiceOfferingDetailsVO detailVO : detailsVO) {
@@ -3921,7 +4057,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         offering = _serviceOfferingDao.findById(id);
-        CallContext.current().setEventDetails("Service offering id=" + offering.getId());
+        CallContext.current().setEventDetails("Service offering ID:" + offering.getUuid());
         return offering;
     }
 
@@ -3992,7 +4128,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -4037,7 +4173,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         newDiskOffering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
         newDiskOffering.setDiskSizeStrictness(diskSizeStrictness);
 
-        CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
+        CallContext.current().setEventDetails("Disk offering ID: " + newDiskOffering.getUuid());
         final DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);
         if (offering != null) {
             List<DiskOfferingDetailVO> detailsVO = new ArrayList<>();
@@ -4062,7 +4198,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (!detailsVO.isEmpty()) {
                 diskOfferingDetailsDao.saveDetails(detailsVO);
             }
-            CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
+            CallContext.current().setEventDetails("Disk offering ID: " + newDiskOffering.getUuid());
             CallContext.current().putContextParameter(DiskOffering.class, newDiskOffering.getId());
             return offering;
         }
@@ -4268,7 +4404,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Account account = _accountDao.findById(user.getAccountId());
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
@@ -4337,7 +4473,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 diskOfferingDetailsDao.persist(detailVO);
             }
         }
-        CallContext.current().setEventDetails("Disk offering id=" + diskOffering.getId());
+        CallContext.current().setEventDetails("Disk offering ID: " + diskOffering.getUuid());
         return _diskOfferingDao.findById(diskOfferingId);
     }
 
@@ -4595,7 +4731,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         annotationDao.removeByEntityType(AnnotationService.EntityType.DISK_OFFERING.name(), offering.getUuid());
         offering.setState(DiskOffering.State.Inactive);
         if (_diskOfferingDao.update(offering.getId(), offering)) {
-            CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
+            CallContext.current().setEventDetails("Disk offering ID: " + offering.getUuid());
             return true;
         } else {
             return false;
@@ -4675,7 +4811,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         offering.setState(ServiceOffering.State.Inactive);
         if (_serviceOfferingDao.update(offeringId, offering)) {
-            CallContext.current().setEventDetails("Service offering id=" + offeringId);
+            CallContext.current().setEventDetails("Service offering ID: " + offering.getUuid());
             return true;
         } else {
             return false;
@@ -4684,7 +4820,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventDescription = "creating vlan ip range", async = false)
+    @ActionEvent(eventType = EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventDescription = "Creating VLAN IP range", async = false)
     public Vlan createVlanAndPublicIpRange(final CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
     ResourceAllocationException {
         Long zoneId = cmd.getZoneId();
@@ -4789,6 +4925,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
 
+        // If external provider is provided, verify zone has that provider enabled and the controller added
+        Provider provider = cmd.getProvider();
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(provider) && ObjectUtils.anyNotNull(nsxProvider, netrisProvider)) {
+            boolean unsupported =
+                    (Provider.Nsx == provider && nsxProvider == null) ||
+                            (Provider.Netris == provider && netrisProvider == null);
+            if (unsupported) {
+                throw new InvalidParameterValueException(String.format("Cannot add public IP range as the zone does not support provider: %s", provider.getName()));
+            }
+        }
+
         // verify that physical network exists
         PhysicalNetworkVO pNtwk = null;
         if (physicalNetworkId != null) {
@@ -4834,7 +4983,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (zone.isSecurityGroupEnabled() && zone.getNetworkType() != DataCenter.NetworkType.Basic && forVirtualNetwork) {
-            throw new InvalidParameterValueException("Can't add virtual ip range into a zone with security group enabled");
+            throw new InvalidParameterValueException("Can't add virtual IP range into a zone with security group enabled");
         }
 
         // If networkId is not specified, and vlan is Virtual or Direct
@@ -4870,13 +5019,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Pair<Boolean, Pair<String, String>> sameSubnet = null;
         // Can add vlan range only to the network which allows it
         if (!network.getSpecifyIpRanges()) {
-            throw new InvalidParameterValueException("Network " + network + " doesn't support adding ip ranges");
+            throw new InvalidParameterValueException("Network " + network + " doesn't support adding IP ranges");
         }
 
         if (zone.getNetworkType() == DataCenter.NetworkType.Advanced) {
             if (network.getTrafficType() == TrafficType.Guest) {
                 if (network.getGuestType() != GuestType.Shared) {
-                    throw new InvalidParameterValueException(String.format("Can execute createVLANIpRanges on shared guest network, but type of this guest network %s is %s", network, network.getGuestType()));
+                    throw new InvalidParameterValueException(String.format("Can execute createVLANIpRanges on shared guest Network, but type of this guest Network %s is %s", network, network.getGuestType()));
                 }
 
                 final List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
@@ -4918,7 +5067,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return commitVlan(zoneId, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId, forVirtualNetwork, forSystemVms, networkId, physicalNetworkId, startIPv6, endIPv6, ip6Gateway,
-                ip6Cidr, domain, vlanOwner, network, sameSubnet, cmd.isForNsx());
+                ip6Cidr, domain, vlanOwner, network, sameSubnet, cmd.getProvider());
     }
 
     private Network getNetwork(Long networkId) {
@@ -4949,7 +5098,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private Vlan commitVlan(final Long zoneId, final Long podId, final String startIP, final String endIP, final String newVlanGatewayFinal, final String newVlanNetmaskFinal,
             final String vlanId, final Boolean forVirtualNetwork, final Boolean forSystemVms, final Long networkId, final Long physicalNetworkId, final String startIPv6, final String endIPv6,
-            final String ip6Gateway, final String ip6Cidr, final Domain domain, final Account vlanOwner, final Network network, final Pair<Boolean, Pair<String, String>> sameSubnet, boolean forNsx) {
+            final String ip6Gateway, final String ip6Cidr, final Domain domain, final Account vlanOwner, final Network network, final Pair<Boolean, Pair<String, String>> sameSubnet, Provider provider) {
         final GlobalLock commitVlanLock = GlobalLock.getInternLock("CommitVlan");
         commitVlanLock.lock(5);
         logger.debug("Acquiring lock for committing vlan");
@@ -4977,13 +5126,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         newVlanNetmask = sameSubnet.second().second();
                     }
                     final Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, forSystemVms, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId,
-                            false, domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr, forNsx);
+                            false, domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr, provider);
                     // create an entry in the nic_secondary table. This will be the new
                     // gateway that will be configured on the corresponding routervm.
                     return vlan;
                 }
             });
 
+            if (provider == Provider.Netris && netrisProviderDao.findByZoneId(zoneId) != null) {
+                if (Objects.nonNull(netrisServiceProvider) && Objects.nonNull(netrisServiceProvider.get())) {
+                    NetrisService netrisService = netrisServiceProvider.get();
+                    netrisService.createIPAMAllocationsForZoneLevelPublicRanges(zoneId);
+                }
+            }
             messageBus.publish(_name, MESSAGE_CREATE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, vlan);
 
             return vlan;
@@ -5008,10 +5163,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     "either both netmask and gateway should be passed or both should me omited.");
         } else {
             if (!NetUtils.sameSubnet(newStartIP, newVlanGateway, newVlanNetmask)) {
-                throw new InvalidParameterValueException("The start ip and gateway do not belong to the same subnet");
+                throw new InvalidParameterValueException("The start IP and gateway do not belong to the same subnet");
             }
             if (!NetUtils.sameSubnet(newEndIP, newVlanGateway, newVlanNetmask)) {
-                throw new InvalidParameterValueException("The end ip and gateway do not belong to the same subnet");
+                throw new InvalidParameterValueException("The end IP and gateway do not belong to the same subnet");
             }
         }
         final String cidrnew = NetUtils.getCidrFromGatewayAndNetmask(newVlanGateway, newVlanNetmask);
@@ -5040,7 +5195,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     ipv6, ip6Gateway, ip6Cidr, startIPv6, endIPv6, network);
         }
         if (newVlanGateway == null && newVlanNetmask == null && !sameSubnet) {
-            throw new InvalidParameterValueException("The ip range dose not belong to any of the existing subnets, Provide the netmask and gateway if you want to add new subnet");
+            throw new InvalidParameterValueException("The IP range dose not belong to any of the existing subnets, Provide the netmask and gateway if you want to add new subnet");
         }
         Pair<String, String> vlanDetails = null;
 
@@ -5104,7 +5259,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public Vlan createVlanAndPublicIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final boolean forVirtualNetwork, final boolean forSystemVms, final Long podId, final String startIP, final String endIP,
-                                           final String vlanGateway, final String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, final Account vlanOwner, final String startIPv6, final String endIPv6, final String vlanIp6Gateway, final String vlanIp6Cidr, boolean forNsx) {
+                                           final String vlanGateway, final String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, final Account vlanOwner, final String startIPv6, final String endIPv6, final String vlanIp6Gateway, final String vlanIp6Cidr, Provider provider) {
         final Network network = _networkModel.getNetwork(networkId);
 
         boolean ipv4 = false, ipv6 = false;
@@ -5154,6 +5309,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // 1) if vlan is specified for the guest network range, it should be the
         // same as network's vlan
         // 2) if vlan is missing, default it to the guest network's vlan
+        boolean forExternalProvider = ConfigurationService.IsIpRangeForProvider(provider);
         if (network.getTrafficType() == TrafficType.Guest) {
             boolean connectivityWithoutVlan = isConnectivityWithoutVlan(network);
             String networkVlanId = getNetworkVlanId(network, connectivityWithoutVlan);
@@ -5166,11 +5322,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } else {
                 vlanId = networkVlanId;
             }
-        } else if (network.getTrafficType() == TrafficType.Public && vlanId == null && !forNsx) {
+        } else if (network.getTrafficType() == TrafficType.Public && vlanId == null && !forExternalProvider) {
             throw new InvalidParameterValueException("Unable to determine vlan id or untagged vlan for public network");
         }
 
-        if (vlanId == null && !forNsx) {
+        if (vlanId == null && !forExternalProvider) {
             vlanId = Vlan.UNTAGGED;
         }
 
@@ -5256,10 +5412,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 vlan.getVlanTag()));
                     }
                 }
-                if (NetUtils.isSameIsolationId(vlanId, vlan.getVlanTag()) && !vlanIp6Gateway.equals(vlan.getIp6Gateway())) {
-                    throw new InvalidParameterValueException(String.format("The IP range with tag: %s has already been added with gateway %s. Please specify a different tag.",
-                            vlan.getVlanTag(), vlan.getIp6Gateway()));
-                }
             }
         }
 
@@ -5267,7 +5419,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (isSharedNetworkWithoutSpecifyVlan) {
             bypassVlanOverlapCheck = true;
         }
-        if (!bypassVlanOverlapCheck && !forNsx && !_zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).isEmpty()) {
+        if (!bypassVlanOverlapCheck && !forExternalProvider && !_zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).isEmpty()) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                     + zone.getName());
         }
@@ -5283,9 +5435,42 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Everything was fine, so persist the VLAN
         final VlanVO vlan = commitVlanAndIpRange(zoneId, networkId, physicalNetworkId, podId, startIP, endIP, vlanGateway, vlanNetmask, vlanId, domain, vlanOwner, vlanIp6Gateway, vlanIp6Cidr,
-                ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms, forNsx);
+                ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms, provider);
+
+        if (vlan != null) {
+            if (ipv4) {
+                addCidrAndGatewayForIpv4(networkId, vlanGateway, vlanNetmask);
+            } else if (ipv6) {
+                addCidrAndGatewayForIpv6(networkId, vlanIp6Gateway, vlanIp6Cidr);
+            }
+        }
 
         return vlan;
+    }
+
+    private void addCidrAndGatewayForIpv4(final long networkId, final String vlanGateway, final String vlanNetmask) {
+        final NetworkVO networkVO = _networkDao.findById(networkId);
+        String networkCidr = networkVO.getCidr();
+        String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
+        String newNetworkCidr = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkCidr, newCidr, true);
+        networkVO.setCidr(newNetworkCidr);
+
+        String networkGateway = networkVO.getGateway();
+        String newNetworkGateway = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkGateway, vlanGateway, true);
+        networkVO.setGateway(newNetworkGateway);
+        _networkDao.update(networkId, networkVO);
+    }
+
+    private void addCidrAndGatewayForIpv6(final long networkId, final String vlanIp6Gateway, final String vlanIp6Cidr) {
+        final NetworkVO networkVO = _networkDao.findById(networkId);
+        String networkIp6Cidr = networkVO.getIp6Cidr();
+        String newNetworkIp6Cidr = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkIp6Cidr, vlanIp6Cidr, true);
+        networkVO.setIp6Cidr(newNetworkIp6Cidr);
+
+        String networkIp6Gateway = networkVO.getIp6Gateway();
+        String newNetworkIp6Gateway = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkIp6Gateway, vlanIp6Gateway, true);
+        networkVO.setIp6Gateway(newNetworkIp6Gateway);
+        _networkDao.update(networkId, networkVO);
     }
 
     private boolean isConnectivityWithoutVlan(Network network) {
@@ -5384,14 +5569,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private VlanVO commitVlanAndIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final Long podId, final String startIP, final String endIP,
             final String vlanGateway, final String vlanNetmask, final String vlanId, final Domain domain, final Account vlanOwner, final String vlanIp6Gateway, final String vlanIp6Cidr,
-            final boolean ipv4, final DataCenterVO zone, final VlanType vlanType, final String ipv6Range, final String ipRange, final boolean forSystemVms, final boolean forNsx) {
+            final boolean ipv4, final DataCenterVO zone, final VlanType vlanType, final String ipv6Range, final String ipRange, final boolean forSystemVms, final Provider provider) {
         return Transaction.execute(new TransactionCallback<>() {
             @Override
             public VlanVO doInTransaction(final TransactionStatus status) {
                 VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId, physicalNetworkId, vlanIp6Gateway, vlanIp6Cidr, ipv6Range);
                 logger.debug("Saving vlan range " + vlan);
                 vlan = _vlanDao.persist(vlan);
-                vlanDetailsDao.addDetail(vlan.getId(), ApiConstants.NSX_DETAIL_KEY, String.valueOf(forNsx), true);
+                if (Objects.nonNull(provider)) {
+                    addProviderVlanDetailKey(vlan, provider);
+                }
 
                 // IPv6 use a used ip map, is different from ipv4, no need to save
                 // public ip range
@@ -5430,6 +5617,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         });
 
+    }
+
+    private void addProviderVlanDetailKey(Vlan vlan, Provider provider) {
+        vlanDetailsDao.addDetail(vlan.getId(), getProviderDetailKey(provider.getName()),
+                String.valueOf(ConfigurationService.IsIpRangeForProvider(provider)), true);
+    }
+
+    private String getProviderDetailKey(String providerName) {
+        return ConfigurationService.ProviderDetailKeyMap.get(providerName);
     }
 
     @Override
@@ -5568,10 +5764,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final List<UserIpv6AddressVO> listAllocatedIPs = _ipv6Dao.listByVlanIdAndState(id, IpAddress.State.Allocated);
 
         if (ip6Gateway != null && !ip6Gateway.equals(vlanRange.getIp6Gateway()) && (CollectionUtils.isNotEmpty(listAllocatedIPs) || CollectionUtils.isNotEmpty(ipv6Service.getAllocatedIpv6FromVlanRange(vlanRange)))) {
-            throw new InvalidParameterValueException(String.format("Unable to change ipv6 gateway to %s because some IPs are in use", ip6Gateway));
+            throw new InvalidParameterValueException(String.format("Unable to change IPv6 gateway to %s because some IPs are in use", ip6Gateway));
         }
         if (ip6Cidr != null && !ip6Cidr.equals(vlanRange.getIp6Cidr()) && (CollectionUtils.isNotEmpty(listAllocatedIPs) || CollectionUtils.isNotEmpty(ipv6Service.getAllocatedIpv6FromVlanRange(vlanRange)))) {
-            throw new InvalidParameterValueException(String.format("Unable to change ipv6 cidr to %s because some IPs are in use", ip6Cidr));
+            throw new InvalidParameterValueException(String.format("Unable to change IPv6 CIDR to %s because some IPs are in use", ip6Cidr));
         }
         ip6Gateway = MoreObjects.firstNonNull(ip6Gateway, vlanRange.getIp6Gateway());
         ip6Cidr = MoreObjects.firstNonNull(ip6Cidr, vlanRange.getIp6Cidr());
@@ -6317,10 +6513,45 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private boolean deleteAndPublishVlanAndPublicIpRange(final long userId, final long vlanDbId, final Account caller) {
         VlanVO deletedVlan = deleteVlanAndPublicIpRange(userId, vlanDbId, caller);
         if (deletedVlan != null) {
+            final boolean ipv4 = deletedVlan.getVlanGateway() != null;
+            final boolean ipv6 = deletedVlan.getIp6Gateway() != null;
+            final long networkId = deletedVlan.getNetworkId();
+
+            if (ipv4) {
+                removeCidrAndGatewayForIpv4(networkId, deletedVlan);
+            } else if (ipv6) {
+                removeCidrAndGatewayForIpv6(networkId, deletedVlan);
+            }
+
             messageBus.publish(_name, MESSAGE_DELETE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, deletedVlan);
             return true;
         }
         return false;
+    }
+
+    private void removeCidrAndGatewayForIpv4(final long networkId, VlanVO deletedVlan) {
+        final NetworkVO networkVO = _networkDao.findById(networkId);
+        String networkCidr = networkVO.getCidr();
+        String cidrToRemove = NetUtils.getCidrFromGatewayAndNetmask(deletedVlan.getVlanGateway(), deletedVlan.getVlanNetmask());
+        String newNetworkCidr = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkCidr, cidrToRemove, false);
+        networkVO.setCidr(newNetworkCidr);
+
+        String networkGateway = networkVO.getGateway();
+        String newNetworkGateway = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkGateway, deletedVlan.getVlanGateway(), false);
+        networkVO.setGateway(newNetworkGateway);
+        _networkDao.update(networkId, networkVO);
+    }
+
+    private void removeCidrAndGatewayForIpv6(final long networkId, VlanVO deletedVlan) {
+        final NetworkVO networkVO = _networkDao.findById(networkId);
+        String networkIp6Cidr = networkVO.getIp6Cidr();
+        String newNetworkIp6Cidr = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkIp6Cidr, deletedVlan.getIp6Cidr(), false);
+        networkVO.setIp6Cidr(newNetworkIp6Cidr);
+
+        String networkIp6Gateway = networkVO.getIp6Gateway();
+        String newNetworkIp6Gateway = com.cloud.utils.StringUtils.updateCommaSeparatedStringWithValue(networkIp6Gateway, deletedVlan.getIp6Gateway(), false);
+        networkVO.setIp6Gateway(newNetworkIp6Gateway);
+        _networkDao.update(networkId, networkVO);
     }
 
     @Override
@@ -6377,7 +6608,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Map<String, String> detailsStr = cmd.getDetails();
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Boolean forVpc = cmd.getForVpc();
-        Boolean forNsx = cmd.isForNsx();
+        boolean forNsx = cmd.isForNsx();
+        boolean forNetris = cmd.isForNetris();
         Boolean forTungsten = cmd.getForTungsten();
         String networkModeStr = cmd.getNetworkMode();
         boolean nsxSupportInternalLbSvc = cmd.getNsxSupportsInternalLbService();
@@ -6416,8 +6648,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        if (Boolean.TRUE.equals(forNsx) && Boolean.TRUE.equals(forTungsten)) {
-            throw new InvalidParameterValueException("Network Offering cannot be for both Tungsten-Fabric and NSX");
+        if ((Boolean.TRUE.equals(forTungsten) ? 1 : 0) + (forNetris ? 1 : 0) + (forNsx ? 1 : 0) > 1) {
+            throw new InvalidParameterValueException("Network Offering cannot be for multiple providers - Tungsten-Fabric, NSX and Netris");
         }
 
         NetworkOffering.NetworkMode networkMode = null;
@@ -6619,7 +6851,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
             maxconn = cmd.getMaxconnections();
             if (maxconn == null) {
-                maxconn = Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
+                maxconn = NetworkOrchestrationService.NETWORK_LB_HAPROXY_MAX_CONN.value();
             }
         }
         if (cmd.getKeepAliveEnabled() != null && cmd.getKeepAliveEnabled()) {
@@ -6630,7 +6862,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // offering
         final Map<Capability, String> sourceNatServiceCapabilityMap = cmd.getServiceCapabilities(Service.SourceNat);
         if (!serviceProviderMap.containsKey(Service.SourceNat) && sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
-            throw new InvalidParameterValueException("Capabilities for source NAT service can be specifed only when source NAT service is enabled for network offering.");
+            throw new InvalidParameterValueException("Capabilities for source NAT service can be specified only when source NAT service is enabled for network offering.");
         }
         validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
 
@@ -6638,7 +6870,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // offering
         final Map<Capability, String> staticNatServiceCapabilityMap = cmd.getServiceCapabilities(Service.StaticNat);
         if (!serviceProviderMap.containsKey(Service.StaticNat) && sourceNatServiceCapabilityMap != null && !staticNatServiceCapabilityMap.isEmpty()) {
-            throw new InvalidParameterValueException("Capabilities for static NAT service can be specifed only when static NAT service is enabled for network offering.");
+            throw new InvalidParameterValueException("Capabilities for static NAT service can be specified only when static NAT service is enabled for network offering.");
         }
         validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
 
@@ -6699,13 +6931,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, networkMode, domainIds, zoneIds, enable, internetProtocol, routingMode, specifyAsNumber);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, forTungsten, forNsx, forNetris, networkMode, domainIds, zoneIds, enable, internetProtocol, routingMode, specifyAsNumber);
         if (Boolean.TRUE.equals(forNsx) && nsxSupportInternalLbSvc) {
             offering.setInternalLb(true);
             offering.setPublicLb(false);
             _networkOfferingDao.update(offering.getId(), offering);
         }
-        CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
+        CallContext.current().setEventDetails(" ID: " + offering.getUuid() + " Name: " + name);
         CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
     }
@@ -6866,7 +7098,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                    final Long serviceOfferingId,
                                                    final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
                                                    final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-                                                   Boolean forTungsten, boolean forNsx, NetworkOffering.NetworkMode networkMode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
+                                                   Boolean forTungsten, boolean forNsx, boolean forNetris, NetworkOffering.NetworkMode networkMode, final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol,
                                                    final NetworkOffering.RoutingMode routingMode, final boolean specifyAsNumber) {
 
         String servicePackageUuid;
@@ -6961,6 +7193,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     } else {
                         serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VirtualRouter));
                     }
+                } else {
+                    Set<Provider> providers = serviceProviderMap.get(Service.NetworkACL);
+                    serviceProviderMap.put(Service.Gateway, Sets.newHashSet(providers.iterator().next()));
                 }
             }
         }
@@ -7093,9 +7328,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (serviceOfferingId != null) {
             offeringFinal.setServiceOfferingId(serviceOfferingId);
         }
-
-        offeringFinal.setForTungsten(Objects.requireNonNullElse(forTungsten, false));
-        offeringFinal.setForNsx(Objects.requireNonNullElse(forNsx, false));
         offeringFinal.setNetworkMode(networkMode);
 
         if (enableOffering) {
@@ -7166,7 +7398,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                 logger.trace("Added service for the network offering: " + offService + " with provider " + provider.getName());
                             }
 
-                            if (vpcOff && !forNsx) {
+                            if (vpcOff && !forNsx && !forNetris) {
                                 final List<Service> supportedSvcs = new ArrayList<>();
                                 supportedSvcs.addAll(serviceProviderMap.keySet());
                                 _vpcMgr.validateNtwkOffForVpc(offering, supportedSvcs);
@@ -7179,7 +7411,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                     if (offering != null) {
                         // Filter child domains when both parent and child domains are present
-                        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+                        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
                         List<NetworkOfferingDetailsVO> detailsVO = new ArrayList<>();
                         for (Long domainId : filteredDomainIds) {
                             detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.domainid, String.valueOf(domainId), false));
@@ -7560,7 +7792,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_DELETE, eventDescription = "deleting network offering")
     public boolean deleteNetworkOffering(final DeleteNetworkOfferingCmd cmd) {
         final Long offeringId = cmd.getId();
-        CallContext.current().setEventDetails(" Id: " + offeringId);
 
         // Verify network offering id
         final NetworkOfferingVO offering = _networkOfferingDao.findById(offeringId);
@@ -7569,6 +7800,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else if (offering.getRemoved() != null || offering.isSystemOnly()) {
             throw new InvalidParameterValueException("unable to find network offering " + offeringId);
         }
+
+        CallContext.current().setEventDetails(" ID: " + offering.getUuid());
 
         // Don't allow to delete default network offerings
         if (offering.isDefault() == true) {
@@ -7608,13 +7841,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String tags = cmd.getTags();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
-        CallContext.current().setEventDetails(" Id: " + id);
 
         // Verify input parameters
         final NetworkOfferingVO offeringToUpdate = _networkOfferingDao.findById(id);
         if (offeringToUpdate == null) {
             throw new InvalidParameterValueException("unable to find network offering " + id);
         }
+
+        CallContext.current().setEventDetails(" ID: " + offeringToUpdate.getUuid());
 
         List<Long> existingDomainIds = networkOfferingDetailsDao.findDomainIds(id);
         Collections.sort(existingDomainIds);
@@ -7645,7 +7879,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
@@ -7820,7 +8054,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         acctForUpdate.setDefaultZoneId(defaultZoneId);
 
         if (_accountDao.update(account.getId(), acctForUpdate)) {
-            CallContext.current().setEventDetails("Default zone id= " + defaultZoneId);
+            CallContext.current().setEventDetails("Default zone ID: " + defaultZoneId);
             return _accountDao.findById(account.getId());
         } else {
             return null;
@@ -8212,36 +8446,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return false;
     }
 
-    private List<Long> filterChildSubDomains(final List<Long> domainIds) {
-        List<Long> filteredDomainIds = new ArrayList<>();
-        if (domainIds != null) {
-            filteredDomainIds.addAll(domainIds);
-        }
-        if (filteredDomainIds.size() > 1) {
-            for (int i = filteredDomainIds.size() - 1; i >= 1; i--) {
-                long first = filteredDomainIds.get(i);
-                for (int j = i - 1; j >= 0; j--) {
-                    long second = filteredDomainIds.get(j);
-                    if (_domainDao.isChildDomain(filteredDomainIds.get(i), filteredDomainIds.get(j))) {
-                        filteredDomainIds.remove(j);
-                        i--;
-                    }
-                    if (_domainDao.isChildDomain(filteredDomainIds.get(j), filteredDomainIds.get(i))) {
-                        filteredDomainIds.remove(i);
-                        break;
-                    }
-                }
-            }
-        }
-        return filteredDomainIds;
-    }
-
     protected void validateCacheMode(String cacheMode){
         if(cacheMode != null &&
                 !Enums.getIfPresent(DiskOffering.DiskCacheMode.class,
                         cacheMode.toUpperCase()).isPresent()) {
             throw new InvalidParameterValueException(String.format("Invalid cache mode (%s). Please specify one of the following " +
-                    "valid cache mode parameters: none, writeback or writethrough", cacheMode));
+                    "valid cache mode parameters: none, writeback, writethrough or hypervisor_default.", cacheMode));
         }
     }
 
@@ -8274,7 +8484,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE,
                 VM_SERVICE_OFFERING_MAX_CPU_CORES, VM_SERVICE_OFFERING_MAX_RAM_SIZE, MIGRATE_VM_ACROSS_CLUSTERS,
                 ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN,
-                ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS, DELETE_QUERY_BATCH_SIZE, AllowNonRFC1918CompliantIPs
+                ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS, DELETE_QUERY_BATCH_SIZE, AllowNonRFC1918CompliantIPs, HostCapacityTypeCpuMemoryWeight
         };
     }
 

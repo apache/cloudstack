@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.event.EventTypes;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
@@ -43,13 +42,13 @@ public class MigrateVolumeCmd extends BaseAsyncCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the volume")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the volume")
     private Long volumeId;
 
-    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "destination storage pool ID to migrate the volume to")
+    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "Destination storage pool ID to migrate the volume to")
     private Long storageId;
 
-    @Parameter(name = ApiConstants.LIVE_MIGRATE, type = CommandType.BOOLEAN, required = false, description = "if the volume should be live migrated when it is attached to a running vm")
+    @Parameter(name = ApiConstants.LIVE_MIGRATE, type = CommandType.BOOLEAN, required = false, description = "If the volume should be live migrated when it is attached to a running Instance")
     private Boolean liveMigrate;
 
     @Parameter(name = ApiConstants.NEW_DISK_OFFERING_ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, description = "The new disk offering ID that replaces the current one used by the volume. This new disk offering is used to better reflect the new storage where the volume is going to be migrated to.")
@@ -110,7 +109,7 @@ public class MigrateVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return "Attempting to migrate volume Id: " + this._uuidMgr.getUuid(Volume.class, getVolumeId()) + " to storage pool Id: " + this._uuidMgr.getUuid(StoragePool.class, getStoragePoolId());
+        return "Attempting to migrate volume with ID: " + getResourceUuid(ApiConstants.VOLUME_ID) + " to storage pool: " + getResourceUuid(ApiConstants.STORAGE_ID);
     }
 
     public Long getNewDiskOfferingId() {

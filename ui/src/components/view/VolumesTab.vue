@@ -41,7 +41,7 @@
         {{ parseFloat(record.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
       </template>
       <template v-if="column.key === 'storage'">
-        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + record.storageid }">{{ text }}</router-link>
+        <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + encodeURIComponent(record.storageid) }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
     </template>

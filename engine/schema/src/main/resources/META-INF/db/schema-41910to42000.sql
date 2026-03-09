@@ -55,7 +55,7 @@ UPDATE `cloud`.`service_offering` SET ram_size = 512 WHERE unique_name IN ("Clou
                                                        AND system_use = 1 AND ram_size < 512;
 
 -- NSX Plugin --
-CREATE TABLE `cloud`.`nsx_providers` (
+CREATE TABLE IF NOT EXISTS `cloud`.`nsx_providers` (
                                          `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
                                          `uuid` varchar(40),
                                          `zone_id` bigint unsigned NOT NULL COMMENT 'Zone ID',

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -60,9 +62,11 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.bgp.BGPService;
 import com.cloud.configuration.ConfigurationManager;
@@ -84,6 +88,7 @@ import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.nsx.NsxService;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.vo.PublicIpQuarantineVO;
@@ -107,7 +112,9 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
@@ -1216,5 +1223,111 @@ public class NetworkServiceImplTest {
         } catch (InsufficientAddressCapacityException | ResourceAllocationException e) {
             Assert.fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testGetNicVlanValueForExternalVm_NonNsx() {
+        NicTO nic = mock(NicTO.class);
+        String broadcastUri = "vlan://123";
+        when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+        String result = service.getNicVlanValueForExternalVm(nic);
+        assertEquals("123", result);
+    }
+
+    @Test
+    public void testGetNicVlanValueForExternalVm_Nsx() {
+        NicTO nic = mock(NicTO.class);
+        NetworkVO networkVO = mock(NetworkVO.class);
+        NsxService nsxService = mock(NsxService.class);
+        String broadcastUri = "nsx://segment";
+        when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+        when(nic.getNetworkId()).thenReturn(42L);
+        when(networkDao.findById(42L)).thenReturn(networkVO);
+        when(networkVO.getDomainId()).thenReturn(1L);
+        when(networkVO.getDataCenterId()).thenReturn(2L);
+        when(networkVO.getAccountId()).thenReturn(3L);
+        when(networkVO.getVpcId()).thenReturn(4L);
+        when(networkVO.getId()).thenReturn(5L);
+        when(nsxService.getSegmentId(1L, 2L, 3L, 4L, 5L)).thenReturn("segment-123");
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            when(ComponentContext.getDelegateComponentOfType(NsxService.class)).thenReturn(nsxService);
+            String result = service.getNicVlanValueForExternalVm(nic);
+            assertEquals("segment-123", result);
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetNicVlanValueForExternalVm_Nsx_NoBean() {
+        NicTO nic = mock(NicTO.class);
+        NetworkVO networkVO = mock(NetworkVO.class);
+        String broadcastUri = "nsx://segment";
+        when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+        when(nic.getNetworkId()).thenReturn(42L);
+        when(networkDao.findById(42L)).thenReturn(networkVO);
+        try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+            when(ComponentContext.getDelegateComponentOfType(NsxService.class)).thenThrow(NoSuchBeanDefinitionException.class);
+            service.getNicVlanValueForExternalVm(nic);
+        }
+    }
+
+    @Test
+    public void testGetIpAddressesFromIps() {
+        // Test with valid IPv4, IPv6 and MAC address
+        Network.IpAddresses result = service.getIpAddressesFromIps("192.168.1.1", "2001:db8::1", "00:11:22:33:44:55");
+        Assert.assertEquals("192.168.1.1", result.getIp4Address());
+        Assert.assertEquals("2001:db8::1", result.getIp6Address());
+        Assert.assertEquals("00:11:22:33:44:55", result.getMacAddress());
+
+        // Test with all null values
+        result = service.getIpAddressesFromIps(null, null, null);
+        Assert.assertNull(result.getIp4Address());
+        Assert.assertNull(result.getIp6Address());
+        Assert.assertNull(result.getMacAddress());
+
+        // Test with invalid MAC address (non-unicast)
+        try {
+            service.getIpAddressesFromIps(null, null, "ff:ff:ff:ff:ff:ff");
+            Assert.fail("Expected InvalidParameterValueException for non-unicast MAC address");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals("Mac address is not unicast: ff:ff:ff:ff:ff:ff", e.getMessage());
+        }
+
+        // Test with invalid MAC address (invalid format)
+        try {
+            service.getIpAddressesFromIps(null, null, "invalid-mac");
+            Assert.fail("Expected InvalidParameterValueException for invalid MAC address format");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertEquals("Mac address is not valid: invalid-mac", e.getMessage());
+        }
+    }
+
+    @Test
+    public void addProjectNetworksConditionToSearch_includesProjectNetworksWhenNotSkipped() {
+        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+        SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
+        service.addProjectNetworksConditionToSearch(sc, false, -1L);
+        Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.NNULL);
+        Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
+    }
+
+    @Test
+    public void addProjectNetworksConditionToSearch_excludesProjectNetworksWhenSkipped() {
+        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+        SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
+        service.addProjectNetworksConditionToSearch(sc, true, -1L);
+        Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.NEQ, Account.Type.PROJECT);
+        Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
+    }
+
+    @Test
+    public void addProjectNetworksConditionToSearch_includesSpecificProjectWhenProjectIdProvided() {
+        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+        SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
+        service.addProjectNetworksConditionToSearch(sc, false, 123L);
+        Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.EQ, Account.Type.PROJECT);
+        Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
     }
 }

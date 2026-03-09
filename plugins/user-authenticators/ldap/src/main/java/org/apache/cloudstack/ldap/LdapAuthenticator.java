@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.auth.UserAuthenticator;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
@@ -45,6 +46,8 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
     @Inject
     private AccountManager _accountManager;
 
+    private static final String LDAP_READ_TIMED_OUT_MESSAGE = "LDAP response read timed out";
+
     public LdapAuthenticator() {
         super();
     }
@@ -57,10 +60,10 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
 
     @Override
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(final String username, final String password, final Long domainId, final Map<String, Object[]> requestParameters) {
-        Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<>(false, null);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Retrieving ldap user: " + username);
+            logger.debug("Retrieving ldap user: {}", username);
         }
 
         // TODO not allowing an empty password is a policy we shouldn't decide on. A private cloud may well want to allow this.
@@ -74,8 +77,8 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                     return rc;
                 }
                 List<LdapTrustMapVO> ldapTrustMapVOs = getLdapTrustMapVOS(domainId);
-                if(ldapTrustMapVOs != null && ldapTrustMapVOs.size() > 0) {
-                    if(ldapTrustMapVOs.size() == 1 && ldapTrustMapVOs.get(0).getAccountId() == 0) {
+                if (CollectionUtils.isNotEmpty(ldapTrustMapVOs)) {
+                    if (ldapTrustMapVOs.size() == 1 && ldapTrustMapVOs.get(0).getAccountId() == 0) {
                         if (logger.isTraceEnabled()) {
                             logger.trace("We have a single mapping of a domain to an ldap group or ou");
                         }
@@ -88,7 +91,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                     }
                 } else {
                     if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("'this' domain (%d) is not linked to ldap follow normal authentication", domainId));
+                        logger.trace("'this' domain ({}) is not linked to LDAP follow normal authentication", domainId);
                     }
                     rc = authenticate(username, password, domainId, user);
                 }
@@ -112,10 +115,10 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
      * @param domainId domain the user is trying to log on to
      * @param userAccount cloudstack user object
      * @param ldapTrustMapVOs the trust mappings of accounts in the domain to ldap groups
-     * @return false if the ldap user object does not exist, is not mapped to an account, is mapped to multiple accounts or if authenitication fails
+     * @return {false,<error-code>} if the ldap user object does not exist, is not mapped to an account, is mapped to multiple accounts or if authentication fails
      */
     Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, UserAccount userAccount, List<LdapTrustMapVO> ldapTrustMapVOs) {
-        Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<>(false, null);
         try {
             LdapUser ldapUser = _ldapManager.getUser(username, domainId);
             List<String> memberships = ldapUser.getMemberships();
@@ -125,11 +128,11 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
             mappedGroups.retainAll(memberships);
             tracelist("actual groups for " + username, mappedGroups);
             // check membership, there must be only one match in this domain
-            if(ldapUser.isDisabled()) {
+            if (ldapUser.isDisabled()) {
                 logAndDisable(userAccount, "attempt to log on using disabled ldap user " + userAccount.getUsername(), false);
-            } else if(mappedGroups.size() > 1) {
+            } else if (mappedGroups.size() > 1) {
                 logAndDisable(userAccount, "user '" + username + "' is mapped to more then one account in domain and will be disabled.", false);
-            } else if(mappedGroups.size() < 1) {
+            } else if (mappedGroups.isEmpty()) {
                 logAndDisable(userAccount, "user '" + username + "' is not mapped to an account in domain and will be removed.", true);
             } else {
                 // a valid ldap configured user exists
@@ -137,12 +140,12 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 // we could now assert that ldapTrustMapVOs.contains(mapping);
                 // createUser in Account can only be done by account name not by account id;
                 Account account = _accountManager.getAccount(mapping.getAccountId());
-                if(null == account) {
+                if (null == account) {
                     throw new CloudRuntimeException(String.format("account for user (%s) not found by id %d", username, mapping.getAccountId()));
                 }
                 String accountName = account.getAccountName();
                 rc.first(_ldapManager.canAuthenticate(ldapUser.getPrincipal(), password, domainId));
-                if (! rc.first()) {
+                if (!rc.first()) {
                     rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
                 }
                 // for security reasons we keep processing on faulty login attempt to not give a way information on userid existence
@@ -162,7 +165,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                     userAccount = _accountManager.getUserAccountById(user.getId());
                 } else {
                     // not a new user, check if mapped group has changed
-                    if(userAccount.getAccountId() != mapping.getAccountId()) {
+                    if (userAccount.getAccountId() != mapping.getAccountId()) {
                         final Account mappedAccount = _accountManager.getAccount(mapping.getAccountId());
                         if (mappedAccount == null || mappedAccount.getRemoved() != null) {
                             throw new CloudRuntimeException("Mapped account for users does not exist. Please contact your administrator.");
@@ -174,10 +177,19 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
             }
         } catch (NoLdapUserMatchingQueryException e) {
             logger.debug(e.getMessage());
-            disableUserInCloudStack(userAccount);
+            processLdapUserErrorMessage(userAccount, e.getMessage(), rc);
         }
 
         return rc;
+    }
+
+    private void processLdapUserErrorMessage(UserAccount user, String errorMessage, Pair<Boolean, ActionOnFailedAuthentication> rc) {
+        if (StringUtils.isNotEmpty(errorMessage) && errorMessage.contains(LDAP_READ_TIMED_OUT_MESSAGE) && !rc.first()) {
+            rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+        } else {
+            // no user in ldap ==>> disable user in cloudstack
+            disableUserInCloudStack(user);
+        }
     }
 
     private void tracelist(String msg, List<String> listToTrace) {
@@ -197,7 +209,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         if (logger.isInfoEnabled()) {
             logger.info(msg);
         }
-        if(remove) {
+        if (remove) {
             removeUserInCloudStack(userAccount);
         } else {
             disableUserInCloudStack(userAccount);
@@ -219,33 +231,32 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
      * @param domainId domain the user is trying to log on to
      * @param user cloudstack user object
      * @param ldapTrustMapVO the trust mapping for the domain to the ldap group
-     * @return false if the ldap user object does not exist or authenitication fails
+     * @return {false, <error-code>} if the ldap user object does not exist or authentication fails
      */
     private Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, UserAccount user, LdapTrustMapVO ldapTrustMapVO) {
-        Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<>(false, null);
         try {
             LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType().toString(), ldapTrustMapVO.getName(), domainId);
             final Account.Type accountType = ldapTrustMapVO.getAccountType();
             processLdapUser(password, domainId, user, rc, ldapUser, accountType);
         } catch (NoLdapUserMatchingQueryException e) {
             logger.debug(e.getMessage());
-            // no user in ldap ==>> disable user in cloudstack
-            disableUserInCloudStack(user);
+            processLdapUserErrorMessage(user, e.getMessage(), rc);
         }
         return rc;
     }
 
     private void processLdapUser(String password, Long domainId, UserAccount user, Pair<Boolean, ActionOnFailedAuthentication> rc, LdapUser ldapUser, Account.Type accountType) {
-        if(!ldapUser.isDisabled()) {
+        if (!ldapUser.isDisabled()) {
             rc.first(_ldapManager.canAuthenticate(ldapUser.getPrincipal(), password, domainId));
-            if(rc.first()) {
-                if(user == null) {
+            if (rc.first()) {
+                if (user == null) {
                     // import user to cloudstack
                     createCloudStackUserAccount(ldapUser, domainId, accountType);
                 } else {
                     enableUserInCloudStack(user);
                 }
-            } else if(user != null) {
+            } else if (user != null) {
                 rc.second(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
             }
         } else {
@@ -260,34 +271,38 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
      * @param password pass phrase
      * @param domainId domain the user is trying to log on to
      * @param user cloudstack user object
-     * @return false if either user object does not exist or authenitication fails
+     * @return {false,<error-code>} if either user object does not exist or authentication fails
      */
     Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, UserAccount user) {
         boolean result = false;
+        boolean timedOut = false;
 
-        if(user != null ) {
+        if (user != null ) {
             try {
                 LdapUser ldapUser = _ldapManager.getUser(username, domainId);
-                if(!ldapUser.isDisabled()) {
+                if (!ldapUser.isDisabled()) {
                     result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password, domainId);
                 } else {
-                    logger.debug("user with principal "+ ldapUser.getPrincipal() + " is disabled in ldap");
+                    logger.debug("user with principal {} is disabled in ldap", () -> ldapUser.getPrincipal());
                 }
             } catch (NoLdapUserMatchingQueryException e) {
                 logger.debug(e.getMessage());
+                if (e.getMessage().contains(LDAP_READ_TIMED_OUT_MESSAGE)) {
+                    timedOut = true;
+                }
             }
         }
-        return processResultAndAction(user, result);
+        return processResultAndAction(user, result, timedOut);
     }
 
-    private Pair<Boolean, ActionOnFailedAuthentication> processResultAndAction(UserAccount user, boolean result) {
-        return (!result && user != null) ?
-                new Pair<Boolean, ActionOnFailedAuthentication>(result, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT):
-                new Pair<Boolean, ActionOnFailedAuthentication>(result, null);
+    private Pair<Boolean, ActionOnFailedAuthentication> processResultAndAction(UserAccount user, boolean result, boolean timedOut) {
+        return (!result && (user != null || timedOut)) ?
+                new Pair<>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT):
+                new Pair<>(result, null);
     }
 
     private void enableUserInCloudStack(UserAccount user) {
-        if(user != null && (user.getState().equalsIgnoreCase(Account.State.DISABLED.toString()))) {
+        if (user != null && (user.getState().equalsIgnoreCase(Account.State.DISABLED.toString()))) {
             _accountManager.enableUser(user.getId());
         }
     }

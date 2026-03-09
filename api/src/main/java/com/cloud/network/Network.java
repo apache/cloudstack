@@ -206,6 +206,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider Tungsten = new Provider("Tungsten", false);
 
         public static final Provider Nsx = new Provider("Nsx", false);
+        public static final Provider Netris = new Provider("Netris", false);
 
         private final String name;
         private final boolean isExternal;
@@ -324,9 +325,9 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     public enum State {
 
-        Allocated("Indicates the network configuration is in allocated but not setup"), Setup("Indicates the network configuration is setup"), Implementing(
-                "Indicates the network configuration is being implemented"), Implemented("Indicates the network configuration is in use"), Shutdown(
-                "Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
+        Allocated("Indicates the Network configuration is in allocated but not setup"), Setup("Indicates the Network configuration is setup"), Implementing(
+                "Indicates the Network configuration is being implemented"), Implemented("Indicates the Network configuration is in use"), Shutdown(
+                "Indicates the Network configuration is being destroyed"), Destroy("Indicates that the Network is destroyed");
 
         protected static final StateMachine2<State, Network.Event, Network> s_fsm = new StateMachine2<State, Network.Event, Network>();
 

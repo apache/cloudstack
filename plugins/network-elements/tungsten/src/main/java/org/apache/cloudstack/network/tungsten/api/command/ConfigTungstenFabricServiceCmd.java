@@ -54,7 +54,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-@APICommand(name = ConfigTungstenFabricServiceCmd.APINAME, description = "config Tungsten-Fabric service",
+@APICommand(name = ConfigTungstenFabricServiceCmd.APINAME, description = "Config Tungsten-Fabric service",
     responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigTungstenFabricServiceCmd extends BaseCmd {
     public static final String APINAME = "configTungstenFabricService";
@@ -72,10 +72,10 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
     PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true
-        , description = "the ID of zone")
+        , description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "the ID of physical network")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "The ID of physical network")
     private Long physicalNetworkId;
 
     public Long getZoneId() {
@@ -165,7 +165,6 @@ public class ConfigTungstenFabricServiceCmd extends BaseCmd {
                             "Default offering for Tungsten-Fabric Network", Networks.TrafficType.Guest, false, false,
                             null, null, true, NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated,
                             false, false, false, false, true, false);
-                    networkOfferingVO.setForTungsten(true);
                     networkOfferingVO.setState(NetworkOffering.State.Enabled);
                     networkOfferingDao.persist(networkOfferingVO);
 

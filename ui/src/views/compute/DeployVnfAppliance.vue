@@ -163,6 +163,7 @@
                       :value="serviceOffering ? serviceOffering.id : ''"
                       :loading="loading.serviceOfferings"
                       :preFillContent="dataPreFill"
+                      :show-gpu-filter="zone.gputotal && zone.gputotal > 0"
                       :minimum-cpunumber="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpunumber ? selectedTemplateConfiguration.cpunumber : 0"
                       :minimum-cpuspeed="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.cpuspeed ? selectedTemplateConfiguration.cpuspeed : 0"
                       :minimum-memory="templateConfigurationExists && selectedTemplateConfiguration && selectedTemplateConfiguration.memory ? selectedTemplateConfiguration.memory : 0"
@@ -359,6 +360,7 @@
                   <div>
                     <vnf-nics-selection
                       :items="templateVnfNics"
+                      :templateNics="templateNics"
                       :networks="networks"
                       @update-vnf-nic-networks="($event) => updateVnfNicNetworks($event)" />
                   </div>
@@ -549,7 +551,7 @@
                           @change="val => { dynamicscalingenabled = val }"/>
                       </a-form-item>
                     </a-form-item>
-                    <a-form-item :label="$t('label.userdata')">
+                    <a-form-item :label="$t('label.user.data')">
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
                           <a-typography-text>
@@ -603,11 +605,11 @@
                         </div><br/><br/>
                         <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
                           <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-                            {{ $t('label.userdata.do.override') }}
+                            {{ $t('label.user.data.do.override') }}
                             <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
                           </span>
                           <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-                            {{ $t('label.userdata.do.append') }}
+                            {{ $t('label.user.data.do.append') }}
                             <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
                           </span>
                           <a-step
@@ -810,7 +812,7 @@
                 :deployButtonMenuOptions="deployMenuOptions"
                 @handle-cancel="() => $router.back()"
                 @handle-deploy="handleSubmit"
-                @handle-deploy-menu="handleSubmitAndStay" />
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </div>
           </a-form>
         </a-card>
@@ -825,7 +827,7 @@
                 :deployButtonMenuOptions="deployMenuOptions"
                 @handle-cancel="() => $router.back()"
                 @handle-deploy="handleSubmit"
-                @handle-deploy-menu="handleSubmitAndStay" />
+                @handle-deploy-menu="(index, e) => handleSubmitAndStay(e)" />
             </template>
           </info-card>
         </a-affix>
@@ -952,8 +954,7 @@ export default {
         keyboards: [],
         bootTypes: [],
         bootModes: [],
-        ioPolicyTypes: [],
-        dynamicScalingVmConfig: false
+        ioPolicyTypes: []
       },
       rowCount: {},
       loading: {
@@ -1011,11 +1012,11 @@ export default {
       userDataValues: {},
       templateUserDataCols: [
         {
-          title: this.$t('label.userdata'),
+          title: this.$t('label.user.data'),
           dataIndex: 'userdata'
         },
         {
-          title: this.$t('label.userdatapolicy'),
+          title: this.$t('label.user.data.policy'),
           dataIndex: 'userdataoverridepolicy'
         }
       ],
@@ -1290,19 +1291,21 @@ export default {
       }]
     },
     userdataTabList () {
-      return [
-        {
-          key: 'userdataregistered',
-          tab: this.$t('label.userdata.registered')
-        },
-        {
-          key: 'userdatatext',
-          tab: this.$t('label.userdata.text')
-        }
-      ]
+      let tabList = []
+      tabList = [{
+        key: 'userdataregistered',
+        tab: this.$t('label.user.data.registered')
+      },
+      {
+        key: 'userdatatext',
+        tab: this.$t('label.user.data.text')
+      }]
+
+      return tabList
     },
     showVnfNicsSection () {
-      return this.networks && this.networks.length > 0 && this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
+      return ((this.networks && this.networks.length > 0) || (this.templateNics && this.templateNics.length > 0)) &&
+        this.vm.templateid && this.templateVnfNics && this.templateVnfNics.length > 0
     },
     showVnfConfigureManagement () {
       const managementDeviceIds = []
@@ -1312,9 +1315,14 @@ export default {
         }
       }
       for (const deviceId of managementDeviceIds) {
+        if (this.templateNics && this.templateNics[deviceId] &&
+          ((this.templateNics[deviceId].selectednetworktype === 'Isolated' && this.templateNics[deviceId].selectednetworkvpcid === undefined) ||
+            (this.templateNics[deviceId].selectednetworktype === 'Shared' && this.templateNics[deviceId].selectednetworkwithsg))) {
+          return true
+        }
         if (this.vnfNicNetworks && this.vnfNicNetworks[deviceId] &&
           ((this.vnfNicNetworks[deviceId].type === 'Isolated' && this.vnfNicNetworks[deviceId].vpcid === undefined) ||
-            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.zone.securitygroupsenabled))) {
+            (this.vnfNicNetworks[deviceId].type === 'Shared' && this.vnfNicNetworks[deviceId].service.filter(svc => svc.name === 'SecurityGroupProvider')))) {
           return true
         }
       }
@@ -1330,7 +1338,7 @@ export default {
       return Boolean('listUserData' in this.$store.getters.apis)
     },
     dynamicScalingVmConfigValue () {
-      return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
+      return this.$store.getters.features.dynamicscalingenabled
     },
     isCustomizedDiskIOPS () {
       return this.diskSelected?.iscustomizediops || false
@@ -1720,7 +1728,7 @@ export default {
         }
         if (!apiName) return resolve(zones)
 
-        postAPI(apiName, params).then(json => {
+        getAPI(apiName, params).then(json => {
           let objectName
           const responseName = [apiName.toLowerCase(), 'response'].join('')
           for (const key in json[responseName]) {
@@ -1760,7 +1768,7 @@ export default {
       }
       this.fetchBootTypes()
       this.fetchBootModes()
-      this.fetchInstaceGroups()
+      this.fetchInstanceGroups()
       this.fetchIoPolicyTypes()
       nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
@@ -1815,7 +1823,7 @@ export default {
         { id: 'storage_specific', description: 'storage_specific' }
       ]
     },
-    fetchInstaceGroups () {
+    fetchInstanceGroups () {
       this.options.instanceGroups = []
       getAPI('listInstanceGroups', {
         account: this.$store.getters.userInfo.account,
@@ -2089,7 +2097,7 @@ export default {
         // All checked networks should be used and only once.
         // Required NIC must be associated to a network
         // DeviceID must be consequent
-        if (this.templateVnfNics && this.templateVnfNics.length > 0) {
+        if (this.templateVnfNics && this.templateVnfNics.length > 0 && (!this.templateNics || this.templateNics.length === 0)) {
           let nextDeviceId = 0
           const usedNetworkIds = []
           const keys = Object.keys(this.vnfNicNetworks)
@@ -2446,7 +2454,7 @@ export default {
         const param = this.params.zones
         const args = { showicon: true }
         if (zoneId) args.id = zoneId
-        postAPI(param.list, args).then(json => {
+        getAPI(param.list, args).then(json => {
           const zoneResponse = json.listzonesresponse.zone || []
           if (listZoneAllow && listZoneAllow.length > 0) {
             zoneResponse.map(zone => {
@@ -2475,51 +2483,60 @@ export default {
         param.loading = true
         param.opts = []
         const options = param.options || {}
-        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
+        if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'hypervisors'].includes(name)) {
           options.listall = true
         }
-        postAPI(param.list, options).then((response) => {
+        getAPI(param.list, options).then((response) => {
           param.loading = false
           _.map(response, (responseItem, responseKey) => {
             if (Object.keys(responseItem).length === 0) {
               this.rowCount[name] = 0
               this.options[name] = []
-              return resolve(null)
+              return
             }
             if (!responseKey.includes('response')) {
-              return resolve(null)
+              return
             }
             _.map(responseItem, (response, key) => {
               if (key === 'count') {
                 this.rowCount[name] = response
                 return
               }
-              param.opts = response
-              this.options[name] = response
-
-              if (name === 'hypervisors') {
-                const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
-                this.dataPreFill.hypervisor = hypervisorFromResponse
-                this.form.hypervisor = hypervisorFromResponse
+              if (!responseKey.includes('response')) {
+                return resolve(null)
               }
+              _.map(responseItem, (response, key) => {
+                if (key === 'count') {
+                  this.rowCount[name] = response
+                  return
+                }
+                param.opts = response
+                this.options[name] = response
 
-              if (param.field) {
-                this.fillValue(param.field)
+                if (name === 'hypervisors') {
+                  const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
+                  this.dataPreFill.hypervisor = hypervisorFromResponse
+                  this.form.hypervisor = hypervisorFromResponse
+                }
+
+                if (param.field) {
+                  this.fillValue(param.field)
+                }
+              })
+
+              if (name === 'zones') {
+                let zoneid = ''
+                if (this.$route.query.zoneid) {
+                  zoneid = this.$route.query.zoneid
+                } else if (this.options.zones.length === 1) {
+                  zoneid = this.options.zones[0].id
+                }
+                if (zoneid) {
+                  this.form.zoneid = zoneid
+                  this.onSelectZoneId(zoneid)
+                }
               }
             })
-
-            if (name === 'zones') {
-              let zoneid = ''
-              if (this.$route.query.zoneid) {
-                zoneid = this.$route.query.zoneid
-              } else if (this.options.zones.length === 1) {
-                zoneid = this.options.zones[0].id
-              }
-              if (zoneid) {
-                this.form.zoneid = zoneid
-                this.onSelectZoneId(zoneid)
-              }
-            }
           })
           resolve(response)
         }).catch(function (error) {
@@ -2536,15 +2553,16 @@ export default {
       if (this.isModernImageSelection && this.form.guestoscategoryid && !['-1', '0'].includes(this.form.guestoscategoryid)) {
         args.oscategoryid = this.form.guestoscategoryid
       }
-      if (args.keyword || (args.category && args.category !== templateFilter)) {
+      if (!args.page || args.keyword || (args.category && args.category !== templateFilter)) {
         args.page = 1
-        args.pageSize = args.pageSize || 10
       }
+      args.pageSize = args.pageSize || 10
       args.zoneid = _.get(this.zone, 'id')
       if (this.isZoneSelectedMultiArch) {
         args.arch = this.selectedArchitecture
       }
       args.templatefilter = templateFilter
+      args.isready = true
       args.details = 'all'
       args.showicon = 'true'
       args.id = this.queryTemplateId
@@ -2709,6 +2727,9 @@ export default {
             var network = this.options.networks[Math.min(i, this.options.networks.length - 1)]
             nic.selectednetworkid = network.id
             nic.selectednetworkname = network.name
+            nic.selectednetworktype = network.type
+            nic.selectednetworkvpcid = network.vpcid
+            nic.selectednetworkwithsg = network.service.filter(svc => svc.name === 'SecurityGroupProvider').length > 0
             this.nicToNetworkSelection.push({ nic: nic.id, network: network.id })
           }
         }
@@ -2756,12 +2777,12 @@ export default {
           configuration.cpunumber = 0
           configuration.cpuspeed = 0
           configuration.memory = 0
-          for (var harwareItem of configuration.hardwareItems) {
-            if (harwareItem.resourceType === 'Processor') {
-              configuration.cpunumber = harwareItem.virtualQuantity
-              configuration.cpuspeed = harwareItem.reservation
-            } else if (harwareItem.resourceType === 'Memory') {
-              configuration.memory = harwareItem.virtualQuantity
+          for (var hardwareItem of configuration.hardwareItems) {
+            if (hardwareItem.resourceType === 'Processor') {
+              configuration.cpunumber = hardwareItem.virtualQuantity
+              configuration.cpuspeed = hardwareItem.reservation
+            } else if (hardwareItem.resourceType === 'Memory') {
+              configuration.memory = hardwareItem.virtualQuantity
             }
           }
           configurations.push(configuration)

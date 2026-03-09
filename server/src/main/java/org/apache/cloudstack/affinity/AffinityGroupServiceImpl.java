@@ -43,6 +43,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -285,7 +286,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         if(account == null && domainId != null){
             group = _affinityGroupDao.findDomainLevelGroupByName(domainId, affinityGroupName);
         }else{
-            Long accountId = _accountMgr.finalyzeAccountId(account, domainId, projectId, true);
+            Long accountId = _accountMgr.finalizeAccountId(account, domainId, projectId, true);
             if(accountId == null){
                 Account caller = CallContext.current().getCallingAccount();
                 group = _affinityGroupDao.findByAccountAndName(caller.getAccountId(), affinityGroupName);
@@ -433,6 +434,12 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         }
         if (UserVmManager.SHAREDFSVM.equals(vmInstance.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
+        }
+        if (Hypervisor.HypervisorType.External.equals(vmInstance.getHypervisorType())) {
+            logger.error("Update VM Affinity Group not supported for {} as it is {} hypervisor instance",
+                    vmInstance, Hypervisor.HypervisorType.External.name());
+            throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
+                    vmInstance.getName()));
         }
 
         // Check that the VM is stopped

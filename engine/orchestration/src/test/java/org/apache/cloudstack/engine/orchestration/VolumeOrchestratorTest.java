@@ -241,7 +241,7 @@ public class VolumeOrchestratorTest {
 
         volumeOrchestrator.importVolume(volumeType, name, diskOffering, sizeInBytes, null, null,
                 zoneId, hypervisorType, null, null, owner,
-                deviceId, poolId, path, chainInfo);
+                deviceId, poolId, Storage.StoragePoolType.NetworkFilesystem, path, chainInfo);
 
         VolumeVO volume = volumeVOMockedConstructionConstruction.constructed().get(0);
         Mockito.verify(volume, Mockito.never()).setInstanceId(Mockito.anyLong());

@@ -93,15 +93,15 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name for the Kubernetes cluster")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name for the Kubernetes cluster")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "description for the Kubernetes cluster")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description for the Kubernetes cluster")
     private String description;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true,
-            description = "availability zone in which Kubernetes cluster to be launched")
+            description = "Availability zone in which Kubernetes cluster to be launched")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.KUBERNETES_VERSION_ID, type = CommandType.UUID, entityType = KubernetesSupportedVersionResponse.class,
@@ -110,7 +110,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
-            description = "the ID of the service offering for the virtual machines in the cluster.")
+            description = "The ID of the service offering for the Instances in the cluster.")
     private Long serviceOfferingId;
 
     @ACL(accessType = AccessType.UseEntry)
@@ -133,13 +133,13 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     private Long etcdNodes;
 
     @ACL(accessType = AccessType.UseEntry)
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the" +
-            " virtual machine. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "An optional Account for the" +
+            " Instance. Must be used with domainId.")
     private String accountName;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
-            description = "an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used. " +
+            description = "An optional domainId for the Instance. If the Account parameter is used, domainId must also be used. " +
                     "Hosts dedicated to the specified domain will be used for deploying the cluster")
     private Long domainId;
 
@@ -155,32 +155,32 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING,
-            description = "name of the ssh key pair used to login to the virtual machines")
+            description = "Name of the SSH key pair used to login to the Instances")
     private String sshKeyPairName;
 
     @Parameter(name=ApiConstants.MASTER_NODES, type = CommandType.LONG,
-            description = "number of Kubernetes cluster master nodes, default is 1. This option is deprecated, please use 'controlnodes' parameter.")
+            description = "Number of Kubernetes cluster master nodes, default is 1. This option is deprecated, please use 'controlnodes' parameter.")
     @Deprecated
     private Long masterNodes;
 
     @Parameter(name=ApiConstants.CONTROL_NODES, type = CommandType.LONG,
-            description = "number of Kubernetes cluster control nodes, default is 1")
+            description = "Number of Kubernetes cluster control nodes, default is 1")
     private Long controlNodes;
 
     @Parameter(name=ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, type = CommandType.STRING,
-            description = "external load balancer IP address while using shared network with Kubernetes HA cluster")
+            description = "External load balancer IP address while using shared network with Kubernetes HA cluster")
     private String externalLoadBalancerIpAddress;
 
     @Parameter(name=ApiConstants.SIZE, type = CommandType.LONG,
-            description = "number of Kubernetes cluster worker nodes")
+            description = "Number of Kubernetes cluster worker nodes")
     private Long clusterSize;
 
     @Parameter(name = ApiConstants.DOCKER_REGISTRY_USER_NAME, type = CommandType.STRING,
-            description = "user name for the docker image private registry")
+            description = "User name for the docker image private registry")
     private String dockerRegistryUserName;
 
     @Parameter(name = ApiConstants.DOCKER_REGISTRY_PASSWORD, type = CommandType.STRING,
-            description = "password for the docker image private registry")
+            description = "Password for the docker image private registry")
     private String dockerRegistryPassword;
 
     @Parameter(name = ApiConstants.DOCKER_REGISTRY_URL, type = CommandType.STRING,
@@ -188,10 +188,10 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     private String dockerRegistryUrl;
 
     @Parameter(name = ApiConstants.NODE_ROOT_DISK_SIZE, type = CommandType.LONG,
-            description = "root disk size in GB for each node")
+            description = "Root disk size in GB for each node")
     private Long nodeRootDiskSize;
 
-    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "type of the cluster: CloudManaged, ExternalManaged. The default value is CloudManaged.", since="4.19.0")
+    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "Type of the cluster: CloudManaged, ExternalManaged. The default value is CloudManaged.", since="4.19.0")
     private String clusterType;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which the CKS cluster is to be deployed. This is required if the zone in which the CKS cluster is being deployed has clusters with different hypervisor types.", since = "4.21.0")
@@ -206,6 +206,9 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
                     "cniconfigdetails[1].key=secretkey&cniconfigdetails[1].value=8dshfsss",
             since = "4.21.0")
     private Map cniConfigDetails;
+
+    @Parameter(name = ApiConstants.ENABLE_CSI, type = CommandType.BOOLEAN, description = "if true, setups up CloudStack CSI driver", since = "4.22.0")
+    private Boolean enableCsi;
 
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the network")
     private Long asNumber;
@@ -371,6 +374,10 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         return cniConfigId;
     }
 
+    public boolean getEnableCsi() {
+        return Objects.nonNull(enableCsi) ? enableCsi : Boolean.FALSE;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -381,7 +388,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }

@@ -160,4 +160,19 @@ public class FileUtil {
     public static String readResourceFile(String resource) throws IOException {
         return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
     }
+
+    public static boolean deleteRecursively(Path path) throws IOException {
+        LOGGER.debug("Deleting path: {}", path);
+        if (Files.isDirectory(path)) {
+            try (Stream<Path> entries = Files.list(path)) {
+                List<Path> list = entries.collect(Collectors.toList());
+                for (Path entry : list) {
+                    if (!deleteRecursively(entry)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return Files.deleteIfExists(path);
+    }
 }

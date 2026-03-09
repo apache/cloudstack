@@ -241,6 +241,21 @@ public class StringUtilsTest {
     }
 
     @Test
+    public void testCleanSessionkeyFromAccessLogString() {
+        final String input = "GET /client/api/?managementserverid=cad7010f-216f-48cb-af11-280588863c4e&command=readyForShutdown&response=json&sessionkey=-FrgnKy6pj-JB4BI2sXqo HTTP/1.1\" 200 180 \"-\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15 Ddg/18.5";
+        final String expected = "GET /client/api/?managementserverid=cad7010f-216f-48cb-af11-280588863c4e&command=readyForShutdown&response=json& HTTP/1.1\" 200 180 \"-\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15 Ddg/18.5";
+        final String result = StringUtils.cleanString(input);
+        assertEquals(expected, result);
+    }
+    @Test
+    public void testCleanSessionkeyFromRequestJsonString() {
+        final String input = "{id=64b5e71d-2ae8-11ef-9466-1e00c400042b, showicon=true, command=listUsers, response=json, sessionkey=lXfAicKQXPBzt7KjLx6DwVfcOuA}";
+        final String expected = "{id=64b5e71d-2ae8-11ef-9466-1e00c400042b, showicon=true, command=listUsers, response=json, }";
+        final String result = StringUtils.cleanString(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
     public void listToCsvTags() {
         assertEquals("a,b,c", StringUtils.listToCsvTags(Arrays.asList("a","b", "c")));
         assertEquals("", StringUtils.listToCsvTags(new ArrayList<String>()));

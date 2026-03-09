@@ -32,6 +32,7 @@ export const pollJobPlugin = {
        * @param {String} [name='']
        * @param {String} [title='']
        * @param {String} [description='']
+       * @param {Boolean} [showSuccessMessage=true]
        * @param {String} [successMessage=Success]
        * @param {Function} [successMethod=() => {}]
        * @param {String} [errorMessage=Error]
@@ -49,6 +50,7 @@ export const pollJobPlugin = {
         name = '',
         title = '',
         description = '',
+        showSuccessMessage = true,
         successMessage = i18n.global.t('label.success'),
         successMethod = () => {},
         errorMessage = i18n.global.t('label.error'),
@@ -92,18 +94,22 @@ export const pollJobPlugin = {
         const result = json.queryasyncjobresultresponse
         eventBus.emit('update-job-details', { jobId, resourceId })
         if (result.jobstatus === 1) {
-          var content = successMessage
-          if (successMessage === 'Success' && action && action.label) {
-            content = i18n.global.t(action.label)
+          if (showSuccessMessage) {
+            var content = successMessage
+            if (successMessage === 'Success' && action && action.label) {
+              content = i18n.global.t(action.label)
+            }
+            if (name) {
+              content = content + ' - ' + name
+            }
+            message.success({
+              content,
+              key: jobId,
+              duration: 2
+            })
+          } else {
+            message.destroy(jobId)
           }
-          if (name) {
-            content = content + ' - ' + name
-          }
-          message.success({
-            content,
-            key: jobId,
-            duration: 2
-          })
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title,
@@ -218,17 +224,18 @@ export const notifierPlugin = {
         if (error.response.status) {
           msg = `${i18n.global.t('message.request.failed')} (${error.response.status})`
         }
-        if (error.message) {
-          desc = error.message
-        }
-        if (error.response.headers && 'x-description' in error.response.headers) {
+        if (error.response.headers?.['x-description']) {
           desc = error.response.headers['x-description']
-        }
-        if (desc === '' && error.response.data) {
+        } else if (error.response.data) {
           const responseKey = _.findKey(error.response.data, 'errortext')
           if (responseKey) {
             desc = error.response.data[responseKey].errortext
+          } else if (typeof error.response.data === 'string') {
+            desc = error.response.data
           }
+        }
+        if (!desc && error.message) {
+          desc = error.message
         }
       }
       let countNotify = store.getters.countNotify
@@ -384,6 +391,8 @@ export const resourceTypePlugin = {
           return 'kubernetes'
         case 'KubernetesSupportedVersion':
           return 'kubernetesiso'
+        case 'ExtensionCustomAction':
+          return 'customaction'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -413,6 +422,7 @@ export const resourceTypePlugin = {
         case 'AutoScaleVmGroup':
         case 'QuotaTariff':
         case 'GuestOsCategory':
+        case 'Extension':
           return resourceType.toLowerCase()
       }
       return ''
@@ -540,6 +550,17 @@ export const dialogUtilPlugin = {
         onOk: () => callback(configRecord)
       })
     }
+
+    app.config.globalProperties.$notifyConfigurationValueChange = function (configRecord) {
+      if (!configRecord || configRecord.isdynamic || store.getters.userInfo?.roletype !== 'Admin') {
+        return
+      }
+      const server = configRecord.group === 'Usage Server' ? 'usage' : 'mgmt'
+      this.$notification.warning({
+        message: this.$t('label.status'),
+        description: this.$t('message.restart.' + server + '.server')
+      })
+    }
   }
 }
 
@@ -548,7 +569,8 @@ export const cpuArchitectureUtilPlugin = {
     app.config.globalProperties.$fetchCpuArchitectureTypes = function () {
       const architectures = [
         { id: 'x86_64', name: 'Intel/AMD 64 bits (x86_64)' },
-        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' }
+        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' },
+        { id: 's390x', name: 'IBM Z 64 bits (s390x)' }
       ]
       return architectures.map(item => ({ ...item, description: item.name }))
     }
@@ -557,14 +579,45 @@ export const cpuArchitectureUtilPlugin = {
 
 export const imagesUtilPlugin = {
   install (app) {
-    app.config.globalProperties.$fetchTemplateTypes = function () {
-      const baseTypes = ['USER', 'VNF']
+    app.config.globalProperties.$fetchTemplateTypes = function (hypervisor) {
+      const baseTypes = ['USER']
+      if (hypervisor === 'External') {
+        return baseTypes.map(type => ({ id: type, name: type, description: type }))
+      }
+      baseTypes.push('VNF')
       const adminTypes = ['SYSTEM', 'BUILTIN', 'ROUTING']
       const types = [...baseTypes]
       if (store.getters.userInfo?.roletype === 'Admin') {
         types.push(...adminTypes)
       }
       return types.map(type => ({ id: type, name: type, description: type }))
+    }
+  }
+}
+
+export const extensionsUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchCustomActionRoleTypes = function () {
+      const roleTypes = []
+      const roleTypesList = ['Admin', 'Resource Admin', 'Domain Admin', 'User']
+      roleTypesList.forEach((item) => {
+        roleTypes.push({
+          id: item.replace(' ', ''),
+          description: item
+        })
+      })
+      return roleTypes
+    }
+  }
+}
+
+export const backupUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$isBackupProviderSupportsQuiesceVm = function (provider) {
+      if (!provider && typeof provider !== 'string') {
+        return false
+      }
+      return ['nas'].includes(provider.toLowerCase())
     }
   }
 }

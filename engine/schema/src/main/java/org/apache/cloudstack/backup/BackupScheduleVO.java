@@ -18,6 +18,7 @@
 package org.apache.cloudstack.backup;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -39,6 +40,9 @@ public class BackupScheduleVO implements BackupSchedule {
     @Column(name = "id")
     private long id;
 
+    @Column(name = "uuid", nullable = false)
+    private String uuid = UUID.randomUUID().toString();
+
     @Column(name = "vm_id")
     private Long vmId;
 
@@ -59,18 +63,30 @@ public class BackupScheduleVO implements BackupSchedule {
     Long asyncJobId;
 
     @Column(name = "max_backups")
-    Integer maxBackups = 0;
+    private int maxBackups = 0;
+
+    @Column(name = "quiescevm")
+    Boolean quiesceVM = false;
+
+    @Column(name = "account_id")
+    Long accountId;
+
+    @Column(name = "domain_id")
+    Long domainId;
 
     public BackupScheduleVO() {
     }
 
-    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, Integer maxBackups) {
+    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, int maxBackups, Boolean quiesceVM, Long accountId, Long domainId) {
         this.vmId = vmId;
         this.scheduleType = (short) scheduleType.ordinal();
         this.schedule = schedule;
         this.timezone = timezone;
         this.scheduledTimestamp = scheduledTimestamp;
         this.maxBackups = maxBackups;
+        this.quiesceVM = quiesceVM;
+        this.accountId = accountId;
+        this.domainId = domainId;
     }
 
     @Override
@@ -82,6 +98,11 @@ public class BackupScheduleVO implements BackupSchedule {
     @Override
     public long getId() {
         return id;
+    }
+
+    @Override
+    public String getUuid() {
+        return uuid;
     }
 
     public Long getVmId() {
@@ -133,11 +154,47 @@ public class BackupScheduleVO implements BackupSchedule {
         this.asyncJobId = asyncJobId;
     }
 
-    public Integer getMaxBackups() {
+    public int getMaxBackups() {
         return maxBackups;
     }
 
-    public void setMaxBackups(Integer maxBackups) {
+    public void setMaxBackups(int maxBackups) {
         this.maxBackups = maxBackups;
+    }
+
+    public void setQuiesceVM(Boolean quiesceVM) {
+        this.quiesceVM = quiesceVM;
+    }
+
+    public Boolean getQuiesceVM() {
+        return quiesceVM;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return BackupSchedule.class;
+    }
+
+    @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
     }
 }

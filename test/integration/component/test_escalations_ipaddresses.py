@@ -4341,7 +4341,7 @@ class TestIpAddresses(cloudstackTestCase):
                 vmgroup_disabled,
                 "Failed to disable Autoscale VM group"
             )
-            # Verifyign the state of the VM Group afte renabling
+            # Verifying the state of the VM Group after renabling
             self.assertEqual(
                 "disabled",
                 vmgroup_disabled.state,
@@ -4375,7 +4375,7 @@ class TestIpAddresses(cloudstackTestCase):
                 vmgroup_enabled,
                 "Failed to enable Autoscale VM group"
             )
-            # Verifyign the state of the VM Group afte renabling
+            # Verifying the state of the VM Group after renabling
             self.assertEqual(
                 "enabled",
                 vmgroup_enabled.state,

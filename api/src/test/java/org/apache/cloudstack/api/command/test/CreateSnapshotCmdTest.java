@@ -25,11 +25,13 @@ import static org.mockito.ArgumentMatchers.isNull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -73,11 +75,6 @@ public class CreateSnapshotCmdTest extends TestCase {
             public long getEntityOwnerId(){
                 return 1L;
             }
-
-            @Override
-            protected String getVolumeUuid() {
-                return "123";
-            }
         };
 
     }
@@ -93,7 +90,7 @@ public class CreateSnapshotCmdTest extends TestCase {
         Snapshot snapshot = Mockito.mock(Snapshot.class);
         try {
             Mockito.when(volumeApiService.takeSnapshot(nullable(Long.class), nullable(Long.class), isNull(),
-                    nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), nullable(Map.class), nullable(List.class))).thenReturn(snapshot);
+                    nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), nullable(Map.class), nullable(List.class), nullable(List.class), Mockito.anyBoolean())).thenReturn(snapshot);
 
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
@@ -121,12 +118,15 @@ public class CreateSnapshotCmdTest extends TestCase {
         AccountService accountService = Mockito.mock(AccountService.class);
         Account account = Mockito.mock(Account.class);
         Mockito.when(accountService.getAccount(anyLong())).thenReturn(account);
+        UUID volumeUuid = UUID.randomUUID();
+
+        CallContext.current().putApiResourceUuid("volumeid", volumeUuid);
 
         VolumeApiService volumeApiService = Mockito.mock(VolumeApiService.class);
 
         try {
                 Mockito.when(volumeApiService.takeSnapshot(nullable(Long.class), nullable(Long.class), nullable(Long.class),
-                        nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), any(), Mockito.anyList())).thenReturn(null);
+                        nullable(Account.class), nullable(Boolean.class), nullable(Snapshot.LocationType.class), nullable(Boolean.class), any(), Mockito.anyList(), Mockito.anyList(), Mockito.anyBoolean())).thenReturn(null);
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
         }
@@ -137,7 +137,7 @@ public class CreateSnapshotCmdTest extends TestCase {
         try {
             createSnapshotCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to create snapshot due to an internal error creating snapshot for volume 123", exception.getDescription());
+            Assert.assertEquals("Failed to create Snapshot due to an internal error creating Snapshot for volume " + volumeUuid, exception.getDescription());
         }
     }
 

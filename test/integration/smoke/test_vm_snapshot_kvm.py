@@ -77,6 +77,18 @@ class TestVmSnapshot(cloudstackTestCase):
         Configurations.update(cls.apiclient,
             name = "kvm.vmstoragesnapshot.enabled",
             value = "true")
+
+        cls.services["domainid"] = cls.domain.id
+        cls.services["small"]["zoneid"] = cls.zone.id
+        cls.services["zoneid"] = cls.zone.id
+
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=cls.domain.id
+        )
+        cls._cleanup.append(cls.account)
+
         #The version of CentOS has to be supported
         templ = {
             "name": "CentOS8",
@@ -91,36 +103,33 @@ class TestVmSnapshot(cloudstackTestCase):
             "directdownload": True,
         }
 
-        template = Template.register(cls.apiclient, templ, zoneid=cls.zone.id, hypervisor=cls.hypervisor)
+        template = Template.register(
+            cls.apiclient,
+            templ,
+            zoneid=cls.zone.id,
+            account=cls.account.name,
+            domainid=cls.account.domainid,
+            hypervisor=cls.hypervisor
+        )
         if template == FAILED:
             assert False, "get_template() failed to return template\
                     with description %s" % cls.services["ostype"]
 
-        cls.services["domainid"] = cls.domain.id
-        cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["templates"]["ostypeid"] = template.ostypeid
-        cls.services["zoneid"] = cls.zone.id
 
-        cls.account = Account.create(
-            cls.apiclient,
-            cls.services["account"],
-            domainid=cls.domain.id
-        )
-        cls._cleanup.append(cls.account)
-
-        service_offerings_nfs = {
+        service_offering_nfs = {
             "name": "nfs",
-                "displaytext": "nfs",
-                "cpunumber": 1,
-                "cpuspeed": 500,
-                "memory": 512,
-                "storagetype": "shared",
-                "customizediops": False,
-            }
+            "displaytext": "nfs",
+            "cpunumber": 1,
+            "cpuspeed": 500,
+            "memory": 512,
+            "storagetype": "shared",
+            "customizediops": False,
+        }
 
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
-            service_offerings_nfs,
+            service_offering_nfs,
         )
 
         cls._cleanup.append(cls.service_offering)
@@ -138,7 +147,7 @@ class TestVmSnapshot(cloudstackTestCase):
             rootdisksize=20,
         )
         cls.random_data_0 = random_gen(size=100)
-        cls.test_dir = "/tmp"
+        cls.test_dir = "$HOME"
         cls.random_data = "random.data"
         return
 
@@ -201,8 +210,8 @@ class TestVmSnapshot(cloudstackTestCase):
             self.apiclient,
             self.virtual_machine.id,
             MemorySnapshot,
-            "TestSnapshot",
-            "Display Text"
+            "TestVmSnapshot",
+            "Test VM Snapshot"
         )
         self.assertEqual(
             vm_snapshot.state,
@@ -269,6 +278,8 @@ class TestVmSnapshot(cloudstackTestCase):
 
         self.virtual_machine.start(self.apiclient)
 
+        time.sleep(30)
+
         try:
             ssh_client = self.virtual_machine.get_ssh_client(reconnect=True)
 
@@ -288,7 +299,7 @@ class TestVmSnapshot(cloudstackTestCase):
         self.assertEqual(
             self.random_data_0,
             result[0],
-            "Check the random data is equal with the ramdom file!"
+            "Check the random data is equal with the random file!"
         )
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
@@ -320,7 +331,7 @@ class TestVmSnapshot(cloudstackTestCase):
         list_snapshot_response = VmSnapshot.list(
             self.apiclient,
             virtualmachineid=self.virtual_machine.id,
-            listall=False)
+            listall=True)
         self.debug('list_snapshot_response -------------------- %s' % list_snapshot_response)
 
         self.assertIsNone(list_snapshot_response, "snapshot is already deleted")

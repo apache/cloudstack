@@ -16,21 +16,30 @@
 // under the License.
 package com.cloud.usage.parser;
 
+import com.cloud.usage.dao.UsageDao;
+import com.cloud.user.AccountVO;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import javax.inject.Inject;
 import java.util.Date;
 
+public abstract class UsageParser {
+    Logger logger = LogManager.getLogger(getClass());
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+    @Inject
+    UsageDao usageDao;
 
-public abstract class UsageParser extends ManagedContextRunnable {
-
-    @Override
-    protected void runInContext() {
-        try {
-            parse(null);
-        } catch (Exception e) {
-            logger.warn("Error while parsing usage events", e);
-        }
+    private void beforeParse(AccountVO account) {
+        logger.debug("Parsing all {} usage events for account: [{}]", getParserName(), account);
     }
 
-    public abstract void parse(Date endDate);
+    public abstract String getParserName();
+
+    protected abstract boolean parse(AccountVO account, Date startDate, Date endDate);
+
+    public boolean doParsing(AccountVO account, Date startDate, Date endDate) {
+        beforeParse(account);
+        return parse(account, startDate, endDate);
+    }
 }

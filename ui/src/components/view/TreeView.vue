@@ -92,7 +92,7 @@
 
 <script>
 import store from '@/store'
-import { postAPI } from '@/api'
+import { callAPI } from '@/api'
 import DetailsTab from '@/components/view/DetailsTab'
 import ResourceView from '@/components/view/ResourceView'
 import ResourceLayout from '@/layouts/ResourceLayout'
@@ -268,7 +268,7 @@ export default {
       }
 
       return new Promise(resolve => {
-        postAPI(this.apiChildren, params).then(json => {
+        callAPI(this.apiChildren, params).then(json => {
           const dataResponse = this.getResponseJsonData(json)
           const dataGenerate = this.generateTreeData(dataResponse)
           treeNode.dataRef.children = dataGenerate
@@ -390,7 +390,7 @@ export default {
       this.treeViewData = []
       this.loadingSearch = true
       this.$emit('change-tree-store', {})
-      postAPI(this.apiList, params).then(json => {
+      callAPI(this.apiList, params).then(json => {
         const listDomains = this.getResponseJsonData(json)
         this.treeVerticalData = this.treeVerticalData.concat(listDomains)
 
@@ -454,7 +454,7 @@ export default {
         params.pageSize = 1
 
         this.detailLoading = true
-        postAPI(apiName, params).then(json => {
+        callAPI(apiName, params).then(json => {
           const jsonResponse = this.getResponseJsonData(json)
           resolve(jsonResponse[0])
         }).catch(() => {

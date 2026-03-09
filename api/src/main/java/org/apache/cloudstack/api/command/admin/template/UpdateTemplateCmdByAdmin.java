@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
-@APICommand(name = "updateTemplate", description = "Updates attributes of a template.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
+@APICommand(name = "updateTemplate", description = "Updates attributes of a Template.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateTemplateCmdByAdmin extends UpdateTemplateCmd implements AdminCmd {
 }

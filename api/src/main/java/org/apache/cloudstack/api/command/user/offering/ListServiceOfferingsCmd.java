@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,51 +45,51 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "ID of the service offering")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the service offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the service offering")
     private String serviceOfferingName;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
                entityType = UserVmResponse.class,
-               description = "the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
+               description = "The ID of the Instance. Pass this in if you want to see the available service offering that an Instance can be changed to.")
     private Long virtualMachineId;
 
-    @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description="is this a system vm offering")
+    @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description = " Is this a System VM offering")
     private Boolean isSystem;
 
     @Parameter(name = ApiConstants.SYSTEM_VM_TYPE,
                type = CommandType.STRING,
-               description = "the system VM type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
+               description = "The system Instance type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
     private String systemVmType;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "id of zone disk offering is associated with",
+            description = "ID of zone disk offering is associated with",
             since = "4.13")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.CPU_NUMBER,
             type = CommandType.INTEGER,
-            description = "the CPU number that listed offerings must support",
+            description = "The CPU number that listed offerings must support",
             since = "4.15")
     private Integer cpuNumber;
 
     @Parameter(name = ApiConstants.MEMORY,
             type = CommandType.INTEGER,
-            description = "the RAM memory that listed offering must support",
+            description = "The RAM memory that listed offering must support",
             since = "4.15")
     private Integer memory;
 
     @Parameter(name = ApiConstants.CPU_SPEED,
             type = CommandType.INTEGER,
-            description = "the CPU speed that listed offerings must support",
+            description = "The CPU speed that listed offerings must support",
             since = "4.15")
     private Integer cpuSpeed;
 
     @Parameter(name = ApiConstants.ENCRYPT_ROOT,
         type = CommandType.BOOLEAN,
-        description = "listed offerings support root disk encryption",
+        description = "Listed offerings support root disk encryption",
         since = "4.18")
     private Boolean encryptRoot;
 
@@ -109,6 +110,19 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
             description = "The ID of the template that listed offerings must support",
             since = "4.20.0")
     private Long templateId;
+
+    @Parameter(name = ApiConstants.VGPU_PROFILE_ID,
+            type = CommandType.UUID,
+            entityType = VgpuProfileResponse.class,
+            description = "The ID of the vGPU profile that listed offerings must support",
+            since = "4.21.0")
+    private Long vgpuProfileId;
+
+    @Parameter(name = ApiConstants.GPU_ENABLED,
+            type = CommandType.BOOLEAN,
+            description = "Flag to indicate if the service offering supports GPU. If set to true, only service offerings that support GPU will be returned.",
+            since = "4.21.0")
+    private Boolean gpuEnabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -169,6 +183,14 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public Boolean getGpuEnabled() {
+        return gpuEnabled;
     }
 
     /////////////////////////////////////////////////////

@@ -18,7 +18,7 @@
 # The CloudStack management server needs sudo permissions
 # without a password.
 
-Cmnd_Alias CLOUDSTACK = /bin/mkdir, /bin/mount, /bin/umount, /bin/cp, /bin/chmod, /usr/bin/keytool, /bin/keytool, /bin/touch, /bin/find, /bin/df, /bin/ls, /bin/qemu-img
+Cmnd_Alias CLOUDSTACK = /bin/mkdir, /bin/mount, /bin/umount, /bin/cp, /bin/chmod, /usr/bin/keytool, /bin/keytool, /bin/touch, /bin/find, /bin/df, /bin/ls, /bin/qemu-img, /usr/bin/qemu-img
 
 Defaults:@MSUSER@ !requiretty
 

@@ -40,7 +40,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 
-@APICommand(name = "addAccountToProject", description = "Adds account to a project", responseObject = SuccessResponse.class, since = "3.0.0",
+@APICommand(name = "addAccountToProject", description = "Adds Account to a project", responseObject = SuccessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddAccountToProjectCmd extends BaseAsyncCmd {
 
@@ -53,13 +53,13 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = ProjectResponse.class,
                required = true,
-               description = "ID of the project to add the account to")
+               description = "ID of the project to add the Account to")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "name of the account to be added to the project")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Name of the Account to be added to the project")
     private String accountName;
 
-    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "email to which invitation to the project is going to be sent")
+    @Parameter(name = ApiConstants.EMAIL, type = CommandType.STRING, description = "Email to which invitation to the project is going to be sent")
     private String email;
 
     @Parameter(name = ApiConstants.PROJECT_ROLE_ID, type = CommandType.UUID, entityType = ProjectRoleResponse.class,
@@ -67,7 +67,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
     private Long projectRoleId;
 
     @Parameter(name = ApiConstants.ROLE_TYPE, type = BaseCmd.CommandType.STRING,
-            description = "Project role type to be assigned to the user - Admin/Regular; default: Regular")
+            description = "Project role type to be assigned to the User - Admin/Regular; default: Regular")
     private String roleType;
 
     /////////////////////////////////////////////////////
@@ -111,13 +111,13 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Either accountName or email is required");
         }
 
-        CallContext.current().setEventDetails("Project ID: " + projectId + "; accountName " + accountName);
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.PROJECT_ID) + "; accountName " + accountName);
         boolean result = _projectService.addAccountToProject(getProjectId(), getAccountName(), getEmail(), getProjectRoleId(), getRoleType());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add account to the project");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Account to the project");
         }
     }
 
@@ -146,10 +146,12 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
+        String projectUuid = getResourceUuid(ApiConstants.PROJECT_ID);
+
         if (accountName != null) {
-            return "Adding account " + getAccountName() + " to project: " + getProjectId();
+            return "Adding account " + getAccountName() + " to project: " + projectUuid;
         } else {
-            return "Sending invitation to email " + email + " to join project: " + getProjectId();
+            return "Sending invitation to email " + email + " to join project: " + projectUuid;
         }
     }
 

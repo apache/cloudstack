@@ -348,17 +348,17 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         for (VMInstanceVO vm : reorderedVMList) {
             if (_itMgr.isRootVolumeOnLocalStorage(vm.getId())) {
                 if (logger.isDebugEnabled()){
-                    logger.debug("Skipping HA on vm " + vm + ", because it uses local storage. Its fate is tied to the host.");
+                    logger.debug("Skipping HA on Instance " + vm + ", because it uses local storage. Its fate is tied to the host.");
                 }
                 continue;
             }
             if (logger.isDebugEnabled()) {
-                logger.debug("Notifying HA Mgr of to restart vm {}", vm);
+                logger.debug("Notifying HA Mgr of to restart Instance {}", vm);
             }
             vm = _instanceDao.findByUuid(vm.getUuid());
             Long hostId = vm.getHostId();
             if (hostId != null && !hostId.equals(host.getId())) {
-                logger.debug("VM {} is not on down host {} it is on other host {} VM HA is done", vm, host, hostId);
+                logger.debug("Instance {} is not on down host {} it is on other host {} Instance HA is done", vm, host, hostId);
                 continue;
             }
             scheduleRestart(vm, investigate, reasonType);
@@ -837,7 +837,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         if (checkAndCancelWorkIfNeeded(work)) {
             return null;
         }
-        logger.info("Migration attempt: for VM {}from host {}. Starting attempt: {}/{} times.", vm, srcHost, 1 + work.getTimesTried(), _maxRetries);
+        logger.info("Migration attempt: for {} from {}. Starting attempt: {}/{} times.", vm, srcHost, 1 + work.getTimesTried(), _maxRetries);
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             logger.info(String.format("vm %s is Stopped, skipping migrate.", vm));
@@ -847,8 +847,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             logger.info(String.format("VM %s is running on a different host %s, skipping migration", vm, vm.getHostId()));
             return null;
         }
-        logger.info("Migration attempt: for VM " + vm.getUuid() + "from host id " + srcHostId +
-                ". Starting attempt: " + (1 + work.getTimesTried()) + "/" + _maxRetries + " times.");
 
         try {
             work.setStep(Step.Migrating);

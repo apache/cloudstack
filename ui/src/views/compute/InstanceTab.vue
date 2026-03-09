@@ -39,10 +39,19 @@
           style="width: 100%; margin-bottom: 10px"
           @click="showAddVolModal"
           :loading="loading"
-          :disabled="!('createVolume' in $store.getters.apis) || this.vm.state === 'Error'">
+          :disabled="!('createVolume' in $store.getters.apis) || this.vm.state === 'Error' || resource.hypervisor === 'External'">
           <template #icon><plus-outlined /></template> {{ $t('label.action.create.volume.add') }}
         </a-button>
         <volumes-tab :resource="vm" :loading="loading" />
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.gpu')" key="gpu" v-if="dataResource.gpucardname">
+        <GPUTab
+          apiName="listGpuDevices"
+          :resource="dataResource"
+          :params="{virtualmachineid: dataResource.id}"
+          resourceType="VirtualMachine"
+          :columns="['gpucardname', 'vgpuprofilename', 'state'].concat($store.getters.userInfo.roletype === 'Admin' ? ['id', 'hostname'] : [])"
+          :routerlinks="(record) => { return { displayname: '/gpudevice/' + record.id } }"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
         <NicsTab :resource="vm"/>
@@ -60,8 +69,8 @@
           apiName="listBackups"
           :resource="resource"
           :params="{virtualmachineid: dataResource.id}"
-          :columns="['created', 'status', 'type', 'size', 'virtualsize']"
-          :routerlinks="(record) => { return { created: '/backup/' + record.id } }"
+          :columns="['name', 'status', 'size', 'virtualsize', 'type', 'intervaltype', 'created']"
+          :routerlinks="(record) => { return { name: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="dataResource.securitygroup && dataResource.securitygroup.length > 0 || $store.getters.showSecurityGroups">
@@ -143,6 +152,7 @@ import ResourceIcon from '@/components/view/ResourceIcon'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import VolumesTab from '@/components/view/VolumesTab.vue'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
+import GPUTab from '@/components/view/GPUTab.vue'
 
 export default {
   name: 'InstanceTab',
@@ -154,6 +164,7 @@ export default {
     DetailSettings,
     CreateVolume,
     NicsTab,
+    GPUTab,
     InstanceSchedules,
     ListResourceTable,
     SecurityGroupSelection,

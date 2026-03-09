@@ -39,10 +39,15 @@ import {
   localesPlugin,
   dialogUtilPlugin,
   cpuArchitectureUtilPlugin,
-  imagesUtilPlugin
+  imagesUtilPlugin,
+  extensionsUtilPlugin,
+  backupUtilPlugin
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
+import Cookies from 'js-cookie'
+import { getAPI } from '@/api'
+import { applyCustomGuiTheme } from './utils/guiTheme'
 
 vueApp.use(VueAxios, router)
 vueApp.use(pollJobPlugin)
@@ -58,6 +63,8 @@ vueApp.use(genericUtilPlugin)
 vueApp.use(dialogUtilPlugin)
 vueApp.use(cpuArchitectureUtilPlugin)
 vueApp.use(imagesUtilPlugin)
+vueApp.use(extensionsUtilPlugin)
+vueApp.use(backupUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 
@@ -89,7 +96,7 @@ fetch('config.json?ts=' + Date.now())
     }
     return response.json()
   })
-  .then(config => {
+  .then(async config => {
     vueProps.$config = config
     let baseUrl = config.apiBase
     if (config.multipleServer) {
@@ -97,6 +104,19 @@ fetch('config.json?ts=' + Date.now())
     }
 
     vueProps.axios.defaults.baseURL = baseUrl
+
+    const userid = Cookies.get('userid')
+    let accountid = null
+    let domainid = null
+
+    if (userid !== undefined && Cookies.get('sessionkey')) {
+      await getAPI('listUsers', { userid: userid }).then(response => {
+        accountid = response.listusersresponse.user[0].accountid
+        domainid = response.listusersresponse.user[0].domainid
+      })
+    }
+
+    await applyCustomGuiTheme(accountid, domainid)
 
     loadLanguageAsync().then(() => {
       vueApp.use(store)

@@ -34,6 +34,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.NsxProviderVO;
@@ -48,6 +49,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.User;
+import com.cloud.utils.DomainHelper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
@@ -88,6 +90,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -135,6 +138,8 @@ public class ConfigurationManagerImplTest {
     @Mock
     NsxProviderDao nsxProviderDao;
     @Mock
+    NetrisProviderDao netrisProviderDao;
+    @Mock
     DataCenterDao zoneDao;
     @Mock
     HostDao hostDao;
@@ -174,6 +179,8 @@ public class ConfigurationManagerImplTest {
     PrimaryDataStoreDao storagePoolDao;
     @Mock
     StoragePoolDetailsDao storagePoolDetailsDao;
+    @Mock
+    DomainHelper domainHelper;
 
     DeleteZoneCmd deleteZoneCmd;
     CreateNetworkOfferingCmd createNetworkOfferingCmd;
@@ -418,6 +425,7 @@ public class ConfigurationManagerImplTest {
         DataCenterVO dataCenterVO = Mockito.mock(DataCenterVO.class);
 
         when(nsxProviderDao.findByZoneId(anyLong())).thenReturn(nsxProviderVO);
+        when(netrisProviderDao.findByZoneId(anyLong())).thenReturn(null);
         when(zoneDao.findById(anyLong())).thenReturn(dataCenterVO);
         lenient().when(hostDao.findByDataCenterId(anyLong())).thenReturn(Collections.emptyList());
         when(podDao.listByDataCenterId(anyLong())).thenReturn(Collections.emptyList());
@@ -846,30 +854,6 @@ public class ConfigurationManagerImplTest {
     }
 
     @Test
-    public void shouldValidateConfigRangeTestValueIsNullReturnFalse() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxyUrlDomain.name(), null, Config.ConsoleProxyUrlDomain);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void shouldValidateConfigRangeTestConfigIsNullReturnFalse() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange("", "test", null);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void shouldValidateConfigRangeTestConfigDoesNotHaveARangeReturnFalse() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxySessionMax.name(), "test", Config.ConsoleProxySessionMax);
-        Assert.assertFalse(result);
-    }
-
-    @Test
-    public void shouldValidateConfigRangeTestValueIsNotNullAndConfigHasRangeReturnTrue() {
-        boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxySessionMax.name(), "test", Config.ConsoleProxyUrlDomain);
-        Assert.assertTrue(result);
-    }
-
-    @Test
     public void testResetConfigurations() {
         Long poolId = 1L;
         ResetCfgCmd cmd = Mockito.mock(ResetCfgCmd.class);
@@ -1040,5 +1024,123 @@ public class ConfigurationManagerImplTest {
 
         configurationManagerImplSpy.getConfigurationType(configuration.key());
         Mockito.verify(configurationManagerImplSpy).parseConfigurationTypeIntoString(configuration.type(), configurationVOMock);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenExternalDetailsIsEmpty() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenExternalDetailsIsEmptyAndCleanupTrue() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, true);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenExistingDetailsExistExternalDetailsIsEmptyAndCleanupTrue() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, true);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenExistingExternalDetailsExistValidExternalDetailsAndCleanupTrue() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Collections.emptyMap();
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, true);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenExistingExternalDetailsIsEmpty() {
+        Map<String, String> offeringDetails = Map.of("key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenSizesDiffer() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsTrueWhenValuesDiffer() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1");
+        Map<String, String> externalDetails = Map.of("External:key1", "differentValue");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void serviceOfferingExternalDetailsNeedUpdateReturnsFalseWhenDetailsMatch() {
+        Map<String, String> offeringDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+        Map<String, String> externalDetails = Map.of("External:key1", "value1", "External:key2", "value2");
+
+        boolean result = configurationManagerImplSpy.serviceOfferingExternalDetailsNeedUpdate(offeringDetails, externalDetails, false);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void normalizedEmptyValueForConfigReturnsTrimmedValueWhenInputIsValid() {
+        String result = configurationManagerImplSpy.getNormalizedEmptyValueForConfig("someConfig", "  validValue  ", null);
+        Assert.assertEquals("validValue", result);
+    }
+
+    @Test
+    public void normalizedEmptyValueForConfigReturnsNullWhenInputIsNullAndNoConfigStorageId() {
+        String result = configurationManagerImplSpy.getNormalizedEmptyValueForConfig("someConfig", "null", null);
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void normalizedEmptyValueForConfigReturnsEmptyStringWhenInputIsNullAndConfigStorageIdProvided() {
+        String result = configurationManagerImplSpy.getNormalizedEmptyValueForConfig("someConfig", "null", 123L);
+        Assert.assertEquals("", result);
+    }
+
+    @Test
+    public void normalizedEmptyValueForConfigReturnsEmptyStringWhenKeyTypeIsStringAndInputIsEmpty() {
+        ConfigKey<String> mockKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(mockKey.type()).thenReturn(String.class);
+        Mockito.doReturn(mockKey).when(configDepot).get("someConfig");
+
+        String result = configurationManagerImplSpy.getNormalizedEmptyValueForConfig("someConfig", "", null);
+        Assert.assertEquals("", result);
+    }
+
+    @Test
+    public void normalizedEmptyValueForConfigReturnsNullWhenKeyTypeIsNotStringAndInputIsEmpty() {
+        ConfigKey<Integer> mockKey = Mockito.mock(ConfigKey.class);
+        Mockito.when(mockKey.type()).thenReturn(Integer.class);
+        Mockito.doReturn(mockKey).when(configDepot).get("someConfig");
+
+        String result = configurationManagerImplSpy.getNormalizedEmptyValueForConfig("someConfig", "", null);
+        Assert.assertNull(result);
     }
 }

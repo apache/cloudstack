@@ -451,8 +451,13 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 user.setExternalEntity(entityId);
                 user.setSource(User.Source.SAML2);
             } else {
+                boolean enableLoginAfterSAMLDisable =  SAML2AuthManager.EnableLoginAfterSAMLDisable.value();
                 if (user.getSource().equals(User.Source.SAML2)) {
-                    user.setSource(User.Source.SAML2DISABLED);
+                    if(enableLoginAfterSAMLDisable) {
+                        user.setSource(User.Source.UNKNOWN);
+                    } else {
+                        user.setSource(User.Source.SAML2DISABLED);
+                    }
                 } else {
                     return false;
                 }
@@ -541,6 +546,6 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 SAMLCloudStackRedirectionUrl, SAMLUserAttributeName,
                 SAMLIdentityProviderMetadataURL, SAMLDefaultIdentityProviderId,
                 SAMLSignatureAlgorithm, SAMLAppendDomainSuffix, SAMLTimeout, SAMLCheckSignature,
-                SAMLForceAuthn, SAMLUserSessionKeyPathAttribute, SAMLRequirePasswordLogin};
+                SAMLForceAuthn, SAMLUserSessionKeyPathAttribute, SAMLRequirePasswordLogin, EnableLoginAfterSAMLDisable};
     }
 }

@@ -38,16 +38,16 @@
                   v-model:value="form.intervaltype"
                   buttonStyle="solid"
                   @change="handleChangeIntervalType">
-                  <a-radio-button value="hourly" :disabled="handleVisibleInterval(0)">
+                  <a-radio-button value="hourly" :disabled="isIntervalDisabled('hourly')">
                     {{ $t('label.hourly') }}
                   </a-radio-button>
-                  <a-radio-button value="daily" :disabled="handleVisibleInterval(1)">
+                  <a-radio-button value="daily" :disabled="isIntervalDisabled('daily')">
                     {{ $t('label.daily') }}
                   </a-radio-button>
-                  <a-radio-button value="weekly" :disabled="handleVisibleInterval(2)">
+                  <a-radio-button value="weekly" :disabled="isIntervalDisabled('weekly')">
                     {{ $t('label.weekly') }}
                   </a-radio-button>
-                  <a-radio-button value="monthly" :disabled="handleVisibleInterval(3)">
+                  <a-radio-button value="monthly" :disabled="isIntervalDisabled('monthly')">
                     {{ $t('label.monthly') }}
                   </a-radio-button>
                 </a-radio-group>
@@ -60,6 +60,7 @@
                   :title="$t('label.minute.past.hour')">
                   <a-input-number
                     style="width: 100%"
+                    :disabled="isIntervalDisabled(form.intervaltype)"
                     v-model:value="form.time"
                     :min="1"
                     :max="59"
@@ -76,6 +77,7 @@
                 <a-time-picker
                   use12Hours
                   format="h:mm A"
+                  :disabled="isIntervalDisabled(form.intervaltype)"
                   v-model:value="form.timeSelect"
                   style="width: 100%;" />
               </a-form-item>
@@ -85,6 +87,7 @@
                 <a-select
                   v-model:value="form['day-of-week']"
                   showSearch
+                  :disabled="isIntervalDisabled(form.intervaltype)"
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
                     return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -100,6 +103,7 @@
                 <a-select
                   v-model:value="form['day-of-month']"
                   showSearch
+                  :disabled="isIntervalDisabled(form.intervaltype)"
                   optionFilterProp="value"
                   :filterOption="(input, option) => {
                     return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -139,7 +143,7 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
-              <a-form-item ref="zoneids" name="zoneids">
+              <a-form-item ref="zoneids" name="zoneids" :required="(!isAdmin && form.useStorageReplication)">
                 <template #label>
                   <tooltip-label :title="$t('label.zones')" :tooltip="''"/>
                 </template>
@@ -160,6 +164,38 @@
                   :loading="zoneLoading"
                   :placeholder="''">
                   <a-select-option v-for="opt in this.zones" :key="opt.id" :label="opt.name || opt.description">
+                    <span>
+                      <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <global-outlined v-else style="margin-right: 5px"/>
+                      {{ opt.name || opt.description }}
+                    </span>
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+            <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
+              <a-form-item name="useStorageReplication" ref="useStorageReplication">
+                <template #label>
+                  <tooltip-label :title="$t('label.usestoragereplication')" :tooltip="apiParams.usestoragereplication.description" />
+                </template>
+                <a-switch v-model:checked="form.useStorageReplication" />
+              </a-form-item>
+              <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageids" name="storageids">
+                <template #label>
+                  <tooltip-label :title="$t('label.storagepools')" :tooltip="''"/>
+                </template>
+                <a-select
+                  id="storagepool-selection"
+                  v-model:value="form.storageids"
+                  mode="multiple"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }"
+                  :loading="storagePoolLoading"
+                  :placeholder="''">
+                  <a-select-option v-for="opt in this.storagePools" :key="opt.id" :label="opt.name || opt.description">
                     <span>
                       <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                       <global-outlined v-else style="margin-right: 5px"/>
@@ -224,6 +260,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
+import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { timeZone } from '@/utils/timezone'
@@ -272,17 +309,47 @@ export default {
       timeZoneMap: [],
       fetching: false,
       listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
-      zones: []
+      zones: [],
+      storagePools: []
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('createSnapshotPolicy')
   },
   created () {
     this.initForm()
     this.volumeId = this.resource.id
     this.fetchTimeZone()
   },
+  mounted () {
+    if (this.form.intervaltype && this.isIntervalDisabled(this.form.intervaltype)) {
+      const nextAvailable = this.getNextAvailableIntervalType(this.form.intervaltype)
+      if (nextAvailable) {
+        this.form.intervaltype = nextAvailable
+        this.handleChangeIntervalType()
+      }
+    }
+  },
   computed: {
     formattedAdditionalZoneMessage () {
       return `${this.$t('message.snapshot.additional.zones').replace('%x', this.resource.zonename)}`
+    },
+    isAdmin () {
+      return isAdmin()
+    }
+  },
+  watch: {
+    dataSource: {
+      handler () {
+        if (this.form.intervaltype && this.getNextAvailableIntervalType && this.isIntervalDisabled(this.form.intervaltype)) {
+          const nextAvailable = this.getNextAvailableIntervalType(this.form.intervaltype)
+          if (nextAvailable) {
+            this.form.intervaltype = nextAvailable
+            this.handleChangeIntervalType()
+          }
+        }
+      },
+      deep: true
     }
   },
   methods: {
@@ -295,7 +362,8 @@ export default {
         'day-of-week': undefined,
         'day-of-month': undefined,
         maxsnaps: undefined,
-        timezone: undefined
+        timezone: undefined,
+        useStorageReplication: false
       })
       this.rules = reactive({
         time: [{ type: 'number', required: true, message: this.$t('message.error.required.input') }],
@@ -307,6 +375,7 @@ export default {
       })
       if (this.resourceType === 'Volume') {
         this.fetchZoneData()
+        this.fetchStoragePoolData()
       }
     },
     fetchZoneData () {
@@ -321,6 +390,20 @@ export default {
         }
       }).finally(() => {
         this.zoneLoading = false
+      })
+    },
+    fetchStoragePoolData () {
+      const params = {}
+      params.showicon = true
+      this.storagePoolsLoading = true
+      getAPI('listStoragePools', params).then(json => {
+        const listStoragePools = json.liststoragepoolsresponse.storagepool
+        if (listStoragePools) {
+          this.storagePools = listStoragePools
+          this.storagePools = this.storagePools.filter(pool => pool.storagecapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE && pool.zoneid !== this.resource.zoneid)
+        }
+      }).finally(() => {
+        this.storagePoolsLoading = false
       })
     },
     fetchTimeZone (value) {
@@ -354,28 +437,46 @@ export default {
       }
     },
     handleChangeIntervalType () {
-      switch (this.form.intervaltype) {
+      if (this.form.intervaltype === 'weekly') {
+        this.fetchDayOfWeek()
+      } else if (this.form.intervaltype === 'monthly') {
+        this.fetchDayOfMonth()
+      }
+      this.intervalValue = this.getIntervalValue(this.formintervaltype)
+    },
+    getIntervalValue (intervalType) {
+      switch (intervalType) {
         case 'hourly':
-          this.intervalValue = 0
-          break
+          return 0
         case 'daily':
-          this.intervalValue = 1
-          break
+          return 1
         case 'weekly':
-          this.intervalValue = 2
-          this.fetchDayOfWeek()
-          break
+          return 2
         case 'monthly':
-          this.intervalValue = 3
-          this.fetchDayOfMonth()
-          break
+          return 3
       }
     },
-    handleVisibleInterval (intervalType) {
+    getNextAvailableIntervalType (currentIntervalType) {
+      const intervalTypes = ['hourly', 'daily', 'weekly', 'monthly']
+      const currentIndex = intervalTypes.indexOf(currentIntervalType)
+      const startIndex = currentIndex >= 0 ? currentIndex : -1
+
+      for (let i = 1; i <= intervalTypes.length; i++) {
+        const nextIndex = (startIndex + i) % intervalTypes.length
+        const nextIntervalType = intervalTypes[nextIndex]
+
+        if (!this.isIntervalDisabled(nextIntervalType)) {
+          return nextIntervalType
+        }
+      }
+      return null
+    },
+    isIntervalDisabled (intervalType) {
+      const intervalValue = this.getIntervalValue(intervalType)
       if (this.dataSource.length === 0) {
         return false
       }
-      const dataSource = this.dataSource.filter(item => item.intervaltype === intervalType)
+      const dataSource = this.dataSource.filter(item => item.intervaltype === intervalValue)
       if (dataSource && dataSource.length > 0) {
         return true
       }
@@ -419,8 +520,12 @@ export default {
         params.intervaltype = values.intervaltype
         params.timezone = values.timezone
         params.maxsnaps = values.maxsnaps
+        params.useStorageReplication = values.useStorageReplication
         if (values.zoneids && values.zoneids.length > 0) {
           params.zoneids = values.zoneids.join()
+        }
+        if (values.storageids && values.storageids.length > 0) {
+          params.storageids = values.storageids.join()
         }
         switch (values.intervaltype) {
           case 'hourly':

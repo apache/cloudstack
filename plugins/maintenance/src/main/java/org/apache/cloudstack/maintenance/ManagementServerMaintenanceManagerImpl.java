@@ -622,6 +622,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                         ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
                         if (msHost == null) {
                             logger.warn("Unable to find the management server, invalid node id");
+                            managementServerMaintenanceManager.cancelWaitForPendingJobs();
                             return;
                         }
                         msHostDao.updateState(msHost.getId(), State.Maintenance);
@@ -658,6 +659,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                     ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
                     if (msHost == null) {
                         logger.warn("Unable to find the management server, invalid node id");
+                        managementServerMaintenanceManager.cancelWaitForPendingJobs();
                         return;
                     }
                     if (totalAgents == 0) {
@@ -693,6 +695,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                     ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
                     if (msHost == null) {
                         logger.warn("Unable to find the management server, invalid node id");
+                        managementServerMaintenanceManager.cancelWaitForPendingJobs();
                         return;
                     }
                     msHostDao.updateState(msHost.getId(), State.ReadyToShutDown);
