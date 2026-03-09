@@ -258,9 +258,12 @@ export default {
         'Group 15': 'modp3072',
         'Group 16': 'modp4096',
         'Group 17': 'modp6144',
-        'Group 18': 'modp8192'
+        'Group 18': 'modp8192',
+        'Group 19': 'modp256',
+        'Group 20': 'modp2048',
+        'Group 21': 'modp2048'
       },
-      ikeDhGroupInitialValue: 'Group 5(modp1536)',
+      ikeDhGroupInitialValue: 'Group 19(modp256)',
       isSubmitted: false,
       ikeversion: 'ike'
     }
@@ -275,12 +278,12 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        ikeEncryption: 'aes128',
+        ikeEncryption: 'aes256',
         ikeHash: 'sha1',
         ikeversion: 'ike',
-        ikeDh: 'Group 5(modp1536)',
-        espEncryption: 'aes128',
-        espHash: 'sha1',
+        ikeDh: 'Group 19(modp 256)',
+        espEncryption: 'aes256',
+        espHash: 'sha256',
         perfectForwardSecrecy: 'None',
         ikelifetime: '86400',
         esplifetime: '3600',
