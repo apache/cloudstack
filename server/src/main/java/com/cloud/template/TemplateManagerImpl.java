@@ -2427,7 +2427,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             } else if (cmd instanceof UpdateTemplateCmd) {
                 throw new InvalidParameterValueException(String.format("Users can not update Template to template type %s.", templateType));
             } else if (cmd instanceof GetUploadParamsForTemplateCmd) {
-                throw new InvalidParameterValueException(String.format("Users can not upload Template to template type %s.", templateType));
+                throw new InvalidParameterValueException(String.format("Users can not request upload parameters for Template with template type %s.", templateType));
             }
         }
         return templateType;
