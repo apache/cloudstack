@@ -2407,8 +2407,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new InvalidParameterValueException(String.format("Please specify a valid templatetype: %s",
                         org.apache.commons.lang3.StringUtils.join(",", TemplateType.values())));
             }
-        } else if (cmd instanceof GetUploadParamsForTemplateCmd) {
-            templateType = ((GetUploadParamsForTemplateCmd) cmd).isRoutingType() ? TemplateType.ROUTING : TemplateType.USER;
         }
         if (templateType != null) {
             if (isRoutingType != null && (TemplateType.ROUTING.equals(templateType) != isRoutingType)) {
@@ -2418,7 +2416,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             } else if ((cmd instanceof RegisterVnfTemplateCmd || cmd instanceof UpdateVnfTemplateCmd) && !TemplateType.VNF.equals(templateType)) {
                 throw new InvalidParameterValueException("The template type must be VNF for VNF templates, but the actual type is " + templateType);
             }
-        } else if (cmd instanceof RegisterTemplateCmd) {
+        } else if (cmd instanceof RegisterTemplateCmd || cmd instanceof GetUploadParamsForTemplateCmd) {
             boolean isRouting = Boolean.TRUE.equals(isRoutingType);
             templateType = (cmd instanceof RegisterVnfTemplateCmd) ? TemplateType.VNF : (isRouting ? TemplateType.ROUTING : TemplateType.USER);
         }
@@ -2428,6 +2426,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new InvalidParameterValueException(String.format("Users can not register Template with template type %s.", templateType));
             } else if (cmd instanceof UpdateTemplateCmd) {
                 throw new InvalidParameterValueException(String.format("Users can not update Template to template type %s.", templateType));
+            } else if (cmd instanceof GetUploadParamsForTemplateCmd) {
+                throw new InvalidParameterValueException(String.format("Users can not upload Template to template type %s.", templateType));
             }
         }
         return templateType;
