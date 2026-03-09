@@ -2579,18 +2579,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void transitionExpungingToError(long vmId) {
-        try {
-            UserVmVO vm = _vmDao.findById(vmId);
-            if (vm != null && vm.getState() == State.Expunging) {
+        UserVmVO vm = _vmDao.findById(vmId);
+        if (vm != null && vm.getState() == State.Expunging) {
+            try {
                 boolean transitioned = _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailedToError, null);
                 if (transitioned) {
                     logger.info("Transitioned VM [{}] from Expunging to Error after failed expunge", vm.getUuid());
                 } else {
                     logger.warn("Failed to persist transition of VM [{}] from Expunging to Error after failed expunge, possibly due to concurrent update", vm.getUuid());
                 }
+            } catch (NoTransitionException e) {
+                logger.warn("Failed to transition VM {} to Error state: {}", vm, e.getMessage());
             }
-        } catch (NoTransitionException e) {
-            logger.warn("Failed to transition VM to Error state: {}", e.getMessage());
         }
     }
 
@@ -3578,17 +3578,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
-            boolean expunged;
+            boolean expunged = false;
+            String errorMsg = "";
             try {
                 expunged = expunge(vm);
             } catch (RuntimeException e) {
                 logger.error("Failed to expunge VM [{}] due to: {}", vm, e.getMessage(), e);
-                transitionExpungingToError(vm.getId());
-                throw new CloudRuntimeException("Failed to expunge VM " + vm.getUuid() + " due to: " + e.getMessage(), e);
+                errorMsg = e.getMessage();
             }
             if (!expunged) {
                 transitionExpungingToError(vm.getId());
-                throw new CloudRuntimeException("Failed to expunge VM " + destroyedVm);
+                throw new CloudRuntimeException("Failed to expunge VM " + vm.getUuid() + (StringUtils.isNotBlank(errorMsg) ? " due to: " + errorMsg : ""));
             }
         }
 
