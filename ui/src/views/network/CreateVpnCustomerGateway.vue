@@ -259,11 +259,12 @@ export default {
         'Group 16': 'modp4096',
         'Group 17': 'modp6144',
         'Group 18': 'modp8192',
-        'Group 19': 'modp256',
-        'Group 20': 'modp2048',
-        'Group 21': 'modp2048'
+        'Group 22': 'modp1024s160',
+        'Group 23': 'modp2048s224',
+        'Group 24': 'modp2048s256',
+        'Group 31': 'curve25519'
       },
-      ikeDhGroupInitialValue: 'Group 19(modp256)',
+      ikeDhGroupInitialValue: 'Group 31(curve25519)',
       isSubmitted: false,
       ikeversion: 'ike'
     }
@@ -281,7 +282,7 @@ export default {
         ikeEncryption: 'aes256',
         ikeHash: 'sha1',
         ikeversion: 'ike',
-        ikeDh: 'Group 19(modp 256)',
+        ikeDh: 'Group 31(curve 25519)',
         espEncryption: 'aes256',
         espHash: 'sha256',
         perfectForwardSecrecy: 'None',

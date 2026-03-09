@@ -1265,7 +1265,7 @@ public class NetUtils {
             if (group == null && policyType.toLowerCase().matches("ike")) {
                 return false; // StrongSwan requires a DH group for the IKE policy
             }
-            if (group != null && !group.matches("modp1024|modp1536|modp2048|modp3072|modp4096|modp6144|modp8192")) {
+            if (group != null && !group.matches("modp1024|modp1536|modp2048|modp3072|modp4096|modp6144|modp8192|modp1024s160|modp2048s224|modp2048s256|CURVE_25519")) {
                 return false;
             }
         }
