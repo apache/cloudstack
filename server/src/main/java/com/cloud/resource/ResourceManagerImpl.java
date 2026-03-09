@@ -776,7 +776,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 _clusterDetailsDao.persist(cluster_cpu_detail);
                 _clusterDetailsDao.persist(cluster_memory_detail);
             }
-
         }
 
         try {
@@ -871,7 +870,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         hosts.add(host);
                     }
                     discoverer.postDiscovery(hosts, _nodeId);
-
                 }
                 logger.info("server resources successfully discovered by " + discoverer.getName());
                 return hosts;
@@ -2261,15 +2259,26 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private HostVO getNewHost(StartupCommand[] startupCommands) {
         StartupCommand startupCommand = startupCommands[0];
 
-        HostVO host = findHostByGuid(startupCommand.getGuid());
+        String fullGuid = startupCommand.getGuid();
+        logger.debug(String.format("Trying to find Host by guid %s", fullGuid));
+        HostVO host = findHostByGuid(fullGuid);
 
         if (host != null) {
+            logger.debug(String.format("Found Host by guid %s: %s", fullGuid, host));
             return host;
         }
 
-        host = findHostByGuid(startupCommand.getGuidWithoutResource());
+        String guidPrefix = startupCommand.getGuidWithoutResource();
+        logger.debug(String.format("Trying to find Host by guid prefix %s", guidPrefix));
+        host = findHostByGuidPrefix(guidPrefix);
 
-        return host; // even when host == null!
+        if (host != null) {
+            logger.debug(String.format("Found Host by guid prefix %s: %s", guidPrefix, host));
+            return host;
+        }
+
+        logger.debug(String.format("Could not find Host by guid %s", fullGuid));
+        return null;
     }
 
     protected HostVO createHostVO(final StartupCommand[] cmds, final ServerResource resource, final Map<String, String> details, List<String> hostTags,
@@ -2949,7 +2958,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      */
     protected void connectAndRestartAgentOnHost(HostVO host, String username, String password, String privateKey) {
         final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
-                host.getPrivateIpAddress(), 22, username, password, privateKey);
+                host.getPrivateIpAddress(), _agentMgr.getHostSshPort(host), username, password, privateKey);
         if (connection == null) {
             throw new CloudRuntimeException(String.format("SSH to agent is enabled, but failed to connect to %s via IP address [%s].", host, host.getPrivateIpAddress()));
         }
@@ -3296,6 +3305,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public HostVO findHostByGuid(final String guid) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getGuid(), Op.EQ, guid);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
+        return sc.find();
+    }
+
+    @Override
+    public HostVO findHostByGuidPrefix(String guid) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getGuid(), Op.LIKE, guid + "%");
+        sc.and(sc.entity().getRemoved(), Op.NULL);
         return sc.find();
     }
 
@@ -3303,6 +3321,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public HostVO findHostByName(final String name) {
         final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         sc.and(sc.entity().getName(), Op.EQ, name);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
         return sc.find();
     }
 

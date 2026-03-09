@@ -145,8 +145,8 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
         return (Map) (paramsCollection.toArray())[0];
     }
 
-    public boolean isCleanupDetails(){
-        return cleanupDetails == null ? false : cleanupDetails.booleanValue();
+    public boolean isCleanupDetails() {
+        return cleanupDetails != null && cleanupDetails;
     }
 
     public CPU.CPUArch getCPUArch() {

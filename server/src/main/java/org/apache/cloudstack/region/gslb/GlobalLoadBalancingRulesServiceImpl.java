@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -681,7 +682,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
                     continue;
                 }
                 SiteLoadBalancerConfig siteLb = zoneSiteLoadbalancerMap.get(innerLoopZoneId.first());
-                siteLb.setLocal(zoneId.first().equals(innerLoopZoneId.first()));
+                siteLb.setLocal(Objects.equals(zoneId.first(), innerLoopZoneId.first()));
                 slbs.add(siteLb);
             }
 

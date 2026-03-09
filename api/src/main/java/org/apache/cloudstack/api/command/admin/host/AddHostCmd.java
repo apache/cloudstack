@@ -60,7 +60,8 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "The Pod ID for the host")
     private Long podId;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "The host URL")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "The host URL, optionally add ssh port (format: 'host:port') for KVM hosts," +
+            " otherwise falls back to the port defined at the config 'kvm.host.discovery.ssh.port'")
     private String url;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "The Zone ID for the host")

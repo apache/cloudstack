@@ -826,7 +826,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException(String.format("Error restoring volume [%s] of VM [%s] to host [%s] using backup provider [%s] due to: [%s].",
                     backedUpVolumeUuid, vm.getUuid(), host.getUuid(), backupProvider.getName(), result.second()));
         }
-        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), vmFromBackup.getBackupVolumeList(),
+        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), backup.getBackedUpVolumes(),
                             backedUpVolumeUuid, vm, datastore.getUuid(), backup)) {
             throw new CloudRuntimeException(String.format("Error attaching volume [%s] to VM [%s]." + backedUpVolumeUuid, vm.getUuid()));
         }
@@ -972,10 +972,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (StringUtils.isEmpty(name)) {
             throw new CloudRuntimeException("Invalid backup provider name provided");
         }
-        if (!backupProvidersMap.containsKey(name)) {
-            throw new CloudRuntimeException("Failed to find backup provider by the name: " + name);
-        }
-        return backupProvidersMap.get(name);
+       if (!backupProvidersMap.containsKey(name)) {
+           throw new CloudRuntimeException("Failed to find backup provider by the name: " + name);
+       }
+       return backupProvidersMap.get(name);
     }
 
     @Override

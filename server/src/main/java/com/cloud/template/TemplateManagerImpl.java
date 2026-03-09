@@ -219,7 +219,6 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -1375,9 +1374,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         else {
             vmInstanceVOList = _vmInstanceDao.listNonExpungedByTemplate(templateId);
         }
-        if(!cmd.isForced() && CollectionUtils.isNotEmpty(vmInstanceVOList)) {
-            final String message = String.format("Unable to delete Template: %s because Instance: [%s] are using it.",  template, Joiner.on(",").join(vmInstanceVOList));
-            logger.warn(message);
+        if (!cmd.isForced() && CollectionUtils.isNotEmpty(vmInstanceVOList)) {
+            String message = String.format("Unable to delete template [%s] because there are [%d] VM instances using it.", template, vmInstanceVOList.size());
+            String instancesListMessage = String.format(" Instances list: [%s].", StringUtils.join(vmInstanceVOList, ","));
+
+            logger.warn("{}{}", message, instancesListMessage);
+
+            if (_accountMgr.isRootAdmin(caller.getAccountId())) {
+                message += instancesListMessage;
+            }
+
             throw new InvalidParameterValueException(message);
         }
 
@@ -2210,7 +2216,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   templateType == null &&
                   templateTag == null &&
                   arch == null &&
-                  (! cleanupDetails && details == null) //update details in every case except this one
+                  (!cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
             return template;
@@ -2308,8 +2314,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (cleanupDetails) {
             template.setDetails(null);
             _tmpltDetailsDao.removeDetails(id);
-        }
-        else if (details != null && !details.isEmpty()) {
+        } else if (details != null && !details.isEmpty()) {
             template.setDetails(details);
             _tmpltDao.saveDetails(template);
         }
