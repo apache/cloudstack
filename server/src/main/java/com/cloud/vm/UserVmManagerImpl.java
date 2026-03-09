@@ -5795,7 +5795,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Set parameters
-        Map<VirtualMachineProfile.Param, Object> params = null;
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
         if (vm.isUpdateParameters()) {
             _vmDao.loadDetails(vm);
 
