@@ -199,6 +199,13 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             }
         }
 
+        executeMount(backupRepoAddress, backupRepoType, mountOptions, mountDirectory, mountTimeout);
+
+        return mountDirectory;
+    }
+
+    private void executeMount(String backupRepoAddress, String backupRepoType, String mountOptions,
+                              String mountDirectory, Integer mountTimeout) {
         List<String[]> commands = new ArrayList<>();
         List<String> cmd = new ArrayList<>();
         cmd.add("sudo");
@@ -219,8 +226,6 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                     backupRepoAddress, backupRepoType, mountDirectory, result.second());
             throw new CloudRuntimeException("Failed to mount the backup repository on the KVM host");
         }
-
-        return mountDirectory;
     }
 
     private void unmountBackupDirectory(String backupDirectory) {
