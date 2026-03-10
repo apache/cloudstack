@@ -29,7 +29,7 @@ jobs:
     if: github.repository == 'apache/cloudstack'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Setup Environment
@@ -57,7 +57,7 @@ jobs:
           tar -czf /tmp/artifacts/targets.tar.gz $(find . -name "target" -type d) tools/marvin/dist
           tar -czf /tmp/artifacts/m2-cloudstack.tar.gz -C ~/.m2/repository org/apache/cloudstack
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-artifacts
           path: /tmp/artifacts/
@@ -68,77 +68,188 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tests:
-          - smoke/test_accounts smoke/test_account_access smoke/test_affinity_groups
-            smoke/test_affinity_groups_projects smoke/test_annotations smoke/test_async_job
-            smoke/test_attach_multiple_volumes smoke/test_backup_recovery_dummy smoke/test_certauthority_root
-            smoke/test_console_endpoint smoke/test_create_list_domain_account_project
-            smoke/test_create_network smoke/test_deploy_vgpu_enabled_vm smoke/test_deploy_virtio_scsi_vm
-            smoke/test_deploy_vm_extra_config_data smoke/test_deploy_vm_iso smoke/test_deploy_vm_iso_uefi
-            smoke/test_deploy_vm_root_resize smoke/test_deploy_vm_with_userdata smoke/test_deploy_vms_in_parallel
-            smoke/test_deploy_vms_with_varied_deploymentplanners smoke/test_restore_vm
-            smoke/test_diagnostics smoke/test_direct_download smoke/test_disk_offerings
-            smoke/test_disk_provisioning_types smoke/test_domain_disk_offerings smoke/test_domain_network_offerings
-            smoke/test_domain_service_offerings smoke/test_domain_vpc_offerings
-          - smoke/test_cluster_drs smoke/test_dynamicroles smoke/test_enable_account_settings_for_domain
-            smoke/test_enable_role_based_users_in_projects smoke/test_events_resource
-            smoke/test_global_settings smoke/test_guest_vlan_range smoke/test_host_maintenance
-            smoke/test_hostha_kvm smoke/test_hostha_simulator smoke/test_internal_lb
-            smoke/test_ipv6_infra smoke/test_iso smoke/test_kubernetes_clusters smoke/test_kubernetes_supported_versions
-            smoke/test_list_ids_parameter smoke/test_loadbalance smoke/test_login
-            smoke/test_2fa smoke/test_metrics_api smoke/test_migration smoke/test_multipleips_per_nic
-            smoke/test_nested_virtualization smoke/test_set_sourcenat smoke/test_webhook_lifecycle
-            smoke/test_purge_expunged_vms smoke/test_extension_lifecycle smoke/test_extension_custom_action_lifecycle
-            smoke/test_extension_custom
-          - smoke/test_network smoke/test_network_acl smoke/test_network_ipv6 smoke/test_network_permissions
-            smoke/test_nic smoke/test_nic_adapter_type smoke/test_non_contigiousvlan
-            smoke/test_object_stores smoke/test_outofbandmanagement smoke/test_outofbandmanagement_nestedplugin
-            smoke/test_over_provisioning smoke/test_password_server smoke/test_persistent_network
-            smoke/test_portable_publicip smoke/test_portforwardingrules smoke/test_primary_storage
-            smoke/test_privategw_acl smoke/test_privategw_acl_ovs_gre smoke/test_projects
-            smoke/test_public_ip_range smoke/test_pvlan smoke/test_regions smoke/test_register_userdata
-            smoke/test_reset_configuration_settings smoke/test_reset_vm_on_reboot
-            smoke/test_resource_accounting smoke/test_resource_detail smoke/test_global_acls
-          - smoke/test_router_dhcphosts smoke/test_router_dns smoke/test_router_dnsservice
-            smoke/test_routers smoke/test_routers_iptables_default_policy smoke/test_routers_network_ops
-            smoke/test_scale_vm smoke/test_secondary_storage smoke/test_service_offerings
-            smoke/test_snapshots smoke/test_ssvm smoke/test_staticroles smoke/test_templates
-            smoke/test_update_security_group smoke/test_usage smoke/test_usage_events
-            smoke/test_vm_deployment_planner smoke/test_vm_strict_host_tags smoke/test_vm_schedule
-            smoke/test_deploy_vgpu_enabled_vm smoke/test_vm_life_cycle smoke/test_vm_lifecycle_unmanage_import
-            smoke/test_vm_snapshot_kvm smoke/test_vm_snapshots smoke/test_volumes
-            smoke/test_vpc_ipv6 smoke/test_vpc_redundant smoke/test_vpc_router_nics
-            smoke/test_vpc_vpn
-          - component/find_hosts_for_migration component/test_acl_isolatednetwork
-            component/test_acl_isolatednetwork_delete component/test_acl_listsnapshot
-          - component/test_acl_listvm component/test_acl_listvolume
-          - component/test_acl_sharednetwork component/test_acl_sharednetwork_deployVM-impersonation
-            component/test_user_private_gateway component/test_user_shared_network
-          - component/test_affinity_groups_projects component/test_allocation_states
-            component/test_assign_vm
-          - component/test_concurrent_snapshots_limit component/test_cpu_domain_limits
-            component/test_cpu_limits component/test_cpu_max_limits component/test_cpu_project_limits
-            component/test_deploy_vm_userdata_multi_nic component/test_deploy_vm_lease
-          - component/test_egress_fw_rules component/test_invalid_gw_nm component/test_ip_reservation
-          - component/test_lb_secondary_ip component/test_list_nics component/test_list_pod
-            component/test_memory_limits
-          - component/test_mm_domain_limits component/test_mm_max_limits component/test_mm_project_limits
-            component/test_network_offering component/test_non_contiguous_vlan
-          - component/test_persistent_networks component/test_project_configs component/test_project_limits
-            component/test_project_resources
-          - component/test_project_usage component/test_protocol_number_security_group
-            component/test_public_ip component/test_resource_limits component/test_resource_limit_tags
-          - component/test_regions_accounts component/test_routers component/test_snapshots
-            component/test_stopped_vm component/test_tags component/test_templates
-            component/test_updateResourceCount component/test_update_vm
-          - component/test_volumes component/test_vpc component/test_vpc_distributed_routing_offering
-            component/test_vpc_network component/test_vpc_offerings component/test_vpc_routers
-            component/test_vpn_users component/test_vpc_network_lbrules
-          - smoke/test_list_accounts smoke/test_list_disk_offerings smoke/test_list_domains
-            smoke/test_list_hosts smoke/test_list_service_offerings smoke/test_list_storage_pools
-            smoke/test_list_volumes
+        tests: [ "smoke/test_accounts
+                  smoke/test_account_access
+                  smoke/test_affinity_groups
+                  smoke/test_affinity_groups_projects
+                  smoke/test_annotations
+                  smoke/test_async_job
+                  smoke/test_attach_multiple_volumes
+                  smoke/test_backup_recovery_dummy
+                  smoke/test_certauthority_root
+                  smoke/test_console_endpoint
+                  smoke/test_create_list_domain_account_project
+                  smoke/test_create_network
+                  smoke/test_deploy_vgpu_enabled_vm
+                  smoke/test_deploy_virtio_scsi_vm
+                  smoke/test_deploy_vm_extra_config_data
+                  smoke/test_deploy_vm_iso
+                  smoke/test_deploy_vm_iso_uefi
+                  smoke/test_deploy_vm_root_resize
+                  smoke/test_deploy_vm_with_userdata
+                  smoke/test_deploy_vms_in_parallel
+                  smoke/test_deploy_vms_with_varied_deploymentplanners
+                  smoke/test_restore_vm
+                  smoke/test_diagnostics
+                  smoke/test_direct_download
+                  smoke/test_disk_offerings
+                  smoke/test_disk_provisioning_types
+                  smoke/test_domain_disk_offerings
+                  smoke/test_domain_network_offerings
+                  smoke/test_domain_service_offerings
+                  smoke/test_domain_vpc_offerings",
+                "smoke/test_cluster_drs
+                  smoke/test_dynamicroles
+                  smoke/test_enable_account_settings_for_domain
+                  smoke/test_enable_role_based_users_in_projects
+                  smoke/test_events_resource
+                  smoke/test_global_settings
+                  smoke/test_guest_vlan_range
+                  smoke/test_host_maintenance
+                  smoke/test_hostha_kvm
+                  smoke/test_hostha_simulator
+                  smoke/test_internal_lb
+                  smoke/test_ipv6_infra
+                  smoke/test_iso
+                  smoke/test_kubernetes_clusters
+                  smoke/test_kubernetes_supported_versions
+                  smoke/test_list_ids_parameter
+                  smoke/test_loadbalance
+                  smoke/test_login
+                  smoke/test_2fa
+                  smoke/test_metrics_api
+                  smoke/test_migration
+                  smoke/test_multipleips_per_nic
+                  smoke/test_nested_virtualization
+                  smoke/test_set_sourcenat
+                  smoke/test_webhook_lifecycle
+                  smoke/test_purge_expunged_vms
+                  smoke/test_extension_lifecycle
+                  smoke/test_extension_custom_action_lifecycle
+                  smoke/test_extension_custom",
+                "smoke/test_network
+                  smoke/test_network_acl
+                  smoke/test_network_ipv6
+                  smoke/test_network_permissions
+                  smoke/test_nic
+                  smoke/test_nic_adapter_type
+                  smoke/test_non_contigiousvlan
+                  smoke/test_object_stores
+                  smoke/test_outofbandmanagement
+                  smoke/test_outofbandmanagement_nestedplugin
+                  smoke/test_over_provisioning
+                  smoke/test_password_server
+                  smoke/test_persistent_network
+                  smoke/test_portable_publicip
+                  smoke/test_portforwardingrules
+                  smoke/test_primary_storage
+                  smoke/test_privategw_acl
+                  smoke/test_privategw_acl_ovs_gre
+                  smoke/test_projects
+                  smoke/test_public_ip_range
+                  smoke/test_pvlan
+                  smoke/test_regions
+                  smoke/test_register_userdata
+                  smoke/test_reset_configuration_settings
+                  smoke/test_reset_vm_on_reboot
+                  smoke/test_resource_accounting
+                  smoke/test_resource_detail
+                  smoke/test_global_acls",
+                "smoke/test_router_dhcphosts
+                  smoke/test_router_dns
+                  smoke/test_router_dnsservice
+                  smoke/test_routers
+                  smoke/test_routers_iptables_default_policy
+                  smoke/test_routers_network_ops
+                  smoke/test_scale_vm
+                  smoke/test_secondary_storage
+                  smoke/test_service_offerings
+                  smoke/test_snapshots
+                  smoke/test_ssvm
+                  smoke/test_staticroles
+                  smoke/test_templates
+                  smoke/test_update_security_group
+                  smoke/test_usage
+                  smoke/test_usage_events
+                  smoke/test_vm_deployment_planner
+                  smoke/test_vm_strict_host_tags
+                  smoke/test_vm_schedule
+                  smoke/test_deploy_vgpu_enabled_vm
+                  smoke/test_vm_life_cycle
+                  smoke/test_vm_lifecycle_unmanage_import
+                  smoke/test_vm_snapshot_kvm
+                  smoke/test_vm_snapshots
+                  smoke/test_volumes
+                  smoke/test_vpc_ipv6
+                  smoke/test_vpc_redundant
+                  smoke/test_vpc_router_nics
+                  smoke/test_vpc_vpn",
+                "component/find_hosts_for_migration
+                  component/test_acl_isolatednetwork
+                  component/test_acl_isolatednetwork_delete
+                  component/test_acl_listsnapshot",
+                "component/test_acl_listvm
+                  component/test_acl_listvolume",
+                "component/test_acl_sharednetwork
+                  component/test_acl_sharednetwork_deployVM-impersonation
+                  component/test_user_private_gateway
+                  component/test_user_shared_network",
+                "component/test_affinity_groups_projects
+                  component/test_allocation_states
+                  component/test_assign_vm",
+                "component/test_concurrent_snapshots_limit
+                  component/test_cpu_domain_limits
+                  component/test_cpu_limits
+                  component/test_cpu_max_limits
+                  component/test_cpu_project_limits
+                  component/test_deploy_vm_userdata_multi_nic
+                  component/test_deploy_vm_lease",
+                "component/test_egress_fw_rules
+                  component/test_invalid_gw_nm
+                  component/test_ip_reservation",
+                "component/test_lb_secondary_ip
+                  component/test_list_nics
+                  component/test_list_pod
+                  component/test_memory_limits",
+                "component/test_mm_domain_limits
+                  component/test_mm_max_limits
+                  component/test_mm_project_limits
+                  component/test_network_offering
+                  component/test_non_contiguous_vlan",
+                "component/test_persistent_networks
+                  component/test_project_configs
+                  component/test_project_limits
+                  component/test_project_resources",
+                "component/test_project_usage
+                  component/test_protocol_number_security_group
+                  component/test_public_ip
+                  component/test_resource_limits
+                  component/test_resource_limit_tags",
+                "component/test_regions_accounts
+                  component/test_routers
+                  component/test_snapshots
+                  component/test_stopped_vm
+                  component/test_tags
+                  component/test_templates
+                  component/test_updateResourceCount
+                  component/test_update_vm",
+                "component/test_volumes
+                  component/test_vpc
+                  component/test_vpc_distributed_routing_offering
+                  component/test_vpc_network
+                  component/test_vpc_offerings
+                  component/test_vpc_routers
+                  component/test_vpn_users
+                  component/test_vpc_network_lbrules",
+                "smoke/test_list_accounts
+                  smoke/test_list_disk_offerings
+                  smoke/test_list_domains
+                  smoke/test_list_hosts
+                  smoke/test_list_service_offerings
+                  smoke/test_list_storage_pools
+                  smoke/test_list_volumes"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Setup Environment
@@ -179,7 +290,7 @@ jobs:
           sudo systemctl restart mysql
           sudo mysql -uroot -e "SELECT VERSION();"
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: build-artifacts
           path: /tmp/artifacts/
@@ -233,7 +344,7 @@ jobs:
         run: |
           echo -e "Simulator CI Test Results: (only failures listed)\n"
           python3 ./tools/marvin/xunit-reader.py integration-test-results/
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           files: jacoco-coverage.xml
           fail_ci_if_error: true

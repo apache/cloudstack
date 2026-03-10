@@ -26,9 +26,9 @@ permissions:
   contents: read
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup Environment
         uses: ./.github/actions/setup-env
       - name: Install Non-OSS
