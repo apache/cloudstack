@@ -18,8 +18,8 @@
 
 help() {
   printf "Usage: $0
-                -i identifier (ignored for local-only heartbeat)
-                -p path (ignored for local-only heartbeat)
+                -i identifier (required for CLI compatibility; value ignored by local-only heartbeat)
+                -p path (required for CLI compatibility; value ignored by local-only heartbeat)
                 -m mount point (local path where heartbeat will be written)
                 -h host (host IP/name to include in heartbeat filename)
                 -r write/read hb log (read-check mode)
