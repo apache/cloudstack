@@ -5405,7 +5405,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic) {
-        if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
+        if (nic == null || nic.getBroadCastUri() == null) {
+            return false;
+        }
+
+        String scheme = nic.getBroadCastUri().getScheme();
+        if (!"pvlan".equals(scheme)) {
             return false;
         }
         String op = "add";
@@ -5415,9 +5420,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         Network network = _networkDao.findById(nic.getNetworkId());
         Host host = _hostDao.findById(hostId);
+        if (host == null) {
+            logger.warn("Host with id {} doesn't exist", hostId);
+            return false;
+        }
+
         String networkTag = _networkModel.getNetworkTag(host.getHypervisorType(), network);
         PvlanSetupCommand cmd = PvlanSetupCommand.createVmSetup(op, nic.getBroadCastUri(), networkTag, nic.getMacAddress());
-        Answer answer = null;
+        Answer answer;
         try {
             answer = _agentMgr.send(hostId, cmd);
         } catch (OperationTimedoutException e) {
