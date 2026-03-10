@@ -102,55 +102,6 @@ echo "Downloading Headlamp manifest from ${HEADLAMP_DASHBOARD_URL}"
 headlamp_conf_file="${working_dir}/headlamp.yaml"
 curl -sSL ${HEADLAMP_DASHBOARD_URL} -o ${headlamp_conf_file}
 
-# Patch the Headlamp manifest to add missing components
-echo "Patching Headlamp manifest with missing ServiceAccount and ClusterRoleBinding..."
-
-if ! grep -q "kind: ServiceAccount" ${headlamp_conf_file}; then
-  echo "Adding missing ServiceAccount to Headlamp manifest"
-  cat > ${headlamp_conf_file}.tmp << 'EOF'
----
-# ServiceAccount for Headlamp (added by CloudStack)
-kind: ServiceAccount
-apiVersion: v1
-metadata:
-  name: headlamp-admin
-  namespace: kube-system
----
-# ClusterRoleBinding to grant cluster-admin permissions to Headlamp (added by CloudStack)
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: headlamp-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    name: headlamp-admin
-    namespace: kube-system
----
-EOF
-  cat ${headlamp_conf_file} >> ${headlamp_conf_file}.tmp
-  mv ${headlamp_conf_file}.tmp ${headlamp_conf_file}
-fi
-
-if grep -q "kind: Deployment" ${headlamp_conf_file} && ! grep -q "serviceAccountName:" ${headlamp_conf_file}; then
-  echo "Adding serviceAccountName to Headlamp Deployment"
-  awk '/kind: Deployment/,0 {
-    if (/^    spec:$/ && !found) {
-      print
-      print "      serviceAccountName: headlamp-admin"
-      found=1
-      next
-    }
-  }
-  {print}' ${headlamp_conf_file} > ${headlamp_conf_file}.tmp
-  mv ${headlamp_conf_file}.tmp ${headlamp_conf_file}
-fi
-
-echo "Headlamp manifest patched successfully"
-
 # TODO : Change the url once merged
 AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
 echo "Downloading kubernetes cluster autoscaler ${AUTOSCALER_URL}"
