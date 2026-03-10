@@ -67,12 +67,6 @@ do
   esac
 done
 
-# Match original kvmheartbeat.sh: require NfsSvrIP parameter for CLI compatibility
-if [ -z "$NfsSvrIP" ]
-then
-   exit 1
-fi
-
 # For local-only heartbeat we require a mountpoint
 if [ -z "$MountPoint" ]
 then
