@@ -87,7 +87,7 @@
             <a-timeline-item>
               <p>
                 {{ $t('label.token.for.dashboard.login') }}<br><br>
-                <code><b>kubectl --kubeconfig /custom/path/kube.conf describe secret $(kubectl --kubeconfig /custom/path/kube.conf get secrets -n kubernetes-dashboard | grep kubernetes-dashboard-token | awk '{print $1}') -n kubernetes-dashboard</b></code>
+                <code><b>kubectl --kubeconfig /custom/path/kube.conf describe secret $(kubectl --kubeconfig /custom/path/kube.conf get secrets -n kube-system | grep headlamp-admin | awk '{print $1}') -n kube-system</b></code>
               </p>
             </a-timeline-item>
           </a-timeline>
