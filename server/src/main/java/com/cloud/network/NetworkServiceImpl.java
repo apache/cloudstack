@@ -41,6 +41,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -76,6 +77,7 @@ import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -334,6 +336,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     FirewallRulesDao _firewallDao;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    ReservationDao reservationDao;
     @Inject
     DomainManager _domainMgr;
     @Inject
@@ -1152,15 +1156,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (ipDedicatedAccountId != null && !ipDedicatedAccountId.equals(account.getAccountId())) {
             throw new InvalidParameterValueException("Unable to reserve a IP because it is dedicated to another account.");
         }
-        if (ipDedicatedAccountId == null) {
-            // Check that the maximum number of public IPs for the given accountId will not be exceeded
-            try {
-                _resourceLimitMgr.checkResourceLimit(account, Resource.ResourceType.public_ip);
-            } catch (ResourceAllocationException ex) {
-                logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + account);
-                throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
-            }
-        }
+
+        long reservedIpAddressesAmount = ipDedicatedAccountId == null ? 1L : 0L;
+        try (CheckedReservation publicIpAddressReservation = new CheckedReservation(account, Resource.ResourceType.public_ip, reservedIpAddressesAmount, reservationDao, _resourceLimitMgr)) {
+
         List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
         ipVO.setAllocatedTime(new Date());
         ipVO.setAllocatedToAccountId(account.getAccountId());
@@ -1170,10 +1169,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             ipVO.setDisplay(displayIp);
         }
         ipVO = _ipAddressDao.persist(ipVO);
-        if (ipDedicatedAccountId == null) {
+        if (reservedIpAddressesAmount > 0) {
             _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
         }
         return ipVO;
+
+        } catch (ResourceAllocationException ex) {
+            logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + account);
+            throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
+        }
     }
 
     @Override
