@@ -167,6 +167,8 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public HostVO findHostByGuid(String guid);
 
+    HostVO findHostByGuidPrefix(String guid);
+
     public HostVO findHostByName(String name);
 
     HostStats getHostStatistics(Host host);

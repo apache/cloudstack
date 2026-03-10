@@ -14,21 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.acl.apikeypair;
 
-package org.apache.cloudstack.quota.activationrule.presetvariables;
+import org.apache.cloudstack.acl.RolePermissionEntity;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
-
-@RunWith(MockitoJUnitRunner.class)
-public class HostTest {
-
-    @Test
-    public void setTagsTestAddFieldTagsToCollection() {
-        Host variable = new Host();
-        variable.setTags(null);
-        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("tags"));
-    }
+public interface ApiKeyPairPermission extends RolePermissionEntity {
+    long getApiKeyPairId();
 }

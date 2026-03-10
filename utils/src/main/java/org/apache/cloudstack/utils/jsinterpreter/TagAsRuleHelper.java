@@ -17,7 +17,11 @@
 package org.apache.cloudstack.utils.jsinterpreter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import com.cloud.utils.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,24 +31,25 @@ public class TagAsRuleHelper {
 
     protected static Logger LOGGER = LogManager.getLogger(TagAsRuleHelper.class);
 
-    private static final String PARSE_TAGS = "tags = tags ? tags.split(',') : [];";
-
-
     public static boolean interpretTagAsRule(String rule, String tags, long timeout) {
-        String script = PARSE_TAGS + rule;
+        List<String> tagsPresetVariable = new ArrayList<>();
+        if (!StringUtils.isEmpty(tags)) {
+            tagsPresetVariable.addAll(Arrays.asList(tags.split(",")));
+        }
+
         try (JsInterpreter jsInterpreter = new JsInterpreter(timeout)) {
-            jsInterpreter.injectVariable("tags", tags);
-            Object scriptReturn = jsInterpreter.executeScript(script);
+            jsInterpreter.injectVariable("tags", tagsPresetVariable);
+            Object scriptReturn = jsInterpreter.executeScript(rule);
             if (scriptReturn instanceof Boolean) {
                 return (Boolean)scriptReturn;
             }
         } catch (IOException ex) {
-            String message = String.format("Error while executing script [%s].", script);
+            String message = String.format("Error while executing script [%s].", rule);
             LOGGER.error(message, ex);
             throw new CloudRuntimeException(message, ex);
         }
 
-        LOGGER.debug(String.format("Result of tag rule [%s] was not a boolean, returning false.", script));
+        LOGGER.debug("Result of tag rule [{}] was not a boolean, returning false.", rule);
         return false;
     }
 

@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.storage;
 
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.browser.StorageBrowser;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,6 +31,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -95,10 +97,13 @@ public class DownloadImageStoreObjectCmdTest {
 
     @Test
     public void testGetEventDescription() {
+        UUID uuid = UUID.randomUUID();
+
         ReflectionTestUtils.setField(cmd, "storeId", 1L);
         ReflectionTestUtils.setField(cmd, "path", "path/to/object");
+        CallContext.current().putApiResourceUuid("id", uuid);
         String eventDescription = cmd.getEventDescription();
 
-        Assert.assertEquals("Downloading object at path path/to/object on image store 1", eventDescription);
+        Assert.assertEquals(String.format("Downloading object at path path/to/object on image store %s", uuid), eventDescription);
     }
 }

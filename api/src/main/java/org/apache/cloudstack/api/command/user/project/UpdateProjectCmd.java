@@ -133,7 +133,7 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceAllocationException {
-        CallContext.current().setEventDetails("Project id: " + getId());
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.ID));
         if (getAccountName() != null && getUserId() != null) {
             throw new InvalidParameterValueException("Account name and User ID are mutually exclusive. Provide either Account name" +
                     "to update Account or user ID to update the user of the project");
@@ -161,6 +161,6 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating project: " + id;
+        return "Updating project with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

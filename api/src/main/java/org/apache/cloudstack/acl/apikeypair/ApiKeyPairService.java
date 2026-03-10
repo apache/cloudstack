@@ -14,27 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.acl.apikeypair;
 
-package org.apache.cloudstack.storage.heuristics.presetvariables;
+import java.util.List;
 
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+public interface ApiKeyPairService {
+    List<ApiKeyPairPermission> findAllPermissionsByKeyPairId(Long apiKeyPairId, Long roleId);
 
-@RunWith(MockitoJUnitRunner.class)
-public class GenericHeuristicPresetVariableTest {
+    ApiKeyPair findByApiKey(String apiKey);
 
-    @Test
-    public void toStringTestReturnsValidJson() {
-        GenericHeuristicPresetVariable variable = new GenericHeuristicPresetVariable();
-        variable.setName("test name");
-
-        String expected = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(variable, "name");
-        String result = variable.toString();
-
-        Assert.assertEquals(expected, result);
-    }
-
+    ApiKeyPair findById(Long id);
 }

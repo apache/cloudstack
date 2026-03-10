@@ -14,21 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.acl.dao;
 
-package org.apache.cloudstack.quota.activationrule.presetvariables;
+import com.cloud.utils.Pair;
+import java.util.List;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+public interface ApiKeyPairDao extends GenericDao<ApiKeyPairVO, Long> {
+    ApiKeyPairVO findBySecretKey(String secretKey);
 
-@RunWith(MockitoJUnitRunner.class)
-public class AccountTest {
+    ApiKeyPairVO findByApiKey(String apiKey);
 
-    @Test
-    public void setRoleTestAddFieldRoleToCollection() {
-        Account variable = new Account();
-        variable.setRole(null);
-        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("role"));
-    }
+    ApiKeyPairVO findByUuid(String uuid);
+
+    Pair<List<ApiKeyPairVO>, Integer> listApiKeysByUserOrApiKeyId(Long userId, Long apiKeyId);
+
+    ApiKeyPairVO getLastApiKeyCreatedByUser(Long userId);
+
+    Pair<List<ApiKeyPairVO>, Integer> listByUserIdsPaginated(List<Long> userIds, ListUserKeysCmd cmd);
+
 }

@@ -14,21 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package com.cloud.user;
 
-package org.apache.cloudstack.quota.activationrule.presetvariables;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
-
-@RunWith(MockitoJUnitRunner.class)
-public class RoleTest {
-
-    @Test
-    public void setTagsTestAddFieldTagsToCollection() {
-        Role variable = new Role();
-        variable.setType(null);
-        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("type"));
-    }
+public enum ApiKeyPairState {
+    ENABLED, REMOVED, EXPIRED
 }

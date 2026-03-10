@@ -14,27 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.acl.apikeypair;
 
-package org.apache.cloudstack.quota.activationrule.presetvariables;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import java.util.Date;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ResourceTest {
-
-    @Test
-    public void toStringTestReturnAJson() {
-        Resource variable = new Resource();
-
-        String expected = ToStringBuilder.reflectionToString(variable, ToStringStyle.JSON_STYLE);
-        String result = variable.toString();
-
-        Assert.assertEquals(expected, result);
-    }
-
+public interface ApiKeyPair extends ControlledEntity, InternalIdentity, Identity {
+    Long getUserId();
+    Date getStartDate();
+    Date getEndDate();
+    Date getCreated();
+    String getDescription();
+    String getApiKey();
+    String getSecretKey();
+    String getName();
+    Date getRemoved();
+    void setRemoved(Date date);
+    void validateDate();
+    boolean hasEndDatePassed();
 }

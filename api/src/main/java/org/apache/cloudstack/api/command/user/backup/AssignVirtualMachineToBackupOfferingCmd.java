@@ -109,6 +109,6 @@ public class AssignVirtualMachineToBackupOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Assigning Instance to backup offering ID: " + offeringId;
+        return "Assigning Instance with ID " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " to backup offering with ID: " + getResourceUuid(ApiConstants.BACKUP_OFFERING_ID);
     }
 }

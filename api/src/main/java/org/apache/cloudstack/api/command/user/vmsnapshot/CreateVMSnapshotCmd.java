@@ -34,7 +34,6 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 
 @APICommand(name = "createVMSnapshot", description = "Creates Snapshot for an Instance.", responseObject = VMSnapshotResponse.class, since = "4.2.0", entityType = {VMSnapshot.class},
@@ -105,7 +104,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating Snapshot for Instance: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
+        return "Creating Snapshot for Instance: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override
@@ -115,7 +114,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID));
         VMSnapshot result = _vmSnapshotService.createVMSnapshot(getVmId(), getEntityId(), getQuiescevm());
         if (result != null) {
             VMSnapshotResponse response = _responseGenerator.createVMSnapshotResponse(result);
