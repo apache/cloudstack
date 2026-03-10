@@ -20,6 +20,7 @@
 package com.cloud.utils.ssh;
 
 import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +32,7 @@ import java.security.interfaces.RSAPublicKey;
 
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 public class SSHKeysHelper {
 
@@ -146,7 +148,11 @@ public class SSHKeysHelper {
             return null;
         }
         try {
-            return CertUtils.privateKeyToPem(keyPair.getPrivate());
+            StringWriter sw = new StringWriter();
+            try (JcaPEMWriter pemWriter = new JcaPEMWriter(sw)) {
+                pemWriter.writeObject(keyPair.getPrivate());
+            }
+            return sw.toString();
         } catch (Exception e) {
             e.printStackTrace();
         }
