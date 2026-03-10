@@ -118,7 +118,7 @@ public class SSHKeysHelper {
 
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-            writeString(buffer,"ssh-rsa");
+            writeString(buffer, "ssh-rsa");
             writeBigInt(buffer, rsaPublicKey.getPublicExponent());
             writeBigInt(buffer, rsaPublicKey.getModulus());
 
