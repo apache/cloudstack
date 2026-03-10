@@ -58,8 +58,8 @@
             {{ record.isolationuri }}
           </a-descriptions-item>
 
-          <a-descriptions-item :label="$t('label.dns_url')" v-if="record.dns_url">
-            {{ record.dns_url }}
+          <a-descriptions-item :label="$t('label.dns.record.url')" v-if="record.dnsrecordurl">
+            {{ record.dnsrecordurl }}
           </a-descriptions-item>
         </template>
       </a-descriptions>

@@ -47,26 +47,6 @@
             :placeholder="apiParams.url?.description" />
         </a-form-item>
 
-        <a-form-item name="provider" ref="provider">
-          <template #label>
-            <tooltip-label
-              :title="$t('label.provider')"
-              :tooltip="apiParams.provider?.description" />
-          </template>
-          <a-select
-            v-model:value="form.provider"
-            :placeholder="apiParams.provider?.description || 'Select Provider'"
-            :loading="fetchingProviders"
-            showSearch>
-            <a-select-option
-              v-for="provider in providers"
-              :key="provider.name || provider"
-              :value="provider.name || provider">
-              {{ provider.description || provider.name || provider }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-
         <a-form-item name="port" ref="port">
           <template #label>
             <tooltip-label
@@ -78,38 +58,6 @@
             :min="1"
             :max="65535"
             style="width: 100%" />
-        </a-form-item>
-
-        <a-form-item name="credentials" ref="credentials">
-          <template #label>
-            <tooltip-label
-              :title="$t('label.dns.credentials')"
-              :tooltip="apiParams.credentials?.description" />
-          </template>
-          <a-input-password
-            v-model:value="form.credentials"
-            :placeholder="apiParams.credentials?.description || 'Enter API Key'" />
-        </a-form-item>
-
-        <a-form-item name="nameservers" ref="nameservers">
-          <template #label>
-            <tooltip-label
-              :title="$t('label.nameservers')"
-              :tooltip="apiParams.nameservers?.description" />
-          </template>
-
-          <a-select
-            v-model:value="form.nameservers"
-            mode="tags"
-            style="width: 100%"
-            :token-separators="[',', ' ']"
-            :placeholder="apiParams.nameservers?.description || 'ns1.example.com, ns2.example.com'" />
-        </a-form-item>
-
-        <a-form-item name="ispublic" ref="ispublic">
-          <a-checkbox v-model:checked="form.ispublic">
-            {{ $t('label.ispublic') }}
-          </a-checkbox>
         </a-form-item>
 
         <div class="action-button">
@@ -129,13 +77,19 @@
 </template>
 
 <script>
-import { getAPI, postAPI } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'AddDnsServer',
+  name: 'UpdateDnsServer',
   components: {
     TooltipLabel
+  },
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    }
   },
   data () {
     return {
@@ -144,29 +98,25 @@ export default {
       form: {
         name: '',
         url: '',
-        provider: '',
-        port: 8081,
-        nameservers: '',
-        ispublic: false
+        port: 53
       },
-      rules: {},
-      fetchingProviders: false,
-      providers: []
+      rules: {}
     }
   },
   created () {
-    this.apiParams = this.$getApiParams('addDnsServer') || {}
+    this.apiParams = this.$getApiParams('updateDnsServer') || {}
     this.rules = {
       name: [{ required: true, message: this.$t('message.error.required.input') }],
-      url: [{ required: true, message: this.$t('message.error.required.input') }],
-      provider: [{ required: true, message: this.$t('message.error.required.input') }],
-      credentials: [{ required: true, message: this.$t('message.error.required.input') }]
+      url: [{ required: true, message: this.$t('message.error.required.input') }]
     }
-    this.fetchProviders()
+    this.form.name = this.resource.name || ''
+    this.form.url = this.resource.url || ''
+    this.form.port = this.resource.port || 53
   },
   methods: {
     async handleSubmit () {
       if (this.loading) return
+
       try {
         await this.$refs.formRef.validate()
       } catch (error) {
@@ -175,13 +125,17 @@ export default {
         }
         return
       }
+
       this.loading = true
+
       try {
-        await postAPI('addDnsServer', this.form)
+        await postAPI('updateDnsServer', { id: this.resource.id, ...this.form })
+
         this.$notification.success({
-          message: this.$t('label.add.dns.server'),
-          description: this.$t('message.success.add.dns.server')
+          message: this.$t('label.dns.update.server'),
+          description: this.$t('message.success.update.dns.server')
         })
+
         this.$emit('refresh-data')
         this.closeAction()
       } catch (error) {
@@ -196,23 +150,6 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
-    },
-    async fetchProviders () {
-      this.fetchingProviders = true
-      try {
-        const response = await getAPI('listDnsProviders')
-        const listResponse = response?.listdnsprovidersresponse || {}
-        this.providers = listResponse.dnsprovider || listResponse.provider || []
-        if (this.providers.length > 0) {
-          const defaultProvider = this.providers[0]
-          this.form.provider = defaultProvider.name || defaultProvider
-        }
-      } catch (error) {
-        console.error('Failed to fetch DNS providers', error)
-        this.$message.warning('Could not load DNS providers.')
-      } finally {
-        this.fetchingProviders = false
-      }
     }
   }
 }

@@ -110,7 +110,7 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
 
         sb.and().op(ApiConstants.ACCOUNT_ID, sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         if (!CollectionUtils.isEmpty(domainIds)) {
-            sb.or().op(ApiConstants.IS_PUBLIC, sb.entity().isPublicServer(), SearchCriteria.Op.EQ);
+            sb.or().op(ApiConstants.IS_PUBLIC, sb.entity().getPublicServer(), SearchCriteria.Op.EQ);
             sb.and(ApiConstants.DOMAIN_IDS, sb.entity().getDomainId(), SearchCriteria.Op.IN);
             sb.cp();
         }

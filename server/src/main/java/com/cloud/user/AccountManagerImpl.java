@@ -3640,7 +3640,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (caller.getId() == dnsServer.getAccountId()) {
             return;
         }
-        if (!dnsServer.isPublicServer()) {
+        if (!dnsServer.getPublicServer()) {
             throw new PermissionDeniedException(caller + "is not allowed to access the DNS server " + dnsServer.getName());
         }
         Account owner = getAccount(dnsServer.getAccountId());

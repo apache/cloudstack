@@ -230,7 +230,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             dnsServer.setPort(cmd.getPort());
         }
         if (cmd.isPublic() != null) {
-            dnsServer.setIsPublic(cmd.isPublic());
+            dnsServer.setPublicServer(cmd.isPublic());
         }
 
         if (cmd.getPublicDomainSuffix() != null) {
@@ -476,7 +476,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Account caller = CallContext.current().getCallingAccount();
         boolean isOwner = (server.getAccountId() == caller.getId());
         if (!isOwner) {
-            if (!server.isPublicServer()) {
+            if (!server.getPublicServer()) {
                 throw new PermissionDeniedException("You do not have permission to use this DNS server.");
             }
             dnsZoneName = DnsProviderUtil.appendPublicSuffixToZone(dnsZoneName, server.getPublicDomainSuffix());

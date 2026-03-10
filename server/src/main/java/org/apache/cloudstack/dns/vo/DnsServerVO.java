@@ -36,7 +36,6 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsServer;
-import org.apache.cloudstack.dns.DnsZone;
 
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.Encrypt;
@@ -123,7 +122,7 @@ public class DnsServerVO implements DnsServer {
         this.publicDomainSuffix = publicDomainSuffix;
         this.publicServer = isPublic;
         this.state = State.Enabled;
-        this.nameServers = String.join(",", nameServers);;
+        this.nameServers = String.join(",", nameServers);
     }
 
     @Override
@@ -133,7 +132,7 @@ public class DnsServerVO implements DnsServer {
 
     @Override
     public Class<?> getEntityType() {
-        return DnsZone.class;
+        return DnsServer.class;
     }
 
     @Override
@@ -176,7 +175,7 @@ public class DnsServerVO implements DnsServer {
         return uuid;
     }
 
-    public boolean isPublicServer() {
+    public boolean getPublicServer() {
         return publicServer;
     }
 
@@ -202,8 +201,8 @@ public class DnsServerVO implements DnsServer {
         this.nameServers = nameServers;
     }
 
-    public void setIsPublic(boolean value) {
-        publicServer = value;
+    public void setPublicServer(boolean value) {
+        this.publicServer = value;
     }
 
     public void setPublicDomainSuffix(String publicDomainSuffix) {

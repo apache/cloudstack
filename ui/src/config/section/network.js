@@ -1489,46 +1489,14 @@ export default {
       ]
     },
     {
-      name: 'dnsrecords',
-      title: 'label.dns.records',
-      icon: 'global-outlined',
-      hidden: true,
-      permission: ['listDnsRecords'],
-      columns: ['name', 'url', 'provider'],
-      details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers'],
-      related: [{
-        name: 'vm',
-        title: 'label.dns.zone',
-        param: 'dnszoneid'
-      }]
-    },
-    {
-      name: 'dnszones',
-      title: 'label.dns.zones',
-      icon: 'global-outlined',
-      hidden: true,
-      permission: ['listDnsZones'],
-      columns: ['name', 'state', 'dnsservername', 'dnsserveraccount'],
-      details: ['name', 'state', 'dnsservername', 'dnsserveraccount'],
-      tabs: [{
-        name: 'details',
-        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
-      },
-      {
-        name: 'dnsrecords',
-        component: shallowRef(defineAsyncComponent(() => import('@/views/network/InternalLBAssignedVmTab.vue'))),
-        show: () => true
-      }]
-    },
-    {
       name: 'dnsserver',
       title: 'label.dns.server',
       icon: 'global-outlined',
       permission: ['listDnsServers'],
       columns: ['name', 'url', 'provider'],
-      details: ['name', 'url', 'abc', 'provider', 'ispublic', 'port', 'nameservers', 'domain', 'account'],
+      details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'domain', 'account'],
       related: [{
-        name: 'dnszones',
+        name: 'dnszone',
         title: 'label.dns.zone',
         param: 'dnsserverid'
       }],
@@ -1550,7 +1518,7 @@ export default {
           label: 'label.dns.update.server',
           dataView: true,
           popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AddDnsServer.vue'))),
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsServer.vue'))),
           show: (record) => { return true }
         },
         {
@@ -1560,6 +1528,58 @@ export default {
           message: 'message.action.delete.dns.server',
           dataView: true,
           groupAction: true,
+          show: (record) => { return true },
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'dnszone',
+      title: 'label.dns.zones',
+      icon: 'global-outlined',
+      permission: ['listDnsZones'],
+      columns: ['name', 'state', 'dnsservername', 'account'],
+      details: ['name', 'id', 'state', 'dnsservername', 'dnsserverid', 'account', 'domainpath'],
+      tabs: [{
+        name: 'details',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+      },
+      {
+        name: 'dns.records',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DnsRecordsTab.vue'))),
+        show: () => true
+      }],
+      actions: [
+        {
+          api: 'createDnsZone',
+          icon: 'plus-outlined',
+          label: 'label.dns.add.zone',
+          listView: true,
+          popup: true,
+          disabled: (record) => false,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AddDnsZone.vue'))),
+          show: () => {
+            return true
+          }
+        },
+        {
+          api: 'updateDnsZone',
+          icon: 'edit-outlined',
+          label: 'label.dns.update.zone',
+          dataView: true,
+          popup: true,
+          disabled: (record) => false,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsZone.vue'))),
+          show: (record) => { return true }
+        },
+        {
+          api: 'deleteDnsZone',
+          icon: 'delete-outlined',
+          label: 'label.dns.delete.zone',
+          message: 'message.action.delete.dns.zone',
+          dataView: true,
+          groupAction: true,
+          disabled: (record) => false,
           show: (record) => { return true },
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
