@@ -119,6 +119,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.user.UserPasswordResetManager;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -1398,6 +1399,25 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new CloudRuntimeException(errorMessage);
         }
         return userPasswordResetManager.validateAndResetPassword(userAccount, token, password);
+    }
+
+    @Override
+    public String getDomainId(Map<String, Object[]> params) {
+        if (MapUtils.isEmpty(params)) {
+            return null;
+        }
+
+        String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (domainIdArr == null) {
+            // Fallback to support clients using the camelCase parameter name "domainId"
+            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
+        }
+
+        if (domainIdArr == null || domainIdArr.length == 0) {
+            return null;
+        }
+
+        return domainIdArr[0];
     }
 
     private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
