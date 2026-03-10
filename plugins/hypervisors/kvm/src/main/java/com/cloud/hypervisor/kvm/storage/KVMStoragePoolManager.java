@@ -57,7 +57,7 @@ public class KVMStoragePoolManager {
     private final Map<String, StoragePoolInformation> _storagePools = new ConcurrentHashMap<String, StoragePoolInformation>();
     private final Map<String, StorageAdaptor> _storageMapper = new HashMap<String, StorageAdaptor>();
 
-    public StorageAdaptor getStorageAdaptor(StoragePoolType type) {
+    private StorageAdaptor getStorageAdaptor(StoragePoolType type) {
         // type can be null: LibVirtComputingResource:3238
         if (type == null) {
             return _storageMapper.get("libvirt");
