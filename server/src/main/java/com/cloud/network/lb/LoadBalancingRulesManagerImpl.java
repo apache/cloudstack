@@ -53,6 +53,8 @@ import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -1018,7 +1020,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, eventDescription = "assigning to load balancer", async = true)
-    public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpMap, boolean isAutoScaleVM) {
+    public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpMap, Map<Long, Long> vmIdNetworkMap, boolean isAutoScaleVM) {
         CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
 
@@ -1091,28 +1093,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             _rulesMgr.checkRuleAndUserVm(loadBalancer, vm, caller);
 
             Account vmOwner = _accountDao.findById(vm.getAccountId());
-            Network network = _networkDao.findById(loadBalancer.getNetworkId());
-            _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, network);
+            Network loadBalancerNetwork = _networkDao.findById(loadBalancer.getNetworkId());
+            _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, loadBalancerNetwork);
 
-            // Let's check to make sure the vm has a nic in the same network as
-            // the load balancing rule.
-            List<? extends Nic> nics = _networkModel.getNics(vm.getId());
-            Nic nicInSameNetwork = null;
-            for (Nic nic : nics) {
-                if (nic.getNetworkId() == loadBalancer.getNetworkId()) {
-                    nicInSameNetwork = nic;
-                    break;
-                }
-            }
+            Nic vmNicInLb = getVmNicInLoadBalancer(vm, loadBalancer, loadBalancerNetwork, vmIdNetworkMap, vmOwner);
 
-            if (nicInSameNetwork == null) {
-                InvalidParameterValueException ex =
-                        new InvalidParameterValueException("VM with id specified cannot be added because it doesn't belong in the same network.");
-                ex.addProxyObject(vm.getUuid(), "instanceId");
-                throw ex;
-            }
-
-            String priIp = nicInSameNetwork.getIPv4Address();
+            String priIp = vmNicInLb.getIPv4Address();
 
             if (existingVmIdIps.containsKey(instanceId)) {
                 // now check for ip address
@@ -1142,9 +1128,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (ip.equals(priIp)) {
                         continue;
                     }
-                    if(_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,nicInSameNetwork.getId()) == null) {
+                    if(_nicSecondaryIpDao.findByIp4AddressAndNicId(ip,vmNicInLb.getId()) == null) {
                         throw new InvalidParameterValueException("Instance IP "+ ip + " specified does not belong to " +
-                                "NIC in Network " + nicInSameNetwork.getNetworkId());
+                                "NIC in Network " + vmNicInLb.getNetworkId());
                     }
                 }
             } else {
@@ -1232,6 +1218,63 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         return success;
+    }
+
+    protected Nic getVmNicInLoadBalancer(UserVm vm, LoadBalancerVO loadBalancer, Network loadBalancerNetwork, Map<Long, Long> vmIdNetworkMap, Account vmOwner) {
+        boolean isVpcConserveModeEnabled = _vpcMgr.isNetworkOnVpcEnabledConserveMode(loadBalancerNetwork);
+
+        boolean isNetworkPassedVpcConserveMode = isVpcConserveModeEnabled && MapUtils.isNotEmpty(vmIdNetworkMap) && vmIdNetworkMap.containsKey(vm.getId());
+        Nic vmNicInLb = isNetworkPassedVpcConserveMode ?
+                getNicForVmInVpcConserveModeTierNetwork(vm, vmIdNetworkMap, vmOwner, loadBalancerNetwork) :
+                getNicForVmLbNetwork(vm, loadBalancer);
+
+        if (vmNicInLb == null) {
+            String msg = !isVpcConserveModeEnabled ?
+                    "VM with id specified cannot be added because it doesn't belong in the same network." :
+                    "VM with id specified cannot be added to the load balancing rule for VPC Conserve Mode.";
+            InvalidParameterValueException ex = new InvalidParameterValueException(msg);
+            ex.addProxyObject(vm.getUuid(), "instanceId");
+            throw ex;
+        }
+        return vmNicInLb;
+    }
+
+    /**
+     * For Isolated Networks or Network tiers of VPCs not using Conserve mode, use the same network as the load balancer
+     * @return the nic of the VM in the load balancer network
+     */
+    protected Nic getNicForVmLbNetwork(UserVm vm, LoadBalancerVO loadBalancer) {
+        List<? extends Nic> nics = _networkModel.getNics(vm.getId());
+        for (Nic nic : nics) {
+            if (nic.getNetworkId() == loadBalancer.getNetworkId()) {
+                return nic;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * On VPC Conserve Mode, VMs from multiple VPC networks tiers can be assigned to the same load balancer.
+     * @return the nic of the VM in the specified tier network in `vmIdNetworkMap`
+     */
+    protected Nic getNicForVmInVpcConserveModeTierNetwork(UserVm vm, Map<Long, Long> vmIdNetworkMap, Account vmOwner, Network loadBalancerNetwork) {
+        Long vmNetworkId = vmIdNetworkMap.get(vm.getId());
+        Network vmNetwork = _networkDao.findById(vmNetworkId);
+        _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, vmNetwork);
+        checkNetworkBelongsToLoadBalancerVpc(vmNetwork, loadBalancerNetwork);
+        return _networkModel.getNicInNetwork(vm.getId(), vmNetworkId);
+    }
+
+    protected void checkNetworkBelongsToLoadBalancerVpc(Network vmNetwork, Network loadBalancerNetwork) {
+        if (ObjectUtils.anyNull(vmNetwork, loadBalancerNetwork)) {
+            throw new InvalidParameterValueException("Cannot add VM to load balancer because the VM network or load balancer network is null");
+        }
+        if (ObjectUtils.anyNull(vmNetwork.getVpcId(), loadBalancerNetwork.getVpcId())) {
+            throw new InvalidParameterValueException("Cannot add VM to load balancer because the VM network or load balancer network are not part of a VPC");
+        }
+        if (!vmNetwork.getVpcId().equals(loadBalancerNetwork.getVpcId())) {
+            throw new InvalidParameterValueException("Cannot add VM to load balancer because the VM network and load balancer network are not part of the same VPC");
+        }
     }
 
     @Override

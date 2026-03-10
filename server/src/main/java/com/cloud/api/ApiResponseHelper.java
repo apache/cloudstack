@@ -1675,7 +1675,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Network guestNtwk = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(guestNtwk.getUuid());
-
+        response.setNetworkName(guestNtwk.getName());
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
 

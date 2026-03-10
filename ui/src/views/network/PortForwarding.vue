@@ -117,6 +117,12 @@
         <template v-if="column.key === 'cidrlist'">
           <span style="white-space: pre-line"> {{ record.cidrlist?.replaceAll(",", "\n") }}</span>
         </template>
+        <template v-if="vpcConserveMode && column.key === 'networkid'">
+          <router-link
+            :to="{ path: '/guestnetwork/' + record.networkid }">
+            {{ record.networkname }}
+          </router-link>
+        </template>
         <template v-if="column.key === 'vm'">
           <div><desktop-outlined/>
             <router-link
@@ -480,7 +486,6 @@ export default {
     this.apiParams = this.$getApiParams('createPortForwardingRule')
   },
   created () {
-    console.log(this.resource)
     this.initForm()
     this.fetchData()
   },
@@ -518,6 +523,12 @@ export default {
         id: this.resource.vpcid
       }).then(json => {
         this.vpcConserveMode = json.listvpcsresponse?.vpc?.[0].vpcofferingconservemode || false
+        if (this.vpcConserveMode) {
+          this.columns.splice(this.columns.length - 1, 0, {
+            key: 'networkid',
+            title: this.$t('label.network')
+          })
+        }
       }).catch(error => {
         this.$notifyError(error)
       })
@@ -811,7 +822,6 @@ export default {
         this.newRule.vmguestip = this.nics[0]
         this.addVmModalNicLoading = false
       }).catch(error => {
-        console.log(error)
         this.$notifyError(error)
         this.closeModal()
       })

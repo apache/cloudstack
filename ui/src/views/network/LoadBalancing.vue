@@ -204,6 +204,11 @@
                   {{ instance.loadbalancerruleinstance.displayname }}
                 </router-link>
               </div>
+              <div v-if="this.vpcConserveMode">
+                <router-link :to="{ path: '/guestnetwork/' + instance.loadbalancerruleinstance.nic[0].networkid }">
+                  {{ instance.loadbalancerruleinstance.nic[0].networkname }}
+                </router-link>
+              </div>
               <div>{{ ip }}</div>
               <tooltip-button
                 :disabled='record.autoscalevmgroup'
@@ -1950,11 +1955,17 @@ export default {
           ip.forEach(i => {
             vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
             vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = i
+            if (this.vpcConserveMode) {
+              vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = this.selectedTier
+            }
             innerCount++
           })
         } else {
           vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
           vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = ip
+          if (this.vpcConserveMode && ip != null) {
+            vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = this.selectedTier
+          }
           innerCount++
         }
         if (this.newRule.virtualmachineid[count]) {
