@@ -26,7 +26,6 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   build:
-    if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository
     name: Sonar JaCoCo Coverage
     runs-on: ubuntu-24.04
     steps:
@@ -35,6 +34,9 @@ jobs:
           fetch-depth: 0
       - name: Setup Environment
         uses: ./.github/actions/setup-env
+        with:
+          install-python: 'true'
+          install-apt-deps: 'true'
       - name: Cache SonarCloud packages
         uses: actions/cache@v5
         with:
@@ -44,14 +46,17 @@ jobs:
       - name: Install Non-OSS
         uses: ./.github/actions/install-nonoss
       - name: Run Build and Tests with Coverage
+        run: mvn -B -T$(nproc) -P developer,systemvm,quality -Dsimulator -Dnoredist clean install
+      - name: Upload to SonarQube
+        if: github.repository == 'apache/cloudstack' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           PR_ID: ${{ github.event.pull_request.number }}
           HEADREF: ${{ github.event.pull_request.head.ref }}
         run: |
-          mvn -T$(nproc) -P quality -Dsimulator -Dnoredist clean install org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=apache_cloudstack -Dsonar.pullrequest.key="$PR_ID" -Dsonar.pullrequest.branch="$HEADREF" -Dsonar.pullrequest.github.repository=apache/cloudstack -Dsonar.pullrequest.provider=GitHub -Dsonar.pullrequest.github.summary_comment=true
-      - uses: codecov/codecov-action@v5
+          mvn -B -P quality org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=apache_cloudstack -Dsonar.pullrequest.key="$PR_ID" -Dsonar.pullrequest.branch="$HEADREF" -Dsonar.pullrequest.github.repository=apache/cloudstack -Dsonar.pullrequest.provider=GitHub -Dsonar.pullrequest.github.summary_comment=true
+      - uses: codecov/codecov-action@v4
         with:
           files: ./client/target/site/jacoco-aggregate/jacoco.xml
           fail_ci_if_error: true
