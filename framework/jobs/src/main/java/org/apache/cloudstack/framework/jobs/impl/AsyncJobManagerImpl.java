@@ -184,6 +184,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private volatile long _executionRunNumber = 1;
 
     private final ScheduledExecutorService _heartbeatScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AsyncJobMgr-Heartbeat"));
+    private final ExecutorService _eventBusPublisher = Executors.newSingleThreadExecutor(new NamedThreadFactory("AsyncJobMgr-EventBus"));
     private ExecutorService _apiJobExecutor;
     private ExecutorService _workerJobExecutor;
 
@@ -1378,6 +1379,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public boolean stop() {
         _heartbeatScheduler.shutdown();
+        _eventBusPublisher.shutdown();
         _apiJobExecutor.shutdown();
         _workerJobExecutor.shutdown();
         return true;
@@ -1397,8 +1399,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     private void publishOnEventBus(AsyncJob job, String jobEvent) {
-        _messageBus.publish(null, AsyncJob.Topics.JOB_EVENT_PUBLISH, PublishScope.LOCAL,
-            new Pair<AsyncJob, String>(job, jobEvent));
+        try {
+            _eventBusPublisher.submit(() ->
+                _messageBus.publish(null, AsyncJob.Topics.JOB_EVENT_PUBLISH, PublishScope.LOCAL,
+                    new Pair<AsyncJob, String>(job, jobEvent)));
+        } catch (RejectedExecutionException e) {
+            s_logger.warn("Failed to publish async job event, event bus publisher is shut down", e);
+        }
     }
 
     @Override
