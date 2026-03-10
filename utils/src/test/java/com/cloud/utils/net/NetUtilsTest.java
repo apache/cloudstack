@@ -131,7 +131,10 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-md5;modp1024"));
         assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1;modp3072,aes128-sha1;modp1536"));
         assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha256;modp3072,aes128-sha512;modp1536"));
-        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256;modp1024s160,modp2048s224,modp2048s256,curve25519"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;modp1024s160"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;modp2048s224"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;modp2048s256"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("ike", "aes256-sha256;curve25519"));
         assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "aes128-sha1"));
         assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1"));
         assertFalse(NetUtils.isValidS2SVpnPolicy("ike", "3des-sha1,aes256-sha1"));
