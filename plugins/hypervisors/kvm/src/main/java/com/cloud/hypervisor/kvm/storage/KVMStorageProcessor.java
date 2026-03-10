@@ -2309,7 +2309,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (path == null) {
                 path = details != null ? details.get(DiskTO.IQN) : null;
                 if (path == null) {
-                   throw new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                   logger.warn("The 'path' or 'iqn' field must be specified.");
                 }
             }
         }
