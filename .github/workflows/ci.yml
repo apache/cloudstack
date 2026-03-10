@@ -54,7 +54,7 @@ jobs:
       - name: Archive artifacts
         run: |
           mkdir -p /tmp/artifacts
-          tar -czf /tmp/artifacts/targets.tar.gz $(find . -name "target" -type d) tools/marvin/dist
+          tar -czf /tmp/artifacts/targets.tar.gz $(find . -name "target" -type d) tools/marvin/dist engine/schema/dist utils/conf
           tar -czf /tmp/artifacts/m2-cloudstack.tar.gz -C ~/.m2/repository org/apache/cloudstack
       - name: Upload artifacts
         uses: actions/upload-artifact@v7

@@ -37,6 +37,8 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 16
+          cache: 'npm'
+          cache-dependency-path: 'ui/package-lock.json'
 
       - name: Env details
         run: |
