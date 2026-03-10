@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.utils.Pair;
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
@@ -83,6 +84,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+                        .thenReturn(new Pair<>(0, "success"));
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
                         .thenReturn(0); // Mount success
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
@@ -126,6 +129,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+                        .thenReturn(new Pair<>(0, "success"));
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
                         .thenReturn(0); // Mount success
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
@@ -165,6 +170,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+                        .thenReturn(new Pair<>(0, "success"));
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
                         .thenReturn(0); // Mount success
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
@@ -207,6 +214,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+                        .thenReturn(new Pair<>(0, "success"));
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
                         .thenReturn(0); // Mount success
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
@@ -251,8 +260,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
-                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
-                        .thenReturn(1); // Mount failure
+                Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+                        .thenReturn(new Pair<>(1, "Failed"));
 
                 Answer result = wrapper.execute(command, libvirtComputingResource);
 
@@ -290,6 +299,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+                        .thenReturn(new Pair<>(0, "success"));
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
                         .thenReturn(0); // Mount success
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
@@ -339,8 +350,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
-                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
-                        .thenReturn(0); // Mount success
+                Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+                        .thenReturn(new Pair<>(0, "success"));
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
                         .thenAnswer(invocation -> {
                             String command = invocation.getArgument(0);
@@ -390,6 +401,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+                        .thenReturn(new Pair<>(0, "success"));
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
                         .thenAnswer(invocation -> {
                             String command = invocation.getArgument(0);
@@ -449,6 +462,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+                        .thenReturn(new Pair<>(0, "success"));
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
                         .thenAnswer(invocation -> {
                             String command = invocation.getArgument(0);
@@ -551,6 +566,10 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+                        .thenReturn(new Pair<>(0, "success"));
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
+                        .thenReturn(0); // Mount success
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
                         .thenReturn(0); // All commands success
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
