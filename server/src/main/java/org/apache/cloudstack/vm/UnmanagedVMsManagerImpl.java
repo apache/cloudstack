@@ -326,7 +326,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             template = VMTemplateVO.createSystemIso(templateDao.getNextInSequence(Long.class, "id"), templateName, templateName, true,
                     "", true, 64, Account.ACCOUNT_ID_SYSTEM, "",
-                    "VM Import Default Template", false, 1);
+                    "VM Import Default Template", false, 99);
             template.setState(VirtualMachineTemplate.State.Inactive);
             template = templateDao.persist(template);
             if (template == null) {
