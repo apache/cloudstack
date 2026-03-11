@@ -16,6 +16,14 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+
 public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     @Override
@@ -26,5 +34,47 @@ public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     public String getUpgradedVersion() {
         return "4.22.1.0";
+    }
+
+    @Override
+    public void performDataMigration(Connection conn) {
+        removeDuplicateDummyTemplates(conn);
+    }
+
+    private void removeDuplicateDummyTemplates(Connection conn) {
+        List<Long> templateIds = new ArrayList<>();
+        try (PreparedStatement selectStmt = conn.prepareStatement(String.format("SELECT id FROM cloud.vm_template WHERE name='%s' ORDER BY id ASC", UnmanagedVMsManager.KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME))) {
+            ResultSet rs = selectStmt.executeQuery();
+            while (rs.next()) {
+                templateIds.add(rs.getLong(1));
+            }
+
+            if (templateIds.size() <= 1) {
+                return;
+            }
+
+            Long firstTemplateId = templateIds.get(0);
+
+            String updateTemplateSql = "UPDATE cloud.vm_instance SET vm_template_id = ? WHERE vm_template_id = ?";
+            String deleteTemplateSql = "DELETE FROM cloud.vm_template WHERE id = ?";
+
+            try (PreparedStatement updateTemplateStmt = conn.prepareStatement(updateTemplateSql);
+                 PreparedStatement deleteTemplateStmt = conn.prepareStatement(deleteTemplateSql)) {
+                for (int i = 1; i < templateIds.size(); i++) {
+                    Long duplicateTemplateId = templateIds.get(i);
+
+                    // Update VM references
+                    updateTemplateStmt.setLong(1, firstTemplateId);
+                    updateTemplateStmt.setLong(2, duplicateTemplateId);
+                    updateTemplateStmt.executeUpdate();
+
+                    // Delete duplicate dummy template
+                    deleteTemplateStmt.setLong(1, duplicateTemplateId);
+                    deleteTemplateStmt.executeUpdate();
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to clean duplicate kvm-default-vm-import-dummy-template entries", e);
+        }
     }
 }
