@@ -19,7 +19,10 @@
 
 package org.apache.cloudstack.oauth2;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.oauth2.api.command.DeleteOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.api.command.RegisterOAuthProviderCmd;
 import org.apache.cloudstack.oauth2.api.command.UpdateOAuthProviderCmd;
@@ -36,10 +39,14 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -52,6 +59,9 @@ public class OAuth2AuthManagerImplTest {
 
     @Mock
     OauthProviderDao _oauthProviderDao;
+
+    @Mock
+    DomainDao _domainDao;
 
     AutoCloseable closeable;
     @Before
@@ -188,6 +198,203 @@ public class OAuth2AuthManagerImplTest {
         when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(false);
         result = _authManager.start();
         assertTrue(result);
+    }
+
+    @Test
+    public void testRegisterOauthProviderWithDomain() {
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd.getProvider()).thenReturn("github");
+        when(cmd.getDomainId()).thenReturn(5L);
+        when(cmd.getSecretKey()).thenReturn("secret");
+        when(cmd.getClientId()).thenReturn("clientId");
+        when(cmd.getRedirectUri()).thenReturn("https://redirect");
+
+        // No existing provider for this domain
+        when(_oauthProviderDao.findByProviderAndDomain("github", 5L)).thenReturn(null);
+        when(_oauthProviderDao.persist(Mockito.any(OauthProviderVO.class))).thenAnswer(i -> i.getArgument(0));
+
+        OauthProviderVO result = _authManager.registerOauthProvider(cmd);
+        assertEquals("github", result.getProvider());
+        assertEquals(Long.valueOf(5L), result.getDomainId());
+    }
+
+    @Test
+    public void testRegisterOauthProviderDuplicateForDomain() {
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd.getProvider()).thenReturn("github");
+        when(cmd.getDomainId()).thenReturn(5L);
+
+        OauthProviderVO existing = new OauthProviderVO();
+        existing.setProvider("github");
+        existing.setDomainId(5L);
+        when(_oauthProviderDao.findByProviderAndDomain("github", 5L)).thenReturn(existing);
+
+        try {
+            _authManager.registerOauthProvider(cmd);
+            Assert.fail("Expected CloudRuntimeException was not thrown");
+        } catch (CloudRuntimeException e) {
+            assertEquals("Provider with the name github is already registered for domain 5", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testListOauthProvidersWithDomainId() {
+        Long domainId = 5L;
+        OauthProviderVO globalProvider = new OauthProviderVO();
+        globalProvider.setProvider("google");
+        OauthProviderVO domainProvider = new OauthProviderVO();
+        domainProvider.setProvider("github");
+        domainProvider.setDomainId(domainId);
+        List<OauthProviderVO> providers = Arrays.asList(globalProvider, domainProvider);
+
+        when(_oauthProviderDao.listByDomainIncludingGlobal(domainId)).thenReturn(providers);
+        List<OauthProviderVO> result = _authManager.listOauthProviders(null, null, domainId);
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    public void testListOauthProvidersByProviderAndDomain() {
+        Long domainId = 5L;
+        OauthProviderVO domainProvider = new OauthProviderVO();
+        domainProvider.setProvider("github");
+        domainProvider.setDomainId(domainId);
+
+        when(_oauthProviderDao.findByProviderAndDomain("github", domainId)).thenReturn(domainProvider);
+        List<OauthProviderVO> result = _authManager.listOauthProviders("github", null, domainId);
+        assertEquals(1, result.size());
+        assertEquals("github", result.get(0).getProvider());
+        assertEquals(Long.valueOf(5L), result.get(0).getDomainId());
+    }
+
+    @Test
+    public void testResolveDomainIdFromDomainUuid() {
+        Map<String, Object[]> params = new HashMap<>();
+        params.put(ApiConstants.DOMAIN_ID, new String[]{"test-uuid-123"});
+
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        when(domain.getId()).thenReturn(10L);
+        when(_domainDao.findByUuid("test-uuid-123")).thenReturn(domain);
+
+        Long result = _authManager.resolveDomainId(params);
+        assertEquals(Long.valueOf(10L), result);
+    }
+
+    @Test
+    public void testResolveDomainIdGlobalFilter() {
+        Map<String, Object[]> params = new HashMap<>();
+        params.put(ApiConstants.DOMAIN_ID, new String[]{"-1"});
+
+        Long result = _authManager.resolveDomainId(params);
+        assertEquals(Long.valueOf(-1L), result);
+    }
+
+    @Test
+    public void testResolveDomainIdFromDomainPath() {
+        Map<String, Object[]> params = new HashMap<>();
+        params.put(ApiConstants.DOMAIN, new String[]{"ROOT/child"});
+
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        when(domain.getId()).thenReturn(20L);
+        when(_domainDao.findDomainByPath("/ROOT/child/")).thenReturn(domain);
+
+        Long result = _authManager.resolveDomainId(params);
+        assertEquals(Long.valueOf(20L), result);
+    }
+
+    @Test
+    public void testResolveDomainIdFromDomainPathWithSlashes() {
+        Map<String, Object[]> params = new HashMap<>();
+        params.put(ApiConstants.DOMAIN, new String[]{"/ROOT/child/"});
+
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        when(domain.getId()).thenReturn(20L);
+        when(_domainDao.findDomainByPath("/ROOT/child/")).thenReturn(domain);
+
+        Long result = _authManager.resolveDomainId(params);
+        assertEquals(Long.valueOf(20L), result);
+    }
+
+    @Test
+    public void testResolveDomainIdReturnsNullWhenNotFound() {
+        Map<String, Object[]> params = new HashMap<>();
+        params.put(ApiConstants.DOMAIN_ID, new String[]{"nonexistent-uuid"});
+
+        when(_domainDao.findByUuid("nonexistent-uuid")).thenReturn(null);
+
+        Long result = _authManager.resolveDomainId(params);
+        assertNull(result);
+    }
+
+    @Test
+    public void testResolveDomainIdReturnsNullForEmptyParams() {
+        Map<String, Object[]> params = new HashMap<>();
+        Long result = _authManager.resolveDomainId(params);
+        assertNull(result);
+    }
+
+    @Test
+    public void testResolveDomainIdPrefersUuidOverPath() {
+        Map<String, Object[]> params = new HashMap<>();
+        params.put(ApiConstants.DOMAIN_ID, new String[]{"test-uuid"});
+        params.put(ApiConstants.DOMAIN, new String[]{"/ROOT/child/"});
+
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        when(domain.getId()).thenReturn(10L);
+        when(_domainDao.findByUuid("test-uuid")).thenReturn(domain);
+
+        Long result = _authManager.resolveDomainId(params);
+        assertEquals(Long.valueOf(10L), result);
+    }
+
+    @Test
+    public void testResolveDomainIdFallsBackToPathWhenUuidNotFound() {
+        Map<String, Object[]> params = new HashMap<>();
+        params.put(ApiConstants.DOMAIN_ID, new String[]{"bad-uuid"});
+        params.put(ApiConstants.DOMAIN, new String[]{"/ROOT/"});
+
+        when(_domainDao.findByUuid("bad-uuid")).thenReturn(null);
+        DomainVO domain = Mockito.mock(DomainVO.class);
+        when(domain.getId()).thenReturn(1L);
+        when(_domainDao.findDomainByPath("/ROOT/")).thenReturn(domain);
+
+        Long result = _authManager.resolveDomainId(params);
+        assertEquals(Long.valueOf(1L), result);
+    }
+
+    @Test
+    public void testUpdateOauthProviderNotFound() {
+        UpdateOAuthProviderCmd cmd = Mockito.mock(UpdateOAuthProviderCmd.class);
+        when(cmd.getId()).thenReturn(999L);
+        when(_oauthProviderDao.findById(999L)).thenReturn(null);
+
+        try {
+            _authManager.updateOauthProvider(cmd);
+            Assert.fail("Expected CloudRuntimeException was not thrown");
+        } catch (CloudRuntimeException e) {
+            assertEquals("Provider with the given id is not there", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetUserOAuth2AuthenticationProviderEmptyName() {
+        try {
+            _authManager.getUserOAuth2AuthenticationProvider("");
+            Assert.fail("Expected CloudRuntimeException was not thrown");
+        } catch (CloudRuntimeException e) {
+            assertEquals("OAuth2 authentication provider name is empty", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetUserOAuth2AuthenticationProviderNotFound() {
+        try {
+            _authManager.getUserOAuth2AuthenticationProvider("nonexistent");
+            Assert.fail("Expected CloudRuntimeException was not thrown");
+        } catch (CloudRuntimeException e) {
+            assertTrue(e.getMessage().contains("nonexistent"));
+        }
     }
 
 }

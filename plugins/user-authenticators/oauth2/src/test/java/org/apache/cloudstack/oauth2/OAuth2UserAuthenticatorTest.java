@@ -168,4 +168,48 @@ public class OAuth2UserAuthenticatorTest {
         verify(userDao, never()).getUser(anyLong());
         verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
     }
+
+    @Test
+    public void testAuthenticatePluginDisabled() {
+        doReturn(false).when(authenticator).isOAuthPluginEnabled(anyLong());
+
+        Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result =
+                authenticator.authenticate("testuser", null, 1L, new HashMap<>());
+
+        assertFalse(result.first());
+        assertNull(result.second());
+        verify(userAccountDao, never()).getUserAccount(anyString(), anyLong());
+    }
+
+    @Test
+    public void testAuthenticateNullRequestParameters() {
+        Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result =
+                authenticator.authenticate("testuser", null, 1L, null);
+
+        assertFalse(result.first());
+        assertNull(result.second());
+        verify(userAccountDao, never()).getUserAccount(anyString(), anyLong());
+    }
+
+    @Test
+    public void testAuthenticateNullProvider() {
+        String username = "testuser";
+        Long domainId = 1L;
+
+        UserAccount userAccount = mock(UserAccount.class);
+        when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
+        when(userDao.getUser(userAccount.getId())).thenReturn(mock(UserVO.class));
+
+        Map<String, Object[]> requestParameters = new HashMap<>();
+        requestParameters.put("email", new String[]{"test@email.com"});
+        requestParameters.put("secretcode", new String[]{"code"});
+        // No provider in params
+
+        Pair<Boolean, OAuth2UserAuthenticator.ActionOnFailedAuthentication> result =
+                authenticator.authenticate(username, null, domainId, requestParameters);
+
+        assertFalse(result.first());
+        assertNull(result.second());
+        verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
+    }
 }
