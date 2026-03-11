@@ -125,6 +125,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
         request.setFollowRedirects(followRedirects);
+        request.setRequestHeader("User-Agent", "CloudStack-Agent");
         return request;
     }
 
