@@ -132,7 +132,7 @@
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis2.version>1.6.4</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
-        <cs.bcprov.version>1.72</cs.bcprov.version>
+        <cs.bcprov.version>1.83</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
         <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
         <cs.cron-utils.version>9.2.0</cs.cron-utils.version>
@@ -191,6 +191,7 @@
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.caffeine.version>3.1.7</cs.caffeine.version>
         <cs.protobuf.version>3.25.5</cs.protobuf.version>
+        <cs.minio.version>8.6.0</cs.minio.version>
     </properties>
 
     <distributionManagement>
@@ -667,6 +668,18 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>log4j-over-slf4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcpkix-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcutil-jdk15on</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
