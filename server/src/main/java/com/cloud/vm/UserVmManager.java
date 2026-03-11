@@ -99,6 +99,15 @@ public interface UserVmManager extends UserVmService {
             ConfigKey.Scope.Account);
 
 
+    ConfigKey<Boolean> VmwareAdditionalDetailsFromOvaEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "vmware.additional.details.from.ova.enabled", "false",
+            "If true, allow users to add additional VM settings if VM instance settings are read from OVA.", true, ConfigKey.Scope.Zone);
+
+    ConfigKey<String> VmwareAllowedAdditionalDetailsFromOva = new ConfigKey<>(String.class,
+            "vmware.allowed.additional.details.from.ova", "Advanced", "",
+            "Comma separated list of allowed additional VM settings if VM instance settings are read from OVA.",
+            true, ConfigKey.Scope.Zone, null, null, null, null, null, ConfigKey.Kind.CSV, null);
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";

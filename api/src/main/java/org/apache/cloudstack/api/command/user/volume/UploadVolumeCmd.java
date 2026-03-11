@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -159,7 +158,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -169,7 +168,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "uploading volume: " + getVolumeName() + " in the zone " + this._uuidMgr.getUuid(DataCenter.class, getZoneId());
+        return  "Uploading volume: " + getVolumeName() + " to zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 
     @Override

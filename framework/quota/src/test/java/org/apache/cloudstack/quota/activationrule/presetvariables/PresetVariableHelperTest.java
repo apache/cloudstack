@@ -220,14 +220,14 @@ public class PresetVariableHelperTest {
         value.setTags(Collections.singletonMap("tag1", "value1"));
         value.setTemplate(getGenericPresetVariableForTests());
         value.setDiskOffering(getDiskOfferingForTests());
-        value.setProvisioningType(ProvisioningType.THIN);
+        value.setProvisioningType(ProvisioningType.THIN.toString());
         value.setStorage(getStorageForTests());
         value.setSize(ByteScaleUtils.GiB);
-        value.setSnapshotType(Snapshot.Type.HOURLY);
+        value.setSnapshotType(Snapshot.Type.HOURLY.toString());
         value.setTag("tag_test");
-        value.setVmSnapshotType(VMSnapshot.Type.Disk);
+        value.setVmSnapshotType(VMSnapshot.Type.Disk.toString());
         value.setComputingResources(getComputingResourcesForTests());
-        value.setVolumeType(Volume.Type.DATADISK);
+        value.setVolumeType(Volume.Type.DATADISK.toString());
         return value;
     }
 
@@ -277,7 +277,7 @@ public class PresetVariableHelperTest {
         storage.setId("storage_id");
         storage.setName("storage_name");
         storage.setTags(Arrays.asList("tag1", "tag2"));
-        storage.setScope(ScopeType.ZONE);
+        storage.setScope(ScopeType.ZONE.toString());
         return storage;
     }
 
@@ -303,22 +303,15 @@ public class PresetVariableHelperTest {
 
     private List<VMInstanceDetailVO> getVmDetailsForTests() {
         List<VMInstanceDetailVO> details = new LinkedList<>();
-        details.add(new VMInstanceDetailVO(1l, "test_with_value", "277", false));
-        details.add(new VMInstanceDetailVO(1l, "test_with_invalid_value", "invalid", false));
-        details.add(new VMInstanceDetailVO(1l, "test_with_null", null, false));
+        details.add(new VMInstanceDetailVO(1L, "test_with_value", "277", false));
+        details.add(new VMInstanceDetailVO(1L, "test_with_invalid_value", "invalid", false));
+        details.add(new VMInstanceDetailVO(1L, "test_with_null", null, false));
         return details;
     }
 
     private void assertPresetVariableIdAndName(GenericPresetVariable expected, GenericPresetVariable result) {
         Assert.assertEquals(expected.getId(), result.getId());
         Assert.assertEquals(expected.getName(), result.getName());
-    }
-
-    private void validateFieldNamesToIncludeInToString(List<String> expected, GenericPresetVariable resultObject) {
-        List<String> result = new ArrayList<>(resultObject.fieldNamesToIncludeInToString);
-        Collections.sort(expected);
-        Collections.sort(result);
-        Assert.assertEquals(expected, result);
     }
 
     private BackupOffering getBackupOfferingForTests() {
@@ -420,7 +413,6 @@ public class PresetVariableHelperTest {
 
         Assert.assertNotNull(result.getProject());
         assertPresetVariableIdAndName(account, result.getProject());
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result.getProject());
     }
 
     @Test
@@ -435,10 +427,9 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(account.getName()).when(accountVoMock).getName();
         Mockito.doReturn(account.getCreated()).when(accountVoMock).getCreated();
 
-        Account result = presetVariableHelperSpy.getPresetVariableAccount(1l);
+        Account result = presetVariableHelperSpy.getPresetVariableAccount(1L);
 
         assertPresetVariableIdAndName(account, result);
-        validateFieldNamesToIncludeInToString(Arrays.asList("created", "id", "name"), result);
     }
 
     @Test
@@ -468,18 +459,16 @@ public class PresetVariableHelperTest {
             Role role = new Role();
             role.setId("test_id");
             role.setName("test_name");
-            role.setType(roleType);
+            role.setType(roleType.toString());
 
             Mockito.doReturn(role.getId()).when(roleVoMock).getUuid();
             Mockito.doReturn(role.getName()).when(roleVoMock).getName();
-            Mockito.doReturn(role.getType()).when(roleVoMock).getRoleType();
+            Mockito.doReturn(RoleType.fromString(role.getType())).when(roleVoMock).getRoleType();
 
-            Role result = presetVariableHelperSpy.getPresetVariableRole(1l);
+            Role result = presetVariableHelperSpy.getPresetVariableRole(1L);
 
             assertPresetVariableIdAndName(role, result);
             Assert.assertEquals(role.getType(), result.getType());
-
-            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "type"), result);
         });
     }
 
@@ -494,12 +483,10 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(domain.getName()).when(domainVoMock).getName();
         Mockito.doReturn(domain.getPath()).when(domainVoMock).getPath();
 
-        Domain result = presetVariableHelperSpy.getPresetVariableDomain(1l);
+        Domain result = presetVariableHelperSpy.getPresetVariableDomain(1L);
 
         assertPresetVariableIdAndName(domain, result);
         Assert.assertEquals(domain.getPath(), result.getPath());
-
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "path"), result);
     }
 
     @Test
@@ -512,10 +499,9 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getId()).when(dataCenterVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(dataCenterVoMock).getName();
 
-        GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableZone(1l);
+        GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableZone(1L);
 
         assertPresetVariableIdAndName(expected, result);
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result);
     }
 
     @Test
@@ -536,7 +522,6 @@ public class PresetVariableHelperTest {
         Value result = presetVariableHelperSpy.getPresetVariableValue(usageVoMock);
 
         Assert.assertEquals(resources, result.getAccountResources());
-        validateFieldNamesToIncludeInToString(Arrays.asList("accountResources"), result);
     }
 
     @Test
@@ -546,7 +531,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(new Date()).when(usageVoMock).getEndDate();
         Mockito.doReturn(expected).when(usageDaoMock).listAccountResourcesInThePeriod(Mockito.anyLong(), Mockito.anyInt(), Mockito.any(Date.class), Mockito.any(Date.class));
 
-        List<Resource> result = presetVariableHelperSpy.getPresetVariableAccountResources(usageVoMock, 1l, 0);
+        List<Resource> result = presetVariableHelperSpy.getPresetVariableAccountResources(usageVoMock, 1L, 0);
 
         for (int i = 0; i < expected.size(); i++) {
             Assert.assertEquals(expected.get(i).first(), result.get(i).getZoneId());
@@ -595,8 +580,6 @@ public class PresetVariableHelperTest {
                 Assert.assertEquals(expected.getTags(), result.getTags());
                 Assert.assertEquals(expected.getTemplate(), result.getTemplate());
                 Assert.assertEquals(hypervisorType.name(), result.getHypervisorType());
-
-                validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "osName", "tags", "template", "hypervisorType"), result);
             });
         }
 
@@ -619,7 +602,6 @@ public class PresetVariableHelperTest {
     public void setPresetVariableHostInValueIfUsageTypeIsRunningVmTestQuotaTypeIsRunningVmSetHost() {
         Value result = new Value();
         Host expectedHost = getHostForTests();
-        List<HostTagVO> expectedHostTags = getHostTagsForTests();
 
         Mockito.doReturn(expectedHost).when(presetVariableHelperSpy).getPresetVariableValueHost(Mockito.anyLong());
         presetVariableHelperSpy.setPresetVariableHostInValueIfUsageTypeIsRunningVm(result, UsageTypes.RUNNING_VM, vmInstanceVoMock);
@@ -628,7 +610,6 @@ public class PresetVariableHelperTest {
 
         assertPresetVariableIdAndName(expectedHost, result.getHost());
         Assert.assertEquals(expectedHost.getTags(), result.getHost().getTags());
-        validateFieldNamesToIncludeInToString(Arrays.asList("host"), result);
     }
 
     @Test
@@ -643,11 +624,10 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getName()).when(hostVoMock).getName();
         Mockito.doReturn(hostTagVOListMock).when(hostTagsDaoMock).getHostTags(Mockito.anyLong());
 
-        Host result = presetVariableHelperSpy.getPresetVariableValueHost(1l);
+        Host result = presetVariableHelperSpy.getPresetVariableValueHost(1L);
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getTags(), result.getTags());
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "isTagARule", "name", "tags"), result);
     }
 
     @Test
@@ -662,12 +642,11 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getName()).when(hostVoMock).getName();
         Mockito.doReturn(hostTagVOListMock).when(hostTagsDaoMock).getHostTags(Mockito.anyLong());
 
-        Host result = presetVariableHelperSpy.getPresetVariableValueHost(1l);
+        Host result = presetVariableHelperSpy.getPresetVariableValueHost(1L);
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(new ArrayList<>(), result.getTags());
         Assert.assertTrue(result.getIsTagARule());
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "isTagARule", "name", "tags"), result);
     }
 
     @Test
@@ -679,7 +658,7 @@ public class PresetVariableHelperTest {
         String expected = "os_display_name";
         Mockito.doReturn(expected).when(guestOsVoMock).getDisplayName();
 
-        String result = presetVariableHelperSpy.getPresetVariableValueOsName(1l);
+        String result = presetVariableHelperSpy.getPresetVariableValueOsName(1L);
 
         Assert.assertEquals(expected, result);
     }
@@ -697,7 +676,6 @@ public class PresetVariableHelperTest {
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.isCustomized(), result.isCustomized());
         Assert.assertEquals(expected.offerHa(), result.offerHa());
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "customized", "offerHa"), result);
     }
 
     @Test
@@ -711,9 +689,7 @@ public class PresetVariableHelperTest {
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.isCustomized(), result.isCustomized());
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "customized"), result);
     }
-
 
     @Test
     public void getPresetVariableValueTemplateTestSetValuesAndReturnObject() {
@@ -725,10 +701,9 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getId()).when(vmTemplateVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(vmTemplateVoMock).getName();
 
-        GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueTemplate(1l);
+        GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueTemplate(1L);
 
         assertPresetVariableIdAndName(expected, result);
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result);
     }
 
     @Test
@@ -740,7 +715,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(listExpected).when(resourceTagDaoMock).listBy(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
 
         Arrays.asList(ResourceObjectType.values()).forEach(type -> {
-            Map<String, String> result = presetVariableHelperSpy.getPresetVariableValueResourceTags(1l, type);
+            Map<String, String> result = presetVariableHelperSpy.getPresetVariableValueResourceTags(1L, type);
 
             for (ResourceTag expected: listExpected) {
                 Assert.assertEquals(expected.getValue(), result.get(expected.getKey()));
@@ -765,15 +740,15 @@ public class PresetVariableHelperTest {
 
             VolumeVO volumeVoMock = Mockito.mock(VolumeVO.class);
             Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
-            Mockito.doReturn(1l).when(volumeVoMock).getPoolId();
+            Mockito.doReturn(1L).when(volumeVoMock).getPoolId();
 
             mockMethodValidateIfObjectIsNull();
 
             Mockito.doReturn(expected.getId()).when(volumeVoMock).getUuid();
             Mockito.doReturn(expected.getName()).when(volumeVoMock).getName();
             Mockito.doReturn(expected.getDiskOffering()).when(presetVariableHelperSpy).getPresetVariableValueDiskOffering(Mockito.anyLong());
-            Mockito.doReturn(expected.getProvisioningType()).when(volumeVoMock).getProvisioningType();
-            Mockito.doReturn(expected.getVolumeType()).when(volumeVoMock).getVolumeType();
+            Mockito.doReturn(ProvisioningType.getProvisioningType(expected.getProvisioningType())).when(volumeVoMock).getProvisioningType();
+            Mockito.doReturn(Volume.Type.valueOf(expected.getVolumeType())).when(volumeVoMock).getVolumeType();
             Mockito.doReturn(expected.getStorage()).when(presetVariableHelperSpy).getPresetVariableValueStorage(Mockito.anyLong(), Mockito.anyInt());
             Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
             Mockito.doReturn(expected.getSize()).when(volumeVoMock).getSize();
@@ -794,8 +769,6 @@ public class PresetVariableHelperTest {
             Assert.assertEquals(expected.getTags(), result.getTags());
             Assert.assertEquals(expectedSize, result.getSize());
             Assert.assertEquals(imageFormat.name(), result.getVolumeFormat());
-
-            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "diskOffering", "provisioningType", "volumeType", "storage", "tags", "size", "volumeFormat"), result);
         }
 
         Mockito.verify(presetVariableHelperSpy, Mockito.times(ImageFormat.values().length)).getPresetVariableValueResourceTags(Mockito.anyLong(),
@@ -816,8 +789,8 @@ public class PresetVariableHelperTest {
             Mockito.doReturn(expected.getId()).when(volumeVoMock).getUuid();
             Mockito.doReturn(expected.getName()).when(volumeVoMock).getName();
             Mockito.doReturn(expected.getDiskOffering()).when(presetVariableHelperSpy).getPresetVariableValueDiskOffering(Mockito.anyLong());
-            Mockito.doReturn(expected.getProvisioningType()).when(volumeVoMock).getProvisioningType();
-            Mockito.doReturn(expected.getVolumeType()).when(volumeVoMock).getVolumeType();
+            Mockito.doReturn(Volume.Type.valueOf(expected.getVolumeType())).when(volumeVoMock).getVolumeType();
+            Mockito.doReturn(ProvisioningType.getProvisioningType(expected.getProvisioningType())).when(volumeVoMock).getProvisioningType();
             Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
             Mockito.doReturn(expected.getSize()).when(volumeVoMock).getSize();
             Mockito.doReturn(imageFormat).when(volumeVoMock).getFormat();
@@ -837,8 +810,6 @@ public class PresetVariableHelperTest {
             Assert.assertEquals(expected.getTags(), result.getTags());
             Assert.assertEquals(expectedSize, result.getSize());
             Assert.assertEquals(imageFormat.name(), result.getVolumeFormat());
-
-            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "diskOffering", "provisioningType", "volumeType", "tags", "size", "volumeFormat"), result);
         }
 
         Mockito.verify(presetVariableHelperSpy, Mockito.times(ImageFormat.values().length)).getPresetVariableValueResourceTags(Mockito.anyLong(),
@@ -855,11 +826,9 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getId()).when(diskOfferingVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(diskOfferingVoMock).getName();
 
-        GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueDiskOffering(1l);
+        GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueDiskOffering(1L);
 
         assertPresetVariableIdAndName(expected, result);
-        validateFieldNamesToIncludeInToString(Arrays.asList("bytesReadBurst", "bytesReadBurstLength", "bytesReadRate", "bytesWriteBurst", "bytesWriteBurstLength", "bytesWriteRate",
-                "id", "iopsReadBurst", "iopsReadBurstLength", "iopsReadRate", "iopsWriteBurst", "iopsWriteBurstLength", "iopsWriteRate", "name"), result);
     }
 
     @Test
@@ -867,7 +836,7 @@ public class PresetVariableHelperTest {
         Storage expected = getStorageForTests();
         Mockito.doReturn(expected).when(presetVariableHelperSpy).getSecondaryStorageForSnapshot(Mockito.anyLong(), Mockito.anyInt());
 
-        Storage result = presetVariableHelperSpy.getPresetVariableValueStorage(1l, 2);
+        Storage result = presetVariableHelperSpy.getPresetVariableValueStorage(1L, 2);
 
         Assert.assertEquals(expected, result);
         Mockito.verify(primaryStorageDaoMock, Mockito.never()).findByIdIncludingRemoved(Mockito.anyLong());
@@ -885,16 +854,14 @@ public class PresetVariableHelperTest {
 
         Mockito.doReturn(expected.getId()).when(storagePoolVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(storagePoolVoMock).getName();
-        Mockito.doReturn(expected.getScope()).when(storagePoolVoMock).getScope();
+        Mockito.doReturn(ScopeType.validateAndGetScopeType(expected.getScope())).when(storagePoolVoMock).getScope();
         Mockito.doReturn(storageTagVOListMock).when(storagePoolTagsDaoMock).findStoragePoolTags(Mockito.anyLong());
 
-        Storage result = presetVariableHelperSpy.getPresetVariableValueStorage(1l, 2);
+        Storage result = presetVariableHelperSpy.getPresetVariableValueStorage(1L, 2);
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getScope(), result.getScope());
         Assert.assertEquals(expected.getTags(), result.getTags());
-
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "isTagARule",  "name", "scope", "tags"), result);
     }
 
     @Test
@@ -909,24 +876,22 @@ public class PresetVariableHelperTest {
 
         Mockito.doReturn(expected.getId()).when(storagePoolVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(storagePoolVoMock).getName();
-        Mockito.doReturn(expected.getScope()).when(storagePoolVoMock).getScope();
+        Mockito.doReturn(ScopeType.validateAndGetScopeType(expected.getScope())).when(storagePoolVoMock).getScope();
         Mockito.doReturn(storageTagVOListMock).when(storagePoolTagsDaoMock).findStoragePoolTags(Mockito.anyLong());
 
-        Storage result = presetVariableHelperSpy.getPresetVariableValueStorage(1l, 2);
+        Storage result = presetVariableHelperSpy.getPresetVariableValueStorage(1L, 2);
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getScope(), result.getScope());
         Assert.assertEquals(new ArrayList<>(), result.getTags());
         Assert.assertTrue(result.getIsTagARule());
-
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "isTagARule",  "name", "scope", "tags"), result);
     }
 
     @Test
     public void getSecondaryStorageForSnapshotTestAllTypesAndDoNotBackupSnapshotReturnNull() {
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = false;
         getQuotaTypesForTests().forEach(type -> {
-            Storage result = presetVariableHelperSpy.getSecondaryStorageForSnapshot(1l, type.getKey());
+            Storage result = presetVariableHelperSpy.getSecondaryStorageForSnapshot(1L, type.getKey());
             Assert.assertNull(result);
         });
     }
@@ -935,7 +900,7 @@ public class PresetVariableHelperTest {
     public void getSecondaryStorageForSnapshotTestAllTypesExceptSnapshotAndBackupSnapshotReturnNull() {
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = true;
         getQuotaTypesForTests(UsageTypes.SNAPSHOT).forEach(type -> {
-            Storage result = presetVariableHelperSpy.getSecondaryStorageForSnapshot(1l, type.getKey());
+            Storage result = presetVariableHelperSpy.getSecondaryStorageForSnapshot(1L, type.getKey());
             Assert.assertNull(result);
         });
     }
@@ -952,10 +917,9 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getName()).when(imageStoreVoMock).getName();
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = true;
 
-        Storage result = presetVariableHelperSpy.getSecondaryStorageForSnapshot(1l, UsageTypes.SNAPSHOT);
+        Storage result = presetVariableHelperSpy.getSecondaryStorageForSnapshot(1L, UsageTypes.SNAPSHOT);
 
         assertPresetVariableIdAndName(expected, result);
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result);
     }
 
     @Test
@@ -996,8 +960,6 @@ public class PresetVariableHelperTest {
             Assert.assertEquals(expected.getOsName(), result.getOsName());
             Assert.assertEquals(expected.getTags(), result.getTags());
             Assert.assertEquals(expectedSize, result.getSize());
-
-            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "osName", "tags", "size"), result);
         });
 
         Mockito.verify(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.eq(ResourceObjectType.Template));
@@ -1030,7 +992,7 @@ public class PresetVariableHelperTest {
             Mockito.doReturn(expected.getName()).when(snapshotVoMock).getName();
             Mockito.doReturn(expected.getSize()).when(snapshotVoMock).getSize();
             Mockito.doReturn((short) 3).when(snapshotVoMock).getSnapshotType();
-            Mockito.doReturn(1l).when(presetVariableHelperSpy).getSnapshotDataStoreId(Mockito.anyLong(), Mockito.anyLong());
+            Mockito.doReturn(1L).when(presetVariableHelperSpy).getSnapshotDataStoreId(Mockito.anyLong(), Mockito.anyLong());
             Mockito.doReturn(expected.getStorage()).when(presetVariableHelperSpy).getPresetVariableValueStorage(Mockito.anyLong(), Mockito.anyInt());
             Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
             Mockito.doReturn(hypervisorType).when(snapshotVoMock).getHypervisorType();
@@ -1048,8 +1010,6 @@ public class PresetVariableHelperTest {
             Assert.assertEquals(expected.getTags(), result.getTags());
             Assert.assertEquals(expectedSize, result.getSize());
             Assert.assertEquals(hypervisorType.name(), result.getHypervisorType());
-
-            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "snapshotType", "storage", "tags", "size", "hypervisorType"), result);
         }
 
         Mockito.verify(presetVariableHelperSpy, Mockito.times(Hypervisor.HypervisorType.values().length)).getPresetVariableValueResourceTags(Mockito.anyLong(),
@@ -1061,12 +1021,12 @@ public class PresetVariableHelperTest {
     public void getSnapshotDataStoreIdTestDoNotBackupSnapshotToSecondaryRetrievePrimaryStorage() {
         SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
 
-        Long expected = 1l;
+        Long expected = 1L;
         Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.any(DataStoreRole.class));
         Mockito.doReturn(expected).when(snapshotDataStoreVoMock).getDataStoreId();
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = false;
 
-        Long result = presetVariableHelperSpy.getSnapshotDataStoreId(1l, 1l);
+        Long result = presetVariableHelperSpy.getSnapshotDataStoreId(1L, 1L);
 
         Assert.assertEquals(expected, result);
 
@@ -1083,7 +1043,7 @@ public class PresetVariableHelperTest {
     public void getSnapshotDataStoreIdTestBackupSnapshotToSecondaryRetrieveSecondaryStorage() {
         SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
 
-        Long expected = 2l;
+        Long expected = 2L;
         ImageStoreVO imageStore = Mockito.mock(ImageStoreVO.class);
         Mockito.when(imageStoreDaoMock.findById(Mockito.anyLong())).thenReturn(imageStore);
         Mockito.when(imageStore.getDataCenterId()).thenReturn(1L);
@@ -1091,7 +1051,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected).when(snapshotDataStoreVoMock).getDataStoreId();
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = true;
 
-        Long result = presetVariableHelperSpy.getSnapshotDataStoreId(2l, 1L);
+        Long result = presetVariableHelperSpy.getSnapshotDataStoreId(2L, 1L);
 
         Assert.assertEquals(expected, result);
 
@@ -1134,8 +1094,6 @@ public class PresetVariableHelperTest {
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getTag(), result.getTag());
-
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "tag"), result);
     }
 
     @Test
@@ -1160,7 +1118,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getId()).when(vmSnapshotVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(vmSnapshotVoMock).getName();
         Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
-        Mockito.doReturn(expected.getVmSnapshotType()).when(vmSnapshotVoMock).getType();
+        Mockito.doReturn(VMSnapshot.Type.valueOf(expected.getVmSnapshotType())).when(vmSnapshotVoMock).getType();
 
         Mockito.doReturn(UsageTypes.VM_SNAPSHOT).when(usageVoMock).getUsageType();
 
@@ -1170,8 +1128,6 @@ public class PresetVariableHelperTest {
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getTags(), result.getTags());
         Assert.assertEquals(expected.getVmSnapshotType(), result.getVmSnapshotType());
-
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "tags", "vmSnapshotType"), result);
 
         Mockito.verify(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.eq(ResourceObjectType.VMSnapshot));
     }
@@ -1205,9 +1161,6 @@ public class PresetVariableHelperTest {
 
             if (typeInt == UsageTypes.RUNNING_VM) {
                 Assert.assertEquals(expected.getComputingResources(), result.getComputingResources());
-                validateFieldNamesToIncludeInToString(Arrays.asList("computeOffering", "computingResources"), result);
-            } else {
-                validateFieldNamesToIncludeInToString(Arrays.asList("computeOffering"), result);
             }
         });
     }
@@ -1233,7 +1186,7 @@ public class PresetVariableHelperTest {
 
     @Test
     public void getDetailByNameTestReturnsValue() {
-        int expected = Integer.valueOf(getVmDetailsForTests().get(0).getValue());
+        int expected = Integer.parseInt(getVmDetailsForTests().get(0).getValue());
         int result = presetVariableHelperSpy.getDetailByName(getVmDetailsForTests(), "test_with_value", expected);
         Assert.assertEquals(expected, result);
     }
@@ -1300,8 +1253,6 @@ public class PresetVariableHelperTest {
         Assert.assertEquals(expected.getVirtualSize(), result.getVirtualSize());
         Assert.assertEquals(expected.getBackupOffering(), result.getBackupOffering());
 
-        validateFieldNamesToIncludeInToString(Arrays.asList("size", "virtualSize", "backupOffering"), result);
-
         Mockito.verify(presetVariableHelperSpy).getPresetVariableValueBackupOffering(Mockito.anyLong());
     }
 
@@ -1316,11 +1267,10 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getName()).when(backupOfferingVoMock).getName();
         Mockito.doReturn(expected.getExternalId()).when(backupOfferingVoMock).getExternalId();
 
-        BackupOffering result = presetVariableHelperSpy.getPresetVariableValueBackupOffering(1l);
+        BackupOffering result = presetVariableHelperSpy.getPresetVariableValueBackupOffering(1L);
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getExternalId(), result.getExternalId());
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "externalId"), result);
     }
 
     @Test

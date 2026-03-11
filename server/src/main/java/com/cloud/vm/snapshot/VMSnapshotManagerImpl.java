@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -181,6 +182,11 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
             Long.class, "vm.job.check.interval", "3000",
             "Interval in milliseconds to check if the job is complete", false);
+
+    private static final Set<String> VM_SNAPSHOT_CUSTOM_SERVICE_OFFERING_DETAILS = Set.of(
+            VmDetailConstants.CPU_NUMBER.toLowerCase(),
+            VmDetailConstants.CPU_SPEED.toLowerCase(),
+            VmDetailConstants.MEMORY.toLowerCase());
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -400,10 +406,11 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         _accountMgr.checkAccess(caller, null, true, userVmVo);
 
         // check max snapshot limit for per VM
-        int vmSnapshotMax = VMSnapshotManager.VMSnapshotMax.value();
-
+        boolean vmBelongsToProject = _accountMgr.getAccount(userVmVo.getAccountId()).getType() == Account.Type.PROJECT;
+        long accountIdToRetrieveConfigurationValueFrom = vmBelongsToProject ? caller.getId() : userVmVo.getAccountId();
+        int vmSnapshotMax = VMSnapshotManager.VMSnapshotMax.valueIn(accountIdToRetrieveConfigurationValueFrom);
         if (_vmSnapshotDao.findByVm(vmId).size() >= vmSnapshotMax) {
-            throw new CloudRuntimeException("Creating Instance Snapshot failed due to a Instance can just have : " + vmSnapshotMax + " Instance Snapshots. Please delete old ones");
+            throw new CloudRuntimeException(String.format("Each VM can have at most [%s] VM snapshots.", vmSnapshotMax));
         }
 
         // check if there are active volume snapshots tasks
@@ -471,7 +478,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     /**
-     * Add entries on vm_snapshot_details if service offering is dynamic. This will allow setting details when revert to vm snapshot
+     * Add entries about cpu, cpu_speed and memory in vm_snapshot_details if service offering is dynamic.
+     * This will allow setting details when revert to vm snapshot.
      * @param vmId vm id
      * @param serviceOfferingId service offering id
      * @param vmSnapshotId vm snapshot id
@@ -482,7 +490,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             List<VMInstanceDetailVO> vmDetails = _vmInstanceDetailsDao.listDetails(vmId);
             List<VMSnapshotDetailsVO> vmSnapshotDetails = new ArrayList<VMSnapshotDetailsVO>();
             for (VMInstanceDetailVO detail : vmDetails) {
-                if(detail.getName().equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.getName().equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.getName().equalsIgnoreCase(VmDetailConstants.MEMORY)) {
+                if (VM_SNAPSHOT_CUSTOM_SERVICE_OFFERING_DETAILS.contains(detail.getName().toLowerCase())) {
                     vmSnapshotDetails.add(new VMSnapshotDetailsVO(vmSnapshotId, detail.getName(), detail.getValue(), detail.isDisplay()));
                 }
             }
@@ -935,7 +943,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
-                    revertUserVmDetailsFromVmSnapshot(userVm, vmSnapshotVo);
+                    revertCustomServiceOfferingDetailsFromVmSnapshot(userVm, vmSnapshotVo);
                     updateUserVmServiceOffering(userVm, vmSnapshotVo);
                 }
             });
@@ -947,19 +955,19 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     /**
-     * Update or add user vm details from vm snapshot for vms with custom service offerings
+     * Update or add user vm details (cpu, cpu_speed and memory) from vm snapshot for vms with custom service offerings
      * @param userVm user vm
      * @param vmSnapshotVo vm snapshot
      */
-    protected void revertUserVmDetailsFromVmSnapshot(UserVmVO userVm, VMSnapshotVO vmSnapshotVo) {
+    protected void revertCustomServiceOfferingDetailsFromVmSnapshot(UserVmVO userVm, VMSnapshotVO vmSnapshotVo) {
         ServiceOfferingVO serviceOfferingVO = _serviceOfferingDao.findById(vmSnapshotVo.getServiceOfferingId());
         if (serviceOfferingVO.isDynamic()) {
             List<VMSnapshotDetailsVO> vmSnapshotDetails = _vmSnapshotDetailsDao.listDetails(vmSnapshotVo.getId());
-            List<VMInstanceDetailVO> userVmDetails = new ArrayList<VMInstanceDetailVO>();
             for (VMSnapshotDetailsVO detail : vmSnapshotDetails) {
-                userVmDetails.add(new VMInstanceDetailVO(userVm.getId(), detail.getName(), detail.getValue(), detail.isDisplay()));
+                if (VM_SNAPSHOT_CUSTOM_SERVICE_OFFERING_DETAILS.contains(detail.getName().toLowerCase())) {
+                    _vmInstanceDetailsDao.addDetail(userVm.getId(), detail.getName(), detail.getValue(), detail.isDisplay());
+                }
             }
-            _vmInstanceDetailsDao.saveDetails(userVmDetails);
         }
     }
 

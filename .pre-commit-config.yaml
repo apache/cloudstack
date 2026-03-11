@@ -53,6 +53,16 @@ repos:
         files: \.md$
         stages: [manual]
       - id: insert-license
+        name: add license for all cfg files
+        description: automatically adds a licence header to all cfg files that don't have a license header
+        files: \.cfg$
+        args:
+          - --comment-style
+          - '|#|'
+          - --license-filepath
+          - .github/workflows/license-templates/LICENSE.txt
+          - --fuzzy-match-generates-todo
+      - id: insert-license
         name: add license for all Markdown files
         files: \.md$
         args:
@@ -61,7 +71,7 @@ repos:
           - --license-filepath
           - .github/workflows/license-templates/LICENSE.txt
           - --fuzzy-match-generates-todo
-        exclude: ^(CHANGES|ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE)\.md$|^ui/docs/(full|smoke)-test-plan\.template\.md$
+        exclude: ^(CHANGES|ISSUE_TEMPLATE|PULL_REQUEST_TEMPLATE)\.md$|^ui/docs/(full|smoke)-test-plan\.template\.md$|^\.github/workflows/.*\.md$|^\.github/aw/.*\.md$
       - id: insert-license
         name: add license for all properties files
         description: automatically adds a licence header to all properties files that don't have a license header
@@ -110,6 +120,7 @@ repos:
           - --license-filepath
           - .github/workflows/license-templates/LICENSE.txt
           - --fuzzy-match-generates-todo
+        exclude: ^\.github/workflows/.*\.lock\.yml$
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -185,4 +196,4 @@ repos:
         args: [--config-file=.github/linters/.yamllint.yml]
         types: [yaml]
         files: \.ya?ml$
-        exclude: ^.*k8s-.*\.ya?ml$
+        exclude: ^.*k8s-.*\.ya?ml$|^.github/workflows/.*\.lock\.ya?ml$

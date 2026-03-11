@@ -20,10 +20,6 @@ package org.apache.cloudstack.quota.activationrule.presetvariables;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.Volume;
-import com.cloud.vm.snapshot.VMSnapshot;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 
 public class Value extends GenericPresetVariable {
@@ -61,13 +57,13 @@ public class Value extends GenericPresetVariable {
     private Long virtualSize;
 
     @PresetVariableDefinition(description = "Provisioning type of the resource. Values can be: thin, sparse or fat.", supportedTypes = {QuotaTypes.VOLUME})
-    private ProvisioningType provisioningType;
+    private String provisioningType;
 
     @PresetVariableDefinition(description = "Type of the snapshot. Values can be: MANUAL, RECURRING, HOURLY, DAILY, WEEKLY and MONTHLY.", supportedTypes = {QuotaTypes.SNAPSHOT})
-    private Snapshot.Type snapshotType;
+    private String snapshotType;
 
     @PresetVariableDefinition(description = "Type of the VM snapshot. Values can be: Disk or DiskAndMemory.", supportedTypes = {QuotaTypes.VM_SNAPSHOT})
-    private VMSnapshot.Type vmSnapshotType;
+    private String vmSnapshotType;
 
     @PresetVariableDefinition(description = "Computing offering of the VM.", supportedTypes = {QuotaTypes.RUNNING_VM, QuotaTypes.ALLOCATED_VM})
     private ComputeOffering computeOffering;
@@ -96,7 +92,7 @@ public class Value extends GenericPresetVariable {
     private String volumeFormat;
 
     @PresetVariableDefinition(description = "The volume type. Values can be: UNKNOWN, ROOT, SWAP, DATADISK and ISO.", supportedTypes = {QuotaTypes.VOLUME})
-    private Volume.Type volumeType;
+    private String volumeType;
 
     private String state;
 
@@ -112,7 +108,6 @@ public class Value extends GenericPresetVariable {
 
     public void setHost(Host host) {
         this.host = host;
-        fieldNamesToIncludeInToString.add("host");
     }
 
     public String getOsName() {
@@ -121,7 +116,6 @@ public class Value extends GenericPresetVariable {
 
     public void setOsName(String osName) {
         this.osName = osName;
-        fieldNamesToIncludeInToString.add("osName");
     }
 
     public List<Resource> getAccountResources() {
@@ -130,7 +124,6 @@ public class Value extends GenericPresetVariable {
 
     public void setAccountResources(List<Resource> accountResources) {
         this.accountResources = accountResources;
-        fieldNamesToIncludeInToString.add("accountResources");
     }
 
     public Map<String, String> getTags() {
@@ -139,7 +132,6 @@ public class Value extends GenericPresetVariable {
 
     public void setTags(Map<String, String> tags) {
         this.tags = tags;
-        fieldNamesToIncludeInToString.add("tags");
     }
 
     public String getTag() {
@@ -148,7 +140,6 @@ public class Value extends GenericPresetVariable {
 
     public void setTag(String tag) {
         this.tag = tag;
-        fieldNamesToIncludeInToString.add("tag");
     }
 
     public Long getSize() {
@@ -157,34 +148,30 @@ public class Value extends GenericPresetVariable {
 
     public void setSize(Long size) {
         this.size = size;
-        fieldNamesToIncludeInToString.add("size");
     }
 
-    public ProvisioningType getProvisioningType() {
+    public String getProvisioningType() {
         return provisioningType;
     }
 
-    public void setProvisioningType(ProvisioningType provisioningType) {
+    public void setProvisioningType(String provisioningType) {
         this.provisioningType = provisioningType;
-        fieldNamesToIncludeInToString.add("provisioningType");
     }
 
-    public Snapshot.Type getSnapshotType() {
+    public String getSnapshotType() {
         return snapshotType;
     }
 
-    public void setSnapshotType(Snapshot.Type snapshotType) {
+    public void setSnapshotType(String snapshotType) {
         this.snapshotType = snapshotType;
-        fieldNamesToIncludeInToString.add("snapshotType");
     }
 
-    public VMSnapshot.Type getVmSnapshotType() {
+    public String getVmSnapshotType() {
         return vmSnapshotType;
     }
 
-    public void setVmSnapshotType(VMSnapshot.Type vmSnapshotType) {
+    public void setVmSnapshotType(String vmSnapshotType) {
         this.vmSnapshotType = vmSnapshotType;
-        fieldNamesToIncludeInToString.add("vmSnapshotType");
     }
 
     public ComputeOffering getComputeOffering() {
@@ -193,7 +180,6 @@ public class Value extends GenericPresetVariable {
 
     public void setComputeOffering(ComputeOffering computeOffering) {
         this.computeOffering = computeOffering;
-        fieldNamesToIncludeInToString.add("computeOffering");
     }
 
     public GenericPresetVariable getTemplate() {
@@ -202,7 +188,6 @@ public class Value extends GenericPresetVariable {
 
     public void setTemplate(GenericPresetVariable template) {
         this.template = template;
-        fieldNamesToIncludeInToString.add("template");
     }
 
     public DiskOfferingPresetVariables getDiskOffering() {
@@ -211,7 +196,6 @@ public class Value extends GenericPresetVariable {
 
     public void setDiskOffering(DiskOfferingPresetVariables diskOffering) {
         this.diskOffering = diskOffering;
-        fieldNamesToIncludeInToString.add("diskOffering");
     }
 
     public Storage getStorage() {
@@ -220,7 +204,6 @@ public class Value extends GenericPresetVariable {
 
     public void setStorage(Storage storage) {
         this.storage = storage;
-        fieldNamesToIncludeInToString.add("storage");
     }
 
     public ComputingResources getComputingResources() {
@@ -229,7 +212,6 @@ public class Value extends GenericPresetVariable {
 
     public void setComputingResources(ComputingResources computingResources) {
         this.computingResources = computingResources;
-        fieldNamesToIncludeInToString.add("computingResources");
     }
 
     public Long getVirtualSize() {
@@ -238,7 +220,6 @@ public class Value extends GenericPresetVariable {
 
     public void setVirtualSize(Long virtualSize) {
         this.virtualSize = virtualSize;
-        fieldNamesToIncludeInToString.add("virtualSize");
     }
 
     public BackupOffering getBackupOffering() {
@@ -247,12 +228,10 @@ public class Value extends GenericPresetVariable {
 
     public void setBackupOffering(BackupOffering backupOffering) {
         this.backupOffering = backupOffering;
-        fieldNamesToIncludeInToString.add("backupOffering");
     }
 
     public void setHypervisorType(String hypervisorType) {
         this.hypervisorType = hypervisorType;
-        fieldNamesToIncludeInToString.add("hypervisorType");
     }
 
     public String getHypervisorType() {
@@ -261,20 +240,18 @@ public class Value extends GenericPresetVariable {
 
     public void setVolumeFormat(String volumeFormat) {
         this.volumeFormat = volumeFormat;
-        fieldNamesToIncludeInToString.add("volumeFormat");
     }
 
     public String getVolumeFormat() {
         return volumeFormat;
     }
 
-    public Volume.Type getVolumeType() {
+    public String getVolumeType() {
         return volumeType;
     }
 
-    public void setVolumeType(Volume.Type volumeType) {
+    public void setVolumeType(String volumeType) {
         this.volumeType = volumeType;
-        fieldNamesToIncludeInToString.add("volumeType");
     }
 
     public String getState() {
@@ -283,7 +260,6 @@ public class Value extends GenericPresetVariable {
 
     public void setState(String state) {
         this.state = state;
-        fieldNamesToIncludeInToString.add("state");
     }
 
     public GenericPresetVariable getNetworkOffering() {

@@ -335,6 +335,7 @@ class User:
     def registerUserKeys(cls, apiclient, userid):
         cmd = registerUserKeys.registerUserKeysCmd()
         cmd.id = userid
+        cmd.name = f"keypair-{userid}"
         return apiclient.registerUserKeys(cmd)
 
     def update(self, apiclient, **kwargs):
@@ -1725,11 +1726,12 @@ class Template:
                 # If template is ready,
                 # template.status = Download Complete
                 # Downloading - x% Downloaded
+                # Processing - Initial status
                 # Error - Any other string
                 if template.status == 'Download Complete' and template.isready:
                     return
 
-                elif 'Downloaded' in template.status:
+                elif 'Downloaded' in template.status or template.status == 'Processing':
                     retries = retries - 1
                     continue
 

@@ -286,7 +286,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         if(account == null && domainId != null){
             group = _affinityGroupDao.findDomainLevelGroupByName(domainId, affinityGroupName);
         }else{
-            Long accountId = _accountMgr.finalyzeAccountId(account, domainId, projectId, true);
+            Long accountId = _accountMgr.finalizeAccountId(account, domainId, projectId, true);
             if(accountId == null){
                 Account caller = CallContext.current().getCallingAccount();
                 group = _affinityGroupDao.findByAccountAndName(caller.getAccountId(), affinityGroupName);

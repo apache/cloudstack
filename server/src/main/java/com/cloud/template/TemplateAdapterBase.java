@@ -234,9 +234,10 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 throw new CloudRuntimeException(errMsg);
             }
 
-            TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(), template.getUuid(), tmpl.getInstallPath(), tmpl
-                    .getChecksum(), tmpl.getType().toString(), template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
-                    templateOnStore.getDataStore().getRole().toString());
+            TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(),
+                    template.getUuid(), tmpl.getInstallPath(), tmpl.getChecksum(), tmpl.getType().toString(),
+                    template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
+                    templateOnStore.getDataStore().getRole().toString(), zoneId_is);
             //using the existing max template size configuration
             payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
 
@@ -404,7 +405,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
-        CallContext.current().setEventDetails("Id: " + id + " name: " + name);
+        CallContext.current().setEventDetails("ID: " + id + " name: " + name);
         TemplateProfile profile = new TemplateProfile(id, userId, name, displayText, arch, bits, passwordEnabled, requiresHVM, url, isPublic, featured, isExtractable, imgfmt, guestOSId, zoneIdList,
             hypervisorType, templateOwner.getAccountName(), templateOwner.getDomainId(), templateOwner.getAccountId(), chksum, bootable, templateTag, details,
             sshkeyEnabled, null, isDynamicallyScalable, templateType, directDownload, deployAsIs, extensionId);

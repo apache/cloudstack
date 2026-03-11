@@ -121,6 +121,7 @@ import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -131,6 +132,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -219,7 +221,6 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -315,6 +316,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     protected SnapshotHelper snapshotHelper;
     @Inject
     VnfTemplateManager vnfTemplateManager;
+    @Inject
+    TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
 
     @Inject
     private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
@@ -411,7 +414,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             TemplateOrVolumePostUploadCommand firstCommand = payload.get(0);
 
             String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
-            String protocol = VolumeApiService.UseHttpsToUpload.value() ? "https" : "http";
+            String protocol = VolumeApiService.UseHttpsToUpload.valueIn(firstCommand.getZoneId()) ? "https" : "http";
 
             String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, firstCommand.getRemoteEndPoint(), firstCommand.getEntityUUID(), protocol);
             response.setPostURL(new URL(url));
@@ -515,7 +518,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         String extractUrl = extract(caller, templateId, url, zoneId, mode, eventId, false);
-        CallContext.current().setEventDetails(String.format("Download URL: %s, template ID: %s", extractUrl, template.getUuid()));
+        CallContext.current().setEventDetails(String.format("Download URL: %s, Template ID: %s", extractUrl, template.getUuid()));
         return extractUrl;
     }
 
@@ -844,6 +847,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Copy will just find one eligible image store for the destination zone
         // and copy template there, not propagate to all image stores
         // for that zone
+
+        boolean copied = false;
+
         for (DataStore dstSecStore : dstSecStores) {
             TemplateDataStoreVO dstTmpltStore = _tmplStoreDao.findByStoreTemplate(dstSecStore.getId(), tmpltId);
             if (dstTmpltStore != null && dstTmpltStore.getDownloadState() == Status.DOWNLOADED) {
@@ -858,8 +864,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 TemplateApiResult result = future.get();
                 if (result.isFailed()) {
                     logger.debug("Copy Template failed for image store {}: {}", dstSecStore, result.getResult());
+                    _tmplStoreDao.removeByTemplateStore(tmpltId, dstSecStore.getId());
                     continue; // try next image store
                 }
+
+                copied = true;
 
                 _tmpltDao.addTemplateToZone(template, dstZoneId);
 
@@ -888,12 +897,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                         }
                     }
                 }
+
+                return true;
+
             } catch (Exception ex) {
-                logger.debug("Failed to copy Template to image store:{} ,will try next one", dstSecStore);
+                logger.debug("Failed to copy Template to image store:{} ,will try next one", dstSecStore, ex);
             }
         }
-        return true;
-
+        return copied;
     }
 
     @Override
@@ -1188,7 +1199,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isoId == null) {
             throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
         }
-        CallContext.current().setEventDetails("Vm Id: " + virtualMachine.getUuid() + " ISO Id: " + isoId);
+        CallContext.current().setEventDetails("Vm ID: " + virtualMachine.getUuid() + " ISO ID: " + isoId);
 
         State vmState = virtualMachine.getState();
         if (vmState != State.Running && vmState != State.Stopped) {
@@ -1383,9 +1394,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         else {
             vmInstanceVOList = _vmInstanceDao.listNonExpungedByTemplate(templateId);
         }
-        if(!cmd.isForced() && CollectionUtils.isNotEmpty(vmInstanceVOList)) {
-            final String message = String.format("Unable to delete Template: %s because Instance: [%s] are using it.",  template, Joiner.on(",").join(vmInstanceVOList));
-            logger.warn(message);
+        if (!cmd.isForced() && CollectionUtils.isNotEmpty(vmInstanceVOList)) {
+            String message = String.format("Unable to delete template [%s] because there are [%d] VM instances using it.", template, vmInstanceVOList.size());
+            String instancesListMessage = String.format(" Instances list: [%s].", StringUtils.join(vmInstanceVOList, ","));
+
+            logger.warn("{}{}", message, instancesListMessage);
+
+            if (_accountMgr.isRootAdmin(caller.getAccountId())) {
+                message += instancesListMessage;
+            }
+
             throw new InvalidParameterValueException(message);
         }
 
@@ -2217,6 +2235,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             templateType = validateTemplateType(cmd, isAdmin, template.isCrossZones(), template.getHypervisorType());
             if (cmd instanceof UpdateVnfTemplateCmd) {
                 VnfTemplateUtils.validateApiCommandParams(cmd, template);
+                UpdateVnfTemplateCmd updateCmd = (UpdateVnfTemplateCmd) cmd;
+                if (template.isDeployAsIs() && CollectionUtils.isNotEmpty(updateCmd.getVnfNics())) {
+                    List<OVFNetworkTO> ovfNetworks = templateDeployAsIsDetailsDao.listNetworkRequirementsByTemplateId(template.getId());
+                    VnfTemplateUtils.validateDeployAsIsTemplateVnfNics(ovfNetworks, updateCmd.getVnfNics());
+                }
                 vnfTemplateManager.updateVnfTemplate(template.getId(), (UpdateVnfTemplateCmd) cmd);
             }
             templateTag = ((UpdateTemplateCmd)cmd).getTemplateTag();
@@ -2239,7 +2262,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   templateTag == null &&
                   forCks == null &&
                   arch == null &&
-                  (! cleanupDetails && details == null) //update details in every case except this one
+                  (!cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
             return template;
@@ -2343,8 +2366,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (cleanupDetails) {
             template.setDetails(null);
             _tmpltDetailsDao.removeDetails(id);
-        }
-        else if (details != null && !details.isEmpty()) {
+        } else if (details != null && !details.isEmpty()) {
             template.setDetails(details);
             _tmpltDao.saveDetails(template);
         }
@@ -2413,6 +2435,17 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         throw new InvalidParameterValueException(String.format("Only %s templates supported for %s hypervisor type",
                 TemplateType.USER, HypervisorType.External));
+    }
+
+    @Override
+    public DataStore verifyHeuristicRulesForZone(VMTemplateVO template, Long zoneId) {
+        HeuristicType heuristicType;
+        if (ImageFormat.ISO.equals(template.getFormat())) {
+            heuristicType = HeuristicType.ISO;
+        } else {
+            heuristicType = HeuristicType.TEMPLATE;
+        }
+        return heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, heuristicType, template);
     }
 
     void validateDetails(VMTemplateVO template, Map<String, String> details) {
