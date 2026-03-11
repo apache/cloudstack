@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
  * APICheckers is designed to verify the ownership of resources and to control the access to APIs.
  */
 public interface APIChecker extends Adapter {
-    Logger LOGGER = Logger.getLogger(APIChecker.class);
+    Logger s_logger = Logger.getLogger(APIChecker.class.getName());
     // Interface for checking access for a role using apiname
     // If true, apiChecker has checked the operation
     // If false, apiChecker is unable to handle the operation or not implemented
@@ -54,7 +54,7 @@ public interface APIChecker extends Adapter {
                 checkAccess(account, apiName);
                 allowedApis.add(apiName);
             } catch (PermissionDeniedException e) {
-                LOGGER.debug("Account [" + account + "] is not allowed to access API [" + apiName + "]", e);
+                s_logger.debug("Account [" + account + "] is not allowed to access API [" + apiName + "]", e);
             }
         }
         return allowedApis;
