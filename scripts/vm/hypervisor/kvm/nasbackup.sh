@@ -89,17 +89,42 @@ sanity_checks() {
 
 ### Operation methods ###
 
+get_ceph_uuid_from_path() {
+  local fullpath="$1"
+  # disk for rbd => rbd:<pool>/<uuid>:mon_host=<monitor_host>...
+  # sample: rbd:cloudstack/53d5c355-d726-4d3e-9422-046a503a0b12:mon_host=10.0.1.2...
+  beforeUuid="${fullpath#*/}" # Remove up to first slash after rbd:
+  volUuid="${beforeUuid%%:*}" # Remove everything after colon to get the uuid
+  echo $volUuid
+}
+
+get_linstor_uuid_from_path() {
+  local fullpath="$1"
+  # disk for linstor => /dev/drbd/by-res/cs-<uuid>/0
+  # sample: /dev/drbd/by-res/cs-53d5c355-d726-4d3e-9422-046a503a0b12/0
+  beforeUuid="${fullpath#/dev/drbd/by-res/}"
+  volUuid="${beforeUuid%%/*}"
+  volUuid="${volUuid#cs-}"
+  echo $volUuid
+}
+
 backup_running_vm() {
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
   name="root"
   echo "<domainbackup mode='push'><disks>" > $dest/backup.xml
-  for disk in $(virsh -c qemu:///system domblklist $VM --details 2>/dev/null | awk '/disk/{print$3}'); do
-    volpath=$(virsh -c qemu:///system domblklist $VM --details | awk "/$disk/{print $4}" | sed 's/.*\///')
-    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$name.$volpath.qcow2' /></disk>" >> $dest/backup.xml
+  while read -r disk fullpath; do
+    if [[ "$fullpath" == /dev/drbd/by-res/* ]]; then
+        volUuid=$(get_linstor_uuid_from_path "$fullpath")
+    else
+        volUuid="${fullpath##*/}"
+    fi
+    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$name.$volUuid.qcow2' /></disk>" >> $dest/backup.xml
     name="datadisk"
-  done
+  done < <(
+    virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{print $3, $4}'
+  )
   echo "</disks></domainbackup>" >> $dest/backup.xml
 
   local thaw=0
@@ -166,10 +191,9 @@ backup_stopped_vm() {
   name="root"
   for disk in $DISK_PATHS; do
     if [[ "$disk" == rbd:* ]]; then
-      # disk for rbd => rbd:<pool>/<uuid>:mon_host=<monitor_host>...
-      # sample: rbd:cloudstack/53d5c355-d726-4d3e-9422-046a503a0b12:mon_host=10.0.1.2...
-      beforeUuid="${disk#*/}"     # Remove up to first slash after rbd:
-      volUuid="${beforeUuid%%:*}" # Remove everything after colon to get the uuid
+      volUuid=$(get_ceph_uuid_from_path "$disk")
+    elif [[ "$disk" == /dev/drbd/by-res/* ]]; then
+      volUuid=$(get_linstor_uuid_from_path "$disk")
     else
       volUuid="${disk##*/}"
     fi
