@@ -91,6 +91,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.junit.After;
 import org.junit.Assert;
@@ -240,6 +241,9 @@ public class BackupManagerTest {
 
     @Mock
     private GuestOSDao _guestOSDao;
+
+    @Mock
+    AsyncJobManager asyncJobManager;
 
     private Gson gson;
 
@@ -1489,6 +1493,7 @@ public class BackupManagerTest {
         when(backup.getAccountId()).thenReturn(accountId);
         when(backup.getBackupOfferingId()).thenReturn(backupOfferingId);
         when(backup.getSize()).thenReturn(100L);
+        when(backup.getUuid()).thenReturn("backup-uuid");
 
         overrideBackupFrameworkConfigValue();
 
@@ -1521,6 +1526,29 @@ public class BackupManagerTest {
             usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVED_AND_BACKUPS_DELETED, accountId, zoneId, vmId, resourceName,
                     backupOfferingId, null, null, Backup.class.getSimpleName(), vmUuid));
         }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDeleteBackupBlockedByPendingJobs() {
+        Long backupId = 1L;
+        Long vmId = 2L;
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getVmId()).thenReturn(vmId);
+        when(backup.getUuid()).thenReturn("backup-uuid");
+        when(backupDao.findByIdIncludingRemoved(backupId)).thenReturn(backup);
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+
+        overrideBackupFrameworkConfigValue();
+
+        when(asyncJobManager.countPendingJobs("backup-uuid",
+                "org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd",
+                "org.apache.cloudstack.api.command.admin.vm.CreateVMFromBackupCmdByAdmin",
+                "org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd")).thenReturn(1L);
+
+        backupManager.deleteBackup(backupId, false);
     }
 
     @Test
