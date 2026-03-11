@@ -19,6 +19,7 @@ package org.apache.cloudstack.veeam.api.converter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.backup.Backup;
@@ -34,14 +35,12 @@ import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeStats;
 
 public class VolumeJoinVOToDiskConverter {
-    public static Disk toDisk(final VolumeJoinVO vol) {
+    public static Disk toDisk(final VolumeJoinVO vol, final Function<VolumeJoinVO, Long> physicalSizeResolver) {
         final Disk disk = new Disk();
         final String basePath = VeeamControlService.ContextPath.value();
         final String apiBasePath = basePath + ApiService.BASE_ROUTE;
@@ -64,19 +63,12 @@ public class VolumeJoinVOToDiskConverter {
         disk.setProvisionedSize(String.valueOf(size));
         disk.setActualSize(String.valueOf(actualSize));
         disk.setTotalSize(String.valueOf(size));
-        VolumeStats vs = null;
-        if (List.of(Storage.ImageFormat.VHD, Storage.ImageFormat.QCOW2, Storage.ImageFormat.RAW).contains(vol.getFormat())) {
-            if (vol.getPath() != null) {
-                vs = ApiDBUtils.getVolumeStatistics(vol.getPath());
-            }
-        } else if (vol.getFormat() == Storage.ImageFormat.OVA) {
-            if (vol.getChainInfo() != null) {
-                vs = ApiDBUtils.getVolumeStatistics(vol.getChainInfo());
-            }
+        Long physicalSize = null;
+        if (physicalSizeResolver != null) {
+            physicalSize = physicalSizeResolver.apply(vol);
         }
-        if (vs != null) {
-            disk.setTotalSize(String.valueOf(vs.getVirtualSize()));
-            disk.setActualSize(String.valueOf(vs.getPhysicalSize()));
+        if (physicalSize != null) {
+            disk.setActualSize(String.valueOf(physicalSize));
         }
 
         // Disk format
@@ -122,9 +114,10 @@ public class VolumeJoinVOToDiskConverter {
         return disk;
     }
 
-    public static List<Disk> toDiskList(final List<VolumeJoinVO> srcList) {
+    public static List<Disk> toDiskList(final List<VolumeJoinVO> srcList,
+                        final Function<VolumeJoinVO, Long> physicalSizeResolver) {
         return srcList.stream()
-                .map(VolumeJoinVOToDiskConverter::toDisk)
+                .map(vo -> toDisk(vo, physicalSizeResolver))
                 .collect(Collectors.toList());
     }
 
@@ -143,7 +136,8 @@ public class VolumeJoinVOToDiskConverter {
         return disks;
     }
 
-    public static  DiskAttachment toDiskAttachment(final VolumeJoinVO vol) {
+    public static  DiskAttachment toDiskAttachment(final VolumeJoinVO vol,
+                           final Function<VolumeJoinVO, Long> physicalSizeResolver) {
         final DiskAttachment da = new DiskAttachment();
         final String basePath = VeeamControlService.ContextPath.value();
 
@@ -154,7 +148,7 @@ public class VolumeJoinVOToDiskConverter {
         da.setHref(da.getVm().getHref() + "/diskattachments/" + diskAttachmentId);;
 
         // Links
-        da.setDisk(toDisk(vol));
+        da.setDisk(toDisk(vol, physicalSizeResolver));
 
         // Properties
         da.setActive("true");
@@ -167,9 +161,10 @@ public class VolumeJoinVOToDiskConverter {
         return da;
     }
 
-    public static List<DiskAttachment> toDiskAttachmentList(final List<VolumeJoinVO> srcList) {
+    public static List<DiskAttachment> toDiskAttachmentList(final List<VolumeJoinVO> srcList,
+                            final Function<VolumeJoinVO, Long> physicalSizeResolver) {
         return srcList.stream()
-                .map(VolumeJoinVOToDiskConverter::toDiskAttachment)
+                .map(vo -> toDiskAttachment(vo, physicalSizeResolver))
                 .collect(Collectors.toList());
     }
 
@@ -190,9 +185,9 @@ public class VolumeJoinVOToDiskConverter {
         if (state == null) {
             return "ok";
         }
-        switch (state.name().toLowerCase()) {
-            case "ready":
-            case "allocated":
+        switch (state) {
+            case Ready:
+            case Allocated:
                 return "ok";
             default:
                 return "locked";

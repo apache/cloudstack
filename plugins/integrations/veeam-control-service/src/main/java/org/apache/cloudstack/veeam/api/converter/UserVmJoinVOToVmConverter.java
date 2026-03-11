@@ -160,16 +160,16 @@ public final class UserVmJoinVOToVmConverter {
                 basePath + ApiService.BASE_ROUTE + "/cpuprofiles/" + src.getServiceOfferingUuid(),
                 src.getServiceOfferingUuid()));
         if (allContent) {
-            dst.setInitialization(getOvfInitialization(dst));
+            dst.setInitialization(getOvfInitialization(dst, src));
         }
 
         return dst;
     }
 
-    private static Vm.Initialization getOvfInitialization(Vm vm) {
+    private static Vm.Initialization getOvfInitialization(Vm vm, UserVmJoinVO vo) {
         final Vm.Initialization.Configuration configuration = new Vm.Initialization.Configuration();
         configuration.setType("ovf");
-        configuration.setData(OvfXmlUtil.toXml(vm));
+        configuration.setData(OvfXmlUtil.toXml(vm, vo));
 
         final Vm.Initialization initialization = new Vm.Initialization();
         initialization.setConfiguration(configuration);

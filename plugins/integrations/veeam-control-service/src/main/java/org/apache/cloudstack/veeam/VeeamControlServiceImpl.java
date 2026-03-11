@@ -76,7 +76,9 @@ public class VeeamControlServiceImpl extends ManagerBase implements VeeamControl
             Port,
             ContextPath,
             Username,
-            Password
+            Password,
+            ServiceAccountId,
+            InstanceRestoreAssignOwner
         };
     }
 }

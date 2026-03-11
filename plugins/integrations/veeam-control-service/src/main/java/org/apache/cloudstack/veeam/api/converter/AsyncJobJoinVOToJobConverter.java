@@ -18,6 +18,8 @@
 package org.apache.cloudstack.veeam.api.converter;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.veeam.VeeamControlService;
@@ -81,6 +83,10 @@ public class AsyncJobJoinVOToJobConverter {
         job.setDescription("Something");
         job.setLink(Collections.emptyList());
         return job;
+    }
+
+    public static List<Job> toJobList(List<AsyncJobJoinVO> vos) {
+        return vos.stream().map(AsyncJobJoinVOToJobConverter::toJob).collect(Collectors.toList());
     }
 
     protected static void fillAction(final ResourceAction action, final AsyncJobJoinVO vo) {

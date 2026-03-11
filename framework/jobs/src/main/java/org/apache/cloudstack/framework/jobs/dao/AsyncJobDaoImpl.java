@@ -266,4 +266,14 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         List<Long> results = customSearch(sc, null);
         return results.get(0);
     }
+
+    @Override
+    public List<Long> listPendingJobIdsForAccount(long accountId) {
+        GenericSearchBuilder<AsyncJobVO, Long> sb = createSearchBuilder(Long.class);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.selectFields(sb.entity().getId());
+        SearchCriteria<Long> sc = sb.create();
+        sc.setParameters("accountId", accountId);
+        return customSearch(sc, null);
+    }
 }

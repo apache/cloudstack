@@ -42,6 +42,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import com.cloud.api.query.vo.UserVmJoinVO;
+
 public class OvfXmlUtil {
 
     private static final String NS_OVF = "http://schemas.dmtf.org/ovf/envelope/1/";
@@ -58,7 +60,7 @@ public class OvfXmlUtil {
         return sdf;
     });
 
-    public static String toXml(final Vm vm) {
+    public static String toXml(final Vm vm, final UserVmJoinVO vo) {
         final String vmId = vm.getId();
         final String vmName = vm.getName();
         final String vmDesc = defaultString(vm.getDescription());
@@ -169,6 +171,32 @@ public class OvfXmlUtil {
         }
         sb.append("</Section>");
 
+        if (vo != null) {
+            // -- Add a section for CloudStack-specific metadata that some consumers might look for (e.g. for import back into CloudStack) ---
+            // Add CloudStack-specific metadata section
+            sb.append("<Section xsi:type=\"ovf:CloudStackMetadata_Type\">");
+            sb.append("<Info>CloudStack specific metadata</Info>");
+            sb.append("<CloudStack>");
+            sb.append("<AccountId>").append(vo.getAccountUuid()).append("</AccountId>");
+            sb.append("<DomainId>").append(vo.getDomainUuid()).append("</DomainId>");
+            sb.append("<ProjectId>").append(escapeText(vo.getProjectUuid())).append("</ProjectId>");
+            sb.append("<ServiceOfferingId>").append(vo.getServiceOfferingUuid()).append("</ServiceOfferingId>");
+            sb.append("<DataDiskOfferingIdMap>");
+            for (DiskAttachment da : diskAttachments(vm)) {
+                if (da == null || da.getDisk() == null || StringUtils.isBlank(da.getDisk().getId())) {
+                    continue;
+                }
+                final org.apache.cloudstack.veeam.api.dto.Disk d = da.getDisk();
+                sb.append("<Entry>");
+                sb.append("<DiskId>").append(escapeText(d.getId())).append("</DiskId>");
+                sb.append("<OfferingId>").append(d.getDiskProfile().getId()).append("</OfferingId>");
+                sb.append("</Entry>");
+            }
+            sb.append("</DataDiskOfferingIdMap>");
+            sb.append("</CloudStack>");
+            sb.append("</Section>");
+        }
+
         // --- Content / VirtualSystem ---
         sb.append("<Content ovf:id=\"out\" xsi:type=\"ovf:VirtualSystem_Type\">");
         sb.append("<Name>").append(escapeText(vmName)).append("</Name>");
@@ -191,7 +219,7 @@ public class OvfXmlUtil {
         sb.append("<IsRunAndPause>false</IsRunAndPause>");
         sb.append("<AutoStartup>false</AutoStartup>");
         sb.append("<Priority>0</Priority>");
-        sb.append("<CreatedByUserId>").append(ZERO_UUID).append("</CreatedByUserId>");
+        sb.append("<CreatedByUserId>").append(vo.getAccountUuid()).append("</CreatedByUserId>");
         sb.append("<MigrationSupport>0</MigrationSupport>");
         sb.append("<IsBootMenuEnabled>").append(escapeText(booleanString(vm.getBios() != null && vm.getBios().getBootMenu() != null ? vm.getBios().getBootMenu().getEnabled() : null, "false"))).append("</IsBootMenuEnabled>");
         sb.append("<IsSpiceFileTransferEnabled>true</IsSpiceFileTransferEnabled>");

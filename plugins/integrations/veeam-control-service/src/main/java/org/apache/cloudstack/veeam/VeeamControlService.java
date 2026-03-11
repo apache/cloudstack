@@ -31,8 +31,19 @@ public interface VeeamControlService extends PluggableService, Configurable {
             "8090", "Port for Veeam Integration REST API server", false);
     ConfigKey<String> ContextPath = new ConfigKey<>("Advanced", String.class, "integration.veeam.control.context.path",
             "/ovirt-engine", "Context path for Veeam Integration REST API server", false);
-    ConfigKey<String> Username = new ConfigKey<>("Advanced", String.class, "integration.veeam.api.username",
+    ConfigKey<String> Username = new ConfigKey<>("Advanced", String.class, "integration.veeam.control.api.username",
             "veeam", "Username for Basic Auth on Veeam Integration REST API server", true);
-    ConfigKey<String> Password = new ConfigKey<>("Advanced", String.class, "integration.veeam.api.password",
+    ConfigKey<String> Password = new ConfigKey<>("Advanced", String.class, "integration.veeam.control.api.password",
             "change-me", "Password for Basic Auth on Veeam Integration REST API server", true);
+    ConfigKey<String> ServiceAccountId = new ConfigKey<>("Advanced", String.class,
+            "integration.veeam.control.service.account", "",
+            "ID of the service account used to perform operations on resources. " +
+                    "Preferably an admin-level account with permissions to access resources across the environment " +
+                    "and optionally assign them to other users.",
+            true);
+    ConfigKey<Boolean> InstanceRestoreAssignOwner = new ConfigKey<>("Advanced", Boolean.class,
+            "integration.veeam.instance.restore.assign.owner",
+            "false", "Attempt to assign restored Instance to the owner based on OVF and network " +
+            "details. If the assignment fails or set to false then the Instance will remain owned by the service " +
+            "account", true);
 }

@@ -130,7 +130,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
         String data = RouteHandler.getRequestData(req, logger);
         try {
             Disk request = io.getMapper().jsonMapper().readValue(data, Disk.class);
-            Disk response = serverAdapter.handleCreateDisk(request);
+            Disk response = serverAdapter.createDisk(request);
             io.getWriter().write(resp, HttpServletResponse.SC_CREATED, response, outFormat);
         } catch (JsonProcessingException | CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);

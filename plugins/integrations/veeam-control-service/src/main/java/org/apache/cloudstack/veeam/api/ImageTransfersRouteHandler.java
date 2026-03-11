@@ -115,7 +115,7 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
         String data = RouteHandler.getRequestData(req, logger);
         try {
             ImageTransfer request = io.getMapper().jsonMapper().readValue(data, ImageTransfer.class);
-            ImageTransfer response = serverAdapter.handleCreateImageTransfer(request);
+            ImageTransfer response = serverAdapter.createImageTransfer(request);
             io.getWriter().write(resp, HttpServletResponse.SC_CREATED, response, outFormat);
         } catch (JsonProcessingException | CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);
@@ -128,27 +128,27 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
             ImageTransfer response = serverAdapter.getImageTransfer(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
-            io.notFound(resp, e.getMessage(), outFormat);
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
     protected void handleCancelById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                               final VeeamControlServlet io) throws IOException {
         try {
-            serverAdapter.handleCancelImageTransfer(id);
+            serverAdapter.cancelImageTransfer(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, "Image transfer cancelled successfully", outFormat);
-        } catch (InvalidParameterValueException e) {
-            io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
     protected void handleFinalizeById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
                                     final VeeamControlServlet io) throws IOException {
         try {
-            serverAdapter.handleFinalizeImageTransfer(id);
+            serverAdapter.finalizeImageTransfer(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, "Image transfer finalized successfully", outFormat);
         } catch (CloudRuntimeException e) {
-            io.notFound(resp, e.getMessage(), outFormat);
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 }

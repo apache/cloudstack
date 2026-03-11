@@ -158,7 +158,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
-        backup.setStatus(Backup.Status.ReadyForTransfer);
+        backup.setStatus(Backup.Status.Queued);
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setDate(new Date());
 
@@ -236,6 +236,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
             // todo: set it in the backend
             backup.setType("Incremental");
         }
+        updateBackupState(backup, Backup.Status.ReadyForTransfer);
         return backup;
     }
 
@@ -308,12 +309,12 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         // Delete old checkpoint if exists (POC: skip actual libvirt call)
         if (oldCheckpointId != null) {
             // todo: In production: send command to delete oldCheckpointId via virsh checkpoint-delete
-            logger.debug("Would delete old checkpoint: " + oldCheckpointId);
+            logger.debug("Would delete old checkpoint: {}", oldCheckpointId);
         }
 
         // Delete backup session record
-        backup.setStatus(Backup.Status.BackedUp);
-        backupDao.update(backupId, backup);
+        updateBackupState(backup, Backup.Status.BackedUp);
+        backupDao.remove(backup.getId());
 
         return backup;
 
