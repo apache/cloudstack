@@ -89,6 +89,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
@@ -1823,35 +1824,35 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
         Mockito.doReturn(false).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
 
-        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock, null));
     }
     @Test
     public void checkExpungeVmPermissionTestAccountIsNotAdminConfigTrueNoApiAccessThrowsPermissionDeniedException () {
         Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
         Mockito.doReturn(true).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
-        doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine");
+        doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine", null);
 
-        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock, null));
     }
     @Test
     public void checkExpungeVmPermissionTestAccountIsNotAdminConfigTrueHasApiAccessReturnNothing () {
         Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
         Mockito.doReturn(true).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
 
-        userVmManagerImpl.checkExpungeVmPermission(accountMock);
+        userVmManagerImpl.checkExpungeVmPermission(accountMock, null);
     }
     @Test
     public void checkExpungeVmPermissionTestAccountIsAdminNoApiAccessThrowsPermissionDeniedException () {
         Mockito.doReturn(true).when(accountManager).isAdmin(Mockito.anyLong());
-        doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine");
+        doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine", null);
 
-        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock, null));
     }
     @Test
     public void checkExpungeVmPermissionTestAccountIsAdminHasApiAccessReturnNothing () {
         Mockito.doReturn(true).when(accountManager).isAdmin(Mockito.anyLong());
 
-        userVmManagerImpl.checkExpungeVmPermission(accountMock);
+        userVmManagerImpl.checkExpungeVmPermission(accountMock, null);
     }
 
     @Test
@@ -3661,7 +3662,7 @@ public class UserVmManagerImplTest {
         when(callingAccount.getId()).thenReturn(accountId);
         when(callContext.getCallingAccount()).thenReturn(callingAccount);
         when(accountManager.isAdmin(callingAccount.getId())).thenReturn(true);
-        doNothing().when(accountManager).checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class));
+        doNothing().when(accountManager).checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class), null);
         try (MockedStatic<CallContext> mockedCallContext = mockStatic(CallContext.class)) {
             mockedCallContext.when(CallContext::current).thenReturn(callContext);
             mockedCallContext.when(() -> CallContext.register(callContext, ApiCommandResourceType.Volume)).thenReturn(callContext);
@@ -3671,6 +3672,9 @@ public class UserVmManagerImplTest {
             when(cmd.getExpunge()).thenReturn(expunge);
             List<Long> volumeIds = List.of(volumeId);
             when(cmd.getVolumeIds()).thenReturn(volumeIds);
+            AsyncJobVO asyncJobMock = mock(AsyncJobVO.class);
+            when(cmd.getJob()).thenReturn(asyncJobMock);
+            when(asyncJobMock.getCmdInfo()).thenReturn("{}");
 
             UserVmVO vm = mock(UserVmVO.class);
             when(vm.getId()).thenReturn(vmId);

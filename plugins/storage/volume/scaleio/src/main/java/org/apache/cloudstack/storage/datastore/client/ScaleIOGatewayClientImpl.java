@@ -92,7 +92,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
     private String username;
     private String password;
-    private String sessionKey = null;
+    private String sessionKey;
 
     // The session token is valid for 8 hours from the time it was created, unless there has been no activity for 10 minutes
     // Reference: https://cpsdocs.dellemc.com/bundle/PF_REST_API_RG/page/GUID-92430F19-9F44-42B6-B898-87D5307AE59B.html
@@ -102,7 +102,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     private static final long MAX_IDLE_TIME_IN_MILLISECS = MAX_IDLE_TIME_IN_MINS * 60 * 1000;
     private static final long BUFFER_TIME_IN_MILLISECS = 30 * 1000; // keep 30 secs buffer before the expiration (to avoid any last-minute operations)
 
-    private boolean authenticating = false;
+    private volatile boolean authenticating = false;
     private long createTime = 0;
     private long lastUsedTime = 0;
 
@@ -142,7 +142,6 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         this.username = username;
         this.password = password;
 
-        authenticate();
         logger.debug("API client for the PowerFlex gateway " + apiURI.getHost() + " is created successfully, with max connections: "
                 + maxConnections + " and timeout: " + timeout + " secs");
     }
@@ -181,7 +180,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             long now = System.currentTimeMillis();
             createTime = lastUsedTime = now;
         } catch (final IOException e) {
-            logger.error("Failed to authenticate PowerFlex API Gateway " + apiURI.getHost() + " due to: " + e.getMessage() + getConnectionManagerStats());
+            logger.error("Failed to authenticate PowerFlex API Gateway " + apiURI.getHost() + " due to: " + e.getMessage() + getConnectionManagerStats(), e);
             throw new CloudRuntimeException("Failed to authenticate PowerFlex API Gateway " + apiURI.getHost() + " due to: " + e.getMessage());
         } finally {
             authenticating = false;
@@ -199,6 +198,10 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     }
 
     private boolean isSessionExpired() {
+        if (sessionKey == null) {
+            logger.debug("Session never created for the Gateway " + apiURI.getHost());
+            return true;
+        }
         long now = System.currentTimeMillis() + BUFFER_TIME_IN_MILLISECS;
         if ((now - createTime) > MAX_VALID_SESSION_TIME_IN_MILLISECS) {
             logger.debug("Session expired for the Gateway " + apiURI.getHost() + ", token is invalid after " + MAX_VALID_SESSION_TIME_IN_HRS
@@ -281,7 +284,11 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         HttpResponse response = null;
         boolean responseConsumed = false;
         try {
-            while (authenticating); // wait for authentication request (if any) to complete (and to pick the new session key)
+            while (authenticating) { // wait for authentication request (if any)
+                // to complete (and to pick the new session key)
+                Thread.yield();
+            }
+
             final HttpGet request = new HttpGet(apiURI.toString() + path);
             request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.sessionKey).getBytes()));
             logger.debug("Sending GET request: " + request.toString());
@@ -316,7 +323,10 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         HttpResponse response = null;
         boolean responseConsumed = false;
         try {
-            while (authenticating); // wait for authentication request (if any) to complete (and to pick the new session key)
+            while (authenticating) { // wait for authentication request (if any)
+                // to complete (and to pick the new session key)
+                Thread.yield();
+            }
             final HttpPost request = new HttpPost(apiURI.toString() + path);
             request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.sessionKey).getBytes()));
             request.setHeader("content-type", "application/json");

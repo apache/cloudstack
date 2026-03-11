@@ -846,14 +846,17 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
         try {
             pstmtLegacy = txn.prepareAutoCloseStatement(finalQueryLegacy.toString());
-            pstmt = txn.prepareAutoCloseStatement(finalQuery.toString());
             for (int i = 0; i < resourceIdList.size(); i++) {
                 pstmtLegacy.setLong(1 + i, resourceIdList.get(i));
-                pstmt.setLong(1 + i, resourceIdList.get(i));
             }
             ResultSet rs = pstmtLegacy.executeQuery();
             while (rs.next()) {
                 result.put(rs.getString(1).concat(rs.getString(2)), rs.getLong(3));
+            }
+
+            pstmt = txn.prepareAutoCloseStatement(finalQuery.toString());
+            for (int i = 0; i < resourceIdList.size(); i++) {
+                pstmt.setLong(1 + i, resourceIdList.get(i));
             }
             rs = pstmt.executeQuery();
             while (rs.next()) {
