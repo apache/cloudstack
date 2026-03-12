@@ -39,18 +39,13 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
     private final String hostPrivateIp;
 
-    public KVMHAMonitor(HAStoragePool pool, String host, String scriptPath) {
+    public KVMHAMonitor(HAStoragePool pool, String host) {
         if (pool != null) {
             storagePool.put(pool.getPoolUUID(), pool);
         }
         hostPrivateIp = host;
-        configureHeartBeatPath(scriptPath);
 
         rebootHostAndAlertManagementOnHeartbeatTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT);
-    }
-
-    private static synchronized void configureHeartBeatPath(String scriptPath) {
-        KVMHABase.s_heartBeatPath = scriptPath;
     }
 
     public void addStoragePool(HAStoragePool pool) {

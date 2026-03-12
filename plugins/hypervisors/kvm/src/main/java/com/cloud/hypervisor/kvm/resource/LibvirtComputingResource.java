@@ -1063,11 +1063,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find patch.sh");
         }
 
-        heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
-        if (heartBeatPath == null) {
-            throw new ConfigurationException("Unable to find kvmheartbeat.sh");
-        }
-
         createVmPath = Script.findScript(storageScriptsDir, "createvm.sh");
         if (createVmPath == null) {
             throw new ConfigurationException("Unable to find the createvm.sh");
@@ -1330,7 +1325,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String[] info = NetUtils.getNetworkParams(privateNic);
 
-        kvmhaMonitor = new KVMHAMonitor(null, info[0], heartBeatPath);
+        kvmhaMonitor = new KVMHAMonitor(null, info[0]);
         final Thread ha = new Thread(kvmhaMonitor);
         ha.start();
 
