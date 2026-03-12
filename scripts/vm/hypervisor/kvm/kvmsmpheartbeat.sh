@@ -113,7 +113,7 @@ else
    :
 fi
 
-hbFolder="$MountPoint/KVMHA/"
+hbFolder="$MountPoint/KVMHA"
 hbFile="$hbFolder/hb-$HostIP"
 
 write_hbLog() {
