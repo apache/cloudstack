@@ -96,6 +96,9 @@ fi
 #delete VMs on this mountpoint (best-effort)
 deleteVMs() {
   local mountPoint=$1
+  # ensure it ends with a single trailing slash
+  mountPoint="${mountPoint%/}/"
+
   vmPids=$(ps aux | grep qemu | grep "$mountPoint" | awk '{print $2}' 2> /dev/null)
 
   if [ -z "$vmPids" ]
