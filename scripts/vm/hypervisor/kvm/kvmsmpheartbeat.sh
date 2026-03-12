@@ -158,40 +158,49 @@ write_hbLog() {
 }
 
 check_hbLog() {
+  hb_diff=0
   if [ ! -f "$hbFile" ]; then
     # signal large difference if file missing
-    return 999999
+    hb_diff=999999
+    return 1
   fi
   now=$(date +%s)
   hb=$(cat "$hbFile" 2>/dev/null)
   if [ -z "$hb" ]; then
-    return 999998
+    hb_diff=999998
+    return 1
   fi
   diff=`expr $now - $hb 2>/dev/null`
   if [ $? -ne 0 ]
   then
-    return 999997
+    hb_diff=999997
+    return 1
   fi
   if [ -z "$interval" ]; then
     # if no interval provided, consider 0 as success
     if [ $diff -gt 0 ]; then
-      return $diff
+      hb_diff=$diff
+      return 1
     else
+      hb_diff=0
       return 0
     fi
   fi
   if [ $diff -gt $interval ]
   then
-    return $diff
+    hb_diff=$diff
+    return 1
   fi
+  hb_diff=0
   return 0
 }
 
 if [ "$rflag" == "1" ]
 then
   check_hbLog
-  diff=$?
-  if [ $diff == 0 ]
+  status=$?
+  diff="${hb_diff:-0}"
+  if [ $status -eq 0 ]
   then
     echo "=====> ALIVE <====="
   else
