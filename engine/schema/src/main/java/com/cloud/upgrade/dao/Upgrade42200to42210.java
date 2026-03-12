@@ -38,10 +38,10 @@ public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public void performDataMigration(Connection conn) {
-        removeDuplicateDummyTemplates(conn);
+        removeDuplicateKVMImportTemplates(conn);
     }
 
-    private void removeDuplicateDummyTemplates(Connection conn) {
+    private void removeDuplicateKVMImportTemplates(Connection conn) {
         List<Long> templateIds = new ArrayList<>();
         try (PreparedStatement selectStmt = conn.prepareStatement(String.format("SELECT id FROM cloud.vm_template WHERE name='%s' ORDER BY id ASC", UnmanagedVMsManager.KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME))) {
             ResultSet rs = selectStmt.executeQuery();
@@ -53,6 +53,7 @@ public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgr
                 return;
             }
 
+            logger.info("Removing duplicate template " + UnmanagedVMsManager.KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME + " entries");
             Long firstTemplateId = templateIds.get(0);
 
             String updateTemplateSql = "UPDATE cloud.vm_instance SET vm_template_id = ? WHERE vm_template_id = ?";
@@ -74,7 +75,7 @@ public class Upgrade42200to42210 extends DbUpgradeAbstractImpl implements DbUpgr
                 }
             }
         } catch (Exception e) {
-            logger.warn("Failed to clean duplicate kvm-default-vm-import-dummy-template entries", e);
+            logger.warn("Failed to remove duplicate template " + UnmanagedVMsManager.KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME + " entries", e);
         }
     }
 }
