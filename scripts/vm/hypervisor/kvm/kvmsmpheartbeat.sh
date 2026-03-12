@@ -115,18 +115,17 @@ deleteVMs() {
 }
 
 #checking is there the mount point present under $MountPoint?
-mounts=$(cat /proc/mounts | grep "$MountPoint")
-if [ $? -gt 0 ]
+if grep -q "^[^ ]\+ $MountPoint " /proc/mounts
 then
-   # mount point not present — we don't remount in local-only script
-   # nothing to do here; keep for compatibility with original flow
-   :
-else
    # mount exists; if not in read-check mode, consider deleting VMs similar to original behavior
    if [ "$rflag" == "0" ]
    then
      deleteVMs $MountPoint
    fi
+else
+   # mount point not present — we don't remount in local-only script
+   # nothing to do here; keep for compatibility with original flow
+   :
 fi
 
 hbFolder="$MountPoint/KVMHA/"
