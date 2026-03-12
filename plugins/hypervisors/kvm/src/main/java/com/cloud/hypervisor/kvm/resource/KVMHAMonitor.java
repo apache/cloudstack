@@ -18,7 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.utils.script.Script;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
@@ -33,8 +33,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
-
-    public static final List<StoragePoolType> STORAGE_POOL_TYPES_WITH_HA_SUPPORT = List.of(StoragePoolType.NetworkFilesystem, StoragePoolType.SharedMountPoint);
 
     private final Map<String, HAStoragePool> storagePool = new ConcurrentHashMap<>();
     private final boolean rebootHostAndAlertManagementOnHeartbeatTimeout;
@@ -88,8 +86,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             Set<String> removedPools = new HashSet<>();
             for (String uuid : storagePool.keySet()) {
                 HAStoragePool primaryStoragePool = storagePool.get(uuid);
-                if (STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(primaryStoragePool.getPool().getType())) {
-                    checkForNotExistingPools(removedPools, uuid);
+                if (HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(primaryStoragePool.getPool().getType())) {
+                    checkForNotExistingLibvirtStoragePools(removedPools, uuid);
                     if (removedPools.contains(uuid)) {
                         continue;
                     }
@@ -129,7 +127,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         return result;
     }
 
-    private void checkForNotExistingPools(Set<String> removedPools, String uuid) {
+    private void checkForNotExistingLibvirtStoragePools(Set<String> removedPools, String uuid) {
         try {
             Connect conn = LibvirtConnection.getConnection();
             StoragePool storage = conn.storagePoolLookupByUUIDString(uuid);

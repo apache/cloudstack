@@ -31,8 +31,8 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import com.cloud.agent.api.to.HostTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
-import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -321,7 +321,7 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean isPoolSupportHA() {
-        return KVMHAMonitor.STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
+        return HighAvailabilityManager.LIBVIRT_STORAGE_POOL_TYPES_WITH_HA_SUPPORT.contains(type);
     }
 
     public String getHearthBeatPath() {
