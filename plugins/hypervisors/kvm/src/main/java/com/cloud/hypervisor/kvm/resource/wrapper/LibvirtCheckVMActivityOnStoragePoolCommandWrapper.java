@@ -47,7 +47,6 @@ public final class LibvirtCheckVMActivityOnStoragePoolCommandWrapper extends Com
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
 
         KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid());
-        primaryPool.setType(pool.getType());
 
         if (primaryPool.isPoolSupportHA()) {
             final HAStoragePool nfspool = monitor.getStoragePool(pool.getUuid());

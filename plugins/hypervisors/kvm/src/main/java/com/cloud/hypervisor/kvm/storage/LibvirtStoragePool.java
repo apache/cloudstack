@@ -423,7 +423,6 @@ public class LibvirtStoragePool implements KVMStoragePool {
         }
     }
 
-    @Override
     public void setType(StoragePoolType type) {
         this.type = type;
     }
