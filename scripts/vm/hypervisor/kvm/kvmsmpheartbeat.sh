@@ -74,15 +74,25 @@ then
    help
 fi
 
-# Ensure mount point exists and is writable
+# Validate mount point exists, is (if possible) a mounted filesystem, and is writable
 if [ ! -d "$MountPoint" ]; then
-  mkdir -p "$MountPoint" 2>/dev/null
-  if [ $? -ne 0 ]; then
-    echo "Failed to create mount point directory: $MountPoint" >&2
+  echo "Mount point directory does not exist: $MountPoint" >&2
+  exit 1
+fi
+
+# If the 'mountpoint' utility is available, ensure this is an actual mount
+if command -v mountpoint >/dev/null 2>&1; then
+  if ! mountpoint -q "$MountPoint"; then
+    echo "Mount point is not a mounted filesystem: $MountPoint" >&2
     exit 1
   fi
 fi
 
+# Ensure the mount point is writable
+if [ ! -w "$MountPoint" ]; then
+  echo "Mount point is not writable: $MountPoint" >&2
+  exit 1
+fi
 #delete VMs on this mountpoint (best-effort)
 deleteVMs() {
   local mountPoint=$1
