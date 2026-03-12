@@ -71,6 +71,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
@@ -313,6 +314,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private DataStoreManager dataStoreManager;
     @Inject
     private ImportVmTasksManager importVmTasksManager;
+    @Inject
+    private KubernetesServiceHelper kubernetesServiceHelper;
 
     protected Gson gson;
 
@@ -2365,6 +2368,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
      * Perform validations before attempting to unmanage a VM from CloudStack:
      * - VM must not have any associated volume snapshot
      * - VM must not have an attached ISO
+     * - VM must not belong to any CKS cluster
+     * @throws UnsupportedServiceException in case any of the validations above fail
      */
     void performUnmanageVMInstancePrechecks(VMInstanceVO vmVO) {
         if (hasVolumeSnapshotsPriorToUnmanageVM(vmVO)) {
@@ -2376,6 +2381,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
                     " as there is an ISO attached. Please detach ISO before unmanaging.");
         }
+
+        if (belongsToCksCluster(vmVO)) {
+            throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
+                    " as it belongs to a CKS cluster. Please remove the VM from the CKS cluster before unmanaging.");
+        }
+    }
+
+    private boolean belongsToCksCluster(VMInstanceVO vmVO) {
+        return kubernetesServiceHelper.findByVmId(vmVO.getId()) != null;
     }
 
     private boolean hasVolumeSnapshotsPriorToUnmanageVM(VMInstanceVO vmVO) {
