@@ -883,7 +883,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private boolean resetVMPasswordInternal(Long vmId, String password) throws ResourceUnavailableException, InsufficientCapacityException {
         VMInstanceVO vmInstance = _vmDao.findById(vmId);
 
-        if (password == null || password.isEmpty()) {
+        if (StringUtils.isBlank(password)) {
             return false;
         }
 
@@ -3726,7 +3726,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private boolean validPassword(String password) {
-        if (password == null || password.isEmpty()) {
+       if (StringUtils.isBlank(password)) {
             return false;
         }
         for (int i = 0; i < password.length(); i++) {
@@ -4547,11 +4547,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             logger.error("error during resource reservation and allocation", e);
             throw new CloudRuntimeException(e);
         } finally {
-            closeCheckeReservation(checkedReservations);
+            closeCheckedReservations(checkedReservations);
         }
     }
 
-    private void closeCheckeReservation(List<CheckedReservation> checkedReservations) {
+    private void closeCheckedReservations(List<CheckedReservation> checkedReservations) {
         for (CheckedReservation checkedReservation : checkedReservations) {
             try {
                 checkedReservation.close();
@@ -4577,7 +4577,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private long verifyAndGetDiskSize(DiskOffering diskOffering, Long diskSize) {
-        long size = 0L;
+        long size;
         if (diskOffering == null) {
             throw new InvalidParameterValueException("Specified disk offering cannot be found");
         }
@@ -5118,7 +5118,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             sc_nic.addAnd("macAddress", SearchCriteria.Op.EQ, vmNetworkStat.getMacAddress());
                             NicVO nic = _nicDao.search(sc_nic, null).get(0);
                             List<VlanVO> vlan = _vlanDao.listVlansByNetworkId(nic.getNetworkId());
-                            if (vlan == null || vlan.isEmpty() || vlan.get(0).getVlanType() != VlanType.DirectAttached)
+                            if (CollectionUtils.isEmpty(vlan) || vlan.get(0).getVlanType() != VlanType.DirectAttached)
                             {
                                 break; // only get network statistics for DirectAttached network (shared networks in Basic zone and Advanced zone with/without SG)
                             }
@@ -5298,7 +5298,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
         }
-        logger.info("cmdline details: "+ buf);
+        logger.info("cmdline details: {}”, buf);
     }
 
     @Override
@@ -5744,7 +5744,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             //overwrite BootIntoSetup
             Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoSetup);
-            logger.trace("It was specified whether to enter setup mode: {}", paramValue.toString());
+            logger.trace("It was specified whether to enter setup mode: {}", paramValue);
             params = createParameterInParameterMap(params, VirtualMachineProfile.Param.BootIntoSetup, paramValue);
         }
 
@@ -5988,7 +5988,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             SearchCriteria<VolumeVO> sc_volume = _volsDao.createSearchCriteria();
                             sc_volume.addAnd("path", SearchCriteria.Op.LIKE, vmDiskStat.getPath() + "%");
                             List<VolumeVO> volumes = _volsDao.search(sc_volume, null);
-                            if ((volumes == null) || (volumes.isEmpty())) {
+                            if (CollectionUtils.isEmpty(volumes)) {
                                 break;
                             }
                             VolumeVO volume = volumes.get(0);
@@ -9222,7 +9222,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private void encryptAndStorePassword(UserVmVO vm, String password) {
         String sshPublicKeys = vm.getDetail(VmDetailConstants.SSH_PUBLIC_KEY);
-        if (sshPublicKeys != null && !sshPublicKeys.isEmpty() && password != null && !password.equals("saved_password")) {
+        if (!StringUtils.isEmpty(sshPublicKeys) && password != null && !password.equals("saved_password")) {
             if (!sshPublicKeys.startsWith("ssh-rsa")) {
                 logger.warn("Only RSA public keys can be used to encrypt a vm password.");
                 return;
