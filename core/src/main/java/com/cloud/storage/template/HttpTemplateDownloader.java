@@ -20,6 +20,7 @@
 package com.cloud.storage.template;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import static org.apache.cloudstack.api.ApiConstants.CLOUDSTACK_USER_AGENT;
 
 import java.io.File;
 import java.io.IOException;
@@ -125,7 +126,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
         request.setFollowRedirects(followRedirects);
-        request.setRequestHeader("User-Agent", "CloudStack-Agent");
+        request.getParams().setParameter(HttpMethodParams.USER_AGENT,  CLOUDSTACK_USER_AGENT);
         return request;
     }
 
