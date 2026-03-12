@@ -2478,10 +2478,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         int _usageAggregationRange  = NumbersUtil.parseInt(aggregationRange, 1440);
         int HOURLY_TIME = 60;
         final int DAILY_TIME = 60 * 24;
-        if (_usageAggregationRange == DAILY_TIME) {
-            _dailyOrHourly = true;
-        } else _dailyOrHourly = _usageAggregationRange == HOURLY_TIME;
-
+        _dailyOrHourly = (_usageAggregationRange == DAILY_TIME || _usageAggregationRange == HOURLY_TIME);
         _itMgr.registerGuru(VirtualMachine.Type.User, this);
 
         VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao, serviceOfferingDao, _vmDao, this, _configDao));
@@ -3472,12 +3469,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId + " corresponding to the Instance");
         }
 
-        Boolean enterSetup = cmd.getBootIntoSetup();
-        if (enterSetup != null && enterSetup && !HypervisorType.VMware.equals(vmInstance.getHypervisorType())) {
+        boolean enterSetup = Boolean.TRUE.equals(cmd.getBootIntoSetup());
+        if (enterSetup && !HypervisorType.VMware.equals(vmInstance.getHypervisorType())) {
             throw new InvalidParameterValueException("Booting into a hardware setup menu is not implemented on " + vmInstance.getHypervisorType());
         }
 
-        UserVm userVm = rebootVirtualMachine(vmId, enterSetup != null && cmd.getBootIntoSetup(), cmd.isForced());
+        UserVm userVm = rebootVirtualMachine(vmId, cmd.getBootIntoSetup(), cmd.isForced());
         if (userVm != null ) {
             // update the vmIdCountMap if the vm is in advanced shared network with out services
             final List<NicVO> nics = _nicDao.listByVmId(vmId);
@@ -4860,7 +4857,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
         }
 
-        vm.setDisplayVm(isDisplayVm == null || isDisplayVm);
+        vm.setDisplayVm(!Boolean.FALSE.equals(isDisplayVm));
 
         setVmRequiredFieldsForImport(isImport, vm, zone, hypervisorType, host, lastHost, powerState);
 
@@ -5363,7 +5360,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
         }
-        logger.info("cmdline details: {}”, buf);
+        logger.info("cmdline details: {}", buf);
     }
 
     @Override
