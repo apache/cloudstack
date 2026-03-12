@@ -98,10 +98,6 @@ fi
 deleteVMs() {
   local mountPoint=$1
   vmPids=$(ps aux | grep qemu | grep "$mountPoint" | awk '{print $2}' 2> /dev/null)
-  if [ $? -gt 0 ]
-  then
-     return
-  fi
 
   if [ -z "$vmPids" ]
   then
