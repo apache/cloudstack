@@ -2382,13 +2382,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     " as there is an ISO attached. Please detach ISO before unmanaging.");
         }
 
-        if (belongsToCksCluster(vmVO)) {
+        if (isVmPartOfCKSCluster(vmVO)) {
             throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
                     " as it belongs to a CKS cluster. Please remove the VM from the CKS cluster before unmanaging.");
         }
     }
 
-    private boolean belongsToCksCluster(VMInstanceVO vmVO) {
+    private boolean isVmPartOfCKSCluster(VMInstanceVO vmVO) {
         return kubernetesServiceHelper.findByVmId(vmVO.getId()) != null;
     }
 
