@@ -42,10 +42,10 @@ do
   case $OPTION in
   i)
      NfsSvrIP="$OPTARG"
-     ;; # retained for CLI compatibility but unused for local-only script
+     ;; # retained for CLI compatibility but unused for this script
   p)
      NfsSvrPath="$OPTARG"
-     ;; # retained for CLI compatibility but unused for local-only script
+     ;; # retained for CLI compatibility but unused for this script
   m)
      MountPoint="$OPTARG"
      ;;
@@ -67,7 +67,7 @@ do
   esac
 done
 
-# For local-only heartbeat we require a mountpoint
+# For heartbeat we require a mountpoint
 if [ -z "$MountPoint" ]
 then
    echo "Mount point (-m) is required"
@@ -80,17 +80,6 @@ if [ ! -d "$MountPoint" ]; then
   if [ $? -ne 0 ]; then
     echo "Failed to create mount point directory: $MountPoint" >&2
     exit 1
-  fi
-fi
-
-# Determine a sensible HostIP if not provided
-if [ -z "$HostIP" ]; then
-  # try to get a non-loopback IPv4 address, fallback to hostname
-  ipaddr=$(hostname -I 2>/dev/null | awk '{print $1}')
-  if [ -n "$ipaddr" ]; then
-    HostIP="$ipaddr"
-  else
-    HostIP=$(hostname)
   fi
 fi
 
