@@ -1456,6 +1456,7 @@ export default {
       this.tabKey = 'isoid'
     } else {
       this.tabKey = 'templateid'
+      this.selectedArchitecture = this.dataPreFill.templateArch ? this.dataPreFill.templateArch : this.architectureTypes.opts[0].id
     }
 
     this.fetchData()
@@ -1718,6 +1719,7 @@ export default {
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
+          this.selectedArchitecture = template?.arch || 'x86_64'
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -2344,9 +2346,6 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.isZoneSelectedMultiArch = this.zone.ismultiarch
-      if (this.isZoneSelectedMultiArch) {
-        this.selectedArchitecture = this.architectureTypes.opts[0].id
-      }
       this.zoneSelected = true
       this.form.startvm = true
       this.selectedZone = this.zoneId

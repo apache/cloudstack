@@ -94,7 +94,8 @@ export default {
   async created () {
     await Promise.all[(
       this.fetchServiceOffering(),
-      this.fetchBackupOffering()
+      this.fetchBackupOffering(),
+      this.fetchTemplateArch()
     )]
     this.loading = false
   },
@@ -118,6 +119,18 @@ export default {
         this.backupOffering = backupOfferings[0]
       })
     },
+    fetchTemplateArch () {
+      return getAPI('listTemplates', {
+        id: this.resource.vmdetails.templateid,
+        listall: true,
+        templatefilter: 'all'
+      }).then(response => {
+        const templates = response.listtemplatesresponse.template || []
+        this.templateArch = templates[0]?.arch || 'x86_64'
+      }).catch(() => {
+        this.templateArch = 'x86_64'
+      })
+    },
     populatePreFillData () {
       this.vmdetails = this.resource.vmdetails
       this.dataPreFill.zoneid = this.resource.zoneid
@@ -128,6 +141,7 @@ export default {
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
       this.dataPreFill.templateid = this.vmdetails.templateid
+      this.dataPreFill.templateArch = this.templateArch
       this.dataPreFill.allowtemplateisoselection = true
       this.dataPreFill.isoid = this.vmdetails.templateid
       this.dataPreFill.allowIpAddressesFetch = this.resource.isbackupvmexpunged
