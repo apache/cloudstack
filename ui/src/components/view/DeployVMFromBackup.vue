@@ -1540,46 +1540,6 @@ export default {
     fillValue (field) {
       this.form[field] = this.dataPreFill[field]
     },
-    fetchZoneByQuery () {
-      return new Promise(resolve => {
-        let zones = []
-        let apiName = ''
-        const params = {}
-        if (this.templateId) {
-          apiName = 'listTemplates'
-          params.listall = true
-          params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
-          params.id = this.templateId
-        } else if (this.isoId) {
-          apiName = 'listIsos'
-          params.listall = true
-          params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
-          params.id = this.isoId
-        } else if (this.networkId) {
-          params.listall = true
-          params.id = this.networkId
-          apiName = 'listNetworks'
-        }
-        if (!apiName) return resolve(zones)
-
-        getAPI(apiName, params).then(json => {
-          let objectName
-          const responseName = [apiName.toLowerCase(), 'response'].join('')
-          for (const key in json[responseName]) {
-            if (key === 'count') {
-              continue
-            }
-            objectName = key
-            break
-          }
-          const data = json?.[responseName]?.[objectName] || []
-          zones = data.map(item => item.zoneid)
-          return resolve(zones)
-        }).catch(() => {
-          return resolve(zones)
-        })
-      })
-    },
     async fetchData () {
       this.fetchZones(null, null)
       _.each(this.params, (param, name) => {
