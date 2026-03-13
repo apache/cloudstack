@@ -135,22 +135,39 @@ export default {
         return
       }
       if (this.resource && this.resource.vpcid) {
-        // VPC IPs with source nat have only VPN
+        // VPC IPs with source nat have VPN and Firewall (firewall only if associatednetworkid present)
         if (this.resource.issourcenat) {
-          this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+          let tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+          if (this.resource.associatednetworkid) {
+            tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
+          }
+          this.tabs = tabs
           return
         }
 
-        // VPC IPs with static nat have nothing
+        // VPC IPs with static nat have firewall (only if associatednetworkid present)
         if (this.resource.isstaticnat) {
           if (this.resource.virtualmachinetype === 'DomainRouter') {
-            this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+            let tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
+            if (this.resource.associatednetworkid) {
+              tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => ['vpn', 'firewall'].includes(tab.name)))
+            }
+            this.tabs = tabs
+          } else {
+            if (this.resource.associatednetworkid) {
+              this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'firewall'))
+            } else {
+              this.tabs = this.defaultTabs
+            }
           }
           return
         }
 
-        // VPC IPs don't have firewall
-        let tabs = this.$route.meta.tabs.filter(tab => tab.name !== 'firewall')
+        // VPC IPs have all tabs, but firewall only if associatednetworkid present
+        let tabs = this.$route.meta.tabs
+        if (!this.resource.associatednetworkid) {
+          tabs = tabs.filter(tab => tab.name !== 'firewall')
+        }
 
         const network = await this.fetchNetwork()
         if (network && network.networkofferingconservemode) {
@@ -161,12 +178,12 @@ export default {
         this.portFWRuleCount = await this.fetchPortFWRule()
         this.loadBalancerRuleCount = await this.fetchLoadBalancerRule()
 
-        // VPC IPs with PF only have PF
+        // VPC IPs with PF only have PF (and firewall)
         if (this.portFWRuleCount > 0) {
           tabs = tabs.filter(tab => tab.name !== 'loadbalancing')
         }
 
-        // VPC IPs with LB rules only have LB
+        // VPC IPs with LB rules only have LB (and firewall)
         if (this.loadBalancerRuleCount > 0) {
           tabs = tabs.filter(tab => tab.name !== 'portforwarding')
         }
