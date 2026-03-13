@@ -604,16 +604,16 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
             boolean shouldIncrementResourceCount = projectRole != null && Role.Admin == projectRole;
             try (CheckedReservation cr = new CheckedReservation(userAccount, ResourceType.project, shouldIncrementResourceCount ? 1L : 0L, reservationDao, _resourceLimitMgr)) {
-            if (assignUserToProject(project, user.getId(), user.getAccountId(), projectRole,
-                    Optional.ofNullable(role).map(ProjectRole::getId).orElse(null)) != null) {
-                if (shouldIncrementResourceCount) {
-                    _resourceLimitMgr.incrementResourceCount(userAccount.getId(), ResourceType.project);
+                if (assignUserToProject(project, user.getId(), user.getAccountId(), projectRole,
+                        Optional.ofNullable(role).map(ProjectRole::getId).orElse(null)) != null) {
+                    if (shouldIncrementResourceCount) {
+                        _resourceLimitMgr.incrementResourceCount(userAccount.getId(), ResourceType.project);
+                    }
+                    return true;
+                } else {
+                    logger.warn("Failed to add user to project: {}", project);
+                    return false;
                 }
-                return true;
-            } else {
-                logger.warn("Failed to add user to project: {}", project);
-                return false;
-            }
             }
         }
     }
@@ -721,19 +721,16 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                         }
 
                         try (CheckedReservation checkedReservation = new CheckedReservation(futureOwnerAccount, ResourceType.project, null, null, 1L, reservationDao, _resourceLimitMgr)) {
+                            //unset the role for the old owner
+                            ProjectAccountVO currentOwner = _projectAccountDao.findByProjectIdAccountId(projectId, currentOwnerAccount.getId());
+                            currentOwner.setAccountRole(Role.Regular);
+                            _projectAccountDao.update(currentOwner.getId(), currentOwner);
+                            _resourceLimitMgr.decrementResourceCount(currentOwnerAccount.getId(), ResourceType.project);
 
-                        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(futureOwnerAccount.getId()), ResourceType.project);
-
-                        //unset the role for the old owner
-                        ProjectAccountVO currentOwner = _projectAccountDao.findByProjectIdAccountId(projectId, currentOwnerAccount.getId());
-                        currentOwner.setAccountRole(Role.Regular);
-                        _projectAccountDao.update(currentOwner.getId(), currentOwner);
-                        _resourceLimitMgr.decrementResourceCount(currentOwnerAccount.getId(), ResourceType.project);
-
-                        //set new owner
-                        futureOwner.setAccountRole(Role.Admin);
-                        _projectAccountDao.update(futureOwner.getId(), futureOwner);
-                        _resourceLimitMgr.incrementResourceCount(futureOwnerAccount.getId(), ResourceType.project);
+                            //set new owner
+                            futureOwner.setAccountRole(Role.Admin);
+                            _projectAccountDao.update(futureOwner.getId(), futureOwner);
+                            _resourceLimitMgr.incrementResourceCount(futureOwnerAccount.getId(), ResourceType.project);
                         }
                     } else {
                         logger.trace("Future owner {}is already the owner of the project {}", newOwnerName, project);

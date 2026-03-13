@@ -280,7 +280,7 @@ public class DownloadListener implements Listener {
     }
 
     private Long getSizeFromDB() {
-        Long lastSize = 0L;
+        Long lastSize = null;
         if (DataObjectType.TEMPLATE.equals(object.getType())) {
             TemplateDataStoreVO t = _templateDataStoreDao.findByStoreTemplate(object.getDataStore().getId(), object.getId());
             lastSize = t.getSize();
@@ -288,7 +288,7 @@ public class DownloadListener implements Listener {
             VolumeVO v = _volumeDao.findById(object.getId());
             lastSize = v.getSize();
         }
-        return lastSize;
+        return lastSize == null ? 0L : lastSize;
     }
 
     private Boolean checkAndUpdateResourceLimits(DownloadAnswer answer) {
@@ -297,6 +297,9 @@ public class DownloadListener implements Listener {
 
         if (currentSize > lastSize) {
             Long accountId = getAccountIdForDataObject();
+            if (accountId == null) {
+                return true;
+            }
             Account account = _accountMgr.getAccount(accountId);
             Long usage = currentSize - lastSize;
             try (CheckedReservation secStorageReservation = new CheckedReservation(account, Resource.ResourceType.secondary_storage, usage, _reservationDao, _resourceLimitMgr)) {
