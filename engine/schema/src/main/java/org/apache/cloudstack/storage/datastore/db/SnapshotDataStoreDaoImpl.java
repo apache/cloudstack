@@ -401,7 +401,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     }
 
     @Override
-    public List<SnapshotDataStoreVO> findBySnapshotIdAndDataStoreRoleAndStateIn(long snapshotId, DataStoreRole role, State... state) {
+    public List<SnapshotDataStoreVO> listBySnapshotIdAndDataStoreRoleAndStateIn(long snapshotId, DataStoreRole role, State... state) {
         SearchCriteria<SnapshotDataStoreVO> sc = idEqRoleEqStateInSearch.create();
         sc.setParameters(SNAPSHOT_ID, snapshotId);
         sc.setParameters(STORE_ROLE, role);
