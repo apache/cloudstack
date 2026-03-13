@@ -65,6 +65,20 @@ get_lv() {
 	lvm lvs --noheadings --unbuffered --separator=/ "${1}" | cut -d '/' -f 1 | tr -d ' '
 }
 
+# Check if a block device contains QCOW2 data (CLVM_NG)
+is_qcow2_on_block_device() {
+	local disk=$1
+
+	# Must be a block device
+	if [ ! -b "${disk}" ]; then
+		return 1
+	fi
+
+	# Check if it contains QCOW2 data using qemu-img info
+	${qemu_img} info "${disk}" 2>/dev/null | grep -q "file format: qcow2"
+	return $?
+}
+
 create_snapshot() {
   local disk=$1
   local snapshotname="$2"
@@ -73,7 +87,6 @@ create_snapshot() {
   islv_ret=$?
 
   if [ ${dmsnapshot} = "yes" ] && [ "$islv_ret" == "1" ]; then
-    # Modern LVM snapshot approach
     local lv=`get_lv ${disk}`
     local vg=`get_vg ${disk}`
     local lv_bytes=`blockdev --getsize64 ${disk}`
@@ -133,11 +146,18 @@ destroy_snapshot() {
   local disk=$1
   local snapshotname="$2"
   local failed=0
+
+  # If the disk path does not exist any more, assume volume was deleted and
+  # the snapshot is already gone — return success to let caller proceed.
+  if [ ! -e "${disk}" ]; then
+    printf "Disk %s does not exist; assuming volume removed and snapshot %s is deleted\n" "${disk}" "${snapshotname}" >&2
+    return 0
+  fi
+
   is_lv ${disk}
   islv_ret=$?
 
   if [ "$islv_ret" == "1" ]; then
-    # Modern LVM snapshot deletion
     local lv=`get_lv ${disk}`
     local vg=`get_vg ${disk}`
 
@@ -147,7 +167,6 @@ destroy_snapshot() {
       return 0
     fi
 
-    # Remove the snapshot using native LVM command
     lvm lvremove -f "${vg}/${snapshotname}" >&2
     if [ $? -gt 0 ]; then
       printf "***Failed to remove LVM snapshot ${vg}/${snapshotname}\n" >&2
@@ -176,7 +195,6 @@ rollback_snapshot() {
   islv_ret=$?
 
   if [ ${dmrollback} = "yes" ] && [ "$islv_ret" == "1" ]; then
-    # Modern LVM snapshot merge (rollback)
     local lv=`get_lv ${disk}`
     local vg=`get_vg ${disk}`
 
@@ -229,9 +247,11 @@ backup_snapshot() {
   is_lv ${disk}
   islv_ret=$?
 
+  # Both CLVM and CLVM_NG use LVM snapshot backup, but with different formats
   if [ ${dmsnapshot} = "yes" ] && [ "$islv_ret" == "1" ] ; then
     local vg=`get_vg ${disk}`
     local scriptdir=`dirname ${0}`
+    local input_format="raw"
 
     # Check if snapshot exists using native LVM command
     if ! lvm lvs "${vg}/${snapshotname}" > /dev/null 2>&1; then
@@ -239,13 +259,19 @@ backup_snapshot() {
       return 1
     fi
 
-    # Use native LVM path for backup
-    qemuimg_ret=$($qemu_img convert $forceShareFlag -f raw -O qcow2 "/dev/${vg}/${snapshotname}" "${destPath}/${destName}" 2>&1)
+    # Detect if this is CLVM_NG (QCOW2 on block device)
+    if is_qcow2_on_block_device "${disk}"; then
+      input_format="qcow2"
+      printf "Detected CLVM_NG volume, using qcow2 format for backup\n" >&2
+    fi
+
+    # Use native LVM path for backup with appropriate format
+    qemuimg_ret=$($qemu_img convert $forceShareFlag -f ${input_format} -O qcow2 "/dev/${vg}/${snapshotname}" "${destPath}/${destName}" 2>&1)
     ret_code=$?
     if [ $ret_code -gt 0 ] && ([[ $qemuimg_ret == *"invalid option"*"'U'"* ]] || [[ $qemuimg_ret == *"unrecognized option"*"'-U'"* ]])
     then
       forceShareFlag=""
-      $qemu_img convert $forceShareFlag -f raw -O qcow2 "/dev/${vg}/${snapshotname}" "${destPath}/${destName}"
+      $qemu_img convert $forceShareFlag -f ${input_format} -O qcow2 "/dev/${vg}/${snapshotname}" "${destPath}/${destName}"
       ret_code=$?
     fi
     if [ $ret_code -gt 0 ]
@@ -308,8 +334,15 @@ revert_snapshot() {
   local snapshotPath=$1
   local destPath=$2
   local output_format="qcow2"
+
+  # Check if destination is a block device
   if [ -b "$destPath" ]; then
-    output_format="raw"
+    if is_qcow2_on_block_device "${destPath}"; then
+      output_format="qcow2"
+      printf "Detected CLVM_NG volume %s, preserving QCOW2 format for revert\n" "${destPath}" >&2
+    else
+      output_format="raw"
+    fi
   fi
 
   ${qemu_img} convert -f qcow2 -O ${output_format} "$snapshotPath" "$destPath" || \

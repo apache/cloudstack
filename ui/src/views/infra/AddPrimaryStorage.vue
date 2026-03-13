@@ -863,7 +863,7 @@ export default {
           var vg = (values.volumegroup.substring(0, 1) !== '/') ? ('/' + values.volumegroup) : values.volumegroup
           url = this.clvmURL(vg)
         } else if (values.protocol === 'CLVM_NG') {
-          var vg = (values.volumegroup.substring(0, 1) !== '/') ? ('/' + values.volumegroup) : values.volumegroup
+          vg = (values.volumegroup.substring(0, 1) !== '/') ? ('/' + values.volumegroup) : values.volumegroup
           url = this.clvmNgURL(vg)
         } else if (values.protocol === 'RBD') {
           url = this.rbdURL(values.radosmonitor, values.radospool, values.radosuser, values.radossecret)

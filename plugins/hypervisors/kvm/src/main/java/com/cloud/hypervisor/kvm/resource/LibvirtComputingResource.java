@@ -3682,7 +3682,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
                             null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
                 } else if (pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
-                    // CLVM and CLVM_NG use block devices (/dev/vgname/volume)
                     if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                     } else {
@@ -6585,7 +6584,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static void modifyClvmVolumeState(String volumePath, String lvchangeFlag,
                                        String stateDescription, String logMessage) {
         try {
-            LOGGER.info("[CLVM Migration] {} for volume [{}]", logMessage, volumePath);
+            LOGGER.info("{} for volume [{}]", logMessage, volumePath);
 
             Script cmd = new Script("lvchange", Duration.standardSeconds(300), LOGGER);
             cmd.add(lvchangeFlag);
@@ -6594,19 +6593,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             String result = cmd.execute();
             if (result != null) {
                 String errorMsg = String.format(
-                        "[CLVM Migration] Failed to set volume [%s] to %s state. Command result: %s",
+                        "Failed to set volume [%s] to %s state. Command result: %s",
                         volumePath, stateDescription, result);
                 LOGGER.error(errorMsg);
                 throw new CloudRuntimeException(errorMsg);
             } else {
-                LOGGER.info("[CLVM Migration] Successfully set volume [{}] to {} state.",
+                LOGGER.info("Successfully set volume [{}] to {} state.",
                         volumePath, stateDescription);
             }
         } catch (CloudRuntimeException e) {
             throw e;
         } catch (Exception e) {
             String errorMsg = String.format(
-                    "[CLVM Migration] Exception while setting volume [%s] to %s state: %s",
+                    "Exception while setting volume [%s] to %s state: %s",
                     volumePath, stateDescription, e.getMessage());
             LOGGER.error(errorMsg, e);
             throw new CloudRuntimeException(errorMsg, e);
@@ -6616,16 +6615,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static void activateClvmVolumeExclusive(String volumePath) {
         modifyClvmVolumeState(volumePath, ClvmVolumeState.EXCLUSIVE.getLvchangeFlag(),
                 ClvmVolumeState.EXCLUSIVE.getDescription(),
-                "Activating CLVM volume in exclusive mode for copy");
+                "Activating CLVM volume in exclusive mode");
     }
 
     public static void deactivateClvmVolume(String volumePath) {
         try {
             modifyClvmVolumeState(volumePath, ClvmVolumeState.DEACTIVATE.getLvchangeFlag(),
                     ClvmVolumeState.DEACTIVATE.getDescription(),
-                    "Deactivating CLVM volume after copy");
+                    "Deactivating CLVM volume");
         } catch (Exception e) {
             LOGGER.warn("Failed to deactivate CLVM volume {}: {}", volumePath, e.getMessage());
+        }
+    }
+
+    public static void setClvmVolumeToSharedMode(String volumePath) {
+        try {
+            modifyClvmVolumeState(volumePath, ClvmVolumeState.SHARED.getLvchangeFlag(),
+                    ClvmVolumeState.SHARED.getDescription(),
+                    "Setting CLVM volume to shared mode");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to set CLVM volume {} to shared mode: {}", volumePath, e.getMessage());
         }
     }
 

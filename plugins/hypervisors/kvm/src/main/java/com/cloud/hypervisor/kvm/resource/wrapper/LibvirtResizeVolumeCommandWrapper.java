@@ -113,7 +113,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             logger.debug("Resizing volume: " + path + ", from: " + toHumanReadableSize(currentSize) + ", to: " + toHumanReadableSize(newSize) + ", type: " + type + ", name: " + vmInstanceName + ", shrinkOk: " + shrinkOk);
 
             /* libvirt doesn't support resizing (C)LVM devices, and corrupts QCOW2 in some scenarios, so we have to do these via qemu-img */
-            if (pool.getType() != StoragePoolType.CLVM && pool.getType() != StoragePoolType.CLVM_NG 
+            if (pool.getType() != StoragePoolType.CLVM && pool.getType() != StoragePoolType.CLVM_NG
                     && pool.getType() != StoragePoolType.Linstor && pool.getType() != StoragePoolType.PowerFlex
                     && vol.getFormat() != PhysicalDiskFormat.QCOW2) {
                 logger.debug("Volume " + path +  " can be resized by libvirt. Asking libvirt to resize the volume.");

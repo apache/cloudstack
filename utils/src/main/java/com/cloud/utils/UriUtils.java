@@ -638,6 +638,9 @@ public class UriUtils {
             if (url.startsWith("rbd://")) {
                 return getRbdUrlInfo(url);
             }
+            if (url.startsWith("clvm://") || url.startsWith("clvm_ng://")) {
+                return getClvmUrlInfo(url);
+            }
             URI uri = new URI(UriUtils.encodeURIComponent(url));
             return new UriInfo(uri.getScheme(), uri.getHost(), uri.getPath(), uri.getUserInfo(), uri.getPort());
         } catch (URISyntaxException e) {
@@ -673,6 +676,36 @@ public class UriUtils {
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(url + " is not a valid uri for RBD");
         }
+    }
+
+    private static UriInfo getClvmUrlInfo(String url) {
+        if (url == null || (!url.toLowerCase().startsWith("clvm://") && !url.toLowerCase().startsWith("clvm_ng://"))) {
+            throw new CloudRuntimeException("CLVM URL must start with \"clvm://\" or \"clvm_ng://\"");
+        }
+
+        String scheme;
+        String remainder;
+        if (url.toLowerCase().startsWith("clvm_ng://")) {
+            scheme = "clvm_ng";
+            remainder = url.substring(10);
+        } else {
+            scheme = "clvm";
+            remainder = url.substring(7);
+        }
+
+        int firstSlash = remainder.indexOf('/');
+        String host = (firstSlash == -1) ? remainder : remainder.substring(0, firstSlash);
+        String path = (firstSlash == -1) ? "/" : remainder.substring(firstSlash);
+
+        if (host.isEmpty()) {
+            host = "localhost";
+        }
+
+        while (path.startsWith("//")) {
+            path = path.substring(1);
+        }
+
+        return new UriInfo(scheme, host, path, null, -1);
     }
 
     public static boolean isUrlForCompressedFile(String url) {
