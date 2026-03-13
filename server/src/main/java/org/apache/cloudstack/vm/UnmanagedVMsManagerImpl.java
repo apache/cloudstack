@@ -2466,91 +2466,91 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         List<Reserver> reservations = new ArrayList<>();
         try {
-        checkVolumeResourceLimitsForExternalKvmVmImport(owner, rootDisk, dataDisks, diskOffering, dataDiskOfferingMap, reservations);
+            checkVolumeResourceLimitsForExternalKvmVmImport(owner, rootDisk, dataDisks, diskOffering, dataDiskOfferingMap, reservations);
 
-        // Check NICs and supplied networks
-        Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
-        Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner, Hypervisor.HypervisorType.KVM);
-        if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
-            allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
-        }
-        VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
+            // Check NICs and supplied networks
+            Map<String, Network.IpAddresses> nicIpAddressMap = getNicIpAddresses(unmanagedInstance.getNics(), callerNicIpAddressMap);
+            Map<String, Long> allNicNetworkMap = getUnmanagedNicNetworkMap(unmanagedInstance.getName(), unmanagedInstance.getNics(), nicNetworkMap, nicIpAddressMap, zone, hostName, owner, Hypervisor.HypervisorType.KVM);
+            if (!CollectionUtils.isEmpty(unmanagedInstance.getNics())) {
+                allDetails.put(VmDetailConstants.NIC_ADAPTER, unmanagedInstance.getNics().get(0).getAdapterType());
+            }
+            VirtualMachine.PowerState powerState = VirtualMachine.PowerState.PowerOff;
 
-        try {
-            userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
-                    null, caller, true, null, owner.getAccountId(), userId,
-                    serviceOffering, null, hostName,
-                    Hypervisor.HypervisorType.KVM, allDetails, powerState, null);
-        } catch (InsufficientCapacityException ice) {
-            logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
-            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
-        }
-        if (userVm == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
-        }
-        String rootVolumeName = String.format("ROOT-%s", userVm.getId());
-        DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null, false);
+            try {
+                userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
+                        null, caller, true, null, owner.getAccountId(), userId,
+                        serviceOffering, null, hostName,
+                        Hypervisor.HypervisorType.KVM, allDetails, powerState, null);
+            } catch (InsufficientCapacityException ice) {
+                logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
+                throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
+            }
+            if (userVm == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
+            }
+            String rootVolumeName = String.format("ROOT-%s", userVm.getId());
+            DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null, false);
 
-        DiskProfile[] dataDiskProfiles = new DiskProfile[dataDisks.size()];
-        int diskSeq = 0;
-        for (UnmanagedInstanceTO.Disk disk : dataDisks) {
-            DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
-            DiskProfile dataDiskProfile = volumeManager.allocateRawVolume(Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), offering, null, null, null, userVm, template, owner, null, false);
-            dataDiskProfiles[diskSeq++] = dataDiskProfile;
-        }
-
-        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
-        ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
-        profile.setServiceOffering(dummyOffering);
-        DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
-        final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
-        DeployDestination dest = null;
-        try {
-            dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null);
-        } catch (Exception e) {
-            logger.warn("Import failed for Vm: {} while finding deployment destination", userVm, e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s while finding deployment destination", userVm.getInstanceName()));
-        }
-        if(dest == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
-        }
-
-        List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
-        try {
-            diskProfileStoragePoolList.add(importExternalDisk(rootDisk, userVm, dest, diskOffering, Volume.Type.ROOT,
-                    template, null, remoteUrl, username, password, tmpPath, diskProfile));
-
-            long deviceId = 1L;
-            diskSeq = 0;
+            DiskProfile[] dataDiskProfiles = new DiskProfile[dataDisks.size()];
+            int diskSeq = 0;
             for (UnmanagedInstanceTO.Disk disk : dataDisks) {
-                DiskProfile dataDiskProfile = dataDiskProfiles[diskSeq++];
                 DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
+                DiskProfile dataDiskProfile = volumeManager.allocateRawVolume(Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()), offering, null, null, null, userVm, template, owner, null, false);
+                dataDiskProfiles[diskSeq++] = dataDiskProfile;
+            }
 
-                diskProfileStoragePoolList.add(importExternalDisk(disk, userVm, dest, offering, Volume.Type.DATADISK,
-                        template, deviceId, remoteUrl, username, password, tmpPath, dataDiskProfile));
-                deviceId++;
+            final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
+            ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
+            profile.setServiceOffering(dummyOffering);
+            DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
+            final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null, null, null);
+            DeployDestination dest = null;
+            try {
+                dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null);
+            } catch (Exception e) {
+                logger.warn("Import failed for Vm: {} while finding deployment destination", userVm, e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s while finding deployment destination", userVm.getInstanceName()));
             }
-        } catch (Exception e) {
-            logger.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
-        }
-        try {
-            int nicIndex = 0;
-            for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
-                Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
-                Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
-                importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, true);
-                nicIndex++;
+            if(dest == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
             }
-        } catch (Exception e) {
-            logger.error(String.format("Failed to import NICs while importing vm: %s", instanceName), e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
-        }
-        publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
-        return userVm;
+
+            List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
+            try {
+                diskProfileStoragePoolList.add(importExternalDisk(rootDisk, userVm, dest, diskOffering, Volume.Type.ROOT,
+                        template, null, remoteUrl, username, password, tmpPath, diskProfile));
+
+                long deviceId = 1L;
+                diskSeq = 0;
+                for (UnmanagedInstanceTO.Disk disk : dataDisks) {
+                    DiskProfile dataDiskProfile = dataDiskProfiles[diskSeq++];
+                    DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
+
+                    diskProfileStoragePoolList.add(importExternalDisk(disk, userVm, dest, offering, Volume.Type.DATADISK,
+                            template, deviceId, remoteUrl, username, password, tmpPath, dataDiskProfile));
+                    deviceId++;
+                }
+            } catch (Exception e) {
+                logger.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
+            }
+            try {
+                int nicIndex = 0;
+                for (UnmanagedInstanceTO.Nic nic : unmanagedInstance.getNics()) {
+                    Network network = networkDao.findById(allNicNetworkMap.get(nic.getNicId()));
+                    Network.IpAddresses ipAddresses = nicIpAddressMap.get(nic.getNicId());
+                    importNic(nic, userVm, network, ipAddresses, nicIndex, nicIndex==0, true);
+                    nicIndex++;
+                }
+            } catch (Exception e) {
+                logger.error(String.format("Failed to import NICs while importing vm: %s", instanceName), e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import NICs while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
+            }
+            publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
+            return userVm;
 
         } finally {
             ReservationHelper.closeAll(reservations);
@@ -2648,77 +2648,77 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<Reserver> reservations = new ArrayList<>();
         List<String> resourceLimitStorageTags = resourceLimitService.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering);
         try {
-        CheckedReservation volumeReservation = new CheckedReservation(owner, Resource.ResourceType.volume, resourceLimitStorageTags,
+            CheckedReservation volumeReservation = new CheckedReservation(owner, Resource.ResourceType.volume, resourceLimitStorageTags,
                     CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? 1L : 0L, reservationDao, resourceLimitService);
-        reservations.add(volumeReservation);
+            reservations.add(volumeReservation);
 
-        String rootVolumeName = String.format("ROOT-%s", userVm.getId());
-        DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null, false);
+            String rootVolumeName = String.format("ROOT-%s", userVm.getId());
+            DiskProfile diskProfile = volumeManager.allocateRawVolume(Volume.Type.ROOT, rootVolumeName, diskOffering, null, null, null, userVm, template, owner, null, false);
 
-        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
-        ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
-        profile.setServiceOffering(dummyOffering);
-        DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
-        final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, hostId, poolId, null);
-        DeployDestination dest = null;
-        try {
-            dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null);
-        } catch (Exception e) {
-            logger.warn("Import failed for Vm: {} while finding deployment destination", userVm, e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s while finding deployment destination", userVm.getInstanceName()));
-        }
-        if(dest == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
-        }
-
-        Map<Volume, StoragePool> storage = dest.getStorageForDisks();
-        Volume volume = volumeDao.findById(diskProfile.getVolumeId());
-        StoragePool storagePool = storage.get(volume);
-        CheckVolumeCommand checkVolumeCommand = new CheckVolumeCommand();
-        checkVolumeCommand.setSrcFile(diskPath);
-        StorageFilerTO storageTO = new StorageFilerTO(storagePool);
-        checkVolumeCommand.setStorageFilerTO(storageTO);
-        Answer answer = agentManager.easySend(dest.getHost().getId(), checkVolumeCommand);
-        if (!(answer instanceof CheckVolumeAnswer)) {
-            cleanupFailedImportVM(userVm);
-            throw new CloudRuntimeException("Disk not found or is invalid");
-        }
-        CheckVolumeAnswer checkVolumeAnswer = (CheckVolumeAnswer) answer;
-        try {
-            checkVolume(checkVolumeAnswer.getVolumeDetails());
-        } catch (CloudRuntimeException e) {
-            cleanupFailedImportVM(userVm);
-            throw e;
-        }
-        if (!checkVolumeAnswer.getResult()) {
-            cleanupFailedImportVM(userVm);
-            throw new CloudRuntimeException("Disk not found or is invalid");
-        }
-        diskProfile.setSize(checkVolumeAnswer.getSize());
-
-        CheckedReservation primaryStorageReservation = new CheckedReservation(owner, Resource.ResourceType.primary_storage, resourceLimitStorageTags,
-                CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? diskProfile.getSize() : 0L, reservationDao, resourceLimitService);
-        reservations.add(primaryStorageReservation);
-
-        List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
-        try {
-            long deviceId = 1L;
-            if(ImportSource.SHARED == importSource) {
-                diskProfileStoragePoolList.add(importKVMSharedDisk(userVm, diskOffering, Volume.Type.ROOT,
-                        template, deviceId, poolId, diskPath, diskProfile));
-            } else if(ImportSource.LOCAL == importSource) {
-                diskProfileStoragePoolList.add(importKVMLocalDisk(userVm, diskOffering, Volume.Type.ROOT,
-                        template, deviceId, hostId, diskPath, diskProfile));
+            final VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVm, template, serviceOffering, owner, null);
+            ServiceOfferingVO dummyOffering = serviceOfferingDao.findById(userVm.getId(), serviceOffering.getId());
+            profile.setServiceOffering(dummyOffering);
+            DeploymentPlanner.ExcludeList excludeList = new DeploymentPlanner.ExcludeList();
+            final DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, hostId, poolId, null);
+            DeployDestination dest = null;
+            try {
+                dest = deploymentPlanningManager.planDeployment(profile, plan, excludeList, null);
+            } catch (Exception e) {
+                logger.warn("Import failed for Vm: {} while finding deployment destination", userVm, e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s while finding deployment destination", userVm.getInstanceName()));
             }
-        } catch (Exception e) {
-            logger.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
-            cleanupFailedImportVM(userVm);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
-        }
-        networkOrchestrationService.importNic(macAddress, 0, network, true, userVm, requestedIpPair, zone, true);
-        publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
-        return userVm;
+            if(dest == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Import failed for Vm: %s. Suitable deployment destination not found", userVm.getInstanceName()));
+            }
+
+            Map<Volume, StoragePool> storage = dest.getStorageForDisks();
+            Volume volume = volumeDao.findById(diskProfile.getVolumeId());
+            StoragePool storagePool = storage.get(volume);
+            CheckVolumeCommand checkVolumeCommand = new CheckVolumeCommand();
+            checkVolumeCommand.setSrcFile(diskPath);
+            StorageFilerTO storageTO = new StorageFilerTO(storagePool);
+            checkVolumeCommand.setStorageFilerTO(storageTO);
+            Answer answer = agentManager.easySend(dest.getHost().getId(), checkVolumeCommand);
+            if (!(answer instanceof CheckVolumeAnswer)) {
+                cleanupFailedImportVM(userVm);
+                throw new CloudRuntimeException("Disk not found or is invalid");
+            }
+            CheckVolumeAnswer checkVolumeAnswer = (CheckVolumeAnswer) answer;
+            try {
+                checkVolume(checkVolumeAnswer.getVolumeDetails());
+            } catch (CloudRuntimeException e) {
+                cleanupFailedImportVM(userVm);
+                throw e;
+            }
+            if (!checkVolumeAnswer.getResult()) {
+                cleanupFailedImportVM(userVm);
+                throw new CloudRuntimeException("Disk not found or is invalid");
+            }
+            diskProfile.setSize(checkVolumeAnswer.getSize());
+
+            CheckedReservation primaryStorageReservation = new CheckedReservation(owner, Resource.ResourceType.primary_storage, resourceLimitStorageTags,
+                    CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? diskProfile.getSize() : 0L, reservationDao, resourceLimitService);
+            reservations.add(primaryStorageReservation);
+
+            List<Pair<DiskProfile, StoragePool>> diskProfileStoragePoolList = new ArrayList<>();
+            try {
+                long deviceId = 1L;
+                if(ImportSource.SHARED == importSource) {
+                    diskProfileStoragePoolList.add(importKVMSharedDisk(userVm, diskOffering, Volume.Type.ROOT,
+                            template, deviceId, poolId, diskPath, diskProfile));
+                } else if(ImportSource.LOCAL == importSource) {
+                    diskProfileStoragePoolList.add(importKVMLocalDisk(userVm, diskOffering, Volume.Type.ROOT,
+                            template, deviceId, hostId, diskPath, diskProfile));
+                }
+            } catch (Exception e) {
+                logger.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
+                cleanupFailedImportVM(userVm);
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import volumes while importing vm: %s. %s", instanceName, StringUtils.defaultString(e.getMessage())));
+            }
+            networkOrchestrationService.importNic(macAddress, 0, network, true, userVm, requestedIpPair, zone, true);
+            publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
+            return userVm;
 
         } catch (ResourceAllocationException e) {
             cleanupFailedImportVM(userVm);

@@ -1356,30 +1356,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         List<Reserver> reservations = new ArrayList<>();
         try {
-        if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            _resourceLimitMgr.checkVmResourceLimitsForServiceOfferingChange(owner, vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
-                    (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template, reservations);
-        }
+            if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+                _resourceLimitMgr.checkVmResourceLimitsForServiceOfferingChange(owner, vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
+                        (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template, reservations);
+            }
 
-        // Check that the specified service offering ID is valid
-        _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
+            // Check that the specified service offering ID is valid
+            _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
 
-        // Check if the new service offering can be applied to vm instance
-        _accountMgr.checkAccess(owner, newServiceOffering, _dcDao.findById(vmInstance.getDataCenterId()));
+            // Check if the new service offering can be applied to vm instance
+            _accountMgr.checkAccess(owner, newServiceOffering, _dcDao.findById(vmInstance.getDataCenterId()));
 
-        // resize and migrate the root volume if required
-        DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
-        changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters, vmInstance.getDataCenterId());
+            // resize and migrate the root volume if required
+            DiskOfferingVO newDiskOffering = _diskOfferingDao.findById(newServiceOffering.getDiskOfferingId());
+            changeDiskOfferingForRootVolume(vmId, newDiskOffering, customParameters, vmInstance.getDataCenterId());
 
-        _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
+            _itMgr.upgradeVmDb(vmId, newServiceOffering, currentServiceOffering);
 
-        // Increment or decrement CPU and Memory count accordingly.
-        if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(owner.getAccountId(), vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
-                    (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template);
-        }
+            // Increment or decrement CPU and Memory count accordingly.
+            if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+                _resourceLimitMgr.updateVmResourceCountForServiceOfferingChange(owner.getAccountId(), vmInstance.isDisplay(), (long) currentCpu, (long) newCpu,
+                        (long) currentMemory, (long) newMemory, currentServiceOffering, newServiceOffering, template);
+            }
 
-        return _vmDao.findById(vmInstance.getId());
+            return _vmDao.findById(vmInstance.getId());
 
         } finally {
             ReservationHelper.closeAll(reservations);
@@ -2338,34 +2338,34 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 List<Reserver> reservations = new ArrayList<>();
                 try {
-                // First check that the maximum number of UserVMs, CPU and Memory limit for the given
-                // accountId will not be exceeded
-                if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-                    resourceLimitService.checkVmResourceLimit(account, vm.isDisplayVm(), serviceOffering, template, reservations);
-                }
+                    // First check that the maximum number of UserVMs, CPU and Memory limit for the given
+                    // accountId will not be exceeded
+                    if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+                        resourceLimitService.checkVmResourceLimit(account, vm.isDisplayVm(), serviceOffering, template, reservations);
+                    }
 
-                _haMgr.cancelDestroy(vm, vm.getHostId());
+                    _haMgr.cancelDestroy(vm, vm.getHostId());
 
-                try {
-                    if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.RecoveryRequested, null)) {
-                        logger.debug("Unable to recover the vm {} because it is not in the correct state. current state: {}", vm, vm.getState());
+                    try {
+                        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.RecoveryRequested, null)) {
+                            logger.debug("Unable to recover the vm {} because it is not in the correct state. current state: {}", vm, vm.getState());
+                            throw new InvalidParameterValueException(String.format("Unable to recover the vm %s because it is not in the correct state. current state: %s", vm, vm.getState()));
+                        }
+                    } catch (NoTransitionException e) {
                         throw new InvalidParameterValueException(String.format("Unable to recover the vm %s because it is not in the correct state. current state: %s", vm, vm.getState()));
                     }
-                } catch (NoTransitionException e) {
-                    throw new InvalidParameterValueException(String.format("Unable to recover the vm %s because it is not in the correct state. current state: %s", vm, vm.getState()));
-                }
 
-                // Recover the VM's disks
-                List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
-                for (VolumeVO volume : volumes) {
-                    if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                        recoverRootVolume(volume, vmId);
-                        break;
+                    // Recover the VM's disks
+                    List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+                    for (VolumeVO volume : volumes) {
+                        if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                            recoverRootVolume(volume, vmId);
+                            break;
+                        }
                     }
-                }
 
-                //Update Resource Count for the given account
-                resourceCountIncrement(account.getId(), vm.isDisplayVm(), serviceOffering, template);
+                    //Update Resource Count for the given account
+                    resourceCountIncrement(account.getId(), vm.isDisplayVm(), serviceOffering, template);
 
                 } finally {
                     ReservationHelper.closeAll(reservations);

@@ -5430,18 +5430,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             try (CheckedReservation publicIpReservation = new CheckedReservation(account, ResourceType.public_ip, null, null, null, newIpAddressAmount, existingIpAddressAmount, reservationDao, _resourceLimitMgr)) {
+                updateVlanAndIpv4Range(id, vlanRange, startIp, endIp, gateway, netmask, isRangeForSystemVM, forSystemVms);
 
-            updateVlanAndIpv4Range(id, vlanRange, startIp, endIp, gateway, netmask, isRangeForSystemVM, forSystemVms);
-
-            if (account != null) {
-                long countDiff = newIpAddressAmount - existingIpAddressAmount;
-                if (countDiff > 0) {
-                    _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.public_ip, countDiff);
-                } else if (countDiff < 0) {
-                    _resourceLimitMgr.decrementResourceCount(account.getId(), ResourceType.public_ip, Math.abs(countDiff));
+                if (account != null) {
+                    long countDiff = newIpAddressAmount - existingIpAddressAmount;
+                    if (countDiff > 0) {
+                        _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.public_ip, countDiff);
+                    } else if (countDiff < 0) {
+                        _resourceLimitMgr.decrementResourceCount(account.getId(), ResourceType.public_ip, Math.abs(countDiff));
+                    }
                 }
-            }
-
             }
         }
         if (ipv6) {
@@ -5852,31 +5850,29 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Check Public IP resource limits
         long reservedIpAddressesAmount = vlanOwner != null ? _publicIpAddressDao.countIPs(zoneId, vlanDbId, false) : 0L;
         try (CheckedReservation publicIpReservation = new CheckedReservation(vlanOwner, ResourceType.public_ip, null, null, null, reservedIpAddressesAmount, null, reservationDao, _resourceLimitMgr)) {
+            if (vlanOwner != null) {
+                // Create an AccountVlanMapVO entry
+                final AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(vlanOwner.getId(), vlan.getId());
+                _accountVlanMapDao.persist(accountVlanMapVO);
 
-        if (vlanOwner != null) {
-            // Create an AccountVlanMapVO entry
-            final AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(vlanOwner.getId(), vlan.getId());
-            _accountVlanMapDao.persist(accountVlanMapVO);
-
-           // generate usage event for dedication of every ip address in the range
-            for (final IPAddressVO ip : ips) {
-                final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(),
-                        vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
+                // generate usage event for dedication of every ip address in the range
+                for (final IPAddressVO ip : ips) {
+                    final boolean usageHidden = _ipAddrMgr.isUsageHidden(ip);
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(),
+                            vlan.getVlanType().toString(), ip.getSystem(), usageHidden, ip.getClass().getName(), ip.getUuid());
+                }
+            } else if (domain != null) {
+                // Create an DomainVlanMapVO entry
+                DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
+                _domainVlanMapDao.persist(domainVlanMapVO);
             }
-        } else if (domain != null) {
-            // Create an DomainVlanMapVO entry
-            DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
-            _domainVlanMapDao.persist(domainVlanMapVO);
-        }
 
-        // increment resource count for dedicated public ip's
-        if (vlanOwner != null) {
-            _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
-        }
+            // increment resource count for dedicated public ip's
+            if (vlanOwner != null) {
+                _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
+            }
 
-        return vlan;
-
+            return vlan;
         }
     }
 
