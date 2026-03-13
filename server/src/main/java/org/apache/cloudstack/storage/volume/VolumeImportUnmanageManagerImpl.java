@@ -17,8 +17,6 @@
 
 package org.apache.cloudstack.storage.volume;
 
-import static org.apache.cloudstack.vm.UnmanagedVMsManager.AllowImportVolumeWithBackingFile;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVolumesOnStorageAnswer;
@@ -70,6 +68,7 @@ import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -514,5 +513,17 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         volume.setState(Volume.State.Destroy);
         volume.setRemoved(new Date());
         volumeDao.update(volume.getId(), volume);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VolumeImportUnmanageManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{
+                AllowImportVolumeWithBackingFile
+        };
     }
 }

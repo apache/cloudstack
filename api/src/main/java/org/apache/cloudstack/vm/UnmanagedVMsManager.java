@@ -70,15 +70,6 @@ public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService,
             ConfigKey.Scope.Global,
             null);
 
-    ConfigKey<Boolean> AllowImportVolumeWithBackingFile = new ConfigKey<>(Boolean.class,
-            "allow.import.volume.with.backing.file",
-            "Advanced",
-            "false",
-            "If enabled, allows QCOW2 volumes with backing files to be imported or unmanaged",
-            true,
-            ConfigKey.Scope.Global,
-            null);
-
     static boolean isSupported(Hypervisor.HypervisorType hypervisorType) {
         return hypervisorType == VMware || hypervisorType == KVM;
     }
