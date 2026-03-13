@@ -220,6 +220,15 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             ConfigKey.Scope.Global,
             null);
 
+    ConfigKey<Boolean> AllowImportVolumeWithBackingFile = new ConfigKey<>(Boolean.class,
+            "allow.import.volume.with.backing.file",
+            "Advanced",
+            "false",
+            "If enabled, allows QCOW2 volumes with backing files to be imported or unmanaged",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
     ConfigKey<String> ConvertVmwareInstanceToKvmExtraParamsAllowedList = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
             String.class,
             "convert.vmware.instance.to.kvm.extra.params.allowed.list",
@@ -2889,7 +2898,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userVm;
     }
 
-    private void checkVolume(Map<VolumeOnStorageTO.Detail, String> volumeDetails) {
+    protected void checkVolume(Map<VolumeOnStorageTO.Detail, String> volumeDetails) {
         if (MapUtils.isEmpty(volumeDetails)) {
             return;
         }
@@ -2908,7 +2917,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         if (volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
             String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
-            if (StringUtils.isNotBlank(backingFile)) {
+            if (StringUtils.isNotBlank(backingFile) && !AllowImportVolumeWithBackingFile.value()) {
                 logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
             }
         }
@@ -3037,7 +3046,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 ThreadsOnMSToImportVMwareVMFiles,
                 ThreadsOnKVMHostToImportVMwareVMFiles,
                 ConvertVmwareInstanceToKvmExtraParamsAllowed,
-                ConvertVmwareInstanceToKvmExtraParamsAllowedList
+                ConvertVmwareInstanceToKvmExtraParamsAllowedList,
+                AllowImportVolumeWithBackingFile
         };
     }
 }

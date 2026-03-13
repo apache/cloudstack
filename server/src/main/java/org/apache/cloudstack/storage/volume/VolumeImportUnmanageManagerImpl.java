@@ -73,6 +73,8 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -84,7 +86,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageService {
+public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageService, Configurable {
     protected Logger logger = LogManager.getLogger(VolumeImportUnmanageManagerImpl.class);
 
     @Inject
@@ -122,6 +124,15 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     static final String DEFAULT_DISK_OFFERING_UNIQUE_NAME = "Volume-Import";
     static final String DISK_OFFERING_NAME_SUFFIX_LOCAL = " - Local Storage";
     static final String DISK_OFFERING_UNIQUE_NAME_SUFFIX_LOCAL = "-Local";
+
+    ConfigKey<Boolean> AllowImportVolumeWithBackingFile = new ConfigKey<>(Boolean.class,
+            "allow.import.volume.with.backing.file",
+            "Advanced",
+            "false",
+            "If enabled, allows QCOW2 volumes with backing files to be imported or unmanaged",
+            true,
+            ConfigKey.Scope.Global,
+            null);
 
     protected void logFailureAndThrowException(String msg) {
         logger.error(msg);
@@ -394,7 +405,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         Map<VolumeOnStorageTO.Detail, String> volumeDetails = volume.getDetails();
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
             String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
-            if (StringUtils.isNotBlank(backingFile)) {
+            if (StringUtils.isNotBlank(backingFile) && !AllowImportVolumeWithBackingFile.value()) {
                 logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
             }
         }
@@ -512,5 +523,15 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         volume.setState(Volume.State.Destroy);
         volume.setRemoved(new Date());
         volumeDao.update(volume.getId(), volume);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VolumeImportUnmanageManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{ AllowImportVolumeWithBackingFile };
     }
 }

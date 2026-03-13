@@ -171,6 +171,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
+import org.apache.cloudstack.storage.volume.VolumeOnStorageTO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UnmanagedVMsManagerImplTest {
@@ -257,6 +258,8 @@ public class UnmanagedVMsManagerImplTest {
     private ConfigKey<Boolean> configKeyMockParamsAllowed;
     @Mock
     private ConfigKey<String> configKeyMockParamsAllowedList;
+    @Mock
+    private ConfigKey<Boolean> configKeyMockAllowBackingFile;
 
     private static final long virtualMachineId = 1L;
 
@@ -1350,5 +1353,23 @@ public class UnmanagedVMsManagerImplTest {
         Assert.assertFalse(params.containsKey(VmDetailConstants.CPU_NUMBER));
         Assert.assertFalse(params.containsKey(VmDetailConstants.CPU_SPEED));
         Assert.assertFalse(params.containsKey(VmDetailConstants.MEMORY));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckVolumeWithBackingFileSettingDisabled() {
+        unmanagedVMsManager.AllowImportVolumeWithBackingFile = configKeyMockAllowBackingFile;
+        Mockito.when(configKeyMockAllowBackingFile.value()).thenReturn(false);
+        Map<VolumeOnStorageTO.Detail, String> details = new HashMap<>();
+        details.put(VolumeOnStorageTO.Detail.BACKING_FILE, "backing.qcow2");
+        unmanagedVMsManager.checkVolume(details);
+    }
+
+    @Test
+    public void testCheckVolumeWithBackingFileSettingEnabled() {
+        unmanagedVMsManager.AllowImportVolumeWithBackingFile = configKeyMockAllowBackingFile;
+        Mockito.when(configKeyMockAllowBackingFile.value()).thenReturn(true);
+        Map<VolumeOnStorageTO.Detail, String> details = new HashMap<>();
+        details.put(VolumeOnStorageTO.Detail.BACKING_FILE, "backing.qcow2");
+        unmanagedVMsManager.checkVolume(details);
     }
 }
