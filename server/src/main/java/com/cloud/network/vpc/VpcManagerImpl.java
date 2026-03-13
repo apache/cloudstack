@@ -1248,25 +1248,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
 
         try (CheckedReservation vpcReservation = new CheckedReservation(owner, ResourceType.vpc, null, null, 1L, reservationDao, _resourceLimitMgr)) {
-        if (vpc.getCidr() == null && cidrSize != null) {
-            // Allocate a CIDR for VPC
-            Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForVpc(vpc, cidrSize);
-            if (subnet != null) {
-                vpc.setCidr(subnet.getSubnet());
-            } else {
-                throw new CloudRuntimeException("Failed to allocate a CIDR with requested size for VPC.");
+            if (vpc.getCidr() == null && cidrSize != null) {
+                // Allocate a CIDR for VPC
+                Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForVpc(vpc, cidrSize);
+                if (subnet != null) {
+                    vpc.setCidr(subnet.getSubnet());
+                } else {
+                    throw new CloudRuntimeException("Failed to allocate a CIDR with requested size for VPC.");
+                }
             }
-        }
 
-        Vpc newVpc = createVpc(displayVpc, vpc);
-        // assign Ipv4 subnet to Routed VPC
-        if (routedIpv4Manager.isRoutedVpc(vpc)) {
-            routedIpv4Manager.assignIpv4SubnetToVpc(newVpc);
-        }
-        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
-            routedIpv4Manager.persistBgpPeersForVpc(newVpc.getId(), bgpPeerIds);
-        }
-        return newVpc;
+            Vpc newVpc = createVpc(displayVpc, vpc);
+            // assign Ipv4 subnet to Routed VPC
+            if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                routedIpv4Manager.assignIpv4SubnetToVpc(newVpc);
+            }
+            if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+                routedIpv4Manager.persistBgpPeersForVpc(newVpc.getId(), bgpPeerIds);
+            }
+            return newVpc;
         }
     }
 

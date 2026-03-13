@@ -211,20 +211,20 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
 
         List<Reserver> reservations = new ArrayList<>();
         try {
-        // 6. check resource limitation
-        checkResourceLimitForImportVolume(owner, volume, diskOffering, reservations);
+            // 6. check resource limitation
+            checkResourceLimitForImportVolume(owner, volume, diskOffering, reservations);
 
-        // 7. create records
-        String volumeName = StringUtils.isNotBlank(cmd.getName()) ? cmd.getName().trim() : volumePath;
-        VolumeVO volumeVO = importVolumeInternal(volume, diskOffering, owner, pool, volumeName);
+            // 7. create records
+            String volumeName = StringUtils.isNotBlank(cmd.getName()) ? cmd.getName().trim() : volumePath;
+            VolumeVO volumeVO = importVolumeInternal(volume, diskOffering, owner, pool, volumeName);
 
-        // 8. Update resource count
-        updateResourceLimitForVolumeImport(volumeVO);
+            // 8. Update resource count
+            updateResourceLimitForVolumeImport(volumeVO);
 
-        // 9. Publish event
-        publicUsageEventForVolumeImportAndUnmanage(volumeVO, true);
+            // 9. Publish event
+            publicUsageEventForVolumeImportAndUnmanage(volumeVO, true);
 
-        return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
+            return responseGenerator.createVolumeResponse(ResponseObject.ResponseView.Full, volumeVO);
 
         } finally {
             ReservationHelper.closeAll(reservations);

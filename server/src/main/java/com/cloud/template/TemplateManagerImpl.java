@@ -403,23 +403,23 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         try (CheckedReservation templateReservation = new CheckedReservation(owner, ResourceType.template, null, null, 1L, reservationDao, _resourceLimitMgr);
              CheckedReservation secondaryStorageReservation = new CheckedReservation(owner, ResourceType.secondary_storage, null, null, secondaryStorageUsage, reservationDao, _resourceLimitMgr)) {
-        TemplateProfile profile = adapter.prepare(cmd);
-        VMTemplateVO template = adapter.create(profile);
+            TemplateProfile profile = adapter.prepare(cmd);
+            VMTemplateVO template = adapter.create(profile);
 
-        // Secondary storage resource usage will be incremented in com.cloud.template.HypervisorTemplateAdapter.createTemplateAsyncCallBack
-        // for HypervisorTemplateAdapter
-        _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
-        if (secondaryStorageUsage > 0) {
-            _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.secondary_storage, secondaryStorageUsage);
-        }
-
-        if (template != null) {
-            CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
-            if (cmd instanceof RegisterVnfTemplateCmd) {
-                vnfTemplateManager.persistVnfTemplate(template.getId(), (RegisterVnfTemplateCmd) cmd);
+            // Secondary storage resource usage will be incremented in com.cloud.template.HypervisorTemplateAdapter.createTemplateAsyncCallBack
+            // for HypervisorTemplateAdapter
+            _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
+            if (secondaryStorageUsage > 0) {
+                _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.secondary_storage, secondaryStorageUsage);
             }
-            return template;
-        }
+
+            if (template != null) {
+                CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
+                if (cmd instanceof RegisterVnfTemplateCmd) {
+                    vnfTemplateManager.persistVnfTemplate(template.getId(), (RegisterVnfTemplateCmd) cmd);
+                }
+                return template;
+            }
         }
         throw new CloudRuntimeException("Failed to create a Template");
     }
@@ -2000,102 +2000,102 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         try (CheckedReservation templateReservation = new CheckedReservation(templateOwner, ResourceType.template, null, null, 1L, reservationDao, _resourceLimitMgr);
              CheckedReservation secondaryStorageReservation = new CheckedReservation(templateOwner, ResourceType.secondary_storage, null, null, templateSize, reservationDao, _resourceLimitMgr)) {
 
-        if (!isAdmin || featured == null) {
-            featured = Boolean.FALSE;
-        }
-        Long guestOSId = cmd.getOsTypeId();
-        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-        if (guestOS == null) {
-            throw new InvalidParameterValueException("GuestOS with ID: " + guestOSId + " does not exist.");
-        }
-
-        Long nextTemplateId = _tmpltDao.getNextInSequence(Long.class, "id");
-        String description = cmd.getDisplayText();
-        boolean isExtractable = false;
-        Long sourceTemplateId = null;
-        if (volume != null) {
-            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
-            isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-            if (template != null) {
-                arch = template.getArch();
+            if (!isAdmin || featured == null) {
+                featured = Boolean.FALSE;
             }
-            if (volume.getIsoId() != null && volume.getIsoId() != 0) {
-                sourceTemplateId = volume.getIsoId();
-            } else if (volume.getTemplateId() != null) {
-                sourceTemplateId = volume.getTemplateId();
+            Long guestOSId = cmd.getOsTypeId();
+            GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
+            if (guestOS == null) {
+                throw new InvalidParameterValueException("GuestOS with ID: " + guestOSId + " does not exist.");
             }
-        }
-        String templateTag = cmd.getTemplateTag();
-        if (templateTag != null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Adding Template tag: " + templateTag);
+
+            Long nextTemplateId = _tmpltDao.getNextInSequence(Long.class, "id");
+            String description = cmd.getDisplayText();
+            boolean isExtractable = false;
+            Long sourceTemplateId = null;
+            if (volume != null) {
+                VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+                isExtractable = template != null && template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+                if (template != null) {
+                    arch = template.getArch();
+                }
+                if (volume.getIsoId() != null && volume.getIsoId() != 0) {
+                    sourceTemplateId = volume.getIsoId();
+                } else if (volume.getTemplateId() != null) {
+                    sourceTemplateId = volume.getTemplateId();
+                }
             }
-        }
-        privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
-                TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false, arch);
-
-        if (sourceTemplateId != null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("This Template is getting created from other Template, setting source Template ID to: " + sourceTemplateId);
+            String templateTag = cmd.getTemplateTag();
+            if (templateTag != null) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Adding Template tag: " + templateTag);
+                }
             }
-        }
-
-
-        // for region wide storage, set cross zones flag
-        List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
-        if (!CollectionUtils.isEmpty(stores)) {
-            privateTemplate.setCrossZones(true);
-        }
-
-        privateTemplate.setSourceTemplateId(sourceTemplateId);
-
-        VMTemplateVO template = _tmpltDao.persist(privateTemplate);
-        // Increment the number of templates
-        if (template != null) {
-            Map<String, String> details = new HashMap<String, String>();
+            privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
+                    TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
+                    passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false, arch);
 
             if (sourceTemplateId != null) {
-                VMTemplateVO sourceTemplate = _tmpltDao.findById(sourceTemplateId);
-                if (sourceTemplate != null && sourceTemplate.getDetails() != null) {
-                    details.putAll(sourceTemplate.getDetails());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("This Template is getting created from other Template, setting source Template ID to: " + sourceTemplateId);
                 }
             }
 
-            if (volume != null) {
-                Long vmId = volume.getInstanceId();
-                if (vmId != null) {
-                    UserVmVO userVm = _userVmDao.findById(vmId);
-                    if (userVm != null) {
-                        _userVmDao.loadDetails(userVm);
-                        Map<String, String> vmDetails = userVm.getDetails();
-                        vmDetails = vmDetails.entrySet()
-                                .stream()
-                                .filter(map -> map.getValue() != null)
-                                .collect(Collectors.toMap(map -> map.getKey(), map -> map.getValue()));
-                        details.putAll(vmDetails);
+
+            // for region wide storage, set cross zones flag
+            List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
+            if (!CollectionUtils.isEmpty(stores)) {
+                privateTemplate.setCrossZones(true);
+            }
+
+            privateTemplate.setSourceTemplateId(sourceTemplateId);
+
+            VMTemplateVO template = _tmpltDao.persist(privateTemplate);
+            // Increment the number of templates
+            if (template != null) {
+                Map<String, String> details = new HashMap<String, String>();
+
+                if (sourceTemplateId != null) {
+                    VMTemplateVO sourceTemplate = _tmpltDao.findById(sourceTemplateId);
+                    if (sourceTemplate != null && sourceTemplate.getDetails() != null) {
+                        details.putAll(sourceTemplate.getDetails());
                     }
                 }
-            }
-            if (cmd.getDetails() != null) {
-                details.remove(VmDetailConstants.ENCRYPTED_PASSWORD); // new password will be generated during vm deployment from password enabled template
-                details.putAll(cmd.getDetails());
-            }
-            if (!details.isEmpty()) {
-                privateTemplate.setDetails(details);
-                _tmpltDao.saveDetails(privateTemplate);
+
+                if (volume != null) {
+                    Long vmId = volume.getInstanceId();
+                    if (vmId != null) {
+                        UserVmVO userVm = _userVmDao.findById(vmId);
+                        if (userVm != null) {
+                            _userVmDao.loadDetails(userVm);
+                            Map<String, String> vmDetails = userVm.getDetails();
+                            vmDetails = vmDetails.entrySet()
+                                    .stream()
+                                    .filter(map -> map.getValue() != null)
+                                    .collect(Collectors.toMap(map -> map.getKey(), map -> map.getValue()));
+                            details.putAll(vmDetails);
+                        }
+                    }
+                }
+                if (cmd.getDetails() != null) {
+                    details.remove(VmDetailConstants.ENCRYPTED_PASSWORD); // new password will be generated during vm deployment from password enabled template
+                    details.putAll(cmd.getDetails());
+                }
+                if (!details.isEmpty()) {
+                    privateTemplate.setDetails(details);
+                    _tmpltDao.saveDetails(privateTemplate);
+                }
+
+                _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
+                _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage, templateSize);
             }
 
-            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
-            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage, templateSize);
-        }
-
-        if (template != null) {
-            CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
-            return template;
-        } else {
-            throw new CloudRuntimeException("Failed to create a Template");
-        }
+            if (template != null) {
+                CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
+                return template;
+            } else {
+                throw new CloudRuntimeException("Failed to create a Template");
+            }
         }
     }
 
