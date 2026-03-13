@@ -1481,7 +1481,7 @@ public class CommandSetupHelper {
                             guestNetwork.getId(), asNumberVO.getAsNumber(), guestNetwork.getCidr(), guestNetwork.getIp6Cidr(), bgpPeerDetails));
                 } else if (guestNetwork.getIp6Cidr() != null && bgpPeer.getIp6Address() != null) {
                     bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), null, bgpPeer.getIp6Address(), bgpPeer.getAsNumber(), bgpPeer.getPassword(),
-                            guestNetwork.getId(), asNumberVO.getAsNumber(), guestNetwork.getCidr(), guestNetwork.getIp6Cidr(), bgpPeerDetails));
+                            guestNetwork.getId(), asNumberVO.getAsNumber(), null, guestNetwork.getIp6Cidr(), bgpPeerDetails));
                 }
             }
         }
