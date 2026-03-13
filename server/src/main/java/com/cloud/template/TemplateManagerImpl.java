@@ -1035,12 +1035,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     logger.debug("There is Template {} in secondary storage {} in zone {} , don't need to copy", template, dstSecStore, dataCenterVOs.get(destZoneId));
                     continue;
                 }
-                try (CheckedReservation secondaryStorageReservation = new CheckedReservation(templateOwner, ResourceType.secondary_storage, null, null, template.getSize(), reservationDao, _resourceLimitMgr)) {
-                if (!copy(userId, template, srcSecStore, dataCenterVOs.get(destZoneId))) {
-                    failedZones.add(dataCenterVOs.get(destZoneId).getName());
-                    continue;
-                }
-                _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage, template.getSize());
+                if (template.getSize() != null) {
+                    try (CheckedReservation secondaryStorageReservation = new CheckedReservation(templateOwner, ResourceType.secondary_storage, null, null, template.getSize(), reservationDao, _resourceLimitMgr)) {
+                        if (!copy(userId, template, srcSecStore, dataCenterVOs.get(destZoneId))) {
+                            failedZones.add(dataCenterVOs.get(destZoneId).getName());
+                            continue;
+                        }
+                        _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage, template.getSize());
+                    }
                 }
             }
         }
