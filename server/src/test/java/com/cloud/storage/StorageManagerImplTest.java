@@ -1735,9 +1735,9 @@ public class StorageManagerImplTest {
         Mockito.when(snapshot.getState()).thenReturn(Snapshot.State.BackedUp);
         Mockito.when(snapshotDao.listByVolumeId(1L)).thenReturn(List.of(snapshot));
 
-        SnapshotDataStoreVO primaryRef = Mockito.mock(SnapshotDataStoreVO.class);
-        Mockito.when(primaryRef.getId()).thenReturn(100L);
-        Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Primary)).thenReturn(List.of(primaryRef));
+        SnapshotDataStoreVO snapshotOnPrimaryStorage = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotOnPrimaryStorage.getId()).thenReturn(100L);
+        Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Primary)).thenReturn(List.of(snapshotOnPrimaryStorage));
         Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Image)).thenReturn(Collections.emptyList());
 
         storageManagerImpl.cleanupSnapshotRecordsInPrimaryStorageOnly(volume);
@@ -1757,10 +1757,10 @@ public class StorageManagerImplTest {
         Mockito.when(snapshot.getState()).thenReturn(Snapshot.State.BackedUp);
         Mockito.when(snapshotDao.listByVolumeId(1L)).thenReturn(List.of(snapshot));
 
-        SnapshotDataStoreVO primaryRef = Mockito.mock(SnapshotDataStoreVO.class);
-        SnapshotDataStoreVO secondaryRef = Mockito.mock(SnapshotDataStoreVO.class);
-        Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Primary)).thenReturn(List.of(primaryRef));
-        Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Image)).thenReturn(List.of(secondaryRef));
+        SnapshotDataStoreVO snapshotOnPrimaryStorage = Mockito.mock(SnapshotDataStoreVO.class);
+        SnapshotDataStoreVO snapshotOnSecondaryStorage = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Primary)).thenReturn(List.of(snapshotOnPrimaryStorage));
+        Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Image)).thenReturn(List.of(snapshotOnSecondaryStorage));
 
         storageManagerImpl.cleanupSnapshotRecordsInPrimaryStorageOnly(volume);
 

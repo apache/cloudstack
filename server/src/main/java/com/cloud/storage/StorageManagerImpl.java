@@ -2308,12 +2308,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (Snapshot.State.Destroyed.equals(snapshot.getState())) {
                 continue;
             }
-            List<SnapshotDataStoreVO> primaryRefs = _snapshotStoreDao.listBySnapshotAndDataStoreRole(snapshot.getId(), DataStoreRole.Primary);
-            List<SnapshotDataStoreVO> secondaryRefs = _snapshotStoreDao.listBySnapshotAndDataStoreRole(snapshot.getId(), DataStoreRole.Image);
-            if (CollectionUtils.isNotEmpty(primaryRefs) && CollectionUtils.isEmpty(secondaryRefs)) {
+            List<SnapshotDataStoreVO> snapshotsOnPrimaryStorage = _snapshotStoreDao.listBySnapshotAndDataStoreRole(snapshot.getId(), DataStoreRole.Primary);
+            List<SnapshotDataStoreVO> snapshotsOnSecondaryStorage = _snapshotStoreDao.listBySnapshotAndDataStoreRole(snapshot.getId(), DataStoreRole.Image);
+            if (CollectionUtils.isNotEmpty(snapshotsOnPrimaryStorage) && CollectionUtils.isEmpty(snapshotsOnSecondaryStorage)) {
                 logger.info("Cleaning up snapshot {} (primary-only, no secondary copy) as volume {} is being deleted", snapshot, volume);
-                for (SnapshotDataStoreVO ref : primaryRefs) {
-                    _snapshotStoreDao.expunge(ref.getId());
+                for (SnapshotDataStoreVO snapshotOnPrimaryStorage : snapshotsOnPrimaryStorage) {
+                    _snapshotStoreDao.expunge(snapshotOnPrimaryStorage.getId());
                 }
                 snapshot.setState(Snapshot.State.Destroyed);
                 _snapshotDao.update(snapshot.getId(), snapshot);
