@@ -544,7 +544,6 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                                 }
                             }
                             stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationSucceeded, null, _templateDao);
-                            _resourceLimitMgr.incrementResourceCount(template.getAccountId(), Resource.ResourceType.secondary_storage, answer.getVirtualSize());
                             //publish usage event
                             String etype = EventTypes.EVENT_TEMPLATE_CREATE;
                             if (tmpTemplate.getFormat() == Storage.ImageFormat.ISO) {
