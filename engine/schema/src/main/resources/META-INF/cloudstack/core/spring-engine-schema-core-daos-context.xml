@@ -310,6 +310,8 @@
   <bean id="gpuDeviceDaoImpl" class="com.cloud.gpu.dao.GpuDeviceDaoImpl" />
   <bean id="vgpuProfileDaoImpl" class="com.cloud.gpu.dao.VgpuProfileDaoImpl" />
   <bean id="importVMTaskDaoImpl" class="com.cloud.vm.dao.ImportVMTaskDaoImpl" />
+  <bean id="apiKeyPairDaoImpl" class="org.apache.cloudstack.acl.dao.ApiKeyPairDaoImpl" />
+  <bean id="apiKeyPairPermissionsDaoImpl" class="org.apache.cloudstack.acl.dao.ApiKeyPairPermissionsDaoImpl" />
   <bean id="dnsServerDao" class="org.apache.cloudstack.dns.dao.DnsServerDaoImpl" />
   <bean id="dnsZoneDao" class="org.apache.cloudstack.dns.dao.DnsZoneDaoImpl" />
   <bean id="dnsZoneNetworkMapDao" class="org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDaoImpl" />

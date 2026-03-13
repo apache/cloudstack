@@ -335,6 +335,7 @@ class User:
     def registerUserKeys(cls, apiclient, userid):
         cmd = registerUserKeys.registerUserKeysCmd()
         cmd.id = userid
+        cmd.name = f"keypair-{userid}"
         return apiclient.registerUserKeys(cmd)
 
     def update(self, apiclient, **kwargs):

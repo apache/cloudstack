@@ -99,7 +99,7 @@ public class ApiDiscoveryTest {
     @Test (expected = PermissionDeniedException.class)
     public void listApisTestThrowPermissionDeniedExceptionOnAccountNull() throws PermissionDeniedException {
         Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(null);
-        discoveryServiceSpy.listApis(getTestUser(), null);
+        discoveryServiceSpy.listApis(getTestUser(), null, null);
     }
 
     @Test (expected = PermissionDeniedException.class)
@@ -107,7 +107,7 @@ public class ApiDiscoveryTest {
         Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(getNormalAccount());
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(null);
 
-        discoveryServiceSpy.listApis(getTestUser(), null);
+        discoveryServiceSpy.listApis(getTestUser(), null, null);
     }
 
     @Test (expected = PermissionDeniedException.class)
@@ -117,7 +117,7 @@ public class ApiDiscoveryTest {
         Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(getNormalAccount());
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(unknownRoleVO);
 
-        discoveryServiceSpy.listApis(getTestUser(), null);
+        discoveryServiceSpy.listApis(getTestUser(), null, null);
     }
 
     @Test
@@ -128,7 +128,7 @@ public class ApiDiscoveryTest {
         Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(adminAccountVO);
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(adminRoleVO);
 
-        discoveryServiceSpy.listApis(getTestUser(), null);
+        discoveryServiceSpy.listApis(getTestUser(), null, null);
 
         Mockito.verify(apiCheckerMock, Mockito.times(0)).getApisAllowedToUser(any(Role.class), any(User.class), anyList());
     }
@@ -140,7 +140,7 @@ public class ApiDiscoveryTest {
         Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(getNormalAccount());
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(userRoleVO);
 
-        discoveryServiceSpy.listApis(getTestUser(), null);
+        discoveryServiceSpy.listApis(getTestUser(), null, null);
 
         Mockito.verify(apiCheckerMock, Mockito.times(1)).getApisAllowedToUser(any(Role.class), any(User.class), anyList());
     }
@@ -153,7 +153,7 @@ public class ApiDiscoveryTest {
         Mockito.when(mockUserAccount.getDetails()).thenReturn(userDetails);
         Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(getNormalAccount());
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(userRoleVO);
-        discoveryServiceSpy.listApis(getTestUser(), null);
+        discoveryServiceSpy.listApis(getTestUser(), null, null);
         Mockito.verify(apiCheckerMock, Mockito.times(1)).getApisAllowedToUser(any(Role.class), any(User.class), anyList());
     }
 
@@ -166,7 +166,7 @@ public class ApiDiscoveryTest {
         Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(getNormalAccount());
         Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(userRoleVO);
         Mockito.when(apiNameDiscoveryResponseMapMock.get(Mockito.anyString())).thenReturn(Mockito.mock(ApiDiscoveryResponse.class));
-        ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) discoveryServiceSpy.listApis(getTestUser(), null);
+        ListResponse<ApiDiscoveryResponse> response = (ListResponse<ApiDiscoveryResponse>) discoveryServiceSpy.listApis(getTestUser(), null, null);
         Assert.assertEquals(4, response.getResponses().size());
     }
 }
