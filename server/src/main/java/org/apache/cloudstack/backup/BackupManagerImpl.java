@@ -1560,7 +1560,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 CreateVMFromBackupCmdByAdmin.class.getName(),
                 RestoreBackupCmd.class.getName());
         if (pendingJobs > 0) {
-            throw new CloudRuntimeException("Cannot delete backup while a create instance from backup or restore operation is in progress, please try again later.");
+            throw new CloudRuntimeException("Cannot delete Backup while a create Instance from Backup or restore Backup operation is in progress, please try again later.");
         }
     }
 
