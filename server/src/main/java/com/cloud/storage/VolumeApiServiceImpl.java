@@ -1640,6 +1640,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private boolean deleteVolumeFromStorage(VolumeVO volume, Account caller) throws ConcurrentOperationException {
         try {
+            cleanupSnapshotRecordsInPrimaryStorageOnly(volume);
             expungeVolumesInPrimaryStorageIfNeeded(volume);
             expungeVolumesInSecondaryStorageIfNeeded(volume);
             cleanVolumesCache(volume);
@@ -1647,6 +1648,34 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } catch (InterruptedException | ExecutionException e) {
             logger.warn("Failed to expunge volume: {}", volume, e);
             return false;
+        }
+    }
+
+    /**
+     * Cleans up snapshot DB records for snapshots that exist only on primary storage (no secondary copy).
+     * This handles the case where snapshot.backup.to.secondary=false and the volume
+     * is being deleted during VM expunge; the RBD snapshots will be destroyed along with the image,
+     * so the DB records need to be cleaned up to avoid orphaned entries.
+     */
+    protected void cleanupSnapshotRecordsInPrimaryStorageOnly(VolumeVO volume) {
+        List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
+        if (CollectionUtils.isEmpty(snapshots)) {
+            return;
+        }
+        for (SnapshotVO snapshot : snapshots) {
+            if (Snapshot.State.Destroyed.equals(snapshot.getState())) {
+                continue;
+            }
+            List<SnapshotDataStoreVO> primaryRefs = _snapshotDataStoreDao.listBySnapshotAndDataStoreRole(snapshot.getId(), DataStoreRole.Primary);
+            List<SnapshotDataStoreVO> secondaryRefs = _snapshotDataStoreDao.listBySnapshotAndDataStoreRole(snapshot.getId(), DataStoreRole.Image);
+            if (CollectionUtils.isNotEmpty(primaryRefs) && CollectionUtils.isEmpty(secondaryRefs)) {
+                logger.info("Cleaning up snapshot {} (primary-only, no secondary copy) as volume {} is being deleted", snapshot, volume);
+                for (SnapshotDataStoreVO ref : primaryRefs) {
+                    _snapshotDataStoreDao.expunge(ref.getId());
+                }
+                snapshot.setState(Snapshot.State.Destroyed);
+                _snapshotDao.update(snapshot.getId(), snapshot);
+            }
         }
     }
 
