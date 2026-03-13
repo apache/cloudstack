@@ -55,6 +55,7 @@ public class UnmanagedInstanceTO {
 
     private String hostName;
 
+    private String hypervisorType;
     private String hostHypervisorVersion;
 
     private List<Disk> disks;
@@ -168,6 +169,14 @@ public class UnmanagedInstanceTO {
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+
+    public String getHypervisorType() {
+        return hypervisorType;
+    }
+
+    public void setHypervisorType(String hypervisorType) {
+        this.hypervisorType = hypervisorType;
     }
 
     public String getHostHypervisorVersion() {

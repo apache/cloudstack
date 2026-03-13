@@ -41,6 +41,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
@@ -833,6 +834,7 @@ public class VmwareHelper {
             }
 
             instance.setHostName(hyperHost.getHyperHostName());
+            instance.setHypervisorType(Hypervisor.HypervisorType.VMware.name());
             instance.setHostHypervisorVersion(getVmwareHostVersion(hyperHost));
 
             if (StringUtils.isEmpty(instance.getOperatingSystemId()) && configSummary != null) {

@@ -51,8 +51,12 @@ public class UnmanagedInstanceResponse extends BaseResponse {
     @Param(description = "The name of the host to which Instance belongs")
     private String hostName;
 
+    @SerializedName(ApiConstants.HYPERVISOR)
+    @Param(description = "The hypervisor to which Instance belongs")
+    private String hypervisor;
+
     @SerializedName(ApiConstants.HYPERVISOR_VERSION)
-    @Param(description = "The version of the host to which Instance belongs")
+    @Param(description = "The hypervisor version of the host to which Instance belongs")
     private String hypervisorVersion;
 
     @SerializedName(ApiConstants.POWER_STATE)
@@ -142,6 +146,14 @@ public class UnmanagedInstanceResponse extends BaseResponse {
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
     }
 
     public String getHypervisorVersion() {

@@ -350,6 +350,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (host != null) {
             response.setHostId(host.getUuid());
             response.setHostName(host.getName());
+            if (host.getHypervisorType() != null) {
+                response.setHypervisor(host.getHypervisorType().toString());
+            }
             response.setHypervisorVersion(host.getHypervisorVersion());
         } else {
             // In case the unmanaged instance is on an external host
@@ -358,6 +361,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
             if (instance.getHostHypervisorVersion() != null) {
                 response.setHypervisorVersion(instance.getHostHypervisorVersion());
+            }
+            if (instance.getHypervisorType() != null) {
+                response.setHypervisor(instance.getHypervisorType());
             }
         }
         response.setPowerState(instance.getPowerState().toString());
