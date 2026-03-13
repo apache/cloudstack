@@ -3586,16 +3586,14 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // add IPv6 routes
         ipv6Service.updateIpv6RoutesForVpcResponse(vpc, response);
-        if (CollectionUtils.isNotEmpty(response.getIpv6Routes())) {
-            if (Objects.nonNull(asNumberVO)) {
-                response.setIpv6Routing(Network.Routing.Dynamic.name());
-            } else {
-                response.setIpv6Routing(Network.Routing.Static.name());
-            }
+        if (Objects.nonNull(asNumberVO)) {
+            response.setIpv6Routing(Network.Routing.Dynamic.name());
+        } else {
+            response.setIpv6Routing(Network.Routing.Static.name());
         }
 
         // Add BGP peer information for full view
-        if (view == ResponseView.Full) {
+        if (view == ResponseView.Full && Objects.nonNull(asNumberVO)) {
             List<BgpPeerVO> bgpPeerVOS = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
             for (BgpPeerVO bgpPeerVO : bgpPeerVOS) {
                 BgpPeerResponse bgpPeerResponse = routedIpv4Manager.createBgpPeerResponse(bgpPeerVO);
