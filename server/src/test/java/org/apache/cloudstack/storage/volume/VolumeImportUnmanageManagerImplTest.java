@@ -61,7 +61,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
@@ -135,8 +134,6 @@ public class VolumeImportUnmanageManagerImplTest {
     private VolumeApiService volumeApiService;
     @Mock
     private SnapshotDataStoreDao snapshotDataStoreDao;
-    @Mock
-    private ConfigKey<Boolean> mockAllowImportVolumeWithBackingFile;
 
     @Mock
     StoragePoolVO storagePoolVO;
@@ -346,8 +343,6 @@ public class VolumeImportUnmanageManagerImplTest {
 
     @Test
     public void testCheckIfVolumeHasBackingFile() {
-        volumeImportUnmanageManager.AllowImportVolumeWithBackingFile = mockAllowImportVolumeWithBackingFile;
-        Mockito.when(mockAllowImportVolumeWithBackingFile.value()).thenReturn(false);
         try {
             VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
                     format, size, virtualSize);
@@ -359,17 +354,6 @@ public class VolumeImportUnmanageManagerImplTest {
             Assert.assertEquals("Volume with backing file cannot be imported or unmanaged.", ex.getMessage());
             verify(volumeImportUnmanageManager).logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
         }
-    }
-
-    @Test
-    public void testCheckIfVolumeHasBackingFileAllowEnabled() {
-        volumeImportUnmanageManager.AllowImportVolumeWithBackingFile = mockAllowImportVolumeWithBackingFile;
-        Mockito.when(mockAllowImportVolumeWithBackingFile.value()).thenReturn(true);
-        VolumeOnStorageTO volumeOnStorageTO = new VolumeOnStorageTO(hypervisorType, path, name, fullPath,
-                format, size, virtualSize);
-        volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE, BACKING_FILE);
-        volumeOnStorageTO.addDetail(VolumeOnStorageTO.Detail.BACKING_FILE_FORMAT, BACKING_FILE_FORMAT);
-        volumeImportUnmanageManager.checkIfVolumeHasBackingFile(volumeOnStorageTO);
     }
 
     @Test
