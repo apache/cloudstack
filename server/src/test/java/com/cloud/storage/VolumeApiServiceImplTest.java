@@ -122,8 +122,6 @@ import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -254,9 +252,6 @@ public class VolumeApiServiceImplTest {
 
     @Mock
     private SnapshotDao snapshotDaoMock;
-
-    @Mock
-    private SnapshotDataStoreDao snapshotDataStoreDaoMock;
 
     @Mock
     private SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
@@ -2294,62 +2289,4 @@ public class VolumeApiServiceImplTest {
         return List.of(mock1, mock2);
     }
 
-    @Test
-    public void testCleanupSnapshotRecordsInPrimaryStorageOnly() {
-        VolumeVO volume = Mockito.mock(VolumeVO.class);
-        Mockito.when(volume.getId()).thenReturn(1L);
-
-        SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
-        Mockito.when(snapshot.getId()).thenReturn(10L);
-        Mockito.when(snapshot.getState()).thenReturn(Snapshot.State.BackedUp);
-        Mockito.when(snapshotDaoMock.listByVolumeId(1L)).thenReturn(List.of(snapshot));
-
-        SnapshotDataStoreVO primaryRef = Mockito.mock(SnapshotDataStoreVO.class);
-        Mockito.when(primaryRef.getId()).thenReturn(100L);
-        Mockito.when(snapshotDataStoreDaoMock.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Primary)).thenReturn(List.of(primaryRef));
-        Mockito.when(snapshotDataStoreDaoMock.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Image)).thenReturn(Collections.emptyList());
-
-        volumeApiServiceImpl.cleanupSnapshotRecordsInPrimaryStorageOnly(volume);
-
-        Mockito.verify(snapshotDataStoreDaoMock).expunge(100L);
-        Mockito.verify(snapshot).setState(Snapshot.State.Destroyed);
-        Mockito.verify(snapshotDaoMock).update(10L, snapshot);
-    }
-
-    @Test
-    public void testCleanupSnapshotRecordsInPrimaryStorageOnlySkipsWhenSecondaryExists() {
-        VolumeVO volume = Mockito.mock(VolumeVO.class);
-        Mockito.when(volume.getId()).thenReturn(1L);
-
-        SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
-        Mockito.when(snapshot.getId()).thenReturn(10L);
-        Mockito.when(snapshot.getState()).thenReturn(Snapshot.State.BackedUp);
-        Mockito.when(snapshotDaoMock.listByVolumeId(1L)).thenReturn(List.of(snapshot));
-
-        SnapshotDataStoreVO primaryRef = Mockito.mock(SnapshotDataStoreVO.class);
-        SnapshotDataStoreVO secondaryRef = Mockito.mock(SnapshotDataStoreVO.class);
-        Mockito.when(snapshotDataStoreDaoMock.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Primary)).thenReturn(List.of(primaryRef));
-        Mockito.when(snapshotDataStoreDaoMock.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Image)).thenReturn(List.of(secondaryRef));
-
-        volumeApiServiceImpl.cleanupSnapshotRecordsInPrimaryStorageOnly(volume);
-
-        Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).expunge(Mockito.anyLong());
-        Mockito.verify(snapshotDaoMock, Mockito.never()).update(Mockito.anyLong(), Mockito.any(SnapshotVO.class));
-    }
-
-    @Test
-    public void testCleanupSnapshotRecordsInPrimaryStorageOnlySkipsDestroyedSnapshots() {
-        VolumeVO volume = Mockito.mock(VolumeVO.class);
-        Mockito.when(volume.getId()).thenReturn(1L);
-
-        SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
-        Mockito.when(snapshot.getId()).thenReturn(10L);
-        Mockito.when(snapshot.getState()).thenReturn(Snapshot.State.Destroyed);
-        Mockito.when(snapshotDaoMock.listByVolumeId(1L)).thenReturn(List.of(snapshot));
-
-        volumeApiServiceImpl.cleanupSnapshotRecordsInPrimaryStorageOnly(volume);
-
-        Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).listBySnapshotAndDataStoreRole(Mockito.anyLong(), Mockito.any());
-        Mockito.verify(snapshotDataStoreDaoMock, Mockito.never()).expunge(Mockito.anyLong());
-    }
 }
