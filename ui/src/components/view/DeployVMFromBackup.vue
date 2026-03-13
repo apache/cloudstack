@@ -1451,12 +1451,11 @@ export default {
     this.initForm()
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
     this.showOverrideDiskOfferingOption = this.dataPreFill.overridediskoffering
-
+    this.selectedArchitecture = this.dataPreFill.backupArch ? this.dataPreFill.backupArch : this.architectureTypes.opts[0].id
     if (this.dataPreFill.isIso) {
       this.tabKey = 'isoid'
     } else {
       this.tabKey = 'templateid'
-      this.selectedArchitecture = this.dataPreFill.templateArch ? this.dataPreFill.templateArch : this.architectureTypes.opts[0].id
     }
 
     this.fetchData()

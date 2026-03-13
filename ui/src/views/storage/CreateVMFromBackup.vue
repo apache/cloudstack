@@ -92,11 +92,11 @@ export default {
     }
   },
   async created () {
-    await Promise.all[(
+    await Promise.all([
       this.fetchServiceOffering(),
       this.fetchBackupOffering(),
-      this.fetchTemplateArch()
-    )]
+      this.fetchBackupArch()
+    ])
     this.loading = false
   },
   methods: {
@@ -119,16 +119,21 @@ export default {
         this.backupOffering = backupOfferings[0]
       })
     },
-    fetchTemplateArch () {
-      return getAPI('listTemplates', {
+    fetchBackupArch () {
+      const isIso = this.resource.vmdetails.isiso === 'true'
+      const api = isIso ? 'listIsos' : 'listTemplates'
+      const responseKey = isIso ? 'listisosresponse' : 'listtemplatesresponse'
+      const itemKey = isIso ? 'iso' : 'template'
+
+      return getAPI(api, {
         id: this.resource.vmdetails.templateid,
         listall: true,
-        templatefilter: 'all'
+        ...(isIso ? {} : { templatefilter: 'all' })
       }).then(response => {
-        const templates = response.listtemplatesresponse.template || []
-        this.templateArch = templates[0]?.arch || 'x86_64'
+        const items = response?.[responseKey]?.[itemKey] || []
+        this.backupArch = items[0]?.arch || 'x86_64'
       }).catch(() => {
-        this.templateArch = 'x86_64'
+        this.backupArch = 'x86_64'
       })
     },
     populatePreFillData () {
@@ -141,7 +146,7 @@ export default {
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
       this.dataPreFill.templateid = this.vmdetails.templateid
-      this.dataPreFill.templateArch = this.templateArch
+      this.dataPreFill.backupArch = this.backupArch
       this.dataPreFill.allowtemplateisoselection = true
       this.dataPreFill.isoid = this.vmdetails.templateid
       this.dataPreFill.allowIpAddressesFetch = this.resource.isbackupvmexpunged
