@@ -1467,10 +1467,15 @@ public class CommandSetupHelper {
         } else {
             guestNetworks.add(network);
         }
+        Map<Long, NetworkOfferingVO> guestNetworkOfferings = new HashMap<>();
+        for (Network guestNetwork : guestNetworks) {
+            final NetworkOfferingVO offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
+            guestNetworkOfferings.put(guestNetwork.getId(), offering);
+        }
         for (BgpPeer bgpPeer: bgpPeers) {
             Map<BgpPeer.Detail, String> bgpPeerDetails = bgpPeerDetailsDao.getBgpPeerDetails(bgpPeer.getId());
             for (Network guestNetwork : guestNetworks) {
-                final NetworkOfferingVO offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
+                final NetworkOfferingVO offering = guestNetworkOfferings.get(guestNetwork.getId());
                 if (NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode())) {
                     bgpPeerTOs.add(new BgpPeerTO(bgpPeer.getId(), bgpPeer.getIp4Address(), bgpPeer.getIp6Address(), bgpPeer.getAsNumber(), bgpPeer.getPassword(),
                             guestNetwork.getId(), asNumberVO.getAsNumber(), guestNetwork.getCidr(), guestNetwork.getIp6Cidr(), bgpPeerDetails));
