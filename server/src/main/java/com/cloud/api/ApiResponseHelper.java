@@ -5806,7 +5806,7 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
 
     @Override
     public NativeBackupOfferingResponse createNativeBackupOfferingResponse(NativeBackupOffering offering) {
-        return new NativeBackupOfferingResponse(offering.getUuid(), offering.getName(), offering.isCompress(), offering.isValidate(), offering.isAllowQuickRestore(),
-                offering.isAllowExtractFile(), offering.getBackupChainSize(), offering.getCreated(), offering.getRemoved());
+        return new NativeBackupOfferingResponse(offering.getUuid(), offering.getName(), offering.isCompress(), offering.isValidate(), offering.getValidationSteps(),
+                offering.isAllowQuickRestore(), offering.isAllowExtractFile(), offering.getBackupChainSize(), offering.getCreated(), offering.getRemoved());
     }
 }

@@ -887,6 +887,18 @@ public class AgentProperties{
     public static final Property<Boolean> CREATE_FULL_CLONE = new Property<>("create.full.clone", false);
 
 
+    /**
+     * Maximum number of backup validation jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many validations as possible will be done at
+     * the same time.
+     */
+    public static final Property<Integer> BACKUP_VALIDATION_MAX_CONCURRENT_OPERATIONS_PER_HOST = new Property<>("backup.validation.max.concurrent.operations.per.host", null, Integer.class);
+
+    /**
+     * Maximum number of backup compression jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many compressions as possible will be
+     * done at the same time.
+     */
+    public static final Property<Integer> BACKUP_COMPRESSION_MAX_CONCURRENT_OPERATIONS_PER_HOST = new Property<>("backup.compression.max.concurrent.operations.per.host", null, Integer.class);
+
     public static class Property <T>{
         private String name;
         private T defaultValue;

@@ -407,5 +407,6 @@
     <bean id="nativeBackupServiceImpl" class="org.apache.cloudstack.backup.NativeBackupServiceImpl" >
         <property name="nativeBackupProviders" value="#{nativeBackupProvidersRegistry.registered}" />
     </bean>
-    <bean id="backupCompressionService" class="org.apache.cloudstack.backup.BackupCompressionService" />
+    <bean id="backupCompressionService" class="org.apache.cloudstack.backup.BackupCompressionServiceJobController" />
+    <bean id="backupValidationService" class="org.apache.cloudstack.backup.BackupValidationServiceController" />
 </beans>

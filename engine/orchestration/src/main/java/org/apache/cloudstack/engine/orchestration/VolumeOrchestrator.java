@@ -2257,7 +2257,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (volume.getState() == Volume.State.Allocated) {
                 _volsDao.remove(volume.getId());
                 stateTransitTo(volume, Volume.Event.DestroyRequested);
-                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
+                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()),
+                        null);
             } else {
                 destroyVolumeInContext(volume);
             }

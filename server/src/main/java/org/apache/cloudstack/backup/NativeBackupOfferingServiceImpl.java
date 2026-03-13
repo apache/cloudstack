@@ -34,7 +34,7 @@ public class NativeBackupOfferingServiceImpl extends ManagerBase implements Nati
 
     @Override
     public NativeBackupOffering createNativeBackupOffering(CreateNativeBackupOfferingCmd cmd) {
-        NativeBackupOfferingVO offeringVO = new NativeBackupOfferingVO(cmd.getName(), cmd.isCompress(), cmd.isValidate(), cmd.isAllowQuickRestore(),
+        NativeBackupOfferingVO offeringVO = new NativeBackupOfferingVO(cmd.getName(), cmd.isCompress(), cmd.isValidate(), cmd.getValidationSteps(), cmd.isAllowQuickRestore(),
                 cmd.isAllowExtractFile(), cmd.getBackupChainSize(), cmd.getCompressionLibrary());
         return nativeBackupOfferingDao.persist(offeringVO);
     }

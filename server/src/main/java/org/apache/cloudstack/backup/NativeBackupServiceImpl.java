@@ -20,9 +20,13 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Upload;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.component.ComponentLifecycleBase;
@@ -40,14 +44,19 @@ import com.cloud.vm.VmWorkRestoreVolumeBackupAndAttach;
 import com.cloud.vm.VmWorkTakeBackup;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
+import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.NativeBackupJoinDao;
 import org.apache.cloudstack.backup.dao.NativeBackupStoragePoolDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.RevertSnapshotCommand;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreObjectDownloadVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -56,6 +65,7 @@ import org.apache.logging.log4j.Logger;
 import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 public class NativeBackupServiceImpl extends ComponentLifecycleBase implements NativeBackupService, VmWorkJobHandler {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -79,6 +89,12 @@ public class NativeBackupServiceImpl extends ComponentLifecycleBase implements N
     private NativeBackupJoinDao nativeBackupJoinDao;
     @Inject
     private BackupDetailsDao backupDetailDao;
+
+    @Inject
+    private ImageStoreObjectDownloadDao imageStoreObjectDownloadDao;
+
+    @Inject
+    private DataStoreManager dataStoreMgr;
 
     private VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
     private HashMap<String, NativeBackupProvider> nativeBackupProviderMap = new HashMap<>();
@@ -202,6 +218,20 @@ public class NativeBackupServiceImpl extends ComponentLifecycleBase implements N
         nativeBackupProvider.prepareVmForSnapshotRevert(vmSnapshot, virtualMachine);
     }
 
+    /**
+     * Ask the backup provider to get the necessary secondary storages that must be mounted at VM start.
+     * <br/>
+     * Note: This is currently only used for Backup Validation VMs. As they are created with backing files that are on secondary storage.
+     * */
+    @Override
+    public Set<String> getSecondaryStorageUrls(UserVm userVm) {
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(userVm.getDataCenterId());
+        if (nativeBackupProvider == null) {
+            return Set.of();
+        }
+        return nativeBackupProvider.getSecondaryStorageUrls(userVm);
+    }
+
     @Override
     public boolean startBackupCompression(long backupId, long hostId, long zoneId) {
         NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(zoneId);
@@ -218,6 +248,43 @@ public class NativeBackupServiceImpl extends ComponentLifecycleBase implements N
             return false;
         }
         return nativeBackupProvider.finalizeBackupCompression(backupId, hostId);
+    }
+
+    @Override
+    public boolean validateBackup(long backupId, long hostId, long zoneId) {
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(zoneId);
+        if (nativeBackupProvider == null) {
+            return false;
+        }
+        return nativeBackupProvider.validateBackup(backupId, hostId);
+    }
+
+    @Override
+    public ExtractResponse downloadScreenshot(long backupId) {
+        BackupDetailVO screenshotPathDetail = backupDetailDao.findDetail(backupId, BackupDetailsDao.SCREENSHOT_PATH);
+        ExtractResponse response = new ExtractResponse();
+        if (screenshotPathDetail == null) {
+            response.setState(Upload.Status.DOWNLOAD_URL_NOT_CREATED.toString());
+            return response;
+        }
+        BackupDetailVO imageStoreId = backupDetailDao.findDetail(backupId, BackupDetailsDao.IMAGE_STORE_ID);
+        ImageStoreEntity imageStore = (ImageStoreEntity) dataStoreMgr.getDataStore(Long.parseLong(imageStoreId.getValue()), DataStoreRole.Image);
+        String screenshotPath = screenshotPathDetail.getValue();
+        ImageStoreObjectDownloadVO imageStoreObj = imageStoreObjectDownloadDao.findByStoreIdAndPath(Long.parseLong(imageStoreId.getValue()), screenshotPath);
+
+        if (imageStoreObj == null) {
+            String downloadUrl = imageStore.createEntityExtractUrl(screenshotPath, Storage.ImageFormat.PNG, null);
+            imageStoreObj = imageStoreObjectDownloadDao.persist(new ImageStoreObjectDownloadVO(imageStore.getId(), screenshotPath, downloadUrl));
+        }
+
+        if (imageStoreObj != null) {
+            response.setUrl(imageStoreObj.getDownloadUrl());
+            response.setName(screenshotPath.substring(screenshotPath.lastIndexOf("/") + 1));
+            response.setState(Upload.Status.DOWNLOAD_URL_CREATED.toString());
+        } else {
+            response.setState(Upload.Status.DOWNLOAD_URL_NOT_CREATED.toString());
+        }
+        return response;
     }
 
     @Override

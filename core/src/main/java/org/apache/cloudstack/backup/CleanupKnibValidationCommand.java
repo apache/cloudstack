@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,28 +15,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.backup.dao;
+//
 
-import org.apache.cloudstack.backup.BackupDetailVO;
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
+package org.apache.cloudstack.backup;
 
-import com.cloud.utils.db.GenericDao;
+import com.cloud.agent.api.Command;
 
-public interface BackupDetailsDao extends GenericDao<BackupDetailVO, Long>, ResourceDetailsDao<BackupDetailVO> {
+import java.util.Set;
 
-    String END_OF_CHAIN = "end_of_chain";
+public class CleanupKnibValidationCommand extends Command {
 
-    String CURRENT = "current";
+    private String vmName;
 
-    String IMAGE_STORE_ID = "image_store_id";
+    private Set<String> secondaryStorages;
 
-    String PARENT_ID = "parent_id";
+    public CleanupKnibValidationCommand(String vmName, Set<String> secondaryStorages) {
+        this.vmName = vmName;
+        this.secondaryStorages = secondaryStorages;
+    }
 
-    String ISOLATED = "isolated";
+    public String getVmName() {
+        return vmName;
+    }
 
-    String SCREENSHOT_PATH = "screenshot_path";
+    public Set<String> getSecondaryStorages() {
+        return secondaryStorages;
+    }
 
-    String BACKUP_HASH = "backup_hash";
-
-    void removeDetailsExcept(long backupId, String exception);
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }

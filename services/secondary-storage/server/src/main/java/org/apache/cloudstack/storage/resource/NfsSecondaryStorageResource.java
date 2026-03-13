@@ -2166,6 +2166,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return new BackupDeleteAnswer(cmd, false, details);
         }
 
+        String screenshotRelativePath = deltaTo.getScreenshotPath();
+        BackupDeleteAnswer answer = deleteScreenshot(cmd, screenshotRelativePath, parent);
+        if (answer != null) {
+            return answer;
+        }
+
         File deltaDir = deltaFile.getParentFile();
         if (deltaDir.isDirectory() && deltaDir.list().length == 0 && !deltaDir.delete()) {
             details = String.format("Unable to delete directory [%s] at path [%s].", deltaDir.getName(), deltaDir.getPath());
@@ -2174,6 +2180,23 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         return new Answer(cmd, true, null);
+    }
+    private BackupDeleteAnswer deleteScreenshot(DeleteCommand cmd, String screenshotRelativePath, String parent) {
+
+        if (screenshotRelativePath != null) {
+            if (screenshotRelativePath.startsWith(File.separator)) {
+                screenshotRelativePath = screenshotRelativePath.substring(1);
+            }
+            String fullScreenshotPath = parent + screenshotRelativePath;
+            logger.debug("Deleting screenshot at [{}].", fullScreenshotPath);
+            String screenshotDeleteResult = deleteLocalFile(fullScreenshotPath);
+            if (screenshotDeleteResult != null) {
+                String details = String.format("Failed to delete backup validation screenshot [%s] with result [%s]. ", fullScreenshotPath, screenshotDeleteResult);
+                logger.warn(details);
+                return new BackupDeleteAnswer(cmd, false, details);
+            }
+        }
+        return null;
     }
 
     private String deleteCheckpointIfExists(DataTO obj, String parent) {

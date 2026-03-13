@@ -2705,6 +2705,7 @@
 "label.uuid": "ID",
 "label.value": "Value",
 "label.validationformat": "Validation Format",
+"label.validationstatus": "Validation status",
 "label.valueoptions": "Values Options",
 "label.vcenter": "VMware datacenter vCenter",
 "label.vcenter.datacenter": "vCenter datacenter",

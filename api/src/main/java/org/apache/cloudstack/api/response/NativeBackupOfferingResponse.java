@@ -44,6 +44,10 @@ public class NativeBackupOfferingResponse extends BaseResponse {
     @Param(description = "Whether the backups should be validated or not.")
     private Boolean validate;
 
+    @SerializedName(ApiConstants.VALIDATION_STEPS)
+    @Param(description = "Which validation steps should be performed.")
+    private String validationSteps;
+
     @SerializedName(ApiConstants.ALLOW_QUICK_RESTORE)
     @Param(description = "Whether the backups are allowed to be restored or not.")
     private Boolean allowQuickRestore;
@@ -64,13 +68,15 @@ public class NativeBackupOfferingResponse extends BaseResponse {
     @Param(description = "When the offering was removed.")
     private Date removed;
 
-    public NativeBackupOfferingResponse(String id, String name, Boolean compress, Boolean validate, Boolean allowQuickRestore, Boolean allowExtractFile, Integer chainSize, Date created,
+    public NativeBackupOfferingResponse(String id, String name, Boolean compress, Boolean validate, String validationSteps, Boolean allowQuickRestore, Boolean allowExtractFile,
+            Integer chainSize, Date created,
             Date removed) {
         super("nativebackupoffering");
         this.id = id;
         this.name = name;
         this.compress = compress;
         this.validate = validate;
+        this.validationSteps = validationSteps;
         this.allowQuickRestore = allowQuickRestore;
         this.allowExtractFile = allowExtractFile;
         this.backupChainSize = chainSize;

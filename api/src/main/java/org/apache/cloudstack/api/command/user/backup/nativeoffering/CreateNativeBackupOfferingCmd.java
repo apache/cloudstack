@@ -55,6 +55,10 @@ public class CreateNativeBackupOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VALIDATE, type = CommandType.BOOLEAN, description = "Whether the backups should be validated or not.")
     private Boolean validate;
 
+    @Parameter(name = ApiConstants.VALIDATION_STEPS, type = CommandType.STRING, description = "Which validation steps should be performed. Accepts a comma-separated list of " +
+            "steps. Accepted values are: wait_for_boot, screenshot and execute_command.")
+    private String validationSteps;
+
     @Parameter(name = ApiConstants.ALLOW_QUICK_RESTORE, type = CommandType.BOOLEAN, description = "Whether the backups are allowed to be restored or not.")
     private Boolean allowQuickRestore;
 
@@ -105,6 +109,25 @@ public class CreateNativeBackupOfferingCmd extends BaseCmd {
         } catch (IllegalArgumentException e) {
             throw new InvalidParameterValueException(String.format("Invalid compression library, accepted values are zstd and zlib, received [%s].", compressionLibrary));
         }
+    }
+
+    public String getValidationSteps() {
+        if (validationSteps == null) {
+            return Backup.ValidationSteps.screenshot.name();
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String step : validationSteps.strip().split(",")) {
+            try {
+                Backup.ValidationSteps enumStep = Backup.ValidationSteps.valueOf(step);
+                sb.append(enumStep.name());
+                sb.append(",");
+            } catch (IllegalArgumentException ex) {
+                logger.error("Invalid validation step informed [{}].", step, ex);
+                throw new InvalidParameterValueException(String.format("Invalid validation step [%s] informed. Accepted values are: wait_for_boot, screenshot and script.", step));
+            }
+        }
+        sb.deleteCharAt(sb.lastIndexOf(","));
+        return sb.toString();
     }
 
     /////////////////////////////////////////////////////

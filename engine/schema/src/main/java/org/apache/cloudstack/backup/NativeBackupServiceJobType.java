@@ -14,28 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.backup.dao;
+package org.apache.cloudstack.backup;
 
-import org.apache.cloudstack.backup.BackupDetailVO;
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
-
-import com.cloud.utils.db.GenericDao;
-
-public interface BackupDetailsDao extends GenericDao<BackupDetailVO, Long>, ResourceDetailsDao<BackupDetailVO> {
-
-    String END_OF_CHAIN = "end_of_chain";
-
-    String CURRENT = "current";
-
-    String IMAGE_STORE_ID = "image_store_id";
-
-    String PARENT_ID = "parent_id";
-
-    String ISOLATED = "isolated";
-
-    String SCREENSHOT_PATH = "screenshot_path";
-
-    String BACKUP_HASH = "backup_hash";
-
-    void removeDetailsExcept(long backupId, String exception);
+public enum NativeBackupServiceJobType {
+    StartCompression, FinalizeCompression, BackupValidation
 }

@@ -23,14 +23,21 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.MergeDiskOnlyVmSnapshotCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.alert.AlertManager;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
@@ -41,6 +48,7 @@ import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
@@ -59,6 +67,7 @@ import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineManagerImpl;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkConstants;
@@ -67,6 +76,7 @@ import com.cloud.vm.VmWorkRestoreBackup;
 import com.cloud.vm.VmWorkRestoreVolumeBackupAndAttach;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeBackup;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshot;
@@ -74,13 +84,16 @@ import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
-import org.apache.cloudstack.backup.dao.BackupCompressionJobDao;
+import org.apache.cloudstack.alert.AlertService;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.NativeBackupDataStoreDao;
 import org.apache.cloudstack.backup.dao.NativeBackupJoinDao;
 import org.apache.cloudstack.backup.dao.NativeBackupOfferingDao;
+import org.apache.cloudstack.backup.dao.NativeBackupServiceJobDao;
 import org.apache.cloudstack.backup.dao.NativeBackupStoragePoolDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -123,6 +136,7 @@ import org.apache.commons.lang3.StringUtils;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -135,11 +149,13 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static org.apache.cloudstack.backup.dao.BackupDetailsDao.BACKUP_HASH;
 import static org.apache.cloudstack.backup.dao.BackupDetailsDao.CURRENT;
 import static org.apache.cloudstack.backup.dao.BackupDetailsDao.END_OF_CHAIN;
 import static org.apache.cloudstack.backup.dao.BackupDetailsDao.IMAGE_STORE_ID;
 import static org.apache.cloudstack.backup.dao.BackupDetailsDao.ISOLATED;
 import static org.apache.cloudstack.backup.dao.BackupDetailsDao.PARENT_ID;
+import static org.apache.cloudstack.backup.dao.BackupDetailsDao.SCREENSHOT_PATH;
 
 public class KnibBackupProvider extends AdapterBase implements NativeBackupProvider, Configurable {
     protected ConfigKey<Integer> backupChainSize = new ConfigKey<>("Advanced", Integer.class, "backup.chain.size", "8", "Determines the max size of a backup chain." +
@@ -236,13 +252,22 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
     @Inject
     private VolumeDataFactory volumeDataFactory;
     @Inject
-    private BackupCompressionJobDao backupCompressionJobDao;
+    private NativeBackupServiceJobDao nativeBackupServiceJobDao;
 
     @Inject
     private BackupManager backupManager;
 
     @Inject
     private DiskOfferingDao diskOfferingDao;
+
+    @Inject
+    private HypervisorGuruManager hypervisorGuruManager;
+
+    @Inject
+    private NicDao nicDao;
+
+    @Inject
+    private AlertManager alertManager;
 
     protected final List<Backup.Status> validChildStatesToRemoveBackup = List.of(Backup.Status.Expunged, Backup.Status.Error, Backup.Status.Failed);
 
@@ -252,6 +277,8 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
     private final List<Backup.Status> allowedBackupStatesToRemove = List.of(Backup.Status.BackedUp, Backup.Status.Failed, Backup.Status.Error);
 
     private final List<Backup.Status> allowedBackupStatesToCompress = List.of(Backup.Status.BackedUp, Backup.Status.Restoring);
+
+    private final List<Backup.Status> allowedBackupStatesToValidate = List.of(Backup.Status.BackedUp, Backup.Status.Restoring);
 
     private final List<VirtualMachine.State> allowedVmStates = Arrays.asList(VirtualMachine.State.Running, VirtualMachine.State.Stopped);
     @Override
@@ -295,14 +322,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         logger.info("Removing VM [{}] from KNIB backup offering.", vm.getUuid());
 
         validateVmState(vm, "remove backup offering", VirtualMachine.State.Expunging, VirtualMachine.State.Destroyed);
-        NativeBackupJoinVO current = nativeBackupJoinDao.findCurrent(vm.getId());
-        if (current == null) {
-            logger.debug("There is no current active chain, no need to do anything.");
-            return true;
-        }
-
-        if (mergeCurrentBackupDeltas(current)) {
-            setEndOfChainAndRemoveCurrentForBackup(current);
+        if (endBackupChain(vm)) {
             return true;
         }
         UserVmVO vmVO = userVmDao.findById(vm.getId());
@@ -406,7 +426,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         updateBackupStatusToBackingUp(volumeTOs, backupVO);
 
         DataStore imageStore = getImageStoreForBackup(userVm.getDataCenterId(), backupVO);
-        createDetails(imageStore.getId(), fullBackup ? 0L : parentBackup.getId(), backupVO);
+        createBasicBackupDetails(imageStore.getId(), fullBackup ? 0L : parentBackup.getId(), backupVO);
 
         List<VMSnapshotVO> succeedingVmSnapshotList = getSucceedingVmSnapshotList(parentBackup);
         VMSnapshotVO succeedingVmSnapshot = succeedingVmSnapshotList.isEmpty() ? null : succeedingVmSnapshotList.get(0);
@@ -436,7 +456,11 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
             updateCurrentBackup(newBackupJoin);
         }
 
-        compressBackupAsyncIfHasOfferingSupport(newBackupJoin, backup.getZoneId());
+        if (offeringSupportsCompression(newBackupJoin)) {
+            compressBackupAsync(newBackupJoin, backup.getZoneId(), userVm.getAccountId());
+        } else {
+            validateBackupAsyncIfHasOfferingSupport(newBackupJoin, backup.getZoneId(), userVm.getAccountId());
+        }
         return new Pair<>(Boolean.TRUE, backupVO.getId());
     }
 
@@ -587,7 +611,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
 
         HostVO host;
         try {
-            host = getHostToRestore(vm, quickRestore, hostId); // review for quick restore.
+            host = getHostToRestore(vm, quickRestore, hostId);
         } catch (AgentUnavailableException e) {
             throw new CloudRuntimeException(e);
         }
@@ -627,7 +651,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
             return false;
         }
 
-        if (!processRestoreAnswers(vm, answers)) {
+        if (!processRestoreAnswers(vm, answers, quickRestore)) {
             return false;
         }
 
@@ -689,14 +713,14 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         VolumeObjectTO volumeObjectTO = (VolumeObjectTO) volumeInfo.getTO();
         NativeBackupDataStoreVO deltaOnSecondary = nativeBackupDataStoreDao.findByBackupIdAndVolumeId(backup.getId(), backedUpVolume.getId());
         NativeBackupJoinVO nativeBackupJoinVO = nativeBackupJoinDao.findById(backup.getId());
-        Pair<BackupDeltaTO, VolumeObjectTO> backupAndVolumePair = generateBackupAndVolumePairForSingleNewVolume(deltaOnSecondary, volumeObjectTO, backedUpVolume.getId(), nativeBackupJoinVO);
+        Pair<BackupDeltaTO, VolumeObjectTO> backupAndVolumePair = generateBackupAndVolumePairForSingleNewVolume(deltaOnSecondary, volumeObjectTO, nativeBackupJoinVO);
         Set<String> secondaryStorageUrls = getParentSecondaryStorageUrls(backupVO);
 
         RestoreKnibBackupCommand cmd = new RestoreKnibBackupCommand(Set.of(), Set.of(backupAndVolumePair), secondaryStorageUrls, quickRestore);
 
         Answer answer = sendBackupCommand(hostVo.getId(), cmd);
 
-        if (!processRestoreAnswers(vm, new Answer[] {answer})) {
+        if (!processRestoreAnswers(vm, new Answer[] {answer}, quickRestore)) {
             throw new CloudRuntimeException("Bad answer from agent");
         }
 
@@ -745,7 +769,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         long minFreeStorage = Math.round(backupVO.getSize() * backupCompressionMinimumFreeStorage.valueIn(hostVO.getDataCenterId()));
 
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findByIdIncludingRemoved(backupVO.getBackupOfferingId());
-        NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuid(backupOfferingVO.getExternalId());
+        NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuidIncludingRemoved(backupOfferingVO.getExternalId());
         List<NativeBackupJoinVO> backupChain = getBackupJoinParents(backupVO, true);
         List<String> chainImageStoreUrls = getChainImageStoreUrls(backupChain);
         CompressBackupCommand cmd = new CompressBackupCommand(deltasToCompressAndParents, chainImageStoreUrls, minFreeStorage, nativeBackupOfferingVO.getCompressionLibrary(),
@@ -763,7 +787,8 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         logger.info("Successfully completed the first step of the backup compression process for backup [{}]. Will launch a new compression job to finalize the compression.",
                 backup.getUuid());
 
-        backupCompressionJobDao.persist(new BackupCompressionJobVO(backupVO.getId(), backupVO.getZoneId(), backupVO.getVmId(), BackupCompressionJobType.FinalizeCompression));
+        nativeBackupServiceJobDao.persist(new NativeBackupServiceJobVO(backupVO.getId(), backupVO.getZoneId(), backupVO.getVmId(), backupVO.getAccountId(),
+                NativeBackupServiceJobType.FinalizeCompression));
 
         return true;
     }
@@ -776,12 +801,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         }
         BackupVO backupVO = shouldContinueProcessAndBackupVo.second();
 
-        NativeBackupJoinVO backupJoinVO = nativeBackupJoinDao.findById(backupId);
-        DataStoreTO imageStoreTo = dataStoreManager.getDataStore(backupJoinVO.getImageStoreId(), DataStoreRole.Image).getTO();
-        List<NativeBackupDataStoreVO> deltas = nativeBackupDataStoreDao.listByBackupId(backupId);
-        List<BackupDeltaTO> deltaTOs = deltas.stream()
-                .map(delta -> new BackupDeltaTO(imageStoreTo, Hypervisor.HypervisorType.KVM, delta.getBackupPath()))
-                .collect(Collectors.toList());
+        List<BackupDeltaTO> deltaTOs = getBackupDeltaTOList(backupId);
 
         FinalizeBackupCompressionCommand cmd = new FinalizeBackupCompressionCommand(backupVO.getStatus() != Backup.Status.BackedUp, deltaTOs);
         HostVO hostVO = hostDao.findById(hostId);
@@ -806,7 +826,25 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         backupDao.update(backupVO.getId(), backupVO);
 
         logger.info("Finalized compression for backup [{}], old size was [{}], compressed size is [{}].", backupVO.getUuid(), backupVO.getUncompressedSize(), backupVO.getSize());
+
+        validateBackupAsyncIfHasOfferingSupport(nativeBackupJoinDao.findById(backupId), backupVO.getZoneId(), backupVO.getAccountId());
         return true;
+    }
+
+    @Override
+    public boolean validateBackup(long backupId, long hostId) {
+        if (!validateBackupStateForValidation(backupId)) {
+            return false;
+        }
+        BackupVO backupVO = backupDao.findById(backupId);
+        backupVO.setValidationStatus(Backup.ValidationStatus.Validating);
+        backupDao.update(backupId, backupVO);
+        BackupDetailVO hashDetail = backupDetailDao.findDetail(backupId, BACKUP_HASH);
+        if (hashDetail != null) {
+            return validateWithHash(backupId, backupVO, hashDetail);
+        } else {
+            return validateWithValidationVm(backupId, hostId, backupVO);
+        }
     }
 
     @Override
@@ -934,6 +972,23 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         updateReferencesAfterPrepareForSnapshotRevert(deltaMergeTreeTOList, snapRefsSucceedingCurrentBackup, deletedDeltas, currentBackup);
     }
 
+    /**
+     * Get the secondary storage URLs of the backups that are backing files of this VM. This is only useful for Validation VMs currently, which are created with backing files on
+     * the secondary storage.
+     * */
+    @Override
+    public Set<String> getSecondaryStorageUrls(UserVm userVm) {
+        VMInstanceDetailVO detailVO = userVmDetailsDao.findDetail(userVm.getId(), ApiConstants.BACKUP_ID);
+        if (detailVO == null) {
+            return Set.of();
+        }
+        BackupVO backupVO = backupDao.findByUuid(detailVO.getValue());
+        Set<String> secondaryStorageUrls = getParentSecondaryStorageUrls(backupVO);
+        NativeBackupJoinVO nativeBackupJoinVO = nativeBackupJoinDao.findById(backupVO.getId());
+        secondaryStorageUrls.add(imageStoreDao.findById(nativeBackupJoinVO.getImageStoreId()).getUrl());
+        return secondaryStorageUrls;
+    }
+
     @Override
     public Boolean crossZoneInstanceCreationEnabled(BackupOffering backupOffering) {
         return false;
@@ -1040,13 +1095,18 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         }, AsyncJob.Topics.JOB_STATE);
     }
 
-    protected void compressBackupAsyncIfHasOfferingSupport(NativeBackupJoinVO backupJoinVO, long zoneId) {
-        if (!offeringSupportsCompression(backupJoinVO)) {
+    protected void validateBackupAsyncIfHasOfferingSupport(NativeBackupJoinVO backupJoinVO, long zoneId, long accountId) {
+        if (!offeringSupportsValidation(backupJoinVO)) {
             return;
         }
 
+        logger.info("Queuing backup validation job for backup [{}].", backupJoinVO.getUuid());
+        nativeBackupServiceJobDao.persist(new NativeBackupServiceJobVO(backupJoinVO.getId(), zoneId, backupJoinVO.getVmId(), accountId, NativeBackupServiceJobType.BackupValidation));
+    }
+
+    protected void compressBackupAsync(NativeBackupJoinVO backupJoinVO, long zoneId, long accountId) {
         logger.info("Queuing backup compression job for backup [{}].", backupJoinVO.getUuid());
-        backupCompressionJobDao.persist(new BackupCompressionJobVO(backupJoinVO.getId(), zoneId, backupJoinVO.getVmId(), BackupCompressionJobType.StartCompression));
+        nativeBackupServiceJobDao.persist(new NativeBackupServiceJobVO(backupJoinVO.getId(), zoneId, backupJoinVO.getVmId(), accountId, NativeBackupServiceJobType.StartCompression));
     }
 
     private boolean finalizeQuickRestore(VirtualMachine vm, List<VolumeInfo> volumesToConsolidate, long hostId) {
@@ -1064,6 +1124,228 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         }
 
         return consolidateVolumes(vm, hostId, volumesToConsolidate);
+    }
+
+    private boolean validateWithHash(long backupId, BackupVO backupVO, BackupDetailVO hashDetail) {
+        List<BackupDeltaTO> backupDeltaTOList = getBackupDeltaTOList(backupId);
+        TakeBackupHashCommand hashCommand = new TakeBackupHashCommand(backupDeltaTOList, backupVO.getUuid());
+        List<HostVO> hosts = hostDao.listAllHostsUpByZoneAndHypervisor(backupVO.getZoneId(), Hypervisor.HypervisorType.KVM);
+        String message;
+        if (CollectionUtils.isEmpty(hosts)) {
+            message = String.format("No Up and Enabled host found in zone [%s]. Cannot validate backup [%s]. Will try again later.", backupVO.getZoneId(), backupVO.getUuid());
+            logger.error(message);
+            setBackupUnableToValidateAndSendAlert(backupVO, message);
+            return false;
+        }
+        Collections.shuffle(hosts);
+        Answer answer = sendBackupCommand(hosts.get(0).getId(), hashCommand);
+        if (!answer.getResult()) {
+            message = String.format("Unable to get hash of backup [%s] due to [%s]. Will try again later.", backupVO.getUuid(), answer.getDetails());
+            logger.warn(message);
+            setBackupUnableToValidateAndSendAlert(backupVO, message);
+            return false;
+        }
+
+        if (!hashDetail.getValue().equals(answer.getDetails())) {
+            message = String.format("Current xxHash128 of backup [%s] is different from previous validated hash. This backup has changed and might be corrupt." +
+                    "The old hash is [%s]; the new hash is [%s].", backupVO.getUuid(), hashDetail.getValue(), answer.getDetails());
+            logger.error(message);
+            setBackupAsInvalidAndSendAlert(backupVO, message);
+            return false;
+        }
+
+        logger.info("xxHash128 of backup [{}] is the same as when it was validated. This backup is still valid.", backupVO.getUuid());
+        backupVO.setValidationStatus(Backup.ValidationStatus.Valid);
+        backupDao.update(backupId, backupVO);
+        return true;
+    }
+
+    private boolean validateWithValidationVm(long backupId, long hostId, BackupVO backupVO) {
+        UserVmVO validationVm;
+        validationVm = allocateValidationVm(backupId, backupVO);
+        if (validationVm == null) {
+            return false;
+        }
+
+        HostVO hostVo = hostDao.findById(hostId);
+
+        List<VolumeObjectTO> volumeToList = new ArrayList<>();
+        boolean startedVm = false;
+        boolean validationPrepared = false;
+        VirtualMachineTO vmTO = null;
+        List<VolumeVO> volumeVOs = volumeDao.findByInstance(validationVm.getId());
+        try {
+            createValidationVolumesOnPrimaryStorage(volumeVOs, validationVm, backupVO, hostVo, volumeToList);
+
+            List<NativeBackupDataStoreVO> backupDeltas = nativeBackupDataStoreDao.listByBackupId(backupId);
+            NativeBackupJoinVO backupJoinVO = nativeBackupJoinDao.findById(backupId);
+            Set<Pair<BackupDeltaTO, VolumeObjectTO>> backupDeltaAndVolumePairs = generateBackupAndVolumePairsToRestore(backupDeltas, volumeToList, backupJoinVO, false);
+            if (!prepareForValidation(backupId, hostId, backupDeltaAndVolumePairs, backupVO, validationVm)) {
+                return false;
+            }
+            validationPrepared = true;
+
+            userVmManager.startVirtualMachine(validationVm, null);
+            startedVm = true;
+            //refresh info
+            validationVm = userVmDao.findById(validationVm.getId());
+            hostVo = hostDao.findById(validationVm.getHostId());
+
+            HypervisorGuru hvGuru = hypervisorGuruManager.getGuru(validationVm.getHypervisorType());
+            VirtualMachineProfileImpl profile = new VirtualMachineProfileImpl(validationVm);
+            vmTO = hvGuru.implement(profile);
+
+            if (!validateBackup(backupId, vmTO, backupDeltaAndVolumePairs, backupVO, validationVm, hostVo)) {
+                endBackupChainIfConfigured(backupVO);
+                return false;
+            }
+            calculateAndSaveHash(backupDeltaAndVolumePairs, backupVO, hostVo.getId());
+            return true;
+        } catch (Exception ex) {
+            logger.error("Encountered an exception during the validation process of backup [{}]. Will cleanup now.", backupVO.getUuid(), ex);
+            setBackupUnableToValidateAndSendAlert(backupVO, "Failed to validate due to unexpected exception: " + ex.getMessage());
+            return false;
+        } finally {
+            cleanupValidation(startedVm, validationVm, backupVO, volumeVOs, validationPrepared);
+        }
+    }
+
+    /**
+     * If backupValidationEndChainOnFail is true for the account, and the backup being validated is part of the current chain, we end the current chain.
+     * */
+
+    private void endBackupChainIfConfigured(BackupVO backupVO) {
+        if (!BackupValidationServiceController.backupValidationEndChainOnFail.valueIn(backupVO.getAccountId())) {
+            return;
+        }
+        List<NativeBackupJoinVO> backupChildren = getBackupJoinChildren(backupVO);
+
+        // Get updated record
+        NativeBackupJoinVO backupJoinVO = nativeBackupJoinDao.findById(backupVO.getId());
+        if (backupJoinVO.getCurrent() || (!backupChildren.isEmpty() && backupChildren.get(backupChildren.size() -1).getCurrent())) {
+            logger.info("As [{}] is true, we are ending the backup chain for VM [{}]. The next backup will be a full backup.",
+                    BackupValidationServiceController.backupValidationEndChainOnFail.toString());
+            endBackupChain(userVmDao.findById(backupVO.getVmId()));
+        }
+    }
+
+    protected void calculateAndSaveHash(Set<Pair<BackupDeltaTO, VolumeObjectTO>> backupDeltaAndVolumePairs, BackupVO backupVO, long hostId) {
+        TakeBackupHashCommand cmd = new TakeBackupHashCommand(backupDeltaAndVolumePairs.stream().map(Pair::first).collect(Collectors.toList()), backupVO.getUuid());
+        Answer answer = sendBackupCommand(hostId, cmd);
+
+        if (answer.getResult() && answer.getDetails() != null) {
+            logger.debug("Got xxHash128 [{}] of backup [{}].", answer.getDetails(), backupVO.getUuid());
+            backupDetailDao.addDetail(backupVO.getId(), BackupDetailsDao.BACKUP_HASH, answer.getDetails(), false);
+            return;
+        }
+        logger.warn("Unable to get hash of backup [{}] due to [{}].", backupVO.getUuid(), answer.getDetails());
+    }
+
+
+    /**
+     * Return a list of BackupDeltaTO of the given backup.
+     * */
+    private List<BackupDeltaTO> getBackupDeltaTOList(long backupId) {
+        NativeBackupJoinVO backupJoinVO = nativeBackupJoinDao.findById(backupId);
+        DataStoreTO imageStoreTo = dataStoreManager.getDataStore(backupJoinVO.getImageStoreId(), DataStoreRole.Image).getTO();
+        List<NativeBackupDataStoreVO> deltas = nativeBackupDataStoreDao.listByBackupId(backupId);
+
+        return deltas.stream()
+                .map(delta -> new BackupDeltaTO(imageStoreTo, Hypervisor.HypervisorType.KVM, delta.getBackupPath()))
+                .collect(Collectors.toList());
+    }
+
+    private void cleanupValidation(boolean startedVm, UserVmVO validationVm, BackupVO backupVO, List<VolumeVO> volumeVOs, boolean validationPrepared) {
+        if (startedVm) {
+            userVmManager.stopVirtualMachine(validationVm.getId(), true);
+        }
+        DestroyVMCmd destroyVMCmd = new DestroyVMCmd(validationVm.getId(), true);
+        StringBuilder errorMessage = new StringBuilder("Cleanup failed due to:");
+        boolean sendMail = false;
+        try {
+            userVmManager.destroyVm(destroyVMCmd, false);
+        } catch (Exception e) {
+            errorMessage.append("\nGot an unexpected exception while trying to destroy validation VM.");
+            sendMail = true;
+            logger.error("Got an error while trying to cleanup validation of backup [{}].", backupVO.getUuid(), e);
+        }
+        for (VolumeVO volume : volumeVOs) {
+            if (volume.getVolumeType() == Volume.Type.ROOT) {
+                continue;
+            }
+            Volume vol = volumeApiService.destroyVolume(volume.getId(), CallContext.current().getCallingAccount(), true, true, null);
+            if (vol == null) {
+                errorMessage.append(String.format("\nWe were unable to destroy volume [%s].", volume.getUuid()));
+            }
+        }
+
+        if (validationPrepared) {
+            CleanupKnibValidationCommand cleanupKnibValidationCommand = new CleanupKnibValidationCommand(validationVm.getName(), getSecondaryStorageUrls(validationVm));
+            Answer answer = agentManager.easySend(validationVm.getHostId(), cleanupKnibValidationCommand);
+            if (answer == null || !answer.getResult()) {
+                logger.error("Failed to cleanup post validation of backup [{}]. Got answer [{}]", backupVO.getUuid(), answer == null ? null : answer.getDetails());
+                HostVO host = hostDao.findById(validationVm.getHostId());
+                errorMessage.append(String.format("\nFailed to cleanup secondary storage mount at host [%s].", host.getUuid()));
+            }
+        }
+
+        if (sendMail) {
+            sendCleanupFailedEmail(backupVO, errorMessage.toString());
+        }
+    }
+
+    private boolean validateBackup(long backupId, VirtualMachineTO vmTO, Set<Pair<BackupDeltaTO, VolumeObjectTO>> backupDeltaAndVolumePairs, BackupVO backupVO, UserVmVO validationVm,
+            HostVO hostVo) {
+        Answer answer;
+        ValidateKnibVmCommand validateKnibVmCommand = new ValidateKnibVmCommand(vmTO, backupDeltaAndVolumePairs.stream().findFirst().get().first());
+        configureValidationSteps(validateKnibVmCommand, backupVO);
+        answer = agentManager.easySend(validationVm.getHostId(), validateKnibVmCommand);
+
+        boolean result = processValidationAnswer(answer, backupVO, validationVm, hostVo, validateKnibVmCommand);
+        if (result) {
+            backupVO.setValidationStatus(Backup.ValidationStatus.Valid);
+            backupDao.update(backupId, backupVO);
+        }
+        return result;
+    }
+
+    private boolean prepareForValidation(long backupId, long hostId, Set<Pair<BackupDeltaTO, VolumeObjectTO>> backupDeltaAndVolumePairs, BackupVO backupVO, UserVmVO validationVm) {
+        PrepareValidationCommand prepareCommand = new PrepareValidationCommand(new ArrayList<>(backupDeltaAndVolumePairs), getParentSecondaryStorageUrls(backupVO));
+
+        Answer answer = agentManager.easySend(hostId, prepareCommand);
+
+        if (answer == null || !answer.getResult()) {
+            String msg = String.format("Failed to prepare dummy VM [%s] for validation of %s. %s", validationVm.getName(), backupVO.getUuid(), answer != null ?
+                    "Details: "+ answer.getDetails(): "");
+            logger.error(msg);
+            setBackupUnableToValidateAndSendAlert(backupVO, msg);
+            return false;
+        }
+        return true;
+    }
+
+    private void createValidationVolumesOnPrimaryStorage(List<VolumeVO> volumeVOs, UserVmVO validationVm, BackupVO backupVO, HostVO hostVo, List<VolumeObjectTO> volumeToList) throws NoTransitionException {
+        for (VolumeVO volume : volumeVOs) {
+            VolumeInfo volumeInfo = volumeDataFactory.getVolume(volume.getId());
+            volumeInfo = volumeOrchestrationService.createVolumeOnPrimaryStorage(validationVm, volumeInfo, Hypervisor.HypervisorType.KVM, null, hostVo.getClusterId(),
+                    hostVo.getPodId());
+            validateCorrectStorageType(backupVO, volume, volumeInfo);
+            volumeToList.add((VolumeObjectTO)volumeInfo.getTO());
+        }
+    }
+
+    private UserVmVO allocateValidationVm(long backupId, BackupVO backupVO) {
+        UserVmVO validationVm;
+        try {
+            validationVm = (UserVmVO) userVmManager.allocateVMForValidation(backupId, Hypervisor.HypervisorType.KVM);
+            validationVm.setDataCenterId(backupVO.getZoneId());
+        } catch (InsufficientCapacityException | ResourceAllocationException | ResourceUnavailableException e) {
+            String msg = String.format("Unable to allocate dummy VM to validate %s due to %s.", backupVO.getUuid(), e.getMessage());
+            logger.error(msg, e);
+            setBackupUnableToValidateAndSendAlert(backupVO, msg);
+            return null;
+        }
+        return validationVm;
     }
 
     private List<VolumeInfo> getVolumesToConsolidate(VirtualMachine vm, List<NativeBackupDataStoreVO> deltasOnSecondary, List<VolumeObjectTO> volumeObjectTOS, long hostId,
@@ -1561,7 +1843,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         return backupAndVolumePairs;
     }
 
-    protected Pair<BackupDeltaTO, VolumeObjectTO> generateBackupAndVolumePairForSingleNewVolume(NativeBackupDataStoreVO backupDeltaVo, VolumeObjectTO volumeTO, long oldVolumeId,
+    protected Pair<BackupDeltaTO, VolumeObjectTO> generateBackupAndVolumePairForSingleNewVolume(NativeBackupDataStoreVO backupDeltaVo, VolumeObjectTO volumeTO,
             NativeBackupJoinVO backupJoinVO) {
         DataStore dataStore = dataStoreManager.getDataStore(backupJoinVO.getImageStoreId(), DataStoreRole.Image);
         Pair<BackupDeltaTO, VolumeObjectTO> backupAndVolumePair = new Pair<>(new BackupDeltaTO(dataStore.getTO(), Hypervisor.HypervisorType.KVM, backupDeltaVo.getBackupPath()), volumeTO);
@@ -1654,6 +1936,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
 
         try {
             volumeInfo = volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeInfo, Hypervisor.HypervisorType.KVM, null, hostVo.getClusterId(), hostVo.getPodId());
+            validateCorrectStorageType(null, newVolume, volumeInfo);
         } catch (NoTransitionException ex) {
             logger.error("Exception while creating volume to restore.", ex);
             throw new CloudRuntimeException(ex);
@@ -1801,19 +2084,62 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         }
     }
 
-    private boolean processRestoreAnswers(VirtualMachine vm, Answer[] answers) {
+    private boolean processRestoreAnswers(VirtualMachine vm, Answer[] answers, boolean quickRestore) {
         boolean cmdSucceeded = true;
         for (Answer answer : answers) {
             if (answer == null || !answer.getResult()) {
                 cmdSucceeded = false;
                 logger.error("Failed to restore backup due to: [{}].", answer == null ? "null answer" : answer.getDetails());
             }
-            if (answer instanceof RestoreKnibBackupAnswer) {
+            if (answer instanceof RestoreKnibBackupAnswer && quickRestore) {
                 RestoreKnibBackupAnswer restoreAnswer = (RestoreKnibBackupAnswer) answer;
                 userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.LINKED_VOLUMES_SECONDARY_STORAGE_UUIDS, StringUtils.join(restoreAnswer.getSecondaryStorageUuids(), ","), false);
             }
         }
         return cmdSucceeded;
+    }
+
+    private boolean processValidationAnswer(Answer answer, BackupVO backupVO, UserVmVO validationVm, HostVO hostVo, ValidateKnibVmCommand validateKnibVmCommand) {
+        if (answer == null) {
+            String msg = String.format("Backup [%s] was validated using dummy VM [%s]. The backup was deemed invalid due to: Null answer from host [%s]", backupVO.getUuid(),
+                    validationVm.getName(), hostVo.getName());
+            logger.error(msg);
+            setBackupAsInvalidAndSendAlert(backupVO, "msg");
+            return false;
+        }
+        if (!answer.getResult()) {
+            String msg = String.format("Backup [%s] was validated using dummy VM [%s]. The backup was deemed invalid due to: %s", backupVO.getUuid(),
+                    validationVm.getName(), answer.getDetails());
+            logger.error(msg);
+            setBackupAsInvalidAndSendAlert(backupVO, "msg");
+            return false;
+        }
+        if (answer instanceof ValidateKnibVmAnswer) {
+            ValidateKnibVmAnswer validateKnibVmAnswer = (ValidateKnibVmAnswer)answer;
+            boolean result = true;
+            String msg = String.format("Backup [%s] was validated using dummy VM [%s]. The backup was deemed invalid due to: ", backupVO.getUuid(), validationVm.getName());
+            if (validateKnibVmCommand.isWaitForBoot() && !validateKnibVmAnswer.isBootValidated()) {
+                result = false;
+                msg += "\n - The VM did not boot within the expected time.";
+            }
+            if (validateKnibVmCommand.isExecuteScript() && validateKnibVmAnswer.getScriptResult() != null) {
+                result = false;
+                msg += "\n - The script did not output the expected output. Captured output: " + validateKnibVmAnswer.getScriptResult();
+            }
+            if (validateKnibVmCommand.isTakeScreenshot() && validateKnibVmAnswer.getScreenshotPath() == null) {
+                result = false;
+                msg += "\n - We were unable to take a screenshot of the VM.";
+            } else if (validateKnibVmCommand.isTakeScreenshot()) {
+                logger.debug("Saving validation screenshot path [{}] to the backup details of backup [{}].", validateKnibVmAnswer.getScreenshotPath(), backupVO.getUuid());
+                backupDetailDao.addDetail(backupVO.getId(), SCREENSHOT_PATH, validateKnibVmAnswer.getScreenshotPath(), false);
+            }
+            if (!result) {
+                setBackupAsInvalidAndSendAlert(backupVO, msg);
+            }
+
+            return result;
+        }
+        return false;
     }
 
     private void handleBackupExceptionInRestore(VirtualMachine vm, BackupException jobResult) {
@@ -1838,6 +2164,20 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
             throw (BackupProviderException) jobResult;
         }
         throw new CloudRuntimeException(String.format("Exception while restoring KVM native incremental backup [%s]. Check the logs for more information.", backup.getUuid()), ((Throwable)jobResult).getCause());
+    }
+
+    private boolean endBackupChain(VirtualMachine vm) {
+        NativeBackupJoinVO current = nativeBackupJoinDao.findCurrent(vm.getId());
+        if (current == null) {
+            logger.debug("There is no current active chain, no need to do anything.");
+            return true;
+        }
+
+        if (mergeCurrentBackupDeltas(current)) {
+            setEndOfChainAndRemoveCurrentForBackup(current);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1946,9 +2286,14 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         List<NativeBackupDataStoreVO> nativeBackupDataStoreVOs = nativeBackupDataStoreDao.listByBackupId(backupId);
         DataStore dataStore = dataStoreManager.getDataStore(nativeBackupJoinVO.getImageStoreId(), DataStoreRole.Image);
         DataStoreTO dataStoreTO = dataStore.getTO();
+        BackupDetailVO screenshotPath = backupDetailDao.findDetail(backupId, SCREENSHOT_PATH);
         for (NativeBackupDataStoreVO nativeBackupDataStoreVO : nativeBackupDataStoreVOs) {
             BackupDeltaTO backupDeltaTO = new BackupDeltaTO(dataStoreTO, Hypervisor.HypervisorType.KVM, nativeBackupDataStoreVO.getBackupPath());
             backupDeltaTO.setId(backupId);
+            if (screenshotPath != null) {
+                backupDeltaTO.setScreenshotPath(screenshotPath.getValue());
+                screenshotPath = null;
+            }
             DeleteCommand deleteCommand = new DeleteCommand(backupDeltaTO);
             deleteCommands.addCommand(deleteCommand);
         }
@@ -2001,7 +2346,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
     }
 
     /**
-     * Gets the list of backup children of a given backupVO
+     * Gets the list of backup children of a given backupVO. In ascending created order.
      *
      * @return list of children, or and empty list if no children found.
      * */
@@ -2069,7 +2414,69 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         }
     }
 
-    private void createDetails(Long imageStoreId, Long parentId, BackupVO backupVO) {
+    private void setBackupUnableToValidateAndSendAlert(BackupVO backupVO, String msg) {
+        backupVO.setValidationStatus(Backup.ValidationStatus.UnableToValidate);
+        backupDao.update(backupVO.getId(), backupVO);
+        alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_BACKUP_VALIDATION_UNABLE_TO_VALIDATE, backupVO.getZoneId(), null, String.format("Unable to validate backup [%s]",
+                backupVO.getName()), msg);
+    }
+
+    private void sendCleanupFailedEmail(BackupVO backupVO, String msg) {
+        alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_BACKUP_VALIDATION_CLEANUP_FAILED, backupVO.getZoneId(), null, String.format("Cleanup of validation of backup " +
+                        "[%s] failed",
+                backupVO.getName()), msg);
+    }
+
+    private void setBackupAsInvalidAndSendAlert(BackupVO backupVO, String msg) {
+        backupVO.setValidationStatus(Backup.ValidationStatus.NotValid);
+        backupDao.update(backupVO.getId(), backupVO);
+        alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_BACKUP_VALIDATION_FAILED, backupVO.getZoneId(), null, String.format("Backup [%s] is not valid",
+                backupVO.getName()), msg);
+    }
+
+    private void configureValidationSteps(ValidateKnibVmCommand cmd, BackupVO backup) {
+        BackupOfferingVO offeringVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
+        NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuidIncludingRemoved(offeringVO.getExternalId());
+        String validationSteps = nativeBackupOfferingVO.getValidationSteps();
+        for (String step : validationSteps.split(",")) {
+            Backup.ValidationSteps enumStep = Backup.ValidationSteps.valueOf(step);
+            switch (enumStep) {
+                case screenshot:
+                    cmd.setTakeScreenshot(true);
+                    VMInstanceDetailVO screenshotWait = userVmDetailsDao.findDetail(backup.getVmId(), VmDetailConstants.VALIDATION_SCREENSHOT_WAIT);
+                    cmd.setScreenshotWait(screenshotWait != null ? Integer.valueOf(screenshotWait.getValue()) :
+                            BackupValidationServiceController.backupValidationScreenshotDefaultWait.valueIn(backup.getAccountId()));
+                    break;
+                case wait_for_boot:
+                    cmd.setWaitForBoot(true);
+                    VMInstanceDetailVO bootTimeout = userVmDetailsDao.findDetail(backup.getVmId(), VmDetailConstants.VALIDATION_BOOT_TIMEOUT);
+                    cmd.setBootTimeout(bootTimeout != null ? Integer.valueOf(bootTimeout.getValue()) :
+                            BackupValidationServiceController.backupValidationBootDefaultTimeout.valueIn(backup.getAccountId()));
+                    break;
+                case execute_command:
+                    configureValidationScript(cmd, backup.getVmId(), backup.getAccountId());
+                    break;
+            }
+        }
+    }
+
+    private void configureValidationScript(ValidateKnibVmCommand cmd, long vmId, long accountId) {
+        VMInstanceDetailVO script = userVmDetailsDao.findDetail(vmId, VmDetailConstants.VALIDATION_COMMAND);
+        if (script == null) {
+            return;
+        }
+        cmd.setExecuteScript(true);
+        cmd.setScriptToExecute(script.getValue());
+        VMInstanceDetailVO scriptArguments = userVmDetailsDao.findDetail(vmId, VmDetailConstants.VALIDATION_COMMAND_ARGUMENTS);
+        cmd.setScriptArguments(scriptArguments != null ? scriptArguments.getValue() : null);
+        VMInstanceDetailVO scriptExpectedResult = userVmDetailsDao.findDetail(vmId, VmDetailConstants.VALIDATION_COMMAND_EXPECTED_RESULT);
+        cmd.setExpectedResult(scriptExpectedResult != null ? scriptExpectedResult.getValue() : "0");
+        VMInstanceDetailVO scriptTimeout = userVmDetailsDao.findDetail(vmId, VmDetailConstants.VALIDATION_COMMAND_TIMEOUT);
+        cmd.setScriptTimeout(scriptTimeout != null ? Integer.valueOf(scriptTimeout.getValue()) :
+                BackupValidationServiceController.backupValidationScriptDefaultTimeout.valueIn(accountId));
+    }
+
+    private void createBasicBackupDetails(Long imageStoreId, Long parentId, BackupVO backupVO) {
         backupDetailDao.persist(new BackupDetailVO(backupVO.getId(), IMAGE_STORE_ID, imageStoreId.toString(), false));
         backupDetailDao.persist(new BackupDetailVO(backupVO.getId(), PARENT_ID, parentId.toString(), false));
     }
@@ -2108,6 +2515,15 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         return agentManager.send(hostId, cmds);
     }
 
+    private void validateCorrectStorageType(BackupVO backupVO, VolumeVO volume, VolumeInfo volumeInfo) {
+        StoragePoolVO storagePoolVO = storagePoolDao.findById(volumeInfo.getDataStore().getId());
+        if (!supportedStoragePoolTypes.contains(storagePoolVO.getPoolType())) {
+            logger.error("Error while trying create volume [{}]. It was created in a storage that is not supported. Make sure that the disk offerings of VMs with backup " +
+                    "offerings can only be allocated to file-based storages ({}).", backupVO, volume, supportedStoragePoolTypes);
+            throw new CloudRuntimeException(String.format("Unable to create volume [%s] due to a failure to allocate the volume. Please check the logs.", backupVO.getUuid()));
+        }
+    }
+
     private void validateQuickRestore(Backup backup, boolean quickRestore) {
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuidIncludingRemoved(backupOfferingVO.getExternalId());
@@ -2115,6 +2531,17 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
             throw new BackupProviderException(String.format("Unable to quick restore backup [%s] using offering [%s] as the offering does not support quick restoration.",
                     backup.getUuid(), backupOfferingVO.getUuid()));
         }
+    }
+
+    private boolean offeringSupportsValidation(NativeBackupJoinVO backup) {
+        BackupOfferingVO backupOfferingVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
+        NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuidIncludingRemoved(backupOfferingVO.getExternalId());
+        if (!nativeBackupOfferingVO.isValidate()) {
+            logger.debug("Backup [{}] will not be validated as offering [{}] with external id [{}] does not support it.", backup, backupOfferingVO.getUuid(),
+                    nativeBackupOfferingVO.getExternalId());
+            return false;
+        }
+        return true;
     }
 
     private boolean offeringSupportsCompression(NativeBackupJoinVO backup) {
@@ -2127,7 +2554,6 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         }
         return true;
     }
-
 
     private void validateVmState(VirtualMachine vm, String operation, VirtualMachine.State... additionalStates) {
         List<VirtualMachine.State> allowedStates = new ArrayList<>(this.allowedVmStates);
@@ -2182,6 +2608,11 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
 
                 if (Backup.CompressionStatus.Compressing.equals(backupVO.getCompressionStatus())) {
                     logger.error("Backup [{}] is being compressed, we cannot delete it. Please wait for the compress process to end and try again later.", backupVO.getUuid());
+                    return false;
+                }
+
+                if (Backup.ValidationStatus.Validating.equals(backupVO.getValidationStatus())) {
+                    logger.error("Backup [{}] is being validated, we cannot delete it. Please wait for the validation process to end and try again later.");
                     return false;
                 }
                 return true;
@@ -2279,6 +2710,31 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
                             backupVO.getUuid(), backupVO.getStatus(), Backup.Status.BackedUp);
                     return new Pair<>(false, null);
                 }
+            } finally {
+                releaseBackup(backupId);
+            }
+        });
+    }
+
+    /**
+     * Validates that the backup is in a valid state to validate. This is synchronized with the backup removal check. We get a new backup reference to make sure the removal process
+     * has not changed the backup state.
+     * */
+    private boolean validateBackupStateForValidation(long backupId) {
+        return Transaction.execute(TransactionLegacy.CLOUD_DB, (TransactionCallback<Boolean>) result -> {
+            try {
+                BackupVO backupVO = lockBackup(backupId);
+                if (backupVO == null) {
+                    logger.warn("Unable to acquire lock for backup [{}]. Cannot validate it.", backupId);
+                    return false;
+                }
+
+                if (!allowedBackupStatesToValidate.contains(backupVO.getStatus())) {
+                    logger.error("Backup [{}] is not in a state allowed to be validated. Current state is [{}]; allowed states are [{}]", backupVO, backupVO.getStatus(),
+                            allowedBackupStatesToValidate);
+                    return false;
+                }
+                return true;
             } finally {
                 releaseBackup(backupId);
             }

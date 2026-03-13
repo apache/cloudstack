@@ -39,6 +39,14 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         Uncompressed, Compressing, FinalizingCompression, Compressed, CompressionError
     }
 
+    enum ValidationStatus {
+        NotValidated, Validating, Valid, UnableToValidate, NotValid
+    }
+
+    enum ValidationSteps {
+        wait_for_boot, screenshot, execute_command
+    }
+
     enum CompressionLibrary {
         zstd, zlib
     }
@@ -199,6 +207,7 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     Date getDate();
     Backup.Status getStatus();
     Backup.CompressionStatus getCompressionStatus();
+    Backup.ValidationStatus getValidationStatus();
     Long getSize();
     Long getProtectedSize();
     void setName(String name);

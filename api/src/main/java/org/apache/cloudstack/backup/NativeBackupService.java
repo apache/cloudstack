@@ -19,8 +19,12 @@ package org.apache.cloudstack.backup;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.storage.Volume;
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
+import org.apache.cloudstack.api.response.ExtractResponse;
+
+import java.util.Set;
 
 public interface NativeBackupService {
 
@@ -36,7 +40,13 @@ public interface NativeBackupService {
 
     void updateVolumeId(long oldVolumeId, long newVolumeId);
 
+    Set<String> getSecondaryStorageUrls(UserVm userVm);
+
     boolean startBackupCompression(long backupId, long hostId, long zoneId);
 
     boolean finalizeBackupCompression(long backupId, long hostId, long zoneId);
+
+    boolean validateBackup(long backupId, long hostId, long zoneId);
+
+    ExtractResponse downloadScreenshot(long backupId);
 }

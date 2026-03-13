@@ -25,6 +25,8 @@ public interface NativeBackupOffering extends BackupOffering {
 
     boolean isValidate();
 
+    String getValidationSteps();
+
     boolean isAllowQuickRestore();
 
     boolean isAllowExtractFile();

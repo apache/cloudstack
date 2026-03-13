@@ -96,7 +96,7 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
-import org.apache.cloudstack.api.command.user.backup.ListBackupCompressionJobsCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
 import org.apache.cloudstack.api.command.user.backup.nativeoffering.ListNativeBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -120,7 +120,7 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.BackupCompressionJobResponse;
+import org.apache.cloudstack.api.response.BackupServiceJobResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
@@ -159,12 +159,13 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.BackupCompressionJobVO;
+import org.apache.cloudstack.backup.NativeBackupServiceJobType;
+import org.apache.cloudstack.backup.NativeBackupServiceJobVO;
 import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.NativeBackupOffering;
 import org.apache.cloudstack.backup.NativeBackupOfferingVO;
-import org.apache.cloudstack.backup.dao.BackupCompressionJobDao;
+import org.apache.cloudstack.backup.dao.NativeBackupServiceJobDao;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.NativeBackupOfferingDao;
@@ -672,7 +673,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private NativeBackupOfferingDao nativeBackupOfferingDao;
 
     @Inject
-    private BackupCompressionJobDao backupCompressionJobDao;
+    private NativeBackupServiceJobDao nativeBackupServiceJobDao;
 
     @Inject
     private BackupDao backupDao;
@@ -5491,6 +5492,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.GUEST_CPU_MODEL, Collections.emptyList());
             options.put(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE, Collections.emptyList());
             options.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, Arrays.asList("true", "false"));
+            options.put(VmDetailConstants.VALIDATION_COMMAND, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_ARGUMENTS, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_EXPECTED_RESULT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_TIMEOUT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_BOOT_TIMEOUT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_SCREENSHOT_WAIT, Collections.emptyList());
+
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
@@ -6385,16 +6393,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
-    public ListResponse<BackupCompressionJobResponse> listBackupCompressionJobs(ListBackupCompressionJobsCmd cmd) {
-        ListResponse<BackupCompressionJobResponse> responses = new ListResponse<>();
-        Pair<List<BackupCompressionJobVO>, Integer> result = listBackupCompressionJobsInternal(cmd);
-        List<BackupCompressionJobResponse> compressionJobResponses = new ArrayList<>();
+    public ListResponse<BackupServiceJobResponse> listBackupServiceJobs(ListBackupServiceJobsCmd cmd) {
+        ListResponse<BackupServiceJobResponse> responses = new ListResponse<>();
+        Pair<List<NativeBackupServiceJobVO>, Integer> result = listBackupServiceJobsInternal(cmd);
+        List<BackupServiceJobResponse> compressionJobResponses = new ArrayList<>();
 
-        for (BackupCompressionJobVO jobVO : result.first()) {
+        for (NativeBackupServiceJobVO jobVO : result.first()) {
             BackupVO backup = backupDao.findByIdIncludingRemoved(jobVO.getBackupId());
             DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(jobVO.getZoneId());
 
-            BackupCompressionJobResponse response =  new BackupCompressionJobResponse(jobVO.getId(), backup.getUuid(), zone.getUuid(), jobVO.getAttempts(),
+            BackupServiceJobResponse response =  new BackupServiceJobResponse(jobVO.getId(), backup.getUuid(), zone.getUuid(), jobVO.getAttempts(),
                     jobVO.getType().toString(), jobVO.getStartTime(), jobVO.getScheduledStartTime(), jobVO.getRemoved());
 
             if (jobVO.getHostId() != null) {
@@ -6407,8 +6415,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return responses;
     }
 
-    private Pair<List<BackupCompressionJobVO>, Integer> listBackupCompressionJobsInternal(ListBackupCompressionJobsCmd cmd) {
-        SearchBuilder<BackupCompressionJobVO> sb = backupCompressionJobDao.createSearchBuilder();
+    private Pair<List<NativeBackupServiceJobVO>, Integer> listBackupServiceJobsInternal(ListBackupServiceJobsCmd cmd) {
+        SearchBuilder<NativeBackupServiceJobVO> sb = nativeBackupServiceJobDao.createSearchBuilder();
 
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("backup_id", sb.entity().getBackupId(), Op.EQ);
@@ -6423,19 +6431,19 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("scheduled", sb.entity().getStartTime(), Op.NULL);
         }
 
-        SearchCriteria<BackupCompressionJobVO> sc = sb.create();
+        SearchCriteria<NativeBackupServiceJobVO> sc = sb.create();
 
         sc.setParametersIfNotNull("id", cmd.getId());
         sc.setParametersIfNotNull("backup_id", cmd.getBackupId());
         sc.setParametersIfNotNull("host_id", cmd.getHostId());
         sc.setParametersIfNotNull("zone_id", cmd.getZoneId());
         if (cmd.getType() != null) {
-            sc.setParameters("type", StringUtils.capitalize(cmd.getType().toLowerCase())+"Compression");
+            sc.setParameters("type", NativeBackupServiceJobType.valueOf(cmd.getType()));
         }
 
-        Filter filter = new Filter(BackupCompressionJobVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter filter = new Filter(NativeBackupServiceJobVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        return backupCompressionJobDao.searchAndCount(sc, filter, removed);
+        return nativeBackupServiceJobDao.searchAndCount(sc, filter, removed);
     }
 
     @Override

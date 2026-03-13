@@ -73,11 +73,13 @@ public interface UserVmService {
     /**
      * Destroys one virtual machine
      *
-     * @param cmd the API Command Object containg the parameters to use for this service action
+     * @param cmd
+     *         the API Command Object containg the parameters to use for this service action
+     * @param checkExpunge
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    UserVm destroyVm(DestroyVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
+    UserVm destroyVm(DestroyVMCmd cmd, boolean checkExpunge) throws ResourceUnavailableException, ConcurrentOperationException;
 
     /**
      * Destroys one virtual machine

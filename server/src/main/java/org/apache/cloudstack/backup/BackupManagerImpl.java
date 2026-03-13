@@ -43,6 +43,9 @@ import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.VmDiskInfo;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.cloud.utils.DomainHelper;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -58,7 +61,8 @@ import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
-import org.apache.cloudstack.api.command.user.backup.ListBackupCompressionJobsCmd;
+import org.apache.cloudstack.api.command.user.backup.DownloadValidationScreenshotCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
@@ -171,13 +175,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmDiskInfo;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -1857,7 +1858,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(CreateNativeBackupOfferingCmd.class);
         cmdList.add(ListNativeBackupOfferingsCmd.class);
         cmdList.add(DeleteNativeBackupOfferingCmd.class);
-        cmdList.add(ListBackupCompressionJobsCmd.class);
+        cmdList.add(DownloadValidationScreenshotCmd.class);
+        cmdList.add(ListBackupServiceJobsCmd.class);
         return cmdList;
     }
 
@@ -2417,6 +2419,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backup.getUncompressedSize() != null && backup.getUncompressedSize() > 0) {
             response.setUncompressedSize(backup.getUncompressedSize());
         }
+        response.setValidationStatus(backup.getValidationStatus());
         if (backup.getBackupScheduleId() != null) {
             BackupScheduleVO scheduleVO = backupScheduleDao.findById(backup.getBackupScheduleId());
             if (scheduleVO != null) {

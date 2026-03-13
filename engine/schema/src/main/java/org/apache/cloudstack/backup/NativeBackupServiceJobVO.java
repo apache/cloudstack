@@ -31,8 +31,8 @@ import javax.persistence.TemporalType;
 import java.util.Date;
 
 @Entity
-@Table(name = "backup_compression_job")
-public class BackupCompressionJobVO implements InternalIdentity, Comparable<BackupCompressionJobVO> {
+@Table(name = "native_backup_service_job")
+public class NativeBackupServiceJobVO implements InternalIdentity, Comparable<NativeBackupServiceJobVO> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,6 +45,9 @@ public class BackupCompressionJobVO implements InternalIdentity, Comparable<Back
     @Column(name = "instance_id")
     private long instanceId;
 
+    @Column(name = "account_id")
+    private long accountId;
+
     @Column(name = "host_id")
     private Long hostId;
 
@@ -55,7 +58,7 @@ public class BackupCompressionJobVO implements InternalIdentity, Comparable<Back
     private int attempts;
 
     @Column (name = "type")
-    private BackupCompressionJobType type;
+    private NativeBackupServiceJobType type;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -72,16 +75,22 @@ public class BackupCompressionJobVO implements InternalIdentity, Comparable<Back
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date removed;
 
-    public BackupCompressionJobVO() {
+    public NativeBackupServiceJobVO() {
     }
 
-    public BackupCompressionJobVO(long backupId, long zoneId, long instanceId, BackupCompressionJobType type) {
+    public NativeBackupServiceJobVO(long backupId, long zoneId, long instanceId, long accountId, NativeBackupServiceJobType type) {
         this.created = new Date();
         this.backupId = backupId;
         this.zoneId = zoneId;
         this.instanceId = instanceId;
+        this.accountId = accountId;
         this.type = type;
         this.scheduledStartTime = this.created;
+    }
+
+    public NativeBackupServiceJobVO(long backupId, long zoneId, long instanceId, long accountId, NativeBackupServiceJobType type, Date scheduledStartTime) {
+        this(backupId, zoneId, instanceId, accountId, type);
+        this.scheduledStartTime = scheduledStartTime;
     }
 
     @Override
@@ -95,6 +104,10 @@ public class BackupCompressionJobVO implements InternalIdentity, Comparable<Back
 
     public long getInstanceId() {
         return instanceId;
+    }
+
+    public long getAccountId() {
+        return accountId;
     }
 
     public Long getHostId() {
@@ -121,7 +134,7 @@ public class BackupCompressionJobVO implements InternalIdentity, Comparable<Back
         this.attempts = attempts;
     }
 
-    public BackupCompressionJobType getType() {
+    public NativeBackupServiceJobType getType() {
         return type;
     }
 
@@ -154,7 +167,7 @@ public class BackupCompressionJobVO implements InternalIdentity, Comparable<Back
     }
 
     @Override
-    public int compareTo(BackupCompressionJobVO that) {
+    public int compareTo(NativeBackupServiceJobVO that) {
         return this.created.compareTo(that.created);
     }
 

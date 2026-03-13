@@ -108,12 +108,16 @@ public class BackupVO implements Backup {
     @Column(name = "compression_status")
     private CompressionStatus compressionStatus;
 
+    @Column(name = "validation_status")
+    private ValidationStatus validationStatus;
+
     @Transient
     Map<String, String> details;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
         this.compressionStatus = CompressionStatus.Uncompressed;
+        this.validationStatus = ValidationStatus.NotValidated;
     }
 
     public BackupVO(String name, long vmId, long backupOfferingId, long accountId, long domainId, long zoneId, long virtualSize, Status status, Long backupScheduleId) {
@@ -129,6 +133,7 @@ public class BackupVO implements Backup {
         this.uuid = UUID.randomUUID().toString();
         this.backupScheduleId = backupScheduleId;
         this.compressionStatus = CompressionStatus.Uncompressed;
+        this.validationStatus = ValidationStatus.NotValidated;
     }
 
     @Override
@@ -311,12 +316,22 @@ public class BackupVO implements Backup {
         this.backupScheduleId = backupScheduleId;
     }
 
+    @Override
     public CompressionStatus getCompressionStatus() {
         return compressionStatus;
     }
 
     public void setCompressionStatus(CompressionStatus compressionStatus) {
         this.compressionStatus = compressionStatus;
+    }
+
+    @Override
+    public ValidationStatus getValidationStatus() {
+        return validationStatus;
+    }
+
+    public void setValidationStatus(ValidationStatus validationStatus) {
+        this.validationStatus = validationStatus;
     }
 
     public Long getUncompressedSize() {

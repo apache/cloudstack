@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.BaseResponse;
 
 import java.util.Date;
 
-public class BackupCompressionJobResponse extends BaseResponse {
+public class BackupServiceJobResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "Compression job ID.")
@@ -61,7 +61,7 @@ public class BackupCompressionJobResponse extends BaseResponse {
     @Param(description = "Compression job scheduled removed date.")
     private Date removed;
 
-    public BackupCompressionJobResponse(Long id, String backupId, String zoneId, Integer attempts, String type, Date startDate, Date scheduledDate, Date removed) {
+    public BackupServiceJobResponse(Long id, String backupId, String zoneId, Integer attempts, String type, Date startDate, Date scheduledDate, Date removed) {
         super("backupcompressionjob");
         this.id = id;
         this.backupId = backupId;

@@ -1001,7 +1001,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
                                     logger.debug("Successfully transitioned to start state for {} reservation id = {}", vm, work.getId());
                                     if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-                                        _resourceLimitMgr.incrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template);
+                                        _resourceLimitMgr.incrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template, null);
                                     }
                                     return new Ternary<>(vm, context, work);
                                 }
@@ -1676,7 +1676,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             long hostId = vm.getHostId();
             if (startedVm == null) {
                 if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-                    _resourceLimitMgr.decrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template);
+                    _resourceLimitMgr.decrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template, null);
                 }
                 if (canRetry) {
                     try {
@@ -2602,7 +2602,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (result && VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
                         ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
                         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-                        _resourceLimitMgr.decrementVmResourceCount(vm.getAccountId(), vm.isDisplay(), offering, template);
+                        _resourceLimitMgr.decrementVmResourceCount(vm.getAccountId(), vm.isDisplay(), offering, template, null);
                     }
                     return result;
                 }

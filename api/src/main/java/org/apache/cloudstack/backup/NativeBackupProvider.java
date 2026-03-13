@@ -18,10 +18,13 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.storage.Volume;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 import org.apache.cloudstack.framework.config.ConfigKey;
+
+import java.util.Set;
 
 public interface NativeBackupProvider extends BackupProvider {
     String VM_WORK_JOB_HANDLER = NativeBackupService.class.getSimpleName();
@@ -38,6 +41,9 @@ public interface NativeBackupProvider extends BackupProvider {
 
     ConfigKey<Integer> backupCompressionRateLimit = new ConfigKey<>("Advanced", Integer.class, "backup.compression.rate.limit", "0", "Limit the compression rate to " +
             "this configuration's value (in MB/s). Values lower than 1 disable the limit.", true, ConfigKey.Scope.Cluster);
+
+    ConfigKey<Integer> backupValidationTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.validation.timeout", "3600", "Backup validation job timeout (in " +
+            "seconds). Will only start counting once the backup validation async job actually starts.", true, ConfigKey.Scope.Cluster);
 
     /**
      * Actually execute the backup after being queued.
@@ -96,6 +102,10 @@ public interface NativeBackupProvider extends BackupProvider {
         return false;
     }
 
+    default boolean validateBackup(long backupId, long hostId) {
+        return false;
+    }
+
     /**
      * This method should be overwritten by any native backup providers that allow volume detach but need to prepare it beforehand.
      * */
@@ -112,6 +122,10 @@ public interface NativeBackupProvider extends BackupProvider {
      * This method should be overwritten by any native backup providers that must update metadata regarding a volume after certain operations (such as after a volume migration).
      * */
     default void updateVolumeId(VirtualMachine virtualMachine, long oldVolumeId, long newVolumeId) {
+    }
+
+    default Set<String> getSecondaryStorageUrls(UserVm userVm) {
+        return Set.of();
     }
 
     /**

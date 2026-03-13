@@ -136,6 +136,7 @@ export default {
         case 'managed':
         case 'yes':
         case 'compressed':
+        case 'valid':
           status = 'success'
           break
         case 'alert':
@@ -152,6 +153,8 @@ export default {
         case 'failed':
         case 'unmanaged':
         case 'no':
+        case 'notvalid':
+        case 'unabletovalidate':
         case 'compressionerror':
           status = 'error'
           break
@@ -161,6 +164,7 @@ export default {
         case 'stopping':
         case 'upgrading':
         case 'inprogress':
+        case 'validating':
         case 'compressing':
           status = 'processing'
           break

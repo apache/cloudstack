@@ -1096,7 +1096,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 VolumeVO finalVolume = volume;
                 logger.trace("Decrementing volume resource count for account {} as volume failed to create on the backend", () -> _accountMgr.getAccount(finalVolume.getAccountId()));
                 _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), cmd.getDisplayVolume(),
-                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
+                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), null);
             }
         }
     }
@@ -1644,7 +1644,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * Otherwise, after the removal in the database, we will try to remove the volume from both primary and secondary storage.
      */
     public boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException {
-        Volume volume = destroyVolume(volumeId, caller, true, true);
+        Volume volume = destroyVolume(volumeId, caller, true, true, null);
         return (volume != null);
     }
 
@@ -1817,7 +1817,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DESTROY, eventDescription = "destroying a volume")
-    public Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge) {
+    public Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge, Boolean enforceResourceLimitOnDisplayFalse) {
         VolumeVO volume = retrieveAndValidateVolume(volumeId, caller);
 
         validateDestroyVolume(volume, caller, expunge, forceExpunge);
@@ -1836,7 +1836,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     return null;
                 }
                 _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(),
-                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
+                        volume.getSize(), _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), enforceResourceLimitOnDisplayFalse);
                 return volume;
             }
             if (!deleteVolumeFromStorage(volume, caller)) {
@@ -3008,7 +3008,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // Update only when the flag has changed.
         if (displayVolume != null && displayVolume != volume.isDisplayVolume()) {
             if (Boolean.FALSE.equals(displayVolume)) {
-                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
+                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()), null);
             } else {
                 _resourceLimitMgr.incrementVolumeResourceCount(volume.getAccountId(), true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()));
             }
@@ -4365,7 +4365,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
         DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
         _resourceLimitMgr.decrementVolumeResourceCount(oldAccount.getAccountId(), true, volume.getSize(),
-                diskOfferingVO);
+                diskOfferingVO, null);
 
         volume.setAccountId(newAccount.getAccountId());
         volume.setDomainId(newAccount.getDomainId());

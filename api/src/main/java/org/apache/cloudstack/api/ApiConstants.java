@@ -572,6 +572,7 @@ public class ApiConstants {
     public static final String STATS = "stats";
     public static final String STATUS = "status";
     public static final String COMPRESSION_STATUS = "compressionstatus";
+    public static final String VALIDATION_STATUS = "validationstatus";
     public static final String STORAGE_TYPE = "storagetype";
     public static final String STORAGE_POLICY = "storagepolicy";
     public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
@@ -1388,6 +1389,8 @@ public class ApiConstants {
     public static final String COMPRESS = "compress";
 
     public static final String VALIDATE = "validate";
+
+    public static final String VALIDATION_STEPS = "validationsteps";
 
     public static final String ALLOW_QUICK_RESTORE = "allowquickrestore";
 

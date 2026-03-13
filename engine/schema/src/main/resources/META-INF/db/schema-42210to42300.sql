@@ -132,6 +132,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_offering` (
     `name` varchar(255) NOT NULL,
     `compress` tinyint(1) UNSIGNED NOT NULL,
     `validate` tinyint(1) UNSIGNED NOT NULL,
+    `validation_steps` varchar(255),
     `allow_quick_restore` tinyint(1) UNSIGNED NOT NULL,
     `allow_extract_file` tinyint(1) UNSIGNED NOT NULL,
     `backup_chain_size` INT,
@@ -141,10 +142,11 @@ CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_offering` (
     PRIMARY KEY (`id`)
     );
 
-CREATE TABLE IF NOT EXISTS `cloud`.`backup_compression_job` (
+CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_service_job` (
     `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
     `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
     `instance_id` bigint unsigned NOT NULL COMMENT 'The instance ID. Foreign key that points to the vm_instance table.',
+    `account_id` bigint unsigned COMMENT 'Account ID of the owner of the VM.',
     `host_id` bigint unsigned COMMENT 'The host ID that is executing the compression. Foreign key that points to the host table.',
     `zone_id` bigint unsigned NOT NULL COMMENT 'The zone ID of the where the VM is. Foreign key that points to the data_center table',
     `attempts` int(32) unsigned NOT NULL DEFAULT 0,
@@ -162,4 +164,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_compression_job` (
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'uncompressed_size', 'bigint unsigned');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'compression_status', 'varchar(55)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'validation_status', 'varchar(55)');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'isolated', 'TINYINT(1) NOT NULL DEFAULT 0 COMMENT "Whether the scheduled backups will be isolated or not."');
+
+UPDATE `cloud`.`configuration` SET `value`=CONCAT(`value`, ', backupValidationCommandTimeout, backupValidationScreenshotWait, backupValidationBootTimeout')
+WHERE `name`='user.vm.readonly.details' AND `value` IS NOT NULL;

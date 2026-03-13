@@ -55,6 +55,9 @@ public class NativeBackupOfferingVO implements NativeBackupOffering {
     @Column (name = "validate")
     private boolean validate;
 
+    @Column (name = "validation_steps")
+    private String validationSteps;
+
     @Column(name = "allow_quick_restore")
     private boolean allowQuickRestore;
 
@@ -78,11 +81,12 @@ public class NativeBackupOfferingVO implements NativeBackupOffering {
         this.compressionLibrary = Backup.CompressionLibrary.zstd;
     }
 
-    public NativeBackupOfferingVO(String name, boolean compress, boolean validate, boolean allowQuickRestore, boolean allowExtractFile, Integer backupChainSize, Backup.CompressionLibrary compressionLibrary) {
+    public NativeBackupOfferingVO(String name, boolean compress, boolean validate, String validationSteps, boolean allowQuickRestore, boolean allowExtractFile, Integer backupChainSize, Backup.CompressionLibrary compressionLibrary) {
         this();
         this.name = name;
         this.compress = compress;
         this.validate = validate;
+        this.validationSteps = validationSteps;
         this.allowQuickRestore = allowQuickRestore;
         this.allowExtractFile = allowExtractFile;
         this.backupChainSize = backupChainSize;
@@ -141,6 +145,11 @@ public class NativeBackupOfferingVO implements NativeBackupOffering {
     @Override
     public boolean isValidate() {
         return validate;
+    }
+
+    @Override
+    public String getValidationSteps() {
+        return validationSteps;
     }
 
     @Override

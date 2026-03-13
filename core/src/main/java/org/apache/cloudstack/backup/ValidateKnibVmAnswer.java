@@ -16,6 +16,31 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
-public enum BackupCompressionJobType {
-    StartCompression, FinalizeCompression
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+
+public class ValidateKnibVmAnswer extends Answer {
+
+    private boolean bootValidated;
+    private String screenshotPath;
+    private String scriptResult;
+
+    public ValidateKnibVmAnswer(Command command, boolean bootValidated, String screenshotPath, String scriptResult) {
+        super(command);
+        this.bootValidated = bootValidated;
+        this.screenshotPath = screenshotPath;
+        this.scriptResult = scriptResult;
+    }
+
+    public boolean isBootValidated() {
+        return bootValidated;
+    }
+
+    public String getScreenshotPath() {
+        return screenshotPath;
+    }
+
+    public String getScriptResult() {
+        return scriptResult;
+    }
 }

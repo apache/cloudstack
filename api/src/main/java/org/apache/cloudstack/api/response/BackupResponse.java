@@ -83,6 +83,10 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "backup compression status")
     private Backup.CompressionStatus compressionStatus;
 
+    @SerializedName(ApiConstants.VALIDATION_STATUS)
+    @Param(description = "backup validation status")
+    private Backup.ValidationStatus validationStatus;
+
     @SerializedName(ApiConstants.VOLUMES)
     @Param(description = "Backed up volumes")
     private String volumes;
@@ -237,6 +241,14 @@ public class BackupResponse extends BaseResponse {
 
     public void setCompressionStatus(Backup.CompressionStatus compressionStatus) {
         this.compressionStatus = compressionStatus;
+    }
+
+    public Backup.ValidationStatus getValidationStatus() {
+        return validationStatus;
+    }
+
+    public void setValidationStatus(Backup.ValidationStatus validationStatus) {
+        this.validationStatus = validationStatus;
     }
 
     public String getVolumes() {

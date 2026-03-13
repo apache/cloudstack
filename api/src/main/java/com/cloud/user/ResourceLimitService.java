@@ -259,7 +259,7 @@ public interface ResourceLimitService {
     void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException;
 
     void incrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
-    void decrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
+    void decrementVolumeResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering, Boolean countDisplayFalseInResourceCount);
 
     void updateVmResourceCountForTemplateChange(long accountId, Boolean display, ServiceOffering offering, VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate);
 
@@ -274,8 +274,8 @@ public interface ResourceLimitService {
     void incrementVolumePrimaryStorageResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
     void decrementVolumePrimaryStorageResourceCount(long accountId, Boolean display, Long size, DiskOffering diskOffering);
     void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) throws ResourceAllocationException;
-    void incrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template);
-    void decrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template);
+    void incrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Boolean countDisplayFalseInResourceLimit);
+    void decrementVmResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Boolean countDisplayFalseInResourceCount);
 
     void checkVmResourceLimitsForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering, VirtualMachineTemplate template) throws ResourceAllocationException;

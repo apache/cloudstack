@@ -2181,7 +2181,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                     volService.destroyVolume(volume.getId());
                                     // decrement volume resource count
                                     _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplayVolume(),
-                                            null, _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
+                                            null, _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()), null);
                                     // expunge volume from secondary if volume is on image store
                                     VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
                                     if (volOnSecondary != null) {

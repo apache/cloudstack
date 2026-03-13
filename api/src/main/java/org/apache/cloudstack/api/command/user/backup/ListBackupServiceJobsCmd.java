@@ -27,17 +27,17 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupCompressionJobResponse;
+import org.apache.cloudstack.api.response.BackupServiceJobResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-@APICommand(name = "listBackupCompressionJobs", description = "List backup compression jobs", responseObject = BackupCompressionJobResponse.class,
+@APICommand(name = "listBackupServiceJobs", description = "List backup service jobs", responseObject = BackupServiceJobResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin}, since = "4.23.0")
-public class ListBackupCompressionJobsCmd extends BaseListCmd {
+public class ListBackupServiceJobsCmd extends BaseListCmd {
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, entityType = BackupCompressionJobResponse.class, description = "List only job with given ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, entityType = BackupServiceJobResponse.class, description = "List only job with given ID.")
     private Long id;
 
     @Parameter(name = ApiConstants.BACKUP_ID, type = CommandType.UUID, entityType = BackupResponse.class, description = "List jobs for the given backup.")
@@ -49,7 +49,8 @@ public class ListBackupCompressionJobsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "List jobs in the given zone.")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "List jobs with the given type. Accepted values are Start and Finalize.")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "List jobs with the given type. Accepted values are StartCompression, FinalizeCompression and " +
+            "BackupValidation.")
     private String type;
 
     @Parameter(name = ApiConstants.EXECUTING, type = CommandType.BOOLEAN, description = "List executing jobs.")
@@ -97,7 +98,7 @@ public class ListBackupCompressionJobsCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
-        ListResponse<BackupCompressionJobResponse> response = _queryService.listBackupCompressionJobs(this);
+        ListResponse<BackupServiceJobResponse> response = _queryService.listBackupServiceJobs(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

@@ -21,13 +21,16 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections4.CollectionUtils;
 import org.libvirt.Connect;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.LibvirtException;
@@ -64,7 +67,9 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
         Connect conn = null;
+        List<KVMStoragePool> secondaryStorages = new ArrayList<>();
         try {
+            mountSecondaryStoragesIfNeeded(command, libvirtComputingResource, secondaryStorages);
 
             vm = libvirtComputingResource.createVMFromSpec(vmSpec);
             conn = libvirtUtilitiesHelper.getConnectionByType(vm.getHvsType());
@@ -167,6 +172,17 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
         } finally {
             if (state != DomainState.VIR_DOMAIN_RUNNING) {
                 storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);
+                for (KVMStoragePool secondaryStorage : secondaryStorages) {
+                    libvirtComputingResource.getStoragePoolMgr().deleteStoragePool(secondaryStorage.getType(), secondaryStorage.getUuid());
+                }
+            }
+        }
+    }
+
+    private void mountSecondaryStoragesIfNeeded(StartCommand command, LibvirtComputingResource libvirtComputingResource, List<KVMStoragePool> secondaryStorages) {
+        if (CollectionUtils.isNotEmpty(command.getSecondaryStorages())) {
+            for (String secondaryStorageUrl : command.getSecondaryStorages()) {
+                secondaryStorages.add(libvirtComputingResource.getStoragePoolMgr().getStoragePoolByURI(secondaryStorageUrl));
             }
         }
     }

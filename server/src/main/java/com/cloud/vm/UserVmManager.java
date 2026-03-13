@@ -108,10 +108,15 @@ public interface UserVmManager extends UserVmService {
             "Comma separated list of allowed additional VM settings if VM instance settings are read from OVA.",
             true, ConfigKey.Scope.Zone, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
+    ConfigKey<Boolean> EnforceResourceLimitOnValidationVm = new ConfigKey<Boolean>(
+            "Advanced", Boolean.class, "enforce.resource.limit.on.backup.validation.vm", "false", "If set to true, validation VMs will be accounted in the resource limit of the " +
+            "account/domain.",true, ConfigKey.Scope.Account);
+
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
     public  static  final String CKS_NODE = "cksnode";
     public  static  final String SHAREDFSVM = "sharedfsvm";
+    String VALIDATION_VM = "validationvm";
 
     /**
      * @param hostId get all of the virtual machines that belong to one host.
@@ -199,4 +204,5 @@ public interface UserVmManager extends UserVmService {
 
     Boolean getDestroyRootVolumeOnVmDestruction(Long domainId);
 
+    UserVm allocateVMForValidation(long backupId, HypervisorType hypervisor) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException;
 }

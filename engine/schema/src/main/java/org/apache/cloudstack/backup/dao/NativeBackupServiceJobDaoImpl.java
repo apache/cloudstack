@@ -22,18 +22,18 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.backup.BackupCompressionJobType;
-import org.apache.cloudstack.backup.BackupCompressionJobVO;
+import org.apache.cloudstack.backup.NativeBackupServiceJobType;
+import org.apache.cloudstack.backup.NativeBackupServiceJobVO;
 
 import javax.annotation.PostConstruct;
 import java.util.Date;
 import java.util.List;
 
-public class BackupCompressionJobDaoImpl extends GenericDaoBase<BackupCompressionJobVO, Long> implements BackupCompressionJobDao {
-    private SearchBuilder<BackupCompressionJobVO> executingBeforeAndHostInSearch;
-    private SearchBuilder<BackupCompressionJobVO> scheduledAndNotStartedSearch;
+public class NativeBackupServiceJobDaoImpl extends GenericDaoBase<NativeBackupServiceJobVO, Long> implements NativeBackupServiceJobDao {
+    private SearchBuilder<NativeBackupServiceJobVO> executingBeforeAndHostInAndTypeInSearch;
+    private SearchBuilder<NativeBackupServiceJobVO> scheduledAndNotStartedSearch;
 
-    private SearchBuilder<BackupCompressionJobVO> executingAndZoneIdAndTypeSearch;
+    private SearchBuilder<NativeBackupServiceJobVO> executingAndZoneIdAndTypeSearch;
 
     private static final String HOST_ID = "host_id";
     private static final String TYPE = "type";
@@ -43,49 +43,53 @@ public class BackupCompressionJobDaoImpl extends GenericDaoBase<BackupCompressio
 
     @PostConstruct
     protected void init() {
-        executingBeforeAndHostInSearch = createSearchBuilder();
-        executingBeforeAndHostInSearch.and(HOST_ID, executingBeforeAndHostInSearch.entity().getHostId(), SearchCriteria.Op.IN);
-        executingBeforeAndHostInSearch.and(START_TIME, executingBeforeAndHostInSearch.entity().getStartTime(), SearchCriteria.Op.LTEQ);
-        executingBeforeAndHostInSearch.done();
+        executingBeforeAndHostInAndTypeInSearch = createSearchBuilder();
+        executingBeforeAndHostInAndTypeInSearch.and(HOST_ID, executingBeforeAndHostInAndTypeInSearch.entity().getHostId(), SearchCriteria.Op.IN);
+        executingBeforeAndHostInAndTypeInSearch.and(START_TIME, executingBeforeAndHostInAndTypeInSearch.entity().getStartTime(), SearchCriteria.Op.LTEQ);
+        executingBeforeAndHostInAndTypeInSearch.and(TYPE, executingBeforeAndHostInAndTypeInSearch.entity().getType(), SearchCriteria.Op.IN);
+        executingBeforeAndHostInAndTypeInSearch.done();
 
         scheduledAndNotStartedSearch = createSearchBuilder();
         scheduledAndNotStartedSearch.and(SCHEDULED, scheduledAndNotStartedSearch.entity().getScheduledStartTime(), SearchCriteria.Op.LTEQ);
         scheduledAndNotStartedSearch.and(START_TIME, scheduledAndNotStartedSearch.entity().getStartTime(), SearchCriteria.Op.NULL);
         scheduledAndNotStartedSearch.and(ZONE_ID, scheduledAndNotStartedSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        scheduledAndNotStartedSearch.and(TYPE, scheduledAndNotStartedSearch.entity().getType(), SearchCriteria.Op.IN);
         scheduledAndNotStartedSearch.done();
 
         executingAndZoneIdAndTypeSearch = createSearchBuilder();
         executingAndZoneIdAndTypeSearch.and(START_TIME, executingAndZoneIdAndTypeSearch.entity().getStartTime(), SearchCriteria.Op.NNULL);
         executingAndZoneIdAndTypeSearch.and(ZONE_ID, executingAndZoneIdAndTypeSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-        executingAndZoneIdAndTypeSearch.and(TYPE, executingAndZoneIdAndTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
+        executingAndZoneIdAndTypeSearch.and(TYPE, executingAndZoneIdAndTypeSearch.entity().getType(), SearchCriteria.Op.IN);
         executingAndZoneIdAndTypeSearch.done();
     }
 
     @Override
-    public List<BackupCompressionJobVO> listExecutingJobsByZoneIdAndJobType(long zoneId, BackupCompressionJobType type) {
-        SearchCriteria<BackupCompressionJobVO> sc = executingAndZoneIdAndTypeSearch.create();
-        sc.setParameters(TYPE, type);
+    public List<NativeBackupServiceJobVO> listExecutingJobsByZoneIdAndJobType(long zoneId, NativeBackupServiceJobType... jobTypes) {
+        SearchCriteria<NativeBackupServiceJobVO> sc = executingAndZoneIdAndTypeSearch.create();
+        sc.setParameters(TYPE, (Object[]) jobTypes);
         sc.setParameters(ZONE_ID, zoneId);
 
         return listBy(sc);
     }
 
     @Override
-    public List<BackupCompressionJobVO> listWaitingJobsAndScheduledToBeforeNow(long zoneId) {
-        SearchCriteria<BackupCompressionJobVO> sc = scheduledAndNotStartedSearch.create();
+    public List<NativeBackupServiceJobVO> listWaitingJobsAndScheduledToBeforeNow(long zoneId, NativeBackupServiceJobType... jobTypes) {
+        SearchCriteria<NativeBackupServiceJobVO> sc = scheduledAndNotStartedSearch.create();
 
         sc.setParameters(SCHEDULED, DateUtil.now());
         sc.setParameters(ZONE_ID, zoneId);
+        sc.setParameters(TYPE, (Object[]) jobTypes);
 
-        Filter filter = new Filter(BackupCompressionJobVO.class, "scheduledStartTime", true);
+        Filter filter = new Filter(NativeBackupServiceJobVO.class, "scheduledStartTime", true);
         return listBy(sc, filter);
     }
 
     @Override
-    public List<BackupCompressionJobVO> listExecutingJobsByHostsAndStartTimeBefore(Object[] hostIds, Date date) {
-        SearchCriteria<BackupCompressionJobVO> sc = executingBeforeAndHostInSearch.create();
+    public List<NativeBackupServiceJobVO> listExecutingJobsByHostsAndStartTimeBeforeAndTypeIn(Object[] hostIds, Date date, NativeBackupServiceJobType... jobTypes) {
+        SearchCriteria<NativeBackupServiceJobVO> sc = executingBeforeAndHostInAndTypeInSearch.create();
         sc.setParameters(HOST_ID, hostIds);
         sc.setParameters(START_TIME, date);
+        sc.setParameters(TYPE, (Object[]) jobTypes);
 
         return listBy(sc);
     }
@@ -93,7 +97,7 @@ public class BackupCompressionJobDaoImpl extends GenericDaoBase<BackupCompressio
 
     @Override
     @DB
-    public void update(BackupCompressionJobVO job) {
+    public void update(NativeBackupServiceJobVO job) {
         super.update(job.getId(), job);
     }
 }

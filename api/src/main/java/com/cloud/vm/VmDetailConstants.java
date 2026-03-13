@@ -132,4 +132,10 @@ public interface VmDetailConstants {
 
     // KNIB specific
     String LINKED_VOLUMES_SECONDARY_STORAGE_UUIDS = "linkedVolumesSecondaryStorageUuids";
+    String VALIDATION_COMMAND = "backupValidationCommand";
+    String VALIDATION_COMMAND_ARGUMENTS = "backupValidationCommandArguments";
+    String VALIDATION_COMMAND_EXPECTED_RESULT = "backupValidationCommandExpectedResult";
+    String VALIDATION_COMMAND_TIMEOUT = "backupValidationCommandTimeout";
+    String VALIDATION_SCREENSHOT_WAIT = "backupValidationScreenshotWait";
+    String VALIDATION_BOOT_TIMEOUT = "backupValidationBootTimeout";
 }

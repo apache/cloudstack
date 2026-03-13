@@ -480,6 +480,9 @@
       <template v-if="column.key === 'compressionstatus'">
         <status :text="text ? text : ''" displayText />
       </template>
+      <template v-if="column.key === 'validationstatus'">
+        <status :text="text ? text : ''" displayText />
+      </template>
       <template v-if="column.key === 'allocationstate'">
         <status
           :text="text ? text : ''"

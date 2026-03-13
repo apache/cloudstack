@@ -17,19 +17,19 @@
 package org.apache.cloudstack.backup.dao;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.backup.BackupCompressionJobType;
-import org.apache.cloudstack.backup.BackupCompressionJobVO;
+import org.apache.cloudstack.backup.NativeBackupServiceJobType;
+import org.apache.cloudstack.backup.NativeBackupServiceJobVO;
 
 import java.util.Date;
 import java.util.List;
 
-public interface BackupCompressionJobDao extends GenericDao<BackupCompressionJobVO, Long> {
+public interface NativeBackupServiceJobDao extends GenericDao<NativeBackupServiceJobVO, Long> {
 
-    List<BackupCompressionJobVO> listExecutingJobsByZoneIdAndJobType(long zoneId, BackupCompressionJobType type);
+    List<NativeBackupServiceJobVO> listExecutingJobsByZoneIdAndJobType(long zoneId, NativeBackupServiceJobType... jobTypes);
 
-    List<BackupCompressionJobVO> listWaitingJobsAndScheduledToBeforeNow(long zoneId);
+    List<NativeBackupServiceJobVO> listWaitingJobsAndScheduledToBeforeNow(long zoneId, NativeBackupServiceJobType... jobTypes);
 
-    List<BackupCompressionJobVO> listExecutingJobsByHostsAndStartTimeBefore(Object[] hostIds, Date date);
+    List<NativeBackupServiceJobVO> listExecutingJobsByHostsAndStartTimeBeforeAndTypeIn(Object[] hostIds, Date date, NativeBackupServiceJobType... jobTypes);
 
-    void update(BackupCompressionJobVO job);
+    void update(NativeBackupServiceJobVO job);
 }

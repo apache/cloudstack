@@ -182,7 +182,7 @@ public interface VolumeApiService {
 
     boolean validateConditionsToReplaceDiskOfferingOfVolume(Volume volume, DiskOffering newDiskOffering, StoragePool destPool);
 
-    Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
+    Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge, Boolean countDisplayFalseInResourceCount);
 
     void destroyVolume(long volumeId);
 

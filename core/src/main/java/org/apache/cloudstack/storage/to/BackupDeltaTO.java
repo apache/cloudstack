@@ -31,6 +31,8 @@ public class BackupDeltaTO implements DataTO {
 
     private String path;
 
+    private String screenshotPath;
+
     private Storage.ImageFormat format;
 
     // When set, represents the Backup ID, not the delta ID.
@@ -80,6 +82,15 @@ public class BackupDeltaTO implements DataTO {
     public Storage.ImageFormat getFormat() {
         return this.format;
     }
+
+    public void setScreenshotPath(String screenshotPath) {
+        this.screenshotPath = screenshotPath;
+    }
+
+    public String getScreenshotPath() {
+        return screenshotPath;
+    }
+
     @Override
     public String toString() {
         return new ReflectionToStringBuilder(this, ToStringStyle.JSON_STYLE).setExcludeFieldNames("id").toString();

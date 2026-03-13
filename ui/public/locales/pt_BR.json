@@ -1722,6 +1722,7 @@
 "label.utilization": "Utiliza\u00e7\u00e3o",
 "label.uuid": "ID",
 "label.value": "Valor",
+"label.validationstatus": "Estado de valida\u00E7\u00E3o",
 "label.vcenter": "vcenter",
 "label.vcenter.datacenter": "Datacenter vCenter",
 "label.vcenter.datastore": "Datastore vCenter",
