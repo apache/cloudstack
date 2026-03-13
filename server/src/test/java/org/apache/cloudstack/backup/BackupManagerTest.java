@@ -1536,6 +1536,7 @@ public class BackupManagerTest {
         BackupVO backup = mock(BackupVO.class);
         when(backup.getVmId()).thenReturn(vmId);
         when(backup.getUuid()).thenReturn("backup-uuid");
+        when(backup.getZoneId()).thenReturn(1L);
         when(backupDao.findByIdIncludingRemoved(backupId)).thenReturn(backup);
 
         VMInstanceVO vm = mock(VMInstanceVO.class);
@@ -1546,7 +1547,8 @@ public class BackupManagerTest {
         when(asyncJobManager.countPendingJobs("backup-uuid",
                 "org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd",
                 "org.apache.cloudstack.api.command.admin.vm.CreateVMFromBackupCmdByAdmin",
-                "org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd")).thenReturn(1L);
+                "org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd",
+                "org.apache.cloudstack.api.command.user.backup.RestoreVolumeFromBackupAndAttachToVMCmd")).thenReturn(1L);
 
         backupManager.deleteBackup(backupId, false);
     }
