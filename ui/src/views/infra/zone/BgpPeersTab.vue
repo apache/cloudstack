@@ -18,7 +18,7 @@
 <template>
   <a-spin :spinning="componentLoading">
     <a-alert
-      v-if="this.resource.ip4routing"
+      v-if="this.resource.ip4routing || this.resource.ip6routing"
       type="info">
       <template #message>
         <div v-html="$t('message.bgp.peers.null')" />
@@ -26,7 +26,7 @@
     </a-alert>
     <br>
     <a-button
-      v-if="!this.resource.ip4routing"
+      v-if="!(this.resource.ip4routing || this.resource.ip6routing)"
       :disabled="!('createBgpPeer' in $store.getters.apis)"
       type="primary"
       style="margin-bottom: 20px; width: 100%"
@@ -56,7 +56,7 @@
         <template v-if="column.key === 'project'">
           {{ record.project }}
         </template>
-        <template v-if="column.key === 'actions' && !this.resource.ip4routing">
+        <template v-if="column.key === 'actions' && !(this.resource.ip4routing || this.resource.ip6routing)">
           <div
             class="actions"
             style="text-align: right" >
@@ -103,7 +103,7 @@
       </template>
     </a-table>
     <a-pagination
-      v-if="!this.resource.ip4routing"
+      v-if="!(this.resource.ip4routing || this.resource.ip6routing)"
       class="row-element pagination"
       size="small"
       :current="bgpPeersPage"
@@ -318,7 +318,7 @@
 
     <br>
     <a-button
-      v-if="this.resource.ip4routing && this.$route.meta.name === 'guestnetwork'"
+      v-if="(this.resource.ip4routing || this.resource.ip6routing) && this.$route.meta.name === 'guestnetwork'"
       type="primary"
       style="margin-bottom: 20px; width: 100%"
       @click="() => { changeBgpPeersForNetworkModal = true }"
@@ -327,7 +327,7 @@
       {{ $t('label.change.bgp.peers') }}
     </a-button>
     <a-button
-      v-if="this.resource.ip4routing && this.$route.meta.name === 'vpc'"
+      v-if="(this.resource.ip4routing || this.resource.ip6routing) && this.$route.meta.name === 'vpc'"
       type="primary"
       style="margin-bottom: 20px; width: 100%"
       @click="() => { changeBgpPeersForVpcModal = true }"
@@ -474,7 +474,7 @@ export default {
       })
     },
     fetchData () {
-      if (this.resource.ip4routing) {
+      if (this.resource.ip4routing || this.resource.ip6routing) {
         this.bgpPeers = this.resource.bgppeers
       } else {
         this.fetchZoneBgpPeer()

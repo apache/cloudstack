@@ -165,6 +165,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "The IPv4 routing mode of VPC", since = "4.20.0")
     private String ipv4Routing;
 
+    @SerializedName(ApiConstants.IPV6_ROUTING)
+    @Param(description = "The Ipv6 routing type of VPC", since = "4.22.1")
+    private String ipv6Routing;
+
     @SerializedName(ApiConstants.IPV4_ROUTES)
     @Param(description = "The routes for the VPC to ease adding route in upstream router", since = "4.20.0")
     private Set<Ipv4RouteResponse> ipv4Routes;
@@ -310,6 +314,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
 
     public void addIpv4Route(Ipv4RouteResponse ipv4Route) {
         this.ipv4Routes.add(ipv4Route);
+    }
+
+    public void setIpv6Routing(String ipv6Routing) {
+        this.ipv6Routing = ipv6Routing;
     }
 
     public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {
