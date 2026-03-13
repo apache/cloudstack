@@ -819,7 +819,7 @@ public class VmwareHelper {
                 instance.setBootType(firmware.equalsIgnoreCase("efi") ? "UEFI" : "BIOS");
                 VirtualMachineBootOptions bootOptions = configInfo.getBootOptions();
                 String bootMode = "LEGACY";
-                if (bootOptions != null && bootOptions.isEfiSecureBootEnabled()) {
+                if (bootOptions != null && Boolean.TRUE.equals(bootOptions.isEfiSecureBootEnabled())) {
                     bootMode = "SECURE";
                 }
                 instance.setBootMode(bootMode);
