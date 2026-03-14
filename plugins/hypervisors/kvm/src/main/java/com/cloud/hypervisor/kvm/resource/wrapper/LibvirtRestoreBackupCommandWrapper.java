@@ -283,6 +283,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             KVMPhysicalDisk disk = null;
             if (createTargetVolume) {
                 if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
+                    if (size == null) {
+                        throw new CloudRuntimeException("Restore volume size is required for Linstor pool when creating target volume");
+                    }
                     disk = volumeStoragePool.createPhysicalDisk(volumeUuid, QemuImg.PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, size, null);
                 }
             } else {
@@ -293,7 +296,9 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 }
                 qemu.setSkipTargetVolumeCreation(true);
             }
-            logger.debug("Restoring volume: {}", disk.toString());
+            if (disk != null) {
+                logger.debug("Restoring volume: {}", disk.toString());
+            }
         } catch (LibvirtException ex) {
             throw new CloudRuntimeException("Failed to create qemu-img command to restore RBD volume with backup", ex);
         }
