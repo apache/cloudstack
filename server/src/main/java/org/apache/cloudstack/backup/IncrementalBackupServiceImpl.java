@@ -337,7 +337,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
         if (vm.getState() == State.Stopped) {
             String volumePath = getVolumePathForFileBasedBackend(volume);
-            startNBDServer(transferId, direction, backup.getHostId(), volume.getUuid(), volumePath);
+            startNBDServer(transferId, direction, backup.getHostId(), volume.getUuid(), volumePath, vm.getActiveCheckpointId());
             socket = transferId;
         }
 
@@ -393,7 +393,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
         return hosts.get(0);
     }
 
-    private void startNBDServer(String transferId, String direction, Long hostId, String exportName, String volumePath) {
+    private void startNBDServer(String transferId, String direction, Long hostId, String exportName, String volumePath, String checkpointId) {
         StartNBDServerAnswer nbdServerAnswer;
         if (hostId == null) {
             throw new CloudRuntimeException("Host cannot be determined for starting NBD server");
@@ -407,7 +407,8 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                 exportName,
                 volumePath,
                 transferId,
-                direction
+                direction,
+                checkpointId
         );
         try {
             nbdServerAnswer = (StartNBDServerAnswer) agentManager.send(hostId, nbdServerCmd);
@@ -457,7 +458,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
                     volumePath);
 
         } else {
-            startNBDServer(transferId, direction, host.getId(), volume.getUuid(), volumePath);
+            startNBDServer(transferId, direction, host.getId(), volume.getUuid(), volumePath, null);
             imageTransfer = new ImageTransferVO(
                     transferId,
                     null,
@@ -486,7 +487,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
         if (!transferAnswer.getResult()) {
             if (!backend.equals(ImageTransfer.Backend.file)) {
-                stopNbdServer(imageTransfer);
+                stopNBDServer(imageTransfer);
             }
             throw new CloudRuntimeException("Failed to create image transfer: " + transferAnswer.getDetails());
         }
@@ -578,14 +579,14 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
         VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
         if (vm.getState() == State.Stopped) {
-            boolean stopNbdServerResult = stopNbdServer(imageTransfer);
+            boolean stopNbdServerResult = stopNBDServer(imageTransfer);
             if (!stopNbdServerResult) {
                 throw new CloudRuntimeException("Failed to stop the nbd server");
             }
         }
     }
 
-    private boolean stopNbdServer(ImageTransferVO imageTransfer) {
+    private boolean stopNBDServer(ImageTransferVO imageTransfer) {
         String transferId = imageTransfer.getUuid();
         String direction = imageTransfer.getDirection().toString();
         StopNBDServerCommand stopNbdServerCommand = new StopNBDServerCommand(transferId, direction);
@@ -602,7 +603,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
     private void finalizeUploadImageTransfer(ImageTransferVO imageTransfer) {
         String transferId = imageTransfer.getUuid();
 
-        boolean stopNbdServerResult = stopNbdServer(imageTransfer);
+        boolean stopNbdServerResult = stopNBDServer(imageTransfer);
         if (!stopNbdServerResult) {
             throw new CloudRuntimeException("Failed to stop the nbd server");
         }

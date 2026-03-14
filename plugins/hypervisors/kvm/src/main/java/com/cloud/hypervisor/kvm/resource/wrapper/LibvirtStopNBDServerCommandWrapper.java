@@ -38,7 +38,8 @@ public class LibvirtStopNBDServerCommandWrapper extends CommandWrapper<StopNBDSe
         resetScript.execute();
     }
 
-    private Answer handleUpload(StopNBDServerCommand cmd) {
+    @Override
+    public Answer execute(StopNBDServerCommand cmd, LibvirtComputingResource resource) {
         try {
             String unitName = "qemu-nbd-" + cmd.getTransferId().hashCode();
 
@@ -66,19 +67,6 @@ public class LibvirtStopNBDServerCommandWrapper extends CommandWrapper<StopNBDSe
         } catch (Exception e) {
             logger.error("Error finalizing image transfer for upload", e);
             return new Answer(cmd, false, "Error finalizing image transfer: " + e.getMessage());
-        }
-    }
-
-    private Answer handleDownload(StopNBDServerCommand cmd) {
-        return new Answer(cmd, true, "Image transfer finalized");
-    }
-
-    @Override
-    public Answer execute(StopNBDServerCommand cmd, LibvirtComputingResource resource) {
-        if (cmd.getDirection().equals("download")) {
-            return handleDownload(cmd);
-        } else {
-            return handleUpload(cmd);
         }
     }
 }

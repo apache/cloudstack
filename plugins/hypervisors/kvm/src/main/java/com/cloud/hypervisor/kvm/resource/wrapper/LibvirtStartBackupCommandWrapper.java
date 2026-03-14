@@ -88,8 +88,8 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             script.add(backupCmd);
             String result = script.execute();
 
-//            backupXmlFile.delete();
-//            checkpointXmlFile.delete();
+            backupXmlFile.delete();
+            checkpointXmlFile.delete();
 
             if (result != null) {
                 return new StartBackupAnswer(cmd, false, "Backup begin failed: " + result);

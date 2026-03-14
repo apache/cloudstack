@@ -25,16 +25,18 @@ public class StartNBDServerCommand extends Command {
     private String volumePath;
     private String socket;
     private String direction;
+    private String fromCheckpointId;
 
     public StartNBDServerCommand() {
     }
 
-    protected StartNBDServerCommand(String transferId, String exportName, String volumePath, String socket, String direction) {
+    protected StartNBDServerCommand(String transferId, String exportName, String volumePath, String socket, String direction, String fromCheckpointId) {
         this.transferId = transferId;
         this.socket = socket;
         this.exportName = exportName;
         this.volumePath = volumePath;
         this.direction = direction;
+        this.fromCheckpointId = fromCheckpointId;
     }
 
     public String getExportName() {
@@ -60,5 +62,9 @@ public class StartNBDServerCommand extends Command {
 
     public String getDirection() {
         return direction;
+    }
+
+    public String getFromCheckpointId() {
+        return fromCheckpointId;
     }
 }

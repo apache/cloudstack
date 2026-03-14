@@ -134,7 +134,7 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
             payload.put("export", exportName);
             String checkpointId = cmd.getCheckpointId();
             if (checkpointId != null) {
-                payload.put("export_bitmap", exportName + "-" + checkpointId.substring(0, 4));
+                payload.put("export_bitmap", cmd.getCheckpointId());
             }
         }
 

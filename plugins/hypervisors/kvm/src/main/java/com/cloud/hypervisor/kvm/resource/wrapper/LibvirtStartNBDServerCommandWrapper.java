@@ -69,10 +69,11 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
 
         String socketName = "/tmp/imagetransfer/" + socket + ".sock";
         String systemdRunCmd = String.format(
-                "systemd-run --unit=%s --property=Restart=no qemu-nbd --export-name %s --socket %s --persistent %s %s",
+                "systemd-run --unit=%s --property=Restart=no qemu-nbd --export-name %s --socket %s --persistent %s %s %s",
                 unitName,
                 exportName,
                 socketName,
+                cmd.getFromCheckpointId() != null ? "-B " + cmd.getFromCheckpointId() : "",
                 cmd.getDirection().equals("download") ? "--read-only" : "",
                 volumePath
         );
