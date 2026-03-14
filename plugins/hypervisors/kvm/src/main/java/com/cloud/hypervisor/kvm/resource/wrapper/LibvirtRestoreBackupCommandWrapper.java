@@ -289,7 +289,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 if (Storage.StoragePoolType.Linstor.equals(volumePool.getPoolType())) {
                     storagePoolMgr.connectPhysicalDisk(volumePool.getPoolType(), volumePool.getUuid(), volumeUuid, null);
                 } else {
-                    disk = volumeStoragePool.getPhysicalDisk(getVolumeUuidFromPath(volumePath, volumePool));
+                    disk = volumeStoragePool.getPhysicalDisk(volumePath);
                 }
                 qemu.setSkipTargetVolumeCreation(true);
             }
