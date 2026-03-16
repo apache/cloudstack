@@ -397,4 +397,122 @@ public class OAuth2AuthManagerImplTest {
         }
     }
 
+    //  Multiple-domain OAuth tests
+
+    @Test
+    public void testSameProviderRegisteredInTwoDifferentDomains() {
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+
+        // Register github for domain 5
+        RegisterOAuthProviderCmd cmd1 = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd1.getProvider()).thenReturn("github");
+        when(cmd1.getDomainId()).thenReturn(5L);
+        when(cmd1.getSecretKey()).thenReturn("secret1");
+        when(_oauthProviderDao.findByProviderAndDomain("github", 5L)).thenReturn(null);
+        when(_oauthProviderDao.persist(Mockito.any(OauthProviderVO.class))).thenAnswer(i -> i.getArgument(0));
+
+        OauthProviderVO result1 = _authManager.registerOauthProvider(cmd1);
+        assertEquals("github", result1.getProvider());
+        assertEquals(Long.valueOf(5L), result1.getDomainId());
+
+        // Register github for domain 10 — should succeed independently
+        RegisterOAuthProviderCmd cmd2 = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd2.getProvider()).thenReturn("github");
+        when(cmd2.getDomainId()).thenReturn(10L);
+        when(cmd2.getSecretKey()).thenReturn("secret2");
+        when(_oauthProviderDao.findByProviderAndDomain("github", 10L)).thenReturn(null);
+
+        OauthProviderVO result2 = _authManager.registerOauthProvider(cmd2);
+        assertEquals("github", result2.getProvider());
+        assertEquals(Long.valueOf(10L), result2.getDomainId());
+    }
+
+    @Test
+    public void testSameProviderRegisteredGloballyAndForDomain() {
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+
+        // Global registration (domainId = null)
+        RegisterOAuthProviderCmd globalCmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(globalCmd.getProvider()).thenReturn("google");
+        when(globalCmd.getDomainId()).thenReturn(null);
+        when(_oauthProviderDao.findByProviderAndDomain("google", null)).thenReturn(null);
+        when(_oauthProviderDao.persist(Mockito.any(OauthProviderVO.class))).thenAnswer(i -> i.getArgument(0));
+
+        OauthProviderVO globalResult = _authManager.registerOauthProvider(globalCmd);
+        assertNull(globalResult.getDomainId());
+
+        // Domain-specific registration for same provider — should succeed (different scope)
+        RegisterOAuthProviderCmd domainCmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(domainCmd.getProvider()).thenReturn("google");
+        when(domainCmd.getDomainId()).thenReturn(7L);
+        when(_oauthProviderDao.findByProviderAndDomain("google", 7L)).thenReturn(null);
+
+        OauthProviderVO domainResult = _authManager.registerOauthProvider(domainCmd);
+        assertEquals(Long.valueOf(7L), domainResult.getDomainId());
+    }
+
+    @Test
+    public void testListOauthProvidersForDomainIncludesGlobalProviders() {
+        Long domainId = 5L;
+        OauthProviderVO globalGoogle = new OauthProviderVO();
+        globalGoogle.setProvider("google");
+        // domainId is null — global
+
+        OauthProviderVO domainGithub = new OauthProviderVO();
+        domainGithub.setProvider("github");
+        domainGithub.setDomainId(domainId);
+
+        OauthProviderVO otherDomainGoogle = new OauthProviderVO();
+        otherDomainGoogle.setProvider("google");
+        otherDomainGoogle.setDomainId(10L);
+
+        // listByDomainIncludingGlobal returns providers for domain 5 + global (not domain 10)
+        when(_oauthProviderDao.listByDomainIncludingGlobal(domainId))
+                .thenReturn(Arrays.asList(globalGoogle, domainGithub));
+
+        List<OauthProviderVO> result = _authManager.listOauthProviders(null, null, domainId);
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(p -> p.getDomainId() == null));         // global included
+        assertTrue(result.stream().anyMatch(p -> Long.valueOf(5L).equals(p.getDomainId()))); // domain-specific included
+        assertTrue(result.stream().noneMatch(p -> Long.valueOf(10L).equals(p.getDomainId()))); // other domain excluded
+    }
+
+    @Test
+    public void testListAllProvidersAcrossAllDomains() {
+        OauthProviderVO global = new OauthProviderVO();
+        global.setProvider("google");
+
+        OauthProviderVO domain5 = new OauthProviderVO();
+        domain5.setProvider("github");
+        domain5.setDomainId(5L);
+
+        OauthProviderVO domain10 = new OauthProviderVO();
+        domain10.setProvider("google");
+        domain10.setDomainId(10L);
+
+        when(_oauthProviderDao.listAll()).thenReturn(Arrays.asList(global, domain5, domain10));
+
+        List<OauthProviderVO> result = _authManager.listOauthProviders(null, null, null);
+        assertEquals(3, result.size());
+    }
+
+    @Test
+    public void testDuplicateGlobalProviderRejected() {
+        when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+        when(cmd.getProvider()).thenReturn("google");
+        when(cmd.getDomainId()).thenReturn(null);
+
+        OauthProviderVO existing = new OauthProviderVO();
+        existing.setProvider("google");
+        when(_oauthProviderDao.findByProviderAndDomain("google", null)).thenReturn(existing);
+
+        try {
+            _authManager.registerOauthProvider(cmd);
+            Assert.fail("Expected CloudRuntimeException was not thrown");
+        } catch (CloudRuntimeException e) {
+            assertEquals("Global provider with the name google is already registered", e.getMessage());
+        }
+    }
+
 }
