@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.driver;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeVO;
@@ -27,9 +28,6 @@ import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -38,6 +36,7 @@ import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.feign.model.Igroup;
 import org.apache.cloudstack.storage.feign.model.Lun;
 import org.apache.cloudstack.storage.service.UnifiedSANStrategy;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
@@ -65,7 +64,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -84,9 +82,6 @@ class OntapPrimaryDatastoreDriverTest {
 
     @Mock
     private PrimaryDataStoreDao storagePoolDao;
-
-    @Mock
-    private VMInstanceDao vmDao;
 
     @Mock
     private VolumeDao volumeDao;
@@ -172,7 +167,6 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePool.getId()).thenReturn(1L);
         when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
-        when(storagePool.getPath()).thenReturn("iqn.1992-08.com.netapp:sn.123456");
 
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(volumeDao.findById(100L)).thenReturn(volumeVO);
@@ -181,19 +175,19 @@ class OntapPrimaryDatastoreDriverTest {
         Lun mockLun = new Lun();
         mockLun.setName("/vol/vol1/lun1");
         mockLun.setUuid("lun-uuid-123");
-        CloudStackVolume mockCloudStackVolume = new CloudStackVolume();
-        mockCloudStackVolume.setLun(mockLun);
+        // Create request volume (returned by Utility.createCloudStackVolumeRequestByProtocol)
+        CloudStackVolume requestVolume = new CloudStackVolume();
+        requestVolume.setLun(mockLun);
+        // Create response volume (returned by sanStrategy.createCloudStackVolume)
+        CloudStackVolume responseVolume = new CloudStackVolume();
+        responseVolume.setLun(mockLun);
 
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(storagePoolDetails))
+            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(sanStrategy);
             utilityMock.when(() -> Utility.createCloudStackVolumeRequestByProtocol(
-                    any(), any(), any())).thenReturn(mockCloudStackVolume);
-            utilityMock.when(() -> Utility.getIgroupName(anyString(), anyString()))
-                    .thenReturn("igroup1");
-
-            when(sanStrategy.createCloudStackVolume(any())).thenReturn(mockCloudStackVolume);
-            when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
+                    any(), any(), any())).thenReturn(requestVolume);
+            when(sanStrategy.createCloudStackVolume(any())).thenReturn(responseVolume);
 
             // Execute
             driver.createAsync(dataStore, volumeInfo, createCallback);
@@ -356,10 +350,16 @@ class OntapPrimaryDatastoreDriverTest {
         when(volumeDao.findById(100L)).thenReturn(volumeVO);
         when(volumeVO.getId()).thenReturn(100L);
 
-        when(host.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
+        when(host.getName()).thenReturn("host1");
 
         VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, Constants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
         when(volumeDetailsDao.findDetail(100L, Constants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
+
+        // Mock AccessGroup with existing igroup
+        AccessGroup existingAccessGroup = new AccessGroup();
+        Igroup existingIgroup = new Igroup();
+        existingIgroup.setName("igroup1");
+        existingAccessGroup.setIgroup(existingIgroup);
 
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(storagePoolDetails))
@@ -367,8 +367,7 @@ class OntapPrimaryDatastoreDriverTest {
             utilityMock.when(() -> Utility.getIgroupName(anyString(), anyString()))
                     .thenReturn("igroup1");
 
-            when(sanStrategy.validateInitiatorInAccessGroup(anyString(), anyString(), anyString()))
-                    .thenReturn(true);
+            when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
             when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
 
             // Execute
@@ -377,14 +376,18 @@ class OntapPrimaryDatastoreDriverTest {
             // Verify
             assertTrue(result);
             verify(volumeDao).update(eq(100L), any(VolumeVO.class));
-            verify(sanStrategy).validateInitiatorInAccessGroup(anyString(), anyString(), anyString());
+            verify(sanStrategy).getAccessGroup(any());
             verify(sanStrategy).ensureLunMapped(anyString(), anyString(), anyString());
+            verify(sanStrategy, never()).validateInitiatorInAccessGroup(anyString(), anyString(), any(Igroup.class));
         }
     }
 
     @Test
-    void testGrantAccess_InitiatorNotInIgroup_ThrowsException() {
-        // Setup
+    void testGrantAccess_IgroupNotFound_CreatesNewIgroup() {
+        // Setup - use HostVO mock since production code casts Host to HostVO
+        HostVO hostVO = mock(HostVO.class);
+        when(hostVO.getName()).thenReturn("host1");
+
         when(dataStore.getId()).thenReturn(1L);
         when(dataStore.getUuid()).thenReturn("pool-uuid-123");
         when(volumeInfo.getType()).thenReturn(VOLUME);
@@ -393,14 +396,21 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePool.getId()).thenReturn(1L);
         when(storagePool.getScope()).thenReturn(ScopeType.CLUSTER);
+        when(storagePool.getPath()).thenReturn("iqn.1992-08.com.netapp:sn.123456");
+        when(storagePool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(volumeDao.findById(100L)).thenReturn(volumeVO);
         when(volumeVO.getId()).thenReturn(100L);
 
-        when(host.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
-
         VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, Constants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
         when(volumeDetailsDao.findDetail(100L, Constants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
+
+        // Mock getAccessGroup returning null (igroup doesn't exist)
+        AccessGroup createdAccessGroup = new AccessGroup();
+        Igroup createdIgroup = new Igroup();
+        createdIgroup.setName("igroup1");
+        createdAccessGroup.setIgroup(createdIgroup);
 
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(storagePoolDetails))
@@ -408,37 +418,49 @@ class OntapPrimaryDatastoreDriverTest {
             utilityMock.when(() -> Utility.getIgroupName(anyString(), anyString()))
                     .thenReturn("igroup1");
 
-            when(sanStrategy.validateInitiatorInAccessGroup(anyString(), anyString(), anyString()))
-                    .thenReturn(false);
+            when(sanStrategy.getAccessGroup(any())).thenReturn(null);
+            when(sanStrategy.createAccessGroup(any())).thenReturn(createdAccessGroup);
+            when(sanStrategy.ensureLunMapped(anyString(), anyString(), anyString())).thenReturn("0");
 
-            // Execute & Verify
-            CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
-                () -> driver.grantAccess(volumeInfo, host, dataStore));
+            // Execute
+            boolean result = driver.grantAccess(volumeInfo, hostVO, dataStore);
 
-            assertTrue(exception.getMessage().contains("is not present in iGroup"));
+            // Verify
+            assertTrue(result);
+            verify(sanStrategy).getAccessGroup(any());
+            verify(sanStrategy).createAccessGroup(any());
+            verify(sanStrategy).ensureLunMapped(anyString(), anyString(), anyString());
+            verify(volumeDao).update(eq(100L), any(VolumeVO.class));
         }
     }
 
     @Test
-    void testRevokeAccess_VolumeAttachedToRunningVM_SkipsRevoke() {
-        // Setup
+    void testRevokeAccess_NFSVolume_SkipsRevoke() {
+        // Setup - NFS volumes have no LUN mapping, so revokeAccess is a no-op
+        when(dataStore.getId()).thenReturn(1L);
         when(volumeInfo.getType()).thenReturn(VOLUME);
         when(volumeInfo.getId()).thenReturn(100L);
 
-        VolumeVO mockVolume = mock(VolumeVO.class);
-        when(mockVolume.getInstanceId()).thenReturn(200L);
-        when(volumeDao.findById(100L)).thenReturn(mockVolume);
+        when(volumeDao.findById(100L)).thenReturn(volumeVO);
+        when(volumeVO.getId()).thenReturn(100L);
+        when(volumeVO.getName()).thenReturn("test-volume");
 
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
-        when(vm.getInstanceName()).thenReturn("i-2-100-VM");
-        when(vmDao.findById(200L)).thenReturn(vm);
+        when(storagePoolDao.findById(1L)).thenReturn(storagePool);
+        when(storagePool.getId()).thenReturn(1L);
+        when(storagePool.getScope()).thenReturn(ScopeType.CLUSTER);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
+        when(host.getName()).thenReturn("host1");
 
-        // Execute
-        driver.revokeAccess(volumeInfo, host, dataStore);
+        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
+            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(storagePoolDetails))
+                    .thenReturn(sanStrategy);
 
-        // Verify - should skip revoke for running VM
-        verify(storagePoolDao, never()).findById(anyLong());
+            // Execute - NFS has no iSCSI protocol, so revokeAccessForVolume does nothing
+            driver.revokeAccess(volumeInfo, host, dataStore);
+
+            // Verify - no LUN unmap operations for NFS
+            verify(sanStrategy, never()).disableLogicalAccess(any());
+        }
     }
 
     @Test
@@ -450,13 +472,11 @@ class OntapPrimaryDatastoreDriverTest {
 
         when(volumeDao.findById(100L)).thenReturn(volumeVO);
         when(volumeVO.getId()).thenReturn(100L);
-        when(volumeVO.getInstanceId()).thenReturn(null);
         when(volumeVO.getName()).thenReturn("test-volume");
 
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePool.getId()).thenReturn(1L);
         when(storagePool.getScope()).thenReturn(ScopeType.CLUSTER);
-        when(storagePool.getUuid()).thenReturn("pool-uuid-123");
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
 
         when(host.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
@@ -499,7 +519,7 @@ class OntapPrimaryDatastoreDriverTest {
             when(sanStrategy.validateInitiatorInAccessGroup(
                 eq("iqn.1993-08.org.debian:01:host1"),
                 eq("svm1"),
-                eq("igroup1")
+                any(Igroup.class)
             )).thenReturn(true);
 
             doNothing().when(sanStrategy).disableLogicalAccess(argThat(map ->
@@ -514,7 +534,7 @@ class OntapPrimaryDatastoreDriverTest {
             // Verify
             verify(sanStrategy).getCloudStackVolume(any());
             verify(sanStrategy).getAccessGroup(any());
-            verify(sanStrategy).validateInitiatorInAccessGroup(anyString(), anyString(), anyString());
+            verify(sanStrategy).validateInitiatorInAccessGroup(anyString(), anyString(), any(Igroup.class));
             verify(sanStrategy).disableLogicalAccess(any());
         }
     }

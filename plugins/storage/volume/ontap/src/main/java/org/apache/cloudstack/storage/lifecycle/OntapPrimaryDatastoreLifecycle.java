@@ -120,7 +120,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             throw new CloudRuntimeException("Cluster Id or Pod Id is null, cannot create primary storage");
         }
 
-        if (podId == null && clusterId == null) {
+        if (podId == null) {
             if (zoneId != null) {
                 s_logger.info("Both Pod Id and Cluster Id are null, Primary storage pool will be associated with a Zone");
             } else {
@@ -231,7 +231,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                 path = Constants.SLASH + storagePoolName;
                 port = Constants.NFS3_PORT;
                 // Force NFSv3 for ONTAP managed storage to avoid NFSv4 ID mapping issues
-                details.put("nfsmountopts", "vers=3");
+                details.put(Constants.NFS_MOUNT_OPTIONS,Constants.NFS3_MOUNT_OPTIONS_VER_3);
                 s_logger.info("Setting NFS path for storage pool: " + path + ", port: " + port + " with mount option: vers=3");
                 break;
             case ISCSI:
@@ -268,22 +268,20 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
     public boolean attachCluster(DataStore dataStore, ClusterScope scope) {
         logger.debug("In attachCluster for ONTAP primary storage");
         if (dataStore == null) {
-            throw new InvalidParameterValueException("attachCluster: dataStore should not be null");
+            throw new InvalidParameterValueException(" dataStore should not be null");
         }
         if (scope == null) {
-            throw new InvalidParameterValueException("attachCluster: scope should not be null");
+            throw new InvalidParameterValueException(" scope should not be null");
         }
         List<String> hostsIdentifier = new ArrayList<>();
         StoragePoolVO storagePool = storagePoolDao.findById(dataStore.getId());
         if (storagePool == null) {
             s_logger.error("attachCluster : Storage Pool not found for id: " + dataStore.getId());
-            throw new CloudRuntimeException("attachCluster : Storage Pool not found for id: " + dataStore.getId());
+            throw new CloudRuntimeException(" Storage Pool not found for id: " + dataStore.getId());
         }
         PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)dataStore;
         List<HostVO> hostsToConnect = _resourceMgr.getEligibleUpAndEnabledHostsInClusterForStorageConnection(primaryStore);
-        // TODO- need to check if no host to connect then throw exception or just continue?
         logger.debug("attachCluster: Eligible Up and Enabled hosts: {} in cluster {}", hostsToConnect, primaryStore.getClusterId());
-
         Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(primaryStore.getId());
         StorageStrategy strategy = Utility.getStrategyByStoragePoolDetails(details);
 
@@ -294,22 +292,24 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             s_logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
-
         logger.debug("attachCluster: Attaching the pool to each of the host in the cluster: {}", primaryStore.getClusterId());
-        //TODO - check if no host to connect then also need to create access group without initiators
-        if (hostsIdentifier != null && hostsIdentifier.size() > 0) {
-            try {
-                AccessGroup accessGroupRequest = new AccessGroup();
-                accessGroupRequest.setHostsToConnect(hostsToConnect);
-                accessGroupRequest.setScope(scope);
-                primaryStore.setDetails(details);// setting details as it does not come from cloudstack
-                accessGroupRequest.setPrimaryDataStoreInfo(primaryStore);
-                strategy.createAccessGroup(accessGroupRequest);
-            } catch (Exception e) {
-                s_logger.error("attachCluster: Failed to create access group on storage system for cluster: " + primaryStore.getClusterId() + ". Exception: " + e.getMessage());
-                throw new CloudRuntimeException("Failed to create access group on storage system for cluster: " + primaryStore.getClusterId() + ". Exception: " + e.getMessage());
+        // We need to create export policy at pool level and igroup at host level(in grantAccess)
+        if (ProtocolType.NFS3.name().equalsIgnoreCase(details.get(Constants.PROTOCOL))) {
+            // If there are no eligible host, export policy or igroup will not be created and will be taken as part of HostListener
+            if (!hostsIdentifier.isEmpty()) {
+                try {
+                    AccessGroup accessGroupRequest = new AccessGroup();
+                    accessGroupRequest.setHostsToConnect(hostsToConnect);
+                    accessGroupRequest.setScope(scope);
+                    accessGroupRequest.setStoragePoolId(storagePool.getId());
+                    strategy.createAccessGroup(accessGroupRequest);
+                } catch (Exception e) {
+                    s_logger.error("attachCluster: Failed to create access group on storage system for cluster: " + primaryStore.getClusterId() + ". Exception: " + e.getMessage());
+                    throw new CloudRuntimeException("Failed to create access group on storage system for cluster: " + primaryStore.getClusterId() + ". Exception: " + e.getMessage());
+                }
             }
         }
+
         logger.debug("attachCluster: Attaching the pool to each of the host in the cluster: {}", primaryStore.getClusterId());
         for (HostVO host : hostsToConnect) {
             try {
@@ -332,27 +332,24 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
     public boolean attachZone(DataStore dataStore, ZoneScope scope, Hypervisor.HypervisorType hypervisorType) {
         logger.debug("In attachZone for ONTAP primary storage");
         if (dataStore == null) {
-            throw new InvalidParameterValueException("attachZone: dataStore should not be null");
+            throw new InvalidParameterValueException("dataStore should not be null");
         }
         if (scope == null) {
-            throw new InvalidParameterValueException("attachZone: scope should not be null");
+            throw new InvalidParameterValueException("scope should not be null");
         }
         List<String> hostsIdentifier = new ArrayList<>();
         StoragePoolVO storagePool = storagePoolDao.findById(dataStore.getId());
         if (storagePool == null) {
             s_logger.error("attachZone : Storage Pool not found for id: " + dataStore.getId());
-            throw new CloudRuntimeException("attachZone : Storage Pool not found for id: " + dataStore.getId());
+            throw new CloudRuntimeException("Storage Pool not found for id: " + dataStore.getId());
         }
 
         PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)dataStore;
         List<HostVO> hostsToConnect = _resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), Hypervisor.HypervisorType.KVM);
         logger.debug(String.format("In createPool. Attaching the pool to each of the hosts in %s.", hostsToConnect));
-
         Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(primaryStore.getId());
         StorageStrategy strategy = Utility.getStrategyByStoragePoolDetails(details);
 
-        // TODO- need to check if no host to connect then throw exception or just continue
-        logger.debug("attachZone: Eligible Up and Enabled hosts: {}", hostsToConnect);
         ProtocolType protocol = ProtocolType.valueOf(details.get(Constants.PROTOCOL));
         //TODO- Check if we have to handle heterogeneous host within the zone
         if (!validateProtocolSupportAndFetchHostsIdentifier(hostsToConnect, protocol, hostsIdentifier)) {
@@ -360,17 +357,21 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
             s_logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
-        if (hostsIdentifier != null && !hostsIdentifier.isEmpty()) {
-            try {
-                AccessGroup accessGroupRequest = new AccessGroup();
-                accessGroupRequest.setHostsToConnect(hostsToConnect);
-                accessGroupRequest.setScope(scope);
-                primaryStore.setDetails(details); // setting details as it does not come from cloudstack
-                accessGroupRequest.setPrimaryDataStoreInfo(primaryStore);
-                strategy.createAccessGroup(accessGroupRequest);
-            } catch (Exception e) {
-                s_logger.error("attachZone: Failed to create access group on storage system for zone with Exception: " + e.getMessage());
-                throw new CloudRuntimeException("Failed to create access group on storage system for zone with Exception: " + e.getMessage());
+
+        // We need to create export policy at pool level and igroup at host level
+        if (ProtocolType.NFS3.name().equalsIgnoreCase(details.get(Constants.PROTOCOL))) {
+            // If there are no eligible host, export policy or igroup will not be created and will be taken as part of HostListener
+            if (!hostsIdentifier.isEmpty()) {
+                try {
+                    AccessGroup accessGroupRequest = new AccessGroup();
+                    accessGroupRequest.setHostsToConnect(hostsToConnect);
+                    accessGroupRequest.setScope(scope);
+                    accessGroupRequest.setStoragePoolId(storagePool.getId());
+                    strategy.createAccessGroup(accessGroupRequest);
+                } catch (Exception e) {
+                    s_logger.error("attachZone: Failed to create access group on storage system for zone with Exception: " + e.getMessage());
+                    throw new CloudRuntimeException(" Failed to create access group on storage system for zone with Exception: " + e.getMessage());
+                }
             }
         }
         for (HostVO host : hostsToConnect) {
@@ -392,7 +393,8 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                 for (HostVO host : hosts) {
                     if (host == null || host.getStorageUrl() == null || host.getStorageUrl().trim().isEmpty()
                             || !host.getStorageUrl().startsWith(protocolPrefix)) {
-                        return false;
+                        // TODO we will inform customer through alert for excluded host because of protocol enabled on host
+                        continue;
                     }
                     hostIdentifiers.add(host.getStorageUrl());
                 }
@@ -403,7 +405,8 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                     if (host != null) {
                         ip =  host.getStorageIpAddress() != null ? host.getStorageIpAddress().trim() : "";
                         if (ip.isEmpty() && host.getPrivateIpAddress() != null || host.getPrivateIpAddress().trim().isEmpty()) {
-                            return false;
+                            // TODO we will inform customer through alert for excluded host because of protocol enabled on host
+                            continue;
                         } else {
                             ip = ip.isEmpty() ? host.getPrivateIpAddress().trim() : ip;
                         }
@@ -412,7 +415,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                 }
                 break;
             default:
-                throw new CloudRuntimeException("validateProtocolSupportAndFetchHostsIdentifier : Unsupported protocol: " + protocolType.name());
+                throw new CloudRuntimeException("Unsupported protocol: " + protocolType.name());
         }
         logger.info("validateProtocolSupportAndFetchHostsIdentifier: All hosts support the protocol: " + protocolType.name());
         return true;
@@ -485,7 +488,7 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                         storagePoolId, e.getMessage(), e);
             }
             AccessGroup accessGroup = new AccessGroup();
-            accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+            accessGroup.setStoragePoolId(storagePoolId);
             // Delete access groups associated with this storage pool
             storageStrategy.deleteAccessGroup(accessGroup);
             s_logger.info("deleteDataStore: Successfully deleted access groups for storage pool '{}'", storagePool.getName());

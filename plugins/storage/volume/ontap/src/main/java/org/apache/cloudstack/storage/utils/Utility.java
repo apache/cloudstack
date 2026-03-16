@@ -139,13 +139,14 @@ public class Utility {
         }
     }
 
-    public static String getIgroupName(String svmName, String poolUuid) {
-        //Igroup name format: cs_svmName_poolUuid
-        return Constants.CS + Constants.UNDERSCORE + svmName + Constants.UNDERSCORE + poolUuid;
+    public static String getIgroupName(String svmName, String hostName) {
+        //Igroup name format: cs_svmName_hostName
+        String sanitizedHostName = hostName.split("\\.")[0].replaceAll("[^a-zA-Z0-9_-]", "_");
+        return Constants.CS + Constants.UNDERSCORE + svmName + Constants.UNDERSCORE + sanitizedHostName;
     }
 
     public static String generateExportPolicyName(String svmName, String volumeName){
-        return Constants.EXPORT + Constants.HYPHEN + svmName + Constants.HYPHEN + volumeName;
+        return Constants.CS + Constants.HYPHEN + svmName + Constants.HYPHEN + volumeName;
     }
 
     public static String getLunName(String volName, String lunName) {

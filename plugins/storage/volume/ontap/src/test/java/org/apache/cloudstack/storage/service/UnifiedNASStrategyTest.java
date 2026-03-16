@@ -26,7 +26,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -261,7 +260,6 @@ public class UnifiedNASStrategyTest {
     public void testCreateAccessGroup_Success() throws Exception {
         // Setup
         AccessGroup accessGroup = mock(AccessGroup.class);
-        PrimaryDataStoreInfo primaryDataStoreInfo = mock(PrimaryDataStoreInfo.class);
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.VOLUME_UUID, "vol-uuid-123");
@@ -287,9 +285,9 @@ public class UnifiedNASStrategyTest {
         job.setState(Constants.JOB_SUCCESS);
         jobResponse.setJob(job);
 
-        when(accessGroup.getPrimaryDataStoreInfo()).thenReturn(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getId()).thenReturn(1L);
+        // Removed primaryDataStoreInfo mock - using storage pool ID directly
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+        when(accessGroup.getStoragePoolId()).thenReturn(1L);
         when(accessGroup.getHostsToConnect()).thenReturn(hosts);
         doNothing().when(nasFeignClient).createExportPolicy(anyString(), any(ExportPolicy.class));
         when(nasFeignClient.getExportPolicyResponse(anyString(), anyMap())).thenReturn(policyResponse);
@@ -312,7 +310,6 @@ public class UnifiedNASStrategyTest {
     @Test
     public void testCreateAccessGroup_FailedToCreatePolicy() {
         AccessGroup accessGroup = mock(AccessGroup.class);
-        PrimaryDataStoreInfo primaryDataStoreInfo = mock(PrimaryDataStoreInfo.class);
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.VOLUME_UUID, "vol-uuid-123");
@@ -323,8 +320,8 @@ public class UnifiedNASStrategyTest {
         when(host1.getStorageIpAddress()).thenReturn("10.0.0.1");
         hosts.add(host1);
 
-        when(accessGroup.getPrimaryDataStoreInfo()).thenReturn(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
+        // Removed primaryDataStoreInfo mock - using storage pool ID directly
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
         when(accessGroup.getHostsToConnect()).thenReturn(hosts);
         doThrow(new RuntimeException("Failed to create policy")).when(nasFeignClient)
             .createExportPolicy(anyString(), any(ExportPolicy.class));
@@ -338,7 +335,6 @@ public class UnifiedNASStrategyTest {
     @Test
     public void testCreateAccessGroup_FailedToVerifyPolicy() {
         AccessGroup accessGroup = mock(AccessGroup.class);
-        PrimaryDataStoreInfo primaryDataStoreInfo = mock(PrimaryDataStoreInfo.class);
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.VOLUME_UUID, "vol-uuid-123");
@@ -352,8 +348,8 @@ public class UnifiedNASStrategyTest {
         OntapResponse<ExportPolicy> emptyResponse = new OntapResponse<>();
         emptyResponse.setRecords(new ArrayList<>());
 
-        when(accessGroup.getPrimaryDataStoreInfo()).thenReturn(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
+        // Removed primaryDataStoreInfo mock - using storage pool ID directly
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
         when(accessGroup.getHostsToConnect()).thenReturn(hosts);
         doNothing().when(nasFeignClient).createExportPolicy(anyString(), any(ExportPolicy.class));
         when(nasFeignClient.getExportPolicyResponse(anyString(), anyMap())).thenReturn(emptyResponse);
@@ -369,7 +365,6 @@ public class UnifiedNASStrategyTest {
     @Test
     public void testCreateAccessGroup_JobFailure() throws Exception {
         AccessGroup accessGroup = mock(AccessGroup.class);
-        PrimaryDataStoreInfo primaryDataStoreInfo = mock(PrimaryDataStoreInfo.class);
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.VOLUME_UUID, "vol-uuid-123");
@@ -396,9 +391,9 @@ public class UnifiedNASStrategyTest {
         job.setMessage("Job failed");
         jobResponse.setJob(job);
 
-        when(accessGroup.getPrimaryDataStoreInfo()).thenReturn(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getId()).thenReturn(1L);
+        // Removed primaryDataStoreInfo mock - using storage pool ID directly
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+        when(accessGroup.getStoragePoolId()).thenReturn(1L);
         when(accessGroup.getHostsToConnect()).thenReturn(hosts);
         doNothing().when(nasFeignClient).createExportPolicy(anyString(), any(ExportPolicy.class));
         when(nasFeignClient.getExportPolicyResponse(anyString(), anyMap())).thenReturn(policyResponse);
@@ -414,7 +409,6 @@ public class UnifiedNASStrategyTest {
     @Test
     public void testCreateAccessGroup_HostWithPrivateIP() throws Exception {
         AccessGroup accessGroup = mock(AccessGroup.class);
-        PrimaryDataStoreInfo primaryDataStoreInfo = mock(PrimaryDataStoreInfo.class);
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.VOLUME_UUID, "vol-uuid-123");
@@ -441,9 +435,9 @@ public class UnifiedNASStrategyTest {
         job.setState(Constants.JOB_SUCCESS);
         jobResponse.setJob(job);
 
-        when(accessGroup.getPrimaryDataStoreInfo()).thenReturn(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getId()).thenReturn(1L);
+        // Removed primaryDataStoreInfo mock - using storage pool ID directly
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+        when(accessGroup.getStoragePoolId()).thenReturn(1L);
         when(accessGroup.getHostsToConnect()).thenReturn(hosts);
         doNothing().when(nasFeignClient).createExportPolicy(anyString(), any(ExportPolicy.class));
         when(nasFeignClient.getExportPolicyResponse(anyString(), anyMap())).thenReturn(policyResponse);
@@ -466,14 +460,13 @@ public class UnifiedNASStrategyTest {
     @Test
     public void testDeleteAccessGroup_Success() {
         AccessGroup accessGroup = mock(AccessGroup.class);
-        PrimaryDataStoreInfo primaryDataStoreInfo = mock(PrimaryDataStoreInfo.class);
         Map<String, String> details = new HashMap<>();
         details.put(Constants.EXPORT_POLICY_NAME, "export-policy-1");
         details.put(Constants.EXPORT_POLICY_ID, "1");
 
-        when(accessGroup.getPrimaryDataStoreInfo()).thenReturn(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getName()).thenReturn("storage-pool-1");
+        when(accessGroup.getStoragePoolId()).thenReturn(1L);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+        // Removed primaryDataStoreInfo.getName() - not used
         doNothing().when(nasFeignClient).deleteExportPolicyById(anyString(), anyString());
 
         // Execute
@@ -495,7 +488,7 @@ public class UnifiedNASStrategyTest {
     @Test
     public void testDeleteAccessGroup_NullPrimaryDataStoreInfo() {
         AccessGroup accessGroup = mock(AccessGroup.class);
-        when(accessGroup.getPrimaryDataStoreInfo()).thenReturn(null);
+        when(accessGroup.getStoragePoolId()).thenReturn(null);
 
         assertThrows(CloudRuntimeException.class, () -> {
             strategy.deleteAccessGroup(accessGroup);
@@ -506,14 +499,12 @@ public class UnifiedNASStrategyTest {
     @Test
     public void testDeleteAccessGroup_Failed() {
         AccessGroup accessGroup = mock(AccessGroup.class);
-        PrimaryDataStoreInfo primaryDataStoreInfo = mock(PrimaryDataStoreInfo.class);
         Map<String, String> details = new HashMap<>();
         details.put(Constants.EXPORT_POLICY_NAME, "export-policy-1");
         details.put(Constants.EXPORT_POLICY_ID, "1");
 
-        when(accessGroup.getPrimaryDataStoreInfo()).thenReturn(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getName()).thenReturn("storage-pool-1");
+        when(accessGroup.getStoragePoolId()).thenReturn(1L);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
         doThrow(new RuntimeException("Failed to delete")).when(nasFeignClient)
             .deleteExportPolicyById(anyString(), anyString());
 

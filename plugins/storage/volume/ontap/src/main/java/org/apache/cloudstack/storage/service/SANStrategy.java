@@ -19,9 +19,14 @@
 
 package org.apache.cloudstack.storage.service;
 
+import org.apache.cloudstack.storage.feign.model.Igroup;
+import org.apache.cloudstack.storage.feign.model.Initiator;
 import org.apache.cloudstack.storage.feign.model.OntapStorage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public abstract class SANStrategy extends StorageStrategy {
+    private static final Logger s_logger = LogManager.getLogger(SANStrategy.class);
     public SANStrategy(OntapStorage ontapStorage) {
         super(ontapStorage);
     }
@@ -43,8 +48,25 @@ public abstract class SANStrategy extends StorageStrategy {
      *
      * @param hostInitiator the host initiator IQN
      * @param svmName the SVM name
-     * @param accessGroupName the igroup name
+     * @param igroup the igroup
      * @return true if the initiator is found in the igroup, false otherwise
      */
-    public abstract boolean validateInitiatorInAccessGroup(String hostInitiator, String svmName, String accessGroupName);
+    public boolean validateInitiatorInAccessGroup(String hostInitiator, String svmName, Igroup igroup) {
+        s_logger.info("validateInitiatorInAccessGroup: Validating initiator [{}] is in igroup [{}] on SVM [{}]", hostInitiator, igroup, svmName);
+
+        if (hostInitiator == null || hostInitiator.isEmpty()) {
+            s_logger.warn("validateInitiatorInAccessGroup: host initiator is null or empty");
+            return false;
+        }
+        if (igroup.getInitiators() != null) {
+            for (Initiator initiator : igroup.getInitiators()) {
+                if (initiator.getName().equalsIgnoreCase(hostInitiator)) {
+                    s_logger.info("validateInitiatorInAccessGroup: Initiator [{}] validated successfully in igroup [{}]", hostInitiator, igroup);
+                    return true;
+                }
+            }
+        }
+        s_logger.warn("validateInitiatorInAccessGroup: Initiator [{}] NOT found in igroup [{}]", hostInitiator, igroup);
+        return false;
+    }
 }

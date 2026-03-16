@@ -19,11 +19,11 @@
 package org.apache.cloudstack.storage.service;
 
 import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
 import feign.FeignException;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.feign.client.SANFeignClient;
 import org.apache.cloudstack.storage.feign.model.Igroup;
 import org.apache.cloudstack.storage.feign.model.Initiator;
@@ -84,6 +84,9 @@ class UnifiedSANStrategyTest {
     @Mock
     private Scope scope;
 
+    @Mock
+    private StoragePoolDetailsDao storagePoolDetailsDao;
+
     private UnifiedSANStrategy unifiedSANStrategy;
     private String authHeader;
 
@@ -106,6 +109,11 @@ class UnifiedSANStrategyTest {
             java.lang.reflect.Field storageField = StorageStrategy.class.getDeclaredField("storage");
             storageField.setAccessible(true);
             storageField.set(unifiedSANStrategy, ontapStorage);
+
+            // Inject storagePoolDetailsDao
+            java.lang.reflect.Field storagePoolDetailsDaoField = UnifiedSANStrategy.class.getDeclaredField("storagePoolDetailsDao");
+            storagePoolDetailsDaoField.setAccessible(true);
+            storagePoolDetailsDaoField.set(unifiedSANStrategy, storagePoolDetailsDao);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -285,19 +293,18 @@ class UnifiedSANStrategyTest {
     void testCreateAccessGroup_Success() {
         // Setup
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+        accessGroup.setStoragePoolId(1L);
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
 
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
-        lenient().when(primaryDataStoreInfo.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
+        when(host1.getName()).thenReturn("host1");
         when(host1.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
@@ -311,7 +318,7 @@ class UnifiedSANStrategyTest {
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
+            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.createIgroup(eq(authHeader), eq(true), any(Igroup.class)))
@@ -339,19 +346,18 @@ class UnifiedSANStrategyTest {
     void testCreateAccessGroup_AlreadyExists_ReturnsSuccessfully() {
         // Setup
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+        accessGroup.setStoragePoolId(1L);
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
 
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
-        lenient().when(primaryDataStoreInfo.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
+        when(host1.getName()).thenReturn("host1");
         when(host1.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
@@ -362,7 +368,7 @@ class UnifiedSANStrategyTest {
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
+            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.createIgroup(eq(authHeader), eq(true), any(Igroup.class)))
@@ -380,10 +386,19 @@ class UnifiedSANStrategyTest {
     void testDeleteAccessGroup_Success() {
         // Setup
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+        accessGroup.setStoragePoolId(1L);
 
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
-        when(primaryDataStoreInfo.getClusterId()).thenReturn(10L);
+        Map<String, String> details = new HashMap<>();
+        details.put(Constants.SVM_NAME, "svm1");
+        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+
+        List<HostVO> hosts = new ArrayList<>();
+        HostVO host1 = mock(HostVO.class);
+        lenient().when(host1.getName()).thenReturn("host1");
+        hosts.add(host1);
+        accessGroup.setHostsToConnect(hosts);
 
         Igroup igroup = new Igroup();
         igroup.setName("igroup1");
@@ -402,11 +417,10 @@ class UnifiedSANStrategyTest {
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
+            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(response);
-            doNothing().when(sanFeignClient).deleteIgroup(eq(authHeader), eq("igroup-uuid-123"));
 
             // Execute
             unifiedSANStrategy.deleteAccessGroup(accessGroup);
@@ -420,9 +434,19 @@ class UnifiedSANStrategyTest {
     void testDeleteAccessGroup_NotFound_SkipsDeletion() {
         // Setup
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+        accessGroup.setStoragePoolId(1L);
 
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
+        Map<String, String> details = new HashMap<>();
+        details.put(Constants.SVM_NAME, "svm1");
+        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+
+        List<HostVO> hosts = new ArrayList<>();
+        HostVO host1 = mock(HostVO.class);
+        lenient().when(host1.getName()).thenReturn("host1");
+        hosts.add(host1);
+        accessGroup.setHostsToConnect(hosts);
 
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(404);
@@ -430,7 +454,7 @@ class UnifiedSANStrategyTest {
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
+            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenThrow(feignException);
@@ -707,21 +731,11 @@ class UnifiedSANStrategyTest {
         igroup.setName(accessGroupName);
         igroup.setInitiators(List.of(initiator));
 
-        OntapResponse<Igroup> response = new OntapResponse<>();
-        response.setRecords(List.of(igroup));
+        // Execute
+        boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, svmName, igroup);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
-
-            when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(response);
-
-            // Execute
-            boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, svmName, accessGroupName);
-
-            // Verify
-            assertTrue(result);
-        }
+        // Verify
+        assertTrue(result);
     }
 
     @Test
@@ -738,29 +752,25 @@ class UnifiedSANStrategyTest {
         igroup.setName(accessGroupName);
         igroup.setInitiators(List.of(differentInitiator));
 
-        OntapResponse<Igroup> response = new OntapResponse<>();
-        response.setRecords(List.of(igroup));
+        // Execute
+        boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, svmName, igroup);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
-
-            when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(response);
-
-            // Execute
-            boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, svmName, accessGroupName);
-
-            // Verify
-            assertFalse(result);
-        }
+        // Verify
+        assertFalse(result);
     }
 
     @Test
     void testValidateInitiatorInAccessGroup_EmptyInitiator_ReturnsFalse() {
-        boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup("", "svm1", "igroup1");
+        Igroup igroup = new Igroup();
+        String accessGroupName = "igroup1";
+        igroup.setName(accessGroupName);
+        Initiator differentInitiator = new Initiator();
+        differentInitiator.setName("iqn.1993-08.org.debian:01:host2");
+        igroup.setInitiators(List.of(differentInitiator));
+        boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup("", "svm1", igroup);
         assertFalse(result);
 
-        result = unifiedSANStrategy.validateInitiatorInAccessGroup(null, "svm1", "igroup1");
+        result = unifiedSANStrategy.validateInitiatorInAccessGroup(null, "svm1", igroup);
         assertFalse(result);
     }
 
@@ -769,21 +779,15 @@ class UnifiedSANStrategyTest {
         // Setup
         String hostInitiator = "iqn.1993-08.org.debian:01:host1";
 
-        OntapResponse<Igroup> response = new OntapResponse<>();
-        response.setRecords(new ArrayList<>());
+        Igroup emptyIgroup = new Igroup();
+        emptyIgroup.setName("igroup1");
+        emptyIgroup.setInitiators(null);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
+        // Execute
+        boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, "svm1", emptyIgroup);
 
-            when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(response);
-
-            // Execute
-            boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, "svm1", "igroup1");
-
-            // Verify
-            assertFalse(result);
-        }
+        // Verify
+        assertFalse(result);
     }
 
     @Test
@@ -842,8 +846,8 @@ class UnifiedSANStrategyTest {
     @Test
     void testCreateAccessGroup_NullDetails_ThrowsException() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getDetails()).thenReturn(null);
+        accessGroup.setStoragePoolId(1L);
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(null);
 
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.createAccessGroup(accessGroup));
@@ -852,8 +856,8 @@ class UnifiedSANStrategyTest {
     @Test
     void testCreateAccessGroup_EmptyDetails_ThrowsException() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getDetails()).thenReturn(new HashMap<>());
+        accessGroup.setStoragePoolId(1L);
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(new HashMap<>());
 
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.createAccessGroup(accessGroup));
@@ -862,74 +866,52 @@ class UnifiedSANStrategyTest {
     @Test
     void testCreateAccessGroup_NullHostsToConnect_ThrowsException() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+        accessGroup.setStoragePoolId(1L);
         accessGroup.setScope(scope);
-
-//        when(scope.getScopeType()).thenReturn(com.cloud.storage.ScopeType.CLUSTER);
 
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
 
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
-        lenient().when(primaryDataStoreInfo.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
         accessGroup.setHostsToConnect(null);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
-                    .thenReturn("igroup1");
-
-            assertThrows(CloudRuntimeException.class,
-                () -> unifiedSANStrategy.createAccessGroup(accessGroup));
-        }
+        assertThrows(CloudRuntimeException.class,
+            () -> unifiedSANStrategy.createAccessGroup(accessGroup));
     }
 
     @Test
     void testCreateAccessGroup_EmptyHostsToConnect_ThrowsException() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+        accessGroup.setStoragePoolId(1L);
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
 
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
-        lenient().when(primaryDataStoreInfo.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
         accessGroup.setHostsToConnect(new ArrayList<>());
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
-                    .thenReturn("igroup1");
-
-            assertThrows(CloudRuntimeException.class,
-                () -> unifiedSANStrategy.createAccessGroup(accessGroup));
-        }
+        assertThrows(CloudRuntimeException.class,
+            () -> unifiedSANStrategy.createAccessGroup(accessGroup));
     }
 
     @Test
     void testCreateAccessGroup_HostWithoutIQN_ThrowsException() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+        accessGroup.setStoragePoolId(1L);
         accessGroup.setScope(scope);
 
-        when(scope.getScopeType()).thenReturn(com.cloud.storage.ScopeType.CLUSTER);
+        lenient().when(scope.getScopeType()).thenReturn(com.cloud.storage.ScopeType.CLUSTER);
 
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
 
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
-        lenient().when(primaryDataStoreInfo.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
@@ -937,32 +919,23 @@ class UnifiedSANStrategyTest {
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
-                    .thenReturn("igroup1");
-
-            assertThrows(CloudRuntimeException.class,
-                () -> unifiedSANStrategy.createAccessGroup(accessGroup));
-        }
+        assertThrows(CloudRuntimeException.class,
+            () -> unifiedSANStrategy.createAccessGroup(accessGroup));
     }
 
     @Test
     void testCreateAccessGroup_HostWithNullStorageUrl_ThrowsException() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+        accessGroup.setStoragePoolId(1L);
         accessGroup.setScope(scope);
 
-        when(scope.getScopeType()).thenReturn(com.cloud.storage.ScopeType.CLUSTER);
+        lenient().when(scope.getScopeType()).thenReturn(com.cloud.storage.ScopeType.CLUSTER);
 
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
 
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
-        lenient().when(primaryDataStoreInfo.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
@@ -970,30 +943,21 @@ class UnifiedSANStrategyTest {
         hosts.add(host1);
         accessGroup.setHostsToConnect(hosts);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
-                    .thenReturn("igroup1");
-
-            assertThrows(CloudRuntimeException.class,
-                () -> unifiedSANStrategy.createAccessGroup(accessGroup));
-        }
+        assertThrows(CloudRuntimeException.class,
+            () -> unifiedSANStrategy.createAccessGroup(accessGroup));
     }
 
     @Test
     void testCreateAccessGroup_FeignExceptionNon409_ThrowsException() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+        accessGroup.setStoragePoolId(1L);
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
 
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
-        lenient().when(primaryDataStoreInfo.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
@@ -1008,7 +972,7 @@ class UnifiedSANStrategyTest {
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
+            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.createIgroup(eq(authHeader), eq(true), any(Igroup.class)))
@@ -1022,16 +986,14 @@ class UnifiedSANStrategyTest {
     @Test
     void testCreateAccessGroup_EmptyResponseRecords_ThrowsException() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
+        accessGroup.setStoragePoolId(1L);
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
         details.put(Constants.SVM_NAME, "svm1");
         details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
 
-        when(primaryDataStoreInfo.getDetails()).thenReturn(details);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
-        lenient().when(primaryDataStoreInfo.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM);
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
@@ -1045,7 +1007,7 @@ class UnifiedSANStrategyTest {
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
+            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.createIgroup(eq(authHeader), eq(true), any(Igroup.class)))
@@ -1072,8 +1034,19 @@ class UnifiedSANStrategyTest {
     @Test
     void testDeleteAccessGroup_EmptyIgroupUuid_ThrowsException() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
+        accessGroup.setStoragePoolId(1L);
+
+        Map<String, String> details = new HashMap<>();
+        details.put(Constants.SVM_NAME, "svm1");
+        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+
+        List<HostVO> hosts = new ArrayList<>();
+        HostVO host1 = mock(HostVO.class);
+        when(host1.getName()).thenReturn("host1");
+        hosts.add(host1);
+        accessGroup.setHostsToConnect(hosts);
 
         Igroup igroup = new Igroup();
         igroup.setName("igroup1");
@@ -1085,7 +1058,7 @@ class UnifiedSANStrategyTest {
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
+            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(response);
@@ -1098,8 +1071,19 @@ class UnifiedSANStrategyTest {
     @Test
     void testDeleteAccessGroup_FeignExceptionNon404_ThrowsException() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
+        accessGroup.setStoragePoolId(1L);
+
+        Map<String, String> details = new HashMap<>();
+        details.put(Constants.SVM_NAME, "svm1");
+        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+
+        lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+
+        List<HostVO> hosts = new ArrayList<>();
+        HostVO host1 = mock(HostVO.class);
+        when(host1.getName()).thenReturn("host1");
+        hosts.add(host1);
+        accessGroup.setHostsToConnect(hosts);
 
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(500);
@@ -1108,7 +1092,7 @@ class UnifiedSANStrategyTest {
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
+            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenThrow(feignException);
@@ -1397,21 +1381,11 @@ class UnifiedSANStrategyTest {
         igroup.setName(accessGroupName);
         igroup.setInitiators(null);
 
-        OntapResponse<Igroup> response = new OntapResponse<>();
-        response.setRecords(List.of(igroup));
+        // Execute
+        boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, svmName, igroup);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
-                    .thenReturn(authHeader);
-
-            when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(response);
-
-            // Execute
-            boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, svmName, accessGroupName);
-
-            // Verify
-            assertFalse(result);
-        }
+        // Verify
+        assertFalse(result);
     }
 
     // ============= Additional Test Cases for Complete Coverage =============
@@ -1725,7 +1699,9 @@ class UnifiedSANStrategyTest {
 
     @Test
     void testValidateInitiatorInAccessGroup_NullInitiator_ReturnsFalse() {
-        boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(null, "svm1", "igroup1");
+        Igroup igroup = new Igroup();
+        igroup.setName("igroup1");
+        boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(null, "svm1", igroup);
         assertFalse(result);
     }
 
@@ -1733,18 +1709,16 @@ class UnifiedSANStrategyTest {
     void testValidateInitiatorInAccessGroup_AccessGroupNotFound_ReturnsFalse() {
         String hostInitiator = "iqn.1993-08.org.debian:01:host1";
         String svmName = "svm1";
-        String accessGroupName = "igroup1";
 
-        OntapResponse<Igroup> emptyResponse = new OntapResponse<>();
-        emptyResponse.setRecords(new ArrayList<>());
+        Igroup igroup = new Igroup();
+        igroup.setName("igroup1");
+        igroup.setInitiators(null);
 
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
-            when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(emptyResponse);
-
-            boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, svmName, accessGroupName);
+            boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, svmName, igroup);
 
             assertFalse(result);
         }
@@ -1753,8 +1727,12 @@ class UnifiedSANStrategyTest {
     @Test
     void testDeleteAccessGroup_FeignException404_SkipsDeletion() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
+        accessGroup.setStoragePoolId(1L);
+        List<HostVO> hosts = new ArrayList<>();
+        HostVO host1 = mock(HostVO.class);
+        when(host1.getName()).thenReturn("host1");
+        hosts.add(host1);
+        accessGroup.setHostsToConnect(hosts);
 
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(404);
@@ -1762,7 +1740,7 @@ class UnifiedSANStrategyTest {
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
+            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenThrow(feignException);
@@ -1775,8 +1753,12 @@ class UnifiedSANStrategyTest {
     @Test
     void testDeleteAccessGroup_NotFoundInResponse_SkipsDeletion() {
         AccessGroup accessGroup = new AccessGroup();
-        accessGroup.setPrimaryDataStoreInfo(primaryDataStoreInfo);
-        when(primaryDataStoreInfo.getUuid()).thenReturn("pool-uuid-123");
+        accessGroup.setStoragePoolId(1L);
+        List<HostVO> hosts = new ArrayList<>();
+        HostVO host1 = mock(HostVO.class);
+        when(host1.getName()).thenReturn("host1");
+        hosts.add(host1);
+        accessGroup.setHostsToConnect(hosts);
 
         OntapResponse<Igroup> emptyResponse = new OntapResponse<>();
         emptyResponse.setRecords(new ArrayList<>());
@@ -1784,7 +1766,7 @@ class UnifiedSANStrategyTest {
         try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
             utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "pool-uuid-123"))
+            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(emptyResponse);

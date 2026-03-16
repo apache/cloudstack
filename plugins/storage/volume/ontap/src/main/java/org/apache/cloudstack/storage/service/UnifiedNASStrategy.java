@@ -29,7 +29,6 @@ import feign.FeignException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
@@ -140,7 +139,8 @@ public class UnifiedNASStrategy extends NASStrategy {
     @Override
     public AccessGroup createAccessGroup(AccessGroup accessGroup) {
         s_logger.info("createAccessGroup: Create access group {}: " , accessGroup);
-        Map<String, String> details = accessGroup.getPrimaryDataStoreInfo().getDetails();
+
+        Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(accessGroup.getStoragePoolId());
         String svmName = details.get(Constants.SVM_NAME);
         String volumeUUID = details.get(Constants.VOLUME_UUID);
         String volumeName = details.get(Constants.VOLUME_NAME);
@@ -153,9 +153,9 @@ public class UnifiedNASStrategy extends NASStrategy {
             // attach export policy to volume of storage pool
             assignExportPolicyToVolume(volumeUUID,createdPolicy.getName());
             // save the export policy details in storage pool details
-            storagePoolDetailsDao.addDetail(accessGroup.getPrimaryDataStoreInfo().getId(), Constants.EXPORT_POLICY_ID, String.valueOf(createdPolicy.getId()), true);
-            storagePoolDetailsDao.addDetail(accessGroup.getPrimaryDataStoreInfo().getId(), Constants.EXPORT_POLICY_NAME, createdPolicy.getName(), true);
-            s_logger.info("createAccessGroup: Successfully assigned exportPolicy {} to volume {}", policyRequest.getName(), volumeName);
+            storagePoolDetailsDao.addDetail(accessGroup.getStoragePoolId(), Constants.EXPORT_POLICY_ID, String.valueOf(createdPolicy.getId()), true);
+            storagePoolDetailsDao.addDetail(accessGroup.getStoragePoolId(), Constants.EXPORT_POLICY_NAME, createdPolicy.getName(), true);
+            s_logger.info("Successfully assigned exportPolicy {} to volume {}", policyRequest.getName(), volumeName);
             accessGroup.setPolicy(policyRequest);
             return accessGroup;
         }catch(Exception e){
@@ -172,18 +172,12 @@ public class UnifiedNASStrategy extends NASStrategy {
             throw new CloudRuntimeException("Invalid accessGroup object - accessGroup is null");
         }
 
-        // Get PrimaryDataStoreInfo from accessGroup
-        PrimaryDataStoreInfo primaryDataStoreInfo = accessGroup.getPrimaryDataStoreInfo();
-        if (primaryDataStoreInfo == null) {
-            throw new CloudRuntimeException("PrimaryDataStoreInfo is null in accessGroup");
-        }
-        s_logger.info("deleteAccessGroup: Deleting export policy for the storage pool {}", primaryDataStoreInfo.getName());
         try {
+            Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(accessGroup.getStoragePoolId());
             String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
-            String svmName = storage.getSvmName();
             // Determine export policy attached to the storage pool
-            String exportPolicyName = primaryDataStoreInfo.getDetails().get(Constants.EXPORT_POLICY_NAME);
-            String exportPolicyId = primaryDataStoreInfo.getDetails().get(Constants.EXPORT_POLICY_ID);
+            String exportPolicyName = details.get(Constants.EXPORT_POLICY_NAME);
+            String exportPolicyId = details.get(Constants.EXPORT_POLICY_ID);
 
             try {
                 nasFeignClient.deleteExportPolicyById(authHeader,exportPolicyId);
@@ -449,6 +443,7 @@ public class UnifiedNASStrategy extends NASStrategy {
            volume.setPoolId(Long.parseLong(dataStoreId));
            volume.setPath(volumeUuid);  // Filename for qcow2 file
            volumeDao.update(volume.getId(), volume);
+           s_logger.info("Updated volume path to {} for volume ID {}", volumeUuid, volumeId);
            return volumeUuid;
        }catch (Exception e){
            s_logger.error("updateCloudStackVolumeMetadata: Exception while updating volumeInfo: {} in volume: {}", dataStoreId, volumeInfo.getUuid(), e);

@@ -42,6 +42,8 @@ public class Constants {
     public static final String IS_DISAGGREGATED = "isDisaggregated";
     public static final String RUNNING = "running";
     public static final String EXPORT = "export";
+    public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
+    public static final String NFS3_MOUNT_OPTIONS_VER_3 = "vers=3";
 
     public static final int ONTAP_PORT = 443;
 
