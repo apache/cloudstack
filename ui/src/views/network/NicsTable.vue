@@ -71,6 +71,9 @@
           {{ $t('label.default') }}
         </a-tag>
       </template>
+      <template v-if="column.key === 'state'">
+        <status :text="text" /> {{ text }}
+      </template>
     </template>
   </a-table>
 </template>
@@ -78,6 +81,7 @@
 <script>
 import { getAPI } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import Status from '@/components/widgets/Status'
 
 export default {
   name: 'NicsTable',
@@ -92,7 +96,8 @@ export default {
     }
   },
   components: {
-    ResourceIcon
+    ResourceIcon,
+    Status
   },
   inject: ['parentFetchData'],
   data () {
@@ -123,6 +128,11 @@ export default {
         {
           title: this.$t('label.gateway'),
           dataIndex: 'gateway'
+        },
+        {
+          key: 'state',
+          title: this.$t('label.state'),
+          dataIndex: 'state'
         }
       ],
       networkicon: {},

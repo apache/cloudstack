@@ -1930,6 +1930,12 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public UserVm findUserVmByNicId(Long nicId) {
+        NicVO nic = ApiDBUtils.findNicById(nicId);
+        return ApiDBUtils.findUserVmById(nic.getInstanceId());
+    }
+
+    @Override
     public VolumeVO findVolumeById(Long volumeId) {
         return ApiDBUtils.findVolumeById(volumeId);
     }
@@ -4844,6 +4850,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             VpcVO vpc = _entityMgr.findByUuidIncludingRemoved(VpcVO.class, userVm.getVpcUuid());
             response.setVpcName(vpc.getName());
         }
+
+        response.setLinkState(result.getLinkState());
         return response;
     }
 

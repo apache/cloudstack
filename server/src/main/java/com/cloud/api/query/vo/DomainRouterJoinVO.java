@@ -37,6 +37,7 @@ import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.resource.ResourceState;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -273,6 +274,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     @Column(name = "mtu")
     private Integer mtu;
+
+    @Column(name = "nic_link_state")
+    private Nic.LinkState nicLinkState;
 
     public DomainRouterJoinVO() {
     }
@@ -576,5 +580,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     public Integer getMtu() {
         return mtu;
+    }
+
+    public Nic.LinkState getNicLinkState() {
+        return nicLinkState;
     }
 }

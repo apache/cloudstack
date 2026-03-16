@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.vm.Nic;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
 
@@ -275,6 +276,7 @@ public class BridgeVifDriver extends VifDriverBase {
         if (nic.getPxeDisable()) {
             intf.setPxeDisable(true);
         }
+        intf.setLinkStateUp(nic.getLinkState() == Nic.LinkState.Enabled);
 
         return intf;
     }
