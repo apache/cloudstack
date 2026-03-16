@@ -83,6 +83,7 @@ import com.vmware.vapi.internal.protocol.RestProtocol;
 import com.vmware.vapi.internal.protocol.client.rest.authn.BasicAuthenticationAppender;
 import com.vmware.vapi.protocol.HttpConfiguration;
 import com.vmware.vapi.std.errors.Error;
+import com.vmware.vapi.std.errors.NotFound;
 import org.apache.cloudstack.resource.NsxLoadBalancerMember;
 import org.apache.cloudstack.resource.NsxNetworkRule;
 import org.apache.cloudstack.utils.NsxControllerUtils;
@@ -96,9 +97,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toSet;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getServerPoolMemberName;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getServerPoolName;
 import static org.apache.cloudstack.utils.NsxControllerUtils.getServiceName;
@@ -656,9 +659,20 @@ public class NsxApiClient {
     public void createNsxLbServerPool(List<NsxLoadBalancerMember> memberList, String tier1GatewayName, String lbServerPoolName,
                                       String algorithm, String privatePort, String protocol) {
         try {
-            String activeMonitorPath = getLbActiveMonitorPath(lbServerPoolName, privatePort, protocol);
             List<LBPoolMember> members = getLbPoolMembers(memberList, tier1GatewayName);
             LbPools lbPools = (LbPools) nsxService.apply(LbPools.class);
+            Optional<LBPool> nsxLbServerPool = getNsxLbServerPool(lbPools, lbServerPoolName);
+            // Skip if pool exists and members unchanged
+            if (nsxLbServerPool.isPresent()) {
+                List<LBPoolMember> existingMembers = nsxLbServerPool
+                        .map(LBPool::getMembers)
+                        .orElseGet(List::of);
+                if (hasSamePoolMembers(existingMembers, members)) {
+                    logger.debug("Skipping patch for LB pool {} on Tier-1 {}: members unchanged", lbServerPoolName, tier1GatewayName);
+                    return;
+                }
+            }
+            String activeMonitorPath = getLbActiveMonitorPath(lbServerPoolName, privatePort, protocol);
             LBPool lbPool = new LBPool.Builder()
                     .setId(lbServerPoolName)
                     .setDisplayName(lbServerPoolName)
@@ -676,9 +690,52 @@ public class NsxApiClient {
         }
     }
 
+    private Optional<LBPool> getNsxLbServerPool(LbPools lbPools, String lbServerPoolName) {
+        try {
+            return Optional.ofNullable(lbPools.get(lbServerPoolName));
+        } catch (NotFound e) {
+            logger.warn("Server Pool not found: {}", lbServerPoolName);
+            return Optional.empty();
+        }
+    }
+
+    private boolean hasSamePoolMembers(List<LBPoolMember> existingMembers, List<LBPoolMember> membersUpdate) {
+        Set<String> existingMembersSet = existingMembers.stream()
+                .map(this::buildPoolMemberKey)
+                .collect(toSet());
+        Set<String> updateMembersSet = membersUpdate.stream()
+                .map(this::buildPoolMemberKey)
+                .collect(toSet());
+
+        return existingMembersSet.size() == updateMembersSet.size()
+               && existingMembersSet.containsAll(updateMembersSet);
+    }
+
+    private String buildPoolMemberKey(LBPoolMember member) {
+        return member.getIpAddress() + ':' + member.getPort() + ':' + member.getDisplayName();
+    }
+
     private String getLbActiveMonitorPath(String lbServerPoolName, String port, String protocol) {
         LbMonitorProfiles lbActiveMonitor = (LbMonitorProfiles) nsxService.apply(LbMonitorProfiles.class);
         String lbMonitorProfileId = getActiveMonitorProfileName(lbServerPoolName, port, protocol);
+        Optional<Structure> monitorProfile = getMonitorProfile(lbActiveMonitor, lbMonitorProfileId);
+        if (monitorProfile.isEmpty()) {
+            patchMonitoringProfile(port, protocol, lbMonitorProfileId, lbActiveMonitor);
+            monitorProfile = getMonitorProfile(lbActiveMonitor, lbMonitorProfileId);
+        }
+        return monitorProfile.map(structure -> structure._getDataValue().getField("path").toString()).orElse(null);
+    }
+
+    private Optional<Structure> getMonitorProfile(LbMonitorProfiles lbActiveMonitor, String lbMonitorProfileId) {
+        try {
+            return Optional.ofNullable(lbActiveMonitor.get(lbMonitorProfileId));
+        } catch (NotFound e) {
+            logger.warn("LB Monitor Profile not found: {}", lbMonitorProfileId);
+            return Optional.empty();
+        }
+    }
+
+    private void patchMonitoringProfile(String port, String protocol, String lbMonitorProfileId, LbMonitorProfiles lbActiveMonitor) {
         if ("TCP".equals(protocol.toUpperCase(Locale.ROOT))) {
             LBTcpMonitorProfile lbTcpMonitorProfile = new LBTcpMonitorProfile.Builder(TCP_MONITOR_PROFILE)
                     .setDisplayName(lbMonitorProfileId)
@@ -691,10 +748,6 @@ public class NsxApiClient {
                     .build();
             lbActiveMonitor.patch(lbMonitorProfileId, icmpMonitorProfile);
         }
-
-        LBMonitorProfileListResult listResult = listLBActiveMonitors(lbActiveMonitor);
-        Optional<Structure> monitorProfile = listResult.getResults().stream().filter(profile -> profile._getDataValue().getField("id").toString().equals(lbMonitorProfileId)).findFirst();
-        return monitorProfile.map(structure -> structure._getDataValue().getField("path").toString()).orElse(null);
     }
 
     LBMonitorProfileListResult listLBActiveMonitors(LbMonitorProfiles lbActiveMonitor) {
@@ -735,7 +788,7 @@ public class NsxApiClient {
             String lbVirtualServerName = getVirtualServerName(tier1GatewayName, lbId);
             String lbServiceName = getLoadBalancerName(tier1GatewayName);
             LbVirtualServers lbVirtualServers = (LbVirtualServers) nsxService.apply(LbVirtualServers.class);
-            if (Objects.nonNull(getLbVirtualServerService(lbVirtualServers, lbServiceName))) {
+            if (Objects.nonNull(getLbVirtualServerService(lbVirtualServers, lbVirtualServerName))) {
                 return;
             }
             LBVirtualServer lbVirtualServer = new LBVirtualServer.Builder()
