@@ -529,6 +529,9 @@ public class ServerAdapter extends ManagerBase {
     }
 
     Ternary<Long, String, Long> getVmOwner(Vm request) {
+        if (!VeeamControlService.InstanceRestoreAssignOwner.value()) {
+            return new Ternary<>(null, null, null);
+        }
         String accountUuid = request.getAccountId();
         if (StringUtils.isBlank(accountUuid)) {
             return new Ternary<>(null, null, null);
@@ -538,6 +541,7 @@ public class ServerAdapter extends ManagerBase {
             logger.warn("Account with ID {} not found, unable to determine owner for VM creation request", accountUuid);
             return new Ternary<>(null, null, null);
         }
+        String accountName = account.getAccountName();
         Long projectId = null;
         if (Account.Type.PROJECT.equals(account.getType())) {
             Project project = projectService.findByProjectAccountId(account.getId());
@@ -546,8 +550,9 @@ public class ServerAdapter extends ManagerBase {
                 return new Ternary<>(null, null, null);
             }
             projectId = project.getId();
+            accountName = null;
         }
-        return new Ternary<>(account.getDomainId(), account.getAccountName(), projectId);
+        return new Ternary<>(account.getDomainId(), accountName, projectId);
     }
 
     public Vm createInstance(Vm request) {
@@ -876,8 +881,12 @@ public class ServerAdapter extends ManagerBase {
             cmd.setVolumeId(volumeVO.getId());
             params.put(ApiConstants.VOLUME_ID, volumeVO.getUuid());
             if (Account.Type.PROJECT.equals(account.getType())) {
-                cmd.setProjectId(account.getId());
-                params.put(ApiConstants.PROJECT_ID, account.getUuid());
+                Project project = projectService.findByProjectAccountId(account.getId());
+                if (project == null) {
+                    throw new InvalidParameterValueException("Project for " + account + " not found");
+                }
+                cmd.setProjectId(project.getId());
+                params.put(ApiConstants.PROJECT_ID, project.getUuid());
             } else {
                 cmd.setAccountId(account.getId());
                 params.put(ApiConstants.ACCOUNT_ID, account.getUuid());
@@ -1052,10 +1061,15 @@ public class ServerAdapter extends ManagerBase {
             AssignVMCmd cmd = new AssignVMCmd();
             ComponentContext.inject(cmd);
             cmd.setVirtualMachineId(vmVO.getId());
-            cmd.setAccountName(account.getAccountName());
             cmd.setDomainId(account.getDomainId());
             if (Account.Type.PROJECT.equals(account.getType())) {
-                cmd.setProjectId(account.getId());
+                Project project = projectService.findByProjectAccountId(account.getId());
+                if (project == null) {
+                    throw new InvalidParameterValueException("Project for " + account + " not found");
+                }
+                cmd.setProjectId(project.getId());
+            } else {
+                cmd.setAccountName(account.getAccountName());
             }
             cmd.setSkipNetwork(true);
             userVmService.moveVmToUser(cmd);
