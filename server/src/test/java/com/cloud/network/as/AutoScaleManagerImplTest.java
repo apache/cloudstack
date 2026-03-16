@@ -1510,14 +1510,14 @@ public class AutoScaleManagerImplTest {
             when(lbVmMapDao.listByLoadBalancerId(loadBalancerId)).thenReturn(Arrays.asList(loadBalancerVMMapMock));
             when(loadBalancerVMMapMock.getInstanceId()).thenReturn(virtualMachineId + 1);
 
-            when(loadBalancingRulesService.assignToLoadBalancer(anyLong(), any(), any(), eq(true))).thenReturn(true);
+            when(loadBalancingRulesService.assignToLoadBalancer(anyLong(), any(), any(), any(), eq(true))).thenReturn(true);
             Mockito.doReturn(new Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>>(userVmMock, null)).when(userVmMgr).startVirtualMachine(virtualMachineId, null,
                     new HashMap<>(), null, false);
 
             autoScaleManagerImplSpy.doScaleUp(vmGroupId, 1);
 
             Mockito.verify(autoScaleManagerImplSpy).createNewVM(asVmGroupMock);
-            Mockito.verify(loadBalancingRulesService).assignToLoadBalancer(anyLong(), any(), any(), eq(true));
+            Mockito.verify(loadBalancingRulesService).assignToLoadBalancer(anyLong(), any(), any(), any(), eq(true));
             Mockito.verify(userVmMgr).startVirtualMachine(virtualMachineId, null, new HashMap<>(), null, false);
         }
     }

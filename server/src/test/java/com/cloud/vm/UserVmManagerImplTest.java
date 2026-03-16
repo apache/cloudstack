@@ -65,10 +65,8 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
-import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
@@ -3663,10 +3661,7 @@ public class UserVmManagerImplTest {
         ReflectionTestUtils.setField(userVmManagerImpl, "_uuidMgr", uuidMgr);
         CallContext callContext = mock(CallContext.class);
         Account callingAccount = mock(Account.class);
-        when(callingAccount.getId()).thenReturn(accountId);
         when(callContext.getCallingAccount()).thenReturn(callingAccount);
-        when(accountManager.isAdmin(callingAccount.getId())).thenReturn(true);
-        doNothing().when(accountManager).checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class), null);
         try (MockedStatic<CallContext> mockedCallContext = mockStatic(CallContext.class)) {
             mockedCallContext.when(CallContext::current).thenReturn(callContext);
             mockedCallContext.when(() -> CallContext.register(callContext, ApiCommandResourceType.Volume)).thenReturn(callContext);
@@ -3677,8 +3672,6 @@ public class UserVmManagerImplTest {
             List<Long> volumeIds = List.of(volumeId);
             when(cmd.getVolumeIds()).thenReturn(volumeIds);
             AsyncJobVO asyncJobMock = mock(AsyncJobVO.class);
-            when(cmd.getJob()).thenReturn(asyncJobMock);
-            when(asyncJobMock.getCmdInfo()).thenReturn("{}");
 
             UserVmVO vm = mock(UserVmVO.class);
             when(vm.getId()).thenReturn(vmId);
@@ -3695,8 +3688,6 @@ public class UserVmManagerImplTest {
 
             List<VolumeVO> dataVolumes = new ArrayList<>();
             when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.DATADISK)).thenReturn(dataVolumes);
-
-            when(volumeApiService.destroyVolume(volumeId, CallContext.current().getCallingAccount(), expunge, false, null)).thenReturn(vol);
 
             doReturn(vm).when(userVmManagerImpl).stopVirtualMachine(anyLong(), anyBoolean());
             doReturn(vm).when(userVmManagerImpl).destroyVm(vmId, expunge);

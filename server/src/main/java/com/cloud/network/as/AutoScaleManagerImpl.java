@@ -2051,7 +2051,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
         lstVmId.add(new Long(vmId));
         try {
-            return loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<>(), true);
+            return loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<>(), null, true);
         } catch (CloudRuntimeException ex) {
             logger.warn("Caught exception: ", ex);
             return false;
