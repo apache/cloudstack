@@ -19,6 +19,7 @@ package org.apache.cloudstack.veeam.api.dto;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
@@ -70,6 +71,9 @@ public final class Vm extends BaseDto {
     public EmptyElement placementPolicy = new EmptyElement();
     public EmptyElement timeZone = new EmptyElement();
     public EmptyElement display = new EmptyElement();
+
+    // CloudStack-specific fields
+    private String accountId;
 
     public String getName() {
         return name;
@@ -277,6 +281,15 @@ public final class Vm extends BaseDto {
 
     public void setCpuProfile(Ref cpuProfile) {
         this.cpuProfile = cpuProfile;
+    }
+
+    @JsonIgnore
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

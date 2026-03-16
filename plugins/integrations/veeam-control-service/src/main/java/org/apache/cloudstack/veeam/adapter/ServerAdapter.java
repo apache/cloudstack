@@ -148,6 +148,8 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectService;
 import com.cloud.server.ResourceTag;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Volume;
@@ -164,6 +166,7 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -287,6 +290,9 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     NetworkModel networkModel;
+
+    @Inject
+    ProjectService projectService;
 
     protected static Tag getDummyTagByName(String name) {
         Tag tag = new Tag();
@@ -522,6 +528,28 @@ public class ServerAdapter extends ManagerBase {
                 allContent);
     }
 
+    Ternary<Long, String, Long> getVmOwner(Vm request) {
+        String accountUuid = request.getAccountId();
+        if (StringUtils.isBlank(accountUuid)) {
+            return new Ternary<>(null, null, null);
+        }
+        Account account = accountService.getActiveAccountByUuid(accountUuid);
+        if (account == null) {
+            logger.warn("Account with ID {} not found, unable to determine owner for VM creation request", accountUuid);
+            return new Ternary<>(null, null, null);
+        }
+        Long projectId = null;
+        if (Account.Type.PROJECT.equals(account.getType())) {
+            Project project = projectService.findByProjectAccountId(account.getId());
+            if (project == null) {
+                logger.warn("Project for {} not found, unable to determine owner for VM creation request", account);
+                return new Ternary<>(null, null, null);
+            }
+            projectId = project.getId();
+        }
+        return new Ternary<>(account.getDomainId(), account.getAccountName(), projectId);
+    }
+
     public Vm createInstance(Vm request) {
         if (request == null) {
             throw new InvalidParameterValueException("Request disk data is empty");
@@ -573,16 +601,29 @@ public class ServerAdapter extends ManagerBase {
             bootType = ApiConstants.BootType.UEFI;
             bootMode = ApiConstants.BootMode.SECURE;
         }
+        Ternary<Long, String, Long> owner = getVmOwner(request);
+        String serviceOfferingUuid = null;
+        if (request.getCpuProfile() != null && StringUtils.isNotEmpty(request.getCpuProfile().getId())) {
+            serviceOfferingUuid = request.getCpuProfile().getId();
+        }
         Pair<User, Account> serviceUserAccount = getServiceAccount();
         CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
-            return createInstance(zoneId, clusterId, name, displayName, cpu, memory, userdata, bootType, bootMode);
+            return createInstance(zoneId, clusterId, owner.first(), owner.second(), owner.third(), name, displayName,
+                    serviceOfferingUuid, cpu, memory, userdata, bootType, bootMode);
         } finally {
             CallContext.unregister();
         }
     }
 
-    protected ServiceOffering getServiceOfferingIdForVmCreation(long zoneId, int cpu, long memory) {
+    protected ServiceOffering getServiceOfferingIdForVmCreation(String serviceOfferingUuid, long zoneId, int cpu, long memory) {
+        if (StringUtils.isNotBlank(serviceOfferingUuid)) {
+            ServiceOffering offering = serviceOfferingDao.findByUuid(serviceOfferingUuid);
+            if (offering != null && !offering.isCustomized()) {
+                // ToDo: check offering is available in the specified zone and matches the requested cpu/memory if it's not a custom offering
+                return offering;
+            }
+        }
         ListServiceOfferingsCmd cmd = new ListServiceOfferingsCmd();
         ComponentContext.inject(cmd);
         cmd.setZoneId(zoneId);
@@ -597,9 +638,10 @@ public class ServerAdapter extends ManagerBase {
         return serviceOfferingDao.findByUuid(uuid);
     }
 
-    protected Vm createInstance(Long zoneId, Long clusterId, String name, String displayName, int cpu, long memory,
-                String userdata, ApiConstants.BootType bootType, ApiConstants.BootMode bootMode) {
-        ServiceOffering serviceOffering = getServiceOfferingIdForVmCreation(zoneId, cpu, memory);
+    protected Vm createInstance(Long zoneId, Long clusterId, Long domainId, String accountName, Long projectId,
+                String name, String displayName, String serviceOfferingUuid, int cpu, long memory, String userdata,
+                ApiConstants.BootType bootType, ApiConstants.BootMode bootMode) {
+        ServiceOffering serviceOffering = getServiceOfferingIdForVmCreation(serviceOfferingUuid, zoneId, cpu, memory);
         if (serviceOffering == null) {
             throw new CloudRuntimeException("No service offering found for VM creation with specified CPU and memory");
         }
@@ -608,6 +650,13 @@ public class ServerAdapter extends ManagerBase {
         ComponentContext.inject(cmd);
         cmd.setZoneId(zoneId);
         cmd.setClusterId(clusterId);
+        if (domainId != null && StringUtils.isNotEmpty(accountName)) {
+            cmd.setDomainId(domainId);
+            cmd.setAccountName(accountName);
+        }
+        if (projectId != null) {
+            cmd.setProjectId(projectId);
+        }
         cmd.setName(name);
         if (displayName != null) {
             cmd.setDisplayName(displayName);
@@ -623,6 +672,7 @@ public class ServerAdapter extends ManagerBase {
             cmd.setBootMode(bootMode.toString());
         }
         // ToDo: handle any other field?
+        // Handle custom offerings
         cmd.setHypervisor(Hypervisor.HypervisorType.KVM.name());
         cmd.setBlankInstance(true);
         Map<String, String> details = new HashMap<>();
@@ -1007,6 +1057,7 @@ public class ServerAdapter extends ManagerBase {
             if (Account.Type.PROJECT.equals(account.getType())) {
                 cmd.setProjectId(account.getId());
             }
+            cmd.setSkipNetwork(true);
             userVmService.moveVmToUser(cmd);
         } catch (ResourceAllocationException | CloudRuntimeException | ResourceUnavailableException |
                  InsufficientCapacityException e) {

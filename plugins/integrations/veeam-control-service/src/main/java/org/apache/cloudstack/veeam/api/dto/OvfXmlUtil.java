@@ -180,13 +180,15 @@ public class OvfXmlUtil {
             sb.append("<AccountId>").append(vo.getAccountUuid()).append("</AccountId>");
             sb.append("<DomainId>").append(vo.getDomainUuid()).append("</DomainId>");
             sb.append("<ProjectId>").append(escapeText(vo.getProjectUuid())).append("</ProjectId>");
-            sb.append("<ServiceOfferingId>").append(vo.getServiceOfferingUuid()).append("</ServiceOfferingId>");
+            if (vm.getCpuProfile() != null && StringUtils.isNotBlank(vm.getCpuProfile().getId())) {
+                sb.append("<ServiceOfferingId>").append(vm.getCpuProfile().getId()).append("</ServiceOfferingId>");
+            }
             sb.append("<DataDiskOfferingIdMap>");
             for (DiskAttachment da : diskAttachments(vm)) {
                 if (da == null || da.getDisk() == null || StringUtils.isBlank(da.getDisk().getId())) {
                     continue;
                 }
-                final org.apache.cloudstack.veeam.api.dto.Disk d = da.getDisk();
+                final Disk d = da.getDisk();
                 sb.append("<Entry>");
                 sb.append("<DiskId>").append(escapeText(d.getId())).append("</DiskId>");
                 sb.append("<OfferingId>").append(d.getDiskProfile().getId()).append("</OfferingId>");
@@ -416,65 +418,120 @@ public class OvfXmlUtil {
             // Register namespace context for XPath
             xpath.setNamespaceContext(new OvfNamespaceContext());
 
+
+            Node contentNode = (Node) xpath.evaluate(
+                    "//*[local-name()='Content']",
+                    doc,
+                    XPathConstants.NODE
+            );
+            updateFromXmlContentNode(vm, contentNode, xpath);
+
             Node hwSection = (Node) xpath.evaluate(
                 "//*[local-name()='Section' and @*[local-name()='type']='ovf:VirtualHardwareSection_Type']",
                 doc,
                 XPathConstants.NODE
             );
+            updateFromXmlHardwareSection(vm, hwSection, xpath);
 
-            if (hwSection != null) {
-                // Memory
-                NodeList memItems = (NodeList) xpath.evaluate(
-                    ".//*[local-name()='Item'][*[local-name()='ResourceType' and text()='4']]",
-                    hwSection,
-                    XPathConstants.NODESET
-                );
-                if (memItems != null && memItems.getLength() > 0) {
-                    Node memItem = memItems.item(0);
-                    String memStr = childText(memItem, "VirtualQuantity");
-                    if (StringUtils.isNotBlank(memStr)) {
-                        vm.setMemory(memStr);
-                    }
-                }
-
-                // CPU
-                NodeList cpuItems = (NodeList) xpath.evaluate(
-                    ".//*[local-name()='Item'][*[local-name()='ResourceType' and text()='3']]",
-                    hwSection,
-                    XPathConstants.NODESET
-                );
-                if (cpuItems != null && cpuItems.getLength() > 0) {
-                    Node cpuItem = cpuItems.item(0);
-                    String socketsStr = childText(cpuItem, "num_of_sockets");
-                    String coresStr = childText(cpuItem, "cpu_per_socket");
-                    String threadsStr = childText(cpuItem, "threads_per_cpu");
-
-                    if (vm.getCpu() == null) {
-                        vm.setCpu(new Cpu());
-                    }
-                    if (vm.getCpu().getTopology() == null) {
-                        vm.getCpu().setTopology(new Topology());
-                    }
-
-                    if (StringUtils.isNotBlank(socketsStr)) {
-                        vm.getCpu().getTopology().setSockets(socketsStr);
-                    }
-                    if (StringUtils.isNotBlank(coresStr)) {
-                        vm.getCpu().getTopology().setCores(coresStr);
-                    }
-                    if (StringUtils.isNotBlank(threadsStr)) {
-                        vm.getCpu().getTopology().setThreads(threadsStr);
-                    }
-                }
-            }
+            Node metadataSection = (Node) xpath.evaluate(
+                "//*[local-name()='Section' and @*[local-name()='type']='ovf:CloudStackMetadata_Type']",
+                doc,
+                XPathConstants.NODE
+            );
+            updateFromXmlCloudStackMetadataSection(vm, metadataSection, xpath);
         } catch (Exception e) {
             // Ignore parsing errors and keep original VM configuration
+        }
+    }
+
+    private static void updateFromXmlContentNode(Vm vm, Node contentNode, XPath xpath) {
+        if (contentNode == null) {
+            return;
+        }
+        String userId = xpathString(xpath, contentNode, "./*[local-name()='CreatedByUserId']/text()");
+        if (StringUtils.isNotBlank(userId)) {
+            vm.setAccountId(userId);
+        }
+        String templateId = xpathString(xpath, contentNode, "./*[local-name()='TemplateId']/text()");
+        if (StringUtils.isNotBlank(templateId)) {
+            vm.setTemplate(Ref.of("", templateId));
+        }
+    }
+
+    private static void updateFromXmlHardwareSection(Vm vm, Node hwSection, XPath xpath) throws XPathExpressionException {
+        if (hwSection == null) {
+            return;
+        }
+        // Memory
+        NodeList memItems = (NodeList) xpath.evaluate(
+            ".//*[local-name()='Item'][*[local-name()='ResourceType' and text()='4']]",
+                hwSection,
+            XPathConstants.NODESET
+        );
+        if (memItems != null && memItems.getLength() > 0) {
+            Node memItem = memItems.item(0);
+            String memStr = childText(memItem, "VirtualQuantity");
+            if (StringUtils.isNotBlank(memStr)) {
+                vm.setMemory(memStr);
+            }
+        }
+
+        // CPU
+        NodeList cpuItems = (NodeList) xpath.evaluate(
+            ".//*[local-name()='Item'][*[local-name()='ResourceType' and text()='3']]",
+                hwSection,
+            XPathConstants.NODESET
+        );
+        if (cpuItems != null && cpuItems.getLength() > 0) {
+            Node cpuItem = cpuItems.item(0);
+            String socketsStr = childText(cpuItem, "num_of_sockets");
+            String coresStr = childText(cpuItem, "cpu_per_socket");
+            String threadsStr = childText(cpuItem, "threads_per_cpu");
+
+            if (vm.getCpu() == null) {
+                vm.setCpu(new Cpu());
+            }
+            if (vm.getCpu().getTopology() == null) {
+                vm.getCpu().setTopology(new Topology());
+            }
+
+            if (StringUtils.isNotBlank(socketsStr)) {
+                vm.getCpu().getTopology().setSockets(socketsStr);
+            }
+            if (StringUtils.isNotBlank(coresStr)) {
+                vm.getCpu().getTopology().setCores(coresStr);
+            }
+            if (StringUtils.isNotBlank(threadsStr)) {
+                vm.getCpu().getTopology().setThreads(threadsStr);
+            }
+        }
+    }
+
+    private static void updateFromXmlCloudStackMetadataSection(Vm vm, Node metadataSection, XPath xpath) {
+        if (metadataSection == null) {
+            return;
+        }
+        String serviceOfferingId = xpathString(xpath, metadataSection, ".//*[local-name()='ServiceOfferingId']/text()");
+        if (StringUtils.isNotBlank(serviceOfferingId)) {
+            vm.setCpuProfile(Ref.of("", serviceOfferingId));
         }
     }
 
     private static String xpathString(XPath xpath, Document doc, String expression) {
         try {
             String value = (String) xpath.evaluate(expression, doc, XPathConstants.STRING);
+            return StringUtils.isBlank(value) ? null : value.trim();
+        } catch (XPathExpressionException e) {
+            return null;
+        }
+    }
+
+    private static String xpathString(XPath xpath, Node node, String expression) {
+        if (node == null) {
+            return null;
+        }
+        try {
+            String value = (String) xpath.evaluate(expression, node, XPathConstants.STRING);
             return StringUtils.isBlank(value) ? null : value.trim();
         } catch (XPathExpressionException e) {
             return null;

@@ -5,21 +5,39 @@
         xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ovf:version="4.4.0.0">
     <References>
-        <File ovf:href="ddf18375-4c69-4ec5-8371-6dabc94e4e60/5cbc2ed5-de89-44a4-aa58-b7161f8afaf8" ovf:id="5cbc2ed5-de89-44a4-aa58-b7161f8afaf8" ovf:size="4096" ovf:description="Active VM" ovf:disk_storage_type="IMAGE" ovf:cinder_volume_type=""></File>
+        <File ovf:href="22e65515-04e6-374e-95e0-981dab9e7fe2/5b08702c-3e4b-45fc-ba1c-425c54e69498" ovf:id="5b08702c-3e4b-45fc-ba1c-425c54e69498" ovf:size="4096" ovf:description="Active VM" ovf:disk_storage_type="IMAGE" ovf:cinder_volume_type=""></File>
     </References>
     <NetworkSection>
         <Info>List of networks</Info>
+        <Network ovf:name="Network-07e8e63c-13b5-4a01-9b41-6f97847d2534">
+            <Description></Description>
+        </Network>
     </NetworkSection>
     <Section xsi:type="ovf:DiskSection_Type">
         <Info>List of Virtual Disks</Info>
-        <Disk ovf:diskId="5cbc2ed5-de89-44a4-aa58-b7161f8afaf8" ovf:size="1" ovf:actual_size="1" ovf:vm_snapshot_id="3d298647-57d5-4a2b-90e7-226bdb4f1800" ovf:parentRef="" ovf:fileRef="ddf18375-4c69-4ec5-8371-6dabc94e4e60/5cbc2ed5-de89-44a4-aa58-b7161f8afaf8" ovf:format="http://www.vmware.com/specifications/vmdk.html#sparse" ovf:volume-format="RAW" ovf:volume-type="Sparse" ovf:disk-interface="VirtIO_SCSI" ovf:read-only="false" ovf:shareable="false" ovf:boot="true" ovf:pass-discard="false" ovf:incremental-backup="false" ovf:disk-alias="test-vm-abhisar_Disk1" ovf:disk-description="" ovf:wipe-after-delete="false"></Disk>
+        <Disk ovf:diskId="5b08702c-3e4b-45fc-ba1c-425c54e69498" ovf:size="1" ovf:actual_size="1" ovf:vm_snapshot_id="6ad1a046-11c9-3a9c-ae76-b1136cefc35e" ovf:parentRef="" ovf:fileRef="22e65515-04e6-374e-95e0-981dab9e7fe2/5b08702c-3e4b-45fc-ba1c-425c54e69498" ovf:format="http://www.vmware.com/specifications/vmdk.html#sparse" ovf:volume-format="COW" ovf:volume-type="Sparse" ovf:disk-interface="VirtIO_SCSI" ovf:read-only="false" ovf:shareable="false" ovf:boot="true" ovf:pass-discard="false" ovf:incremental-backup="false" ovf:disk-alias="ROOT-139" ovf:disk-description="ROOT-139" ovf:wipe-after-delete="false"></Disk>
+    </Section>
+    <Section xsi:type="ovf:CloudStackMetadata_Type">
+        <Info>CloudStack specific metadata</Info>
+        <CloudStack>
+            <AccountId>644c6f0d-f6f9-11f0-9061-5254002b5a70</AccountId>
+            <DomainId>425cf134-f6f9-11f0-9061-5254002b5a70</DomainId>
+            <ProjectId></ProjectId>
+            <ServiceOfferingId>731da585-5259-46f3-bf2d-a71f62178acf</ServiceOfferingId>
+            <DataDiskOfferingIdMap>
+                <Entry>
+                    <DiskId>5b08702c-3e4b-45fc-ba1c-425c54e69498</DiskId>
+                    <OfferingId>9468baee-f467-4806-9520-d313d7362694</OfferingId>
+                </Entry>
+            </DataDiskOfferingIdMap>
+        </CloudStack>
     </Section>
     <Content ovf:id="out" xsi:type="ovf:VirtualSystem_Type">
-        <Name>test-vm-abhisar</Name>
-        <Description></Description>
+        <Name>adm-v10</Name>
+        <Description>adm-v10</Description>
         <Comment></Comment>
-        <CreationDate>2026/01/07 13:37:09</CreationDate>
-        <ExportDate>2026/01/08 04:07:00</ExportDate>
+        <CreationDate>2026/02/26 05:36:58</CreationDate>
+        <ExportDate>2026/03/11 07:25:03</ExportDate>
         <DeleteProtected>false</DeleteProtected>
         <SsoMethod>guest_agent</SsoMethod>
         <IsSmartcardEnabled>false</IsSmartcardEnabled>
@@ -30,12 +48,12 @@
         <ClusterCompatibilityVersion>4.8</ClusterCompatibilityVersion>
         <VmType>1</VmType>
         <ResumeBehavior>AUTO_RESUME</ResumeBehavior>
-        <MinAllocatedMem>1024</MinAllocatedMem>
+        <MinAllocatedMem>512</MinAllocatedMem>
         <IsStateless>false</IsStateless>
         <IsRunAndPause>false</IsRunAndPause>
         <AutoStartup>false</AutoStartup>
         <Priority>0</Priority>
-        <CreatedByUserId>c067a148-e4d5-11f0-98ce-00163e6c35f4</CreatedByUserId>
+        <CreatedByUserId>644c6f0d-f6f9-11f0-9061-5254002b5a70</CreatedByUserId>
         <MigrationSupport>0</MigrationSupport>
         <IsBootMenuEnabled>false</IsBootMenuEnabled>
         <IsSpiceFileTransferEnabled>true</IsSpiceFileTransferEnabled>
@@ -48,32 +66,32 @@
         <CustomCpuName></CustomCpuName>
         <PredefinedProperties></PredefinedProperties>
         <UserDefinedProperties></UserDefinedProperties>
-        <MaxMemorySizeMb>4096</MaxMemorySizeMb>
+        <MaxMemorySizeMb>512</MaxMemorySizeMb>
         <MultiQueuesEnabled>true</MultiQueuesEnabled>
         <VirtioScsiMultiQueuesEnabled>false</VirtioScsiMultiQueuesEnabled>
         <UseHostCpu>false</UseHostCpu>
-        <BalloonEnabled>true</BalloonEnabled>
+        <BalloonEnabled>false</BalloonEnabled>
         <CpuPinningPolicy>0</CpuPinningPolicy>
-        <ClusterName>Default</ClusterName>
-        <TemplateId>00000000-0000-0000-0000-000000000000</TemplateId>
-        <TemplateName>Blank</TemplateName>
+        <ClusterName></ClusterName>
+        <TemplateId>e1a8db34-6eb4-41e0-97b8-898420437df8</TemplateId>
+        <TemplateName>e1a8db34-6eb4-41e0-97b8-898420437df8</TemplateName>
         <IsInitilized>true</IsInitilized>
         <Origin>3</Origin>
-        <quota_id>95e46398-e4d5-11f0-bb71-00163e6c35f4</quota_id>
+        <quota_id>00000000-0000-0000-0000-000000000000</quota_id>
         <DefaultDisplayType>2</DefaultDisplayType>
         <TrustedService>false</TrustedService>
-        <OriginalTemplateId>00000000-0000-0000-0000-000000000000</OriginalTemplateId>
-        <OriginalTemplateName>Blank</OriginalTemplateName>
+        <OriginalTemplateId>e1a8db34-6eb4-41e0-97b8-898420437df8</OriginalTemplateId>
+        <OriginalTemplateName>e1a8db34-6eb4-41e0-97b8-898420437df8</OriginalTemplateName>
         <UseLatestVersion>false</UseLatestVersion>
-        <StopTime>2026/01/07 13:37:09</StopTime>
-        <BootTime>2026/01/07 13:38:03</BootTime>
+        <StopTime>2026/03/10 05:05:50</StopTime>
+        <BootTime>2026/02/26 05:36:58</BootTime>
         <Downtime>0</Downtime>
-        <Section ovf:id="9ce5bba0-6e01-4467-95a1-c4e28ad3ea43" ovf:required="false" xsi:type="ovf:OperatingSystemSection_Type">
+        <Section ovf:id="001c3113-348d-41ba-82af-065f154d7549" ovf:required="false" xsi:type="ovf:OperatingSystemSection_Type">
             <Info>Guest Operating System</Info>
-            <Description>other</Description>
+            <Description>linux</Description>
         </Section>
         <Section xsi:type="ovf:VirtualHardwareSection_Type">
-            <Info>1 CPU, 1024 Memory</Info>
+            <Info>1 CPU, 512 Memory</Info>
             <System>
                 <vssd:VirtualSystemType>ENGINE 4.4.0.0</vssd:VirtualSystemType>
             </System>
@@ -85,49 +103,49 @@
                 <rasd:num_of_sockets>1</rasd:num_of_sockets>
                 <rasd:cpu_per_socket>1</rasd:cpu_per_socket>
                 <rasd:threads_per_cpu>1</rasd:threads_per_cpu>
-                <rasd:max_num_of_vcpus>16</rasd:max_num_of_vcpus>
+                <rasd:max_num_of_vcpus>1</rasd:max_num_of_vcpus>
                 <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
             </Item>
             <Item>
-                <rasd:Caption>1024 MB of memory</rasd:Caption>
+                <rasd:Caption>512 MB of memory</rasd:Caption>
                 <rasd:Description>Memory Size</rasd:Description>
                 <rasd:InstanceId>2</rasd:InstanceId>
                 <rasd:ResourceType>4</rasd:ResourceType>
                 <rasd:AllocationUnits>MegaBytes</rasd:AllocationUnits>
-                <rasd:VirtualQuantity>1024</rasd:VirtualQuantity>
+                <rasd:VirtualQuantity>512</rasd:VirtualQuantity>
             </Item>
             <Item>
-                <rasd:Caption>test-vm-abhisar_Disk1</rasd:Caption>
-                <rasd:InstanceId>5cbc2ed5-de89-44a4-aa58-b7161f8afaf8</rasd:InstanceId>
+                <rasd:Caption>ROOT-139</rasd:Caption>
+                <rasd:InstanceId>5b08702c-3e4b-45fc-ba1c-425c54e69498</rasd:InstanceId>
                 <rasd:ResourceType>17</rasd:ResourceType>
-                <rasd:HostResource>ddf18375-4c69-4ec5-8371-6dabc94e4e60/5cbc2ed5-de89-44a4-aa58-b7161f8afaf8</rasd:HostResource>
+                <rasd:HostResource>22e65515-04e6-374e-95e0-981dab9e7fe2/5b08702c-3e4b-45fc-ba1c-425c54e69498</rasd:HostResource>
                 <rasd:Parent>00000000-0000-0000-0000-000000000000</rasd:Parent>
-                <rasd:Template>00000000-0000-0000-0000-000000000000</rasd:Template>
+                <rasd:Template>e1a8db34-6eb4-41e0-97b8-898420437df8</rasd:Template>
                 <rasd:ApplicationList></rasd:ApplicationList>
-                <rasd:StorageId>41609681-c92a-410a-bcc2-5b5e1305cdd1</rasd:StorageId>
-                <rasd:StoragePoolId>91f4d826-e4d5-11f0-bd93-00163e6c35f4</rasd:StoragePoolId>
-                <rasd:CreationDate>2026/01/07 13:36:59</rasd:CreationDate>
-                <rasd:LastModified>2026/01/07 13:53:36</rasd:LastModified>
-                <rasd:last_modified_date>2026/01/08 04:07:00</rasd:last_modified_date>
+                <rasd:StorageId>22e65515-04e6-374e-95e0-981dab9e7fe2</rasd:StorageId>
+                <rasd:StoragePoolId>00000000-0000-0000-0000-000000000000</rasd:StoragePoolId>
+                <rasd:CreationDate>2026/02/26 05:36:58</rasd:CreationDate>
+                <rasd:LastModified>2026/03/11 07:25:03</rasd:LastModified>
+                <rasd:last_modified_date>2026/03/11 07:25:03</rasd:last_modified_date>
                 <Type>disk</Type>
                 <Device>disk</Device>
                 <rasd:Address>{type=drive, bus=0, controller=0, target=0, unit=0}</rasd:Address>
                 <BootOrder>1</BootOrder>
                 <IsPlugged>true</IsPlugged>
                 <IsReadOnly>false</IsReadOnly>
-                <Alias>ua-ddf18375-4c69-4ec5-8371-6dabc94e4e60</Alias>
+                <Alias>ua-22e65515-04e6-374e-95e0-981dab9e7fe2/5b08702c-3e4b-45fc-ba1c-425c54e69498</Alias>
             </Item>
             <Item>
                 <rasd:Caption>Ethernet adapter on [No Network]</rasd:Caption>
-                <rasd:InstanceId>9a6f804d-b305-41db-b1b4-bdfd82c4b446</rasd:InstanceId>
+                <rasd:InstanceId>07e8e63c-13b5-4a01-9b41-6f97847d2534</rasd:InstanceId>
                 <rasd:ResourceType>10</rasd:ResourceType>
                 <rasd:OtherResourceType></rasd:OtherResourceType>
                 <rasd:ResourceSubType>3</rasd:ResourceSubType>
-                <rasd:Connection></rasd:Connection>
+                <rasd:Connection>Network-07e8e63c-13b5-4a01-9b41-6f97847d2534</rasd:Connection>
                 <rasd:Linked>true</rasd:Linked>
-                <rasd:Name>nic1</rasd:Name>
-                <rasd:ElementName>nic1</rasd:ElementName>
-                <rasd:MACAddress>56:6f:9f:c0:00:07</rasd:MACAddress>
+                <rasd:Name>ExternalGuestNetworkGuru</rasd:Name>
+                <rasd:ElementName>ExternalGuestNetworkGuru</rasd:ElementName>
+                <rasd:MACAddress>02:01:00:dd:00:0c</rasd:MACAddress>
                 <rasd:speed>10000</rasd:speed>
                 <Type>interface</Type>
                 <Device>bridge</Device>
@@ -135,7 +153,7 @@
                 <BootOrder>0</BootOrder>
                 <IsPlugged>true</IsPlugged>
                 <IsReadOnly>false</IsReadOnly>
-                <Alias>ua-9a6f804d-b305-41db-b1b4-bdfd82c4b446</Alias>
+                <Alias>ua-07e8e63c-13b5-4a01-9b41-6f97847d2534</Alias>
             </Item>
             <Item>
                 <rasd:Caption>USB Controller</rasd:Caption>
@@ -144,475 +162,19 @@
                 <rasd:UsbPolicy>DISABLED</rasd:UsbPolicy>
             </Item>
             <Item>
-                <rasd:Caption>Graphical Controller</rasd:Caption>
-                <rasd:InstanceId>0d4a490c-f9d7-45dd-8686-69d5bae218d6</rasd:InstanceId>
-                <rasd:ResourceType>20</rasd:ResourceType>
-                <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
-                <rasd:SinglePciQxl>false</rasd:SinglePciQxl>
-                <Type>video</Type>
-                <Device>vga</Device>
-                <rasd:Address>{type=pci, slot=0x01, bus=0x00, domain=0x0000, function=0x0}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>ua-0d4a490c-f9d7-45dd-8686-69d5bae218d6</Alias>
-                <SpecParams>
-                    <vram>16384</vram>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:Caption>Graphical Framebuffer</rasd:Caption>
-                <rasd:InstanceId>f62554f1-05fe-472e-a34b-9e6b980ad59f</rasd:InstanceId>
-                <rasd:ResourceType>26</rasd:ResourceType>
-                <Type>graphics</Type>
-                <Device>vnc</Device>
-                <rasd:Address></rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias></Alias>
-            </Item>
-            <Item>
-                <rasd:Caption>CDROM</rasd:Caption>
-                <rasd:InstanceId>9c38cc6a-9def-46f3-bf1c-2b3f4aa6b764</rasd:InstanceId>
-                <rasd:ResourceType>15</rasd:ResourceType>
-                <Type>disk</Type>
-                <Device>cdrom</Device>
-                <rasd:Address>{type=drive, bus=0, controller=0, target=0, unit=2}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>true</IsReadOnly>
-                <Alias>ua-9c38cc6a-9def-46f3-bf1c-2b3f4aa6b764</Alias>
-                <SpecParams>
-                    <path></path>
-                </SpecParams>
-            </Item>
-            <Item>
                 <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>a737450e-20b5-427e-a18b-85ec20683e31</rasd:InstanceId>
-                <Type>channel</Type>
-                <Device>unix</Device>
-                <rasd:Address>{type=virtio-serial, bus=0, controller=0, port=1}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>channel0</Alias>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>1d3ba276-9e8d-4a16-9cdf-dfd25180b7bc</rasd:InstanceId>
-                <Type>channel</Type>
-                <Device>unix</Device>
-                <rasd:Address>{type=virtio-serial, bus=0, controller=0, port=2}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>channel1</Alias>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>8f21ce42-9499-4ded-88d4-04dff2fdc3ff</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x02, bus=0x00, domain=0x0000, function=0x0, multifunction=on}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.1</Alias>
-                <SpecParams>
-                    <index>1</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>d1b9d421-1a57-469d-97fe-0682ad4594c3</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x02, bus=0x00, domain=0x0000, function=0x1}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.2</Alias>
-                <SpecParams>
-                    <index>2</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>768c4772-eb7a-4f0f-85a7-2b94e20fe78c</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x02, bus=0x00, domain=0x0000, function=0x2}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.3</Alias>
-                <SpecParams>
-                    <index>3</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>d20bae3b-f5d7-4131-b00a-3cf66f390434</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x02, bus=0x00, domain=0x0000, function=0x3}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.4</Alias>
-                <SpecParams>
-                    <index>4</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>5887f3ad-c575-488e-9138-fca9c7064ae5</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x02, bus=0x00, domain=0x0000, function=0x4}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.5</Alias>
-                <SpecParams>
-                    <index>5</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>f880f086-227e-4e25-b2fc-8a3d13d1f1bd</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x02, bus=0x00, domain=0x0000, function=0x5}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.6</Alias>
-                <SpecParams>
-                    <index>6</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>d64f62a0-6176-482b-8d24-f82fb32b8f12</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x02, bus=0x00, domain=0x0000, function=0x6}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.7</Alias>
-                <SpecParams>
-                    <index>7</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>1544f32e-1e94-4e10-b198-7c5e95ab280d</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x02, bus=0x00, domain=0x0000, function=0x7}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.8</Alias>
-                <SpecParams>
-                    <index>8</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>7dd5080f-8c04-4593-8c6a-1dc5cd6c3e3e</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x03, bus=0x00, domain=0x0000, function=0x0, multifunction=on}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.9</Alias>
-                <SpecParams>
-                    <index>9</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>4dab4257-2729-482c-b4e1-6a3c05161153</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x03, bus=0x00, domain=0x0000, function=0x1}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.10</Alias>
-                <SpecParams>
-                    <index>10</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>99effa2f-2963-4abd-9eab-1cbe8e913ca4</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x03, bus=0x00, domain=0x0000, function=0x2}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.11</Alias>
-                <SpecParams>
-                    <index>11</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>2a376983-897b-4396-be32-89f2a9ca7d22</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x03, bus=0x00, domain=0x0000, function=0x3}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.12</Alias>
-                <SpecParams>
-                    <index>12</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>2e763d82-4475-4268-bc0a-07c915ec19c8</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x03, bus=0x00, domain=0x0000, function=0x4}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.13</Alias>
-                <SpecParams>
-                    <index>13</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>ef39155f-760e-4374-afb9-ff05cc8b9609</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x03, bus=0x00, domain=0x0000, function=0x5}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.14</Alias>
-                <SpecParams>
-                    <index>14</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>74be06f0-84b6-472e-a054-486343f66084</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x03, bus=0x00, domain=0x0000, function=0x6}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.15</Alias>
-                <SpecParams>
-                    <index>15</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>c68db43a-fa3a-4689-941d-b477d2676d27</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x03, bus=0x00, domain=0x0000, function=0x7}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.16</Alias>
-                <SpecParams>
-                    <index>16</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>d11cbe26-ee82-4e15-b8eb-2aa7b285d00d</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x04, bus=0x00, domain=0x0000, function=0x0, multifunction=on}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.17</Alias>
-                <SpecParams>
-                    <index>17</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>c2ef6c73-f633-41c1-8736-7e9c8d748ac2</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x04, bus=0x00, domain=0x0000, function=0x1}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.18</Alias>
-                <SpecParams>
-                    <index>18</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>5944d260-08c3-4f12-aa22-1e9ac76ae6c0</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x04, bus=0x00, domain=0x0000, function=0x2}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.19</Alias>
-                <SpecParams>
-                    <index>19</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>8c7ad6aa-ac22-4d98-86b7-45f3a13c98da</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x04, bus=0x00, domain=0x0000, function=0x3}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.20</Alias>
-                <SpecParams>
-                    <index>20</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>dc1cfae5-682d-4bb5-a53e-d604852e62cd</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>pci</Device>
-                <rasd:Address>{type=pci, slot=0x04, bus=0x00, domain=0x0000, function=0x4}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>pci.21</Alias>
-                <SpecParams>
-                    <index>21</index>
-                    <model>pcie-root-port</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>6117753b-8ce6-4568-8e09-c8b686396334</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>sata</Device>
-                <rasd:Address>{type=pci, slot=0x1f, bus=0x00, domain=0x0000, function=0x2}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>ide</Alias>
-                <SpecParams>
-                    <index>0</index>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>17976687-41f8-4f7c-97f5-a76a282c40e4</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>virtio-serial</Device>
-                <rasd:Address>{type=pci, slot=0x00, bus=0x03, domain=0x0000, function=0x0}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>ua-17976687-41f8-4f7c-97f5-a76a282c40e4</Alias>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>97f6991c-e4d5-11f0-9b4a-00163e6c35f4</rasd:InstanceId>
+                <rasd:InstanceId>a41e097e-329a-3be5-a9e8-9bc112fe5fac</rasd:InstanceId>
                 <Type>rng</Type>
                 <Device>virtio</Device>
                 <rasd:Address>{type=pci, slot=0x00, bus=0x06, domain=0x0000, function=0x0}</rasd:Address>
                 <BootOrder>0</BootOrder>
                 <IsPlugged>true</IsPlugged>
                 <IsReadOnly>false</IsReadOnly>
-                <Alias>ua-97f6991c-e4d5-11f0-9b4a-00163e6c35f4</Alias>
+                <Alias></Alias>
                 <SpecParams>
                     <source>urandom</source>
                 </SpecParams>
             </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>0eb75625-9891-4b03-9541-c58c43c323b2</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>virtio-scsi</Device>
-                <rasd:Address>{type=pci, slot=0x00, bus=0x02, domain=0x0000, function=0x0}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>ua-0eb75625-9891-4b03-9541-c58c43c323b2</Alias>
-                <SpecParams>
-                    <ioThreadId></ioThreadId>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>59536909-bac6-4202-b2ad-d84a22a41013</rasd:InstanceId>
-                <Type>balloon</Type>
-                <Device>memballoon</Device>
-                <rasd:Address>{type=pci, slot=0x00, bus=0x05, domain=0x0000, function=0x0}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>true</IsReadOnly>
-                <Alias>ua-59536909-bac6-4202-b2ad-d84a22a41013</Alias>
-                <SpecParams>
-                    <model>virtio</model>
-                </SpecParams>
-            </Item>
-            <Item>
-                <rasd:ResourceType>0</rasd:ResourceType>
-                <rasd:InstanceId>e95647b0-4bb2-4ccb-b867-cbde06311038</rasd:InstanceId>
-                <Type>controller</Type>
-                <Device>usb</Device>
-                <rasd:Address>{type=pci, slot=0x00, bus=0x04, domain=0x0000, function=0x0}</rasd:Address>
-                <BootOrder>0</BootOrder>
-                <IsPlugged>true</IsPlugged>
-                <IsReadOnly>false</IsReadOnly>
-                <Alias>ua-e95647b0-4bb2-4ccb-b867-cbde06311038</Alias>
-                <SpecParams>
-                    <index>0</index>
-                    <model>qemu-xhci</model>
-                </SpecParams>
-            </Item>
-        </Section>
-        <Section xsi:type="ovf:SnapshotsSection_Type">
-            <Snapshot ovf:id="3d298647-57d5-4a2b-90e7-226bdb4f1800">
-                <Type>ACTIVE</Type>
-                <Description>Active VM</Description>
-                <CreationDate>2026/01/07 13:37:09</CreationDate>
-            </Snapshot>
         </Section>
     </Content>
 </ovf:Envelope>
