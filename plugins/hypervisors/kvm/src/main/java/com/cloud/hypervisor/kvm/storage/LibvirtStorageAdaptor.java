@@ -2553,20 +2553,48 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     /**
-     * Calculate LVM LV size for QCOW2 image accounting for metadata overhead
-     * @param qcow2PhysicalSize Physical size in bytes from qemu-img info
+     * Calculate LVM LV size for CLVM_NG template allocation.
+     * Templates need space for actual data plus overhead for QCOW2 metadata expansion during conversion.
+     * Formula: physical_size + 50% of virtual_size
+     *
+     * @param physicalSize Physical size in bytes (actual allocated data in source template)
+     * @param virtualSize Virtual size in bytes (full disk capacity)
      * @param vgName Volume group name to query PE size
-     * @return Size in bytes to allocate for LV
+     * @return Size in bytes to allocate for template LV
      */
-    private long calculateClvmNgLvSize(long qcow2PhysicalSize, String vgName) {
+    private long calculateClvmNgTemplateLvSize(long physicalSize, long virtualSize, String vgName) {
         long peSize = getVgPhysicalExtentSize(vgName);
-        long roundedSize = ((qcow2PhysicalSize + peSize - 1) / peSize) * peSize;
 
+        long minOverhead = 64 * 1024 * 1024L;
+        long virtualSizeOverhead = (long) (virtualSize * 0.30);
+        long overhead = Math.max(minOverhead, virtualSizeOverhead);
+
+        long targetSize = physicalSize + overhead;
+        long roundedSize = ((targetSize + peSize - 1) / peSize) * peSize;
+
+        logger.info("Calculated template LV size: {} bytes (physical: {}, virtual: {}, overhead: {} (50% of virtual), rounded to {} PEs, PE size = {} bytes)",
+                roundedSize, physicalSize, virtualSize, overhead, roundedSize / peSize, peSize);
+
+        return roundedSize;
+    }
+
+    /**
+     * Calculate LVM LV size for CLVM_NG volume allocation.
+     * Volumes with backing files need approximately the virtual size allocated on block devices.
+     * Formula: virtual_size + 1 PE (for QCOW2 metadata and header)
+     *
+     * @param virtualSize Virtual size in bytes (full disk capacity)
+     * @param vgName Volume group name to query PE size
+     * @return Size in bytes to allocate for volume LV
+     */
+    private long calculateClvmNgVolumeLvSize(long virtualSize, String vgName) {
+        long peSize = getVgPhysicalExtentSize(vgName);
+
+        long roundedSize = ((virtualSize + peSize - 1) / peSize) * peSize;
         long finalSize = roundedSize + peSize;
-        logger.info("Calculated LV size for QCOW2 physical size {} bytes: {} bytes " +
-                        "(rounded to {} PEs + 1 PE overhead, PE size = {} bytes)",
-                qcow2PhysicalSize, finalSize,
-                roundedSize / peSize, peSize);
+
+        logger.info("Calculated volume LV size: {} bytes (virtual: {}, rounded to {} PEs + 1 PE overhead, PE size = {} bytes)",
+                finalSize, virtualSize, roundedSize / peSize, peSize);
 
         return finalSize;
     }
@@ -2618,7 +2646,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     private KVMPhysicalDisk createClvmNgDiskWithBacking(String volumeUuid, int timeout, long virtualSize, String backingFile, KVMStoragePool pool) {
         String vgName = getVgName(pool.getLocalPath());
-        long lvSize = calculateClvmNgLvSize(virtualSize, vgName);
+        long lvSize = calculateClvmNgVolumeLvSize(virtualSize, vgName);
         String volumePath = "/dev/" + vgName + "/" + volumeUuid;
 
         logger.debug("Creating CLVM_NG volume {} with LV size {} bytes (virtual size: {} bytes)", volumeUuid, lvSize, virtualSize);
@@ -2681,10 +2709,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         logger.info("Creating new template LV {} in VG {} for template {}", lvName, vgName, templateUuid);
 
-        // TODO: need to verify if virtual / physical size is to be used!
-        //long physicalSize = getQcow2PhysicalSize(templatePath);
-        long virualSize = getQcow2VirtualSize(templatePath);
-        long lvSize = calculateClvmNgLvSize(virualSize, vgName);
+        long virtualSize = getQcow2VirtualSize(templatePath);
+        long physicalSize = getQcow2PhysicalSize(templatePath);
+        long lvSize = calculateClvmNgTemplateLvSize(physicalSize, virtualSize, vgName);
+
+        logger.info("Template source - Physical: {} bytes, Virtual: {} bytes, LV will be: {} bytes",
+                physicalSize, virtualSize, lvSize);
 
         Script lvcreate = new Script("lvcreate", Duration.millis(timeout), logger);
         lvcreate.add("-n", lvName);
@@ -2695,11 +2725,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException("Failed to create LV for CLVM_NG template: " + result);
         }
 
-
         Script qemuImgConvert = new Script("qemu-img", Duration.millis(timeout), logger);
         qemuImgConvert.add("convert");
         qemuImgConvert.add(templatePath);
         qemuImgConvert.add("-O", "qcow2");
+        qemuImgConvert.add("-o", "cluster_size=64k,extended_l2=off,preallocation=off");
         qemuImgConvert.add(lvPath);
         result = qemuImgConvert.execute();
 
@@ -2708,8 +2738,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException("Failed to convert template to CLVM_NG volume: " + result);
         }
 
-        logger.info("Created template LV {} with size {} bytes (physical: {}, overhead: {})",
-                lvName, lvSize, virualSize, lvSize - virualSize);
+        long actualVirtualSize = getQcow2VirtualSize(lvPath);
+        logger.info("Created template LV {} with size {} bytes (source physical: {}, actual virtual: {}, overhead: {})",
+                lvName, lvSize, physicalSize, actualVirtualSize, lvSize - physicalSize);
 
         try {
             ensureTemplateLvInSharedMode(lvPath, true);
@@ -2721,7 +2752,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         KVMPhysicalDisk templateDisk = new KVMPhysicalDisk(lvPath, lvName, pool);
         templateDisk.setFormat(PhysicalDiskFormat.QCOW2);
-        templateDisk.setVirtualSize(virualSize);
+        templateDisk.setVirtualSize(actualVirtualSize);
+        templateDisk.setSize(lvSize);
         templateDisk.setSize(lvSize);
 
     }
@@ -2741,5 +2773,4 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         lvremove.add(lvPath);
         lvremove.execute();
     }
-
 }
