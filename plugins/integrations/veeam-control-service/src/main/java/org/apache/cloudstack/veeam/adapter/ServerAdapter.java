@@ -701,7 +701,7 @@ public class ServerAdapter extends ManagerBase {
         return getInstance(uuid, false, false, false);
     }
 
-    public VmAction deleteInstance(String uuid) {
+    public VmAction deleteInstance(String uuid, boolean async) {
         UserVmVO vo = userVmDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -718,8 +718,14 @@ public class ServerAdapter extends ManagerBase {
             ApiServerService.AsyncCmdResult result =
                     apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
                             serviceUserAccount.second());
-            AsyncJobJoinVO asyncJobJoinVO = asyncJobJoinDao.findById(result.jobId);
-            return AsyncJobJoinVOToJobConverter.toVmAction(asyncJobJoinVO, userVmJoinDao.findById(vo.getId()));
+            AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
+            if (jobVo == null) {
+                throw new CloudRuntimeException("Failed to find job for VM deletion");
+            }
+            if (!async) {
+                waitForJobCompletion(jobVo);
+            }
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to delete VM: " + e.getMessage(), e);
         } finally {
@@ -727,7 +733,7 @@ public class ServerAdapter extends ManagerBase {
         }
     }
 
-    public VmAction startInstance(String uuid) {
+    public VmAction startInstance(String uuid, boolean async) {
         UserVmVO vo = userVmDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -743,8 +749,14 @@ public class ServerAdapter extends ManagerBase {
             ApiServerService.AsyncCmdResult result =
                     apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
                             serviceUserAccount.second());
-            AsyncJobJoinVO asyncJobJoinVO = asyncJobJoinDao.findById(result.jobId);
-            return AsyncJobJoinVOToJobConverter.toVmAction(asyncJobJoinVO, userVmJoinDao.findById(vo.getId()));
+            AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
+            if (jobVo == null) {
+                throw new CloudRuntimeException("Failed to find job for VM start");
+            }
+            if (!async) {
+                waitForJobCompletion(jobVo);
+            }
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to start VM: " + e.getMessage(), e);
         } finally {
@@ -752,7 +764,7 @@ public class ServerAdapter extends ManagerBase {
         }
     }
 
-    public VmAction stopInstance(String uuid) {
+    public VmAction stopInstance(String uuid, boolean async) {
         UserVmVO vo = userVmDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -769,8 +781,14 @@ public class ServerAdapter extends ManagerBase {
             ApiServerService.AsyncCmdResult result =
                     apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
                             serviceUserAccount.second());
-            AsyncJobJoinVO asyncJobJoinVO = asyncJobJoinDao.findById(result.jobId);
-            return AsyncJobJoinVOToJobConverter.toVmAction(asyncJobJoinVO, userVmJoinDao.findById(vo.getId()));
+            AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
+            if (jobVo == null) {
+                throw new CloudRuntimeException("Failed to find job for VM stop");
+            }
+            if (!async) {
+                waitForJobCompletion(jobVo);
+            }
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to stop VM: " + e.getMessage(), e);
         } finally {
@@ -778,7 +796,7 @@ public class ServerAdapter extends ManagerBase {
         }
     }
 
-    public VmAction shutdownInstance(String uuid) {
+    public VmAction shutdownInstance(String uuid, boolean async) {
         UserVmVO vo = userVmDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
@@ -795,8 +813,14 @@ public class ServerAdapter extends ManagerBase {
             ApiServerService.AsyncCmdResult result =
                     apiServerService.processAsyncCmd(cmd, params, ctx, serviceUserAccount.first().getId(),
                             serviceUserAccount.second());
-            AsyncJobJoinVO asyncJobJoinVO = asyncJobJoinDao.findById(result.jobId);
-            return AsyncJobJoinVOToJobConverter.toVmAction(asyncJobJoinVO, userVmJoinDao.findById(vo.getId()));
+            AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
+            if (jobVo == null) {
+                throw new CloudRuntimeException("Failed to find job for VM shutdown");
+            }
+            if (!async) {
+                waitForJobCompletion(jobVo);
+            }
+            return AsyncJobJoinVOToJobConverter.toVmAction(jobVo, userVmJoinDao.findById(vo.getId()));
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to shutdown VM: " + e.getMessage(), e);
         } finally {
@@ -1314,7 +1338,7 @@ public class ServerAdapter extends ManagerBase {
         return action;
     }
 
-    public ResourceAction revertInstanceToSnapshot(String uuid) {
+    public ResourceAction revertInstanceToSnapshot(String uuid, boolean async) {
         ResourceAction action = null;
         VMSnapshotVO vo = vmSnapshotDao.findByUuid(uuid);
         if (vo == null) {
@@ -1333,6 +1357,9 @@ public class ServerAdapter extends ManagerBase {
             AsyncJobJoinVO jobVo = asyncJobJoinDao.findById(result.jobId);
             if (jobVo == null) {
                 throw new CloudRuntimeException("Failed to find job for snapshot revert");
+            }
+            if (!async) {
+                waitForJobCompletion(jobVo);
             }
             action = AsyncJobJoinVOToJobConverter.toAction(jobVo);
         } catch (Exception e) {
