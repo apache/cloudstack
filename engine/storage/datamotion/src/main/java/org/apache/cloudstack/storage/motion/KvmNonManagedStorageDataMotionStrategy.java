@@ -285,6 +285,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     }
 
     protected Boolean supportStoragePoolType(StoragePoolType storagePoolType) {
-        return super.supportStoragePoolType(storagePoolType, StoragePoolType.Filesystem);
+        return super.supportStoragePoolType(storagePoolType, StoragePoolType.Filesystem,
+                StoragePoolType.CLVM, StoragePoolType.CLVM_NG);
     }
 }
