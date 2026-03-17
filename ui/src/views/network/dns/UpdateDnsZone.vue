@@ -24,15 +24,15 @@
         :rules="rules"
         layout="vertical">
 
-        <a-form-item name="name" ref="name">
+        <a-form-item name="description" ref="description">
           <template #label>
             <tooltip-label
-              :title="$t('label.name')"
-              :tooltip="apiParams.name?.description" />
+              :title="$t('label.description')"
+              :tooltip="apiParams.description?.description" />
           </template>
           <a-input
-            v-model:value="form.name"
-            :placeholder="apiParams.name?.description"
+            v-model:value="form.description"
+            :placeholder="apiParams.description?.description"
             v-focus="true" />
         </a-form-item>
 
@@ -72,17 +72,14 @@ export default {
       loading: false,
       apiParams: {},
       form: {
-        name: ''
+        description: ''
       },
       rules: {}
     }
   },
   created () {
     this.apiParams = this.$getApiParams('updateDnsZone') || {}
-    this.rules = {
-      name: [{ required: true, message: this.$t('message.error.required.input') }]
-    }
-    this.form.name = this.resource.name || ''
+    this.form.description = this.resource.description || ''
   },
   methods: {
     async handleSubmit () {
@@ -98,9 +95,8 @@ export default {
       }
 
       this.loading = true
-
       try {
-        await postAPI('updateDnsZone', { id: this.resource.id, name: this.form.name })
+        await postAPI('updateDnsZone', { id: this.resource.id, description: this.form.description })
 
         this.$notification.success({
           message: this.$t('label.dns.update.zone'),

@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsServerResponse;
+import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.dns.DnsServer;
 
@@ -50,6 +51,10 @@ public class DeleteDnsServerCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsServerResponse.class,
             required = true, description = "the ID of the DNS server")
     private Long id;
+
+    @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN,
+            entityType = DnsZoneResponse.class, description = "True if all associated DNS zones have to be cleaned up with this server")
+    private Boolean cleanup;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -93,4 +98,8 @@ public class DeleteDnsServerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() { return "Deleting DNS server ID: " + getId(); }
+
+    public Boolean getCleanup() {
+        return Boolean.TRUE.equals(cleanup);
+    }
 }

@@ -58,6 +58,15 @@
           </a-select>
         </a-form-item>
 
+        <a-form-item name="description" ref="description">
+          <template #label>
+            <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          </template>
+          <a-input
+            v-model:value="form.description"
+            :placeholder="apiParams.description.description"/>
+        </a-form-item>
+
         <div class="action-button">
           <a-button @click="closeAction">
             {{ $t('label.cancel') }}
@@ -79,7 +88,7 @@ import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'AddDnsZone',
+  name: 'CreateDnsZone',
   components: {
     TooltipLabel
   },
@@ -89,7 +98,8 @@ export default {
       apiParams: {},
       form: {
         name: '',
-        dnsserverid: undefined
+        dnsserverid: undefined,
+        description: ''
       },
       rules: {},
       fetchingServers: false,
@@ -121,10 +131,34 @@ export default {
       this.loading = true
 
       try {
-        await postAPI('createDnsZone', this.form)
-        this.$notification.success({
-          message: this.$t('label.dns.add.zone'),
-          description: this.$t('message.success.add.dns.zone')
+        const params = {
+          name: this.form.name.trim(),
+          dnsserverid: this.form.dnsserverid,
+          description: this.form.description?.trim()
+        }
+
+        const response = await postAPI('createDnsZone', params)
+        const jobId = response.creatednszoneresponse.jobid
+        if (!jobId) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: 'Failed to get jobid for CreateDnsZone',
+            duration: 0
+          })
+        }
+        await this.$pollJob({
+          jobId: jobId,
+          title: this.$t('label.dns.create.zone'),
+          description: this.$t('label.creating.dns.zone'),
+          successMethod: () => {
+            this.$notification.success({
+              message: this.$t('label.dns.create.zone'),
+              description: this.$t('message.success.create.dns.zone')
+            })
+          },
+          loadingMessage: `${this.$t('label.dns.create.zone')} ${this.$t('label.in.progress')}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          action: { isFetchData: false }
         })
         this.$emit('refresh-data')
         this.closeAction()

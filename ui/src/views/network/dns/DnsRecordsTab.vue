@@ -22,8 +22,9 @@
         shape="round"
         style="float: right;margin-bottom: 10px; z-index: 8"
         @click="() => { showAddForm = true }">
-        <template #icon><plus-outlined /></template>
-        {{ $t('label.dns.add.record') }}
+        <!-- <template #icon><plus-outlined /></template> -->
+        {{ $t('label.dns.create.record') }}
+        <plus-outlined style="margin-left: 5px;" />
       </a-button>
       <br />
       <br />
@@ -40,7 +41,10 @@
           <template v-if="column.dataIndex === 'contents'">
             <a-tag v-for="item in record.contents" :key="item">{{ item }}</a-tag>
           </template>
-          <template v-if="column.key === 'actions'">
+          <template v-if="column.dataIndex === 'ttl'">
+            {{ record.ttl }}
+          </template>
+          <template v-if="column.key === 'actions' &&  record.type !== 'NS'">
             <a-popconfirm
               :title="$t('message.confirm.delete.dns.record')"
               @confirm="handleDeleteRecord(record)"
@@ -79,14 +83,14 @@
     <a-modal
       v-if="showAddForm"
       :visible="showAddForm"
-      :title="$t('label.dns.add.record')"
+      :title="$t('label.dns.create.record')"
       :maskClosable="false"
       :closable="true"
       :footer="null"
       @cancel="() => { showAddForm = false }"
       centered
       width="auto">
-      <AddDnsRecord
+      <CreateDnsRecord
         :resource="resource"
         @refresh-data="fetchData"
         @close-action="showAddForm = false" />
@@ -97,13 +101,13 @@
 <script>
 import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
-import AddDnsRecord from '@/views/network/dns/AddDnsRecord'
+import CreateDnsRecord from '@/views/network/dns/CreateDnsRecord'
 
 export default {
   name: 'DnsRecordsTab',
   components: {
     TooltipButton,
-    AddDnsRecord
+    CreateDnsRecord
   },
   props: {
     resource: {
@@ -137,7 +141,7 @@ export default {
           dataIndex: 'contents'
         },
         {
-          title: this.$t('label.ttl'),
+          title: this.$t('label.ttl') + ' (' + this.$t('label.seconds') + ')',
           dataIndex: 'ttl'
         },
         {
@@ -180,7 +184,16 @@ export default {
       })
     },
     handleDeleteRecord (record) {
-      postAPI('deleteDnsRecord', { id: record.id }).then(() => {
+      const params = {
+        dnszoneid: this.resource.id,
+        name: record.name,
+        type: record.type,
+        contents: record.contents.join(','),
+        ttl: record.ttl
+      }
+      console.log('DeleteDnsRecord params', params)
+
+      postAPI('deleteDnsRecord', params).then(() => {
         this.$notification.success({
           message: this.$t('message.success.delete.dns.record')
         })

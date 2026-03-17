@@ -40,6 +40,7 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -185,8 +186,8 @@ public class PowerDnsClient implements AutoCloseable {
                 nsArray.add(ns.endsWith(".") ? ns : ns + ".");
             }
         }
-        HttpPatch request = new HttpPatch(url);
-        request.setEntity(new org.apache.http.entity.StringEntity(json.toString(), StandardCharsets.UTF_8));
+        HttpPut request = new HttpPut(url);
+        request.setEntity(new StringEntity(json.toString(), StandardCharsets.UTF_8));
         execute(request, apiKey, 204);
     }
 
@@ -221,7 +222,7 @@ public class PowerDnsClient implements AutoCloseable {
         }
         String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
         HttpPatch request = new HttpPatch(buildUrl(baseUrl, port, "/servers/" + externalServerId + "/zones/" + encodedZone));
-        request.setEntity(new org.apache.http.entity.StringEntity(root.toString(), StandardCharsets.UTF_8));
+        request.setEntity(new StringEntity(root.toString(), StandardCharsets.UTF_8));
         execute(request, apiKey, 204);
         return normalizedRecord.endsWith(".") ? normalizedRecord.substring(0, normalizedRecord.length() - 1) : normalizedRecord;
     }

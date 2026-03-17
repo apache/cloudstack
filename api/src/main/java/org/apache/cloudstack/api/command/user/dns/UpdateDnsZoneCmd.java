@@ -45,7 +45,7 @@ public class UpdateDnsZoneCmd extends BaseCmd {
             required = true, description = "The ID of the DNS zone")
     private Long id;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Display text for the zone")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description =  "The description of the DNS zone to be updated")
     private String description;
 
     /////////////////////////////////////////////////////

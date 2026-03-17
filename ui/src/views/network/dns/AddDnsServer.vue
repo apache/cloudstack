@@ -91,6 +91,28 @@
             :placeholder="apiParams.credentials?.description || 'Enter API Key'" />
         </a-form-item>
 
+        <a-form-item name="externalserverid" ref="externalserverid">
+          <template #label>
+            <tooltip-label
+              :title="$t('label.dns.externalserverid')"
+              :tooltip="apiParams.externalserverid?.description" />
+          </template>
+          <a-input
+            v-model:value="form.externalserverid"
+            :placeholder="apiParams.externalserverid?.description || 'Enter Server ID of PowerDNS e.g. localhost'" />
+        </a-form-item>
+
+        <a-form-item name="publicdomainsuffix" ref="publicdomainsuffix">
+          <template #label>
+            <tooltip-label
+              :title="$t('label.dns.publicdomainsuffix')"
+              :tooltip="apiParams.publicdomainsuffix?.description" />
+          </template>
+          <a-input
+            v-model:value="form.publicdomainsuffix"
+            :placeholder="apiParams.publicdomainsuffix?.description || 'Enter Public Domain Suffix e.g. example.com'" />
+        </a-form-item>
+
         <a-form-item name="nameservers" ref="nameservers">
           <template #label>
             <tooltip-label
@@ -103,7 +125,7 @@
             mode="tags"
             style="width: 100%"
             :token-separators="[',', ' ']"
-            :placeholder="apiParams.nameservers?.description || 'ns1.example.com, ns2.example.com'" />
+            :placeholder="apiParams.nameservers?.description" />
         </a-form-item>
 
         <a-form-item name="ispublic" ref="ispublic">
@@ -146,8 +168,10 @@ export default {
         url: '',
         provider: '',
         port: 8081,
-        nameservers: '',
-        ispublic: false
+        nameservers: [],
+        ispublic: false,
+        publicdomainsuffix: '',
+        externalserverid: 'localhost'
       },
       rules: {},
       fetchingProviders: false,
@@ -158,9 +182,22 @@ export default {
     this.apiParams = this.$getApiParams('addDnsServer') || {}
     this.rules = {
       name: [{ required: true, message: this.$t('message.error.required.input') }],
-      url: [{ required: true, message: this.$t('message.error.required.input') }],
+      url: [
+        { required: true, message: this.$t('message.error.required.input') },
+        { validator: this.validateUrl }
+      ],
+      port: [
+        { required: true, message: this.$t('message.error.required.input') },
+        { validator: this.validatePort }
+      ],
       provider: [{ required: true, message: this.$t('message.error.required.input') }],
-      credentials: [{ required: true, message: this.$t('message.error.required.input') }]
+      credentials: [{ required: true, message: this.$t('message.error.required.input') }],
+      externalserverid: [{ required: true, message: this.$t('message.error.required.input') }],
+      nameservers: [
+        { required: true, type: 'array', min: 1, message: this.$t('message.error.required.input') },
+        { validator: this.validateNameservers }
+      ],
+      publicdomainsuffix: [{ validator: this.validatePublicDomainSuffix }]
     }
     this.fetchProviders()
   },
@@ -177,9 +214,22 @@ export default {
       }
       this.loading = true
       try {
-        await postAPI('addDnsServer', this.form)
+        const params = {
+          name: this.form.name.trim(),
+          url: this.form.url?.trim().replace(/\/$/, ''),
+          port: this.form.port,
+          provider: this.form.provider,
+          credentials: this.form.credentials,
+          externalserverid: this.form.externalserverid.trim(),
+          nameservers: this.form.nameservers?.map(ns => ns.toLowerCase().trim()).filter(Boolean),
+          ispublic: this.form.ispublic
+        }
+        if (this.form.ispublic) {
+          params.publicdomainsuffix = this.form.publicdomainsuffix?.trim().toLowerCase()
+        }
+        await postAPI('addDnsServer', params)
         this.$notification.success({
-          message: this.$t('label.add.dns.server'),
+          message: this.$t('label.dns.add.server'),
           description: this.$t('message.success.add.dns.server')
         })
         this.$emit('refresh-data')
@@ -213,6 +263,68 @@ export default {
       } finally {
         this.fetchingProviders = false
       }
+    },
+    validateUrl (rule, value) {
+      if (!value) return Promise.resolve()
+      try {
+        const parsed = new URL(value)
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return Promise.reject(new Error('URL must start with http:// or https://'))
+        }
+        if (parsed.port) {
+          return Promise.reject(new Error('Do not include port in URL. Use the port field instead.'))
+        }
+      } catch (e) {
+        return Promise.reject(new Error('Invalid URL format'))
+      }
+      return Promise.resolve()
+    },
+    validatePort (rule, value) {
+      if (value === undefined || value === null) {
+        return Promise.resolve()
+      }
+
+      if (value < 1 || value > 65535) {
+        return Promise.reject(new Error('Port must be between 1 and 65535'))
+      }
+
+      return Promise.resolve()
+    },
+    validateNameservers (rule, value) {
+      if (!value || !value.length) {
+        return Promise.resolve()
+      }
+
+      const fqdnRegex = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
+
+      for (const ns of value) {
+        if (!fqdnRegex.test(ns)) {
+          return Promise.reject(new Error('Invalid nameserver'))
+        }
+      }
+
+      if (new Set(value).size !== value.length) {
+        return Promise.reject(new Error('Nameservers must be unique'))
+      }
+
+      return Promise.resolve()
+    },
+    validatePublicDomainSuffix (rule, value) {
+      if (!this.form.ispublic) {
+        return Promise.resolve()
+      }
+
+      if (!value) {
+        return Promise.reject(new Error(this.$t('message.error.required.publicdomainsuffix')))
+      }
+
+      const fqdnRegex = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
+
+      if (!fqdnRegex.test(value)) {
+        return Promise.reject(new Error('Invalid domain suffix'))
+      }
+
+      return Promise.resolve()
     }
   }
 }

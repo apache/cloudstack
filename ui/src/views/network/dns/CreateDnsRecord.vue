@@ -103,7 +103,7 @@ import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'AddDnsRecord',
+  name: 'CreateDnsRecord',
   components: {
     TooltipLabel
   },
@@ -147,13 +147,35 @@ export default {
       }
       this.loading = true
       try {
-        await postAPI('addDnsRecord', {
+        const params = {
           dnszoneid: this.resource.id,
-          ...this.form
-        })
-        this.$notification.success({
-          message: this.$t('label.dns.add.record'),
-          description: this.$t('message.success.add.dns.record')
+          name: this.form.name,
+          type: this.form.type,
+          contents: this.form.contents.join(','),
+          ttl: this.form.ttl
+        }
+        const response = await postAPI('createDnsRecord', params)
+        const jobId = response.creatednsrecordresponse.jobid
+        if (!jobId) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: 'Failed to get jobid for createDnsRecord',
+            duration: 0
+          })
+        }
+        await this.$pollJob({
+          jobId: jobId,
+          title: this.$t('label.dns.create.record'),
+          description: this.$t('label.creating.dns.record'),
+          successMethod: () => {
+            this.$notification.success({
+              message: this.$t('label.dns.create.record'),
+              description: this.$t('message.success.create.dns.record')
+            })
+          },
+          loadingMessage: `${this.$t('label.dns.create.record')} ${this.$t('label.in.progress')}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          action: { isFetchData: false }
         })
         this.$emit('refresh-data')
         this.closeAction()

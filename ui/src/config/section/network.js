@@ -1522,8 +1522,7 @@ export default {
           label: 'label.dns.update.server',
           dataView: true,
           popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsServer.vue'))),
-          show: (record) => { return true }
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsServer.vue')))
         },
         {
           api: 'deleteDnsServer',
@@ -1531,8 +1530,8 @@ export default {
           label: 'label.dns.delete.server',
           message: 'message.action.delete.dns.server',
           dataView: true,
-          groupAction: true,
-          show: (record) => { return true },
+          popup: true,
+          groupAction: false,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
@@ -1542,8 +1541,8 @@ export default {
       title: 'label.dns.zones',
       icon: 'global-outlined',
       permission: ['listDnsZones'],
-      columns: ['name', 'state', 'dnsservername', 'account'],
-      details: ['name', 'id', 'state', 'dnsservername', 'dnsserverid', 'account', 'domainpath'],
+      columns: ['name', 'state', 'dnsservername', 'account', 'description'],
+      details: ['name', 'id', 'state', 'dnsservername', 'dnsserverid', 'account', 'domainpath', 'description'],
       tabs: [{
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
@@ -1557,11 +1556,10 @@ export default {
         {
           api: 'createDnsZone',
           icon: 'plus-outlined',
-          label: 'label.dns.add.zone',
+          label: 'label.dns.create.zone',
           listView: true,
           popup: true,
-          disabled: (record) => false,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AddDnsZone.vue'))),
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/CreateDnsZone.vue'))),
           show: () => {
             return true
           }
@@ -1572,7 +1570,6 @@ export default {
           label: 'label.dns.update.zone',
           dataView: true,
           popup: true,
-          disabled: (record) => false,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsZone.vue'))),
           show: (record) => { return true }
         },
@@ -1582,7 +1579,8 @@ export default {
           label: 'label.dns.delete.zone',
           message: 'message.action.delete.dns.zone',
           dataView: true,
-          groupAction: true,
+          popup: true,
+          groupAction: false,
           disabled: (record) => false,
           show: (record) => { return true },
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }

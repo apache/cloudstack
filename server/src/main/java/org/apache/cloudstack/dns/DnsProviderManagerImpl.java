@@ -51,7 +51,9 @@ import org.apache.cloudstack.dns.dao.DnsServerJoinDao;
 import org.apache.cloudstack.dns.dao.DnsZoneDao;
 import org.apache.cloudstack.dns.dao.DnsZoneJoinDao;
 import org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDao;
+import org.apache.cloudstack.dns.exception.DnsConflictException;
 import org.apache.cloudstack.dns.exception.DnsNotFoundException;
+import org.apache.cloudstack.dns.exception.DnsTransportException;
 import org.apache.cloudstack.dns.vo.DnsServerJoinVO;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
 import org.apache.cloudstack.dns.vo.DnsZoneJoinVO;
@@ -176,18 +178,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     private Pair<List<DnsServerVO>, Integer> searchForDnsServerInternal(ListDnsServersCmd cmd) {
-        Long dnsServerId = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
-        if (dnsServerId != null) {
-            DnsServerVO dnsServerVO = dnsServerDao.findById(dnsServerId);
-            if (dnsServerVO == null) {
-                return null;
-            }
-            return new Pair<>(Collections.singletonList(dnsServerVO), 1);
-        }
         Set<Long> parentDomainIds = domainDao.getDomainParentIds(caller.getDomainId());
         Filter searchFilter = new Filter(DnsServerVO.class, ApiConstants.ID, true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        return dnsServerDao.searchDnsServer(dnsServerId, caller.getAccountId(), parentDomainIds, cmd.getProviderType(), cmd.getKeyword(), searchFilter);
+        return dnsServerDao.searchDnsServer(cmd.getId(), caller.getAccountId(), parentDomainIds, cmd.getProviderType(), cmd.getKeyword(), searchFilter);
     }
 
     @Override
@@ -272,6 +266,9 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, dnsServer);
+        if (cmd.getCleanup()) {
+            // ToDo cleanup associated dnsZones
+        }
         return dnsServerDao.remove(dnsServerId);
     }
 
@@ -322,6 +319,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             try {
                 DnsProvider provider = getProviderByType(server.getProviderType());
                 provider.updateZone(server, dnsZone);
+                dnsZoneDao.update(dnsZone.getId(), dnsZone);
             } catch (Exception ex) {
                 logger.error("Failed to update DNS zone: {} on DNS server: {}", dnsZone.getName(), server.getName(), ex);
                 throw new CloudRuntimeException("Failed to update DNS zone: " + dnsZone.getName());
@@ -375,20 +373,23 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (StringUtils.isBlank(recordName)) {
             throw new InvalidParameterValueException("Empty DNS record name is not allowed");
         }
-        DnsZoneVO zone = dnsZoneDao.findById(cmd.getDnsZoneId());
-        if (zone == null) {
+        DnsZoneVO dnsZone = dnsZoneDao.findById(cmd.getDnsZoneId());
+        if (dnsZone == null) {
             throw new InvalidParameterValueException("DNS zone not found.");
         }
         Account caller = CallContext.current().getCallingAccount();
-        accountMgr.checkAccess(caller, null, true, zone);
-        DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
+        accountMgr.checkAccess(caller, null, true, dnsZone);
+        DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
+        if (server == null) {
+            throw new CloudRuntimeException("The underlying DNS server for this DNS zone is missing.");
+        }
         try {
             DnsRecord.RecordType type = cmd.getType();
             List<String> normalizedContents = cmd.getContents().stream()
                     .map(value -> DnsProviderUtil.normalizeDnsRecordValue(value, type)).collect(Collectors.toList());
             DnsRecord record = new DnsRecord(recordName, type, normalizedContents, cmd.getTtl());
             DnsProvider provider = getProviderByType(server.getProviderType());
-            String normalizedRecordName = provider.addRecord(server, zone, record);
+            String normalizedRecordName = provider.addRecord(server, dnsZone, record);
             record.setName(normalizedRecordName);
             return createDnsRecordResponse(record);
         } catch (Exception ex) {
@@ -507,7 +508,13 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         } catch (Exception ex) {
             dnsZoneDao.remove(dnsZoneId);
             logger.error("Failed to provision DNS zone: {} on DNS server: {}", dnsZone.getName(), server.getName(), ex);
-            throw new CloudRuntimeException("Failed to provision DNS zone: " + dnsZone.getName());
+            String errorMsg = "";
+            if ( ex instanceof DnsConflictException) {
+                errorMsg = String.format("DNS zone: %s already exists", dnsZone.getName());
+            } else if (ex instanceof DnsTransportException){
+                errorMsg = String.format("DNS server: %s not reachable", server.getName());
+            }
+            throw new CloudRuntimeException(errorMsg);
         }
         return dnsZone;
     }
@@ -562,6 +569,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         res.setName(record.getName());
         res.setType(record.getType());
         res.setContent(record.getContents());
+        res.setTtl(record.getTtl());
         return res;
     }
 

@@ -63,7 +63,7 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
             description = "The type of zone (Public, Private). Defaults to Public.")
     private String type;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Display text for the zone")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description =  "The description of the DNS zone")
     private String description;
 
     /////////////////////////////////////////////////////
