@@ -36,6 +36,8 @@ public class MigrateVolumeCommand extends Command {
     String attachedVmName;
     Volume.Type volumeType;
     String hostGuidInTargetCluster;
+    Long newMaxIops;
+    Long newMinIops;
 
     private DataTO srcData;
     private DataTO destData;
@@ -149,5 +151,21 @@ public class MigrateVolumeCommand extends Command {
     @Override
     public boolean isReconcile() {
         return true;
+    }
+
+    public Long getNewMinIops() {
+        return newMinIops;
+    }
+
+    public void setNewMinIops(Long newMinIops) {
+        this.newMinIops = newMinIops;
+    }
+
+    public Long getNewMaxIops() {
+        return newMaxIops;
+    }
+
+    public void setNewMaxIops(Long newMaxIops) {
+        this.newMaxIops = newMaxIops;
     }
 }

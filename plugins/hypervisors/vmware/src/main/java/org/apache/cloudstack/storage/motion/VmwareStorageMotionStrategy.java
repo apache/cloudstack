@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -38,6 +39,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -251,6 +253,25 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
                 , sourcePool
                 , targetPool
                 , hostIdForVmAndHostGuidInTargetCluster.second(), ((VolumeObjectTO) srcData.getTO()).getChainInfo());
+
+        VolumeInfo volume = (VolumeInfo) srcData;
+        if (volume.getpayload() instanceof DiskOfferingVO) {
+            DiskOfferingVO offering = (DiskOfferingVO) volume.getpayload();
+
+            Long offeringIopsReadRate = offering.getIopsReadRate();
+            Long offeringIopsWriteRate = offering.getIopsWriteRate();
+
+            Long minIops = null;
+            Long maxIops = null;
+            if (ObjectUtils.allNotNull(offeringIopsReadRate, offeringIopsWriteRate)) {
+                minIops = Math.min(offeringIopsReadRate, offeringIopsWriteRate);
+                maxIops = Math.max(offeringIopsReadRate, offeringIopsWriteRate);
+            }
+
+            cmd.setNewMinIops(minIops);
+            cmd.setNewMaxIops(maxIops);
+        }
+
         if (sourcePool.getParent() != 0) {
             cmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
