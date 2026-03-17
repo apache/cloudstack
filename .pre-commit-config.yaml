@@ -166,13 +166,11 @@ repos:
         args: [--markdown-linebreak-ext=md]
         exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+    rev: v2.4.2
     hooks:
       - id: codespell
         name: run codespell
         description: Check spelling with codespell
-        args: [--ignore-words=.github/linters/codespell.txt]
-        exclude: ^systemvm/agent/noVNC/|^ui/package\.json$|^ui/package-lock\.json$|^ui/public/js/less\.min\.js$|^ui/public/locales/.*[^n].*\.json$|^server/src/test/java/org/apache/cloudstack/network/ssl/CertServiceTest.java$|^test/integration/smoke/test_ssl_offloading.py$
   - repo: https://github.com/pycqa/flake8
     rev: 7.0.0
     hooks:

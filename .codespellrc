@@ -1,0 +1,3 @@
+[codespell]
+ignore-words = .github/linters/codespell.txt
+skip = systemvm/agent/noVNC/*,ui/package.json,ui/package-lock.json,ui/public/js/less.min.js,ui/public/locales/*.json,server/src/test/java/org/apache/cloudstack/network/ssl/CertServiceTest.java,test/integration/smoke/test_ssl_offloading.py
