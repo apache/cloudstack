@@ -31,6 +31,7 @@ NAS_ADDRESS=""
 MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
+ENCRYPT_PASSFILE=""
 logFile="/var/log/cloudstack/agent/agent.log"
 
 log() {
@@ -84,6 +85,33 @@ sanity_checks() {
   log -ne "Environment Sanity Checks successfully passed"
 }
 
+encrypt_backup() {
+  local backup_dir="$1"
+  if [[ -z "$ENCRYPT_PASSFILE" ]]; then
+    return
+  fi
+  if [[ ! -f "$ENCRYPT_PASSFILE" ]]; then
+    echo "Encryption passphrase file not found: $ENCRYPT_PASSFILE"
+    exit 1
+  fi
+  log -ne "Encrypting backup files with LUKS"
+  for img in "$backup_dir"/*.qcow2; do
+    [[ -f "$img" ]] || continue
+    local tmp_img="${img}.luks"
+    if qemu-img convert -O qcow2 \
+        --object "secret,id=sec0,file=$ENCRYPT_PASSFILE" \
+        -o "encrypt.format=luks,encrypt.key-secret=sec0" \
+        "$img" "$tmp_img" 2>&1 | tee -a "$logFile"; then
+      mv "$tmp_img" "$img"
+      log -ne "Encrypted: $img"
+    else
+      echo "Encryption failed for $img"
+      rm -f "$tmp_img"
+      exit 1
+    fi
+  done
+}
+
 ### Operation methods ###
 
 backup_running_vm() {
@@ -114,6 +142,8 @@ backup_running_vm() {
   rm -f $dest/backup.xml
   sync
 
+  encrypt_backup "$dest"
+
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
   du -sb $dest | cut -f1
@@ -135,6 +165,8 @@ backup_stopped_vm() {
     name="datadisk"
   done
   sync
+
+  encrypt_backup "$dest"
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
 }
@@ -165,7 +197,7 @@ mount_operation() {
 
 function usage {
   echo ""
-  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path>"
+  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> [-e <passphrase file>]"
   echo ""
   exit 1
 }
@@ -204,6 +236,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -d|--diskpaths)
       DISK_PATHS="$2"
+      shift
+      shift
+      ;;
+    -e|--encrypt)
+      ENCRYPT_PASSFILE="$2"
       shift
       shift
       ;;
