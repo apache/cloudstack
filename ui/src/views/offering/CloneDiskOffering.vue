@@ -18,6 +18,21 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
+      <a-alert
+        v-if="resource"
+        type="info"
+        style="margin-bottom: 16px">
+        <template #message>
+          <div style="display: block; width: 100%;">
+            <div style="display: block; margin-bottom: 8px;">
+              <strong>{{ $t('message.clone.offering.from') }}: {{ resource.name }}</strong>
+            </div>
+            <div style="display: block; font-size: 12px;">
+              {{ $t('message.clone.offering.edit.hint') }}
+            </div>
+          </div>
+        </template>
+      </a-alert>
       <DiskOfferingForm
         ref="formRef"
         :initialValues="form"
@@ -42,9 +57,15 @@ import { postAPI } from '@/api'
 import { isAdmin } from '@/role'
 
 export default {
-  name: 'AddDiskOffering',
+  name: 'CloneDiskOffering',
   components: {
     DiskOfferingForm
+  },
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    }
   },
   data () {
     return {
@@ -54,11 +75,65 @@ export default {
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('createDiskOffering')
+    this.apiParams = this.$getApiParams('cloneDiskOffering')
   },
   created () {
+    this.populateFormFromResource()
   },
   methods: {
+    populateFormFromResource () {
+      if (!this.resource) return
+
+      const r = this.resource
+      this.form.name = r.name + ' - Clone'
+      this.form.displaytext = r.displaytext
+
+      if (r.storagetype) {
+        this.form.storagetype = r.storagetype
+      }
+      if (r.provisioningtype) {
+        this.form.provisioningtype = r.provisioningtype
+      }
+      if (r.customized !== undefined) {
+        this.form.customdisksize = r.customized
+      }
+      if (r.disksize) this.form.disksize = r.disksize
+
+      if (r.cachemode) {
+        this.form.writecachetype = r.cachemode
+      }
+
+      if (r.disksizestrictness !== undefined) {
+        this.form.disksizestrictness = r.disksizestrictness
+      }
+      if (r.encrypt !== undefined) {
+        this.form.encryptdisk = r.encrypt
+      }
+
+      if (r.diskBytesReadRate || r.diskBytesReadRateMax || r.diskBytesWriteRate || r.diskBytesWriteRateMax || r.diskIopsReadRate || r.diskIopsWriteRate) {
+        this.form.qostype = 'hypervisor'
+        if (r.diskBytesReadRate) this.form.diskbytesreadrate = r.diskBytesReadRate
+        if (r.diskBytesReadRateMax) this.form.diskbytesreadratemax = r.diskBytesReadRateMax
+        if (r.diskBytesWriteRate) this.form.diskbyteswriterate = r.diskBytesWriteRate
+        if (r.diskBytesWriteRateMax) this.form.diskbyteswriteratemax = r.diskBytesWriteRateMax
+        if (r.diskIopsReadRate) this.form.diskiopsreadrate = r.diskIopsReadRate
+        if (r.diskIopsWriteRate) this.form.diskiopswriterate = r.diskIopsWriteRate
+      } else if (r.miniops || r.maxiops) {
+        this.form.qostype = 'storage'
+        if (r.miniops) this.form.diskiopsmin = r.miniops
+        if (r.maxiops) this.form.diskiopsmax = r.maxiops
+        if (r.hypervisorsnapshotreserve) this.form.hypervisorsnapshotreserve = r.hypervisorsnapshotreserve
+      }
+      if (r.iscustomizediops !== undefined) {
+        this.form.iscustomizeddiskiops = r.iscustomizediops
+      }
+
+      if (r.tags) {
+        this.form.tags = r.tags.split(',')
+      }
+
+      if (r.vspherestoragepolicy) this.form.storagepolicy = r.vspherestoragepolicy
+    },
     isAdmin () {
       return isAdmin()
     },
@@ -69,21 +144,39 @@ export default {
       if (this.loading) return
 
       this.$refs.formRef.validate().then((values) => {
-        var params = {
-          name: values.name,
-          displaytext: values.displaytext,
-          storageType: values.storagetype,
-          cacheMode: values.writecachetype,
-          provisioningType: values.provisioningtype,
-          customized: values.customdisksize,
-          disksizestrictness: values.disksizestrictness,
-          encrypt: values.encryptdisk
+        const params = {
+          sourceofferingid: this.resource.id,
+          name: values.name
         }
-        if (values.customdisksize !== true) {
+
+        if (values.displaytext) {
+          params.displaytext = values.displaytext
+        }
+        if (values.storagetype) {
+          params.storagetype = values.storagetype
+        }
+        if (values.writecachetype) {
+          params.cachemode = values.writecachetype
+        }
+        if (values.provisioningtype) {
+          params.provisioningtype = values.provisioningtype
+        }
+        if (values.customdisksize !== undefined) {
+          params.customized = values.customdisksize
+        }
+        if (values.disksizestrictness !== undefined) {
+          params.disksizestrictness = values.disksizestrictness
+        }
+        if (values.encryptdisk !== undefined) {
+          params.encrypt = values.encryptdisk
+        }
+
+        if (values.customdisksize !== true && values.disksize) {
           params.disksize = values.disksize
         }
+
         if (values.qostype === 'storage') {
-          var customIops = values.iscustomizeddiskiops === true
+          const customIops = values.iscustomizeddiskiops === true
           params.customizediops = customIops
           if (!customIops) {
             if (values.diskiopsmin != null && values.diskiopsmin.length > 0) {
@@ -116,17 +209,19 @@ export default {
             params.iopswriterate = values.diskiopswriterate
           }
         }
+
         if (values.tags != null && values.tags.length > 0) {
-          var tags = values.tags.join(',')
+          const tags = values.tags.join(',')
           params.tags = tags
         }
+
         if (values.ispublic !== true) {
-          var domainIndexes = values.domainid
-          var domainId = null
+          const domainIndexes = values.domainid
+          let domainId = null
           if (domainIndexes && domainIndexes.length > 0) {
-            var domainIds = []
+            const domainIds = []
             const domains = this.$refs.formRef.domains
-            for (var i = 0; i < domainIndexes.length; i++) {
+            for (let i = 0; i < domainIndexes.length; i++) {
               domainIds.push(domains[domainIndexes[i]].id)
             }
             domainId = domainIds.join(',')
@@ -135,12 +230,13 @@ export default {
             params.domainid = domainId
           }
         }
-        var zoneIndexes = values.zoneid
-        var zoneId = null
+
+        const zoneIndexes = values.zoneid
+        let zoneId = null
         if (zoneIndexes && zoneIndexes.length > 0) {
-          var zoneIds = []
+          const zoneIds = []
           const zones = this.$refs.formRef.zones
-          for (var j = 0; j < zoneIndexes.length; j++) {
+          for (let j = 0; j < zoneIndexes.length; j++) {
             zoneIds.push(zones[zoneIndexes[j]].id)
           }
           zoneId = zoneIds.join(',')
@@ -148,14 +244,14 @@ export default {
         if (zoneId) {
           params.zoneid = zoneId
         }
+
         if (values.storagepolicy) {
           params.storagepolicy = values.storagepolicy
         }
 
         this.loading = true
-        postAPI('createDiskOffering', params).then(json => {
-          this.$emit('publish-disk-offering-id', json?.creatediskofferingresponse?.diskoffering?.id)
-          this.$message.success(`${this.$t('message.disk.offering.created')} ${values.name}`)
+        postAPI('cloneDiskOffering', params).then(json => {
+          this.$message.success(`${this.$t('message.success.clone.disk.offering')} ${values.name}`)
           this.$emit('refresh-data')
           this.closeAction()
         }).catch(error => {
@@ -172,12 +268,12 @@ export default {
 }
 </script>
 
-<style scoped lang="scss">
+<style scoped lang="less">
   .form-layout {
     width: 80vw;
 
-    @media (min-width: 800px) {
-      width: 480px;
+    @media (min-width: 700px) {
+      width: 550px;
     }
   }
 </style>
