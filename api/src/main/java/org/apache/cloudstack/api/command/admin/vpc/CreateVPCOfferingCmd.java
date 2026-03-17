@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.offering.NetworkOffering;
@@ -161,6 +160,12 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             description = "the routing mode for the VPC offering. Supported types are: Static or Dynamic.")
     private String routingMode;
 
+    @Parameter(name = ApiConstants.CONSERVE_MODE, type = CommandType.BOOLEAN,
+            since = "4.23.0",
+            description = "True if the VPC offering is IP conserve mode enabled, allowing public IPs to be used across multiple VPC tiers. Default value is false")
+    private Boolean conserveMode;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -179,9 +184,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     public List<String> getSupportedServices() {
-        if (!isExternalNetworkProvider() && CollectionUtils.isEmpty(supportedServices)) {
-            throw new InvalidParameterValueException("Supported services needs to be provided");
-        }
+        // For external network providers, auto-populate services based on network mode
         if (isExternalNetworkProvider()) {
             supportedServices = new ArrayList<>(List.of(
                     Dhcp.getName(),
@@ -309,6 +312,10 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
 
     public String getRoutingMode() {
         return routingMode;
+    }
+
+    public boolean isConserveMode() {
+        return BooleanUtils.toBoolean(conserveMode);
     }
 
     @Override

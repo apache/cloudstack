@@ -1675,7 +1675,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         Network guestNtwk = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(guestNtwk.getUuid());
-
+        response.setNetworkName(guestNtwk.getName());
 
         IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
 
@@ -3535,6 +3535,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (voff != null) {
             response.setVpcOfferingId(voff.getUuid());
             response.setVpcOfferingName(voff.getName());
+            response.setVpcOfferingConserveMode(voff.isConserveMode());
         }
         response.setCidr(vpc.getCidr());
         response.setRestartRequired(vpc.isRestartRequired());

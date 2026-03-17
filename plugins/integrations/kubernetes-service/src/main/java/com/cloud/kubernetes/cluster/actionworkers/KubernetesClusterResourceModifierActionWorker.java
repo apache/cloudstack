@@ -693,7 +693,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             ips.add(controlVmNic.getIPv4Address());
             vmIdIpMap.put(clusterVMIds.get(i), ips);
         }
-        lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap, false);
+        lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap, null, false);
     }
 
     protected Map<Long, Integer> createFirewallRules(IpAddress publicIp, List<Long> clusterVMIds, boolean apiRule) throws ManagementServerException {
