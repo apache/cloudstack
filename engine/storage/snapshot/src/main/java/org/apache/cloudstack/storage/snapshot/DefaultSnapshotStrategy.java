@@ -303,7 +303,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         if (Snapshot.State.Error.equals(snapshotVO.getState())) {
-            List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotId(snapshotId);
+            List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
             List<Long> deletedRefs = new ArrayList<>();
             for (SnapshotDataStoreVO ref : storeRefs) {
                 boolean refZoneIdMatch = false;

@@ -1283,7 +1283,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         nicProfile.setIPv4Gateway(ipv4Gateway);
         nicProfile.setIPv4Netmask(ipv4Netmask);
 
-        if (nicProfile.getMacAddress() == null) {
+        if (nicProfile.getMacAddress() == null || !_networkModel.isMACUnique(nicProfile.getMacAddress(), network.getId())) {
             try {
                 String macAddress = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
                 nicProfile.setMacAddress(macAddress);
@@ -3119,7 +3119,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         });
 
-        CallContext.current().setEventDetails("Network Id: " + network.getId());
+        CallContext.current().setEventDetails("Network ID: " + network.getUuid());
         CallContext.current().putContextParameter(Network.class, network.getUuid());
         return network;
     }
@@ -3586,8 +3586,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final HashMap<Long, Long> stillFree = new HashMap<>();
 
                 final List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
-                final int netGcWait = NumbersUtil.parseInt(_configDao.getValue(NetworkGcWait.key()), 60);
-                logger.info("NetworkGarbageCollector uses '{}' seconds for GC interval.", netGcWait);
+                final int netGcWait = NetworkGcWait.value();
+                final int netGcInterval = NetworkGcInterval.value();
+                logger.info("NetworkGarbageCollector uses '{}' seconds for GC wait and '{}' seconds for GC interval.", netGcWait, netGcInterval);
 
                 for (final Long networkId : networkIds) {
                     if (!_networkModel.isNetworkReadyForGc(networkId)) {
@@ -4908,10 +4909,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return NetworkOrchestrationService.class.getSimpleName();
     }
 
-    public static final ConfigKey<Integer> NetworkGcWait = new ConfigKey<>(Integer.class, "network.gc.wait", "Advanced", "600",
-            "Time (in seconds) to wait before shutting down a network that's not in used", false, Scope.Global, null);
-    public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<>(Integer.class, "network.gc.interval", "Advanced", "600",
-            "Seconds to wait before checking for networks to shutdown", true, Scope.Global, null);
+    public static final ConfigKey<Integer> NetworkGcWait = new ConfigKey<Integer>(Integer.class, "network.gc.wait", "Advanced", "600",
+            "Time (in seconds) to wait before shutting down a network that's not in used", true, Scope.Global, null);
+    public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class, "network.gc.interval", "Advanced", "600",
+            "Seconds to wait before checking for networks to shutdown", false, Scope.Global, null);
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {

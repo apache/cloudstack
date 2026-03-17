@@ -81,6 +81,6 @@ public class ReleaseDedicatedZoneCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing dedicated zone";
+        return "Releasing dedicated zone with ID: " + getResourceUuid(ApiConstants.ZONE_ID);
     }
 }

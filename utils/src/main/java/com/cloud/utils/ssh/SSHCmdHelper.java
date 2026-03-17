@@ -77,7 +77,7 @@ public class SSHCmdHelper {
     }
 
     public static com.trilead.ssh2.Connection acquireAuthorizedConnection(String ip, int port, String username, String password) {
-        return acquireAuthorizedConnection(ip, 22, username, password, null);
+        return acquireAuthorizedConnection(ip, port, username, password, null);
     }
 
     public static boolean acquireAuthorizedConnectionWithPublicKey(final com.trilead.ssh2.Connection sshConnection, final String username, final String privateKey) {

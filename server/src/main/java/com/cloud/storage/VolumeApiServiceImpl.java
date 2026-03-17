@@ -504,9 +504,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 GetUploadParamsResponse response = new GetUploadParamsResponse();
 
                 String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
-                String protocol = UseHttpsToUpload.value() ? "https" : "http";
+                String protocol = UseHttpsToUpload.valueIn(zoneId) ? "https" : "http";
 
-                String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid(),  protocol);
+                String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid(),
+                        protocol);
                 response.setPostURL(new URL(url));
 
                 // set the post url, this is used in the monitoring thread to determine the SSVM
@@ -526,8 +527,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 /*
                  * encoded metadata using the post upload config key
                  */
-                TemplateOrVolumePostUploadCommand command = new TemplateOrVolumePostUploadCommand(vol.getId(), vol.getUuid(), volumeStore.getInstallPath(), cmd.getChecksum(), vol.getType().toString(),
-                        vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(), dataObject.getDataStore().getRole().toString());
+                TemplateOrVolumePostUploadCommand command = new TemplateOrVolumePostUploadCommand(vol.getId(),
+                        vol.getUuid(), volumeStore.getInstallPath(), cmd.getChecksum(), vol.getType().toString(),
+                        vol.getName(), vol.getFormat().toString(), dataObject.getDataStore().getUri(),
+                        dataObject.getDataStore().getRole().toString(), zoneId);
                 command.setLocalPath(volumeStore.getLocalDownloadPath());
                 //using the existing max upload size configuration
                 command.setProcessTimeout(NumbersUtil.parseLong(_configDao.getValue("vmware.package.ova.timeout"), 3600));
@@ -691,7 +694,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
                 volume.setFormat(ImageFormat.valueOf(format));
                 volume = _volsDao.persist(volume);
-                CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
+                CallContext.current().setEventDetails("Volume ID: " + volume.getUuid());
                 CallContext.current().putContextParameter(Volume.class, volume.getUuid());
 
                 // Increment resource count during allocation; if actual creation fails,
@@ -1020,7 +1023,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     }
                 }
 
-                CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
+                CallContext.current().setEventDetails("Volume ID: " + volume.getUuid());
                 CallContext.current().putContextParameter(Volume.class, volume.getId());
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
@@ -2179,14 +2182,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
             Collections.shuffle(suitableStoragePoolsWithEnoughSpace);
             MigrateVolumeCmd migrateVolumeCmd = new MigrateVolumeCmd(volume.getId(), suitableStoragePoolsWithEnoughSpace.get(0).getId(), newDiskOffering.getId(), true);
+            String volumeUuid = volume.getUuid();
             try {
                 Volume result = migrateVolume(migrateVolumeCmd);
                 volume = (result != null) ? _volsDao.findById(result.getId()) : null;
                 if (volume == null) {
-                    throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s", volume, suitableStoragePools.get(0)));
+                    throw new CloudRuntimeException("Change offering for the volume failed.");
                 }
             } catch (Exception e) {
-                throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume: %s migration failed to storage pool %s due to %s", volume, suitableStoragePools.get(0), e.getMessage()));
+                logger.error("Volume change offering operation failed for volume ID: {} migration failed to storage pool {} due to {}", volumeUuid, suitableStoragePoolsWithEnoughSpace.get(0).getId(), e.getMessage());
+                throw new CloudRuntimeException("Change offering for the volume failed.", e);
             }
         }
 
@@ -2199,7 +2204,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (volumeMigrateRequired) {
                     logger.warn(String.format("Volume change offering operation succeeded for volume ID: %s but volume resize operation failed, so please try resize volume operation separately", volume.getUuid()));
                 } else {
-                    throw new CloudRuntimeException(String.format("Volume change offering operation failed for volume ID: %s due to resize volume operation failed", volume.getUuid()));
+                    throw new CloudRuntimeException(String.format("Volume disk offering change operation failed for volume ID [%s] because the volume resize operation failed.", volume.getUuid()));
                 }
             }
         }
@@ -2457,7 +2462,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     }
                 }
 
-                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState()) && !StoragePoolType.StorPool.equals(volume.getPoolType())) {
+                if (volume != null && ImageFormat.QCOW2.equals(volume.getFormat()) && !Volume.State.Allocated.equals(volume.getState()) &&
+                        !Arrays.asList(StoragePoolType.StorPool, StoragePoolType.Linstor).contains(volume.getPoolType())) {
                     String message = "Unable to shrink volumes of type QCOW2";
                     logger.warn(message);
                     throw new InvalidParameterValueException(message);
@@ -4236,7 +4242,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Optional<String> extractUrl = setExtractVolumeSearchCriteria(sc, volume);
         if (extractUrl.isPresent()) {
             String url = extractUrl.get();
-            CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+            CallContext.current().setEventDetails(String.format("Download URL: %s, Volume ID: %s", url, volume.getUuid()));
             return url;
         }
 
@@ -4255,7 +4261,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 placeHolder = createPlaceHolderWork(vm.getId());
                 try {
                     String url = orchestrateExtractVolume(volume.getId(), zoneId);
-                    CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+                    CallContext.current().setEventDetails(String.format("Download URL: %s, Volume ID: %s", url, volume.getUuid()));
                     return url;
                 } finally {
                     _workJobDao.expunge(placeHolder.getId());
@@ -4286,7 +4292,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // retrieve the entity url from job result
                 if (jobResult != null && jobResult instanceof String) {
                     String url = (String) jobResult;
-                    CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+                    CallContext.current().setEventDetails(String.format("Download URL: %s, Volume ID: %s", url, volume.getUuid()));
                     return url;
                 }
                 return null;
@@ -4294,7 +4300,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         String url = orchestrateExtractVolume(volume.getId(), zoneId);
-        CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+        CallContext.current().setEventDetails(String.format("Download URL: %s, Volume ID: %s", url, volume.getUuid()));
         return url;
     }
 

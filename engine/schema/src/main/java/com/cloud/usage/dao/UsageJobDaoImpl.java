@@ -156,7 +156,8 @@ public class UsageJobDaoImpl extends GenericDaoBase<UsageJobVO, Long> implements
         return jobs.get(0);
     }
 
-    private UsageJobVO getNextRecurringJob() {
+    @Override
+    public UsageJobVO getNextRecurringJob() {
         Filter filter = new Filter(UsageJobVO.class, "id", false, Long.valueOf(0), Long.valueOf(1));
         SearchCriteria<UsageJobVO> sc = createSearchCriteria();
         sc.addAnd("endMillis", SearchCriteria.Op.EQ, Long.valueOf(0));

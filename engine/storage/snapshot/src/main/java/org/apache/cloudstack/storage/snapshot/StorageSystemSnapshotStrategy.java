@@ -541,7 +541,6 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                 logger.warn("Failed to clean up snapshot '" + snapshot.getId() + "' on primary storage: " + e.getMessage());
             }
         }
-
     }
 
     private VMSnapshot takeHypervisorSnapshot(VolumeInfo volumeInfo) {
@@ -952,7 +951,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
 
-        long volumeStoragePoolId = volumeVO.getPoolId();
+        long volumeStoragePoolId = (volumeVO.getPoolId() != null ? volumeVO.getPoolId() : volumeVO.getLastPoolId());
 
         if (SnapshotOperation.REVERT.equals(op)) {
             boolean baseVolumeExists = volumeVO.getRemoved() == null;

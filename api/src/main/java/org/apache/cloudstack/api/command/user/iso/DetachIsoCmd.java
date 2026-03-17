@@ -89,7 +89,7 @@ public class DetachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "detaching ISO from Instance: " + getVirtualMachineId();
+        return  "Detaching ISO from Instance with ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override

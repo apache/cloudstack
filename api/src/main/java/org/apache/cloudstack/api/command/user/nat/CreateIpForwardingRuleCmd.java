@@ -108,7 +108,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
         boolean result = true;
         FirewallRule rule = null;
         try {
-            CallContext.current().setEventDetails("Rule ID: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
 
             if (getOpenFirewall()) {
                 result = result && _firewallService.applyIngressFirewallRules(ipAddressId, CallContext.current().getCallingAccount());

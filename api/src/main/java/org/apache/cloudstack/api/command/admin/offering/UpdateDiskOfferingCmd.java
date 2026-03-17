@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.offering.DiskOffering.State;
@@ -27,19 +26,18 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.offering.DomainAndZoneIdResolver;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.domain.Domain;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateDiskOffering", description = "Updates a disk offering.", responseObject = DiskOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class UpdateDiskOfferingCmd extends BaseCmd {
+public class UpdateDiskOfferingCmd extends BaseCmd implements DomainAndZoneIdResolver {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -75,6 +73,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.STRING,
             description = "The ID of the containing zone(s) as comma separated string, all for all zones offerings",
+            length = 4096,
             since = "4.13")
     private String zoneIds;
 
@@ -151,63 +150,11 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
-        List<Long> validDomainIds = new ArrayList<>();
-        if (StringUtils.isNotEmpty(domainIds)) {
-            if (domainIds.contains(",")) {
-                String[] domains = domainIds.split(",");
-                for (String domain : domains) {
-                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domain.trim());
-                    if (validDomain != null) {
-                        validDomainIds.add(validDomain.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create disk offering because invalid domain has been specified.");
-                    }
-                }
-            } else {
-                domainIds = domainIds.trim();
-                if (!domainIds.matches("public")) {
-                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domainIds.trim());
-                    if (validDomain != null) {
-                        validDomainIds.add(validDomain.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create disk offering because invalid domain has been specified.");
-                    }
-                }
-            }
-        } else {
-            validDomainIds.addAll(_configService.getDiskOfferingDomains(id));
-        }
-        return validDomainIds;
+        return resolveDomainIds(domainIds, id, _configService::getDiskOfferingDomains, "disk offering");
     }
 
     public List<Long> getZoneIds() {
-        List<Long> validZoneIds = new ArrayList<>();
-        if (StringUtils.isNotEmpty(zoneIds)) {
-            if (zoneIds.contains(",")) {
-                String[] zones = zoneIds.split(",");
-                for (String zone : zones) {
-                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zone.trim());
-                    if (validZone != null) {
-                        validZoneIds.add(validZone.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create disk offering because invalid zone has been specified.");
-                    }
-                }
-            } else {
-                zoneIds = zoneIds.trim();
-                if (!zoneIds.matches("all")) {
-                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zoneIds.trim());
-                    if (validZone != null) {
-                        validZoneIds.add(validZone.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create disk offering because invalid zone has been specified.");
-                    }
-                }
-            }
-        } else {
-            validZoneIds.addAll(_configService.getDiskOfferingZones(id));
-        }
-        return validZoneIds;
+        return resolveZoneIds(zoneIds, id, _configService::getDiskOfferingZones, "disk offering");
     }
 
     public String getTags() {

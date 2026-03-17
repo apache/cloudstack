@@ -60,6 +60,7 @@ import javax.servlet.http.HttpSession;
 
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.utils.Ternary;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountManagerImpl;
@@ -68,6 +69,9 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.ApiKeyPairManagerImpl;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -116,9 +120,11 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.user.UserPasswordResetManager;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -194,6 +200,7 @@ import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
 
 import static com.cloud.user.AccountManagerImpl.apiKeyAccess;
+import static org.apache.cloudstack.api.ApiConstants.PASSWORD_CHANGE_REQUIRED;
 import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
 
 @Component
@@ -234,6 +241,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private UUIDManager uuidMgr;
     @Inject
     private UserPasswordResetManager userPasswordResetManager;
+    @Inject
+    private ApiKeyPairManagerImpl keyPairManager;
 
     private List<PluggableService> pluggableServices;
 
@@ -461,14 +470,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         final Long snapshotLimit = ConcurrentSnapshotsThresholdPerHost.value();
         if (snapshotLimit == null || snapshotLimit <= 0) {
-            logger.debug("Global concurrent snapshot config parameter " + ConcurrentSnapshotsThresholdPerHost.value() + " is less or equal 0; defaulting to unlimited");
+            logger.debug("Global concurrent snapshot config parameter {} is less or equal 0; defaulting to unlimited", ConcurrentSnapshotsThresholdPerHost.value());
         } else {
             dispatcher.setCreateSnapshotQueueSizeLimit(snapshotLimit);
         }
 
         final Long migrationLimit = VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value();
         if (migrationLimit == null || migrationLimit <= 0) {
-            logger.debug("Global concurrent migration config parameter " + VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value() + " is less or equal 0; defaulting to unlimited");
+            logger.debug("Global concurrent migration config parameter {} is less or equal 0; defaulting to unlimited", VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value());
         } else {
             dispatcher.setMigrateQueueSizeLimit(migrationLimit);
         }
@@ -647,7 +656,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                             logValue = (value == null) ? "'null'" : value[0];
                         }
 
-                        logger.trace("   key: " + keyStr + ", value: " + logValue);
+                        logger.trace("   key: {}, value: {}", keyStr, logValue);
                     }
                 }
                 throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
@@ -707,7 +716,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     buf.append(obj.getUuid());
                     buf.append(" ");
                 }
-                logger.info("PermissionDenied: " + ex.getMessage() + " on objs: [" + buf + "]");
+                logger.info("PermissionDenied: {} on objs: [{}]", ex.getMessage(), buf);
             } else {
                 logger.info("PermissionDenied: {}", ex.getMessage());
             }
@@ -1035,7 +1044,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
-                logger.debug("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
+                logger.warn("Expired session, missing signature, or missing apiKey -- ignoring request. Signature: {}, apiKey: {}", signature, apiKey);
                 return false; // no signature, bad request
             }
 
@@ -1078,14 +1087,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             txn.close();
             User user;
             // verify there is a user with this api key
-            final Pair<User, Account> userAcctPair = accountMgr.findUserByApiKey(apiKey);
-            if (userAcctPair == null) {
+            final Ternary<User, Account, ApiKeyPair> keyPairTernary = accountMgr.findUserByApiKey(apiKey);
+
+            if (keyPairTernary == null) {
                 logger.debug("apiKey does not map to a valid user -- ignoring request, apiKey: {}", apiKey);
                 return false;
             }
 
-            user = userAcctPair.first();
-            final Account account = userAcctPair.second();
+            user = keyPairTernary.first();
+            Account account = keyPairTernary.second();
+            ApiKeyPair keyPair = keyPairTernary.third();
 
             if (user.getState() != Account.State.ENABLED || !account.getState().equals(Account.State.ENABLED)) {
                 logger.info("disabled or locked user accessing the api, user = {} (state: {}); " +
@@ -1101,10 +1112,16 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 return false;
             }
 
-            // verify secret key exists
-            secretKey = user.getSecretKey();
+            if (keyPair.getRemoved() != null) {
+                logger.info(String.format("Invalid request, as used API keypair [%s] has been removed.", keyPair.getUuid()));
+                return false;
+            }
+
+            keyPair.validateDate();
+
+            secretKey = keyPair.getSecretKey();
             if (secretKey == null) {
-                logger.info("User does not have a secret key associated with the account -- ignoring request, username: {}", user);
+                logger.info(String.format("User does not have a secret key associated with the API key -- ignoring request, username: [%s].", user.getUsername()));
                 return false;
             }
 
@@ -1122,21 +1139,28 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (!equalSig) {
                 signature = signature.replaceAll(SANITIZATION_REGEX, "_");
                 logger.info("User signature [{}] is not equaled to computed signature [{}].", signature, computedSignature);
-            } else {
-                CallContext.register(user, account);
+                return false;
             }
-            return equalSig;
+            CallContext.register(user, account);
+
+            List<ApiKeyPairPermission> keyPairPermissions = keyPairManager.findAllPermissionsByKeyPairId(keyPair.getId(), account.getRoleId());
+            if (commandAvailable(remoteAddress, commandName, user, keyPairPermissions.toArray(new ApiKeyPairPermission[0]))) {
+                logger.info("API accessed through API Key Pair. API Key: [{}].", keyPair.getApiKey());
+                return true;
+            }
         } catch (final ServerApiException ex) {
             throw ex;
+        } catch (PermissionDeniedException ex) {
+            logger.error("Permission denied for keypair, reason: {}.", ex.getMessage());
         } catch (final Exception ex) {
-            logger.error("unable to verify request signature");
+            logger.error("Unable to verify request signature.", ex);
         }
         return false;
     }
 
-    private boolean commandAvailable(final InetAddress remoteAddress, final String commandName, final User user) {
+    private boolean commandAvailable(final InetAddress remoteAddress, final String commandName, final User user, ApiKeyPairPermission... rolePermissions) {
         try {
-            checkCommandAvailable(user, commandName, remoteAddress);
+            checkCommandAvailable(user, commandName, remoteAddress, rolePermissions);
         } catch (final RequestLimitException ex) {
             logger.debug(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
@@ -1227,6 +1251,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.MANAGEMENT_SERVER_ID.equalsIgnoreCase(attrName)) {
                     response.setManagementServerId(attrObj.toString());
                 }
+                if (PASSWORD_CHANGE_REQUIRED.equalsIgnoreCase(attrName) && attrObj instanceof Boolean) {
+                    response.setPasswordChangeRequired((Boolean) attrObj);
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1258,7 +1285,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             float offsetInHrs = 0f;
             if (timezone != null) {
                 final TimeZone t = TimeZone.getTimeZone(timezone);
-                logger.info("Current user logged in under " + timezone + " timezone");
+                logger.info("Current user logged in under {} timezone", timezone);
 
                 final java.util.Date date = new java.util.Date();
                 final long longDate = date.getTime();
@@ -1327,6 +1354,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final String sessionKey = Base64.encodeBase64URLSafeString(sessionKeyBytes);
             session.setAttribute(ApiConstants.SESSIONKEY, sessionKey);
 
+            Map<String, String> userAccDetails = userAcct.getDetails();
+            if (MapUtils.isNotEmpty(userAccDetails)) {
+                String needPwdChangeStr = userAccDetails.get(UserDetailVO.PasswordChangeRequired);
+                if ("true".equalsIgnoreCase(needPwdChangeStr)) {
+                    session.setAttribute(PASSWORD_CHANGE_REQUIRED, true);
+                }
+            }
             return createLoginResponse(session);
         }
         throw new CloudAuthenticationException("Failed to authenticate user " + username + " in domain " + domainId + "; please provide valid credentials");
@@ -1400,7 +1434,26 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return userPasswordResetManager.validateAndResetPassword(userAccount, token, password);
     }
 
-    private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress) throws PermissionDeniedException {
+    @Override
+    public String getDomainId(Map<String, Object[]> params) {
+        if (MapUtils.isEmpty(params)) {
+            return null;
+        }
+
+        String[] domainIdArr = (String[])params.get(ApiConstants.DOMAIN_ID);
+        if (domainIdArr == null) {
+            // Fallback to support clients using the camelCase parameter name "domainId"
+            domainIdArr = (String[])params.get(ApiConstants.DOMAIN__ID);
+        }
+
+        if (domainIdArr == null || domainIdArr.length == 0) {
+            return null;
+        }
+
+        return domainIdArr[0];
+    }
+
+    private void checkCommandAvailable(final User user, final String commandName, final InetAddress remoteAddress, ApiKeyPairPermission ... apiKeyPairPermissions) throws PermissionDeniedException {
         if (user == null) {
             throw new PermissionDeniedException("User is null for role based API access check for command" + commandName);
         }
@@ -1410,16 +1463,15 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         final Boolean apiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
 
         if (apiSourceCidrChecksEnabled) {
-            logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
+            logger.debug("CIDRs from which account '{}' is allowed to perform API calls: {}", account.toString(), accessAllowedCidrs);
             if (!NetUtils.isIpInCidrList(remoteAddress, accessAllowedCidrs.split(","))) {
-                logger.warn("Request by account '" + account.toString() + "' was denied since " + remoteAddress + " does not match " + accessAllowedCidrs);
+                logger.warn("Request by account '{}' was denied since {} does not match {}", account.toString(), remoteAddress, accessAllowedCidrs);
                 throw new OriginDeniedException("Calls from disallowed origin", account, remoteAddress);
-                }
+            }
         }
 
-
         for (final APIChecker apiChecker : apiAccessCheckers) {
-            apiChecker.checkAccess(user, commandName);
+            apiChecker.checkAccess(user, commandName, apiKeyPairPermissions);
         }
     }
 

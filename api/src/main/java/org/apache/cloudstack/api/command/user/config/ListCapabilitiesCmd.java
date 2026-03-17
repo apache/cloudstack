@@ -21,7 +21,9 @@ import java.util.Map;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.CapabilitiesResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 
 import com.cloud.user.Account;
@@ -30,10 +32,20 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListCapabilitiesCmd extends BaseCmd {
 
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the domain for listing capabilities.",
+            since = "4.23.0")
+    private Long domainId;
 
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     @Override
@@ -51,6 +63,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setDiskOffMaxSize((Long)capabilities.get("customDiskOffMaxSize"));
         response.setRegionSecondaryEnabled((Boolean)capabilities.get("regionSecondaryEnabled"));
         response.setKVMSnapshotEnabled((Boolean)capabilities.get("KVMSnapshotEnabled"));
+        response.setSnapshotShowChainSize((Boolean)capabilities.get("SnapshotShowChainSize"));
         response.setAllowUserViewDestroyedVM((Boolean)capabilities.get("allowUserViewDestroyedVM"));
         response.setAllowUserExpungeRecoverVM((Boolean)capabilities.get("allowUserExpungeRecoverVM"));
         response.setAllowUserExpungeRecoverVolume((Boolean)capabilities.get("allowUserExpungeRecoverVolume"));
@@ -76,6 +89,10 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setExtensionsPath((String)capabilities.get(ApiConstants.EXTENSIONS_PATH));
         response.setDynamicScalingEnabled((Boolean) capabilities.get(ApiConstants.DYNAMIC_SCALING_ENABLED));
         response.setAdditionalConfigEnabled((Boolean) capabilities.get(ApiConstants.ADDITONAL_CONFIG_ENABLED));
+        if (capabilities.containsKey(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS)) {
+            Map<String, Object> vpnCustomerGatewayParameters = (Map<String, Object>) capabilities.get(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS);
+            response.setVpnCustomerGatewayParameters(vpnCustomerGatewayParameters);
+        }
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

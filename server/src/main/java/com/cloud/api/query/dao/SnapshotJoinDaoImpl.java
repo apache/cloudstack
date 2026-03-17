@@ -109,6 +109,8 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
             if (showChainSize && snapshotInfo.getParent() != null) {
                 long chainSize = calculateChainSize(snapshotInfo);
                 snapshotResponse.setChainSize(chainSize);
+                snapshotResponse.setParent(snapshotInfo.getParent().getUuid());
+                snapshotResponse.setParentName(snapshotInfo.getParent().getName());
             }
         }
     }

@@ -112,7 +112,10 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             since = "4.21.0")
     protected List<Long> storagePoolIds;
 
-    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION, type=CommandType.BOOLEAN, required = false, description = "This parameter enables the option the snapshot to be copied to supported primary storage")
+    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION,
+            type=CommandType.BOOLEAN,
+            description = "Enables the snapshot to be copied to the supported primary storages when the config 'use.storage.replication' is set to true for the storage or globally. " +
+                    "This is supported only for StorPool storage for now.")
     protected Boolean useStorageReplication;
 
     private String syncObjectType = BaseAsyncCmd.snapshotHostSyncObject;
@@ -226,7 +229,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating Snapshot for volume: " + getVolumeUuid();
+        return "Creating Snapshot for volume: " + getResourceUuid(ApiConstants.VOLUME_ID);
     }
 
     @Override
@@ -241,7 +244,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             setEntityId(snapshot.getId());
             setEntityUuid(snapshot.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Snapshot for volume" + getVolumeUuid());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Snapshot for volume" + getResourceUuid(ApiConstants.VOLUME_ID));
         }
     }
 
@@ -257,22 +260,21 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Snapshot from volume [%s] was not found in database.", getVolumeUuid()));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Snapshot from volume [%s] was not found in database.", getResourceUuid(ApiConstants.VOLUME_ID)));
             }
         } catch (Exception e) {
             if (e.getCause() instanceof UnsupportedOperationException) {
                 throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, String.format("Failed to create Snapshot due to unsupported operation: %s", e.getCause().getMessage()));
             }
 
-            String errorMessage = "Failed to create Snapshot due to an internal error creating Snapshot for volume " + getVolumeUuid();
+            String errorMessage = "Failed to create Snapshot due to an internal error creating Snapshot for volume " + getResourceUuid(ApiConstants.VOLUME_ID);
             logger.error(errorMessage, e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);
         }
     }
 
     public Snapshot.LocationType getLocationType() {
-
-        if (Snapshot.LocationType.values() == null || Snapshot.LocationType.values().length == 0 || locationType == null) {
+        if (locationType == null) {
             return null;
         }
 
@@ -309,9 +311,5 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         } else {
             return asyncBackup;
         }
-    }
-
-    protected String getVolumeUuid() {
-        return _uuidMgr.getUuid(Volume.class, getVolumeId());
     }
 }

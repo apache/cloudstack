@@ -188,7 +188,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -203,7 +203,17 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     @Override
     public String getEventDescription() {
-        return  "Creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from Snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId()));
+        String description = "Creating volume ";
+
+        if (getVolumeName() != null) {
+            description += getVolumeName();
+        }
+
+        if (getSnapshotId() != null) {
+            description += " from Snapshot: " + getResourceUuid(ApiConstants.SNAPSHOT_ID);
+        }
+
+        return description;
     }
 
     @Override
@@ -220,7 +230,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getEntityUuid() + ((getSnapshotId() == null) ? "" : " from Snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId())));
+        CallContext.current().setEventDetails("Volume ID: " + getEntityUuid() + ((getSnapshotId() == null) ? "" : " from Snapshot with ID: " + getResourceUuid(ApiConstants.SNAPSHOT_ID)));
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(getResponseView(), volume);

@@ -81,6 +81,6 @@ public class ReleaseDedicatedPodCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing dedicated pod";
+        return "Releasing dedicated pod with ID: " + getResourceUuid(ApiConstants.POD_ID);
     }
 }

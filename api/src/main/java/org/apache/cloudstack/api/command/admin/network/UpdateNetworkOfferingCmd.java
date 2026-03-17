@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
@@ -26,18 +25,16 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.offering.DomainAndZoneIdResolver;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.domain.Domain;
-import com.cloud.exception.InvalidParameterValueException;
+
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateNetworkOffering", description = "Updates a network offering.", responseObject = NetworkOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class UpdateNetworkOfferingCmd extends BaseCmd {
+public class UpdateNetworkOfferingCmd extends BaseCmd implements DomainAndZoneIdResolver {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -78,6 +75,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
+            length = 4096,
             description = "The ID of the containing domain(s) as comma separated string, public for public offerings")
     private String domainIds;
 
@@ -129,63 +127,11 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
-        List<Long> validDomainIds = new ArrayList<>();
-        if (StringUtils.isNotEmpty(domainIds)) {
-            if (domainIds.contains(",")) {
-                String[] domains = domainIds.split(",");
-                for (String domain : domains) {
-                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domain.trim());
-                    if (validDomain != null) {
-                        validDomainIds.add(validDomain.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create network offering because invalid domain has been specified.");
-                    }
-                }
-            } else {
-                domainIds = domainIds.trim();
-                if (!domainIds.matches("public")) {
-                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domainIds.trim());
-                    if (validDomain != null) {
-                        validDomainIds.add(validDomain.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create network offering because invalid domain has been specified.");
-                    }
-                }
-            }
-        } else {
-            validDomainIds.addAll(_configService.getNetworkOfferingDomains(id));
-        }
-        return validDomainIds;
+        return resolveDomainIds(domainIds, id, _configService::getNetworkOfferingDomains, "network offering");
     }
 
     public List<Long> getZoneIds() {
-        List<Long> validZoneIds = new ArrayList<>();
-        if (StringUtils.isNotEmpty(zoneIds)) {
-            if (zoneIds.contains(",")) {
-                String[] zones = zoneIds.split(",");
-                for (String zone : zones) {
-                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zone.trim());
-                    if (validZone != null) {
-                        validZoneIds.add(validZone.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create network offering because invalid zone has been specified.");
-                    }
-                }
-            } else {
-                zoneIds = zoneIds.trim();
-                if (!zoneIds.matches("all")) {
-                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zoneIds.trim());
-                    if (validZone != null) {
-                        validZoneIds.add(validZone.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create network offering because invalid zone has been specified.");
-                    }
-                }
-            }
-        } else {
-            validZoneIds.addAll(_configService.getNetworkOfferingZones(id));
-        }
-        return validZoneIds;
+        return resolveZoneIds(zoneIds, id, _configService::getNetworkOfferingZones, "network offering");
     }
 
     /////////////////////////////////////////////////////

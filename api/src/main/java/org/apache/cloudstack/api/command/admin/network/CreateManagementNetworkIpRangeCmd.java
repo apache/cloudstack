@@ -132,7 +132,7 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating management ip range from " + getStartIp() + " to " + getEndIp() + " and gateway=" + getGateWay() + ", netmask=" + getNetmask() + " of pod=" + getPodId();
+        return "Creating management IP range from " + getStartIp() + " to " + getEndIp() + ", with gateway: " + getGateWay() + ", netmask:" + getNetmask() + " on pod:" + getPodId();
     }
 
     @Override

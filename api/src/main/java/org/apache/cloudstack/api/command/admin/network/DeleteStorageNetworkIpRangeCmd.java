@@ -64,7 +64,7 @@ public class DeleteStorageNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Deleting storage ip range " + getId();
+        return "Deleting storage IP range with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override
