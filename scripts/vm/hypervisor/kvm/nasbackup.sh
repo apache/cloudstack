@@ -31,6 +31,7 @@ NAS_ADDRESS=""
 MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
+COMPRESS=""
 logFile="/var/log/cloudstack/agent/agent.log"
 
 log() {
@@ -112,6 +113,21 @@ backup_running_vm() {
     sleep 5
   done
   rm -f $dest/backup.xml
+
+  # Compress backup files if requested
+  if [[ "$COMPRESS" == "true" ]]; then
+    log -ne "Compressing backup files for $VM"
+    for img in "$dest"/*.qcow2; do
+      [[ -f "$img" ]] || continue
+      local tmp_img="${img}.tmp"
+      if qemu-img convert -c -O qcow2 "$img" "$tmp_img" 2>&1 | tee -a "$logFile"; then
+        mv "$tmp_img" "$img"
+      else
+        log -ne "Warning: compression failed for $img, keeping uncompressed"
+        rm -f "$tmp_img"
+      fi
+    done
+  fi
   sync
 
   # Print statistics
@@ -131,7 +147,7 @@ backup_stopped_vm() {
   name="root"
   for disk in $DISK_PATHS; do
     volUuid="${disk##*/}"
-    qemu-img convert -O qcow2 $disk $dest/$name.$volUuid.qcow2  | tee -a "$logFile"
+    qemu-img convert $([[ "$COMPRESS" == "true" ]] && echo "-c") -O qcow2 $disk $dest/$name.$volUuid.qcow2  | tee -a "$logFile"
     name="datadisk"
   done
   sync
@@ -165,7 +181,7 @@ mount_operation() {
 
 function usage {
   echo ""
-  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path>"
+  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> [-c]"
   echo ""
   exit 1
 }
@@ -205,6 +221,10 @@ while [[ $# -gt 0 ]]; do
     -d|--diskpaths)
       DISK_PATHS="$2"
       shift
+      shift
+      ;;
+    -c|--compress)
+      COMPRESS="true"
       shift
       ;;
     -h|--help)
