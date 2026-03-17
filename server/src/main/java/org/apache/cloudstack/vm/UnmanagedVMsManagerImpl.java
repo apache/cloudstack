@@ -123,7 +123,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UuidUtils;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -316,10 +315,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     @Inject
     private ImportVmTasksManager importVmTasksManager;
 
-    private KubernetesServiceHelper kubernetesServiceHelper;
+    private List<KubernetesServiceHelper> kubernetesServiceHelpers;
 
-    private void setKubernetesServiceHelper(KubernetesServiceHelper helper) {
-        this.kubernetesServiceHelper = helper;
+    public void setKubernetesServiceHelpers(final List<KubernetesServiceHelper> kubernetesServiceHelpers) {
+        this.kubernetesServiceHelpers = kubernetesServiceHelpers;
     }
 
     protected Gson gson;
@@ -2394,10 +2393,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private boolean isVmPartOfCKSCluster(VMInstanceVO vmVO) {
-        if (kubernetesServiceHelper == null) {
-            setKubernetesServiceHelper(ComponentContext.getComponent(KubernetesServiceHelper.class));
-        }
-        return kubernetesServiceHelper.findByVmId(vmVO.getId()) != null;
+        return kubernetesServiceHelpers.get(0).findByVmId(vmVO.getId()) != null;
     }
 
     private boolean hasVolumeSnapshotsPriorToUnmanageVM(VMInstanceVO vmVO) {
