@@ -27,8 +27,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pre-commit:
-    name: Run pre-commit standard
+  run:
+    name: Run manual hooks
     uses: ./.github/workflows/pre-commit-reusable.yml
     with:
-      job_id: 'standard'
+      job_id: 'manual'
+      extra_args: '--hook-stage manual'
