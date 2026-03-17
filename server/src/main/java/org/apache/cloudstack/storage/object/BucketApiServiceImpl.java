@@ -272,16 +272,6 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         _accountMgr.checkAccess(caller, null, true, bucket);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-        Integer quota = cmd.getQuota();
-        Integer quotaDelta = null;
-
-        if (quota != null) {
-            quotaDelta = quota - bucket.getQuota();
-            if (quotaDelta > 0) {
-                Account owner = _accountMgr.getActiveAccountById(bucket.getAccountId());
-                resourceLimitManager.checkResourceLimit(owner, Resource.ResourceType.object_storage, (quotaDelta * Resource.ResourceType.bytesToGiB));
-            }
-        }
 
         try {
             if (cmd.getEncryption() != null) {
@@ -307,22 +297,39 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
                 bucket.setPolicy(cmd.getPolicy());
             }
 
-            if (cmd.getQuota() != null) {
-                objectStore.setQuota(bucketTO, cmd.getQuota());
-                bucket.setQuota(cmd.getQuota());
-                if (quotaDelta > 0) {
-                    resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, (quotaDelta * Resource.ResourceType.bytesToGiB));
-                } else {
-                    resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, ((-quotaDelta) * Resource.ResourceType.bytesToGiB));
-                }
-                _objectStoreDao.updateAllocatedSize(objectStoreVO, (quotaDelta * Resource.ResourceType.bytesToGiB));
-            }
+            updateBucketQuota(cmd, bucket, objectStore, objectStoreVO, bucketTO);
+
             _bucketDao.update(bucket.getId(), bucket);
         } catch (Exception e) {
             throw new CloudRuntimeException("Error while updating bucket: " +bucket.getName() +". "+e.getMessage());
         }
 
         return true;
+    }
+
+    private void updateBucketQuota(UpdateBucketCmd cmd, BucketVO bucket, ObjectStoreEntity objectStore, ObjectStoreVO objectStoreVO, BucketTO bucketTO) throws ResourceAllocationException {
+        Integer quota = cmd.getQuota();
+        if (quota == null) {
+            return;
+        }
+
+        int quotaDelta = quota - bucket.getQuota();
+        objectStore.setQuota(bucketTO, quota);
+        bucket.setQuota(quota);
+
+        long diff = quotaDelta * Resource.ResourceType.bytesToGiB;
+
+        if (quotaDelta < 0) {
+            resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, Math.abs(diff));
+            _objectStoreDao.updateAllocatedSize(objectStoreVO, diff);
+            return;
+        }
+
+        Account owner = _accountMgr.getActiveAccountById(bucket.getAccountId());
+        try (CheckedReservation objectStorageReservation = new CheckedReservation(owner, Resource.ResourceType.object_storage, diff, reservationDao, resourceLimitManager)) {
+            resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, diff);
+            _objectStoreDao.updateAllocatedSize(objectStoreVO, diff);
+        }
     }
 
     public void getBucketUsage() {
