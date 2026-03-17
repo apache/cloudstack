@@ -476,8 +476,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (imageStore == null) {
-            logger.error("Cannot find an image store for zone [{}].", zoneId);
-            throw new CloudRuntimeException("Failed to create template. Please contact the cloud administrator.");
+            throwExceptionForImageStoreObtentionFailure(zoneId, "upload volume");
         }
 
         return imageStore;
@@ -1397,7 +1396,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_DELETE, eventDescription = "Deleting ISO", async = true)
-    public boolean deleteIso(DeleteIsoCmd cmd) {
+    public boolean deleteIso (DeleteIsoCmd cmd) {
         Long templateId = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
         Long zoneId = cmd.getZoneId();
@@ -1703,8 +1702,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
             DataStore store = _dataStoreMgr.getImageStoreWithFreeCapacity(zoneId);
             if (store == null) {
-                logger.error("Cannot find an image store for zone [{}].", zoneId);
-                throw new CloudRuntimeException("Failed to create template. Please contact the cloud administrator.");
+                throwExceptionForImageStoreObtentionFailure(zoneId, "create template");
             }
             AsyncCallFuture<TemplateApiResult> future = null;
 
@@ -2480,5 +2478,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmpltDao.update(template.getId(), template);
 
         return _tmpltDao.findById(template.getId());
+    }
+
+    private void throwExceptionForImageStoreObtentionFailure(Long zoneId, String operation) {
+        logger.error("Cannot find an image store for zone [{}].", zoneId);
+        throw new CloudRuntimeException(String.format("Failed to %s. Please contact the cloud administrator.", operation));
     }
 }
