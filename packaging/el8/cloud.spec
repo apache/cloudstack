@@ -337,7 +337,7 @@ rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/config.json
 ln -sf /etc/%{name}/ui/config.json ${RPM_BUILD_ROOT}%{_datadir}/%{name}-ui/config.json
 
 # Package mysql-connector-python (bundled to avoid dependency on external community repo)
-# Version 8.0.28 is the last version supporting Python 3.6 (EL8)
+# Version 8.0.31 is the last version supporting Python 3.6 (EL8)
 wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/08/1f/42d74bae9dd6dcfec67c9ed0f3fa482b1ae5ac5f117ca82ab589ecb3ca19/mysql_connector_python-8.0.31-py2.py3-none-any.whl
 # Version 8.3.0 supports Python 3.8 to 3.12 (EL9, EL10)
 wget -P ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel https://files.pythonhosted.org/packages/53/ed/26a4b8cacb8852c6fd97d2d58a7f2591c41989807ea82bd8d9725a4e6937/mysql_connector_python-8.3.0-py2.py3-none-any.whl
