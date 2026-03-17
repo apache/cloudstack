@@ -818,7 +818,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         StoragePoolVO pool = _storagePoolDao.findById(destPool.getId());
-        if (pool == null || pool.getPoolType() != Storage.StoragePoolType.CLVM || pool.getPoolType() != Storage.StoragePoolType.CLVM_NG) {
+        if (pool == null || !ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
             return;
         }
 

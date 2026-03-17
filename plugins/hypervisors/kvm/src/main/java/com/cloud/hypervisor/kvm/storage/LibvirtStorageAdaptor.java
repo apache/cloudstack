@@ -1406,7 +1406,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             return (dataPool == null) ?  createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size) :
                     createPhysicalDiskByQemuImg(name, pool, PhysicalDiskFormat.RAW, provisioningType, size, passphrase);
         } else if (StoragePoolType.CLVM_NG.equals(poolType)) {
-            return createClvmNgDiskWithBacking(name, 0, size, null, pool);
+            return createClvmNgDiskWithBacking(name, 0, size, null, pool, provisioningType);
         } else if (StoragePoolType.NetworkFilesystem.equals(poolType) || StoragePoolType.Filesystem.equals(poolType)) {
             switch (format) {
                 case QCOW2:
@@ -1578,6 +1578,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                                 }
                             }
                         }
+                    } else {
+                        logger.debug("Volume {} does not have a backing file (full clone)", volumePath);
                     }
                 } else {
                     logger.debug("Volume {} does not have a backing file (full clone)", volumePath);
@@ -1828,7 +1830,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     logger.info("Creating CLVM_NG volume {} with backing file from template {}", newUuid, template.getName());
                     String backingFile = getClvmBackingFile(template, destPool);
 
-                    disk = createClvmNgDiskWithBacking(newUuid, timeout, size, backingFile, destPool);
+                    disk = createClvmNgDiskWithBacking(newUuid, timeout, size, backingFile, destPool, provisioningType);
                     return disk;
                 }
                 List<QemuObject> passphraseObjects = new ArrayList<>();
@@ -2060,9 +2062,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         rbd.close(destImage);
                     } else {
                         logger.debug("The source image " + srcPool.getSourceDir() + "/" + template.getName()
-                                + " is RBD format 2. We will perform a RBD clone using snapshot "
-                                + rbdTemplateSnapName);
-                        /* The source image is format 2, we can do a RBD snapshot+clone (layering) */
+                                + " is RBD format 2. We will perform a RBD snapshot+clone (layering)");
 
 
                         logger.debug("Checking if RBD snapshot " + srcPool.getSourceDir() + "/" + template.getName()
@@ -2553,51 +2553,54 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     /**
-     * Calculate LVM LV size for CLVM_NG template allocation.
-     * Templates need space for actual data plus overhead for QCOW2 metadata expansion during conversion.
-     * Formula: physical_size + 50% of virtual_size
+     * Calculate LVM LV size for CLVM_NG volume allocation.
+     * Volumes use QCOW2-on-LVM with extended_l2=on and need:
+     * - Base size (virtual size)
+     * - QCOW2 metadata overhead (L1/L2 tables, refcount tables, headers)
      *
-     * @param physicalSize Physical size in bytes (actual allocated data in source template)
-     * @param virtualSize Virtual size in bytes (full disk capacity)
+     * For QCOW2 with 64k clusters and extended L2 tables (extended_l2=on):
+     * - Each 64KB cluster contains data
+     * - Each L2 table entry is 16 bytes (extended L2, double the standard 8 bytes)
+     * - Each 64KB L2 cluster can hold 4096 entries (64KB / 16 bytes)
+     * Formula: Total overhead (MiB) = ((virtualSize_GiB × 1024 × 1024) / (64 × 4096)) × 2 + 2 MiB headers
+     *
+     * Quick reference (64k clusters, extended_l2=on):
+     *   10 GiB virtual  → ~7 MiB overhead    → 2 PEs (8 MiB)
+     *   100 GiB virtual → ~52 MiB overhead   → 13 PEs (52 MiB)
+     *   1 TiB virtual   → ~514 MiB overhead  → 129 PEs (516 MiB)
+     *   2 TiB virtual   → ~1026 MiB overhead → 257 PEs (1028 MiB)
+     *
+     * @param virtualSize Virtual disk size in bytes (for overhead calculation)
      * @param vgName Volume group name to query PE size
-     * @return Size in bytes to allocate for template LV
+     * @return Size in bytes to allocate for LV
      */
-    private long calculateClvmNgTemplateLvSize(long physicalSize, long virtualSize, String vgName) {
+    private long calculateClvmNgLvSize(long virtualSize, String vgName) {
         long peSize = getVgPhysicalExtentSize(vgName);
 
-        long minOverhead = 64 * 1024 * 1024L;
-        long virtualSizeOverhead = (long) (virtualSize * 0.30);
-        long overhead = Math.max(minOverhead, virtualSizeOverhead);
+        long clusterSize = 64 * 1024L;
+        // Each L2 entry is 16 bytes (extended_l2=on), and each 64KB cluster holds 4096 entries (64KB / 16 bytes)
+        long l2Multiplier = 4096L;
 
-        long targetSize = physicalSize + overhead;
+        long numDataClusters = (virtualSize + clusterSize - 1) / clusterSize;
+        long numL2Clusters = (numDataClusters + l2Multiplier - 1) / l2Multiplier;
+        long l2TableSize = numL2Clusters * clusterSize;
+        long refcountTableSize = l2TableSize;
+
+        // Headers and other metadata (L1 table, QCOW2 header, etc.)
+        long headerOverhead = 2 * 1024 * 1024L; // 2 MiB for headers
+        long metadataOverhead = l2TableSize + refcountTableSize + headerOverhead;
+        long targetSize = virtualSize + metadataOverhead;
         long roundedSize = ((targetSize + peSize - 1) / peSize) * peSize;
+        long virtualSizeGiB = virtualSize / (1024 * 1024 * 1024L);
+        long overheadMiB = metadataOverhead / (1024 * 1024L);
 
-        logger.info("Calculated template LV size: {} bytes (physical: {}, virtual: {}, overhead: {} (50% of virtual), rounded to {} PEs, PE size = {} bytes)",
-                roundedSize, physicalSize, virtualSize, overhead, roundedSize / peSize, peSize);
+        logger.info("Calculated volume LV size: {} bytes (virtual: {} GiB, " +
+                        "QCOW2 metadata overhead: {} MiB (64k clusters, extended_l2=on), rounded to {} PEs, PE size = {} bytes)",
+                    roundedSize, virtualSizeGiB, overheadMiB, roundedSize / peSize, peSize);
 
         return roundedSize;
     }
 
-    /**
-     * Calculate LVM LV size for CLVM_NG volume allocation.
-     * Volumes with backing files need approximately the virtual size allocated on block devices.
-     * Formula: virtual_size + 1 PE (for QCOW2 metadata and header)
-     *
-     * @param virtualSize Virtual size in bytes (full disk capacity)
-     * @param vgName Volume group name to query PE size
-     * @return Size in bytes to allocate for volume LV
-     */
-    private long calculateClvmNgVolumeLvSize(long virtualSize, String vgName) {
-        long peSize = getVgPhysicalExtentSize(vgName);
-
-        long roundedSize = ((virtualSize + peSize - 1) / peSize) * peSize;
-        long finalSize = roundedSize + peSize;
-
-        logger.info("Calculated volume LV size: {} bytes (virtual: {}, rounded to {} PEs + 1 PE overhead, PE size = {} bytes)",
-                finalSize, virtualSize, roundedSize / peSize, peSize);
-
-        return finalSize;
-    }
 
     private long getQcow2VirtualSize(String imagePath) {
         Script qemuImg = new Script("qemu-img", 300000, logger);
@@ -2623,7 +2626,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
 
     private long getQcow2PhysicalSize(String imagePath) {
-        Script qemuImg = new Script("qemu-img", 300000, logger);
+        Script qemuImg = new Script("qemu-img", Duration.millis(300000), logger);
         qemuImg.add("info");
         qemuImg.add("--output=json");
         qemuImg.add(imagePath);
@@ -2644,12 +2647,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return info.get("actual-size").getAsLong();
     }
 
-    private KVMPhysicalDisk createClvmNgDiskWithBacking(String volumeUuid, int timeout, long virtualSize, String backingFile, KVMStoragePool pool) {
+    private KVMPhysicalDisk createClvmNgDiskWithBacking(String volumeUuid, int timeout, long virtualSize, String backingFile,
+                                                         KVMStoragePool pool, Storage.ProvisioningType provisioningType) {
         String vgName = getVgName(pool.getLocalPath());
-        long lvSize = calculateClvmNgVolumeLvSize(virtualSize, vgName);
+        long lvSize = calculateClvmNgLvSize(virtualSize, vgName);
         String volumePath = "/dev/" + vgName + "/" + volumeUuid;
 
-        logger.debug("Creating CLVM_NG volume {} with LV size {} bytes (virtual size: {} bytes)", volumeUuid, lvSize, virtualSize);
+        logger.debug("Creating CLVM_NG volume {} with LV size {} bytes (virtual size: {} bytes, provisioning: {})",
+                     volumeUuid, lvSize, virtualSize, provisioningType);
 
         Script lvcreate = new Script("lvcreate", Duration.millis(timeout), logger);
         lvcreate.add("-n", volumeUuid);
@@ -2666,9 +2671,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         qemuImg.add("-f", "qcow2");
 
         StringBuilder qcow2Options = new StringBuilder();
-        qcow2Options.append("preallocation=metadata");
+
+        // Set preallocation based on provisioning type
+        // THIN: preallocation=off (sparse file, allocate on write)
+        // SPARSE / FAT: preallocation=metadata (allocate metadata only)
+        String preallocation;
+        if (provisioningType == Storage.ProvisioningType.THIN) {
+            preallocation = "off";
+        } else {
+            preallocation = "metadata";
+        }
+
+        qcow2Options.append("preallocation=").append(preallocation);
         qcow2Options.append(",extended_l2=on");
-        qcow2Options.append(",cluster_size=128k");
+        qcow2Options.append(",cluster_size=64k");
 
         if (backingFile != null && !backingFile.isEmpty()) {
             qcow2Options.append(",backing_file=").append(backingFile);
@@ -2691,8 +2707,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         disk.setSize(lvSize);
         disk.setVirtualSize(virtualSize);
 
-        logger.info("Successfully created CLVM_NG volume {} with backing file (LV size: {}, virtual size: {})",
-                    volumeUuid, lvSize, virtualSize);
+        logger.info("Successfully created CLVM_NG volume {} with backing file (LV size: {}, virtual size: {}, provisioning: {}, preallocation: {})",
+                    volumeUuid, lvSize, virtualSize, provisioningType, preallocation);
 
         return disk;
     }
@@ -2711,7 +2727,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         long virtualSize = getQcow2VirtualSize(templatePath);
         long physicalSize = getQcow2PhysicalSize(templatePath);
-        long lvSize = calculateClvmNgTemplateLvSize(physicalSize, virtualSize, vgName);
+        long lvSize = virtualSize; // as extended_l2=off and preallocation=off
 
         logger.info("Template source - Physical: {} bytes, Virtual: {} bytes, LV will be: {} bytes",
                 physicalSize, virtualSize, lvSize);
@@ -2724,7 +2740,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         if (result != null) {
             throw new CloudRuntimeException("Failed to create LV for CLVM_NG template: " + result);
         }
-
         Script qemuImgConvert = new Script("qemu-img", Duration.millis(timeout), logger);
         qemuImgConvert.add("convert");
         qemuImgConvert.add(templatePath);
@@ -2739,8 +2754,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         long actualVirtualSize = getQcow2VirtualSize(lvPath);
-        logger.info("Created template LV {} with size {} bytes (source physical: {}, actual virtual: {}, overhead: {})",
-                lvName, lvSize, physicalSize, actualVirtualSize, lvSize - physicalSize);
+        logger.info("Created template LV {} with size {} bytes (source physical: {}, actual virtual: {})", lvName, lvSize, physicalSize, actualVirtualSize);
 
         try {
             ensureTemplateLvInSharedMode(lvPath, true);
@@ -2753,7 +2767,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         KVMPhysicalDisk templateDisk = new KVMPhysicalDisk(lvPath, lvName, pool);
         templateDisk.setFormat(PhysicalDiskFormat.QCOW2);
         templateDisk.setVirtualSize(actualVirtualSize);
-        templateDisk.setSize(lvSize);
         templateDisk.setSize(lvSize);
 
     }

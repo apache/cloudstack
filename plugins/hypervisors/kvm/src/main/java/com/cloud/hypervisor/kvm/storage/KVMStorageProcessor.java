@@ -2785,11 +2785,13 @@ public class KVMStorageProcessor implements StorageProcessor {
         final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)vol.getDataStore();
         try {
             final KVMStoragePool pool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
-            try {
-                pool.getPhysicalDisk(vol.getPath());
-            } catch (final Exception e) {
-                logger.debug(String.format("can't find volume: %s, return true", vol));
-                return new Answer(null);
+            if (pool.getType() != StoragePoolType.CLVM && pool.getType() != StoragePoolType.CLVM_NG) {
+                try {
+                    pool.getPhysicalDisk(vol.getPath());
+                } catch (final Exception e) {
+                    logger.debug(String.format("can't find volume: %s, return true", vol));
+                    return new Answer(null);
+                }
             }
             pool.deletePhysicalDisk(vol.getPath(), vol.getFormat());
             return new Answer(null);
