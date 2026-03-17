@@ -68,8 +68,10 @@ public class LibvirtStartNBDServerCommandWrapper extends CommandWrapper<StartNBD
         }
 
         String socketName = "/tmp/imagetransfer/" + socket + ".sock";
+        // --persistent: Don't stop the service when the last client disconnects.
+        // --shared=NUM: Allow up to NUM clients to share the device (default 1), 0 for unlimited. Number of parallel connections is managed by the image server.
         String systemdRunCmd = String.format(
-                "systemd-run --unit=%s --property=Restart=no qemu-nbd --export-name %s --socket %s --persistent %s %s %s",
+                "systemd-run --unit=%s --property=Restart=no qemu-nbd --export-name %s --socket %s --persistent --shared=0 %s %s %s",
                 unitName,
                 exportName,
                 socketName,
