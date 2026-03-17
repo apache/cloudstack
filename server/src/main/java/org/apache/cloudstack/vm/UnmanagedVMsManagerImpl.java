@@ -123,6 +123,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UuidUtils;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -314,8 +315,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private DataStoreManager dataStoreManager;
     @Inject
     private ImportVmTasksManager importVmTasksManager;
-    @Inject
+
     private KubernetesServiceHelper kubernetesServiceHelper;
+
+    private void setKubernetesServiceHelper(KubernetesServiceHelper helper) {
+        this.kubernetesServiceHelper = helper;
+    }
 
     protected Gson gson;
 
@@ -2389,6 +2394,9 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private boolean isVmPartOfCKSCluster(VMInstanceVO vmVO) {
+        if (kubernetesServiceHelper == null) {
+            setKubernetesServiceHelper(ComponentContext.getComponent(KubernetesServiceHelper.class));
+        }
         return kubernetesServiceHelper.findByVmId(vmVO.getId()) != null;
     }
 
