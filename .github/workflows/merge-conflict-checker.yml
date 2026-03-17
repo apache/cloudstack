@@ -18,8 +18,8 @@
 name: "PR Merge Conflict Check"
 on:
   push:
-  pull_request_target:
-    types: [synchronize]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:  # added using https://github.com/step-security/secure-workflows
   contents: read
