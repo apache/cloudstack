@@ -77,6 +77,7 @@ public class ApiConstants {
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
     public static final String BIND_PASSWORD = "bindpass";
+    public static final String BLANK_INSTANCE = "blankinstance";
     public static final String BUS_ADDRESS = "busaddress";
     public static final String BYTES_READ_RATE = "bytesreadrate";
     public static final String BYTES_READ_RATE_MAX = "bytesreadratemax";

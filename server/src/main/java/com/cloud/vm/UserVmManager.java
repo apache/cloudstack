@@ -204,5 +204,5 @@ public interface UserVmManager extends UserVmService {
      */
     boolean isVMPartOfAnyCKSCluster(VMInstanceVO vm);
 
-    boolean isBlankInstanceTemplate(VirtualMachineTemplate template);
+    boolean isBlankInstance(VirtualMachineTemplate template);
 }

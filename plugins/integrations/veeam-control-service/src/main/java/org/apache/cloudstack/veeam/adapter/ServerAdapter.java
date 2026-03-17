@@ -152,9 +152,11 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.server.ResourceTag;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.tags.ResourceTagVO;
@@ -263,6 +265,9 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     ServiceOfferingDao serviceOfferingDao;
+
+    @Inject
+    VMTemplateDao templateDao;
 
     @Inject
     UserVmService userVmService;
@@ -611,11 +616,15 @@ public class ServerAdapter extends ManagerBase {
         if (request.getCpuProfile() != null && StringUtils.isNotEmpty(request.getCpuProfile().getId())) {
             serviceOfferingUuid = request.getCpuProfile().getId();
         }
+        String templateUuid = null;
+        if (request.getTemplate() != null && StringUtils.isNotEmpty(request.getTemplate().getId())) {
+            templateUuid = request.getTemplate().getId();
+        }
         Pair<User, Account> serviceUserAccount = getServiceAccount();
         CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             return createInstance(zoneId, clusterId, owner.first(), owner.second(), owner.third(), name, displayName,
-                    serviceOfferingUuid, cpu, memory, userdata, bootType, bootMode);
+                    serviceOfferingUuid, cpu, memory, templateUuid, userdata, bootType, bootMode);
         } finally {
             CallContext.unregister();
         }
@@ -643,9 +652,21 @@ public class ServerAdapter extends ManagerBase {
         return serviceOfferingDao.findByUuid(uuid);
     }
 
+    protected VMTemplateVO getTemplateForVmCreation(String templateUuid) {
+        if (StringUtils.isBlank(templateUuid)) {
+            return null;
+        }
+        VMTemplateVO template = templateDao.findByUuid(templateUuid);
+        if (template == null) {
+            logger.warn("Template with ID {} not found, VM will be created with default template", templateUuid);
+            return null;
+        }
+        return template;
+    }
+
     protected Vm createInstance(Long zoneId, Long clusterId, Long domainId, String accountName, Long projectId,
-                String name, String displayName, String serviceOfferingUuid, int cpu, long memory, String userdata,
-                ApiConstants.BootType bootType, ApiConstants.BootMode bootMode) {
+                String name, String displayName, String serviceOfferingUuid, int cpu, long memory, String templateUuid,
+                String userdata, ApiConstants.BootType bootType, ApiConstants.BootMode bootMode) {
         ServiceOffering serviceOffering = getServiceOfferingIdForVmCreation(serviceOfferingUuid, zoneId, cpu, memory);
         if (serviceOffering == null) {
             throw new CloudRuntimeException("No service offering found for VM creation with specified CPU and memory");
@@ -675,6 +696,10 @@ public class ServerAdapter extends ManagerBase {
         }
         if (bootMode != null) {
             cmd.setBootMode(bootMode.toString());
+        }
+        VMTemplateVO template = getTemplateForVmCreation(templateUuid);
+        if (template != null) {
+            cmd.setTemplateId(template.getId());
         }
         // ToDo: handle any other field?
         // Handle custom offerings

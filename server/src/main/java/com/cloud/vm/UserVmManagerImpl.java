@@ -3933,8 +3933,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(owner, _diskOfferingDao.findById(diskOfferingId), zone);
 
         // If no network is specified, find system security group enabled network
-        if (isBlankInstanceTemplate(template)) {
-            logger.debug("Template is a dummy template for hypervisor {}, skipping network allocation in an advanced security group enabled zone", hypervisor);
+        if (isBlankInstance(template)) {
+            logger.debug("Blank instance for {} hypervisor, skipping network allocation in an advanced security group enabled zone", hypervisor);
         } else if (networkIdList == null || networkIdList.isEmpty()) {
             Network networkWithSecurityGroup = _networkModel.getNetworkWithSGWithFreeIPs(owner, zone.getId());
             if (networkWithSecurityGroup == null) {
@@ -4048,7 +4048,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(owner, diskOffering, zone);
 
         List<HypervisorType> vpcSupportedHTypes = _vpcMgr.getSupportedVpcHypervisors();
-        if (isBlankInstanceTemplate(template)) {
+        if (isBlankInstance(template)) {
             logger.debug("Template is a dummy template for hypervisor {}, skipping network allocation in an advanced zone", hypervisor);
         } else if (networkIdList == null || networkIdList.isEmpty()) {
             NetworkVO defaultNetwork = getDefaultNetwork(zone, owner, false);
@@ -4485,7 +4485,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
-            if (TemplateType.SYSTEM.equals(template.getTemplateType()) && !CKS_NODE.equals(vmType) && !SHAREDFSVM.equals(vmType) && !isBlankInstanceTemplate(template)) {
+            if (TemplateType.SYSTEM.equals(template.getTemplateType()) && !CKS_NODE.equals(vmType) &&
+                    !SHAREDFSVM.equals(vmType) && !isBlankInstanceDefaultTemplate(template)) {
                 throw new InvalidParameterValueException(String.format("Unable to use system template %s to deploy a user vm", template));
             }
 
@@ -4498,7 +4499,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (CollectionUtils.isEmpty(snapshotsOnZone)) {
                     throw new InvalidParameterValueException("The snapshot does not exist on zone " + zone.getId());
                 }
-            } else if (!isBlankInstanceTemplate(template)) {
+            } else if (!isBlankInstanceDefaultTemplate(template)) {
                 List<VMTemplateZoneVO> listZoneTemplate = _templateZoneDao.listByZoneTemplate(zone.getId(), template.getId());
                 if (listZoneTemplate == null || listZoneTemplate.isEmpty()) {
                     throw new InvalidParameterValueException("The template " + template.getId() + " is not available for use");
@@ -4613,7 +4614,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // by Agent Manager in order to configure default
             // gateway for the vm
             if (defaultNetworkNumber == 0) {
-                if (isBlankInstanceTemplate(template)) {
+                if (isBlankInstance(template)) {
                     logger.debug("Template is a dummy template for hypervisor {}, vm can be created without a default network", hypervisorType);
                 } else {
                     throw new InvalidParameterValueException("At least 1 default network has to be specified for the vm");
@@ -6483,7 +6484,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 (!(HypervisorType.KVM.equals(template.getHypervisorType()) || HypervisorType.KVM.equals(cmd.getHypervisor())))) {
             throw new InvalidParameterValueException("Deploying a virtual machine with existing volume/snapshot is supported only from KVM hypervisors");
         }
-        if (template == null && HypervisorType.KVM.equals(cmd.getHypervisor()) && cmd.isBlankInstance()) {
+        boolean blankInstance = cmd.isBlankInstance();
+        if (blankInstance) {
+            CallContext.current().putContextParameter(ApiConstants.BLANK_INSTANCE, true);
+        }
+        if (template == null && HypervisorType.KVM.equals(cmd.getHypervisor()) && blankInstance) {
             template = getBlankInstanceTemplate();
             logger.info("Creating launch permission for Dummy template");
             LaunchPermissionVO launchPermission = new LaunchPermissionVO(template.getId(), owner.getId());
@@ -6648,7 +6653,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             applyLeaseOnCreateInstance(vm, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction(), svcOffering);
         }
 
-        if (isBlankInstanceTemplate(template) && cmd instanceof DeployVMCmd && ((DeployVMCmd) cmd).isBlankInstance()) {
+        if (isBlankInstance(template) && cmd instanceof DeployVMCmd && ((DeployVMCmd) cmd).isBlankInstance()) {
             logger.info("Revoking launch permission for Dummy template");
             launchPermissionDao.removePermissions(template.getId(), Collections.singletonList(owner.getId()));
         }
@@ -10091,9 +10096,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    @Override
-    public boolean isBlankInstanceTemplate(VirtualMachineTemplate template) {
+    protected boolean isBlankInstanceDefaultTemplate(VirtualMachineTemplate template) {
         return KVM_VM_DUMMY_TEMPLATE_NAME.equals(template.getUniqueName());
+    }
+
+    @Override
+    public boolean isBlankInstance(VirtualMachineTemplate template) {
+        if (isBlankInstanceDefaultTemplate(template)) {
+            return true;
+        }
+        return MapUtils.getBoolean(CallContext.current().getContextParameters(),
+                ApiConstants.BLANK_INSTANCE);
     }
 
     VMTemplateVO getBlankInstanceTemplate() {
