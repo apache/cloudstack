@@ -297,24 +297,6 @@ public class ResourceLimitManagerImplTest {
     }
 
     @Test
-    public void testCheckVmGpuResourceLimit() {
-        ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
-        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        Mockito.when(serviceOffering.getHostTag()).thenReturn(hostTags.get(0));
-        Mockito.when(template.getTemplateTag()).thenReturn(hostTags.get(0));
-        Account account = Mockito.mock(Account.class);
-        long gpuCount = 2L;
-        try {
-            Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            resourceLimitManager.checkVmGpuResourceLimit(account, true, serviceOffering, template, gpuCount);
-            Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.gpu, null, gpuCount);
-            Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.gpu, hostTags.get(0), gpuCount);
-        } catch (ResourceAllocationException e) {
-            Assert.fail("Exception encountered: " + e.getMessage());
-        }
-    }
-
-    @Test
     public void testCheckVolumeResourceLimit() {
         List<Reserver> reservations = new ArrayList<>();
         String checkTag = storageTags.get(0);

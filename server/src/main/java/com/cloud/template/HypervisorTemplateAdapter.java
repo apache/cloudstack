@@ -39,9 +39,7 @@ import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
@@ -57,18 +55,15 @@ import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.domain.Domain;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -76,7 +71,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
@@ -300,44 +294,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         }
     }
 
-    protected boolean isZoneAndImageStoreAvailable(DataStore imageStore, Long zoneId, Set<Long> zoneSet, boolean isTemplatePrivate) {
-        if (zoneId == null) {
-            logger.warn(String.format("Zone ID is null, cannot allocate ISO/template in image store [%s].", imageStore));
-            return false;
-        }
-
-        DataCenterVO zone = _dcDao.findById(zoneId);
-        if (zone == null) {
-            logger.warn("Unable to find zone by id [{}], so skip downloading template to its image store [{}].", zoneId, imageStore);
-            return false;
-        }
-
-        if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
-            logger.info("Zone [{}] is disabled. Skip downloading template to its image store [{}].", zone, imageStore);
-            return false;
-        }
-
-        if (!_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
-            logger.info("Image store doesn't have enough capacity. Skip downloading template to this image store [{}].", imageStore);
-            return false;
-        }
-
-        if (zoneSet == null) {
-            logger.info(String.format("Zone set is null; therefore, the ISO/template should be allocated in every secondary storage of zone [%s].", zone));
-            return true;
-        }
-
-        if (isTemplatePrivate && zoneSet.contains(zoneId)) {
-            logger.info(String.format("The template is private and it is already allocated in a secondary storage in zone [%s]; therefore, image store [%s] will be skipped.",
-                    zone, imageStore));
-            return false;
-        }
-
-        logger.info(String.format("Private template will be allocated in image store [%s] in zone [%s].", imageStore, zone));
-        zoneSet.add(zoneId);
-        return true;
-    }
-
     @Override
     public List<TemplateOrVolumePostUploadCommand> createTemplateForPostUpload(final TemplateProfile profile) {
         // persist entry in vm_template, vm_template_details and template_zone_ref tables, not that entry at template_store_ref is not created here, and created in createTemplateAsync.
@@ -389,61 +345,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 return payloads;
             }
         });
-    }
-
-    /**
-     * If the template/ISO is marked as private, then it is allocated to a random secondary storage; otherwise, allocates to every storage pool in every zone given by the
-     * {@link TemplateProfile#getZoneIdList()}.
-     */
-    protected void postUploadAllocation(List<DataStore> imageStores, VMTemplateVO template, List<TemplateOrVolumePostUploadCommand> payloads) {
-        Set<Long> zoneSet = new HashSet<>();
-        Collections.shuffle(imageStores);
-        for (DataStore imageStore : imageStores) {
-            Long zoneId_is = imageStore.getScope().getScopeId();
-
-            if (!isZoneAndImageStoreAvailable(imageStore, zoneId_is, zoneSet, isPrivateTemplate(template))) {
-                continue;
-            }
-
-            TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);
-
-            // persist template_store_ref entry
-            DataObject templateOnStore = imageStore.create(tmpl);
-
-            // update template_store_ref and template state
-            EndPoint ep = _epSelector.select(templateOnStore);
-            if (ep == null) {
-                String errMsg = String.format("There is no secondary storage VM for downloading template to image store %s", imageStore);
-                logger.warn(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-
-            TemplateOrVolumePostUploadCommand payload = new TemplateOrVolumePostUploadCommand(template.getId(), template.getUuid(), tmpl.getInstallPath(), tmpl
-                    .getChecksum(), tmpl.getType().toString(), template.getUniqueName(), template.getFormat().toString(), templateOnStore.getDataStore().getUri(),
-                    templateOnStore.getDataStore().getRole().toString());
-            //using the existing max template size configuration
-            payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
-
-            Long accountId = template.getAccountId();
-            Account account = _accountDao.findById(accountId);
-            Domain domain = _domainDao.findById(account.getDomainId());
-
-            payload.setDefaultMaxSecondaryStorageInGB(ByteScaleUtils.bytesToGibibytes(_resourceLimitMgr.findCorrectResourceLimitForAccountAndDomain(account, domain, ResourceType.secondary_storage, null)));
-            payload.setAccountId(accountId);
-            payload.setRemoteEndPoint(ep.getPublicAddr());
-            payload.setRequiresHvm(template.requiresHvm());
-            payload.setDescription(template.getDisplayText());
-            payloads.add(payload);
-        }
-    }
-
-    protected boolean isPrivateTemplate(VMTemplateVO template){
-
-        // if public OR featured OR system template
-        if(template.isPublicTemplate() || template.isFeatured() || template.getTemplateType() == TemplateType.SYSTEM)
-            return false;
-        else
-            return true;
     }
 
     private class CreateTemplateContext<T> extends AsyncRpcContext<T> {

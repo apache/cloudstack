@@ -721,9 +721,6 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                         }
 
                         try (CheckedReservation checkedReservation = new CheckedReservation(futureOwnerAccount, ResourceType.project, null, null, 1L, reservationDao, _resourceLimitMgr)) {
-
-                        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(futureOwnerAccount.getId()), ResourceType.project);
-
                         //unset the role for the old owner
                         ProjectAccountVO currentOwner = _projectAccountDao.findByProjectIdAccountId(projectId, currentOwnerAccount.getId());
                         currentOwner.setAccountRole(Role.Regular);

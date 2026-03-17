@@ -1222,9 +1222,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // Verify that caller can perform actions in behalf of vpc owner
         _accountMgr.checkAccess(caller, null, false, owner);
 
-        // check resource limit
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.vpc);
-
         // Validate zone
         final DataCenter zone = _dcDao.findById(zoneId);
         if (zone == null) {
