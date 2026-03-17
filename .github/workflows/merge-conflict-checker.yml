@@ -23,6 +23,7 @@ on:
 
 permissions:  # added using https://github.com/step-security/secure-workflows
   contents: read
+  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
