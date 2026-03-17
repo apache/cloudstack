@@ -289,6 +289,8 @@ public class UnmanagedVMsManagerImplTest {
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
+        unmanagedVMsManager.setKubernetesServiceHelpers(List.of(kubernetesServiceHelper));
+
         instance = new UnmanagedInstanceTO();
         instance.setName("TestInstance");
         instance.setCpuCores(2);
