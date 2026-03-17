@@ -31,6 +31,7 @@ NAS_ADDRESS=""
 MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
+BANDWIDTH=""
 logFile="/var/log/cloudstack/agent/agent.log"
 
 log() {
@@ -102,6 +103,14 @@ backup_running_vm() {
   # Start push backup
   virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml > /dev/null 2>/dev/null
 
+  # Throttle backup bandwidth if requested (MiB/s per disk)
+  if [[ -n "$BANDWIDTH" ]]; then
+    for disk in $(virsh -c qemu:///system domblklist $VM --details 2>/dev/null | awk '/disk/{print$3}'); do
+      virsh -c qemu:///system blockjob $VM $disk --bandwidth "${BANDWIDTH}" 2>/dev/null || true
+    done
+    log -ne "Backup bandwidth limited to ${BANDWIDTH} MiB/s per disk for $VM"
+  fi
+
   # Backup domain information
   virsh -c qemu:///system dumpxml $VM > $dest/domain-config.xml 2>/dev/null
   virsh -c qemu:///system dominfo $VM > $dest/dominfo.xml 2>/dev/null
@@ -131,7 +140,7 @@ backup_stopped_vm() {
   name="root"
   for disk in $DISK_PATHS; do
     volUuid="${disk##*/}"
-    qemu-img convert -O qcow2 $disk $dest/$name.$volUuid.qcow2  | tee -a "$logFile"
+    ionice -c 3 qemu-img convert $([[ -n "$BANDWIDTH" ]] && echo "-r" "${BANDWIDTH}M") -O qcow2 $disk $dest/$name.$volUuid.qcow2  | tee -a "$logFile"
     name="datadisk"
   done
   sync
@@ -165,7 +174,7 @@ mount_operation() {
 
 function usage {
   echo ""
-  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path>"
+  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> [-b <MiB/s>]"
   echo ""
   exit 1
 }
@@ -204,6 +213,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -d|--diskpaths)
       DISK_PATHS="$2"
+      shift
+      shift
+      ;;
+    -b|--bandwidth)
+      BANDWIDTH="$2"
       shift
       shift
       ;;
