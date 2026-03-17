@@ -84,6 +84,25 @@ sanity_checks() {
   log -ne "Environment Sanity Checks successfully passed"
 }
 
+verify_backup() {
+  local backup_dir="$1"
+  local failed=0
+  for img in "$backup_dir"/*.qcow2; do
+    [[ -f "$img" ]] || continue
+    if ! qemu-img check "$img" > /dev/null 2>&1; then
+      echo "Backup verification failed for $img"
+      log -ne "Backup verification FAILED: $img"
+      failed=1
+    else
+      log -ne "Backup verification passed: $img"
+    fi
+  done
+  if [[ $failed -ne 0 ]]; then
+    echo "One or more backup files failed verification"
+    exit 1
+  fi
+}
+
 ### Operation methods ###
 
 backup_running_vm() {
@@ -114,6 +133,8 @@ backup_running_vm() {
   rm -f $dest/backup.xml
   sync
 
+  verify_backup "$dest"
+
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
   du -sb $dest | cut -f1
@@ -135,6 +156,8 @@ backup_stopped_vm() {
     name="datadisk"
   done
   sync
+
+  verify_backup "$dest"
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
 }
