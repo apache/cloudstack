@@ -168,9 +168,9 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
 
     @Override
     public List<ProjectRole> findProjectRoles(Long projectId, String keyword) {
-        if (projectId == null || projectId < 1L || projectDao.findById(projectId) == null) {
-            logger.warn("Invalid project ID provided");
-            return null;
+        if (projectId == null) {
+            logger.warn("Invalid project ID provided; thus, an empty list is being returned.");
+            return Collections.emptyList();
         }
         return ListUtils.toListOfInterface(projRoleDao.findAllRoles(projectId, keyword));
     }
