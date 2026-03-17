@@ -162,7 +162,7 @@ repos:
       - id: forbid-submodules
       - id: mixed-line-ending
       - id: trailing-whitespace
-        files: ^(LICENSE|NOTICE)$|\.(bat|cfg|cs|css|gitignore|header|in|install|java|md|properties|py|rb|rc|sh|sql|te|template|txt|ucls|vue|xml|xsl|yaml|yml)$|^cloud-cli/bindir/cloud-tool$|^debian/changelog$
+        files: ^(LICENSE|NOTICE)$|README$|\.(bat|cfg|config|cs|css|erb|gitignore|header|in|install|java|md|properties|py|rb|rc|sh|sql|svg|te|template|txt|ucls|vue|xml|xsl|yaml|yml)$|^cloud-cli/bindir/cloud-tool$|^debian/changelog$
         args: [--markdown-linebreak-ext=md]
         exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
   - repo: https://github.com/codespell-project/codespell
@@ -186,7 +186,7 @@ repos:
         description: check Markdown files with markdownlint
         args: [--config=.github/linters/.markdown-lint.yml]
         types: [markdown]
-        files: \.(md|mdown|markdown)$
+        files: \.md$
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.37.1
     hooks:
