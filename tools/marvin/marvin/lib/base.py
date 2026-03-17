@@ -335,6 +335,7 @@ class User:
     def registerUserKeys(cls, apiclient, userid):
         cmd = registerUserKeys.registerUserKeysCmd()
         cmd.id = userid
+        cmd.name = f"keypair-{userid}"
         return apiclient.registerUserKeys(cmd)
 
     def update(self, apiclient, **kwargs):
@@ -5226,6 +5227,8 @@ class VpcOffering:
             cmd.networkmode = services["networkmode"]
         if "routingmode" in services:
             cmd.routingmode = services["routingmode"]
+        if "conservemode" in services:
+            cmd.conservemode = services["conservemode"]
         return VpcOffering(apiclient.createVPCOffering(cmd).__dict__)
 
     def update(self, apiclient, name=None, displaytext=None, state=None):
