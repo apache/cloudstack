@@ -60,6 +60,7 @@
         <include>log4j-cloud.xml</include>
         <include>consoleproxy.properties</include>
         <include>agent.properties</include>
+        <include>uefi.properties</include>
       </includes>
     </fileSet>
     <fileSet>

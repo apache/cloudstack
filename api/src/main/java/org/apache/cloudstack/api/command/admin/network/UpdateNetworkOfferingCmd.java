@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
@@ -26,64 +25,63 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.offering.DomainAndZoneIdResolver;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.domain.Domain;
-import com.cloud.exception.InvalidParameterValueException;
+
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateNetworkOffering", description = "Updates a network offering.", responseObject = NetworkOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class UpdateNetworkOfferingCmd extends BaseCmd {
+public class UpdateNetworkOfferingCmd extends BaseCmd implements DomainAndZoneIdResolver {
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "the id of the network offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "The ID of the network offering")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the network offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the network offering")
     private String networkOfferingName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "The display text of the network offering")
     private String displayText;
 
-    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering."
+    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "The availability of network offering."
             + " The value is Required makes this network offering default for Guest Virtual Networks. Only one network offering can have the value Required ")
     private String availability;
 
-    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the network offering, integer")
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "Sort key of the network offering, integer")
     private Integer sortKey;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "update state for the network offering")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Update state for the network offering")
     private String state;
 
     @Parameter(name = ApiConstants.KEEPALIVE_ENABLED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
+            description = "If true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
     private Boolean keepAliveEnabled;
 
     @Parameter(name = ApiConstants.MAX_CONNECTIONS,
             type = CommandType.INTEGER,
-            description = "maximum number of concurrent connections supported by the network offering")
+            description = "Maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the network offering.", length = 4096)
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "The tags for the network offering.", length = 4096)
     private String tags;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing domain(s) as comma separated string, public for public offerings")
+            length = 4096,
+            description = "The ID of the containing domain(s) as comma separated string, public for public offerings")
     private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing zone(s) as comma separated string, all for all zones offerings",
+            description = "The ID of the containing zone(s) as comma separated string, all for all zones offerings",
             since = "4.13",
             length = 4096)
     private String zoneIds;
@@ -129,63 +127,11 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
-        List<Long> validDomainIds = new ArrayList<>();
-        if (StringUtils.isNotEmpty(domainIds)) {
-            if (domainIds.contains(",")) {
-                String[] domains = domainIds.split(",");
-                for (String domain : domains) {
-                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domain.trim());
-                    if (validDomain != null) {
-                        validDomainIds.add(validDomain.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create network offering because invalid domain has been specified.");
-                    }
-                }
-            } else {
-                domainIds = domainIds.trim();
-                if (!domainIds.matches("public")) {
-                    Domain validDomain = _entityMgr.findByUuid(Domain.class, domainIds.trim());
-                    if (validDomain != null) {
-                        validDomainIds.add(validDomain.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create network offering because invalid domain has been specified.");
-                    }
-                }
-            }
-        } else {
-            validDomainIds.addAll(_configService.getNetworkOfferingDomains(id));
-        }
-        return validDomainIds;
+        return resolveDomainIds(domainIds, id, _configService::getNetworkOfferingDomains, "network offering");
     }
 
     public List<Long> getZoneIds() {
-        List<Long> validZoneIds = new ArrayList<>();
-        if (StringUtils.isNotEmpty(zoneIds)) {
-            if (zoneIds.contains(",")) {
-                String[] zones = zoneIds.split(",");
-                for (String zone : zones) {
-                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zone.trim());
-                    if (validZone != null) {
-                        validZoneIds.add(validZone.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create network offering because invalid zone has been specified.");
-                    }
-                }
-            } else {
-                zoneIds = zoneIds.trim();
-                if (!zoneIds.matches("all")) {
-                    DataCenter validZone = _entityMgr.findByUuid(DataCenter.class, zoneIds.trim());
-                    if (validZone != null) {
-                        validZoneIds.add(validZone.getId());
-                    } else {
-                        throw new InvalidParameterValueException("Failed to create network offering because invalid zone has been specified.");
-                    }
-                }
-            }
-        } else {
-            validZoneIds.addAll(_configService.getNetworkOfferingZones(id));
-        }
-        return validZoneIds;
+        return resolveZoneIds(zoneIds, id, _configService::getNetworkOfferingZones, "network offering");
     }
 
     /////////////////////////////////////////////////////

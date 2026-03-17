@@ -57,13 +57,13 @@ public class UpdateResourceLimitCmd extends BaseCmd {
                type = CommandType.INTEGER,
                required = true,
                description = "Type of resource to update. Values are 0, 1, 2, 3, 4, 6, 7, 8, 9, 10 and 11. "
-                   + "0 - Instance. Number of instances a user can create. "
+                   + "0 - Instance. Number of Instances a user can create. "
                    + "1 - IP. Number of public IP addresses a user can own. "
                    + "2 - Volume. Number of disk volumes a user can create. "
-                   + "3 - Snapshot. Number of snapshots a user can create. "
-                   + "4 - Template. Number of templates that a user can register/create. "
-                   + "5 - Project. Number of projects a user can create. "
-                   + "6 - Network. Number of guest network a user can create. "
+                   + "3 - Snapshot. Number of Snapshots a user can create. "
+                   + "4 - Template. Number of Templates that a user can register/create. "
+                   + "5 - Project. Number of Projects a user can create. "
+                   + "6 - Network. Number of guest Network a user can create. "
                    + "7 - VPC. Number of VPC a user can create. "
                    + "8 - CPU. Total number of CPU cores a user can use. "
                    + "9 - Memory. Total Memory (in MB) a user can use. "
@@ -100,7 +100,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        Long accountId = _accountService.finalizeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
@@ -110,7 +110,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        ResourceLimit result = _resourceLimitService.updateResourceLimit(_accountService.finalyzeAccountId(accountName, domainId, projectId, true), getDomainId(), resourceType, max, getTag());
+        ResourceLimit result = _resourceLimitService.updateResourceLimit(_accountService.finalizeAccountId(accountName, domainId, projectId, true), getDomainId(), resourceType, max, getTag());
         if (result != null || (result == null && max != null && max.longValue() == -1L)) {
             ResourceLimitResponse response = _responseGenerator.createResourceLimitResponse(result);
             response.setResponseName(getCommandName());

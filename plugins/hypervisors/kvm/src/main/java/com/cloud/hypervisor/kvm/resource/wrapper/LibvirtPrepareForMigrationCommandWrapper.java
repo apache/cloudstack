@@ -56,6 +56,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
         final VirtualMachineTO vm = command.getVirtualMachine();
 
         if (command.isRollback()) {
+            logger.info("Handling rollback for PrepareForMigration of VM {}", vm.getName());
             return handleRollback(command, libvirtComputingResource);
         }
 
@@ -83,6 +84,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 if (interfaceDef != null && interfaceDef.getNetType() == GuestNetType.VHOSTUSER) {
                     DpdkTO to = new DpdkTO(interfaceDef.getDpdkOvsPath(), interfaceDef.getDpdkSourcePort(), interfaceDef.getInterfaceMode());
                     dpdkInterfaceMapping.put(nic.getMac(), to);
+                    logger.debug("Configured DPDK interface for VM {}", vm.getName());
                 }
             }
 
@@ -122,6 +124,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
             }
 
+            logger.info("Successfully prepared destination host for migration of VM {}", vm.getName());
             return createPrepareForMigrationAnswer(command, dpdkInterfaceMapping, libvirtComputingResource, vm);
         } catch (final LibvirtException | CloudRuntimeException | InternalErrorException | URISyntaxException e) {
             if (MapUtils.isNotEmpty(dpdkInterfaceMapping)) {
@@ -157,6 +160,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
         KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         VirtualMachineTO vmTO = command.getVirtualMachine();
 
+        logger.info("Rolling back PrepareForMigration for VM {}: disconnecting physical disks", vmTO.getName());
         if (!storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmTO)) {
             return new PrepareForMigrationAnswer(command, "failed to disconnect physical disks from host");
         }

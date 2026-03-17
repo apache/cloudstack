@@ -249,24 +249,48 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     }
 
     /**
+     * Outputs the parameters that should be used for access control in the query of a resource to
+     * {@code permittedAccounts} and {@code domainIdRecursiveListProject}.
+     * @param isIdProvided indicates whether any ID was provided to the command
+     */
+    private void buildBaseACLSearchParametersForMetrics(boolean isIdProvided, List<Long> permittedAccounts, Ternary<Long, Boolean,
+            Project.ListProjectResourcesCriteria> domainIdRecursiveListProject) {
+        Account caller = CallContext.current().getCallingAccount();
+        Account.Type callerType = caller.getType();
+
+        boolean recursive = AccountTypesWithRecursiveUsageAccess.contains(callerType);
+        domainIdRecursiveListProject.second(recursive);
+
+        // If no ID was provided, then the listing will skip project resources (null); otherwise, project resources should
+        // be listed as well (any long allows this)
+        Long id = isIdProvided ? 1L : null;
+
+        // Allow users to also list metrics of resources owned by projects they belong to (-1L), and admins to list all
+        // metrics belonging to their domains recursively (null)
+        Long projectId = isIdProvided && callerType == Account.Type.NORMAL ? -1L : null;
+
+        accountMgr.buildACLSearchParameters(caller, id, null, projectId, permittedAccounts, domainIdRecursiveListProject, true, false);
+    }
+
+    /**
      * Searches VMs based on {@code ListVMsUsageHistoryCmd} parameters.
      *
      * @param cmd the {@link ListVMsUsageHistoryCmd} specifying the parameters.
      * @return the list of VMs.
      */
     protected Pair<List<UserVmVO>, Integer> searchForUserVmsInternal(ListVMsUsageHistoryCmd cmd) {
-        final Long id = cmd.getId();
-        Account caller = CallContext.current().getCallingAccount();
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
+        boolean isIdProvided = CollectionUtils.isNotEmpty(ids);
         List<Long> permittedAccounts = new ArrayList<>();
-        boolean recursive = AccountTypesWithRecursiveUsageAccess.contains(caller.getType());
-        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(null, recursive, null);
-        accountMgr.buildACLSearchParameters(caller, id, null, null, permittedAccounts, domainIdRecursiveListProject, true, false);
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(null, null, null);
+        buildBaseACLSearchParametersForMetrics(isIdProvided, permittedAccounts, domainIdRecursiveListProject);
+
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(UserVmVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         String name = cmd.getName();
         String keyword = cmd.getKeyword();
 
@@ -361,18 +385,18 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * @return the list of VMs.
      */
     protected Pair<List<VolumeVO>, Integer> searchForVolumesInternal(ListVolumesUsageHistoryCmd cmd) {
-        final Long id = cmd.getId();
-        Account caller = CallContext.current().getCallingAccount();
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
+
+        boolean isIdProvided = CollectionUtils.isNotEmpty(ids);
         List<Long> permittedAccounts = new ArrayList<>();
-        boolean recursive = AccountTypesWithRecursiveUsageAccess.contains(caller.getType());
-        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(null, recursive, null);
-        accountMgr.buildACLSearchParameters(caller, id, null, null, permittedAccounts, domainIdRecursiveListProject, true, false);
+        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(null, null, null);
+        buildBaseACLSearchParametersForMetrics(isIdProvided, permittedAccounts, domainIdRecursiveListProject);
+
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(VolumeVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         String name = cmd.getName();
         String keyword = cmd.getKeyword();
 

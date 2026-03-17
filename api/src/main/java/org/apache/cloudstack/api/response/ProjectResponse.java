@@ -33,87 +33,87 @@ import com.google.gson.annotations.SerializedName;
 public class ProjectResponse extends BaseResponse implements ResourceLimitAndCountResponse, SetResourceIconResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the project")
+    @Param(description = "The ID of the project")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the project")
+    @Param(description = "The name of the project")
     private String name;
 
     @SerializedName(ApiConstants.DISPLAY_TEXT)
-    @Param(description = "the displaytext of the project")
+    @Param(description = "The displaytext of the project")
     private String displaytext;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id the project belongs to")
+    @Param(description = "The domain ID the project belongs to")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name where the project belongs to")
+    @Param(description = "The domain name where the project belongs to")
     private String domain;
 
     @SerializedName(ApiConstants.OWNER)
-    @Param(description = "the account name of the project's owners")
+    @Param(description = "The Account name of the project's owners")
     private List<Map<String, String>> owners;
 
     @SerializedName("projectaccountname")
-    @Param(description="the project account name of the project")
+    @Param(description = "The project Account name of the project")
     private String projectAccountName;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the project")
+    @Param(description = "The state of the project")
     private String state;
 
     @SerializedName(ApiConstants.TAGS)
-    @Param(description = "the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
+    @Param(description = "The list of resource tags associated with Instance", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags = new ArrayList<ResourceTagResponse>();
 
     @SerializedName("networklimit")
-    @Param(description = "the total number of networks the project can own", since = "4.2.0")
+    @Param(description = "The total number of Networks the project can own", since = "4.2.0")
     private String networkLimit;
 
     @SerializedName("networktotal")
-    @Param(description = "the total number of networks owned by project", since = "4.2.0")
+    @Param(description = "The total number of Networks owned by project", since = "4.2.0")
     private Long networkTotal;
 
     @SerializedName("networkavailable")
-    @Param(description = "the total number of networks available to be created for this project", since = "4.2.0")
+    @Param(description = "The total number of Networks available to be created for this project", since = "4.2.0")
     private String networkAvailable;
 
     @SerializedName("vpclimit")
-    @Param(description = "the total number of vpcs the project can own", since = "4.2.0")
+    @Param(description = "The total number of VPCs the project can own", since = "4.2.0")
     private String vpcLimit;
 
     @SerializedName("vpctotal")
-    @Param(description = "the total number of vpcs owned by project", since = "4.2.0")
+    @Param(description = "The total number of VPCs owned by project", since = "4.2.0")
     private Long vpcTotal;
 
     @SerializedName("vpcavailable")
-    @Param(description = "the total number of vpcs available to be created for this project", since = "4.2.0")
+    @Param(description = "The total number of VPCs available to be created for this project", since = "4.2.0")
     private String vpcAvailable;
 
     @SerializedName("cpulimit")
-    @Param(description = "the total number of cpu cores the project can own", since = "4.2.0")
+    @Param(description = "The total number of CPU cores the project can own", since = "4.2.0")
     private String cpuLimit;
 
     @SerializedName("cputotal")
-    @Param(description = "the total number of cpu cores owned by project", since = "4.2.0")
+    @Param(description = "The total number of CPU cores owned by project", since = "4.2.0")
     private Long cpuTotal;
 
     @SerializedName("cpuavailable")
-    @Param(description = "the total number of cpu cores available to be created for this project", since = "4.2.0")
+    @Param(description = "The total number of CPU cores available to be created for this project", since = "4.2.0")
     private String cpuAvailable;
 
     @SerializedName("memorylimit")
-    @Param(description = "the total memory (in MB) the project can own", since = "4.2.0")
+    @Param(description = "The total memory (in MB) the project can own", since = "4.2.0")
     private String memoryLimit;
 
     @SerializedName("memorytotal")
-    @Param(description = "the total memory (in MB) owned by project", since = "4.2.0")
+    @Param(description = "The total memory (in MB) owned by project", since = "4.2.0")
     private Long memoryTotal;
 
     @SerializedName("memoryavailable")
-    @Param(description = "the total memory (in MB) available to be created for this project", since = "4.2.0")
+    @Param(description = "The total memory (in MB) available to be created for this project", since = "4.2.0")
     private String memoryAvailable;
 
     @SerializedName("gpulimit")
@@ -129,27 +129,27 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     private String gpuAvailable;
 
     @SerializedName("primarystoragelimit")
-    @Param(description = "the total primary storage space (in GiB) the project can own", since = "4.2.0")
+    @Param(description = "The total primary storage space (in GiB) the project can own", since = "4.2.0")
     private String primaryStorageLimit;
 
     @SerializedName("primarystoragetotal")
-    @Param(description = "the total primary storage space (in GiB) owned by project", since = "4.2.0")
+    @Param(description = "The total primary storage space (in GiB) owned by project", since = "4.2.0")
     private Long primaryStorageTotal;
 
     @SerializedName("primarystorageavailable")
-    @Param(description = "the total primary storage space (in GiB) available to be used for this project", since = "4.2.0")
+    @Param(description = "The total primary storage space (in GiB) available to be used for this project", since = "4.2.0")
     private String primaryStorageAvailable;
 
     @SerializedName("secondarystoragelimit")
-    @Param(description = "the total secondary storage space (in GiB) the project can own", since = "4.2.0")
+    @Param(description = "The total secondary storage space (in GiB) the project can own", since = "4.2.0")
     private String secondaryStorageLimit;
 
     @SerializedName("secondarystoragetotal")
-    @Param(description = "the total secondary storage space (in GiB) owned by project", since = "4.2.0")
+    @Param(description = "The total secondary storage space (in GiB) owned by project", since = "4.2.0")
     private float secondaryStorageTotal;
 
     @SerializedName("secondarystorageavailable")
-    @Param(description = "the total secondary storage space (in GiB) available to be used for this project", since = "4.2.0")
+    @Param(description = "The total secondary storage space (in GiB) available to be used for this project", since = "4.2.0")
     private String secondaryStorageAvailable;
 
     @SerializedName(ApiConstants.BUCKET_LIMIT)
@@ -177,51 +177,51 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     private String objectStorageAvailable;
 
     @SerializedName(ApiConstants.VM_LIMIT)
-    @Param(description = "the total number of virtual machines that can be deployed by this project", since = "4.2.0")
+    @Param(description = "The total number of Instances that can be deployed by this project", since = "4.2.0")
     private String vmLimit;
 
     @SerializedName(ApiConstants.VM_TOTAL)
-    @Param(description = "the total number of virtual machines deployed by this project", since = "4.2.0")
+    @Param(description = "The total number of Instances deployed by this project", since = "4.2.0")
     private Long vmTotal;
 
     @SerializedName(ApiConstants.VM_AVAILABLE)
-    @Param(description = "the total number of virtual machines available for this project to acquire", since = "4.2.0")
+    @Param(description = "The total number of Instances available for this project to acquire", since = "4.2.0")
     private String vmAvailable;
 
     @SerializedName(ApiConstants.IP_LIMIT)
-    @Param(description = "the total number of public ip addresses this project can acquire", since = "4.2.0")
+    @Param(description = "The total number of public IP addresses this project can acquire", since = "4.2.0")
     private String ipLimit;
 
     @SerializedName(ApiConstants.IP_TOTAL)
-    @Param(description = "the total number of public ip addresses allocated for this project", since = "4.2.0")
+    @Param(description = "The total number of public IP addresses allocated for this project", since = "4.2.0")
     private Long ipTotal;
 
     @SerializedName(ApiConstants.IP_AVAILABLE)
-    @Param(description = "the total number of public ip addresses available for this project to acquire", since = "4.2.0")
+    @Param(description = "The total number of public IP addresses available for this project to acquire", since = "4.2.0")
     private String ipAvailable;
 
     @SerializedName("volumelimit")
-    @Param(description = "the total volume which can be used by this project", since = "4.2.0")
+    @Param(description = "The total volume which can be used by this project", since = "4.2.0")
     private String volumeLimit;
 
     @SerializedName("volumetotal")
-    @Param(description = "the total volume being used by this project", since = "4.2.0")
+    @Param(description = "The total volume being used by this project", since = "4.2.0")
     private Long volumeTotal;
 
     @SerializedName("volumeavailable")
-    @Param(description = "the total volume available for this project", since = "4.2.0")
+    @Param(description = "The total volume available for this project", since = "4.2.0")
     private String volumeAvailable;
 
     @SerializedName("snapshotlimit")
-    @Param(description = "the total number of snapshots which can be stored by this project", since = "4.2.0")
+    @Param(description = "The total number of Snapshots which can be stored by this project", since = "4.2.0")
     private String snapshotLimit;
 
     @SerializedName("snapshottotal")
-    @Param(description = "the total number of snapshots stored by this project", since = "4.2.0")
+    @Param(description = "The total number of Snapshots stored by this project", since = "4.2.0")
     private Long snapshotTotal;
 
     @SerializedName("snapshotavailable")
-    @Param(description = "the total number of snapshots available for this project", since = "4.2.0")
+    @Param(description = "The total number of Snapshots available for this project", since = "4.2.0")
     private String snapshotAvailable;
 
     @SerializedName(ApiConstants.BACKUP_LIMIT)
@@ -249,23 +249,23 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     private String backupStorageAvailable;
 
     @SerializedName("templatelimit")
-    @Param(description = "the total number of templates which can be created by this project", since = "4.2.0")
+    @Param(description = "The total number of Templates which can be created by this project", since = "4.2.0")
     private String templateLimit;
 
     @SerializedName("templatetotal")
-    @Param(description = "the total number of templates which have been created by this project", since = "4.2.0")
+    @Param(description = "The total number of Templates which have been created by this project", since = "4.2.0")
     private Long templateTotal;
 
     @SerializedName("templateavailable")
-    @Param(description = "the total number of templates available to be created by this project", since = "4.2.0")
+    @Param(description = "The total number of Templates available to be created by this project", since = "4.2.0")
     private String templateAvailable;
 
     @SerializedName("vmstopped")
-    @Param(description = "the total number of virtual machines stopped for this project", since = "4.2.0")
+    @Param(description = "The total number of Instances stopped for this project", since = "4.2.0")
     private Integer vmStopped;
 
     @SerializedName("vmrunning")
-    @Param(description = "the total number of virtual machines running for this project", since = "4.2.0")
+    @Param(description = "The total number of Instances running for this project", since = "4.2.0")
     private Integer vmRunning;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
@@ -273,7 +273,7 @@ public class ProjectResponse extends BaseResponse implements ResourceLimitAndCou
     ResourceIconResponse icon;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date this project was created", since = "4.16.0")
+    @Param(description = "The date this project was created", since = "4.16.0")
     private Date created;
 
     @SerializedName(ApiConstants.TAGGED_RESOURCES)

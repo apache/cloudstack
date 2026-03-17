@@ -41,7 +41,7 @@ isCifs() {
 
 # ping dns server
 echo ================================================
-DNSSERVER=`egrep '^nameserver' /etc/resolv.conf  | awk '{print $2}'| head -1`
+DNSSERVER=`grep -E '^nameserver' /etc/resolv.conf  | awk '{print $2}'| head -1`
 echo "First DNS server is " $DNSSERVER
 ping -c 2  $DNSSERVER
 if [ $? -eq 0 ]

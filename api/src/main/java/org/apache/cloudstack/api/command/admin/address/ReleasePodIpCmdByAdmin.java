@@ -70,7 +70,7 @@ public class ReleasePodIpCmdByAdmin extends BaseCmd {
             response.setDisplayText("IP is released successfully");
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release  Pod ip ");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release Pod IP");
         }
     }
 }

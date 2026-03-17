@@ -42,7 +42,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = ListTungstenFabricNetworkCmd.APINAME, description = "list Tungsten-Fabric network",
+@APICommand(name = ListTungstenFabricNetworkCmd.APINAME, description = "List Tungsten-Fabric network",
     responseObject = TungstenFabricNetworkResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo =
     false)
 public class ListTungstenFabricNetworkCmd extends BaseListCmd {
@@ -51,10 +51,10 @@ public class ListTungstenFabricNetworkCmd extends BaseListCmd {
     @Inject
     TungstenService tungstenService;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "The ID of zone")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, description = "the uuid of Tungsten-Fabric network")
+    @Parameter(name = ApiConstants.NETWORK_UUID, type = CommandType.STRING, description = "The uuid of Tungsten-Fabric network")
     private String networkUuid;
 
     @Parameter(name = ApiConstants.LIST_ALL,

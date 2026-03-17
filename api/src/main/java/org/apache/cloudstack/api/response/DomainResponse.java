@@ -16,93 +16,93 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponseWithAnnotations;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.domain.Domain;
 import com.cloud.serializer.Param;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Domain.class)
-public class DomainResponse extends BaseResponseWithAnnotations implements ResourceLimitAndCountResponse, SetResourceIconResponse {
+public class DomainResponse extends BaseResponseWithTagInformation implements ResourceLimitAndCountResponse, SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the domain")
+    @Param(description = "The ID of the domain")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the domain")
+    @Param(description = "The name of the domain")
     private String domainName;
 
     @SerializedName(ApiConstants.LEVEL)
-    @Param(description = "the level of the domain")
+    @Param(description = "The level of the domain")
     private Integer level;
 
     @SerializedName("parentdomainid")
-    @Param(description = "the domain ID of the parent domain")
+    @Param(description = "The domain ID of the parent domain")
     private String parentDomainId;
 
     @SerializedName("parentdomainname")
-    @Param(description = "the domain name of the parent domain")
+    @Param(description = "The domain name of the parent domain")
     private String parentDomainName;
 
     @SerializedName("haschild")
-    @Param(description = "whether the domain has one or more sub-domains")
+    @Param(description = "Whether the domain has one or more sub-domains")
     private boolean hasChild;
 
     @SerializedName(ApiConstants.NETWORK_DOMAIN)
-    @Param(description = "the network domain")
+    @Param(description = "The Network domain")
     private String networkDomain;
 
     @SerializedName(ApiConstants.PATH)
-    @Param(description = "the path of the domain")
+    @Param(description = "The path of the domain")
     private String path;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the domain")
+    @SerializedName(ApiConstants.STATE) @Param(description = "The state of the domain")
     private String state;
 
-    @SerializedName(ApiConstants.CREATED) @Param(description="the date when this domain was created")
+    @SerializedName(ApiConstants.CREATED) @Param(description = "The date when this domain was created")
     private Date created;
 
-    @SerializedName(ApiConstants.VM_LIMIT) @Param(description="the total number of virtual machines that can be deployed by this domain")
+    @SerializedName(ApiConstants.VM_LIMIT) @Param(description = "The total number of Instances that can be deployed by this domain")
     private String vmLimit;
 
-    @SerializedName(ApiConstants.VM_TOTAL) @Param(description="the total number of virtual machines deployed by this domain")
+    @SerializedName(ApiConstants.VM_TOTAL) @Param(description = "The total number of Instances deployed by this domain")
     private Long vmTotal;
 
-    @SerializedName(ApiConstants.VM_AVAILABLE) @Param(description="the total number of virtual machines available for this domain to acquire")
+    @SerializedName(ApiConstants.VM_AVAILABLE) @Param(description = "The total number of Instances available for this domain to acquire")
     private String vmAvailable;
 
-    @SerializedName(ApiConstants.IP_LIMIT) @Param(description="the total number of public ip addresses this domain can acquire")
+    @SerializedName(ApiConstants.IP_LIMIT) @Param(description = "The total number of public IP addresses this domain can acquire")
     private String ipLimit;
 
-    @SerializedName(ApiConstants.IP_TOTAL) @Param(description="the total number of public ip addresses allocated for this domain")
+    @SerializedName(ApiConstants.IP_TOTAL) @Param(description = "The total number of public IP addresses allocated for this domain")
     private Long ipTotal;
 
-    @SerializedName(ApiConstants.IP_AVAILABLE) @Param(description="the total number of public ip addresses available for this domain to acquire")
+    @SerializedName(ApiConstants.IP_AVAILABLE) @Param(description = "The total number of public IP addresses available for this domain to acquire")
     private String ipAvailable;
 
-    @SerializedName("volumelimit") @Param(description="the total volume which can be used by this domain")
+    @SerializedName("volumelimit") @Param(description = "The total volume which can be used by this domain")
     private String volumeLimit;
 
-    @SerializedName("volumetotal") @Param(description="the total volume being used by this domain")
+    @SerializedName("volumetotal") @Param(description = "The total volume being used by this domain")
     private Long volumeTotal;
 
-    @SerializedName("volumeavailable") @Param(description="the total volume available for this domain")
+    @SerializedName("volumeavailable") @Param(description = "The total volume available for this domain")
     private String volumeAvailable;
 
-    @SerializedName("snapshotlimit") @Param(description="the total number of snapshots which can be stored by this domain")
+    @SerializedName("snapshotlimit") @Param(description = "The total number of Snapshots which can be stored by this domain")
     private String snapshotLimit;
 
-    @SerializedName("snapshottotal") @Param(description="the total number of snapshots stored by this domain")
+    @SerializedName("snapshottotal") @Param(description = "The total number of Snapshots stored by this domain")
     private Long snapshotTotal;
 
-    @SerializedName("snapshotavailable") @Param(description="the total number of snapshots available for this domain")
+    @SerializedName("snapshotavailable") @Param(description = "The total number of Snapshots available for this domain")
     private String snapshotAvailable;
 
     @SerializedName(ApiConstants.BACKUP_LIMIT)
@@ -129,58 +129,58 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @Param(description = "the total backup storage space (in GiB) available to the domain", since = "4.21.0")
     private String backupStorageAvailable;
 
-    @SerializedName("templatelimit") @Param(description="the total number of templates which can be created by this domain")
+    @SerializedName("templatelimit") @Param(description = "The total number of Templates which can be created by this domain")
     private String templateLimit;
 
-    @SerializedName("templatetotal") @Param(description="the total number of templates which have been created by this domain")
+    @SerializedName("templatetotal") @Param(description = "The total number of Templates which have been created by this domain")
     private Long templateTotal;
 
-    @SerializedName("templateavailable") @Param(description="the total number of templates available to be created by this domain")
+    @SerializedName("templateavailable") @Param(description = "The total number of Templates available to be created by this domain")
     private String templateAvailable;
 
-    @SerializedName("projectlimit") @Param(description="the total number of projects the domain can own", since="3.0.1")
+    @SerializedName("projectlimit") @Param(description = "The total number of projects the domain can own", since="3.0.1")
     private String projectLimit;
 
-    @SerializedName("projecttotal") @Param(description="the total number of projects being administrated by this domain", since="3.0.1")
+    @SerializedName("projecttotal") @Param(description = "The total number of projects being administrated by this domain", since="3.0.1")
     private Long projectTotal;
 
-    @SerializedName("projectavailable") @Param(description="the total number of projects available for administration by this domain", since="3.0.1")
+    @SerializedName("projectavailable") @Param(description = "The total number of projects available for administration by this domain", since="3.0.1")
     private String projectAvailable;
 
-    @SerializedName("networklimit") @Param(description="the total number of networks the domain can own", since="3.0.1")
+    @SerializedName("networklimit") @Param(description = "The total number of Networks the domain can own", since="3.0.1")
     private String networkLimit;
 
-    @SerializedName("networktotal") @Param(description="the total number of networks owned by domain", since="3.0.1")
+    @SerializedName("networktotal") @Param(description = "The total number of Networks owned by domain", since="3.0.1")
     private Long networkTotal;
 
-    @SerializedName("networkavailable") @Param(description="the total number of networks available to be created for this domain", since="3.0.1")
+    @SerializedName("networkavailable") @Param(description = "The total number of Networks available to be created for this domain", since="3.0.1")
     private String networkAvailable;
 
-    @SerializedName("vpclimit") @Param(description="the total number of vpcs the domain can own", since="4.0.0")
+    @SerializedName("vpclimit") @Param(description = "The total number of VPCs the domain can own", since="4.0.0")
     private String vpcLimit;
 
-    @SerializedName("vpctotal") @Param(description="the total number of vpcs owned by domain", since="4.0.0")
+    @SerializedName("vpctotal") @Param(description = "The total number of VPCs owned by domain", since="4.0.0")
     private Long vpcTotal;
 
-    @SerializedName("vpcavailable") @Param(description="the total number of vpcs available to be created for this domain", since="4.0.0")
+    @SerializedName("vpcavailable") @Param(description = "The total number of VPCs available to be created for this domain", since="4.0.0")
     private String vpcAvailable;
 
-    @SerializedName("cpulimit") @Param(description="the total number of cpu cores the domain can own", since="4.2.0")
+    @SerializedName("cpulimit") @Param(description = "The total number of CPU cores the domain can own", since="4.2.0")
     private String cpuLimit;
 
-    @SerializedName("cputotal") @Param(description="the total number of cpu cores owned by domain", since="4.2.0")
+    @SerializedName("cputotal") @Param(description = "The total number of CPU cores owned by domain", since="4.2.0")
     private Long cpuTotal;
 
-    @SerializedName("cpuavailable") @Param(description="the total number of cpu cores available to be created for this domain", since="4.2.0")
+    @SerializedName("cpuavailable") @Param(description = "The total number of CPU cores available to be created for this domain", since="4.2.0")
     private String cpuAvailable;
 
-    @SerializedName("memorylimit") @Param(description="the total memory (in MB) the domain can own", since="4.2.0")
+    @SerializedName("memorylimit") @Param(description = "The total memory (in MB) the domain can own", since="4.2.0")
     private String memoryLimit;
 
-    @SerializedName("memorytotal") @Param(description="the total memory (in MB) owned by domain", since="4.2.0")
+    @SerializedName("memorytotal") @Param(description = "The total memory (in MB) owned by domain", since="4.2.0")
     private Long memoryTotal;
 
-    @SerializedName("memoryavailable") @Param(description="the total memory (in MB) available to be created for this domain", since="4.2.0")
+    @SerializedName("memoryavailable") @Param(description = "The total memory (in MB) available to be created for this domain", since="4.2.0")
     private String memoryAvailable;
 
     @SerializedName("gpulimit") @Param(description="the total number of gpus the domain can own", since="4.21.0")
@@ -192,22 +192,22 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @SerializedName("gpuavailable") @Param(description="the total number of gpus available to be created for this domain", since="4.21.0")
     private String gpuAvailable;
 
-    @SerializedName("primarystoragelimit") @Param(description="the total primary storage space (in GiB) the domain can own", since="4.2.0")
+    @SerializedName("primarystoragelimit") @Param(description = "The total primary storage space (in GiB) the domain can own", since="4.2.0")
     private String primaryStorageLimit;
 
-    @SerializedName("primarystoragetotal") @Param(description="the total primary storage space (in GiB) owned by domain", since="4.2.0")
+    @SerializedName("primarystoragetotal") @Param(description = "The total primary storage space (in GiB) owned by domain", since="4.2.0")
     private Long primaryStorageTotal;
 
-    @SerializedName("primarystorageavailable") @Param(description="the total primary storage space (in GiB) available to be used for this domain", since="4.2.0")
+    @SerializedName("primarystorageavailable") @Param(description = "The total primary storage space (in GiB) available to be used for this domain", since="4.2.0")
     private String primaryStorageAvailable;
 
-    @SerializedName("secondarystoragelimit") @Param(description="the total secondary storage space (in GiB) the domain can own", since="4.2.0")
+    @SerializedName("secondarystoragelimit") @Param(description = "The total secondary storage space (in GiB) the domain can own", since="4.2.0")
     private String secondaryStorageLimit;
 
-    @SerializedName("secondarystoragetotal") @Param(description="the total secondary storage space (in GiB) owned by domain", since="4.2.0")
+    @SerializedName("secondarystoragetotal") @Param(description = "The total secondary storage space (in GiB) owned by domain", since="4.2.0")
     private float secondaryStorageTotal;
 
-    @SerializedName("secondarystorageavailable") @Param(description="the total secondary storage space (in GiB) available to be used for this domain", since="4.2.0")
+    @SerializedName("secondarystorageavailable") @Param(description = "The total secondary storage space (in GiB) available to be used for this domain", since="4.2.0")
     private String secondaryStorageAvailable;
 
     @SerializedName(ApiConstants.BUCKET_LIMIT)
@@ -239,7 +239,7 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     ResourceIconResponse icon;
 
     @SerializedName(ApiConstants.DOMAIN_DETAILS)
-    @Param(description = "details for the domain")
+    @Param(description = "Details for the domain")
     private Map<String, String> details;
 
     @SerializedName(ApiConstants.TAGGED_RESOURCES)
@@ -588,5 +588,9 @@ public class DomainResponse extends BaseResponseWithAnnotations implements Resou
     @Override
     public void setTaggedResourceLimitsAndCounts(List<TaggedResourceLimitAndCountResponse> taggedResourceLimitsAndCounts) {
         this.taggedResources = taggedResourceLimitsAndCounts;
+    }
+
+    public void setTags(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }
