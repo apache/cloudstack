@@ -10105,8 +10105,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (isBlankInstanceDefaultTemplate(template)) {
             return true;
         }
-        return MapUtils.getBoolean(CallContext.current().getContextParameters(),
-                ApiConstants.BLANK_INSTANCE);
+        return Boolean.TRUE.equals(
+                MapUtils.getBoolean(CallContext.current().getContextParameters(), ApiConstants.BLANK_INSTANCE));
     }
 
     VMTemplateVO getBlankInstanceTemplate() {
