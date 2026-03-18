@@ -20,3 +20,5 @@
 
 .pre-commit-config.yaml @jbampton
 /.github/linters/ @jbampton
+
+/plugins/network-elements/nsx/ @Pearl1594 @nvazquez

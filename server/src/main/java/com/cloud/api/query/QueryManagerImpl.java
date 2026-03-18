@@ -37,6 +37,13 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.network.PublicIpQuarantine;
+import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.user.UserVO;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleVO;
+import org.apache.cloudstack.acl.dao.RoleDao;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -180,6 +187,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -264,7 +272,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.VNF;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
@@ -274,13 +281,11 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.dao.RouterHealthCheckResultVO;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
-import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
@@ -380,6 +385,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     AccountManager accountMgr;
+
+    @Inject
+    RoleService roleService;
 
     @Inject
     ProjectManager _projectMgr;
@@ -653,6 +661,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     ExtensionHelper extensionHelper;
 
+    @Inject
+    RoleDao roleDao;
+
     /*
      * (non-Javadoc)
      *
@@ -830,6 +841,37 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return _userAccountJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+    @Override
+    public List<Long> searchForAccessibleUsers() {
+        List<Long> permittedAccounts = new ArrayList<>();
+        Account callingAccount = CallContext.current().getCallingAccount();
+        Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true);
+        List<RoleVO> allowedRoles = roleDao.listAll();
+        roleService.removeRolesIfNeeded(allowedRoles);
+        List<Long> allowedRolesId = allowedRoles.stream().map(RoleVO::getId).collect(Collectors.toList());
+
+        Pair<List<UserAccountJoinVO>, Integer> usersPair = getUserListInternal(callingAccount, permittedAccounts,
+                true, null, null, null, null, null, null, null, callingAccount.getDomainId(), true, searchFilter, null);
+        return usersPair.first().stream().filter(userAccount -> {
+            if (BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME.equals(userAccount.getUsername()) && !accountMgr.isRootAdmin(callingAccount.getId())) {
+                return false;
+            }
+
+            AccountVO accountVO = _accountDao.findByIdIncludingRemoved(userAccount.getAccountId());
+            UserVO userVO = userDao.findByIdIncludingRemoved(userAccount.getId());
+            if (ObjectUtils.anyNull(accountVO, userVO)) {
+                return false;
+            }
+
+            try {
+                accountMgr.checkCallerRoleTypeAllowedForUserOrAccountOperations(accountVO, userVO);
+            } catch (PermissionDeniedException exception) {
+                return false;
+            }
+            return allowedRolesId.contains(userAccount.getAccountRoleId());
+        }).map(UserAccountJoinVO::getId).collect(Collectors.toList());
     }
 
     @Override
@@ -2432,6 +2474,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long msId = cmd.getManagementServerId();
         final CPU.CPUArch arch = cmd.getArch();
         String storageAccessGroup = cmd.getStorageAccessGroup();
+        String version = cmd.getVersion();
 
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
@@ -2456,11 +2499,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             hostSearchBuilder.or("storageAccessGroupMiddle", hostSearchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
             hostSearchBuilder.cp();
         }
+        hostSearchBuilder.and("version", hostSearchBuilder.entity().getVersion(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             hostSearchBuilder.and().op("keywordName", hostSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
             hostSearchBuilder.or("keywordStatus", hostSearchBuilder.entity().getStatus(), SearchCriteria.Op.LIKE);
             hostSearchBuilder.or("keywordType", hostSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
+            hostSearchBuilder.or("keywordVersion", hostSearchBuilder.entity().getVersion(), SearchCriteria.Op.LIKE);
             hostSearchBuilder.cp();
         }
 
@@ -2491,6 +2536,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("keywordName", "%" + keyword + "%");
             sc.setParameters("keywordStatus", "%" + keyword + "%");
             sc.setParameters("keywordType", "%" + keyword + "%");
+            sc.setParameters("keywordVersion", "%" + keyword + "%");
         }
 
         if (id != null) {
@@ -2552,6 +2598,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("storageAccessGroupPrefix", storageAccessGroup + ",%");
             sc.setParameters("storageAccessGroupSuffix", "%," + storageAccessGroup);
             sc.setParameters("storageAccessGroupMiddle", "%," + storageAccessGroup + ",%");
+        }
+
+        if (version != null) {
+            sc.setParameters("version", version);
         }
 
         Pair<List<HostVO>, Integer> uniqueHostPair = hostDao.searchAndCount(sc, searchFilter);
@@ -2867,6 +2917,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         boolean listAll = cmd.listAll();
         boolean isRecursive = false;
         Domain domain = null;
+        Map<String, String> tags = cmd.getTags();
 
         if (domainId != null) {
             domain = _domainDao.findById(domainId);
@@ -2896,6 +2947,24 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         domainSearchBuilder.and("path", domainSearchBuilder.entity().getPath(), SearchCriteria.Op.LIKE);
         domainSearchBuilder.and("state", domainSearchBuilder.entity().getState(), SearchCriteria.Op.EQ);
 
+        if (MapUtils.isNotEmpty(tags)) {
+            SearchBuilder<ResourceTagVO> resourceTagSearch = resourceTagDao.createSearchBuilder();
+            resourceTagSearch.and("resourceType", resourceTagSearch.entity().getResourceType(), Op.EQ);
+            resourceTagSearch.and().op();
+            for (int count = 0; count < tags.size(); count++) {
+                if (count == 0) {
+                    resourceTagSearch.op("tagKey" + count, resourceTagSearch.entity().getKey(), Op.EQ);
+                } else {
+                    resourceTagSearch.or().op("tagKey" + count, resourceTagSearch.entity().getKey(), Op.EQ);
+                }
+                resourceTagSearch.and("tagValue" + count, resourceTagSearch.entity().getValue(), Op.EQ);
+                resourceTagSearch.cp();
+            }
+            resourceTagSearch.cp();
+
+            domainSearchBuilder.join("tags", resourceTagSearch, resourceTagSearch.entity().getResourceId(), domainSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
         if (keyword != null) {
             domainSearchBuilder.and("keywordName", domainSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
         }
@@ -2922,6 +2991,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.setParameters("path", domain.getPath() + "%");
             } else {
                 sc.setParameters("id", domainId);
+            }
+        }
+
+        if (MapUtils.isNotEmpty(tags)) {
+            int count = 0;
+            sc.setJoinParameters("tags", "resourceType", ResourceObjectType.Domain);
+            for (Map.Entry<String, String> entry  : tags.entrySet()) {
+                sc.setJoinParameters("tags", "tagKey" + count, entry.getKey());
+                sc.setJoinParameters("tags", "tagValue" + count, entry.getValue());
+                count++;
             }
         }
 
@@ -5387,7 +5466,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         options.put(ApiConstants.BootType.UEFI.toString(), Arrays.asList(ApiConstants.BootMode.LEGACY.toString(),
             ApiConstants.BootMode.SECURE.toString()));
-        options.put(VmDetailConstants.KEYBOARD, Arrays.asList("uk", "us", "jp", "fr"));
+        options.put(VmDetailConstants.KEYBOARD, Arrays.asList("uk", "us", "jp", "fr", "es-latam"));
         options.put(VmDetailConstants.CPU_CORE_PER_SOCKET, Collections.emptyList());
         options.put(VmDetailConstants.ROOT_DISK_SIZE, Collections.emptyList());
 
@@ -5406,6 +5485,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.VIRTUAL_TPM_VERSION, Arrays.asList("1.2", "2.0"));
             options.put(VmDetailConstants.GUEST_CPU_MODE, Arrays.asList("custom", "host-model", "host-passthrough"));
             options.put(VmDetailConstants.GUEST_CPU_MODEL, Collections.emptyList());
+            options.put(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE, Collections.emptyList());
             options.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, Arrays.asList("true", "false"));
         }
 
@@ -5416,6 +5496,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, Arrays.asList("true", "false"));
             options.put(VmDetailConstants.SVGA_VRAM_SIZE, Collections.emptyList());
             options.put(VmDetailConstants.RAM_RESERVATION, Collections.emptyList());
+            options.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, Arrays.asList("true", "false"));
+        }
+
+        if (HypervisorType.XenServer.equals(hypervisorType)) {
             options.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, Arrays.asList("true", "false"));
         }
     }
@@ -5731,6 +5815,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     protected Pair<List<ManagementServerJoinVO>, Integer> listManagementServersInternal(ListMgmtsCmd cmd) {
         Long id = cmd.getId();
         String name = cmd.getHostName();
+        String version = cmd.getVersion();
+        String keyword = cmd.getKeyword();
 
         SearchBuilder<ManagementServerJoinVO> sb = managementServerJoinDao.createSearchBuilder();
         SearchCriteria<ManagementServerJoinVO> sc = sb.create();
@@ -5739,6 +5825,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
+        if (version != null) {
+            sc.addAnd("version", SearchCriteria.Op.EQ, version);
+        }
+        if (keyword != null) {
+            sc.addAnd("version", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
         return managementServerJoinDao.searchAndCount(sc, null);
     }

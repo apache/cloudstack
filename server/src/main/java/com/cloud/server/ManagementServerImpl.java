@@ -43,6 +43,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ApiKeyPairVO;
+import com.cloud.network.vpc.VpcVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -130,6 +132,7 @@ import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.CloneNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -160,6 +163,8 @@ import org.apache.cloudstack.api.command.admin.network.UpdateNetworkServiceProvi
 import org.apache.cloudstack.api.command.admin.network.UpdatePhysicalNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateStorageNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CloneServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCategoryCmd;
@@ -278,15 +283,18 @@ import org.apache.cloudstack.api.command.admin.usage.ListUsageTypesCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.UpdateTrafficTypeCmd;
 import org.apache.cloudstack.api.command.admin.user.CreateUserCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.DisableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.EnableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeyRulesCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.LockUserCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterUserKeyCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
@@ -327,6 +335,7 @@ import org.apache.cloudstack.api.command.admin.volume.RecoverVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.ResizeVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.UpdateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.UploadVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.vpc.CloneVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayByAdminCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
@@ -458,6 +467,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCm
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.ImportNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
@@ -686,15 +696,15 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.dao.ManagementServerJoinDao;
 import com.cloud.api.query.dao.StoragePoolJoinDao;
-import com.cloud.api.query.vo.ManagementServerJoinVO;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
@@ -796,7 +806,6 @@ import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -813,6 +822,7 @@ import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -1051,7 +1061,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private BackupManager backupManager;
     @Inject
-    protected ManagementServerJoinDao managementServerJoinDao;
+    protected ManagementServerHostDao managementServerHostDao;
     @Inject
     ClusterManager _clusterMgr;
 
@@ -2654,12 +2664,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (associatedNetworkId != null) {
-            _accountMgr.checkAccess(caller, null, false, networkDao.findById(associatedNetworkId));
-            sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+            NetworkVO associatedNetwork = networkDao.findById(associatedNetworkId);
+
+            if (associatedNetwork != null) {
+                _accountMgr.checkAccess(caller, null, false, associatedNetwork);
+                sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+            }
         }
+
         if (vpcId != null) {
-            _accountMgr.checkAccess(caller, null, false, _vpcDao.findById(vpcId));
-            sc.setParameters("vpcId", vpcId);
+            VpcVO vpc = _vpcDao.findById(vpcId);
+
+            if (vpc != null) {
+                _accountMgr.checkAccess(caller, null, false, vpc);
+                sc.setParameters("vpcId", vpcId);
+            }
         }
 
         addrs = _publicIpAddressDao.search(sc, searchFilter); // Allocated
@@ -2676,12 +2695,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
             if (associatedNetworkId != null) {
                 NetworkVO guestNetwork = networkDao.findById(associatedNetworkId);
-                if (zoneId == null) {
-                    zoneId = guestNetwork.getDataCenterId();
-                } else if (zoneId != guestNetwork.getDataCenterId()) {
-                    throw new InvalidParameterValueException("Please specify a valid associated network id in the specified zone.");
+
+                if (guestNetwork != null) {
+                    if (zoneId == null) {
+                        zoneId = guestNetwork.getDataCenterId();
+                    } else if (zoneId != guestNetwork.getDataCenterId()) {
+                        throw new InvalidParameterValueException("Please specify a valid associated network id in the specified zone.");
+                    }
+                    owner = _accountDao.findById(guestNetwork.getAccountId());
                 }
-                owner = _accountDao.findById(guestNetwork.getAccountId());
             }
             List<DataCenterVO> dcList = new ArrayList<>();
             if (zoneId == null){
@@ -3846,6 +3868,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AddNetworkDeviceCmd.class);
         cmdList.add(AddNetworkServiceProviderCmd.class);
         cmdList.add(CreateNetworkOfferingCmd.class);
+        cmdList.add(CloneNetworkOfferingCmd.class);
         cmdList.add(CreatePhysicalNetworkCmd.class);
         cmdList.add(CreateStorageNetworkIpRangeCmd.class);
         cmdList.add(DeleteNetworkDeviceCmd.class);
@@ -3866,7 +3889,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListDedicatedGuestVlanRangesCmd.class);
         cmdList.add(ReleaseDedicatedGuestVlanRangeCmd.class);
         cmdList.add(CreateDiskOfferingCmd.class);
+        cmdList.add(CloneDiskOfferingCmd.class);
         cmdList.add(CreateServiceOfferingCmd.class);
+        cmdList.add(CloneServiceOfferingCmd.class);
         cmdList.add(DeleteDiskOfferingCmd.class);
         cmdList.add(DeleteServiceOfferingCmd.class);
         cmdList.add(IsAccountAllowedToCreateOfferingsWithTagsCmd.class);
@@ -3941,7 +3966,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListUsersCmd.class);
         cmdList.add(LockUserCmd.class);
         cmdList.add(MoveUserCmd.class);
-        cmdList.add(RegisterUserKeyCmd.class);
+        cmdList.add(RegisterUserKeysCmd.class);
         cmdList.add(UpdateUserCmd.class);
         cmdList.add(CreateVlanIpRangeCmd.class);
         cmdList.add(UpdateVlanIpRangeCmd.class);
@@ -3955,6 +3980,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RecoverVMCmd.class);
         cmdList.add(CreatePrivateGatewayCmd.class);
         cmdList.add(CreateVPCOfferingCmd.class);
+        cmdList.add(CloneVPCOfferingCmd.class);
         cmdList.add(DeletePrivateGatewayCmd.class);
         cmdList.add(DeleteVPCOfferingCmd.class);
         cmdList.add(UpdateVPCOfferingCmd.class);
@@ -4049,6 +4075,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(EnableStaticNatCmd.class);
         cmdList.add(ListIpForwardingRulesCmd.class);
         cmdList.add(CreateNetworkACLCmd.class);
+        cmdList.add(ImportNetworkACLCmd.class);
         cmdList.add(CreateNetworkCmd.class);
         cmdList.add(DeleteNetworkACLCmd.class);
         cmdList.add(DeleteNetworkCmd.class);
@@ -4367,6 +4394,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // Console Session APIs
         cmdList.add(CreateConsoleEndpointCmd.class);
         cmdList.add(ListConsoleSessionsCmd.class);
+
+        cmdList.add(DeleteUserKeysCmd.class);
+        cmdList.add(ListUserKeysCmd.class);
+        cmdList.add(ListUserKeyRulesCmd.class);
 
         //user data APIs
         cmdList.add(RegisterUserDataCmd.class);
@@ -4770,7 +4801,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         try {
             // get the user obj to get their secret key
             user = _accountMgr.getActiveUser(userId);
-            final String secretKey = user.getSecretKey();
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+
+            if (latestKeypair == null) {
+                throw new InvalidParameterValueException(String.format("No API keypair for user [%s]. Please generate it.", user.getUsername()));
+            }
+
+            final String secretKey = latestKeypair.getSecretKey();
             signature = signRequest(cloudIdentifier, secretKey);
         } catch (final Exception e) {
             logger.warn("Exception whilst creating a signature:" + e);
@@ -4817,6 +4854,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final long diskOffMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
         final long diskOffMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
         final boolean KVMSnapshotEnabled = SnapshotManager.KVMSnapshotEnabled.value();
+        final boolean SnapshotShowChainSize = SnapshotManager.snapshotShowChainSize.value();
 
         final boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
@@ -4857,6 +4895,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
         capabilities.put("regionSecondaryEnabled", regionSecondaryEnabled);
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
+        capabilities.put("SnapshotShowChainSize", SnapshotShowChainSize);
         capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
         capabilities.put("allowUserExpungeRecoverVolume", allowUserExpungeRecoverVolume);
@@ -5709,7 +5748,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (_hypervisorCapabilitiesDao.update(id, hpvCapabilities)) {
             hpvCapabilities = _hypervisorCapabilitiesDao.findById(id);
-            CallContext.current().setEventDetails("Hypervisor Capabilities id=" + hpvCapabilities.getId());
+            CallContext.current().setEventDetails("Hypervisor Capabilities ID: " + hpvCapabilities.getUuid());
             return hpvCapabilities;
         } else {
             return null;
@@ -5937,7 +5976,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @ActionEvent(eventType = EventTypes.EVENT_MANAGEMENT_SERVER_REMOVE, eventDescription = "removing Management Server")
     public boolean removeManagementServer(RemoveManagementServerCmd cmd) {
         final Long id = cmd.getId();
-        ManagementServerJoinVO managementServer = managementServerJoinDao.findById(id);
+        ManagementServerHostVO managementServer = managementServerHostDao.findById(id);
 
         if (managementServer == null) {
             throw new InvalidParameterValueException(String.format("Unable to find a Management Server with ID equal to [%s].", id));
@@ -5947,8 +5986,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException(String.format("Unable to remove Management Server with ID [%s]. It can only be removed when it is in the [%s] state, however currently it is in the [%s] state.", managementServer.getUuid(), ManagementServerHost.State.Down.name(), managementServer.getState().name()));
         }
 
-        managementServer.setRemoved(new Date());
-        return managementServerJoinDao.update(id, managementServer);
+        managementServerHostDao.remove(id);
+        return true;
 
     }
 

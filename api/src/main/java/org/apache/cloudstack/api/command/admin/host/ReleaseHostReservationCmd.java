@@ -72,7 +72,7 @@ public class ReleaseHostReservationCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing reservation for host: " + getId();
+        return "Releasing reservation from host with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

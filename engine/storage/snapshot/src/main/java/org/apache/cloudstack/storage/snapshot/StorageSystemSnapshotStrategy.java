@@ -951,7 +951,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         VolumeVO volumeVO = volumeDao.findByIdIncludingRemoved(volumeId);
 
-        long volumeStoragePoolId = volumeVO.getPoolId();
+        long volumeStoragePoolId = (volumeVO.getPoolId() != null ? volumeVO.getPoolId() : volumeVO.getLastPoolId());
 
         if (SnapshotOperation.REVERT.equals(op)) {
             boolean baseVolumeExists = volumeVO.getRemoved() == null;

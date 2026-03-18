@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.network.NetworkModel;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -112,7 +114,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.IpAddresses;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterParam;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
@@ -518,15 +519,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("AutoScale User id does not belong to the same account");
         }
 
-        String apiKey = user.getApiKey();
-        String secretKey = user.getSecretKey();
+        ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
 
-        if (apiKey == null) {
-            throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
-        }
-
-        if (secretKey == null) {
-            throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
+        if (latestKeypair == null) {
+            throw new InvalidParameterValueException(String.format("No API keypair for user [%s]. Please generate it.", user.getUsername()));
         }
 
         ApiServiceConfiguration.validateEndpointUrl();
@@ -1486,7 +1482,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         logger.debug("Adding Counter " + name);
         counter = counterDao.persist(new CounterVO(src, name, value, provider));
 
-        CallContext.current().setEventDetails(" Id: " + counter.getId() + " Name: " + name);
+        CallContext.current().setEventDetails(" ID: " + counter.getUuid() + " Name: " + name);
         return counter;
     }
 
@@ -1527,7 +1523,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         condition = conditionDao.persist(new ConditionVO(cid, threshold, owner.getAccountId(), owner.getDomainId(), op));
         logger.info("Successfully created condition: {}", condition);
 
-        CallContext.current().setEventDetails(" Id: " + condition.getId());
+        CallContext.current().setEventDetails(" ID: " + condition.getUuid());
         return condition;
     }
 
@@ -2015,7 +2011,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     private UserVmVO startNewVM(long vmId) {
         try {
-            CallContext.current().setEventDetails("Vm Id: " + vmId);
+            CallContext.current().setEventDetails("Instance ID: " + vmId);
             return userVmMgr.startVirtualMachine(vmId, null, new HashMap<>(), null).first();
         } catch (final ResourceUnavailableException ex) {
             logger.warn("Exception: ", ex);
@@ -2055,7 +2051,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
         lstVmId.add(new Long(vmId));
         try {
-            return loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<>(), true);
+            return loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<>(), null, true);
         } catch (CloudRuntimeException ex) {
             logger.warn("Caught exception: ", ex);
             return false;

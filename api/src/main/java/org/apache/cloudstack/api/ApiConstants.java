@@ -19,6 +19,7 @@ package org.apache.cloudstack.api;
 public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
+    public static final String ACCOUNT_NAME = "accountname";
     public static final String ACCOUNT_TYPE = "accounttype";
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
@@ -46,6 +47,7 @@ public class ApiConstants {
     public static final String AS_NUMBER_ID = "asnumberid";
     public static final String ASN_RANGE = "asnrange";
     public static final String ASN_RANGE_ID = "asnrangeid";
+    public static final String API_KEY_FILTER = "apikeyfilter";
     public static final String ASYNC_BACKUP = "asyncbackup";
     public static final String AUTO_SELECT = "autoselect";
     public static final String USER_API_KEY = "userapikey";
@@ -282,6 +284,7 @@ public class ApiConstants {
     public static final String HOST = "host";
     public static final String HOST_CONTROL_STATE = "hostcontrolstate";
     public static final String HOSTS_MAP = "hostsmap";
+    public static final String HTTP_REQUEST_TYPE = "httprequesttype";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
     public static final String INSTANCE = "instance";
@@ -355,6 +358,7 @@ public class ApiConstants {
     public static final String JOB_STATUS = "jobstatus";
     public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String KERNEL_VERSION = "kernelversion";
+    public static final String KEYPAIR_ID = "keypairid";
     public static final String KEY = "key";
     public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
@@ -502,6 +506,7 @@ public class ApiConstants {
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
     public static final String REPAIR = "repair";
+    public static final String REPETITION_ALLOWED = "repetitionallowed";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCES = "resources";
     public static final String RESOURCE_COUNT = "resourcecount";
@@ -519,9 +524,9 @@ public class ApiConstants {
     public static final String SCHEDULE = "schedule";
     public static final String SCHEDULE_ID = "scheduleid";
     public static final String SCOPE = "scope";
+    public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String SEARCH_BASE = "searchbase";
     public static final String SECONDARY_IP = "secondaryip";
-    public static final String SECRET_KEY = "secretkey";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
     public static final String SECURITY_GROUP_NAMES = "securitygroupnames";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";
@@ -540,6 +545,7 @@ public class ApiConstants {
     public static final String SHOW_RESOURCE_ICON = "showicon";
     public static final String SHOW_INACTIVE = "showinactive";
     public static final String SHOW_UNIQUE = "showunique";
+    public static final String SHOW_PERMISSIONS = "showpermissions";
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SINCE = "since";
@@ -555,6 +561,7 @@ public class ApiConstants {
     public static final String USE_STORAGE_REPLICATION = "usestoragereplication";
 
     public static final String SOURCE_CIDR_LIST = "sourcecidrlist";
+    public static final String SOURCE_OFFERING_ID = "sourceofferingid";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String SSL_VERIFICATION = "sslverification";
     public static final String START_ASN = "startasn";
@@ -623,7 +630,6 @@ public class ApiConstants {
     public static final String USERNAME = "username";
     public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
-    public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String USE_VIRTUAL_ROUTER_IP_RESOLVER = "userouteripresolver";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
@@ -765,6 +771,7 @@ public class ApiConstants {
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
     public static final String PERMISSION = "permission";
+    public static final String PERMISSIONS = "permissions";
     public static final String RULE = "rule";
     public static final String RULES = "rules";
     public static final String RULE_ID = "ruleid";
@@ -982,6 +989,7 @@ public class ApiConstants {
     public static final String REGION_ID = "regionid";
     public static final String VPC_OFF_ID = "vpcofferingid";
     public static final String VPC_OFF_NAME = "vpcofferingname";
+    public static final String VPC_OFFERING_CONSERVE_MODE = "vpcofferingconservemode";
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
     public static final String VPC_NAME = "vpcname";
@@ -1028,7 +1036,7 @@ public class ApiConstants {
     public static final String NSX_PROVIDER_PORT = "nsxproviderport";
     public static final String NSX_CONTROLLER_ID = "nsxcontrollerid";
     public static final String S3_ACCESS_KEY = "accesskey";
-    public static final String S3_SECRET_KEY = "secretkey";
+    public static final String SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";
     public static final String S3_BUCKET_NAME = "bucket";
     public static final String S3_SIGNER = "s3signer";
@@ -1168,6 +1176,7 @@ public class ApiConstants {
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
     public static final String CLEAN_UP_EXTERNAL_DETAILS = "cleanupexternaldetails";
+    public static final String CLEAN_UP_EXTRA_CONFIG = "cleanupextraconfig";
     public static final String CLEAN_UP_PARAMETERS = "cleanupparameters";
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
@@ -1218,6 +1227,7 @@ public class ApiConstants {
     public static final String DOCKER_REGISTRY_EMAIL = "dockerregistryemail";
     public static final String ISO_NAME = "isoname";
     public static final String ISO_STATE = "isostate";
+    public static final String ISO_URL = "isourl";
     public static final String SEMANTIC_VERSION = "semanticversion";
     public static final String KUBERNETES_VERSION_ID = "kubernetesversionid";
     public static final String KUBERNETES_VERSION_NAME = "kubernetesversionname";
@@ -1238,6 +1248,13 @@ public class ApiConstants {
     public static final String MAX_SIZE = "maxsize";
     public static final String NODE_TYPE_OFFERING_MAP = "nodeofferings";
     public static final String NODE_TYPE_TEMPLATE_MAP = "nodetemplates";
+    public static final String NODE_TYPE_AFFINITY_GROUP_MAP = "nodeaffinitygroups";
+    public static final String CONTROL_AFFINITY_GROUP_IDS = "controlaffinitygroupids";
+    public static final String CONTROL_AFFINITY_GROUP_NAMES = "controlaffinitygroupnames";
+    public static final String WORKER_AFFINITY_GROUP_IDS = "workeraffinitygroupids";
+    public static final String WORKER_AFFINITY_GROUP_NAMES = "workeraffinitygroupnames";
+    public static final String ETCD_AFFINITY_GROUP_IDS = "etcdaffinitygroupids";
+    public static final String ETCD_AFFINITY_GROUP_NAMES = "etcdaffinitygroupnames";
 
     public static final String BOOT_TYPE = "boottype";
     public static final String BOOT_MODE = "bootmode";
@@ -1259,6 +1276,7 @@ public class ApiConstants {
     public static final String PROVIDER_FOR_2FA = "providerfor2fa";
     public static final String ISSUER_FOR_2FA = "issuerfor2fa";
     public static final String MANDATE_2FA = "mandate2fa";
+    public static final String PASSWORD_CHANGE_REQUIRED = "passwordchangerequired";
     public static final String SECRET_CODE = "secretcode";
     public static final String LOGIN = "login";
     public static final String LOGOUT = "logout";

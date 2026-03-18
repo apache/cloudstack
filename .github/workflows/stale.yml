@@ -41,3 +41,9 @@ jobs:
           days-before-pr-close: 240
           exempt-issue-labels: 'gsoc,good-first-issue,long-term-plan'
           exempt-pr-labels: 'status:ready-for-merge,status:needs-testing,status:on-hold'
+      - uses: actions/stale@v10
+        with:
+          stale-issue-label: 'archive'
+          days-before-stale: 240
+          exempt-issue-labels: 'gsoc,good-first-issue,long-term-plan'
+          days-before-close: -1

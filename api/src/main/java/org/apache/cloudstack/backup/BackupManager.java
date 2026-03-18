@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.exception.ResourceAllocationException;
+import org.apache.cloudstack.api.command.admin.backup.CloneBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
@@ -32,6 +33,7 @@ import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ValidatedConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.exception.ResourceUnavailableException;
@@ -53,10 +55,11 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "false",
             "Is backup and recovery framework enabled.", false, ConfigKey.Scope.Zone);
 
-    ConfigKey<String> BackupProviderPlugin = new ConfigKey<>("Advanced", String.class,
+    ConfigKey<String> BackupProviderPlugin = new ValidatedConfigKey<>("Advanced", String.class,
             "backup.framework.provider.plugin",
             "dummy",
-            "The backup and recovery provider plugin. Valid plugin values: dummy, veeam, networker and nas", true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key());
+            "The backup and recovery provider plugin. Valid plugin values: dummy, veeam, networker and nas",
+            true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key(), value -> validateBackupProviderConfig((String)value));
 
     ConfigKey<Long> BackupSyncPollingInterval = new ConfigKey<>("Advanced", Long.class,
             "backup.framework.sync.interval",
@@ -137,6 +140,12 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     BackupOffering importBackupOffering(final ImportBackupOfferingCmd cmd);
 
     List<Long> getBackupOfferingDomains(final Long offeringId);
+
+    /**
+     * Clone an existing backup offering with updated values
+     * @param cmd clone backup offering cmd
+     */
+    BackupOffering cloneBackupOffering(final CloneBackupOfferingCmd cmd);
 
     /**
      * List backup offerings
@@ -249,4 +258,14 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     Capacity getBackupStorageUsedStats(Long zoneId);
 
     void checkAndRemoveBackupOfferingBeforeExpunge(VirtualMachine vm);
+
+    static void validateBackupProviderConfig(String value) {
+        if (value != null && (value.contains(",") || value.trim().contains(" "))) {
+            throw new IllegalArgumentException("Multiple backup provider plugins are not supported. Please provide a single plugin value.");
+        }
+        List<String> validPlugins = List.of("dummy", "veeam", "networker", "nas");
+        if (value != null && !validPlugins.contains(value)) {
+            throw new IllegalArgumentException("Invalid backup provider plugin: " + value + ". Valid plugin values are: " + String.join(", ", validPlugins));
+        }
+    }
 }

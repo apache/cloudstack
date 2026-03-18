@@ -225,8 +225,8 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
                 network.getAccountId(),
                 EventVO.LEVEL_INFO,
                 EventTypes.EVENT_ZONE_VLAN_ASSIGN,
-                "Assigned Zone Vlan: " + vnet + " Network Id: "
-                    + network.getId(),
+                "Assigned Zone VLAN: " + vnet + " Network ID: "
+                    + network.getUuid(),
                 network.getId(), ApiCommandResourceType.Network.toString(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
