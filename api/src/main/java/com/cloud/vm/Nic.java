@@ -37,10 +37,6 @@ public interface Nic extends Identity, InternalIdentity {
         ReservationRequested, ReleaseRequested, CancelRequested, OperationCompleted, OperationFailed,
     }
 
-    enum LinkState {
-        Enabled, Disabled
-    }
-
     public enum State implements FiniteState<State, Event> {
         Allocated("Resource is allocated but not reserved"), Reserving("Resource is being reserved right now"), Reserved("Resource has been reserved."), Releasing(
                 "Resource is being released"), Deallocating("Resource is being deallocated");
@@ -167,5 +163,5 @@ public interface Nic extends Identity, InternalIdentity {
 
     Integer getMtu();
 
-    LinkState getLinkState();
+    boolean isEnabled();
 }

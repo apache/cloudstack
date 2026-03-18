@@ -16,10 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.vm.Nic;
-
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,7 +28,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -43,26 +40,19 @@ import java.util.EnumSet;
         authorized = { RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User })
 public class UpdateVmNicCmd extends BaseAsyncCmd {
 
+    @ACL
     @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = true, description = "NIC ID")
     private Long nicId;
 
-    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Whether the NIC link state is enabled or disabled")
-    private String linkState;
+    @Parameter(name = ApiConstants.ENABLED, type = CommandType.BOOLEAN, description = "If true, sets the NIC state to UP; otherwise, sets the NIC state to DOWN")
+    private Boolean enabled;
 
     public Long getNicId() {
         return nicId;
     }
 
-    public Nic.LinkState getLinkState() {
-        if (linkState == null) {
-            return null;
-        }
-
-        try {
-            return Nic.LinkState.valueOf(StringUtils.capitalize(StringUtils.lowerCase(linkState)));
-        } catch (IllegalArgumentException ex) {
-            throw new InvalidParameterValueException(String.format("Unable to resolve link state [%s] to a supported value (Enabled or Disabled).", linkState));
-        }
+    public Boolean isEnabled() {
+        return enabled;
     }
 
     @Override
@@ -87,10 +77,13 @@ public class UpdateVmNicCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails(String.format("NIC ID: %s", getResourceUuid(ApiConstants.NIC_ID)));
+
         UserVm result = _userVmService.updateVirtualMachineNic(this);
-        ArrayList<ApiConstants.VMDetails> dc = new ArrayList<ApiConstants.VMDetails>();
+
+        ArrayList<ApiConstants.VMDetails> dc = new ArrayList<>();
         dc.add(ApiConstants.VMDetails.valueOf("nics"));
         EnumSet<ApiConstants.VMDetails> details = EnumSet.copyOf(dc);
+
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseObject.ResponseView.Restricted, "virtualmachine", details, result).get(0);
             response.setResponseName(getCommandName());

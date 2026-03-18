@@ -4280,7 +4280,7 @@ public class UserVmManagerImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void updateVirtualMachineNicTestInvalidNicNetworkThrowInvalidParameterValueException() {
         Mockito.doReturn(nicId).when(updateVmNicCmd).getNicId();
-        Mockito.doReturn(Nic.LinkState.Enabled).when(updateVmNicCmd).getLinkState();
+        Mockito.doReturn(true).when(updateVmNicCmd).isEnabled();
         Mockito.doReturn(nicMock).when(nicDao).findById(nicId);
         Mockito.doReturn(vmId).when(nicMock).getInstanceId();
         Mockito.doReturn(userVmVoMock).when(userVmDao).findById(vmId);
@@ -4291,7 +4291,7 @@ public class UserVmManagerImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void updateVirtualMachineNicTestInvalidNicNetworkThrowCloudRuntimeException() {
         Mockito.doReturn(nicId).when(updateVmNicCmd).getNicId();
-        Mockito.doReturn(Nic.LinkState.Enabled).when(updateVmNicCmd).getLinkState();
+        Mockito.doReturn(true).when(updateVmNicCmd).isEnabled();
         Mockito.doReturn(nicMock).when(nicDao).findById(nicId);
         Mockito.doReturn(vmId).when(nicMock).getInstanceId();
         Mockito.doReturn(userVmVoMock).when(userVmDao).findById(vmId);
@@ -4302,7 +4302,7 @@ public class UserVmManagerImplTest {
     @Test
     public void updateVirtualMachineNicTestValidInputReturnNicUserVm() throws ResourceUnavailableException {
         Mockito.doReturn(nicId).when(updateVmNicCmd).getNicId();
-        Mockito.doReturn(Nic.LinkState.Enabled).when(updateVmNicCmd).getLinkState();
+        Mockito.doReturn(true).when(updateVmNicCmd).isEnabled();
         Mockito.doReturn(nicMock).when(nicDao).findById(nicId);
         Mockito.doReturn(vmId).when(nicMock).getInstanceId();
         Mockito.doReturn(userVmVoMock).when(userVmDao).findById(vmId);

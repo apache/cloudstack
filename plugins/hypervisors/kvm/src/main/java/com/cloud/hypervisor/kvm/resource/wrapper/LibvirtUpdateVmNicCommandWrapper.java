@@ -26,7 +26,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.vm.Nic;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
@@ -38,7 +37,7 @@ public final class LibvirtUpdateVmNicCommandWrapper extends CommandWrapper<Updat
     public Answer execute(UpdateVmNicCommand command, LibvirtComputingResource libvirtComputingResource) {
         String nicMacAddress = command.getNicMacAddress();
         String vmName = command.getVmName();
-        Nic.LinkState linkState = command.getLinkState();
+        boolean isEnabled = command.isEnabled();
 
         Domain vm = null;
         try {
@@ -47,7 +46,7 @@ public final class LibvirtUpdateVmNicCommandWrapper extends CommandWrapper<Updat
             vm = libvirtComputingResource.getDomain(conn, vmName);
 
             final InterfaceDef nic = libvirtComputingResource.getInterface(conn, vmName, nicMacAddress);
-            nic.setLinkStateUp(linkState == Nic.LinkState.Enabled);
+            nic.setLinkStateUp(isEnabled);
             vm.updateDeviceFlags(nic.toString(), Domain.DeviceModifyFlags.LIVE);
 
             return new UpdateVmNicAnswer(command, true, "success");

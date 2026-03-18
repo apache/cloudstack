@@ -1903,7 +1903,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public UserVm updateVirtualMachineNic(UpdateVmNicCmd cmd) {
         Long nicId = cmd.getNicId();
-        Nic.LinkState linkState = cmd.getLinkState();
+        Boolean isNicEnabled = cmd.isEnabled();
         Account caller = CallContext.current().getCallingAccount();
 
         NicVO nic = _nicDao.findById(nicId);
@@ -1914,10 +1914,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vmInstance = _vmDao.findById(nic.getInstanceId());
         if (vmInstance == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine associated with the specified NIC.");
-        }
-
-        if (linkState == null) {
-            return vmInstance;
         }
 
         if (vmInstance.getHypervisorType() != HypervisorType.KVM) {
@@ -1931,9 +1927,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
+        if (isNicEnabled == null) {
+            return vmInstance;
+        }
+
         boolean success = false;
         try {
-            success = _itMgr.updateVmNic(vmInstance, nic, linkState);
+            success = _itMgr.updateVmNic(vmInstance, nic, isNicEnabled);
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException(String.format("Unable to update NIC %s of VM %s in network %s due to: %s.", nic, vmInstance, network.getUuid(), e.getMessage()));
         } catch (ConcurrentOperationException e) {

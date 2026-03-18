@@ -17,13 +17,11 @@
 //
 package com.cloud.agent.api;
 
-import com.cloud.vm.Nic;
-
 public class UpdateVmNicCommand extends Command {
 
     String nicMacAddress;
     String instanceName;
-    Nic.LinkState linkState;
+    Boolean enabled;
 
     @Override
     public boolean executeInSequence() {
@@ -33,10 +31,10 @@ public class UpdateVmNicCommand extends Command {
     protected UpdateVmNicCommand() {
     }
 
-    public UpdateVmNicCommand(String nicMacAdderss, String instanceName, Nic.LinkState linkState) {
+    public UpdateVmNicCommand(String nicMacAdderss, String instanceName, Boolean enabled) {
         this.nicMacAddress = nicMacAdderss;
         this.instanceName = instanceName;
-        this.linkState = linkState;
+        this.enabled = enabled;
     }
 
     public String getNicMacAddress() {
@@ -47,7 +45,7 @@ public class UpdateVmNicCommand extends Command {
         return instanceName;
     }
 
-    public Nic.LinkState getLinkState() {
-        return linkState;
+    public Boolean isEnabled() {
+        return enabled;
     }
 }

@@ -52,7 +52,7 @@ public class NicProfile implements InternalIdentity, Serializable {
     boolean defaultNic;
     Integer networkRate;
     boolean isSecurityGroupEnabled;
-    Nic.LinkState linkState;
+    boolean enabled;
 
     Integer orderIndex;
 
@@ -88,7 +88,7 @@ public class NicProfile implements InternalIdentity, Serializable {
         broadcastType = network.getBroadcastDomainType();
         trafficType = network.getTrafficType();
         format = nic.getAddressFormat();
-        linkState = nic.getLinkState();
+        enabled = nic.isEnabled();
 
         iPv4Address = nic.getIPv4Address();
         iPv4Netmask = nic.getIPv4Netmask();
@@ -416,12 +416,12 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.ipv4AllocationRaceCheck = ipv4AllocationRaceCheck;
     }
 
-    public Nic.LinkState getLinkState() {
-        return linkState;
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    public void setLinkState(Nic.LinkState linkState) {
-        this.linkState = linkState;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     //

@@ -4851,7 +4851,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setVpcName(vpc.getName());
         }
 
-        response.setLinkState(result.getLinkState());
+        response.setEnabled(result.isEnabled());
         return response;
     }
 

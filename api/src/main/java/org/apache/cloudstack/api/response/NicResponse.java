@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import com.cloud.vm.Nic.LinkState;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -147,9 +146,9 @@ public class NicResponse extends BaseResponse {
     @Param(description = "Public IP address associated with this NIC via Static NAT rule")
     private String publicIp;
 
-    @SerializedName(ApiConstants.STATE)
-    @Param(description = "NIC's link state")
-    private LinkState linkState;
+    @SerializedName(ApiConstants.ENABLED)
+    @Param(description = "whether the NIC is enabled or not")
+    private Boolean isEnabled;
 
     public void setVmId(String vmId) {
         this.vmId = vmId;
@@ -422,11 +421,11 @@ public class NicResponse extends BaseResponse {
         this.publicIp = publicIp;
     }
 
-    public LinkState getLinkState() {
-        return linkState;
+    public Boolean getEnabled() {
+        return isEnabled;
     }
 
-    public void setLinkState(LinkState linkState) {
-        this.linkState = linkState;
+    public void setEnabled(Boolean enabled) {
+        isEnabled = enabled;
     }
 }

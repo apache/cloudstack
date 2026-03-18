@@ -423,7 +423,7 @@ export default {
     },
     onUpdateNic (record) {
       this.editNicResource = record.nic
-      this.editNicStateValue = record.nic.state === 'Enabled'
+      this.editNicStateValue = record.nic.enabled
       this.showUpdateNicModal = true
     },
     submitAddNetwork () {
@@ -656,7 +656,7 @@ export default {
       this.showUpdateNicModal = false
       const params = {
         nicId: this.editNicResource.id,
-        state: this.editNicStateValue ? 'Enabled' : 'Disabled'
+        enabled: this.editNicStateValue
       }
       postAPI('updateVmNic', params).then(response => {
         this.$pollJob({

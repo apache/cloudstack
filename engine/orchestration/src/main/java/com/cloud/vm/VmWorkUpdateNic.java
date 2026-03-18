@@ -20,19 +20,19 @@ public class VmWorkUpdateNic extends VmWork {
     private static final long serialVersionUID = -8957066627929113278L;
 
     Long nicId;
-    Nic.LinkState linkState;
+    Boolean enabled;
 
-    public VmWorkUpdateNic(VmWork vmWork, Long nicId, Nic.LinkState linkState) {
+    public VmWorkUpdateNic(VmWork vmWork, Long nicId, Boolean enabled) {
         super(vmWork);
         this.nicId = nicId;
-        this.linkState = linkState;
+        this.enabled = enabled;
     }
 
     public Long getNicId() {
         return nicId;
     }
 
-    public Nic.LinkState getLinkState() {
-        return linkState;
+    public Boolean isEnabled() {
+        return enabled;
     }
 }

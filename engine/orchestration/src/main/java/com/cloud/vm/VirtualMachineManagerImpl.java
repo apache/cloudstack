@@ -6273,8 +6273,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean updateVmNic(VirtualMachine vm, Nic nic, Nic.LinkState linkState) {
-        Outcome<VirtualMachine> outcome = updateVmNicThroughJobQueue(vm, nic, linkState);
+    public boolean updateVmNic(VirtualMachine vm, Nic nic, Boolean enabled) {
+        Outcome<VirtualMachine> outcome = updateVmNicThroughJobQueue(vm, nic, enabled);
 
         retrieveVmFromJobOutcome(outcome, vm.getUuid(), "updateVmNic");
 
@@ -6289,10 +6289,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         throw new CloudRuntimeException("Unexpected job execution result.");
     }
 
-    private boolean orchestrateUpdateVmNic(final VirtualMachine vm, final Nic nic, final Nic.LinkState linkState) throws ResourceUnavailableException {
+    private boolean orchestrateUpdateVmNic(final VirtualMachine vm, final Nic nic, final Boolean enabled) throws ResourceUnavailableException {
         if (vm.getState() == State.Running) {
             try {
-                UpdateVmNicCommand updateVmNicCmd = new UpdateVmNicCommand(nic.getMacAddress(), vm.getName(), linkState);
+                UpdateVmNicCommand updateVmNicCmd = new UpdateVmNicCommand(nic.getMacAddress(), vm.getName(), enabled);
                 Commands cmds = new Commands(Command.OnError.Stop);
                 cmds.addCommand("updatevmnic", updateVmNicCmd);
 
@@ -6309,13 +6309,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         NicVO nicVo = _nicsDao.findById(nic.getId());
-        nicVo.setLinkState(linkState);
+        nicVo.setEnabled(enabled);
         _nicsDao.persist(nicVo);
 
         return true;
     }
 
-    public Outcome<VirtualMachine> updateVmNicThroughJobQueue(final VirtualMachine vm, final Nic nic, final Nic.LinkState linkState) {
+    public Outcome<VirtualMachine> updateVmNicThroughJobQueue(final VirtualMachine vm, final Nic nic, final Boolean isNicEnabled) {
         Long vmId = vm.getId();
         String commandName = VmWorkUpdateNic.class.getName();
         Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, commandName);
@@ -6326,7 +6326,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
 
             workJob = newVmWorkJobAndInfo.first();
-            VmWorkUpdateNic workInfo = new VmWorkUpdateNic(newVmWorkJobAndInfo.second(), nic.getId(), linkState);
+            VmWorkUpdateNic workInfo = new VmWorkUpdateNic(newVmWorkJobAndInfo.second(), nic.getId(), isNicEnabled);
 
             setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
@@ -6342,7 +6342,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (nic == null) {
             throw new CloudRuntimeException(String.format("Unable to find NIC with ID %s.", work.getNicId()));
         }
-        final boolean result = orchestrateUpdateVmNic(vm, nic, work.getLinkState());
+        final boolean result = orchestrateUpdateVmNic(vm, nic, work.isEnabled());
         return new Pair<>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(result));
     }
 

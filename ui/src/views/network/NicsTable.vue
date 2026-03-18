@@ -71,8 +71,8 @@
           {{ $t('label.default') }}
         </a-tag>
       </template>
-      <template v-if="column.key === 'state'">
-        <status :text="text" /> {{ text }}
+      <template v-if="column.key === 'enabled'">
+        <status :text="text ? 'enabled' : 'disabled'"/> {{ text ? 'Enabled' : 'Disabled' }}
       </template>
     </template>
   </a-table>
@@ -130,9 +130,9 @@ export default {
           dataIndex: 'gateway'
         },
         {
-          key: 'state',
+          key: 'enabled',
           title: this.$t('label.state'),
-          dataIndex: 'state'
+          dataIndex: 'enabled'
         }
       ],
       networkicon: {},

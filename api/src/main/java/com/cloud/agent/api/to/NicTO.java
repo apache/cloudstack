@@ -17,7 +17,6 @@
 package com.cloud.agent.api.to;
 
 import com.cloud.offering.NetworkOffering;
-import com.cloud.vm.Nic;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,7 @@ public class NicTO extends NetworkTO {
     boolean dpdkEnabled;
     Integer mtu;
     Long networkId;
-    Nic.LinkState linkState;
+    boolean enabled;
 
     String networkSegmentName;
 
@@ -157,11 +156,11 @@ public class NicTO extends NetworkTO {
         this.networkSegmentName = networkSegmentName;
     }
 
-    public Nic.LinkState getLinkState() {
-        return linkState;
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    public void setLinkState(Nic.LinkState linkState) {
-        this.linkState = linkState;
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }
