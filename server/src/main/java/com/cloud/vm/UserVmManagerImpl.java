@@ -99,6 +99,7 @@ import org.apache.cloudstack.api.command.user.vm.SecurityGroupAction;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
@@ -1897,6 +1898,54 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _nicDao.persist(nicVO);
 
         return vm;
+    }
+
+    @Override
+    public UserVm updateVirtualMachineNic(UpdateVmNicCmd cmd) {
+        Long nicId = cmd.getNicId();
+        Boolean isNicEnabled = cmd.isEnabled();
+        Account caller = CallContext.current().getCallingAccount();
+
+        NicVO nic = _nicDao.findById(nicId);
+        if (nic == null) {
+            throw new InvalidParameterValueException("Unable to find the specified NIC.");
+        }
+
+        UserVmVO vmInstance = _vmDao.findById(nic.getInstanceId());
+        if (vmInstance == null) {
+            throw new InvalidParameterValueException("Unable to find a virtual machine associated with the specified NIC.");
+        }
+
+        if (vmInstance.getHypervisorType() != HypervisorType.KVM) {
+            throw new InvalidParameterValueException("Updating the VM NIC is only supported by the KVM hypervisor.");
+        }
+
+        NetworkVO network = _networkDao.findById(nic.getNetworkId());
+        if (network == null) {
+            throw new InvalidParameterValueException("Unable to find NIC's network.");
+        }
+
+        _accountMgr.checkAccess(caller, null, true, vmInstance);
+
+        if (isNicEnabled == null) {
+            return vmInstance;
+        }
+
+        boolean success = false;
+        try {
+            success = _itMgr.updateVmNic(vmInstance, nic, isNicEnabled);
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException(String.format("Unable to update NIC %s of VM %s in network %s due to: %s.", nic, vmInstance, network.getUuid(), e.getMessage()));
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException(String.format("Concurrent operations while updating NIC %s for VM %s: %s.", nic, vmInstance, e.getMessage()));
+        }
+
+        if (!success) {
+            throw new CloudRuntimeException(String.format("Failed to update NIC %s of VM %s in network %s.", nic, vmInstance, network.getUuid()));
+        }
+
+        logger.debug("Successfully updated NIC {} in network {} for VM {}.", nic, network.getUuid(), vmInstance);
+        return vmInstance;
     }
 
     private void updatePublicIpDnatVmIp(long vmId, long networkId, String oldIp, String newIp) {
