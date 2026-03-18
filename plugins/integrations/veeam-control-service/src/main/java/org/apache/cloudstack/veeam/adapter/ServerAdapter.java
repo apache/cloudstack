@@ -575,9 +575,7 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("Invalid name specified for the VM");
         }
         String displayName = name;
-        if (name.endsWith("_restored")) {
-            name = name.replace("_restored", "-restored");
-        }
+        name = name.replaceAll("_", "-");
         Long zoneId = null;
         Long clusterId = null;
         if (request.getCluster() != null && StringUtils.isNotEmpty(request.getCluster().getId())) {
