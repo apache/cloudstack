@@ -178,6 +178,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
@@ -238,6 +239,9 @@ public class ServerAdapter extends ManagerBase {
 
     @Inject
     UserVmJoinDao userVmJoinDao;
+
+    @Inject
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Inject
     VolumeDao volumeDao;
@@ -519,7 +523,7 @@ public class ServerAdapter extends ManagerBase {
 
     public List<Vm> listAllInstances() {
         List<UserVmJoinVO> vms = userVmJoinDao.listAll();
-        return UserVmJoinVOToVmConverter.toVmList(vms, this::getHostById);
+        return UserVmJoinVOToVmConverter.toVmList(vms, this::getHostById, this::getDetailsByInstanceId);
     }
 
     public Vm getInstance(String uuid, boolean includeDisks, boolean includeNics, boolean allContent) {
@@ -528,6 +532,7 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
         }
         return UserVmJoinVOToVmConverter.toVm(vo, this::getHostById,
+                this::getDetailsByInstanceId,
                 includeDisks ? this::listDiskAttachmentsByInstanceId : null,
                 includeNics ? this::listNicsByInstance : null,
                 allContent);
@@ -605,12 +610,7 @@ public class ServerAdapter extends ManagerBase {
         if (request.getInitialization() != null) {
             userdata = request.getInitialization().getCustomScript();
         }
-        ApiConstants.BootType bootType = ApiConstants.BootType.BIOS;
-        ApiConstants.BootMode bootMode = ApiConstants.BootMode.LEGACY;
-        if (request.getBios() != null && StringUtils.isNotEmpty(request.getBios().getType()) && request.getBios().getType().contains("secure")) {
-            bootType = ApiConstants.BootType.UEFI;
-            bootMode = ApiConstants.BootMode.SECURE;
-        }
+        Pair<ApiConstants.BootType, ApiConstants.BootMode> bootOptions = Vm.Bios.retrieveBootOptions(request.getBios());
         Ternary<Long, String, Long> owner = getVmOwner(request);
         String serviceOfferingUuid = null;
         if (request.getCpuProfile() != null && StringUtils.isNotEmpty(request.getCpuProfile().getId())) {
@@ -624,7 +624,7 @@ public class ServerAdapter extends ManagerBase {
         CallContext ctx = CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             return createInstance(zoneId, clusterId, owner.first(), owner.second(), owner.third(), name, displayName,
-                    serviceOfferingUuid, cpu, memory, templateUuid, userdata, bootType, bootMode);
+                    serviceOfferingUuid, cpu, memory, templateUuid, userdata, bootOptions.first(), bootOptions.second());
         } finally {
             CallContext.unregister();
         }
@@ -714,8 +714,8 @@ public class ServerAdapter extends ManagerBase {
             UserVm vm = userVmService.createVirtualMachine(cmd);
             vm = userVmService.finalizeCreateVirtualMachine(vm.getId());
             UserVmJoinVO vo = userVmJoinDao.findById(vm.getId());
-            return UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::listDiskAttachmentsByInstanceId,
-                    this::listNicsByInstance, false);
+            return UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::getDetailsByInstanceId,
+                    this::listDiskAttachmentsByInstanceId, this::listNicsByInstance, false);
         } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException | CloudRuntimeException e) {
             throw new CloudRuntimeException("Failed to create VM: " + e.getMessage(), e);
         }
@@ -1264,6 +1264,10 @@ public class ServerAdapter extends ManagerBase {
             return null;
         }
         return networkDao.findById(networkId);
+    }
+
+    protected Map<String, String> getDetailsByInstanceId(Long instanceId) {
+        return vmInstanceDetailsDao.listDetailsKeyPairs(instanceId, true);
     }
 
     public List<Job> listAllJobs() {

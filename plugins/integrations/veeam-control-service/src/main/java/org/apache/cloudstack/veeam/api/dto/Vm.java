@@ -19,6 +19,10 @@ package org.apache.cloudstack.veeam.api.dto;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants;
+
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -302,6 +306,18 @@ public final class Vm extends BaseDto {
             return type;
         }
 
+        @JsonIgnore
+        public int getTypeOrdinal() {
+            switch (type) {
+                case "q35_secure_boot":
+                    return 4;
+                case "q35_ovmf":
+                    return 2;
+                default:
+                    return 1; // default to i440fx_sea_bios
+            }
+        }
+
         public void setType(String type) {
             this.type = type;
         }
@@ -326,6 +342,60 @@ public final class Vm extends BaseDto {
             public void setEnabled(String enabled) {
                 this.enabled = enabled;
             }
+        }
+
+        public static Bios getDefault() {
+            Bios bios = new Bios();
+            bios.setType("i440fx_sea_bios");
+            BootMenu bootMenu = new BootMenu();
+            bootMenu.setEnabled("false");
+            bios.setBootMenu(bootMenu);
+            return bios;
+        }
+
+        public static void updateBios(Bios bios, String bootMode) {
+            if (StringUtils.isEmpty(bootMode)) {
+                return;
+            }
+            if (ApiConstants.BootMode.SECURE.toString().equals(bootMode)) {
+                bios.setType("q35_secure_boot");
+                return;
+            }
+            bios.setType("q35_ovmf");
+        }
+
+        public static Bios getBiosFromOrdinal(String bootTypeStr) {
+            Bios bios = getDefault();
+            if (StringUtils.isEmpty(bootTypeStr)) {
+                return bios;
+            }
+            int  type = 1;
+            try {
+                type = Integer.parseInt(bootTypeStr);
+            } catch (NumberFormatException e) {
+                return bios;
+            }
+            if (type == 2 || type == 3) {
+                bios.setType("q35_ovmf");
+            } else if (type == 4) {
+                 bios.setType("q35_secure_boot");
+            }
+            return bios;
+        }
+
+        public static Pair<ApiConstants.BootType, ApiConstants.BootMode> retrieveBootOptions(Bios bios) {
+            Pair<ApiConstants.BootType, ApiConstants.BootMode> defaultValue =
+                    new Pair<>(ApiConstants.BootType.BIOS, ApiConstants.BootMode.LEGACY);
+            if (bios == null || StringUtils.isEmpty(bios.getType())) {
+                return defaultValue;
+            }
+            if ("q35_secure_boot".equals(bios.getType())) {
+                return new Pair<>(ApiConstants.BootType.UEFI, ApiConstants.BootMode.SECURE);
+            }
+            if (bios.getType().startsWith("q35_")) {
+                return new Pair<>(ApiConstants.BootType.UEFI, ApiConstants.BootMode.LEGACY);
+            }
+            return defaultValue;
         }
     }
 

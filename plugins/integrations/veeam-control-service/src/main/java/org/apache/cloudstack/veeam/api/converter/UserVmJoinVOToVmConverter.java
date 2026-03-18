@@ -20,9 +20,11 @@ package org.apache.cloudstack.veeam.api.converter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.ApiService;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
@@ -37,6 +39,7 @@ import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.Topology;
 import org.apache.cloudstack.veeam.api.dto.Vm;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.query.vo.HostJoinVO;
@@ -54,6 +57,7 @@ public final class UserVmJoinVOToVmConverter {
      * @param src      UserVmJoinVO
      */
     public static Vm toVm(final UserVmJoinVO src, final Function<Long, HostJoinVO> hostResolver,
+              final Function<Long, Map<String, String>> detailsResolver,
               final Function<Long, List<DiskAttachment>> disksResolver,
               final Function<UserVmJoinVO, List<Nic>> nicsResolver,
               final boolean allContent) {
@@ -124,11 +128,11 @@ public final class UserVmJoinVOToVmConverter {
         boot.setDevices(NamedList.of("device", List.of("hd")));
         os.setBoot(boot);
         dst.setOs(os);
-        Vm.Bios bios = new Vm.Bios();
-        bios.setType("q35_secure_boot");
-        Vm.Bios.BootMenu bootMenu = new Vm.Bios.BootMenu();
-        bootMenu.setEnabled("false");
-        bios.setBootMenu(bootMenu);
+        Vm.Bios bios = Vm.Bios.getDefault();
+        if (detailsResolver != null) {
+            Map<String, String> details = detailsResolver.apply(src.getId());
+            Vm.Bios.updateBios(bios, MapUtils.getString(details, ApiConstants.BootType.UEFI.toString()));
+        }
         dst.setBios(bios);
         dst.setType("desktop");
         dst.setOrigin("ovirt");
@@ -176,9 +180,10 @@ public final class UserVmJoinVOToVmConverter {
         return initialization;
     }
 
-    public static List<Vm> toVmList(final List<UserVmJoinVO> srcList, final Function<Long, HostJoinVO> hostResolver) {
+    public static List<Vm> toVmList(final List<UserVmJoinVO> srcList, final Function<Long, HostJoinVO> hostResolver,
+                    final Function<Long, Map<String, String>> detailsResolver) {
         return srcList.stream()
-                .map(v -> toVm(v, hostResolver, null, null, false))
+                .map(v -> toVm(v, hostResolver, detailsResolver, null, null, false))
                 .collect(Collectors.toList());
     }
 

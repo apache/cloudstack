@@ -230,7 +230,7 @@ public class OvfXmlUtil {
         sb.append("<ConsoleDisconnectAction>LOCK_SCREEN</ConsoleDisconnectAction>");
         sb.append("<ConsoleDisconnectActionDelay>0</ConsoleDisconnectActionDelay>");
         sb.append("<CustomEmulatedMachine></CustomEmulatedMachine>");
-        sb.append("<BiosType>").append(mapBiosType(vm.getBios() != null ? vm.getBios().getType() : null)).append("</BiosType>");
+        sb.append("<BiosType>").append(vm.getBios() != null ? vm.getBios().getTypeOrdinal() : 1).append("</BiosType>");
         sb.append("<CustomCpuName></CustomCpuName>");
         sb.append("<PredefinedProperties></PredefinedProperties>");
         sb.append("<UserDefinedProperties></UserDefinedProperties>");
@@ -456,6 +456,9 @@ public class OvfXmlUtil {
         if (StringUtils.isNotBlank(templateId)) {
             vm.setTemplate(Ref.of("", templateId));
         }
+        String biosType = xpathString(xpath, contentNode, "./*[local-name()='BiosType']/text()");
+        Vm.Bios bios = Vm.Bios.getBiosFromOrdinal(biosType);
+        vm.setBios(bios);
     }
 
     private static void updateFromXmlHardwareSection(Vm vm, Node hwSection, XPath xpath) throws XPathExpressionException {
@@ -644,17 +647,6 @@ public class OvfXmlUtil {
 
     private static String mapVolumeType(String sparse) {
         return "true".equalsIgnoreCase(sparse) ? "Sparse" : "Preallocated";
-    }
-
-    private static int mapBiosType(String biosType) {
-        if (StringUtils.isBlank(biosType)) {
-            return 2;
-        }
-        String t = biosType.toLowerCase(Locale.ROOT);
-        if (t.contains("uefi") || t.contains("secure")) {
-            return 2;
-        }
-        return 0;
     }
 
     private static String mapBalloonEnabled(Vm vm) {
