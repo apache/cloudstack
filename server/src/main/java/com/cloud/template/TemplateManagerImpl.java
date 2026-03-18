@@ -1396,7 +1396,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ISO_DELETE, eventDescription = "Deleting ISO", async = true)
-    public boolean deleteIso (DeleteIsoCmd cmd) {
+    public boolean deleteIso(DeleteIsoCmd cmd) {
         Long templateId = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
         Long zoneId = cmd.getZoneId();
