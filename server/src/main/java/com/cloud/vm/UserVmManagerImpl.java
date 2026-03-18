@@ -2352,6 +2352,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Vm with id " + vm.getUuid() + " is not in the right state");
         }
 
+        if (isVMPartOfAnyCKSCluster(vm)) {
+            throw new UnsupportedServiceException("Cannot recover VM with id = " + vm.getUuid() +
+                    " as it belongs to a CKS cluster. Please remove the VM from the CKS cluster before recovering.");
+        }
+
         if (logger.isDebugEnabled()) {
             logger.debug("Recovering vm {}", vm);
         }
@@ -9953,6 +9958,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     public Boolean getDestroyRootVolumeOnVmDestruction(Long domainId){
         return DestroyRootVolumeOnVmDestruction.valueIn(domainId);
+    }
+
+    @Override
+    public boolean isVMPartOfAnyCKSCluster(VMInstanceVO vm) {
+        return kubernetesServiceHelpers.get(0).findByVmId(vm.getId()) != null;
     }
 
     private void setVncPasswordForKvmIfAvailable(Map<String, String> customParameters, UserVmVO vm) {

@@ -39,13 +39,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.offering.DiskOffering;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.vm.ImportVMTaskVO;
-import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
@@ -248,8 +246,6 @@ public class UnmanagedVMsManagerImplTest {
     @Mock
     private ImportVmTasksManager importVmTasksManager;
     @Mock
-    private KubernetesServiceHelper kubernetesServiceHelper;
-    @Mock
     private SnapshotDao snapshotDao;
 
     @Mock
@@ -288,8 +284,6 @@ public class UnmanagedVMsManagerImplTest {
         AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
-
-        unmanagedVMsManager.setKubernetesServiceHelpers(List.of(kubernetesServiceHelper));
 
         instance = new UnmanagedInstanceTO();
         instance.setName("TestInstance");
@@ -623,7 +617,7 @@ public class UnmanagedVMsManagerImplTest {
         when(userVmVO.getIsoId()).thenReturn(null);
         when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
         when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
-        when(kubernetesServiceHelper.findByVmId(virtualMachineId)).thenReturn(mock(ControlledEntity.class));
+        when(userVmManager.isVMPartOfAnyCKSCluster(virtualMachine)).thenReturn(true);
         unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
     }
 

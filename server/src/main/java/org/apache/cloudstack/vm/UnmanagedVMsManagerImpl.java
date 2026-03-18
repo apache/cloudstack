@@ -71,7 +71,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
@@ -314,12 +313,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private DataStoreManager dataStoreManager;
     @Inject
     private ImportVmTasksManager importVmTasksManager;
-
-    private List<KubernetesServiceHelper> kubernetesServiceHelpers;
-
-    public void setKubernetesServiceHelpers(final List<KubernetesServiceHelper> kubernetesServiceHelpers) {
-        this.kubernetesServiceHelpers = kubernetesServiceHelpers;
-    }
 
     protected Gson gson;
 
@@ -2386,14 +2379,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     " as there is an ISO attached. Please detach ISO before unmanaging.");
         }
 
-        if (isVmPartOfCKSCluster(vmVO)) {
+        if (userVmManager.isVMPartOfAnyCKSCluster(vmVO)) {
             throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
                     " as it belongs to a CKS cluster. Please remove the VM from the CKS cluster before unmanaging.");
         }
-    }
-
-    private boolean isVmPartOfCKSCluster(VMInstanceVO vmVO) {
-        return kubernetesServiceHelpers.get(0).findByVmId(vmVO.getId()) != null;
     }
 
     private boolean hasVolumeSnapshotsPriorToUnmanageVM(VMInstanceVO vmVO) {

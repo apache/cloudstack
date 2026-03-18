@@ -35,9 +35,7 @@
         <property name="name" value="LXCGuru" />
     </bean>
 
-    <bean id="vmImportService" class="org.apache.cloudstack.vm.UnmanagedVMsManagerImpl">
-        <property name="kubernetesServiceHelpers" value="#{kubernetesServiceHelperRegistry.registered}" />
-    </bean>
+    <bean id="vmImportService" class="org.apache.cloudstack.vm.UnmanagedVMsManagerImpl" />
 
     <bean id="importVmTasksManager" class="org.apache.cloudstack.vm.ImportVmTasksManagerImpl" />
 
