@@ -112,6 +112,10 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
         if (dumpScript.execute() == null) {
             return null;
         }
+        if (fromCheckpointCreateTime == null) {
+            return new StartBackupAnswer(cmd, false, "From checkpoint create time is null for checkpoint " + fromCheckpointId);
+        }
+
         String redefineXml = createCheckpointXmlForRedefine(fromCheckpointId, fromCheckpointCreateTime);
         File redefineFile;
         try {
@@ -171,8 +175,7 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             String scratchFile = "/var/tmp/scratch-" + export + ".qcow2";
             xml.append("    <disk name=\"").append(diskName).append("\" type=\"file\" exportname=\"").append(export);
             if (StringUtils.isNotBlank(fromCheckpointId)) {
-                String exportBitmap = export + "-" + fromCheckpointId.substring(0, 4);
-                xml.append("\" exportbitmap=\"").append(exportBitmap);
+                xml.append("\" exportbitmap=\"").append(fromCheckpointId);
             }
             xml.append("\">\n");
             xml.append("      <scratch file=\"").append(scratchFile).append("\"/>\n");
