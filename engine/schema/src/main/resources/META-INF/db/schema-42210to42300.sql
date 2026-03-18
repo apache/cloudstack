@@ -149,3 +149,14 @@ SELECT 'Advanced', 'DEFAULT', 'CapacityManager', 'kvm.cpu.dynamic.scaling.capaci
 FROM `cloud`.`configuration` `cfg`
 WHERE NOT EXISTS (SELECT 1 FROM `cloud`.`configuration` WHERE `name` = 'kvm.cpu.dynamic.scaling.capacity')
   AND `cfg`.`name` = 'vm.serviceoffering.cpu.cores.max';
+
+-- Remove stale realhostip.com default values; domain has been dead since ~2015.
+UPDATE `cloud`.`configuration`
+    SET value = NULL
+    WHERE name IN ('consoleproxy.url.domain', 'secstorage.ssl.cert.domain')
+      AND value IN ('realhostip.com', '*.realhostip.com');
+
+UPDATE `cloud`.`configuration`
+    SET value = NULL
+    WHERE name = 'secstorage.secure.copy.cert'
+      AND value LIKE '%realhostip%';
