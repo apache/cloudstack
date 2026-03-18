@@ -77,6 +77,7 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
             eventBus.subscribe(new EventTopic(null, EventTypes.EVENT_VM_DESTROY, null, null, null), this);
             eventBus.subscribe(new EventTopic(null, EventTypes.EVENT_NIC_CREATE, null, null, null), this);
             eventBus.subscribe(new EventTopic(null, EventTypes.EVENT_NIC_DELETE, null, null, null), this);
+            eventBus.subscribe(new EventTopic(null, EventTypes.EVENT_DNS_RECORD_DELETE, null, null, null), this);
         } catch (EventBusException ex) {
             logger.error("Failed to subscribe DnsVmLifecycleListener to EventBus", ex);
         }

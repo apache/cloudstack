@@ -131,7 +131,10 @@ export default {
       name: [{ required: true, message: this.$t('message.error.required.input') }],
       type: [{ required: true, message: this.$t('message.error.required.input') }],
       contents: [{ required: true, type: 'array', min: 1, message: this.$t('message.error.required.input') }],
-      ttl: [{ required: true, message: this.$t('message.error.required.input') }]
+      ttl: [
+        { required: true, message: this.$t('message.error.required.input') },
+        { type: 'number', validator: this.validateNumber }
+      ]
     }
   },
   methods: {
@@ -191,6 +194,12 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    async validateNumber (rule, value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

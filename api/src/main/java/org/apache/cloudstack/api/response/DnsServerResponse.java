@@ -74,6 +74,10 @@ public class DnsServerResponse extends BaseResponse  {
     @Param(description = "the name of the domain associated with the DNS server")
     private String domainName;
 
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "The state of the account")
+    private String state;
+
     public DnsServerResponse() {
         super();
 
@@ -121,5 +125,9 @@ public class DnsServerResponse extends BaseResponse  {
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }

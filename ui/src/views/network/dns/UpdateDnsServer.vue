@@ -60,6 +60,42 @@
             style="width: 100%" />
         </a-form-item>
 
+        <a-form-item name="credentials">
+          <template #label>
+            <tooltip-label :title="$t('label.dns.credentials')" :tooltip="apiParams.credentials?.description" />
+          </template>
+          <a-input-password v-model:value="form.credentials" :placeholder="apiParams.credentials?.description" />
+        </a-form-item>
+
+        <a-form-item v-if="isAdminOrDomainAdmin()" name="publicdomainsuffix">
+          <template #label>
+            <tooltip-label :title="$t('label.dns.publicdomainsuffix')" :tooltip="apiParams.publicdomainsuffix?.description" />
+          </template>
+          <a-input v-model:value="form.publicdomainsuffix" :placeholder="apiParams.publicdomainsuffix?.description" />
+        </a-form-item>
+
+        <a-form-item name="nameservers" ref="nameservers">
+          <template #label>
+            <tooltip-label
+              :title="$t('label.nameservers')"
+              :tooltip="apiParams.nameservers?.description" />
+          </template>
+
+          <a-select
+            v-model:value="form.nameservers"
+            mode="tags"
+            style="width: 100%"
+            :token-separators="[',', ' ']"
+            :placeholder="apiParams.nameservers?.description" />
+        </a-form-item>
+
+        <a-form-item v-if="isAdminOrDomainAdmin()" name="ispublic">
+          <template #label>
+            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic?.description" />
+          </template>
+          <a-switch v-model:checked="form.ispublic" />
+        </a-form-item>
+
         <div class="action-button">
           <a-button @click="closeAction">
             {{ $t('label.cancel') }}
@@ -107,11 +143,23 @@ export default {
     this.apiParams = this.$getApiParams('updateDnsServer') || {}
     this.rules = {
       name: [{ required: true, message: this.$t('message.error.required.input') }],
-      url: [{ required: true, message: this.$t('message.error.required.input') }]
+      url: [
+        { required: true, message: this.$t('message.error.required.input') },
+        { validator: this.validateUrl }
+      ],
+      port: [
+        { required: true, message: this.$t('message.error.required.input') },
+        { validator: this.validatePort }
+      ],
+      publicdomainsuffix: [{ validator: this.validatePublicDomainSuffix }],
+      state: [{ required: true, message: this.$t('message.error.required.input') }]
     }
-    this.form.name = this.resource.name || ''
-    this.form.url = this.resource.url || ''
-    this.form.port = this.resource.port || 53
+    this.form.name = this.resource.name
+    this.form.url = this.resource.url
+    this.form.port = this.resource.port
+    this.form.publicdomainsuffix = this.resource.publicdomainsuffix
+    this.form.nameservers = this.resource.nameservers || []
+    this.form.ispublic = this.resource.ispublic
   },
   methods: {
     async handleSubmit () {
@@ -129,8 +177,22 @@ export default {
       this.loading = true
 
       try {
-        await postAPI('updateDnsServer', { id: this.resource.id, ...this.form })
-
+        const params = {
+          id: this.resource.id,
+          name: this.form.name.trim(),
+          url: this.form.url?.trim().replace(/\/$/, ''),
+          port: this.form.port,
+          nameservers: this.form.nameservers?.map(ns => ns.toLowerCase().trim()).filter(Boolean),
+          ispublic: this.form.ispublic,
+          state: this.form.state
+        }
+        if (this.form.credentials) {
+          params.credentials = this.form.credentials
+        }
+        if (this.form.ispublic) {
+          params.publicdomainsuffix = this.form.publicdomainsuffix?.trim().toLowerCase()
+        }
+        await postAPI('updateDnsServer', params)
         this.$notification.success({
           message: this.$t('label.dns.update.server'),
           description: this.$t('message.success.update.dns.server')
@@ -150,6 +212,71 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    validateUrl (rule, value) {
+      if (!value) return Promise.resolve()
+      try {
+        const parsed = new URL(value)
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return Promise.reject(new Error('URL must start with http:// or https://'))
+        }
+        if (parsed.port) {
+          return Promise.reject(new Error('Do not include port in URL. Use the port field instead.'))
+        }
+      } catch (e) {
+        return Promise.reject(new Error('Invalid URL format'))
+      }
+      return Promise.resolve()
+    },
+    validatePort (rule, value) {
+      if (value === undefined || value === null) {
+        return Promise.resolve()
+      }
+
+      if (value < 1 || value > 65535) {
+        return Promise.reject(new Error('Port must be between 1 and 65535'))
+      }
+
+      return Promise.resolve()
+    },
+    validateNameservers (rule, value) {
+      if (!value || !value.length) {
+        return Promise.resolve()
+      }
+
+      const fqdnRegex = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
+
+      for (const ns of value) {
+        if (!fqdnRegex.test(ns)) {
+          return Promise.reject(new Error('Invalid nameserver'))
+        }
+      }
+
+      if (new Set(value).size !== value.length) {
+        return Promise.reject(new Error('Nameservers must be unique'))
+      }
+
+      return Promise.resolve()
+    },
+    validatePublicDomainSuffix (rule, value) {
+      if (!this.form.ispublic) {
+        return Promise.resolve()
+      }
+
+      if (!value) {
+        return Promise.reject(new Error(this.$t('message.error.required.publicdomainsuffix')))
+      }
+
+      const fqdnRegex = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
+
+      if (!fqdnRegex.test(value)) {
+        return Promise.reject(new Error('Invalid domain suffix'))
+      }
+
+      return Promise.resolve()
+    },
+    isAdminOrDomainAdmin () {
+      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     }
   }
 }

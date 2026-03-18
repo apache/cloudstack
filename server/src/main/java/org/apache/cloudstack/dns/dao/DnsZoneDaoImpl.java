@@ -33,11 +33,17 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements DnsZoneDao {
+    SearchBuilder<DnsZoneVO> DnsServerSearch;
     SearchBuilder<DnsZoneVO> AccountSearch;
     SearchBuilder<DnsZoneVO> NameServerTypeSearch;
 
     public DnsZoneDaoImpl() {
         super();
+
+        DnsServerSearch  = createSearchBuilder();
+        DnsServerSearch.selectFields(DnsServerSearch.entity().getDnsServerId());
+        DnsServerSearch.and(ApiConstants.DNS_SERVER_ID, DnsServerSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
+        DnsServerSearch.done();
 
         AccountSearch = createSearchBuilder();
         AccountSearch.and(ApiConstants.ACCOUNT_ID, AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -106,5 +112,11 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
         }
         sc.setParameters(ApiConstants.STATE, DnsZone.State.Active);
         return searchAndCount(sc, filter);
+    }
+
+    public List<DnsZoneVO> findDnsZonesByServerId(long dnsServerId) {
+        SearchCriteria<DnsZoneVO> sc = DnsServerSearch.create();
+        sc.setParameters(ApiConstants.DNS_SERVER_ID, dnsServerId);
+        return listBy(sc);
     }
 }

@@ -38,6 +38,7 @@ import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.network.Network;
+import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.Nic;
@@ -75,4 +76,8 @@ public interface DnsProviderManager extends Manager, PluggableService {
     boolean disassociateZoneFromNetwork(DisassociateDnsZoneFromNetworkCmd cmd);
 
     String processDnsRecordForInstance(VirtualMachine instance, Network network, Nic nic, boolean isAdd);
+
+    void checkDnsServerPermission(Account caller, DnsServer dnsServer);
+
+    void checkDnsZonePermission(Account caller, DnsZone dnsZone);
 }

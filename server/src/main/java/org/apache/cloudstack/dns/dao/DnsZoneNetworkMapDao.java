@@ -22,6 +22,6 @@ import org.apache.cloudstack.dns.vo.DnsZoneNetworkMapVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface DnsZoneNetworkMapDao extends GenericDao<DnsZoneNetworkMapVO, Long> {
-    DnsZoneNetworkMapVO findByZoneAndNetwork(long dnsZoneId, long networkId);
+    void removeNetworkMappingByZoneId(long dnsZoneId);
     DnsZoneNetworkMapVO findByNetworkId(long networkId);
 }

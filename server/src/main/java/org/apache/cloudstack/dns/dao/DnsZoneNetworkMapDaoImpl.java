@@ -34,7 +34,6 @@ public class DnsZoneNetworkMapDaoImpl extends GenericDaoBase<DnsZoneNetworkMapVO
         super();
         ZoneNetworkSearch = createSearchBuilder();
         ZoneNetworkSearch.and(ApiConstants.DNS_ZONE_ID, ZoneNetworkSearch.entity().getDnsZoneId(), SearchCriteria.Op.EQ);
-        ZoneNetworkSearch.and(ApiConstants.NETWORK_ID, ZoneNetworkSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         ZoneNetworkSearch.done();
 
         NetworkSearch = createSearchBuilder();
@@ -43,12 +42,10 @@ public class DnsZoneNetworkMapDaoImpl extends GenericDaoBase<DnsZoneNetworkMapVO
     }
 
     @Override
-    public DnsZoneNetworkMapVO findByZoneAndNetwork(long dnsZoneId, long networkId) {
+    public void removeNetworkMappingByZoneId(long dnsZoneId) {
         SearchCriteria<DnsZoneNetworkMapVO> sc = ZoneNetworkSearch.create();
         sc.setParameters(ApiConstants.DNS_ZONE_ID, dnsZoneId);
-        sc.setParameters(ApiConstants.NETWORK_ID, networkId);
-
-        return findOneBy(sc);
+        remove(sc);
     }
 
     @Override

@@ -46,7 +46,6 @@ import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.dns.DnsServer;
 
 public interface AccountService {
 
@@ -128,8 +127,6 @@ public interface AccountService {
     void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException;
 
     void checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException;
-
-    void checkAccess(Account account, DnsServer dnsServer) throws PermissionDeniedException;
 
     void checkAccess(User user, ControlledEntity entity);
 

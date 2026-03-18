@@ -1497,8 +1497,8 @@ export default {
       title: 'label.dns.server',
       icon: 'global-outlined',
       permission: ['listDnsServers'],
-      columns: ['name', 'url', 'provider'],
-      details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'domain', 'account'],
+      columns: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix'],
+      details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix', 'domain', 'account'],
       related: [{
         name: 'dnszone',
         title: 'label.dns.zone',

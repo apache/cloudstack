@@ -54,7 +54,7 @@ public class DeleteDnsServerCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN,
             entityType = DnsZoneResponse.class, description = "True if all associated DNS zones have to be cleaned up with this server")
-    private Boolean cleanup;
+    private Boolean cleanup = true;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

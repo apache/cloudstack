@@ -102,7 +102,7 @@
             :placeholder="apiParams.externalserverid?.description || 'Enter Server ID of PowerDNS e.g. localhost'" />
         </a-form-item>
 
-        <a-form-item name="publicdomainsuffix" ref="publicdomainsuffix">
+        <a-form-item v-if="isAdminOrDomainAdmin()" name="publicdomainsuffix" ref="publicdomainsuffix">
           <template #label>
             <tooltip-label
               :title="$t('label.dns.publicdomainsuffix')"
@@ -128,10 +128,11 @@
             :placeholder="apiParams.nameservers?.description" />
         </a-form-item>
 
-        <a-form-item name="ispublic" ref="ispublic">
-          <a-checkbox v-model:checked="form.ispublic">
-            {{ $t('label.ispublic') }}
-          </a-checkbox>
+        <a-form-item v-if="isAdminOrDomainAdmin()" name="ispublic" ref="ispublic">
+          <template #label>
+            <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic?.description" />
+          </template>
+          <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
 
         <div class="action-button">
@@ -325,6 +326,9 @@ export default {
       }
 
       return Promise.resolve()
+    },
+    isAdminOrDomainAdmin () {
+      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     }
   }
 }

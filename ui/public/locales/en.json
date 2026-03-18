@@ -726,6 +726,7 @@
 "label.creating.dns.zone": "Creating DNS zone",
 "label.creating.iprange": "Creating IP ranges",
 "label.nameservers": "DNS Nameservers",
+"label.publicdomainsuffix": "Public domain suffix",
 "label.credit": "Credit",
 "label.cron": "Cron expression",
 "label.cron.mode": "Cron mode",

@@ -71,11 +71,14 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.VirtualMachine;
@@ -105,6 +108,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     DnsZoneJoinDao dnsZoneJoinDao;
     @Inject
     DnsServerJoinDao dnsServerJoinDao;
+    @Inject
+    AccountDao accountDao;
 
     private DnsProvider getProviderByType(DnsProviderType type) {
         if (type == null) {
@@ -194,7 +199,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         Account caller = CallContext.current().getCallingAccount();
-        accountMgr.checkAccess(caller, dnsServer);
+        accountMgr.checkAccess(caller, null, true, dnsServer);
 
         boolean validationRequired = false;
         String originalUrl = dnsServer.getUrl();
@@ -265,35 +270,55 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             throw new InvalidParameterValueException(String.format("DNS server with ID: %s not found.", dnsServerId));
         }
         Account caller = CallContext.current().getCallingAccount();
-        accountMgr.checkAccess(caller, dnsServer);
-        if (cmd.getCleanup()) {
-            // ToDo cleanup associated dnsZones
-        }
-        return dnsServerDao.remove(dnsServerId);
+        accountMgr.checkAccess(caller, null, true, dnsServer);
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            if (cmd.getCleanup()) {
+                List<DnsZoneVO> dnsZones = dnsZoneDao.findDnsZonesByServerId(dnsServerId);
+                for (DnsZoneVO dnsZone : dnsZones) {
+                    long dnsZoneId = dnsZone.getId();
+                    dnsZoneNetworkMapDao.removeNetworkMappingByZoneId(dnsZoneId);
+                    // ToDo: delete nic_record_urls from vm_details if present before removing dnsZone
+                    dnsZoneDao.remove(dnsZoneId);
+                }
+            }
+            return dnsServerDao.remove(dnsServerId);
+        });
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DNS_ZONE_DELETE, eventDescription = "Deleting DNS Zone")
     public boolean deleteDnsZone(Long zoneId) {
-        DnsZoneVO zone = dnsZoneDao.findById(zoneId);
-        if (zone == null) {
+        DnsZoneVO dnsZone = dnsZoneDao.findById(zoneId);
+        if (dnsZone == null) {
             throw new InvalidParameterValueException("DNS zone not found for the given ID.");
         }
-
+        String dnsZoneName = dnsZone.getName();
         Account caller = CallContext.current().getCallingAccount();
-        accountMgr.checkAccess(caller, null, true, zone);
-        DnsServerVO server = dnsServerDao.findById(zone.getDnsServerId());
-        if (server != null && zone.getState() == DnsZone.State.Active) {
-            try {
-                DnsProvider provider = getProviderByType(server.getProviderType());
-                provider.deleteZone(server, zone);
-                logger.debug("Deleted DNS zone: {}", zone.getName());
-            } catch (Exception ex) {
-                logger.error("Failed to delete DNS zone from provider", ex);
-                throw new CloudRuntimeException("Failed to delete DNS zone.");
-            }
+        accountMgr.checkAccess(caller, null, true, dnsZone);
+        DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
+        if (server == null) {
+            throw new CloudRuntimeException(String.format("The DNS server not found for DNS zone: %s", dnsZoneName));
         }
-        return dnsZoneDao.remove(zoneId);
+        try {
+            DnsProvider provider = getProviderByType(server.getProviderType());
+            provider.deleteZone(server, dnsZone);
+            logger.debug("Deleted DNS zone: {} from provider", dnsZoneName);
+        } catch (DnsNotFoundException ex) {
+            logger.warn("DNS zone: {} is not present in the provider, proceeding with cleanup", dnsZoneName);
+        } catch (Exception ex) {
+            logger.error("Failed to delete DNS zone from provider", ex);
+            throw new CloudRuntimeException(String.format("Failed to delete DNS zone: %s.", dnsZoneName));
+        }
+
+        boolean dbResult = Transaction.execute((TransactionCallback<Boolean>) status -> {
+            dnsZoneNetworkMapDao.removeNetworkMappingByZoneId(zoneId);
+            // ToDo: delete nic_record_urls from vm_details if present before removing dnsZone
+            return dnsZoneDao.remove(zoneId);
+        });
+        if (!dbResult) {
+            logger.error("Failed to remove DNS zone {} from DB after provider deletion", dnsZoneName);
+        }
+        return dbResult;
     }
 
     @Override
@@ -355,7 +380,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         Account caller = CallContext.current().getCallingAccount();
         if (cmd.getDnsServerId() != null) {
             DnsServer dnsServer = dnsServerDao.findById(cmd.getDnsServerId());
-            accountMgr.checkAccess(caller, dnsServer);
+            accountMgr.checkAccess(caller, null, true, dnsServer);
         }
         List<Long> ownDnsServerIds = dnsServerDao.listDnsServerIdsByAccountId(caller.getAccountId());
         String keyword = cmd.getKeyword();
@@ -538,6 +563,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         response.setAccountName(server.getAccountName());
         response.setDomainId(server.getDomainUuid()); // Note: APIs always return UUIDs, not internal DB IDs!
         response.setDomainName(server.getDomainName());
+        response.setState(server.getState().name());
         response.setObjectName("dnsserver");
         return response;
     }
@@ -675,6 +701,31 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             );
         }
         return null;
+    }
+
+    @Override
+    public void checkDnsServerPermission(Account caller, DnsServer dnsServer) throws PermissionDeniedException {
+        if (caller.getId() == dnsServer.getAccountId()) {
+            return;
+        }
+        if (!dnsServer.getPublicServer()) {
+            throw new PermissionDeniedException(caller + "is not allowed to access the DNS server " + dnsServer.getName());
+        }
+        Account owner = getAccount(dnsServer.getAccountId());
+        if (!domainDao.isChildDomain(owner.getDomainId(), caller.getDomainId())) {
+            throw new PermissionDeniedException(caller + "is not allowed to access the DNS server " + dnsServer.getName());
+        }
+    }
+
+    @Override
+    public void checkDnsZonePermission(Account caller, DnsZone zone) {
+        if (caller.getId() != zone.getAccountId()) {
+            throw new PermissionDeniedException(caller + "is not allowed to access the DNS Zone " + zone.getName());
+        }
+    }
+
+    public Account getAccount(long accountId) {
+        return accountDao.findByIdIncludingRemoved(accountId);
     }
 
     @Override
