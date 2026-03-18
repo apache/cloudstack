@@ -686,7 +686,9 @@ export default {
       leaseexpiryaction: undefined,
       vgpuProfiles: [],
       vgpuProfileLoading: false,
-      externalDetailsEnabled: false
+      externalDetailsEnabled: false,
+      categories: [],
+      categoryLoading: false
     }
   },
   created () {
@@ -707,6 +709,7 @@ export default {
       this.fetchDomainData()
       this.fetchZoneData()
       this.fetchGPUCards()
+      this.fetchCategories()
       if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
@@ -726,6 +729,14 @@ export default {
         this.gpuCards.unshift({ id: '', name: this.$t('label.none') })
       }).finally(() => {
         this.gpuCardLoading = false
+      })
+    },
+    fetchCategories () {
+      this.categoryLoading = true
+      getAPI('listServiceOfferingCategories', {}).then(json => {
+        this.categories = json.listserviceofferingcategoriesresponse.serviceofferingcategory || []
+      }).finally(() => {
+        this.categoryLoading = false
       })
     },
     addDiskOffering () { this.showDiskOfferingModal = true },
