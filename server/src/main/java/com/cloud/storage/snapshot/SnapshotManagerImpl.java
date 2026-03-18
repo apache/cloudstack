@@ -2088,57 +2088,61 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @DB
     private boolean copySnapshotToZone(SnapshotDataStoreVO snapshotDataStoreVO, DataStore srcSecStore,
-                                       DataCenterVO dstZone, DataStore dstSecStore, Account account, boolean kvmIncrementalSnapshot)
+                                       DataCenterVO dstZone, DataStore dstSecStore, Account account, boolean kvmIncrementalSnapshot, boolean shouldCheckResourceLimits)
             throws ResourceAllocationException {
         final long snapshotId = snapshotDataStoreVO.getSnapshotId();
         final long dstZoneId = dstZone.getId();
         if (checkAndProcessSnapshotAlreadyExistInStore(snapshotId, dstSecStore)) {
             return true;
         }
-        _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
-        // snapshotId may refer to ID of a removed parent snapshot
-        SnapshotInfo snapshotOnSecondary = snapshotFactory.getSnapshot(snapshotId, srcSecStore);
-        if (kvmIncrementalSnapshot) {
-            snapshotOnSecondary = snapshotHelper.convertSnapshotIfNeeded(snapshotOnSecondary);
-        }
-        String copyUrl = null;
-        try {
-            AsyncCallFuture<CreateCmdResult> future = snapshotSrv.queryCopySnapshot(snapshotOnSecondary);
-            CreateCmdResult result = future.get();
-            if (!result.isFailed()) {
-                copyUrl = result.getPath();
+        // Resource limit checks are not performed here at the moment, but they were added in case this method is used
+        // in the future to copy a standalone snapshot
+        long requiredSecondaryStorageSpace = shouldCheckResourceLimits ? snapshotDataStoreVO.getSize() : 0L;
+        try (CheckedReservation secondaryStorageReservation = new CheckedReservation(account, ResourceType.secondary_storage, null, null, null, requiredSecondaryStorageSpace, null, reservationDao, _resourceLimitMgr)) {
+            // snapshotId may refer to ID of a removed parent snapshot
+            SnapshotInfo snapshotOnSecondary = snapshotFactory.getSnapshot(snapshotId, srcSecStore);
+            if (kvmIncrementalSnapshot) {
+                snapshotOnSecondary = snapshotHelper.convertSnapshotIfNeeded(snapshotOnSecondary);
             }
-        } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
-            logger.error("Failed to prepare URL for copy for snapshot ID: {} on store: {}", snapshotId, srcSecStore, ex);
-        }
-        if (StringUtils.isEmpty(copyUrl)) {
-            logger.error("Unable to prepare URL for copy for snapshot ID: {} on store: {}", snapshotId, srcSecStore);
-            return false;
-        }
-        logger.debug(String.format("Copying snapshot ID: %d to destination zones using download URL: %s", snapshotId, copyUrl));
-        try {
-            AsyncCallFuture<SnapshotResult> future = snapshotSrv.copySnapshot(snapshotOnSecondary, copyUrl, dstSecStore);
-            SnapshotResult result = future.get();
-            if (result.isFailed()) {
-                logger.debug("Copy snapshot ID: {} failed for image store {}: {}", snapshotId, dstSecStore, result.getResult());
+            String copyUrl = null;
+            try {
+                AsyncCallFuture<CreateCmdResult> future = snapshotSrv.queryCopySnapshot(snapshotOnSecondary);
+                CreateCmdResult result = future.get();
+                if (!result.isFailed()) {
+                    copyUrl = result.getPath();
+                }
+            } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
+                logger.error("Failed to prepare URL for copy for snapshot ID: {} on store: {}", snapshotId, srcSecStore, ex);
+            }
+            if (StringUtils.isEmpty(copyUrl)) {
+                logger.error("Unable to prepare URL for copy for snapshot ID: {} on store: {}", snapshotId, srcSecStore);
                 return false;
             }
-            snapshotZoneDao.addSnapshotToZone(snapshotId, dstZoneId);
-            _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
-            if (account.getId() != Account.ACCOUNT_ID_SYSTEM) {
-                SnapshotVO snapshotVO = _snapshotDao.findByIdIncludingRemoved(snapshotId);
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, account.getId(), dstZoneId, snapshotId, null, null, null, snapshotVO.getSize(),
-                        snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
-            }
-            if (kvmIncrementalSnapshot) {
-                ((ImageStoreEntity) srcSecStore).deleteExtractUrl(snapshotOnSecondary.getPath(), copyUrl, Upload.Type.SNAPSHOT);
-            }
+            logger.debug(String.format("Copying snapshot ID: %d to destination zones using download URL: %s", snapshotId, copyUrl));
+            try {
+                AsyncCallFuture<SnapshotResult> future = snapshotSrv.copySnapshot(snapshotOnSecondary, copyUrl, dstSecStore);
+                SnapshotResult result = future.get();
+                if (result.isFailed()) {
+                    logger.debug("Copy snapshot ID: {} failed for image store {}: {}", snapshotId, dstSecStore, result.getResult());
+                    return false;
+                }
+                snapshotZoneDao.addSnapshotToZone(snapshotId, dstZoneId);
+                _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
+                if (account.getId() != Account.ACCOUNT_ID_SYSTEM) {
+                    SnapshotVO snapshotVO = _snapshotDao.findByIdIncludingRemoved(snapshotId);
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, account.getId(), dstZoneId, snapshotId, null, null, null, snapshotVO.getSize(),
+                            snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
+                }
+                if (kvmIncrementalSnapshot) {
+                    ((ImageStoreEntity) srcSecStore).deleteExtractUrl(snapshotOnSecondary.getPath(), copyUrl, Upload.Type.SNAPSHOT);
+                }
 
-            return true;
-        } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
-            logger.debug("Failed to copy snapshot ID: {} to image store: {}", snapshotId, dstSecStore);
+                return true;
+            } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
+                logger.debug("Failed to copy snapshot ID: {} to image store: {}", snapshotId, dstSecStore);
+            }
+            return false;
         }
-        return false;
     }
 
     @DB
@@ -2170,13 +2174,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (CollectionUtils.isEmpty(snapshotChain)) {
             return true;
         }
-        try {
-            _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, size);
-        } catch (ResourceAllocationException e) {
-            logger.error(String.format("Unable to allocate secondary storage resources for snapshot chain for %s with size: %d", snapshotVO, size), e);
-            return false;
-        }
-        Collections.reverse(snapshotChain);
         if (dstSecStore == null) {
             // find all eligible image stores for the destination zone
             List<DataStore> dstSecStores = dataStoreMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(destZoneId));
@@ -2188,15 +2185,21 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 throw new StorageUnavailableException("Destination zone is not ready, no image store with free capacity", DataCenter.class, destZoneId);
             }
         }
-        logger.debug("Copying snapshot chain for snapshot ID: {} on secondary store: {} of zone ID: {}", snapshotVO, dstSecStore, destZone);
-        for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotChain) {
-            if (!copySnapshotToZone(snapshotDataStoreVO, srcSecStore, destZone, dstSecStore, account, kvmIncrementalSnapshot)) {
-                logger.error("Failed to copy snapshot: {} to zone: {} due to failure to copy snapshot ID: {} from snapshot chain",
-                        snapshotVO, destZone, snapshotDataStoreVO.getSnapshotId());
-                return false;
+        try  (CheckedReservation secondaryStorageReservation = new CheckedReservation(account, ResourceType.secondary_storage, null, null, null, size, null, reservationDao, _resourceLimitMgr)) {
+            logger.debug("Copying snapshot chain for snapshot ID: {} on secondary store: {} of zone ID: {}", snapshotVO, dstSecStore, destZone);
+            Collections.reverse(snapshotChain);
+            for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotChain) {
+                if (!copySnapshotToZone(snapshotDataStoreVO, srcSecStore, destZone, dstSecStore, account, kvmIncrementalSnapshot, false)) {
+                    logger.error("Failed to copy snapshot: {} to zone: {} due to failure to copy snapshot ID: {} from snapshot chain",
+                            snapshotVO, destZone, snapshotDataStoreVO.getSnapshotId());
+                    return false;
+                }
             }
+            return true;
+        } catch (ResourceAllocationException e) {
+            logger.error(String.format("Unable to allocate secondary storage resources for snapshot chain for %s with size: %d", snapshotVO, size), e);
+            return false;
         }
-        return true;
     }
 
     @DB
