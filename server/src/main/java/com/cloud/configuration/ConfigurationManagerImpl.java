@@ -3943,7 +3943,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 diskParams.iopsWriteRate, diskParams.iopsWriteRateMax, diskParams.iopsWriteRateMaxLength,
                 diskParams.hypervisorSnapshotReserve, diskParams.cacheMode, customParams.storagePolicy, dynamicScalingEnabled,
                 diskOfferingId, diskOfferingStrictness, isCustomized, encryptRoot,
-                vgpuProfileId, finalGpuCount, gpuDisplay, purgeResources, leaseParams.leaseDuration, leaseParams.leaseExpiryAction);
+                vgpuProfileId, finalGpuCount, gpuDisplay, purgeResources, leaseParams.leaseDuration, leaseParams.leaseExpiryAction, sourceOffering.getCategoryId());
     }
 
     private ServiceOfferingVO getAndValidateSourceOffering(Long sourceOfferingId) {
