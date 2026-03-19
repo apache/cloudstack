@@ -392,7 +392,7 @@ export default {
       columns: () => {
         const fields = ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order']
         if (store.getters.userInfo.roletype === 'Admin') {
-          fields.push({ field: 'serviceofferingname', customTitle: 'virtual.routers.system.offering' })
+          fields.splice(fields.length - 1, 0, { field: 'serviceofferingname', customTitle: 'virtual.routers.system.offering' })
         }
         return fields
       },
