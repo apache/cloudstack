@@ -36,6 +36,7 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.ClvmLockManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -2107,9 +2108,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 } else {
                     String backingPath = generateBackingPath(destStoragePool, destVolumeInfo);
                     migrateDiskInfo = configureMigrateDiskInfo(srcVolumeInfo, destPath, backingPath);
+                    migrateDiskInfo = updateMigrateDiskInfoForBlockDevice(migrateDiskInfo, destStoragePool);
                     migrateDiskInfo.setSourceDiskOnStorageFileSystem(isStoragePoolTypeOfFile(sourceStoragePool));
                     migrateDiskInfoList.add(migrateDiskInfo);
                 }
+                migrateDiskInfo.setDestPoolType(destVolumeInfo.getStoragePoolType());
                 prepareDiskWithSecretConsumerDetail(vmTO, srcVolumeInfo, destVolumeInfo.getPath());
 
                 migrateStorage.put(srcVolumeInfo.getPath(), migrateDiskInfo);
@@ -2326,6 +2329,39 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 MigrateCommand.MigrateDiskInfo.DiskType.BLOCK,
                 MigrateCommand.MigrateDiskInfo.DriverType.RAW,
                 MigrateCommand.MigrateDiskInfo.Source.DEV, destPath, backingPath);
+    }
+
+    /**
+     * UpdatesMigrateDiskInfo for CLVM/CLVM_NG block devices by returning a new instance with corrected disk type, driver type, and source.
+     * For CLVM/CLVM_NG destinations, returns a new MigrateDiskInfo with BLOCK disk type, DEV source, and appropriate driver type (QCOW2 for CLVM_NG, RAW for CLVM).
+     * For other storage types, returns the original MigrateDiskInfo unchanged.
+     *
+     * @param migrateDiskInfo The original MigrateDiskInfo object
+     * @param destStoragePool The destination storage pool
+     * @return A new MigrateDiskInfo with updated values for CLVM/CLVM_NG, or the original for other storage types
+     */
+    protected MigrateCommand.MigrateDiskInfo updateMigrateDiskInfoForBlockDevice(MigrateCommand.MigrateDiskInfo migrateDiskInfo,
+                                                                                   StoragePoolVO destStoragePool) {
+        if (ClvmLockManager.isClvmPoolType(destStoragePool.getPoolType())) {
+
+            MigrateCommand.MigrateDiskInfo.DriverType driverType =
+                (destStoragePool.getPoolType() == StoragePoolType.CLVM_NG) ?
+                MigrateCommand.MigrateDiskInfo.DriverType.QCOW2 :
+                MigrateCommand.MigrateDiskInfo.DriverType.RAW;
+
+            logger.debug("Updating MigrateDiskInfo for {} destination: setting BLOCK disk type, DEV source, and {} driver type",
+                destStoragePool.getPoolType(), driverType);
+
+            return new MigrateCommand.MigrateDiskInfo(
+                migrateDiskInfo.getSerialNumber(),
+                MigrateCommand.MigrateDiskInfo.DiskType.BLOCK,
+                driverType,
+                MigrateCommand.MigrateDiskInfo.Source.DEV,
+                migrateDiskInfo.getSourceText(),
+                migrateDiskInfo.getBackingStoreText());
+        }
+
+        return migrateDiskInfo;
     }
 
     /**

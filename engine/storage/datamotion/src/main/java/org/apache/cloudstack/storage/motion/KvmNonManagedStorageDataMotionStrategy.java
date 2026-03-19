@@ -144,12 +144,16 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     }
 
     /**
-     * Configures a {@link MigrateDiskInfo} object configured for migrating a File System volume and calls rootImageProvisioning.
+     * Configures a {@link MigrateDiskInfo} object configured for migrating a File System volume.
      */
     @Override
     protected MigrateCommand.MigrateDiskInfo configureMigrateDiskInfo(VolumeInfo srcVolumeInfo, String destPath, String backingPath) {
-            return new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(), MigrateCommand.MigrateDiskInfo.DiskType.FILE, MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
-                    MigrateCommand.MigrateDiskInfo.Source.FILE, destPath, backingPath);
+            return new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
+                    MigrateCommand.MigrateDiskInfo.DiskType.FILE,
+                    MigrateCommand.MigrateDiskInfo.DriverType.QCOW2,
+                    MigrateCommand.MigrateDiskInfo.Source.FILE,
+                    destPath,
+                    backingPath);
     }
 
     /**
@@ -158,6 +162,17 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      */
     @Override
     protected String generateDestPath(Host destHost, StoragePoolVO destStoragePool, VolumeInfo destVolumeInfo) {
+        if (destStoragePool.getPoolType() == StoragePoolType.CLVM || destStoragePool.getPoolType() == StoragePoolType.CLVM_NG) {
+            String vgName = destStoragePool.getPath();
+            if (StringUtils.isBlank(vgName)) {
+                throw new CloudRuntimeException(String.format("CLVM/CLVM_NG destination pool [%s] has empty VG path", destStoragePool.getUuid()));
+            }
+            if (vgName.startsWith("/")) {
+                vgName = vgName.substring(1);
+            }
+            return String.format("/dev/%s/%s", vgName, destVolumeInfo.getUuid());
+        }
+
         return new File(destStoragePool.getPath(), destVolumeInfo.getUuid()).getAbsolutePath();
     }
 
