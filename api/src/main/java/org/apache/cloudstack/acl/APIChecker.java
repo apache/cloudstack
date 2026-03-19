@@ -17,6 +17,7 @@
 package org.apache.cloudstack.acl;
 
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.RequestLimitException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Adapter;
@@ -53,6 +54,10 @@ public interface APIChecker extends Adapter {
             try {
                 checkAccess(account, apiName);
                 allowedApis.add(apiName);
+            } catch (RequestLimitException e) {
+                // Non-ACL failure (e.g. rate limiting) should not be treated as simple "not allowed".
+                // Propagate as unchecked so callers are aware of the failure.
+                throw new RuntimeException("Failed to check access for API [" + apiName + "] due to request limits", e);
             } catch (PermissionDeniedException e) {
                 s_logger.debug("Account [" + account + "] is not allowed to access API [" + apiName + "]", e);
             }
