@@ -32,29 +32,7 @@ class CsStaticRoutes(CsDataBag):
                 continue
             self.__update(self.dbag[item])
 
-    def __find_device_for_gateway(self, gateway_ip):
-        """
-        Find which ethernet device the gateway IP belongs to by checking
-        if the gateway is in any of the configured interface subnets.
-        Returns device name (e.g., 'eth2') or None if not found.
-        """
-        try:
-            # Get all configured interfaces from the address databag
-            interfaces = self.config.address().get_interfaces()
 
-            for interface in interfaces:
-                if not interface.is_added():
-                    continue
-
-                # Check if gateway IP is in this interface's subnet
-                if interface.ip_in_subnet(gateway_ip):
-                    return interface.get_device()
-
-            logging.debug("No matching device found for gateway %s" % gateway_ip)
-            return None
-        except Exception as e:
-            logging.error("Error finding device for gateway %s: %s" % (gateway_ip, e))
-            return None
 
     def __update(self, route):
         network = route['network']
@@ -66,7 +44,7 @@ class CsStaticRoutes(CsDataBag):
             CsHelper.execute(command)
 
             # Delete from PBR table if applicable
-            device = self.__find_device_for_gateway(gateway)
+            device = CsHelper.find_device_for_gateway(self.config, gateway)
             if device:
                 cs_route = CsRoute()
                 table_name = cs_route.get_tablename(device)
@@ -83,7 +61,7 @@ class CsStaticRoutes(CsDataBag):
                 logging.info("Added static route %s via %s to main table" % (network, gateway))
 
             # Add to PBR table if applicable
-            device = self.__find_device_for_gateway(gateway)
+            device = CsHelper.find_device_for_gateway(self.config, gateway)
             if device:
                 cs_route = CsRoute()
                 table_name = cs_route.get_tablename(device)
