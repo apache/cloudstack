@@ -228,11 +228,21 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     }
 
     @Test
-    public void testCheckAccessAccountUsesCachedPermissions() {
+    public void testCheckAccessAccountUsesCachedPermissions() throws Exception {
+        // Enable caching by setting a positive cachePeriod
+        Field cachePeriodField = DynamicRoleBasedAPIAccessChecker.class.getDeclaredField("cachePeriod");
+        cachePeriodField.setAccessible(true);
+        cachePeriodField.set(apiAccessCheckerSpy, 1L);
+
         final String allowedApiName = "someAllowedApi";
         final RolePermission permission = new RolePermissionVO(1L, allowedApiName, Permission.ALLOW, null);
         Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
+
+        // First call should populate the cache
         apiAccessCheckerSpy.checkAccess(getTestAccount(), allowedApiName);
+        // Second call should use cached permissions and not hit the DAO again
+        apiAccessCheckerSpy.checkAccess(getTestAccount(), allowedApiName);
+
         Mockito.verify(roleServiceMock, Mockito.times(1)).findAllPermissionsBy(Mockito.anyLong());
     }
 
