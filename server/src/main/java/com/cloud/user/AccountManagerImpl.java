@@ -43,6 +43,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.APIAclChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.QuerySelector;
@@ -1435,13 +1436,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     requested.getRoleId()));
         }
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
+
+        // Only ACL checkers should influence the set of APIs allowed to an account.
+        List<APIAclChecker> aclCheckers = new ArrayList<>();
+        for (APIChecker apiChecker : apiCheckers) {
+            if (apiChecker instanceof APIAclChecker) {
+                aclCheckers.add((APIAclChecker) apiChecker);
+            }
+        }
+
         List<String> allApis = new ArrayList<>(apiNameList);
         List<String> requestedAllowed = allApis;
-        for (final APIChecker apiChecker : apiCheckers) {
+        for (final APIAclChecker apiChecker : aclCheckers) {
             requestedAllowed = apiChecker.getApisAllowedToAccount(requested, requestedAllowed);
         }
         List<String> callerAllowed = requestedAllowed;
-        for (final APIChecker apiChecker : apiCheckers) {
+        for (final APIAclChecker apiChecker : aclCheckers) {
             callerAllowed = apiChecker.getApisAllowedToAccount(caller, callerAllowed);
         }
         if (callerAllowed.size() < requestedAllowed.size()) {
