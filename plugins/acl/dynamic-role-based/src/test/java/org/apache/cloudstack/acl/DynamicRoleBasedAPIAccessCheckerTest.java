@@ -295,9 +295,26 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
 
     @Test
     public void testGetApisAllowedToAccountUsesCachedPermissions() {
-        final RolePermission permission = new RolePermissionVO(1L, "api1", Permission.ALLOW, null);
-        Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
-        apiAccessCheckerSpy.getApisAllowedToAccount(getTestAccount(), new ArrayList<>(Arrays.asList("api1")));
-        Mockito.verify(roleServiceMock, Mockito.times(1)).findAllPermissionsBy(Mockito.anyLong());
+        try {
+            // Ensure caching is enabled by setting a positive cachePeriod
+            Field cachePeriodField = DynamicRoleBasedAPIAccessChecker.class.getDeclaredField("cachePeriod");
+            cachePeriodField.setAccessible(true);
+            cachePeriodField.set(apiAccessCheckerSpy, 1L);
+
+            final RolePermission permission = new RolePermissionVO(1L, "api1", Permission.ALLOW, null);
+            Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
+
+            Account account = getTestAccount();
+            List<String> apis = new ArrayList<>(Arrays.asList("api1"));
+
+            // First call should load permissions from the DAO and populate the cache
+            apiAccessCheckerSpy.getApisAllowedToAccount(account, apis);
+            // Second call should use cached permissions and not hit the DAO again
+            apiAccessCheckerSpy.getApisAllowedToAccount(account, apis);
+
+            Mockito.verify(roleServiceMock, Mockito.times(1)).findAllPermissionsBy(Mockito.anyLong());
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            Assert.fail("Failed to set cachePeriod for test: " + e.getMessage());
+        }
     }
 }
