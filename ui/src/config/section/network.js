@@ -18,7 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import tungsten from '@/assets/icons/tungsten.svg?inline'
-import { isAdmin } from '@/role'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { isZoneCreated } from '@/utils/zone'
 import { vueProps } from '@/vue-app'
 
@@ -49,7 +49,10 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber',
+          'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account',
+          'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2',
+          'publicmtu', 'privatemtu', 'dnszone', 'dnssubdomain']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
@@ -197,6 +200,36 @@ export default {
               api: 'listNetworkACLLists',
               params: (record) => { return { vpcid: record.vpcid } }
             },
+            networkid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'associateDnsZoneToNetwork',
+          icon: 'link-outlined',
+          label: 'label.action.associate.dns.zone',
+          dataView: true,
+          show: (record, store) => {
+            return (record.type === 'Shared' && record.dnszone === undefined &&
+              (record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype)))
+          },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AssociateDnsZone.vue')))
+        },
+        {
+          api: 'disassociateDnsZoneFromNetwork',
+          icon: 'disconnect-outlined',
+          label: 'label.action.disassociate.dns.zone',
+          message: 'message.action.disassociate.dns.zone',
+          dataView: true,
+          popup: true,
+          args: ['networkid'],
+          show: (record, store) => {
+            return record.dnszone !== undefined && record.type === 'Shared' &&
+              (record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype))
+          },
+          mapping: {
             networkid: {
               value: (record) => { return record.id }
             }

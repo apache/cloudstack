@@ -543,6 +543,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Inject
     ResourceIconManager resourceIconManager;
 
+
     public static String getPrettyDomainPath(String path) {
         if (path == null) {
             return null;
@@ -2633,6 +2634,14 @@ public class ApiResponseHelper implements ResponseGenerator {
                 details.put(detail.getName(),detail.getValue());
             }
             response.setDetails(details);
+        }
+
+        Pair<String, String> dnsZoneAndSubDomain = ApiDBUtils.findDnsZoneByNetworkId(network.getId());
+        if (StringUtils.isNotBlank(dnsZoneAndSubDomain.first())) {
+            response.setDnsZone(dnsZoneAndSubDomain.first());
+        }
+        if (StringUtils.isNotBlank(dnsZoneAndSubDomain.second())) {
+            response.setDnsSubdomain(dnsZoneAndSubDomain.second());
         }
 
         DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());

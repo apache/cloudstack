@@ -57,11 +57,10 @@
           <a-descriptions-item :label="$t('label.isolationuri')" v-if="record.isolationuri">
             {{ record.isolationuri }}
           </a-descriptions-item>
-
-          <a-descriptions-item :label="$t('label.dns.record.url')" v-if="record.dnsrecordurl">
-            {{ record.dnsrecordurl }}
-          </a-descriptions-item>
         </template>
+        <a-descriptions-item :label="$t('label.dns.record.url')" v-if="record.dnsrecordurl">
+            {{ record.dnsrecordurl }}
+        </a-descriptions-item>
       </a-descriptions>
     </template>
     <template #bodyCell="{ column, text, record }">

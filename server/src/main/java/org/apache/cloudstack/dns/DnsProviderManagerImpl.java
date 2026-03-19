@@ -661,10 +661,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             return null;
         }
         DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
-        // Construct FQDN Prefix (e.g., "instance-id" or "instance-id.subdomain")
+        // Construct FQDN Prefix (e.g., "instance-id.dnsZoneName" or "instance-id.subdomain.dnsZoneName")
         String recordName = String.valueOf(instance.getInstanceName());
         if (StringUtils.isNotBlank(dnsZoneNetworkMap.getSubDomain())) {
-            recordName = recordName + "." + dnsZoneNetworkMap.getSubDomain();
+            recordName = String.join(".", recordName, dnsZoneNetworkMap.getSubDomain(), dnsZone.getName());
         }
 
         try {
