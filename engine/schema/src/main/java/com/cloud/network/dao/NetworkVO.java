@@ -600,10 +600,9 @@ public class NetworkVO implements Network {
             return true;
         }
 
-        final String normalizedCidr = com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(cidr);
-        final String normalizedThatCidr = com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(that.cidr);
-
-        return NetUtils.isNetworkAWithinNetworkB(normalizedCidr, normalizedThatCidr);
+        return NetUtils.isNetworkAWithinNetworkB(
+                com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(cidr),
+                com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(that.cidr));
     }
 
     @Override
