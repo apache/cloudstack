@@ -33,7 +33,6 @@ import javax.inject.Inject;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.storage.ClvmLockManager;
-import com.cloud.storage.Storage;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.Account;
@@ -423,9 +422,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
         // Check if this is a CLVM pool
         StoragePoolVO pool = _storagePoolDao.findById(store.getId());
-        if (pool == null ||
-                (pool.getPoolType() != Storage.StoragePoolType.CLVM ||
-                pool.getPoolType() != Storage.StoragePoolType.CLVM_NG)) {
+        if (pool == null || !ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
             return null;
         }
 

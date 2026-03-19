@@ -1407,6 +1407,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     createPhysicalDiskByQemuImg(name, pool, PhysicalDiskFormat.RAW, provisioningType, size, passphrase);
         } else if (StoragePoolType.CLVM_NG.equals(poolType)) {
             return createClvmNgDiskWithBacking(name, 0, size, null, pool, provisioningType);
+        } else if (StoragePoolType.CLVM.equals(poolType)) {
+            return createClvmVolume(name, size, pool);
         } else if (StoragePoolType.NetworkFilesystem.equals(poolType) || StoragePoolType.Filesystem.equals(poolType)) {
             switch (format) {
                 case QCOW2:
@@ -2207,75 +2209,23 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 disk.getFormat() : PhysicalDiskFormat.RAW;
         String sourcePath = disk.getPath();
 
-        boolean isSourceClvm = srcPool.getType() == StoragePoolType.CLVM || srcPool.getType() == StoragePoolType.CLVM_NG;
-        boolean isDestClvm = destPool.getType() == StoragePoolType.CLVM || destPool.getType() == StoragePoolType.CLVM_NG;
-
-        String clvmLockVolume = null;
-        boolean shouldDeactivateSource = false;
-
-        try {
-            if (isSourceClvm) {
-                logger.info("Activating source CLVM volume {} in shared mode for copy", sourcePath);
-                LibvirtComputingResource.setClvmVolumeToSharedMode(sourcePath);
-                shouldDeactivateSource = !isDestClvm;
-            }
-
-            KVMPhysicalDisk newDisk;
-            logger.debug("copyPhysicalDisk: disk size:{}, virtualsize:{} format:{}", toHumanReadableSize(disk.getSize()), toHumanReadableSize(disk.getVirtualSize()), disk.getFormat());
-            if (destPool.getType() != StoragePoolType.RBD) {
-                if (disk.getFormat() == PhysicalDiskFormat.TAR) {
-                    newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize(), null);
-                } else {
-                    newDisk = destPool.createPhysicalDisk(name, Storage.ProvisioningType.THIN, disk.getVirtualSize(), null);
-                }
+        KVMPhysicalDisk newDisk;
+        logger.debug("copyPhysicalDisk: disk size:{}, virtualsize:{} format:{}", toHumanReadableSize(disk.getSize()), toHumanReadableSize(disk.getVirtualSize()), disk.getFormat());
+        if (destPool.getType() != StoragePoolType.RBD) {
+            if (disk.getFormat() == PhysicalDiskFormat.TAR) {
+                newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, Storage.ProvisioningType.THIN, disk.getVirtualSize(), null);
             } else {
-                newDisk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + name, name, destPool);
-                newDisk.setFormat(PhysicalDiskFormat.RAW);
-                newDisk.setSize(disk.getVirtualSize());
-                newDisk.setVirtualSize(disk.getSize());
+                newDisk = destPool.createPhysicalDisk(name, Storage.ProvisioningType.THIN, disk.getVirtualSize(), null);
             }
-
-            String destPath = newDisk.getPath();
-            PhysicalDiskFormat destFormat = newDisk.getFormat();
-
-            if (isDestClvm) {
-                logger.info("Activating destination CLVM volume {} in shared mode for copy", destPath);
-                LibvirtComputingResource.setClvmVolumeToSharedMode(destPath);
-                clvmLockVolume = destPath;
-            }
-
-            boolean formatConversion = sourceFormat != destFormat;
-            if (formatConversion) {
-                logger.info("Format conversion required: {} -> {}", sourceFormat, destFormat);
-            }
-
-            return performCopy(disk, name, destPool, timeout, srcPool, sourceFormat,
-                    sourcePath, newDisk, destPath, destFormat, formatConversion);
-
-        } finally {
-            if (isSourceClvm && shouldDeactivateSource) {
-                try {
-                    logger.info("Deactivating source CLVM volume {} after copy", sourcePath);
-                    LibvirtComputingResource.deactivateClvmVolume(sourcePath);
-                } catch (Exception e) {
-                    logger.warn("Failed to deactivate source CLVM volume {}: {}", sourcePath, e.getMessage());
-                }
-            }
-            if (isDestClvm && clvmLockVolume != null) {
-                try {
-                    logger.info("Claiming exclusive lock on destination CLVM volume {} after copy", clvmLockVolume);
-                    LibvirtComputingResource.activateClvmVolumeExclusive(clvmLockVolume);
-                } catch (Exception e) {
-                    logger.warn("Failed to claim exclusive lock on destination CLVM volume {}: {}", clvmLockVolume, e.getMessage());
-                }
-            }
+        } else {
+            newDisk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + name, name, destPool);
+            newDisk.setFormat(PhysicalDiskFormat.RAW);
+            newDisk.setSize(disk.getVirtualSize());
+            newDisk.setVirtualSize(disk.getSize());
         }
-    }
 
-    private KVMPhysicalDisk performCopy(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout,
-                                        KVMStoragePool srcPool, PhysicalDiskFormat sourceFormat, String sourcePath,
-                                        KVMPhysicalDisk newDisk, String destPath, PhysicalDiskFormat destFormat,
-                                        boolean formatConversion) {
+        String destPath = newDisk.getPath();
+        PhysicalDiskFormat destFormat = newDisk.getFormat();
 
         QemuImg qemu;
 
@@ -2376,8 +2326,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
         } else {
             /**
-                We let Qemu-Img do the work here. Although we could work with librbd and have that do the cloning
-                it doesn't benefit us. It's better to keep the current code in place which works
+             We let Qemu-Img do the work here. Although we could work with librbd and have that do the cloning
+             it doesn't benefit us. It's better to keep the current code in place which works
              */
             srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(srcPool, sourcePath));
             srcFile.setFormat(sourceFormat);
@@ -2785,5 +2735,42 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         lvremove.add("-f");
         lvremove.add(lvPath);
         lvremove.execute();
+    }
+
+    /**
+     * Creates a raw LV volume for CLVM pools using direct LVM commands.
+     * This bypasses libvirt since CLVM pools are kept inactive in libvirt.
+     *
+     * @param volumeName the name of the volume to create
+     * @param size the size of the volume in bytes
+     * @param pool the CLVM storage pool
+     * @return the created KVMPhysicalDisk
+     */
+    private KVMPhysicalDisk createClvmVolume(String volumeName, long size, KVMStoragePool pool) {
+        String vgName = getVgName(pool.getLocalPath());
+        String volumePath = "/dev/" + vgName + "/" + volumeName;
+        int timeout = 30000; // 30 seconds timeout for LV creation
+
+        logger.info("Creating CLVM volume {} in VG {} with size {} bytes", volumeName, vgName, size);
+
+        Script lvcreate = new Script("lvcreate", Duration.millis(timeout), logger);
+        lvcreate.add("-n", volumeName);
+        lvcreate.add("-L", size + "B");
+        lvcreate.add(vgName);
+
+        String result = lvcreate.execute();
+        if (result != null) {
+            throw new CloudRuntimeException("Failed to create CLVM volume: " + result);
+        }
+
+        logger.info("Successfully created CLVM volume {} at {} with size {}", volumeName, volumePath, toHumanReadableSize(size));
+
+        long actualSize = getClvmVolumeSize(volumePath);
+        KVMPhysicalDisk disk = new KVMPhysicalDisk(volumePath, volumeName, pool);
+        disk.setFormat(PhysicalDiskFormat.RAW);
+        disk.setSize(actualSize);
+        disk.setVirtualSize(actualSize);
+
+        return disk;
     }
 }

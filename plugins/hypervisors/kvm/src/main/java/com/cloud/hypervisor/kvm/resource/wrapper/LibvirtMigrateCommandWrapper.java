@@ -827,7 +827,13 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             for (int z = 0; z < diskChildNodes.getLength(); z++) {
                                 Node diskChildNode = diskChildNodes.item(z);
 
-                                if (migrateStorageManaged && "driver".equals(diskChildNode.getNodeName())) {
+                                // Update driver type for managed storage OR when migrating to CLVM
+                                // CLVM uses RAW format requiring XML driver type update
+                                // Note: CLVM_NG uses QCOW2-on-block, so no format change needed (already QCOW2)
+                                boolean shouldUpdateDriverType = migrateStorageManaged ||
+                                    (migrateDiskInfo.getDestPoolType() == Storage.StoragePoolType.CLVM);
+
+                                if (shouldUpdateDriverType && "driver".equals(diskChildNode.getNodeName())) {
                                     Node driverNode = diskChildNode;
 
                                     NamedNodeMap driverNodeAttributes = driverNode.getAttributes();
