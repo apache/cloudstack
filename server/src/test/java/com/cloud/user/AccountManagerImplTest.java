@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.APIAclChecker;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
@@ -1632,7 +1633,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         List<String> allApis = Arrays.asList("api1", "api2", "api3");
         List<String> requestedApis = Arrays.asList("api1", "api2");
 
-        APIChecker checker = Mockito.mock(APIChecker.class);
+        APIAclChecker checker = Mockito.mock(APIAclChecker.class);
         Mockito.when(checker.isEnabled()).thenReturn(true);
 
         Account caller = Mockito.mock(Account.class);
@@ -1646,7 +1647,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.when(requested.getRoleId()).thenReturn(5L);
 
         Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(requested), Mockito.anyList())).thenReturn(requestedApis);
-        Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(caller), Mockito.anyList())).thenReturn(requestedApis);
+        Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(caller), Mockito.anyList())).thenReturn(allApis);
 
         accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
         setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(allApis));
@@ -1660,7 +1661,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         List<String> requestedApis = Arrays.asList("api1", "api2", "api3");
         List<String> callerApis = Arrays.asList("api1");
 
-        APIChecker checker = Mockito.mock(APIChecker.class);
+        APIAclChecker checker = Mockito.mock(APIAclChecker.class);
         Mockito.when(checker.isEnabled()).thenReturn(true);
 
         Account caller = Mockito.mock(Account.class);
@@ -1685,7 +1686,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
 
     @Test
     public void testCheckRoleEscalationEmptyApiListShouldPass() throws Exception {
-        APIChecker checker = Mockito.mock(APIChecker.class);
+        APIAclChecker checker = Mockito.mock(APIAclChecker.class);
         Mockito.when(checker.isEnabled()).thenReturn(true);
         Mockito.when(checker.getApisAllowedToAccount(Mockito.any(Account.class), Mockito.anyList())).thenReturn(Collections.emptyList());
 
@@ -1711,9 +1712,9 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         List<String> afterChecker1 = Arrays.asList("api1", "api2");
         List<String> afterChecker2 = Arrays.asList("api1");
 
-        APIChecker checker1 = Mockito.mock(APIChecker.class);
+        APIAclChecker checker1 = Mockito.mock(APIAclChecker.class);
         Mockito.when(checker1.isEnabled()).thenReturn(true);
-        APIChecker checker2 = Mockito.mock(APIChecker.class);
+        APIAclChecker checker2 = Mockito.mock(APIAclChecker.class);
         Mockito.when(checker2.isEnabled()).thenReturn(true);
 
         Account caller = Mockito.mock(Account.class);
