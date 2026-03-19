@@ -59,7 +59,7 @@ public interface APIChecker extends Adapter {
                 // Propagate as unchecked so callers are aware of the failure.
                 throw new RuntimeException("Failed to check access for API [" + apiName + "] due to request limits", e);
             } catch (PermissionDeniedException e) {
-                s_logger.debug("Account [" + account + "] is not allowed to access API [" + apiName + "]", e);
+                s_logger.trace("Account [" + account + "] is not allowed to access API [" + apiName + "]");
             }
         }
         return allowedApis;
