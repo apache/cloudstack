@@ -467,7 +467,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         boolean isOneToOneNat = ipAddress.isOneToOneNat();
         Long associatedWithVmId = ipAddress.getAssociatedWithVmId();
         Nic guestNic;
-        NicSecondaryIpVO nicSecIp = null;
+        wNicSecondaryIpVO nicSecIp = null;
         String dstIp = null;
         Network network = _networkModel.getNetwork(networkId);
 

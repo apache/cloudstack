@@ -56,6 +56,9 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = false, description = "Secondary IP Address")
     private String ipAddr;
 
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = false, description = "Description")
+    private String description;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -160,7 +163,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
         }
 
         try {
-            result = _networkService.allocateSecondaryGuestIP(getNicId(), requestedIpPair);
+            result = _networkService.allocateSecondaryGuestIP(getNicId(), requestedIpPair, description);
             if (result != null) {
                 setEntityId(result.getId());
                 setEntityUuid(result.getUuid());

@@ -896,7 +896,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair) {
+    public NicSecondaryIp allocateSecondaryGuestIP(long nicId, IpAddresses requestedIpPair, String description) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -887,7 +887,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
      */
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NIC_SECONDARY_IP_ASSIGN, eventDescription = "Assigning secondary IP to NIC", create = true)
-    public NicSecondaryIp allocateSecondaryGuestIP(final long nicId, IpAddresses requestedIpPair) throws InsufficientAddressCapacityException {
+    public NicSecondaryIp allocateSecondaryGuestIP(final long nicId, IpAddresses requestedIpPair, String description) throws InsufficientAddressCapacityException {
 
         Account caller = CallContext.current().getCallingAccount();
         String ipv4Address = requestedIpPair.getIp4Address();
@@ -985,7 +985,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
                     logger.debug("Setting nic_secondary_ip table ...");
                     Long vmId = nicVO.getInstanceId();
-                    NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, ip4AddrFinal, ip6AddrFinal, vmId, ipOwner.getId(), ipOwner.getDomainId(), networkId);
+                    NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, ip4AddrFinal, ip6AddrFinal, vmId, ipOwner.getId(), ipOwner.getDomainId(), networkId, description);
                     _nicSecondaryIpDao.persist(secondaryIpVO);
                     return secondaryIpVO.getId();
                 }
