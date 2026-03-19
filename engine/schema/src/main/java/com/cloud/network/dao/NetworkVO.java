@@ -600,9 +600,7 @@ public class NetworkVO implements Network {
             return true;
         }
 
-        return NetUtils.isNetworkAWithinNetworkB(
-                com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(cidr),
-                com.cloud.utils.StringUtils.getFirstValueFromCommaSeparatedString(that.cidr));
+        return NetUtils.isNetworkAWithinNetworkB(cidr, that.cidr);
     }
 
     @Override
