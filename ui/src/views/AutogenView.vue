@@ -1172,6 +1172,10 @@ export default {
         delete params.listall
       }
 
+      if (!['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['computeoffering'].includes(this.routeName)) {
+        delete params.state
+      }
+
       callAPI(this.apiName, params).then(json => {
         var responseName
         var objectName
