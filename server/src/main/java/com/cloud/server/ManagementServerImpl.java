@@ -3038,27 +3038,40 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
             throw new InvalidParameterValueException("Hypervisor version parameter cannot be used without specifying a hypervisor : XenServer, KVM or VMware");
         }
 
-        final SearchCriteria<GuestOSHypervisorVO> sc = _guestOSHypervisorDao.createSearchCriteria();
+        SearchBuilder<GuestOSHypervisorVO> sb = _guestOSHypervisorDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("guestOsName", sb.entity().getGuestOsName(), SearchCriteria.Op.LIKE);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.LIKE);
+        sb.and("hypervisorVersion", sb.entity().getHypervisorVersion(), SearchCriteria.Op.LIKE);
+        sb.and(guestOsId, sb.entity().getGuestOsId(), SearchCriteria.Op.EQ);
+        SearchBuilder<GuestOSVO> guestOSSearch = _guestOSDao.createSearchBuilder();
+        guestOSSearch.and("display", guestOSSearch.entity().isDisplay(), SearchCriteria.Op.LIKE);
+        sb.join("guestOSSearch", guestOSSearch, sb.entity().getGuestOsId(), guestOSSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+
+        final SearchCriteria<GuestOSHypervisorVO> sc = sb.create();
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", SearchCriteria.Op.EQ, id);
         }
 
         if (osTypeId != null) {
-            sc.addAnd(guestOsId, SearchCriteria.Op.EQ, osTypeId);
+            sc.setParameters(guestOsId, osTypeId);
         }
 
         if (osNameForHypervisor != null) {
-            sc.addAnd("guestOsName", SearchCriteria.Op.LIKE, "%" + osNameForHypervisor + "%");
+            sc.setParameters("guestOsName", "%" + osNameForHypervisor + "%");
         }
 
         if (hypervisor != null) {
-            sc.addAnd("hypervisorType", SearchCriteria.Op.LIKE, "%" + hypervisor + "%");
+            sc.setParameters("hypervisorType", "%" + hypervisor + "%");
         }
 
         if (hypervisorVersion != null) {
-            sc.addAnd("hypervisorVersion", SearchCriteria.Op.LIKE, "%" + hypervisorVersion + "%");
+            sc.setParameters("hypervisorVersion", "%" + hypervisorVersion + "%");
         }
+
+        // Exclude the mappings for guest OS marked as display = false
+        sc.setJoinParameters("guestOSSearch", "display", true);
 
         if (osDisplayName != null) {
             List<GuestOSVO> guestOSVOS = _guestOSDao.listLikeDisplayName(osDisplayName);
