@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.veeam;
 
+import java.util.List;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -31,9 +33,9 @@ public interface VeeamControlService extends PluggableService, Configurable {
             "8090", "Port for Veeam Integration REST API server", false);
     ConfigKey<String> ContextPath = new ConfigKey<>("Advanced", String.class, "integration.veeam.control.context.path",
             "/ovirt-engine", "Context path for Veeam Integration REST API server", false);
-    ConfigKey<String> Username = new ConfigKey<>("Advanced", String.class, "integration.veeam.control.api.username",
+    ConfigKey<String> Username = new ConfigKey<>("Secure", String.class, "integration.veeam.control.api.username",
             "veeam", "Username for Basic Auth on Veeam Integration REST API server", true);
-    ConfigKey<String> Password = new ConfigKey<>("Advanced", String.class, "integration.veeam.control.api.password",
+    ConfigKey<String> Password = new ConfigKey<>("Secure", String.class, "integration.veeam.control.api.password",
             "change-me", "Password for Basic Auth on Veeam Integration REST API server", true);
     ConfigKey<String> ServiceAccountId = new ConfigKey<>("Advanced", String.class,
             "integration.veeam.control.service.account", "",
@@ -46,4 +48,13 @@ public interface VeeamControlService extends PluggableService, Configurable {
             "false", "Attempt to assign restored Instance to the owner based on OVF and network " +
             "details. If the assignment fails or set to false then the Instance will remain owned by the service " +
             "account", true);
+    ConfigKey<String> AllowedClientCidrs = new ConfigKey<>("Advanced", String.class,
+            "integration.veeam.control.allowed.client.cidrs",
+            "", "Comma-separated list of CIDR blocks representing clients allowed to access the API. " +
+                    "If empty, all clients will be allowed. Example: '192.168.1.1/24,192.168.2.100/32", true);
+
+
+    List<String> getAllowedClientCidrs();
+
+    boolean validateCredentials(String username, String password);
 }

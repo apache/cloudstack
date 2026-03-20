@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.cloudstack.veeam.api.ApiService;
+import org.apache.cloudstack.veeam.filter.AllowedClientCidrsFilter;
 import org.apache.cloudstack.veeam.filter.BearerOrBasicAuthFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -43,6 +44,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -51,12 +53,14 @@ import org.jetbrains.annotations.NotNull;
 public class VeeamControlServer {
     private static final Logger LOGGER = LogManager.getLogger(VeeamControlServer.class);
 
+    private final VeeamControlService veeamControlService;
     private Server server;
     private List<RouteHandler> routeHandlers;
 
-    public VeeamControlServer(List<RouteHandler> routeHandlers) {
+    public VeeamControlServer(List<RouteHandler> routeHandlers, VeeamControlService veeamControlService) {
         this.routeHandlers = new ArrayList<>(routeHandlers);
         this.routeHandlers.sort((a, b) -> Integer.compare(b.priority(), a.priority()));
+        this.veeamControlService = veeamControlService;
     }
 
     public void startIfEnabled() throws Exception {
@@ -118,8 +122,15 @@ public class VeeamControlServer {
                 new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
         ctx.setContextPath(ctxPath);
 
+        // CIDR filter for all routes
+        AllowedClientCidrsFilter cidrFilter = new AllowedClientCidrsFilter(veeamControlService);
+        FilterHolder cidrHolder = new FilterHolder(cidrFilter);
+        ctx.addFilter(cidrHolder, ApiService.BASE_ROUTE + "/*", EnumSet.of(DispatcherType.REQUEST));
+
         // Bearer or Basic Auth for all routes
-        ctx.addFilter(BearerOrBasicAuthFilter.class, ApiService.BASE_ROUTE + "/*", EnumSet.of(DispatcherType.REQUEST));
+        BearerOrBasicAuthFilter authFilter = new BearerOrBasicAuthFilter(veeamControlService);
+        FilterHolder authHolder = new FilterHolder(authFilter);
+        ctx.addFilter(authHolder, ApiService.BASE_ROUTE + "/*", EnumSet.of(DispatcherType.REQUEST));
 
         // Front controller servlet
         ctx.addServlet(new ServletHolder(new VeeamControlServlet(routeHandlers)), "/*");

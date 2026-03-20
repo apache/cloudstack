@@ -17,17 +17,43 @@
 
 package org.apache.cloudstack.veeam;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.utils.cache.SingleCache;
+import org.apache.cloudstack.veeam.utils.DataUtil;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.net.NetUtils;
 
 public class VeeamControlServiceImpl extends ManagerBase implements VeeamControlService {
 
     private List<RouteHandler> routeHandlers;
-
     private VeeamControlServer veeamControlServer;
+    private SingleCache<List<String>> allowedClientCidrsCache;
+
+    protected List<String> getAllowedClientCidrsInternal() {
+        String allowedClientCidrsStr = AllowedClientCidrs.value();
+        if (StringUtils.isBlank(allowedClientCidrsStr)) {
+            return Collections.emptyList();
+        }
+        List<String> allowedClientCidrs = List.of(allowedClientCidrsStr.split(","));
+        // Sanitize and remove any incorrect CIDR entries
+        allowedClientCidrs = allowedClientCidrs.stream()
+                .map(String::trim)
+                .filter(StringUtils::isNotBlank)
+                .filter(cidr -> {
+                    boolean valid = NetUtils.isValidIp4Cidr(cidr);
+                    if (!valid) {
+                        logger.warn("Invalid CIDR entry '{}' in allowed client CIDRs, ignoring", cidr);
+                    }
+                    return valid;
+                }).collect(Collectors.toList());
+        return allowedClientCidrs;
+    }
 
     public List<RouteHandler> getRouteHandlers() {
         return routeHandlers;
@@ -38,8 +64,20 @@ public class VeeamControlServiceImpl extends ManagerBase implements VeeamControl
     }
 
     @Override
+    public List<String> getAllowedClientCidrs() {
+        return allowedClientCidrsCache.get();
+    }
+
+    @Override
+    public boolean validateCredentials(String username, String password) {
+        return DataUtil.constantTimeEquals(Username.value(), username) &&
+                DataUtil.constantTimeEquals(Password.value(), password);
+    }
+
+    @Override
     public boolean start() {
-        veeamControlServer = new VeeamControlServer(getRouteHandlers());
+        allowedClientCidrsCache = new SingleCache<>(30, this::getAllowedClientCidrsInternal);
+        veeamControlServer = new VeeamControlServer(getRouteHandlers(), this);
         try {
             veeamControlServer.startIfEnabled();
         } catch (Exception e) {
@@ -71,14 +109,15 @@ public class VeeamControlServiceImpl extends ManagerBase implements VeeamControl
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[] {
-            Enabled,
-            BindAddress,
-            Port,
-            ContextPath,
-            Username,
-            Password,
-            ServiceAccountId,
-            InstanceRestoreAssignOwner
+                Enabled,
+                BindAddress,
+                Port,
+                ContextPath,
+                Username,
+                Password,
+                ServiceAccountId,
+                InstanceRestoreAssignOwner,
+                AllowedClientCidrs
         };
     }
 }

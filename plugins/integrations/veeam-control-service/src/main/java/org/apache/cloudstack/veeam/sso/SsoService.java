@@ -20,27 +20,30 @@ package org.apache.cloudstack.veeam.sso;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
-import org.apache.cloudstack.veeam.filter.BearerOrBasicAuthFilter;
+import org.apache.cloudstack.veeam.utils.JwtUtil;
 import org.apache.cloudstack.veeam.utils.Negotiation;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.component.ManagerBase;
 
 public class SsoService extends ManagerBase implements RouteHandler {
     private static final String BASE_ROUTE = "/sso";
     private static final long DEFAULT_TTL_SECONDS = 3600;
+    public static final List<String> REQUIRED_SCOPES = List.of("ovirt-app-admin", "ovirt-app-portal");
+    public static final String HMAC_SECRET = "change-this-super-secret-key-change-this";
 
-    // Replace with your real credential validation (CloudStack account, config, etc.)
-    private final PasswordAuthenticator authenticator = new StaticPasswordAuthenticator();
+    @Inject
+    VeeamControlService veeamControlService;
 
     @Override
     public boolean canHandle(String method, String path) {
@@ -48,7 +51,8 @@ public class SsoService extends ManagerBase implements RouteHandler {
     }
 
     @Override
-    public void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
+    public void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat,
+                       VeeamControlServlet io) throws IOException {
         final String sanitizedPath = getSanitizedPath(path);
         if (sanitizedPath.equals(BASE_ROUTE + "/oauth/token")) {
             handleToken(req, resp, outFormat, io);
@@ -62,54 +66,56 @@ public class SsoService extends ManagerBase implements RouteHandler {
                                Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
 
         if (!"POST".equalsIgnoreCase(req.getMethod())) {
-            // oVirt-like: 405 is fine; if you strictly want 400, change to SC_BAD_REQUEST
             resp.setHeader("Allow", "POST");
             io.getWriter().write(resp, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                    Map.of("error", "method_not_allowed", "message", "token endpoint requires POST"), outFormat);
+                    Map.of("error", "method_not_allowed",
+                            "message", "token endpoint requires POST"), outFormat);
             return;
         }
 
-        // OAuth password grant uses x-www-form-urlencoded. With servlet containers this usually populates getParameter().
         final String grantType = trimToNull(req.getParameter("grant_type"));
-        final String scope = trimToNull(req.getParameter("scope")); // typically "ovirt-app-api"
+        final String scope = trimToNull(req.getParameter("scope"));
         final String username = trimToNull(req.getParameter("username"));
         final String password = trimToNull(req.getParameter("password"));
 
         if (grantType == null) {
             io.getWriter().write(resp, HttpServletResponse.SC_BAD_REQUEST,
-                    Map.of("error", "invalid_request", "error_description", "Missing parameter: grant_type"), outFormat);
+                    Map.of("error", "invalid_request",
+                            "error_description", "Missing parameter: grant_type"), outFormat);
             return;
         }
         if (!"password".equals(grantType)) {
             io.getWriter().write(resp, HttpServletResponse.SC_BAD_REQUEST,
-                    Map.of("error", "unsupported_grant_type", "error_description", "Only grant_type=password is supported"), outFormat);
+                    Map.of("error", "unsupported_grant_type",
+                            "error_description", "Only grant_type=password is supported"), outFormat);
             return;
         }
         if (username == null || password == null) {
             io.getWriter().write(resp, HttpServletResponse.SC_BAD_REQUEST,
-                    Map.of("error", "invalid_request", "error_description", "Missing username/password"), outFormat);
+                    Map.of("error", "invalid_request",
+                            "error_description", "Missing username/password"), outFormat);
             return;
         }
 
-        if (!authenticator.authenticate(username, password)) {
-            // 401 for bad creds
+        if (!veeamControlService.validateCredentials(username, password)) {
             io.getWriter().write(resp, HttpServletResponse.SC_UNAUTHORIZED,
-                    Map.of("error", "invalid_grant", "error_description", "Invalid credentials"), outFormat);
+                    Map.of("error", "invalid_grant",
+                            "error_description", "Invalid credentials"), outFormat);
             return;
         }
 
-        final String effectiveScope = (scope == null) ? "ovirt-app-api" : scope;
+        final String effectiveScope = (scope == null) ? StringUtils.join(REQUIRED_SCOPES, " ") : scope;
 
         final long ttl = DEFAULT_TTL_SECONDS;
         long nowMillis = Instant.now().toEpochMilli();
         long expMillis = nowMillis + ttl * 1000L;
         final String token;
         try {
-            token = JwtUtil.issueHs256Jwt(BearerOrBasicAuthFilter.ISSUER, username, effectiveScope, ttl,
-                    BearerOrBasicAuthFilter.HMAC_SECRET);
+            token = JwtUtil.issueHs256Jwt(username, effectiveScope, ttl, HMAC_SECRET);
         } catch (Exception e) {
             io.getWriter().write(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    Map.of("error", "server_error", "error_description", "Failed to issue token"), outFormat);
+                    Map.of("error", "server_error",
+                            "error_description", "Failed to issue token"), outFormat);
             return;
         }
 
@@ -127,62 +133,5 @@ public class SsoService extends ManagerBase implements RouteHandler {
         if (s == null) return null;
         s = s.trim();
         return s.isEmpty() ? null : s;
-    }
-
-    // ---------- Minimal auth helpers (replace later) ----------
-
-    interface PasswordAuthenticator {
-        boolean authenticate(String username, String password);
-    }
-
-    static final class StaticPasswordAuthenticator implements PasswordAuthenticator {
-        StaticPasswordAuthenticator() {
-        }
-        @Override
-        public boolean authenticate(String username, String password) {
-            return VeeamControlService.Username.value().equals(username) &&
-                    VeeamControlService.Password.value().equals(password);
-        }
-    }
-
-    // ---------- Minimal JWT HS256 without extra libs ----------
-    // (If you prefer Nimbus, I can convert this to nimbus-jose-jwt; this keeps dependencies tiny.)
-
-    static final class JwtUtil {
-        static String issueHs256Jwt(String issuer, String subject, String scope, long ttlSeconds, String secret) throws Exception {
-            long now = Instant.now().getEpochSecond();
-            long exp = now + ttlSeconds;
-
-            String headerJson = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
-            String payloadJson =
-                    "{"
-                            + "\"iss\":\"" + jsonEscape(issuer) + "\","
-                            + "\"sub\":\"" + jsonEscape(subject) + "\","
-                            + "\"scope\":\"" + jsonEscape(scope) + "\","
-                            + "\"iat\":" + now + ","
-                            + "\"exp\":" + exp
-                            + "}";
-
-            String header = b64Url(headerJson.getBytes("UTF-8"));
-            String payload = b64Url(payloadJson.getBytes("UTF-8"));
-            String signingInput = header + "." + payload;
-
-            byte[] sig = hmacSha256(signingInput.getBytes("UTF-8"), secret.getBytes("UTF-8"));
-            return signingInput + "." + b64Url(sig);
-        }
-
-        static byte[] hmacSha256(byte[] data, byte[] key) throws Exception {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(key, "HmacSHA256"));
-            return mac.doFinal(data);
-        }
-
-        static String b64Url(byte[] in) {
-            return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(in);
-        }
-
-        static String jsonEscape(String s) {
-            return s.replace("\\", "\\\\").replace("\"", "\\\"");
-        }
     }
 }
