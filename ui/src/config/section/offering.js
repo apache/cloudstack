@@ -43,7 +43,7 @@ export default {
         }
         return []
       },
-      columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
+      columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'gpu', 'domain', 'zone', 'order'],
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'gpucardid', 'gpucardname', 'vgpuprofileid', 'vgpuprofilename', 'gpucount', 'gpudisplay', 'leaseexpiryaction', 'externaldetails']
         if (store.getters.apis.createServiceOffering &&
@@ -429,7 +429,7 @@ export default {
       name: 'networkoffering',
       title: 'label.network.offerings',
       icon: 'wifi-outlined',
-      docHelp: 'adminguide/networking.html#network-offerings',
+      docHelp: 'adminguide/networking.html#network-offerings  ',
       permission: ['listNetworkOfferings'],
       filters: ['all', 'forvpc', 'guestnetwork'],
       searchFilters: ['name', 'zoneid', 'domainid', 'guestiptype', 'tags'],
