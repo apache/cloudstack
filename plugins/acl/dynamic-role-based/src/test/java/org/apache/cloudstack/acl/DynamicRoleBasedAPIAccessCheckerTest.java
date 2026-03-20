@@ -40,6 +40,8 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 
 import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
+import org.apache.cloudstack.utils.cache.LazyCache;
+import com.cloud.utils.Pair;
 
 import junit.framework.TestCase;
 
@@ -234,6 +236,10 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         cachePeriodField.setAccessible(true);
         cachePeriodField.set(apiAccessCheckerSpy, 1);
 
+        Field rpCacheField = DynamicRoleBasedAPIAccessChecker.class.getDeclaredField("rolePermissionsCache");
+        rpCacheField.setAccessible(true);
+        rpCacheField.set(apiAccessCheckerSpy, new LazyCache<Long, Pair<Role, List<RolePermission>>>(32, 1, apiAccessCheckerSpy::getRolePermissions));
+
         final String allowedApiName = "someAllowedApi";
         final RolePermission permission = new RolePermissionVO(1L, allowedApiName, Permission.ALLOW, null);
         Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
@@ -300,6 +306,10 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
             Field cachePeriodField = DynamicRoleBasedAPIAccessChecker.class.getDeclaredField("cachePeriod");
             cachePeriodField.setAccessible(true);
             cachePeriodField.set(apiAccessCheckerSpy, 1);
+
+            Field rpCacheField = DynamicRoleBasedAPIAccessChecker.class.getDeclaredField("rolePermissionsCache");
+            rpCacheField.setAccessible(true);
+            rpCacheField.set(apiAccessCheckerSpy, new LazyCache<Long, Pair<Role, List<RolePermission>>>(32, 1, apiAccessCheckerSpy::getRolePermissions));
 
             final RolePermission permission = new RolePermissionVO(1L, "api1", Permission.ALLOW, null);
             Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
