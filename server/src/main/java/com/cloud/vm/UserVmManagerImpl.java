@@ -2352,11 +2352,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Vm with id " + vm.getUuid() + " is not in the right state");
         }
 
-        if (isVMPartOfAnyCKSCluster(vm)) {
-            throw new UnsupportedServiceException("Cannot recover VM with id = " + vm.getUuid() +
-                    " as it belongs to a CKS cluster. Please remove the VM from the CKS cluster before recovering.");
-        }
-
         if (logger.isDebugEnabled()) {
             logger.debug("Recovering vm {}", vm);
         }
@@ -8764,6 +8759,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     vm, Hypervisor.HypervisorType.External.name());
             throw new InvalidParameterValueException(String.format("Operation not supported for instance: %s",
                     vm.getName()));
+        }
+        if (isVMPartOfAnyCKSCluster(vm)) {
+            throw new UnsupportedServiceException("Cannot restore VM with id = " + vm.getUuid() +
+                    " as it belongs to a CKS cluster. Please remove the VM from the CKS cluster before restoring.");
         }
         _accountMgr.checkAccess(caller, null, true, vm);
 
