@@ -192,4 +192,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     int getVmCountByOfferingNotInDomain(Long serviceOfferingId, List<Long> domainIds);
 
     List<VMInstanceVO> listByIdsIncludingRemoved(List<Long> ids);
+
+    List<Long> listIdsByHostIdForVolumeStats(long hostIds);
 }
