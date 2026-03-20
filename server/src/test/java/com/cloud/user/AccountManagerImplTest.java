@@ -1610,7 +1610,6 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         APIChecker checker = Mockito.mock(APIChecker.class);
         List<String> apis = Arrays.asList("api1", "api2", "api3");
         Mockito.when(checker.isEnabled()).thenReturn(true);
-        Mockito.when(checker.getApisAllowedToAccount(Mockito.any(Account.class), Mockito.anyList())).thenReturn(apis);
 
         Account caller = Mockito.mock(Account.class);
         Mockito.when(caller.getAccountName()).thenReturn("caller");
