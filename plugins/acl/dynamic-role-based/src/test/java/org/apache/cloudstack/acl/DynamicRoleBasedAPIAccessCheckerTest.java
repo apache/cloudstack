@@ -232,7 +232,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         // Enable caching by setting a positive cachePeriod
         Field cachePeriodField = DynamicRoleBasedAPIAccessChecker.class.getDeclaredField("cachePeriod");
         cachePeriodField.setAccessible(true);
-        cachePeriodField.set(apiAccessCheckerSpy, 1L);
+        cachePeriodField.set(apiAccessCheckerSpy, 1);
 
         final String allowedApiName = "someAllowedApi";
         final RolePermission permission = new RolePermissionVO(1L, allowedApiName, Permission.ALLOW, null);
@@ -299,7 +299,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
             // Ensure caching is enabled by setting a positive cachePeriod
             Field cachePeriodField = DynamicRoleBasedAPIAccessChecker.class.getDeclaredField("cachePeriod");
             cachePeriodField.setAccessible(true);
-            cachePeriodField.set(apiAccessCheckerSpy, 1L);
+            cachePeriodField.set(apiAccessCheckerSpy, 1);
 
             final RolePermission permission = new RolePermissionVO(1L, "api1", Permission.ALLOW, null);
             Mockito.when(roleServiceMock.findAllPermissionsBy(Mockito.anyLong())).thenReturn(Collections.singletonList(permission));
