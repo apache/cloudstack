@@ -144,12 +144,12 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
     }
 
     private void handleVmEvent(String vmUuid, boolean isAddDnsRecord) {
-        VMInstanceVO vmInstanceVO = vmInstanceDao.findByUuid(vmUuid);
+        VMInstanceVO vmInstanceVO = vmInstanceDao.findByUuidIncludingRemoved(vmUuid);
         if (vmInstanceVO == null) {
             logger.error("Unable to find Instance with ID: {}", vmUuid);
             return;
         }
-        List<NicVO> vmNics = nicDao.listByVmId(vmInstanceVO.getId());
+        List<NicVO> vmNics = nicDao.listByVmIdIncludingRemoved(vmInstanceVO.getId());
         for (NicVO nic : vmNics) {
             Network network = networkDao.findById(nic.getNetworkId());
             if (network == null || !Network.GuestType.Shared.equals(network.getGuestType())) {
@@ -160,16 +160,10 @@ public class DnsVmLifecycleListener extends ManagerBase implements EventSubscrib
     }
 
     void processEventForDnsRecord(VMInstanceVO vmInstanceVO, Network network, Nic nic, boolean isAddDnsRecord) {
-        String dnsRecordUrl = providerManager.processDnsRecordForInstance(vmInstanceVO, network, nic, isAddDnsRecord);
-        if (dnsRecordUrl != null) {
-            if (isAddDnsRecord) {
-                nicDetailsDao.addDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD, dnsRecordUrl, true);
-            } else {
-                nicDetailsDao.removeDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD);
-            }
+        if (isAddDnsRecord) {
+            providerManager.addDnsRecordForVM(vmInstanceVO, network, nic);
         } else {
-            logger.error("Failure {} DNS record for Instance: {} for Network with ID: {}",
-                    isAddDnsRecord ? "adding" : "removing", vmInstanceVO.getUuid(), network.getUuid());
+            providerManager.deleteDnsRecordForVM(vmInstanceVO, network, nic);
         }
     }
 

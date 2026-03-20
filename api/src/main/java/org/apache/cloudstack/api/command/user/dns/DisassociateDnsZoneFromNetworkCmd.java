@@ -26,7 +26,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
@@ -35,6 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.user.Account;
 
 @APICommand(name = "disassociateDnsZoneFromNetwork",
@@ -44,9 +44,6 @@ import com.cloud.user.Account;
         since = "4.23.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DisassociateDnsZoneFromNetworkCmd extends BaseCmd {
-
-    @Parameter(name = ApiConstants.DNS_ZONE_ID, type = CommandType.UUID, entityType = DnsZoneResponse.class, description = "The ID of the DNS zone")
-    private Long dnsZoneId;
 
     @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class,
@@ -70,11 +67,11 @@ public class DisassociateDnsZoneFromNetworkCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
+        Network network = _entityMgr.findById(Network.class, networkId);
+        if (network != null) {
+            return network.getAccountId();
+        }
         return Account.ACCOUNT_ID_SYSTEM;
-    }
-
-    public Long getDnsZoneId() {
-        return dnsZoneId;
     }
 
     public Long getNetworkId() {

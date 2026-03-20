@@ -75,7 +75,8 @@ public interface DnsProviderManager extends Manager, PluggableService {
 
     boolean disassociateZoneFromNetwork(DisassociateDnsZoneFromNetworkCmd cmd);
 
-    String processDnsRecordForInstance(VirtualMachine instance, Network network, Nic nic, boolean isAdd);
+    void addDnsRecordForVM(VirtualMachine instance, Network network, Nic nic);
+    void deleteDnsRecordForVM(VirtualMachine instance, Network network, Nic nic);
 
     void checkDnsServerPermission(Account caller, DnsServer dnsServer);
 

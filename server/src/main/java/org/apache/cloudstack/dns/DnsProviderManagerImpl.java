@@ -59,6 +59,7 @@ import org.apache.cloudstack.dns.vo.DnsServerVO;
 import org.apache.cloudstack.dns.vo.DnsZoneJoinVO;
 import org.apache.cloudstack.dns.vo.DnsZoneNetworkMapVO;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.dao.DomainDao;
@@ -81,8 +82,10 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
+import com.cloud.vm.NicDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.UserVmDao;
 
 @Component
@@ -110,6 +113,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     DnsServerJoinDao dnsServerJoinDao;
     @Inject
     AccountDao accountDao;
+    @Inject
+    NicDetailsDao nicDetailsDao;
 
     private DnsProvider getProviderByType(DnsProviderType type) {
         if (type == null) {
@@ -649,23 +654,69 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
-    public String processDnsRecordForInstance(VirtualMachine instance, Network network, Nic nic, boolean isAdd) {
-        long networkId = network.getId();
-        DnsZoneNetworkMapVO dnsZoneNetworkMap = dnsZoneNetworkMapDao.findByNetworkId(networkId);
+    public void addDnsRecordForVM(VirtualMachine instance, Network network, Nic nic) {
+        DnsZoneNetworkMapVO dnsZoneNetworkMap = dnsZoneNetworkMapDao.findByNetworkId(network.getId());
         if (dnsZoneNetworkMap == null) {
             logger.warn("No DNS zone is mapped to this network. Please associate a zone first.");
-            return null;
+            return;
         }
         DnsZoneVO dnsZone = dnsZoneDao.findById(dnsZoneNetworkMap.getDnsZoneId());
         if (dnsZone == null || dnsZone.getState() != DnsZone.State.Active) {
-            return null;
+            logger.warn("DNS zone is not available for DNS record setup");
+            return;
         }
         DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
+        if (server == null) {
+            logger.warn("DNS server is not found to process DNS record for Instance: {}", instance.getInstanceName());
+            return;
+        }
         // Construct FQDN Prefix (e.g., "instance-id.dnsZoneName" or "instance-id.subdomain.dnsZoneName")
         String recordName = String.valueOf(instance.getInstanceName());
         if (StringUtils.isNotBlank(dnsZoneNetworkMap.getSubDomain())) {
             recordName = String.join(".", recordName, dnsZoneNetworkMap.getSubDomain(), dnsZone.getName());
         }
+        String dnsRecordUrl = processDnsRecordInProvider(recordName, instance, server, dnsZone, nic, true);
+        if (Strings.isBlank(dnsRecordUrl)) {
+            logger.error("Failed to add DNS record in provider for Instance: {}", instance.getInstanceName());
+            return;
+        }
+        nicDetailsDao.addDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD, dnsRecordUrl, true);
+    }
+
+    @Override
+    public void deleteDnsRecordForVM(VirtualMachine instance, Network network, Nic nic) {
+        String instanceName = instance.getInstanceName();
+        NicDetailVO nicDetailVO = nicDetailsDao.findDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD);
+        if (nicDetailVO == null || Strings.isBlank(nicDetailVO.getValue())) {
+            logger.debug("No DNS record found for Instance: {}", instance.getInstanceName());
+            return;
+        }
+        String dnsRecord = nicDetailVO.getValue();
+        try {
+            DnsZoneNetworkMapVO dnsZoneNetworkMap = dnsZoneNetworkMapDao.findByNetworkId(network.getId());
+            DnsZoneVO dnsZone = null;
+            DnsServerVO dnsServer = null;
+            if (dnsZoneNetworkMap != null) {
+                dnsZone = dnsZoneDao.findById(dnsZoneNetworkMap.getDnsZoneId());
+            }
+            if (dnsZone != null) {
+                dnsServer = dnsServerDao.findById(dnsZone.getDnsServerId());
+            }
+            if (dnsServer != null) {
+                processDnsRecordInProvider(dnsRecord, instance, dnsServer, dnsZone, nic, false);
+            } else {
+                logger.warn("Skipping deletion of DNS record: {} from provider for Instance: {}.", dnsRecord, instanceName);
+            }
+        } catch (Exception ex) {
+            logger.error("Failed deleting DNS record: {} for Instance: {}, proceeding with DB cleanup.", dnsRecord, instanceName);
+        } finally {
+            nicDetailsDao.removeDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD);
+            logger.debug("Removed DNS record from DB for Instance: {}, NIC ID: {}", instanceName, nic.getUuid());
+        }
+    }
+
+    private String processDnsRecordInProvider(String recordName, VirtualMachine instance, DnsServer server, DnsZone dnsZone,
+                                              Nic nic, boolean isAdd) {
 
         try {
             DnsProvider provider = getProviderByType(server.getProviderType());
@@ -695,7 +746,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             logger.error(
                     "Failed to {} DNS record for Instance {} in zone {}",
                     isAdd ? "register" : "remove",
-                    instance.getHostName(),
+                    instance.getInstanceName(),
                     dnsZone.getName(),
                     ex
             );
