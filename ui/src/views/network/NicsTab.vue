@@ -218,8 +218,7 @@
           <p class="modal-form__label">{{ $t('label.secondaryip.description') }}</p>
           <a-input
             :placeholder="$t('label.new.secondaryip.description.description')"
-            v-model:value="newSecondaryIpDescription"
-            v-focus="editNicResource.type!=='Shared'"></a-input>
+            v-model:value="newSecondaryIpDescription"></a-input>
         </div>
 
         <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
