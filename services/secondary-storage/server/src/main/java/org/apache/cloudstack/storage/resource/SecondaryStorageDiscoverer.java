@@ -294,14 +294,12 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     private void associateTemplatesToZone(long hostId, long dcId) {
         VMTemplateZoneVO tmpltZone;
 
-        List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
-        for (VMTemplateVO vt : allTemplates) {
-            if (vt.isCrossZones()) {
-                tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
-                if (tmpltZone == null) {
-                    VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
-                    _vmTemplateZoneDao.persist(vmTemplateZone);
-                }
+        List<VMTemplateVO> crossZoneTemplates = _vmTemplateDao.listAllCrossZoneTemplates();
+        for (VMTemplateVO vt : crossZoneTemplates) {
+            tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
+            if (tmpltZone == null) {
+                VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
+                _vmTemplateZoneDao.persist(vmTemplateZone);
             }
         }
     }
