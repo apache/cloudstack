@@ -19,18 +19,16 @@ package com.cloud.upgrade.dao;
 import java.io.InputStream;
 import java.sql.Connection;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-
-public class Upgrade42020to42030 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
+public class Upgrade42010to42020 extends DbUpgradeAbstractImpl implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[]{"4.20.2.0", "4.20.3.0"};
+        return new String[]{"4.20.1.0", "4.20.2.0"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "4.20.3.0";
+        return "4.20.2.0";
     }
 
     @Override
@@ -40,13 +38,7 @@ public class Upgrade42020to42030 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-42020to42030.sql";
-        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
-        if (script == null) {
-            throw new CloudRuntimeException("Unable to find " + scriptFile);
-        }
-
-        return new InputStream[] {script};
+        return new InputStream[0];
     }
 
     @Override
@@ -56,9 +48,5 @@ public class Upgrade42020to42030 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     public InputStream[] getCleanupScripts() {
         return new InputStream[0];
-    }
-
-    @Override
-    public void updateSystemVmTemplates(Connection conn) {
     }
 }

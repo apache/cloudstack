@@ -51,6 +51,8 @@ import com.cloud.upgrade.dao.Upgrade461to470;
 import com.cloud.upgrade.dao.Upgrade470to471;
 import com.cloud.upgrade.dao.Upgrade471to480;
 import com.cloud.upgrade.dao.Upgrade480to481;
+import com.cloud.upgrade.dao.Upgrade42010to42020;
+import com.cloud.upgrade.dao.Upgrade42020to42030;
 import com.cloud.upgrade.dao.Upgrade490to4910;
 
 import com.cloud.utils.db.TransactionLegacy;
@@ -358,6 +360,42 @@ public class DatabaseUpgradeCheckerTest {
 
         assertEquals(upgrades.length + 1, upgradesFromSecurityReleaseToNext.length);
         assertTrue(upgradesFromSecurityReleaseToNext[upgradesFromSecurityReleaseToNext.length - 1] instanceof NoopDbUpgrade);
+    }
+
+    @Test
+    public void testCalculateUpgradePath42010to42030() {
+        // Regression test for: missing 4.20.1.0 node in upgrade hierarchy
+        // caused direct 4.20.1.0 -> 4.20.3.0 upgrade to re-run Upgrade42000to42010
+        // and fail with duplicate key on configuration_group.name='Usage Server'
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.20.1.0");
+        assertNotNull(dbVersion);
+
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.20.3.0");
+        assertNotNull(currentVersion);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+
+        assertNotNull(upgrades);
+        assertEquals("Direct upgrade from 4.20.1.0 to 4.20.3.0 should have exactly 2 steps", 2, upgrades.length);
+        assertTrue("First step should be Upgrade42010to42020", upgrades[0] instanceof Upgrade42010to42020);
+        assertTrue("Second step should be Upgrade42020to42030", upgrades[1] instanceof Upgrade42020to42030);
+    }
+
+    @Test
+    public void testCalculateUpgradePath42020to42030() {
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.20.2.0");
+        assertNotNull(dbVersion);
+
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.20.3.0");
+        assertNotNull(currentVersion);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+
+        assertNotNull(upgrades);
+        assertEquals("Upgrade from 4.20.2.0 to 4.20.3.0 should have exactly 1 step", 1, upgrades.length);
+        assertTrue("Only step should be Upgrade42020to42030", upgrades[0] instanceof Upgrade42020to42030);
     }
 
     @Test
