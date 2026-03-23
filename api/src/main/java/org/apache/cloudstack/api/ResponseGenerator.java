@@ -609,6 +609,4 @@ public interface ResponseGenerator {
     ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair);
 
     ListResponse<BaseRolePermissionResponse> createKeypairPermissionsResponse(List<ApiKeyPairPermission> permissions);
-
-    KMSKeyResponse createKMSKeyResponse(KMSKey kmsKey);
 }

@@ -318,7 +318,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         Account targetAccount = accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(),
                 cmd.getProjectId());
 
-        KeyPurpose keyPurpose = parseKeyPurpose(cmd.getPurpose());
+        KeyPurpose keyPurpose = parseKeyPurpose("volume");
 
         int bits = cmd.getKeyBits();
         if (bits != 128 && bits != 192 && bits != 256) {
@@ -349,7 +349,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         response.setId(kmsKey.getUuid());
         response.setName(kmsKey.getName());
         response.setDescription(kmsKey.getDescription());
-        response.setPurpose(kmsKey.getPurpose().getName());
         response.setAlgorithm(kmsKey.getAlgorithm());
         response.setKeyBits(kmsKey.getKeyBits());
         response.setEnabled(kmsKey.isEnabled());
@@ -482,7 +481,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         SearchCriteria<KMSKeyVO> sc = searchBuilder.create();
         accountManager.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
-        KeyPurpose keyPurpose = parseKeyPurpose(cmd.getPurpose());
+        KeyPurpose keyPurpose = parseKeyPurpose("volume");
         if (cmd.getId() != null) {
             sc.setParameters("id", cmd.getId());
         }

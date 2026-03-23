@@ -5802,48 +5802,4 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
         response.setResponses(permissionResponses);
         return response;
     }
-
-    @Override
-    public KMSKeyResponse createKMSKeyResponse(KMSKey kmsKey) {
-        KMSKeyResponse response = new KMSKeyResponse();
-        response.setId(kmsKey.getUuid());
-        response.setName(kmsKey.getName());
-        response.setDescription(kmsKey.getDescription());
-        response.setPurpose(kmsKey.getPurpose().getName());
-        response.setAccountId(String.valueOf(kmsKey.getAccountId()));
-        response.setDomainId(String.valueOf(kmsKey.getDomainId()));
-        response.setZoneId(String.valueOf(kmsKey.getZoneId()));
-        response.setProvider(kmsKey.getProviderName());
-        response.setAlgorithm(kmsKey.getAlgorithm());
-        response.setKeyBits(kmsKey.getKeyBits());
-        response.setState(kmsKey.getState().toString());
-        response.setCreated(kmsKey.getCreated());
-
-        // Set account name
-        Account account = ApiDBUtils.findAccountById(kmsKey.getAccountId());
-        if (account != null) {
-            response.setAccountName(account.getAccountName());
-        }
-
-        // Set domain name
-        Domain domain = ApiDBUtils.findDomainById(kmsKey.getDomainId());
-        if (domain != null) {
-            response.setDomainName(domain.getName());
-        }
-
-        // Set zone name
-        DataCenter zone = ApiDBUtils.findZoneById(kmsKey.getZoneId());
-        if (zone != null) {
-            response.setZoneName(zone.getName());
-        }
-
-        // Set KEK label (admin only)
-        Account caller = CallContext.current().getCallingAccount();
-        if (caller != null && (caller.getType() == Account.Type.ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN)) {
-            response.setKekLabel(kmsKey.getKekLabel());
-        }
-
-        response.setObjectName("kmskey");
-        return response;
-    }
 }

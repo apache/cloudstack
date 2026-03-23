@@ -54,11 +54,6 @@ public class ListKMSKeysCmd extends BaseListProjectAndAccountResourcesCmd implem
                description = "List KMS key by UUID")
     private Long id;
 
-    @Parameter(name = ApiConstants.PURPOSE,
-               type = CommandType.STRING,
-               description = "Filter by purpose: volume, tls")
-    private String purpose;
-
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
@@ -78,10 +73,6 @@ public class ListKMSKeysCmd extends BaseListProjectAndAccountResourcesCmd implem
 
     public Long getId() {
         return id;
-    }
-
-    public String getPurpose() {
-        return purpose;
     }
 
     public Long getZoneId() {

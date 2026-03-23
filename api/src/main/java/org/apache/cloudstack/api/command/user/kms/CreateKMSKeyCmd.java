@@ -63,11 +63,6 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
                description = "Description of the KMS key")
     private String description;
 
-    @Parameter(name = ApiConstants.PURPOSE,
-               type = CommandType.STRING,
-               description = "Purpose of the key: volume, tls. (default: volume)")
-    private String purpose;
-
     @Parameter(name = ApiConstants.ZONE_ID,
                required = true,
                type = CommandType.UUID,
@@ -110,10 +105,6 @@ public class CreateKMSKeyCmd extends BaseCmd implements UserCmd {
 
     public String getDescription() {
         return description;
-    }
-
-    public String getPurpose() {
-        return purpose == null ? "volume" : purpose;
     }
 
     public Long getZoneId() {

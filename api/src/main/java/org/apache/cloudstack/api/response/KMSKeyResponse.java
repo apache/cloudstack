@@ -44,10 +44,6 @@ public class KMSKeyResponse extends BaseResponse implements ControlledViewEntity
     @Param(description = "the description of the key")
     private String description;
 
-    @SerializedName(ApiConstants.PURPOSE)
-    @Param(description = "the purpose of the key (VOLUME_ENCRYPTION, TLS_CERT)")
-    private String purpose;
-
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account owning the key")
     private String accountName;
@@ -138,14 +134,6 @@ public class KMSKeyResponse extends BaseResponse implements ControlledViewEntity
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getPurpose() {
-        return purpose;
-    }
-
-    public void setPurpose(String purpose) {
-        this.purpose = purpose;
     }
 
     public String getAccountName() {
