@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.api.response.ConsoleSessionResponse;
+import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.consoleproxy.ConsoleSession;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
@@ -156,6 +157,7 @@ import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.gui.theme.GuiThemeJoin;
+import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
@@ -281,7 +283,8 @@ public interface ResponseGenerator {
 
     List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVm... userVms);
 
-    List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVm... userVms);
+    List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details,
+            UserVm... userVms);
 
     SystemVmResponse createSystemVmResponse(VirtualMachine systemVM);
 
@@ -307,11 +310,13 @@ public interface ResponseGenerator {
 
     LoadBalancerResponse createLoadBalancerResponse(LoadBalancer loadBalancer);
 
-    LBStickinessResponse createLBStickinessPolicyResponse(List<? extends StickinessPolicy> stickinessPolicies, LoadBalancer lb);
+    LBStickinessResponse createLBStickinessPolicyResponse(List<? extends StickinessPolicy> stickinessPolicies,
+            LoadBalancer lb);
 
     LBStickinessResponse createLBStickinessPolicyResponse(StickinessPolicy stickinessPolicy, LoadBalancer lb);
 
-    LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies, LoadBalancer lb);
+    LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies,
+            LoadBalancer lb);
 
     LBHealthCheckResponse createLBHealthCheckPolicyResponse(HealthCheckPolicy healthcheckPolicy, LoadBalancer lb);
 
@@ -319,7 +324,8 @@ public interface ResponseGenerator {
 
     PodResponse createMinimalPodResponse(Pod pod);
 
-    ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities, Boolean showResourceIcon);
+    ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities,
+            Boolean showResourceIcon);
 
     DataCenterGuestIpv6PrefixResponse createDataCenterGuestIpv6PrefixResponse(DataCenterGuestIpv6Prefix prefix);
 
@@ -359,7 +365,8 @@ public interface ResponseGenerator {
 
     List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long zoneId, boolean readyOnly);
 
-    List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId,
+            boolean readyOnly);
 
     SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> securityRules);
 
@@ -378,14 +385,15 @@ public interface ResponseGenerator {
     TemplateResponse createTemplateUpdateResponse(ResponseView view, VirtualMachineTemplate result);
 
     List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result,
-                                                   Long zoneId, boolean readyOnly);
+            Long zoneId, boolean readyOnly);
 
     List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result,
-                                                   List<Long> zoneIds, boolean readyOnly);
+            List<Long> zoneIds, boolean readyOnly);
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 
-    TemplatePermissionsResponse createTemplatePermissionsResponse(ResponseView view, List<String> accountNames, Long id);
+    TemplatePermissionsResponse createTemplatePermissionsResponse(ResponseView view, List<String> accountNames,
+            Long id);
 
     AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd);
 
@@ -399,7 +407,8 @@ public interface ResponseGenerator {
 
     Long getSecurityGroupId(String groupName, long accountId);
 
-    List<TemplateResponse> createIsoResponses(ResponseView view, VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createIsoResponses(ResponseView view, VirtualMachineTemplate iso, Long zoneId,
+            boolean readyOnly);
 
     ProjectResponse createProjectResponse(Project project);
 
@@ -500,13 +509,15 @@ public interface ResponseGenerator {
 
     GuestOsMappingResponse createGuestOSMappingResponse(GuestOSHypervisor osHypervisor);
 
-    HypervisorGuestOsNamesResponse createHypervisorGuestOSNamesResponse(List<Pair<String, String>> hypervisorGuestOsNames);
+    HypervisorGuestOsNamesResponse createHypervisorGuestOSNamesResponse(
+            List<Pair<String, String>> hypervisorGuestOsNames);
 
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
 
     UsageRecordResponse createUsageResponse(Usage usageRecord);
 
-    UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap, boolean oldFormat);
+    UsageRecordResponse createUsageResponse(Usage usageRecord,
+            Map<String, Set<ResourceTagResponse>> resourceTagResponseMap, boolean oldFormat);
 
     public Map<String, Set<ResourceTagResponse>> getUsageResourceTags();
 
@@ -518,7 +529,8 @@ public interface ResponseGenerator {
 
     public NicResponse createNicResponse(Nic result);
 
-    ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances);
+    ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb,
+            Map<Ip, UserVm> lbInstances);
 
     AffinityGroupResponse createAffinityGroupResponse(AffinityGroup group);
 
@@ -544,9 +556,12 @@ public interface ResponseGenerator {
 
     ManagementServerResponse createManagementResponse(ManagementServerHost mgmt);
 
-    List<RouterHealthCheckResultResponse> createHealthCheckResponse(VirtualMachine router, List<RouterHealthCheckResult> healthCheckResults);
+    List<RouterHealthCheckResultResponse> createHealthCheckResponse(VirtualMachine router,
+            List<RouterHealthCheckResult> healthCheckResults);
 
-    RollingMaintenanceResponse createRollingMaintenanceResponse(Boolean success, String details, List<RollingMaintenanceManager.HostUpdated> hostsUpdated, List<RollingMaintenanceManager.HostSkipped> hostsSkipped);
+    RollingMaintenanceResponse createRollingMaintenanceResponse(Boolean success, String details,
+            List<RollingMaintenanceManager.HostUpdated> hostsUpdated,
+            List<RollingMaintenanceManager.HostSkipped> hostsSkipped);
 
     ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon);
 
@@ -556,11 +571,14 @@ public interface ResponseGenerator {
 
     DirectDownloadCertificateResponse createDirectDownloadCertificateResponse(DirectDownloadCertificate certificate);
 
-    List<DirectDownloadCertificateHostStatusResponse> createDirectDownloadCertificateHostMapResponse(List<DirectDownloadCertificateHostMap> hostMappings);
+    List<DirectDownloadCertificateHostStatusResponse> createDirectDownloadCertificateHostMapResponse(
+            List<DirectDownloadCertificateHostMap> hostMappings);
 
-    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(DirectDownloadManager.HostCertificateStatus status);
+    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(
+            DirectDownloadManager.HostCertificateStatus status);
 
-    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateProvisionResponse(Long certificateId, Long hostId, Pair<Boolean, String> result);
+    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateProvisionResponse(Long certificateId,
+            Long hostId, Pair<Boolean, String> result);
 
     FirewallResponse createIpv6FirewallRuleResponse(FirewallRule acl);
 

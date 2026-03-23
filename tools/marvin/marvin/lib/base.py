@@ -567,7 +567,8 @@ class VirtualMachine:
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
                properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
                userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None,
-               leaseduration=None, leaseexpiryaction=None, volumeid=None, snapshotid=None):
+               leaseduration=None, leaseexpiryaction=None, volumeid=None, snapshotid=None,
+               rootdiskkmskeyid=None):
 
         """Create the instance"""
 
@@ -743,6 +744,9 @@ class VirtualMachine:
 
         if snapshotid:
             cmd.snapshotid = snapshotid
+
+        if rootdiskkmskeyid:
+            cmd.rootdiskkmskeyid = rootdiskkmskeyid
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -8109,3 +8113,86 @@ class SslCertificate:
         cmd = deleteSslCert.deleteSslCertCmd()
         cmd.id = self.id
         apiclient.deleteSslCert(cmd)
+
+
+class HSMProfile:
+    """Manage HSM Profile life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, **kwargs):
+        """Add HSM Profile"""
+        cmd = addHSMProfile.addHSMProfileCmd()
+        cmd.name = name
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return HSMProfile(apiclient.addHSMProfile(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List HSM Profiles"""
+        cmd = listHSMProfiles.listHSMProfilesCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return apiclient.listHSMProfiles(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update HSM Profile"""
+        cmd = updateHSMProfile.updateHSMProfileCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateHSMProfile(cmd)
+
+    def delete(self, apiclient):
+        """Delete HSM Profile"""
+        cmd = deleteHSMProfile.deleteHSMProfileCmd()
+        cmd.id = self.id
+        apiclient.deleteHSMProfile(cmd)
+
+
+class KMSKey:
+    """Manage KMS Key life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, name, zoneid, hsmprofileid, **kwargs):
+        """Create KMS Key"""
+        cmd = createKMSKey.createKMSKeyCmd()
+        cmd.name = name
+        cmd.zoneid = zoneid
+        cmd.hsmprofileid = hsmprofileid
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return KMSKey(apiclient.createKMSKey(cmd).__dict__)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List KMS Keys"""
+        cmd = listKMSKeys.listKMSKeysCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
+            cmd.listall = True
+        return apiclient.listKMSKeys(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Update KMS Key"""
+        cmd = updateKMSKey.updateKMSKeyCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateKMSKey(cmd)
+
+    def delete(self, apiclient):
+        """Delete KMS Key"""
+        cmd = deleteKMSKey.deleteKMSKeyCmd()
+        cmd.id = self.id
+        apiclient.deleteKMSKey(cmd)
+
+    def rotate(self, apiclient, **kwargs):
+        """Rotate KMS Key (creates a new KEK version)"""
+        cmd = rotateKMSKey.rotateKMSKeyCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.rotateKMSKey(cmd)

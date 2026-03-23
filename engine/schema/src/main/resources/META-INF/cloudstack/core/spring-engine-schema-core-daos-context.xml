@@ -312,4 +312,9 @@
   <bean id="importVMTaskDaoImpl" class="com.cloud.vm.dao.ImportVMTaskDaoImpl" />
   <bean id="apiKeyPairDaoImpl" class="org.apache.cloudstack.acl.dao.ApiKeyPairDaoImpl" />
   <bean id="apiKeyPairPermissionsDaoImpl" class="org.apache.cloudstack.acl.dao.ApiKeyPairPermissionsDaoImpl" />
+  <bean id="kmsKeyDaoImpl" class="org.apache.cloudstack.kms.dao.KMSKeyDaoImpl" />
+  <bean id="kmsKekVersionDaoImpl" class="org.apache.cloudstack.kms.dao.KMSKekVersionDaoImpl" />
+  <bean id="kmsWrappedKeyDaoImpl" class="org.apache.cloudstack.kms.dao.KMSWrappedKeyDaoImpl" />
+  <bean id="hsmProfileDaoImpl" class="org.apache.cloudstack.kms.dao.HSMProfileDaoImpl" />
+  <bean id="hsmProfileDetailsDaoImpl" class="org.apache.cloudstack.kms.dao.HSMProfileDetailsDaoImpl" />
 </beans>
