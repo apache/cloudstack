@@ -310,10 +310,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
         boolean dbResult = Transaction.execute((TransactionCallback<Boolean>) status -> {
             DnsZoneNetworkMapVO networkMapVO = dnsZoneNetworkMapDao.findByZoneId(zoneId);
+            DnsProvider provider = getProviderByType(server.getProviderType());
+            // Remove DNS records from nic_details if there are any
             if (networkMapVO != null) {
-                // Remove DNS records from nic_details if there are any
                 try {
-                    DnsProvider provider = getProviderByType(server.getProviderType());
                     List<DnsRecord> records = provider.listRecords(server, dnsZone);
                     if (CollectionUtils.isNotEmpty(records)) {
                         List<String> dnsRecordNames = records.stream().map(DnsRecord::getName).filter(Objects::nonNull)
@@ -324,18 +324,18 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 } catch (Exception ex) {
                     logger.warn("Failed to fetch DNS records for dnsZone: {}, perform manual cleanup.", dnsZoneName, ex);
                 }
-                // Remove DNS zone from provider and cleanup DB
-                try {
-                    DnsProvider provider = getProviderByType(server.getProviderType());
-                    provider.deleteZone(server, dnsZone);
-                    logger.debug("Deleted DNS zone: {} from provider", dnsZoneName);
-                } catch (DnsNotFoundException ex) {
-                    logger.warn("DNS zone: {} is not present in the provider, proceeding with cleanup", dnsZoneName);
-                } catch (Exception ex) {
-                    logger.error("Failed to delete DNS zone from provider", ex);
-                    throw new CloudRuntimeException(String.format("Failed to delete DNS zone: %s.", dnsZoneName));
-                }
                 dnsZoneNetworkMapDao.removeNetworkMappingByZoneId(zoneId);
+            }
+
+            // Remove DNS zone from provider and cleanup DB
+            try {
+                provider.deleteZone(server, dnsZone);
+                logger.debug("Deleted DNS zone: {} from provider", dnsZoneName);
+            } catch (DnsNotFoundException ex) {
+                logger.warn("DNS zone: {} is not present in the provider, proceeding with cleanup", dnsZoneName);
+            } catch (Exception ex) {
+                logger.error("Failed to delete DNS zone from provider", ex);
+                throw new CloudRuntimeException(String.format("Failed to delete DNS zone: %s.", dnsZoneName));
             }
             return dnsZoneDao.remove(zoneId);
         });

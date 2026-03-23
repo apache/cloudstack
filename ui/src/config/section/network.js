@@ -1565,6 +1565,7 @@ export default {
           message: 'message.action.delete.dns.server',
           dataView: true,
           popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DeleteDnsServer.vue'))),
           show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
           groupAction: false,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
@@ -1615,9 +1616,9 @@ export default {
           message: 'message.action.delete.dns.zone',
           dataView: true,
           popup: true,
-          groupAction: false,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DeleteDnsZone.vue'))),
           show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          groupAction: false
         }
       ]
     }
