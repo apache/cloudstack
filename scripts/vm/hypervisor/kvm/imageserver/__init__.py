@@ -18,7 +18,11 @@
 """
 CloudStack image server — HTTP server backed by NBD over Unix socket or a local file.
 
-Supports two backends (configured per-transfer via JSON config):
+Transfer configs are registered/unregistered by the cloudstack-agent via a
+Unix domain control socket (default: /var/run/cloudstack/image-server.sock)
+and stored in-memory for the lifetime of the server process.
+
+Supports two backends (configured per-transfer at registration time):
 - nbd: proxy to an NBD server via Unix socket; supports range reads/writes
   (GET/PUT/PATCH), extents, zero, flush.
 - file: read/write a local qcow2/raw file; full PUT only, GET with optional

@@ -1100,10 +1100,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find nasbackup.sh");
         }
 
-        imageServerPath = Script.findScript(kvmScriptsDir, "image_server.py");
-        if (imageServerPath == null) {
-            throw new ConfigurationException("Unable to find image_server.py");
+        String imageServerMain = Script.findScript(kvmScriptsDir, "imageserver/__main__.py");
+        if (imageServerMain == null) {
+            throw new ConfigurationException("Unable to find imageserver package");
         }
+        imageServerPath = new File(imageServerMain).getParent();
 
         createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
         if (createTmplPath == null) {

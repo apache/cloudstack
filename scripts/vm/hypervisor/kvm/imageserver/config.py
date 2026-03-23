@@ -15,13 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import json
 import logging
 import os
 import threading
-from typing import Any, Dict, Optional, Tuple
-
-from .constants import CFG_DIR
+from typing import Any, Dict, Optional
 
 
 def safe_transfer_id(image_id: str) -> Optional[str]:
@@ -40,97 +37,48 @@ def safe_transfer_id(image_id: str) -> Optional[str]:
     return image_id
 
 
-class TransferConfigLoader:
+class TransferRegistry:
     """
-    Loads and caches per-image transfer configuration from JSON files.
+    Thread-safe in-memory registry for active image transfer configurations.
 
-    CloudStack writes a JSON file at <cfg_dir>/<transferId> with:
-      - NBD backend: {"backend": "nbd", "socket": "...", "export": "vda", "export_bitmap": "..."}
-      - File backend: {"backend": "file", "file": "/path/to/image.qcow2"}
+    The cloudstack-agent registers/unregisters transfers via the Unix domain
+    control socket.  The HTTP handler looks up configs through get().
     """
 
-    def __init__(self, cfg_dir: str = CFG_DIR):
-        self._cfg_dir = cfg_dir
-        self._cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
-        self._cache_guard = threading.Lock()
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._transfers: Dict[str, Dict[str, Any]] = {}
 
-    @property
-    def cfg_dir(self) -> str:
-        return self._cfg_dir
+    def register(self, transfer_id: str, config: Dict[str, Any]) -> bool:
+        safe_id = safe_transfer_id(transfer_id)
+        if safe_id is None:
+            logging.error("register rejected invalid transfer_id=%r", transfer_id)
+            return False
+        with self._lock:
+            self._transfers[safe_id] = config
+            logging.info("registered transfer_id=%s active=%d", safe_id, len(self._transfers))
+            return True
 
-    def load(self, image_id: str) -> Optional[Dict[str, Any]]:
-        safe_id = safe_transfer_id(image_id)
+    def unregister(self, transfer_id: str) -> int:
+        """Remove a transfer and return the number of remaining active transfers."""
+        safe_id = safe_transfer_id(transfer_id)
+        if safe_id is None:
+            logging.error("unregister rejected invalid transfer_id=%r", transfer_id)
+            with self._lock:
+                return len(self._transfers)
+        with self._lock:
+            self._transfers.pop(safe_id, None)
+            remaining = len(self._transfers)
+            logging.info("unregistered transfer_id=%s active=%d", safe_id, remaining)
+            return remaining
+
+    def get(self, transfer_id: str) -> Optional[Dict[str, Any]]:
+        safe_id = safe_transfer_id(transfer_id)
         if safe_id is None:
             return None
+        with self._lock:
+            return self._transfers.get(safe_id)
 
-        cfg_path = os.path.join(self._cfg_dir, safe_id)
-        try:
-            st = os.stat(cfg_path)
-        except FileNotFoundError:
-            return None
-        except OSError as e:
-            logging.error("cfg stat failed image_id=%s err=%r", image_id, e)
-            return None
-
-        with self._cache_guard:
-            cached = self._cache.get(safe_id)
-            if cached is not None:
-                cached_mtime, cached_cfg = cached
-                if float(st.st_mtime) == float(cached_mtime):
-                    return cached_cfg
-
-        try:
-            with open(cfg_path, "rb") as f:
-                raw = f.read(4096)
-        except OSError as e:
-            logging.error("cfg read failed image_id=%s err=%r", image_id, e)
-            return None
-
-        try:
-            obj = json.loads(raw.decode("utf-8"))
-        except Exception as e:
-            logging.error("cfg parse failed image_id=%s err=%r", image_id, e)
-            return None
-
-        if not isinstance(obj, dict):
-            logging.error("cfg invalid type image_id=%s type=%s", image_id, type(obj).__name__)
-            return None
-
-        backend = obj.get("backend")
-        if backend is None:
-            backend = "nbd"
-        if not isinstance(backend, str):
-            logging.error("cfg invalid backend type image_id=%s", image_id)
-            return None
-        backend = backend.lower()
-        if backend not in ("nbd", "file"):
-            logging.error("cfg unsupported backend image_id=%s backend=%s", image_id, backend)
-            return None
-
-        if backend == "file":
-            file_path = obj.get("file")
-            if not isinstance(file_path, str) or not file_path.strip():
-                logging.error("cfg missing/invalid file path for file backend image_id=%s", image_id)
-                return None
-            cfg: Dict[str, Any] = {"backend": "file", "file": file_path.strip()}
-        else:
-            socket_path = obj.get("socket")
-            export = obj.get("export")
-            export_bitmap = obj.get("export_bitmap")
-            if not isinstance(socket_path, str) or not socket_path.strip():
-                logging.error("cfg missing/invalid socket path for nbd backend image_id=%s", image_id)
-                return None
-            socket_path = socket_path.strip()
-            if export is not None and (not isinstance(export, str) or not export):
-                logging.error("cfg missing/invalid export image_id=%s", image_id)
-                return None
-            cfg = {
-                "backend": "nbd",
-                "socket": socket_path,
-                "export": export,
-                "export_bitmap": export_bitmap,
-            }
-
-        with self._cache_guard:
-            self._cache[safe_id] = (float(st.st_mtime), cfg)
-        return cfg
+    def active_count(self) -> int:
+        with self._lock:
+            return len(self._transfers)

@@ -17,18 +17,12 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
-
 import org.apache.cloudstack.backup.FinalizeImageTransferCommand;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.hypervisor.kvm.resource.ImageServerControlSocket;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
@@ -54,9 +48,8 @@ public class LibvirtFinalizeImageTransferCommandWrapper extends CommandWrapper<F
         checkScript.add(String.format("systemctl is-active --quiet %s", unitName));
         String checkResult = checkScript.execute();
         if (checkResult != null) {
-            logger.info(String.format("Image server not running, resetting failed state"));
+            logger.info("Image server not running, resetting failed state");
             resetService(unitName);
-            // Still try to remove firewall rule in case it exists
             removeFirewallRule(imageServerPort);
             return true;
         }
@@ -66,7 +59,7 @@ public class LibvirtFinalizeImageTransferCommandWrapper extends CommandWrapper<F
         stopScript.add(String.format("systemctl stop %s", unitName));
         stopScript.execute();
         resetService(unitName);
-        logger.info(String.format("Image server %s stopped", unitName));
+        logger.info("Image server {} stopped", unitName);
 
         removeFirewallRule(imageServerPort);
 
@@ -80,9 +73,9 @@ public class LibvirtFinalizeImageTransferCommandWrapper extends CommandWrapper<F
         removeScript.add(String.format("iptables -D INPUT %s || true", rule));
         String result = removeScript.execute();
         if (result != null && !result.isEmpty() && !result.contains("iptables: Bad rule")) {
-            logger.debug(String.format("Firewall rule removal result for port %d: %s", port, result));
+            logger.debug("Firewall rule removal result for port {}: {}", port, result);
         } else {
-            logger.info(String.format("Firewall rule removed for port %d (or did not exist)", port));
+            logger.info("Firewall rule removed for port {} (or did not exist)", port);
         }
     }
 
@@ -92,17 +85,15 @@ public class LibvirtFinalizeImageTransferCommandWrapper extends CommandWrapper<F
             return new Answer(cmd, false, "transferId is empty.");
         }
 
-        final File transferFile = new File("/tmp/imagetransfer", transferId);
-        if (transferFile.exists() && !transferFile.delete()) {
-            return new Answer(cmd, false, "Failed to delete transfer config file: " + transferFile.getAbsolutePath());
+        int activeTransfers = ImageServerControlSocket.unregisterTransfer(transferId);
+        if (activeTransfers < 0) {
+            logger.warn("Could not reach image server to unregister transfer {}; assuming server is down", transferId);
+            stopImageServer();
+            return new Answer(cmd, true, "Image transfer finalized (server unreachable, forced stop).");
         }
 
-        try (Stream<Path> stream = Files.list(Paths.get("/tmp/imagetransfer"))) {
-            if (!stream.findAny().isPresent()) {
-                stopImageServer();
-            }
-        } catch (IOException e) {
-            logger.warn("Failed to list /tmp/imagetransfer", e);
+        if (activeTransfers == 0) {
+            stopImageServer();
         }
 
         return new Answer(cmd, true, "Image transfer finalized.");

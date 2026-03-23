@@ -25,7 +25,7 @@ from urllib.parse import parse_qs
 
 from .backends import NbdBackend, create_backend
 from .concurrency import ConcurrencyManager
-from .config import TransferConfigLoader
+from .config import TransferRegistry
 from .constants import CHUNK_SIZE, MAX_PARALLEL_READS, MAX_PARALLEL_WRITES
 from .util import is_fallback_dirty_response, json_bytes, now_s
 
@@ -38,7 +38,7 @@ class Handler(BaseHTTPRequestHandler):
     All backend I/O is delegated to ImageBackend implementations via the
     create_backend() factory.
 
-    Class-level attributes _concurrency and _config_loader are injected
+    Class-level attributes _concurrency and _registry are injected
     by the server at startup (see server.py / make_handler()).
     """
 
@@ -46,7 +46,7 @@ class Handler(BaseHTTPRequestHandler):
     server_protocol = "HTTP/1.1"
 
     _concurrency: ConcurrencyManager
-    _config_loader: TransferConfigLoader
+    _registry: TransferRegistry
 
     _CONTENT_RANGE_RE = re.compile(r"^bytes\s+(\d+)-(\d+)/(?:\*|\d+)$")
 
@@ -197,7 +197,7 @@ class Handler(BaseHTTPRequestHandler):
         return parse_qs(query, keep_blank_values=True)
 
     def _image_cfg(self, image_id: str) -> Optional[Dict[str, Any]]:
-        return self._config_loader.load(image_id)
+        return self._registry.get(image_id)
 
     # ------------------------------------------------------------------
     # HTTP verb dispatchers

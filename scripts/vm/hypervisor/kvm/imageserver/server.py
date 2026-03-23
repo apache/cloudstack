@@ -16,7 +16,11 @@
 # under the License.
 
 import argparse
+import json
 import logging
+import os
+import socket
+import threading
 from http.server import HTTPServer
 from socketserver import ThreadingMixIn
 from typing import Type
@@ -28,14 +32,14 @@ except ImportError:
         pass
 
 from .concurrency import ConcurrencyManager
-from .config import TransferConfigLoader
-from .constants import CFG_DIR, MAX_PARALLEL_READS, MAX_PARALLEL_WRITES
+from .config import TransferRegistry
+from .constants import CONTROL_SOCKET, MAX_PARALLEL_READS, MAX_PARALLEL_WRITES
 from .handler import Handler
 
 
 def make_handler(
     concurrency: ConcurrencyManager,
-    config_loader: TransferConfigLoader,
+    registry: TransferRegistry,
 ) -> Type[Handler]:
     """
     Create a Handler subclass with injected dependencies.
@@ -46,9 +50,118 @@ def make_handler(
 
     class ConfiguredHandler(Handler):
         _concurrency = concurrency
-        _config_loader = config_loader
+        _registry = registry
 
     return ConfiguredHandler
+
+
+def _validate_config(obj: dict) -> dict:
+    """
+    Validate and normalize a transfer config dict received over the control
+    socket.  Returns the cleaned config or raises ValueError.
+    """
+    backend = obj.get("backend")
+    if backend is None:
+        backend = "nbd"
+    if not isinstance(backend, str):
+        raise ValueError("invalid backend type")
+    backend = backend.lower()
+    if backend not in ("nbd", "file"):
+        raise ValueError(f"unsupported backend: {backend}")
+
+    if backend == "file":
+        file_path = obj.get("file")
+        if not isinstance(file_path, str) or not file_path.strip():
+            raise ValueError("missing/invalid file path for file backend")
+        return {"backend": "file", "file": file_path.strip()}
+
+    socket_path = obj.get("socket")
+    export = obj.get("export")
+    export_bitmap = obj.get("export_bitmap")
+    if not isinstance(socket_path, str) or not socket_path.strip():
+        raise ValueError("missing/invalid socket path for nbd backend")
+    if export is not None and (not isinstance(export, str) or not export):
+        raise ValueError("invalid export name")
+    return {
+        "backend": "nbd",
+        "socket": socket_path.strip(),
+        "export": export,
+        "export_bitmap": export_bitmap,
+    }
+
+
+def _handle_control_conn(conn: socket.socket, registry: TransferRegistry) -> None:
+    """Handle a single control-socket connection (one JSON request/response)."""
+    try:
+        data = b""
+        while True:
+            chunk = conn.recv(4096)
+            if not chunk:
+                break
+            data += chunk
+            if b"\n" in data:
+                break
+
+        msg = json.loads(data.strip())
+        action = msg.get("action")
+
+        if action == "register":
+            transfer_id = msg.get("transfer_id")
+            raw_config = msg.get("config")
+            if not transfer_id or not isinstance(raw_config, dict):
+                resp = {"status": "error", "message": "missing transfer_id or config"}
+            else:
+                try:
+                    config = _validate_config(raw_config)
+                except ValueError as e:
+                    resp = {"status": "error", "message": str(e)}
+                else:
+                    if registry.register(transfer_id, config):
+                        resp = {"status": "ok", "active_transfers": registry.active_count()}
+                    else:
+                        resp = {"status": "error", "message": "invalid transfer_id"}
+        elif action == "unregister":
+            transfer_id = msg.get("transfer_id")
+            if not transfer_id:
+                resp = {"status": "error", "message": "missing transfer_id"}
+            else:
+                remaining = registry.unregister(transfer_id)
+                resp = {"status": "ok", "active_transfers": remaining}
+        elif action == "status":
+            resp = {"status": "ok", "active_transfers": registry.active_count()}
+        else:
+            resp = {"status": "error", "message": f"unknown action: {action}"}
+
+        conn.sendall((json.dumps(resp) + "\n").encode("utf-8"))
+    except Exception as e:
+        logging.error("control socket error: %r", e)
+        try:
+            conn.sendall((json.dumps({"status": "error", "message": str(e)}) + "\n").encode("utf-8"))
+        except Exception:
+            pass
+    finally:
+        conn.close()
+
+
+def _control_listener(registry: TransferRegistry, sock_path: str) -> None:
+    """Accept loop for the Unix domain control socket (runs in a daemon thread)."""
+    if os.path.exists(sock_path):
+        os.unlink(sock_path)
+    os.makedirs(os.path.dirname(sock_path), exist_ok=True)
+
+    srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    srv.bind(sock_path)
+    os.chmod(sock_path, 0o660)
+    srv.listen(5)
+    logging.info("control socket listening on %s", sock_path)
+
+    while True:
+        conn, _ = srv.accept()
+        threading.Thread(
+            target=_handle_control_conn,
+            args=(conn, registry),
+            daemon=True,
+        ).start()
 
 
 def main() -> None:
@@ -57,6 +170,11 @@ def main() -> None:
     )
     parser.add_argument("--listen", default="127.0.0.1", help="Address to bind")
     parser.add_argument("--port", type=int, default=54323, help="Port to listen on")
+    parser.add_argument(
+        "--control-socket",
+        default=CONTROL_SOCKET,
+        help="Path to the Unix domain control socket",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -64,12 +182,18 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(message)s",
     )
 
+    registry = TransferRegistry()
     concurrency = ConcurrencyManager(MAX_PARALLEL_READS, MAX_PARALLEL_WRITES)
-    config_loader = TransferConfigLoader(CFG_DIR)
-    handler_cls = make_handler(concurrency, config_loader)
+    handler_cls = make_handler(concurrency, registry)
+
+    ctrl_thread = threading.Thread(
+        target=_control_listener,
+        args=(registry, args.control_socket),
+        daemon=True,
+    )
+    ctrl_thread.start()
 
     addr = (args.listen, args.port)
     httpd = ThreadingHTTPServer(addr, handler_cls)
     logging.info("listening on http://%s:%d", args.listen, args.port)
-    logging.info("image configs are read from %s/<transferId>", config_loader.cfg_dir)
     httpd.serve_forever()

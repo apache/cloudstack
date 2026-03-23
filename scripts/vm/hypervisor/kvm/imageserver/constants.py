@@ -27,3 +27,4 @@ MAX_PARALLEL_READS = 8
 MAX_PARALLEL_WRITES = 1
 
 CFG_DIR = "/tmp/imagetransfer"
+CONTROL_SOCKET = "/var/run/cloudstack/image-server.sock"
