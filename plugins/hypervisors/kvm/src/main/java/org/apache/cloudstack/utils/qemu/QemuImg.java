@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.utils.qemu;
 
+import static java.util.regex.Pattern.CASE_INSENSITIVE;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -28,16 +30,14 @@ import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-
-import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class QemuImg {
     private Logger logger = LogManager.getLogger(this.getClass());
@@ -659,6 +659,24 @@ public class QemuImg {
         }
 
         return info;
+    }
+
+    public String infoBackingJson(final QemuImgFile file) throws QemuImgException {
+        final Script s = new Script(_qemuImgPath);
+        s.add("info");
+        s.add("--backing-chain");
+        s.add("--output=json");
+        if (this.version >= QEMU_2_10) {
+            s.add("-U");
+        }
+        s.add(file.getFileName());
+
+        final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        final String result = s.execute(parser);
+        if (result != null) {
+            throw new QemuImgException(result);
+        }
+        return parser.getLines().trim();
     }
 
     /* create snapshots in image */
