@@ -881,7 +881,7 @@ public class TemplateServiceImpl implements TemplateService {
 
     // update template_zone_ref for cross-zone template for newly added zone
     @Override
-    public void associateCrosszoneTemplatesToZone(long dcId) {
+    public void associateCrossZoneTemplatesToZone(long dcId) {
         VMTemplateZoneVO tmpltZone;
 
         List<VMTemplateVO> crossZoneTemplates = _templateDao.listAllCrossZoneTemplates();
