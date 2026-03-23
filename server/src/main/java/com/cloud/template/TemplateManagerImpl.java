@@ -2493,7 +2493,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return new ConfigKey<?>[] {AllowPublicUserTemplates,
                 TemplatePreloaderPoolSize,
                 ValidateUrlIsResolvableBeforeRegisteringTemplate,
-                TemplateDeleteFromPrimaryStorage};
+                TemplateDeleteFromPrimaryStorage,
+                PublicTemplateSecStorageCopy,
+                PrivateTemplateSecStorageCopy};
     }
 
     public List<TemplateAdapter> getTemplateAdapters() {
