@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,13 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from .server import main
 
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from imageserver.server import main
-
-if __name__ == "__main__":
-    main()
+main()

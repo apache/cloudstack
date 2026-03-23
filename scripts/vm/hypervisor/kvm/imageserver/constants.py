@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,13 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
+CHUNK_SIZE = 256 * 1024  # 256 KiB
 
-import os
-import sys
+# NBD base:allocation flags (hole=1, zero=2; hole|zero=3)
+NBD_STATE_HOLE = 1
+NBD_STATE_ZERO = 2
+# NBD qemu:dirty-bitmap flags (dirty=1)
+NBD_STATE_DIRTY = 1
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+MAX_PARALLEL_READS = 8
+MAX_PARALLEL_WRITES = 1
 
-from imageserver.server import main
-
-if __name__ == "__main__":
-    main()
+CFG_DIR = "/tmp/imagetransfer"

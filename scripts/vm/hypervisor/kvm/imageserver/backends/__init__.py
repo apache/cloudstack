@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,13 +15,22 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from typing import Any, Dict
 
-import os
-import sys
+from .base import BackendSession, ImageBackend
+from .file import FileBackend
+from .nbd import NbdBackend
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+__all__ = ["BackendSession", "ImageBackend", "FileBackend", "NbdBackend", "create_backend"]
 
-from imageserver.server import main
 
-if __name__ == "__main__":
-    main()
+def create_backend(cfg: Dict[str, Any]) -> ImageBackend:
+    """Factory: build the correct ImageBackend from a transfer config dict."""
+    backend_type = cfg.get("backend", "nbd")
+    if backend_type == "file":
+        return FileBackend(cfg["file"])
+    return NbdBackend(
+        cfg["socket"],
+        export=cfg.get("export"),
+        export_bitmap=cfg.get("export_bitmap"),
+    )

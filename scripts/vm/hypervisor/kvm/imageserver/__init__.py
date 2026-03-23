@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,13 +15,19 @@
 # specific language governing permissions and limitations
 # under the License.
 
+"""
+CloudStack image server — HTTP server backed by NBD over Unix socket or a local file.
 
-import os
-import sys
+Supports two backends (configured per-transfer via JSON config):
+- nbd: proxy to an NBD server via Unix socket; supports range reads/writes
+  (GET/PUT/PATCH), extents, zero, flush.
+- file: read/write a local qcow2/raw file; full PUT only, GET with optional
+  ranges, flush.
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+Usage::
 
-from imageserver.server import main
+    # As a module
+    python -m imageserver --listen 127.0.0.1 --port 54323
 
-if __name__ == "__main__":
-    main()
+    # Or via the systemd service started by createImageTransfer
+"""
