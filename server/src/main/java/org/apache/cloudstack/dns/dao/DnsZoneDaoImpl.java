@@ -41,7 +41,7 @@ public class DnsZoneDaoImpl extends GenericDaoBase<DnsZoneVO, Long> implements D
         super();
 
         DnsServerSearch  = createSearchBuilder();
-        DnsServerSearch.selectFields(DnsServerSearch.entity().getDnsServerId());
+        DnsServerSearch.selectFields(DnsServerSearch.entity().getId());
         DnsServerSearch.and(ApiConstants.DNS_SERVER_ID, DnsServerSearch.entity().getDnsServerId(), SearchCriteria.Op.EQ);
         DnsServerSearch.done();
 

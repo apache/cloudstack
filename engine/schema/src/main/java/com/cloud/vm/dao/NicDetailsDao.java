@@ -16,10 +16,14 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicDetailVO;
 
 public interface NicDetailsDao extends GenericDao<NicDetailVO, Long>, ResourceDetailsDao<NicDetailVO> {
+
+    void removeDetailsForValuesIn(String resourceName, List<String> values);
 }

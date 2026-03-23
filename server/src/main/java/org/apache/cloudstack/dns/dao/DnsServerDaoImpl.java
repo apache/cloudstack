@@ -83,24 +83,6 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
     }
 
     @Override
-    public Pair<List<DnsServerVO>, Integer> searchDnsServers(Long id, String keyword, String provider, Long accountId, Filter filter) {
-        SearchCriteria<DnsServerVO> sc = AllFieldsSearch.create();
-        if (id != null) {
-            sc.setParameters(ApiConstants.ID, id);
-        }
-        if (keyword != null) {
-            sc.setParameters(ApiConstants.NAME, "%" + keyword + "%");
-        }
-        if (provider != null) {
-            sc.setParameters(ApiConstants.PROVIDER_TYPE, provider);
-        }
-        if (accountId != null) {
-            sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
-        }
-        return searchAndCount(sc, filter);
-    }
-
-    @Override
     public Pair<List<DnsServerVO>, Integer> searchDnsServer(Long dnsServerId, Long accountId, Set<Long> domainIds, DnsProviderType providerType,
                                                             String keyword, Filter filter) {
 

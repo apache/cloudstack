@@ -24,4 +24,6 @@ import com.cloud.utils.db.GenericDao;
 public interface DnsZoneNetworkMapDao extends GenericDao<DnsZoneNetworkMapVO, Long> {
     void removeNetworkMappingByZoneId(long dnsZoneId);
     DnsZoneNetworkMapVO findByNetworkId(long networkId);
+
+    DnsZoneNetworkMapVO findByZoneId(long networkId);
 }

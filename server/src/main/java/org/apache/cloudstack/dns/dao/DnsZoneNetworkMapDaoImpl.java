@@ -54,4 +54,11 @@ public class DnsZoneNetworkMapDaoImpl extends GenericDaoBase<DnsZoneNetworkMapVO
         sc.setParameters(ApiConstants.NETWORK_ID, networkId);
         return findOneBy(sc);
     }
+
+    @Override
+    public DnsZoneNetworkMapVO findByZoneId(long dnsZoneId) {
+        SearchCriteria<DnsZoneNetworkMapVO> sc = ZoneNetworkSearch.create();
+        sc.setParameters(ApiConstants.DNS_ZONE_ID, dnsZoneId);
+        return findOneBy(sc);
+    }
 }

@@ -1528,7 +1528,7 @@ export default {
     {
       name: 'dnsserver',
       title: 'label.dns.server',
-      icon: 'global-outlined',
+      icon: 'cloud-server-outlined',
       permission: ['listDnsServers'],
       columns: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix'],
       details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix', 'domain', 'account'],
@@ -1555,6 +1555,7 @@ export default {
           label: 'label.dns.update.server',
           dataView: true,
           popup: true,
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsServer.vue')))
         },
         {
@@ -1564,6 +1565,7 @@ export default {
           message: 'message.action.delete.dns.server',
           dataView: true,
           popup: true,
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
           groupAction: false,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
@@ -1572,7 +1574,7 @@ export default {
     {
       name: 'dnszone',
       title: 'label.dns.zones',
-      icon: 'global-outlined',
+      icon: 'apartment-outlined',
       permission: ['listDnsZones'],
       columns: ['name', 'state', 'dnsservername', 'account', 'description'],
       details: ['name', 'id', 'state', 'dnsservername', 'dnsserverid', 'account', 'domainpath', 'description'],
@@ -1603,8 +1605,8 @@ export default {
           label: 'label.dns.update.zone',
           dataView: true,
           popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsZone.vue'))),
-          show: (record) => { return true }
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsZone.vue')))
         },
         {
           api: 'deleteDnsZone',
@@ -1614,8 +1616,7 @@ export default {
           dataView: true,
           popup: true,
           groupAction: false,
-          disabled: (record) => false,
-          show: (record) => { return true },
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]

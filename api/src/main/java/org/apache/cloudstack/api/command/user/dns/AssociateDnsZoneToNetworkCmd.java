@@ -29,13 +29,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.cloudstack.dns.DnsZone;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.user.Account;
 
 @APICommand(name = "associateDnsZoneToNetwork",
@@ -73,9 +73,9 @@ public class AssociateDnsZoneToNetworkCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        DnsZone zone = _entityMgr.findById(DnsZone.class, dnsZoneId);
-        if (zone != null) {
-            return zone.getAccountId();
+        Network network = _entityMgr.findById(Network.class, networkId);
+        if (network != null) {
+            return network.getAccountId();
         }
         return Account.ACCOUNT_ID_SYSTEM;
     }

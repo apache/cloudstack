@@ -33,7 +33,5 @@ public interface DnsServerDao extends GenericDao<DnsServerVO, Long> {
 
     List<Long> listDnsServerIdsByAccountId(Long accountId);
 
-    Pair<List<DnsServerVO>, Integer> searchDnsServers(Long id, String keyword, String provider, Long accountId, Filter filter);
-
     Pair<List<DnsServerVO>, Integer> searchDnsServer(Long dnsServerId, Long accountId, Set<Long> domainIds, DnsProviderType providerType, String keyword, Filter filter);
 }
