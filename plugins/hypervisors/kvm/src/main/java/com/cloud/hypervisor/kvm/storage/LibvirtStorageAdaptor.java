@@ -2652,10 +2652,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException("Failed to create QCOW2 on CLVM_NG volume: " + result);
         }
 
+        long actualSize = getClvmVolumeSize(volumePath);
         KVMPhysicalDisk disk = new KVMPhysicalDisk(volumePath, volumeUuid, pool);
         disk.setFormat(PhysicalDiskFormat.QCOW2);
-        disk.setSize(lvSize);
-        disk.setVirtualSize(virtualSize);
+        disk.setSize(actualSize);
+        disk.setVirtualSize(actualSize);
 
         logger.info("Successfully created CLVM_NG volume {} with backing file (LV size: {}, virtual size: {}, provisioning: {}, preallocation: {})",
                     volumeUuid, lvSize, virtualSize, provisioningType, preallocation);

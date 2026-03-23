@@ -208,6 +208,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private VolumeDataFactory _volFactory;
     @Inject
     ResourceManager resourceManager;
+    @Inject
+    private ClvmLockManager clvmLockManager;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -2072,6 +2074,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 destVolumeInfo.processEvent(Event.MigrationRequested);
 
                 setVolumeMigrationOptions(srcVolumeInfo, destVolumeInfo, vmTO, srcHost, destStoragePool, migrationType);
+
+                if (ClvmLockManager.isClvmPoolType(destStoragePool.getPoolType())) {
+                    destVolumeInfo.setDestinationHostId(destHost.getId());
+                    clvmLockManager.setClvmLockHostId(destVolume.getId(), destHost.getId());
+                    logger.info("Set CLVM lock host {} for volume {} during migration to ensure creation on destination host",
+                            destHost.getId(), destVolumeInfo.getUuid());
+                }
 
                 // create a volume on the destination storage
                 destDataStore.getDriver().createAsync(destDataStore, destVolumeInfo, null);
