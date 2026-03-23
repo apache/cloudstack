@@ -33,7 +33,16 @@ except ImportError:
 
 from .concurrency import ConcurrencyManager
 from .config import TransferRegistry
-from .constants import CONTROL_SOCKET, MAX_PARALLEL_READS, MAX_PARALLEL_WRITES
+from .constants import (
+    CONTROL_RECV_BUFFER,
+    CONTROL_SOCKET,
+    CONTROL_SOCKET_BACKLOG,
+    CONTROL_SOCKET_PERMISSIONS,
+    DEFAULT_HTTP_PORT,
+    DEFAULT_LISTEN_ADDRESS,
+    MAX_PARALLEL_READS,
+    MAX_PARALLEL_WRITES,
+)
 from .handler import Handler
 
 
@@ -95,7 +104,7 @@ def _handle_control_conn(conn: socket.socket, registry: TransferRegistry) -> Non
     try:
         data = b""
         while True:
-            chunk = conn.recv(4096)
+            chunk = conn.recv(CONTROL_RECV_BUFFER)
             if not chunk:
                 break
             data += chunk
@@ -151,8 +160,8 @@ def _control_listener(registry: TransferRegistry, sock_path: str) -> None:
 
     srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     srv.bind(sock_path)
-    os.chmod(sock_path, 0o660)
-    srv.listen(5)
+    os.chmod(sock_path, CONTROL_SOCKET_PERMISSIONS)
+    srv.listen(CONTROL_SOCKET_BACKLOG)
     logging.info("control socket listening on %s", sock_path)
 
     while True:
@@ -168,8 +177,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="CloudStack image server backed by NBD / local file"
     )
-    parser.add_argument("--listen", default="127.0.0.1", help="Address to bind")
-    parser.add_argument("--port", type=int, default=54323, help="Port to listen on")
+    parser.add_argument("--listen", default=DEFAULT_LISTEN_ADDRESS, help="Address to bind")
+    parser.add_argument("--port", type=int, default=DEFAULT_HTTP_PORT, help="Port to listen on")
     parser.add_argument(
         "--control-socket",
         default=CONTROL_SOCKET,

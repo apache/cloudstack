@@ -21,7 +21,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import nbd
 
-from ..constants import CHUNK_SIZE, NBD_STATE_DIRTY, NBD_STATE_HOLE, NBD_STATE_ZERO
+from ..constants import (
+    CHUNK_SIZE,
+    NBD_BLOCK_STATUS_CHUNK,
+    NBD_STATE_DIRTY,
+    NBD_STATE_HOLE,
+    NBD_STATE_ZERO,
+)
 from ..util import merge_dirty_zero_extents
 from .base import BackendSession, ImageBackend
 
@@ -175,7 +181,7 @@ class NbdConnection:
             return [{"start": 0, "length": size, "zero": False}]
 
         allocation_extents: List[Dict[str, Any]] = []
-        chunk = min(size, 64 * 1024 * 1024)
+        chunk = min(size, NBD_BLOCK_STATUS_CHUNK)
         offset = 0
 
         def extent_cb(*args: Any, **kwargs: Any) -> int:
@@ -246,7 +252,7 @@ class NbdConnection:
 
         allocation_extents: List[Tuple[int, int, bool]] = []
         dirty_extents: List[Tuple[int, int, bool]] = []
-        chunk = min(size, 64 * 1024 * 1024)
+        chunk = min(size, NBD_BLOCK_STATUS_CHUNK)
         offset = 0
 
         def extent_cb(*args: Any, **kwargs: Any) -> int:

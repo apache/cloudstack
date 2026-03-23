@@ -26,7 +26,7 @@ from urllib.parse import parse_qs
 from .backends import NbdBackend, create_backend
 from .concurrency import ConcurrencyManager
 from .config import TransferRegistry
-from .constants import CHUNK_SIZE, MAX_PARALLEL_READS, MAX_PARALLEL_WRITES
+from .constants import CHUNK_SIZE, MAX_PARALLEL_READS, MAX_PARALLEL_WRITES, MAX_PATCH_JSON_SIZE
 from .util import is_fallback_dirty_response, json_bytes, now_s
 
 
@@ -422,7 +422,7 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
             return
-        if content_length <= 0 or content_length > 64 * 1024:
+        if content_length <= 0 or content_length > MAX_PATCH_JSON_SIZE:
             self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
             return
 
