@@ -3163,7 +3163,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // Associate cross zone templates with the Edge Zones here because they don't have SSVMs
                 // For Core zones, this happens when the SSVM starts up.
                 if (isEdge) {
-                    _templateService.associateCrosszoneTemplatesToZone(zone.getId());
+                    _templateService.associateCrossZoneTemplatesToZone(zone.getId());
                 }
 
                 return zone;
