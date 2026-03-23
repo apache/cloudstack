@@ -1024,7 +1024,9 @@ public class ServerAdapter extends ManagerBase {
         if (provisionedSizeInGb <= 0) {
             throw new InvalidParameterValueException("Provisioned size must be greater than zero");
         }
-        provisionedSizeInGb = Math.max(1L, provisionedSizeInGb / (1024L * 1024L * 1024L));
+        // round-up provisionedSizeInGb to the next whole GB
+        long GB = 1024L * 1024L * 1024L;
+        provisionedSizeInGb = Math.max(1L, (provisionedSizeInGb + GB - 1) / GB);
         Long initialSize = null;
         if (StringUtils.isNotBlank(request.getInitialSize())) {
             try {
