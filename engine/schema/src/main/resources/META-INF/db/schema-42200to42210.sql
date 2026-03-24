@@ -33,3 +33,6 @@ UPDATE `cloud`.`alert` SET type = 34 WHERE name = 'ALERT.VR.PRIVATE.IFACE.MTU';
 
 -- Update configuration 'kvm.ssh.to.agent' description and is_dynamic fields
 UPDATE `cloud`.`configuration` SET description = 'True if the management server will restart the agent service via SSH into the KVM hosts after or during maintenance operations', is_dynamic = 1 WHERE name = 'kvm.ssh.to.agent';
+
+-- Update `user.password.reset.mail.template` configuration value to follow new logic
+UPDATE configuration  SET value = 'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\n{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team' WHERE value REGEXP '^Hello \\{\\{username\\}\\}!\\nYou have requested to reset your password\\. Please click the following link to reset your password:\\n(http://\\{\\{\\{resetLink\\}\\}\\}|\\{\\{\\{domainUrl\\}\\}\\}\\{\\{\\{resetLink\\}\\}\\})\\nIf you did not request a password reset, please ignore this email\\.\\n\\nRegards,\\nThe CloudStack Team$';
