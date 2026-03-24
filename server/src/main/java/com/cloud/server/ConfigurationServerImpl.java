@@ -222,9 +222,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             _configDao.update(Config.SecStorageEncryptCopy.key(), Config.SecStorageEncryptCopy.getCategory(), "false");
             logger.debug("ConfigurationServer made secondary storage copy encrypt set to false.");
 
-            _configDao.update("secstorage.secure.copy.cert", "");
-            logger.debug("ConfigurationServer cleared legacy secstorage.secure.copy.cert.");
-
             _configDao.update("user.password.encoders.exclude", "MD5,LDAP,PLAINTEXT");
             logger.debug("Configuration server excluded insecure encoders");
 
