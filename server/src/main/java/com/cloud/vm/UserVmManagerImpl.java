@@ -9536,6 +9536,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Unable to import virtual machine with invalid host");
             }
 
+            // Ensure template details are loaded so that commitUserVm can copy them into the VM's details map
+            VMTemplateVO vmTemplateVO = null;
+            if (template != null) {
+                vmTemplateVO = _templateDao.findById(template.getId());
+                _templateDao.loadDetails(vmTemplateVO);
+            }
+
             final long id = _vmDao.getNextInSequence(Long.class, "id");
             String instanceName = StringUtils.isBlank(instanceNameInternal) ?
                     getInternalName(owner.getAccountId(), id) :
@@ -9548,10 +9555,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             final String uuidName = _uuidMgr.generateUuid(UserVm.class, null);
             final Host lastHost = powerState != VirtualMachine.PowerState.PowerOn ? host : null;
-            final Boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, template, zone.getId());
-            return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
+            final Boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, vmTemplateVO, zone.getId());
+            return commitUserVm(true, zone, host, lastHost, vmTemplateVO, hostName, displayName, owner,
                     null, null, userData, null, null, isDisplayVm, keyboard,
-                    accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKeys, networkNicMap,
+                    accountId, userId, serviceOffering, vmTemplateVO.getFormat().equals(ImageFormat.ISO), sshPublicKeys, networkNicMap,
                     id, instanceName, uuidName, hypervisorType, customParameters,
                     null, null, null, powerState, dynamicScalingEnabled, null, serviceOffering.getDiskOfferingId(), null, null, null, null);
         });
