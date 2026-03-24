@@ -330,6 +330,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
             final HttpPost request = new HttpPost(apiURI.toString() + path);
             request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((this.username + ":" + this.sessionKey).getBytes()));
             request.setHeader("content-type", "application/json");
+            request.setHeader("Accept-Encodin", "gzip");
             if (obj != null) {
                 if (obj instanceof String) {
                     request.setEntity(new StringEntity((String) obj));
