@@ -120,8 +120,3 @@ UPDATE `cloud`.`configuration`
     SET value = NULL
     WHERE name IN ('consoleproxy.url.domain', 'secstorage.ssl.cert.domain')
       AND value IN ('realhostip.com', '*.realhostip.com');
-
-UPDATE `cloud`.`configuration`
-    SET value = NULL
-    WHERE name = 'secstorage.secure.copy.cert'
-      AND value LIKE '%realhostip%';
