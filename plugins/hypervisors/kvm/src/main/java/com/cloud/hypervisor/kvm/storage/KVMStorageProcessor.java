@@ -1871,13 +1871,22 @@ public class KVMStorageProcessor implements StorageProcessor {
             primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
             disksize = volume.getSize();
             PhysicalDiskFormat format;
-            if (volume.getFormat() == null || StoragePoolType.RBD.equals(primaryStore.getPoolType())) {
+
+            MigrationOptions migrationOptions = volume.getMigrationOptions();
+            boolean useDstPoolFormat = useDestPoolFormat(migrationOptions, primaryStore);
+
+            if (volume.getFormat() == null || StoragePoolType.RBD.equals(primaryStore.getPoolType()) || useDstPoolFormat) {
                 format = primaryPool.getDefaultFormat();
+                if (useDstPoolFormat) {
+                    logger.debug("Using destination pool default format {} for volume {} due to CLVM migration (src: {}, dst: {})",
+                               format, volume.getUuid(),
+                               migrationOptions != null ? migrationOptions.getSrcPoolType() : "unknown",
+                               primaryStore.getPoolType());
+                }
             } else {
                 format = PhysicalDiskFormat.valueOf(volume.getFormat().toString().toUpperCase());
             }
 
-            MigrationOptions migrationOptions = volume.getMigrationOptions();
             if (migrationOptions != null) {
                 int timeout = migrationOptions.getTimeout();
 
@@ -1912,6 +1921,29 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             volume.clearPassphrase();
         }
+    }
+
+    /**
+     * For migration involving CLVM (RAW format), use destination pool's default format
+     * CLVM uses RAW format which may not match destination pool's format (e.g., NFS uses QCOW2)
+     * This specifically handles:
+     *   - CLVM (RAW) -> NFS/Local/CLVM_NG (QCOW2)
+     *   - NFS/Local/CLVM_NG (QCOW2) -> CLVM (RAW)
+     * @param migrationOptions
+     * @param primaryStore
+     * @return
+     */
+    private boolean useDestPoolFormat(MigrationOptions migrationOptions, PrimaryDataStoreTO primaryStore) {
+        boolean useDstPoolFormat = false;
+        if (migrationOptions != null && migrationOptions.getSrcPoolType() != null) {
+            StoragePoolType srcPoolType = migrationOptions.getSrcPoolType();
+            StoragePoolType dstPoolType = primaryStore.getPoolType();
+
+            if (srcPoolType != dstPoolType) {
+                useDstPoolFormat = (srcPoolType == StoragePoolType.CLVM || dstPoolType == StoragePoolType.CLVM);
+            }
+        }
+        return useDstPoolFormat;
     }
 
     /**

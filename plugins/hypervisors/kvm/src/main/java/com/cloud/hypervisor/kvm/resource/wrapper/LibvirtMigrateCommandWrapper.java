@@ -244,25 +244,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final ExecutorService executor = Executors.newFixedThreadPool(1);
             boolean migrateNonSharedInc = command.isMigrateNonSharedInc() && !migrateStorageManaged;
 
-            // If any of the destination disks target CLVM/CLVM_NG pools, exclude them from
-            // the migration disk list. These disks are already created/activated on the
-            // destination storage before VM migration, so libvirt should not try to migrate them.
-            // Only non-CLVM disks will be migrated by libvirt.
-            boolean effectiveMigrateStorage = migrateStorage;
-            if (migrateStorage && migrateDiskLabels != null && hasClvmDestinationDisks(mapMigrateStorage)) {
-                logger.info("Filtering out CLVM/CLVM_NG disks from migration for VM {} as they are pre-created on destination", vmName);
-                migrateDiskLabels = filterOutClvmDisks(migrateDiskLabels, disks, mapMigrateStorage);
-                logger.debug("Remaining disks to migrate via libvirt: {}", migrateDiskLabels);
-
-                // If all disks were filtered out (only CLVM/CLVM_NG), disable storage migration entirely
-                // to prevent libvirt from trying to handle the block devices
-                if (migrateDiskLabels != null && migrateDiskLabels.isEmpty()) {
-                    logger.info("All disks are CLVM/CLVM_NG and pre-created on destination. Disabling storage migration for VM {}", vmName);
-                    effectiveMigrateStorage = false;
-                    migrateDiskLabels = null;
-                }
-            }
-
             // add cancel hook before we start. If migration fails to start and hook is called, it's non-fatal
             cancelHook = new MigrationCancelHook(dm);
             libvirtComputingResource.addDisconnectHook(cancelHook);
@@ -270,7 +251,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.PROCESSING);
 
             final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc,
-                    effectiveMigrateStorage, migrateNonSharedInc,
+                    migrateStorage, migrateNonSharedInc,
                     command.isAutoConvergence(), vmName, command.getDestinationIp(), migrateDiskLabels);
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
@@ -827,11 +808,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             for (int z = 0; z < diskChildNodes.getLength(); z++) {
                                 Node diskChildNode = diskChildNodes.item(z);
 
-                                // Update driver type for managed storage OR when migrating to CLVM
-                                // CLVM uses RAW format requiring XML driver type update
-                                // Note: CLVM_NG uses QCOW2-on-block, so no format change needed (already QCOW2)
-                                boolean shouldUpdateDriverType = migrateStorageManaged ||
-                                    (migrateDiskInfo.getDestPoolType() == Storage.StoragePoolType.CLVM);
+                                boolean shouldUpdateDriverType = shouldUpdateDriverTypeForMigration(
+                                    migrateStorageManaged, migrateDiskInfo);
 
                                 if (shouldUpdateDriverType && "driver".equals(diskChildNode.getNodeName())) {
                                     Node driverNode = diskChildNode;
@@ -1187,5 +1165,30 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             return false;
         }
         return (Storage.StoragePoolType.CLVM.equals(diskInfo.getDestPoolType()) || Storage.StoragePoolType.CLVM_NG.equals(diskInfo.getDestPoolType()));
+    }
+
+    /**
+     * Determines if the driver type should be updated during migration based on CLVM involvement.
+     * The driver type needs to be updated when:
+     * - Managed storage is being migrated, OR
+     * - Source pool is CLVM or CLVM_NG, OR
+     * - Destination pool is CLVM or CLVM_NG
+     *
+     * This ensures the libvirt XML driver type matches the destination format (raw/qcow2/etc).
+     *
+     * @param migrateStorageManaged true if migrating managed storage
+     * @param migrateDiskInfo the migration disk information containing source and destination pool types
+     * @return true if driver type should be updated, false otherwise
+     */
+    private boolean shouldUpdateDriverTypeForMigration(boolean migrateStorageManaged,
+                                                        MigrateCommand.MigrateDiskInfo migrateDiskInfo) {
+        boolean sourceIsClvm = Storage.StoragePoolType.CLVM == migrateDiskInfo.getSourcePoolType() ||
+                Storage.StoragePoolType.CLVM_NG == migrateDiskInfo.getSourcePoolType();
+
+        boolean destIsClvm = Storage.StoragePoolType.CLVM == migrateDiskInfo.getDestPoolType() ||
+                Storage.StoragePoolType.CLVM_NG == migrateDiskInfo.getDestPoolType();
+
+        boolean isClvmRelatedMigration = sourceIsClvm || destIsClvm;
+        return migrateStorageManaged || isClvmRelatedMigration;
     }
 }

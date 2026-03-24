@@ -2609,6 +2609,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         Script lvcreate = new Script("lvcreate", Duration.millis(timeout), logger);
         lvcreate.add("-n", volumeUuid);
         lvcreate.add("-L", lvSize + "B");
+        lvcreate.add("--yes");
         lvcreate.add(vgName);
 
         String result = lvcreate.execute();
@@ -2686,6 +2687,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         Script lvcreate = new Script("lvcreate", Duration.millis(timeout), logger);
         lvcreate.add("-n", lvName);
         lvcreate.add("-L", lvSize + "B");
+        lvcreate.add("--yes");
         lvcreate.add(vgName);
         String result = lvcreate.execute();
         if (result != null) {
@@ -2757,6 +2759,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         Script lvcreate = new Script("lvcreate", Duration.millis(timeout), logger);
         lvcreate.add("-n", volumeName);
         lvcreate.add("-L", size + "B");
+        lvcreate.add("--yes");
         lvcreate.add(vgName);
 
         String result = lvcreate.execute();

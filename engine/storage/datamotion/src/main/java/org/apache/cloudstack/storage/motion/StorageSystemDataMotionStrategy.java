@@ -2121,6 +2121,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     migrateDiskInfo.setSourceDiskOnStorageFileSystem(isStoragePoolTypeOfFile(sourceStoragePool));
                     migrateDiskInfoList.add(migrateDiskInfo);
                 }
+                migrateDiskInfo.setSourcePoolType(sourceStoragePool.getPoolType());
                 migrateDiskInfo.setDestPoolType(destVolumeInfo.getStoragePoolType());
                 prepareDiskWithSecretConsumerDetail(vmTO, srcVolumeInfo, destVolumeInfo.getPath());
 

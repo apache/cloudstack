@@ -185,6 +185,7 @@ public class MigrateCommand extends Command {
         private final String sourceText;
         private final String backingStoreText;
         private boolean isSourceDiskOnStorageFileSystem;
+        private Storage.StoragePoolType sourcePoolType;
         private Storage.StoragePoolType destPoolType;
 
         public MigrateDiskInfo(final String serialNumber, final DiskType diskType, final DriverType driverType, final Source source, final String sourceText) {
@@ -233,6 +234,14 @@ public class MigrateCommand extends Command {
 
         public void setSourceDiskOnStorageFileSystem(boolean isDiskOnFileSystemStorage) {
             this.isSourceDiskOnStorageFileSystem = isDiskOnFileSystemStorage;
+        }
+
+        public Storage.StoragePoolType getSourcePoolType() {
+            return sourcePoolType;
+        }
+
+        public void setSourcePoolType(Storage.StoragePoolType sourcePoolType) {
+            this.sourcePoolType = sourcePoolType;
         }
 
         public Storage.StoragePoolType getDestPoolType() {
