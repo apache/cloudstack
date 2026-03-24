@@ -55,7 +55,7 @@ public class Upgrade42020to42030 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public InputStream[] getCleanupScripts() {
-        return new InputStream[0];
+        return null;
     }
 
     @Override
