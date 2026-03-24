@@ -18,10 +18,11 @@
 //
 package com.cloud.storage.template;
 
-import static org.apache.cloudstack.api.ApiConstants.CLOUDSTACK_USER_AGENT;
 
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
+
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodRetryHandler;
@@ -61,7 +62,7 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
         request.setFollowRedirects(followRedirects);
-        request.getParams().setParameter(HttpMethodParams.USER_AGENT, CLOUDSTACK_USER_AGENT);
+        request.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
         if (!toFileSet) {
             String[] parts = downloadUrl.split("/");
             String filename = parts[parts.length - 1];

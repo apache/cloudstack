@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.direct.download;
 
-import static org.apache.cloudstack.api.ApiConstants.CLOUDSTACK_USER_AGENT;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -34,6 +33,7 @@ import java.util.Map;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 import com.cloud.utils.storage.QCOW2Utils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.httpclient.HttpClient;
@@ -71,7 +71,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     protected GetMethod createRequest(String downloadUrl, Map<String, String> headers) {
         GetMethod request = new GetMethod(downloadUrl);
         request.setFollowRedirects(this.isFollowRedirects());
-        request.getParams().setParameter(HttpMethodParams.USER_AGENT,  CLOUDSTACK_USER_AGENT);
+        request.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
         if (MapUtils.isNotEmpty(headers)) {
             for (String key : headers.keySet()) {
                 request.setRequestHeader(key, headers.get(key));

@@ -18,7 +18,6 @@
 package com.cloud.storage.template;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-import static org.apache.cloudstack.api.ApiConstants.CLOUDSTACK_USER_AGENT;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +44,7 @@ import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 
 public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implements TemplateDownloader {
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
@@ -96,7 +96,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, retryHandler);
         request.setFollowRedirects(followRedirects);
-        request.getParams().setParameter(HttpMethodParams.USER_AGENT,  CLOUDSTACK_USER_AGENT);
+        request.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
         return request;
     }
 
