@@ -41,6 +41,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
@@ -833,6 +834,8 @@ public class VmwareHelper {
             }
 
             instance.setHostName(hyperHost.getHyperHostName());
+            instance.setHypervisorType(Hypervisor.HypervisorType.VMware.name());
+            instance.setHostHypervisorVersion(getVmwareHostVersion(hyperHost));
 
             if (StringUtils.isEmpty(instance.getOperatingSystemId()) && configSummary != null) {
                 instance.setOperatingSystemId(configSummary.getGuestId());
@@ -864,6 +867,17 @@ public class VmwareHelper {
             LOGGER.error("Unable to retrieve unmanaged instance info, due to: " + e.getMessage());
         }
         return instance;
+    }
+
+    protected static String getVmwareHostVersion(VmwareHypervisorHost hyperHost) {
+        if (hyperHost instanceof HostMO) {
+            try {
+                return ((HostMO) hyperHost).getProductVersion();
+            } catch (Exception e) {
+                LOGGER.warn("Unable to get unmanaged instance host version, due to: " + e.getMessage(), e);
+            }
+        }
+        return null;
     }
 
     protected static List<UnmanagedInstanceTO.Disk> getUnmanageInstanceDisks(VirtualMachineMO vmMo) {

@@ -1727,6 +1727,7 @@
 "label.no.data": "No data to show",
 "label.no.errors": "No recent errors",
 "label.no.items": "No available Items",
+"label.no.matching.guest.os.vmware.import": "No matching guest OS mapping found, using the default import template guest OS",
 "label.no.matching.offering": "No matching offering found",
 "label.no.matching.network": "No matching Networks found",
 "label.node.version": "Node version",
