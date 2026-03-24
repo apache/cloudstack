@@ -201,15 +201,6 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 if (volumeIds != null && !volumeIds.isEmpty()) {
                     List<VMSnapshotDetailsVO> vmSnapshotDetails = new ArrayList<VMSnapshotDetailsVO>();
                     vmSnapshotDetails.add(new VMSnapshotDetailsVO(vmSnapshot.getId(), "SnapshotGroupId", snapshotGroupId, false));
-
-           /*         for (int index = 0; index < volumeIds.size(); index++) {
-                        String volumeSnapshotName = srcVolumeDestSnapshotMap.get(ScaleIOUtil.getVolumePath(volumeTOs.get(index).getPath()));
-                        String pathWithScaleIOVolumeName = ScaleIOUtil.updatedPathWithVolumeName(volumeIds.get(index), volumeSnapshotName);
-                        vmSnapshotDetails.add(new VMSnapshotDetailsVO(vmSnapshot.getId(), "Vol_" + volumeTOs.get(index).getId() + "_Snapshot", pathWithScaleIOVolumeName, false));
-                    }
-           */
-                 // Invert the srcVolumeDestSnapshotMap: snapshotName -> srcVolumePath
-                 // Invert the srcVolumeDestSnapshotMap: snapshotName -> srcVolumePath
                     Map<String, String> snapshotNameToSrcPathMap = new HashMap<>();
                     for (Map.Entry<String, String> entry : srcVolumeDestSnapshotMap.entrySet()) {
                         snapshotNameToSrcPathMap.put(entry.getValue(), entry.getKey());
