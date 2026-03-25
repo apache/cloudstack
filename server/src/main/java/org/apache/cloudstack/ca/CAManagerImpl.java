@@ -22,6 +22,7 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.SecureRandom;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateParsingException;
@@ -39,6 +40,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -400,7 +403,52 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             logger.error("Failed to find valid configured CA provider, please check!");
             return false;
         }
+        if (CaInjectDefaultTruststore.value()) {
+            injectCaCertIntoDefaultTruststore();
+        }
         return true;
+    }
+
+    private void injectCaCertIntoDefaultTruststore() {
+        try {
+            final List<X509Certificate> caCerts = configuredCaProvider.getCaCertificate();
+            if (caCerts == null || caCerts.isEmpty()) {
+                logger.debug("No CA certificates found from the configured provider, skipping JVM truststore injection");
+                return;
+            }
+
+            final KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(null, null);
+
+            // Copy existing default trusted certs
+            final TrustManagerFactory defaultTmf = TrustManagerFactory.getInstance("SunX509");
+            defaultTmf.init((KeyStore) null);
+            final X509TrustManager defaultTm = (X509TrustManager) defaultTmf.getTrustManagers()[0];
+            for (final X509Certificate cert : defaultTm.getAcceptedIssuers()) {
+                final String alias = cert.getSubjectX500Principal().getName();
+                trustStore.setCertificateEntry(alias, cert);
+            }
+
+            // Add CA provider's certificates
+            int count = 0;
+            for (final X509Certificate caCert : caCerts) {
+                final String alias = "cloudstack-ca-" + count;
+                trustStore.setCertificateEntry(alias, caCert);
+                count++;
+                logger.info("Injected CA certificate into JVM default truststore: subject={}, alias={}",
+                    caCert.getSubjectX500Principal().getName(), alias);
+            }
+
+            // Reinitialize default SSLContext with the updated truststore
+            final TrustManagerFactory updatedTmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            updatedTmf.init(trustStore);
+            final SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, updatedTmf.getTrustManagers(), new SecureRandom());
+            SSLContext.setDefault(sslContext);
+            logger.info("Successfully injected {} CA certificate(s) into JVM default truststore", count);
+        } catch (final GeneralSecurityException | IOException e) {
+            logger.error("Failed to inject CA certificate into JVM default truststore", e);
+        }
     }
 
     @Override
@@ -433,7 +481,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CAProviderPlugin, CertKeySize, CertSignatureAlgorithm, CertValidityPeriod,
                 AutomaticCertRenewal, AllowHostIPInSysVMAgentCert, CABackgroundJobDelay, CertExpiryAlertPeriod,
-                CertManagementCustomSubjectAlternativeName
+                CertManagementCustomSubjectAlternativeName, CaInjectDefaultTruststore
         };
     }
 
