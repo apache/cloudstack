@@ -41,7 +41,8 @@ import {
   cpuArchitectureUtilPlugin,
   imagesUtilPlugin,
   extensionsUtilPlugin,
-  backupUtilPlugin
+  backupUtilPlugin,
+  localeErrorUtilPlugin
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
@@ -65,6 +66,7 @@ vueApp.use(cpuArchitectureUtilPlugin)
 vueApp.use(imagesUtilPlugin)
 vueApp.use(extensionsUtilPlugin)
 vueApp.use(backupUtilPlugin)
+vueApp.use(localeErrorUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 

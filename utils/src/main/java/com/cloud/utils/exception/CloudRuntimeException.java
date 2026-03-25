@@ -24,6 +24,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.SerialVersionUID;
@@ -42,6 +43,9 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
     protected int csErrorCode;
 
+    protected String messageKey = null;
+    protected Map<String, Object> metadata = null;
+
     public CloudRuntimeException(String message) {
         super(message);
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
@@ -49,6 +53,13 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
     public CloudRuntimeException(String message, Throwable th) {
         super(message, th);
+        setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
+    }
+
+    public CloudRuntimeException(String message, String messageKey, Map<String, Object> metadata) {
+        super(message);
+        this.messageKey = messageKey;
+        this.metadata = metadata;
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
@@ -137,5 +148,13 @@ public class CloudRuntimeException extends RuntimeException implements ErrorCont
 
             uuidList.add(new Pair<Class<?>, String>(Class.forName(clzName), val));
         }
+    }
+
+    public String getMessageKey() {
+        return messageKey;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
     }
 }
