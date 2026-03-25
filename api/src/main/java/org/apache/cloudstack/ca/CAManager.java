@@ -39,7 +39,10 @@ public interface CAManager extends CAService, Configurable, PluggableService {
     ConfigKey<String> CAProviderPlugin = new ConfigKey<>("Advanced", String.class,
             "ca.framework.provider.plugin",
             "root",
-            "The CA provider plugin that is used for secure CloudStack management server-agent communication for encryption and authentication. Restart management server(s) when changed.", true);
+            "The CA provider plugin used for CloudStack internal certificate management (MS-agent encryption and authentication). " +
+            "The default 'root' provider auto-generates a CA on first startup, but also supports user-provided custom CA material " +
+            "via the ca.plugin.root.private.key, ca.plugin.root.public.key, and ca.plugin.root.ca.certificate settings. " +
+            "Restart management server(s) when changed.", true);
 
     ConfigKey<Integer> CertKeySize = new ConfigKey<>("Advanced", Integer.class,
                                     "ca.framework.cert.keysize",

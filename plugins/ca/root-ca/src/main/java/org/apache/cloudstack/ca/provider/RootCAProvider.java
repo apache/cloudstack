@@ -106,17 +106,21 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     private static ConfigKey<String> rootCAPrivateKey = new ConfigKey<>("Hidden", String.class,
             "ca.plugin.root.private.key",
             null,
-            "The ROOT CA private key.", true);
+            "The ROOT CA private key in PEM format (PKCS#8: must start with '-----BEGIN PRIVATE KEY-----'). " +
+            "When set along with the public key and certificate, CloudStack uses this custom CA instead of auto-generating one. " +
+            "All three ca.plugin.root.* keys must be set together. Restart management server(s) when changed.", true);
 
     private static ConfigKey<String> rootCAPublicKey = new ConfigKey<>("Hidden", String.class,
             "ca.plugin.root.public.key",
             null,
-            "The ROOT CA public key.", true);
+            "The ROOT CA public key in PEM format (X.509/SPKI: must start with '-----BEGIN PUBLIC KEY-----'). " +
+            "Required when providing a custom CA. Restart management server(s) when changed.", true);
 
     private static ConfigKey<String> rootCACertificate = new ConfigKey<>("Hidden", String.class,
             "ca.plugin.root.ca.certificate",
             null,
-            "The ROOT CA certificate.", true);
+            "The ROOT CA X.509 certificate in PEM format (must start with '-----BEGIN CERTIFICATE-----'). " +
+            "Required when providing a custom CA. Restart management server(s) when changed.", true);
 
     private static ConfigKey<String> rootCAIssuerDN = new ConfigKey<>("Advanced", String.class,
             "ca.plugin.root.issuer.dn",
@@ -422,13 +426,29 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
 
     private boolean setupCA() {
-        if (!loadRootCAKeyPair() && !saveNewRootCAKeypair()) {
-            logger.error("Failed to save and load root CA keypair");
-            return false;
+        if (!loadRootCAKeyPair()) {
+            if (hasUserProvidedCAKeys()) {
+                logger.error("Failed to load user-provided CA keys from configuration. " +
+                    "Check that ca.plugin.root.private.key, ca.plugin.root.public.key, and " +
+                    "ca.plugin.root.ca.certificate are all set and in the correct PEM format " +
+                    "(private key must be PKCS#8: '-----BEGIN PRIVATE KEY-----'). " +
+                    "Overwriting with auto-generated keys.");
+            }
+            if (!saveNewRootCAKeypair()) {
+                logger.error("Failed to save and load root CA keypair");
+                return false;
+            }
         }
-        if (!loadRootCACertificate() && !saveNewRootCACertificate()) {
-            logger.error("Failed to save and load root CA certificate");
-            return false;
+        if (!loadRootCACertificate()) {
+            if (hasUserProvidedCAKeys()) {
+                logger.error("Failed to load user-provided CA certificate. " +
+                    "Check that ca.plugin.root.ca.certificate is set and in PEM format. " +
+                    "Overwriting with auto-generated certificate.");
+            }
+            if (!saveNewRootCACertificate()) {
+                logger.error("Failed to save and load root CA certificate");
+                return false;
+            }
         }
         if (!loadManagementKeyStore()) {
             logger.error("Failed to check and configure management server keystore");
@@ -437,10 +457,16 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         return true;
     }
 
+    private boolean hasUserProvidedCAKeys() {
+        return StringUtils.isNotEmpty(rootCAPublicKey.value())
+            || StringUtils.isNotEmpty(rootCAPrivateKey.value())
+            || StringUtils.isNotEmpty(rootCACertificate.value());
+    }
+
     @Override
     public boolean start() {
         managementCertificateCustomSAN = CAManager.CertManagementCustomSubjectAlternativeName.value();
-        return loadRootCAKeyPair() && loadRootCAKeyPair() && loadManagementKeyStore();
+        return loadRootCAKeyPair() && loadRootCACertificate() && loadManagementKeyStore();
     }
 
     @Override
