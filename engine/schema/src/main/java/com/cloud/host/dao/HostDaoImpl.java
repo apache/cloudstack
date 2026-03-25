@@ -1334,6 +1334,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> findRoutingByClusterId(Long clusterId) {
+        SearchCriteria<HostVO> sc = ClusterSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("type", Type.Routing);
+        return listBy(sc);
+    }
+
+    @Override
     public List<HostVO> findByClusterIdAndEncryptionSupport(Long clusterId) {
         SearchBuilder<DetailVO> hostCapabilitySearch = _detailsDao.createSearchBuilder();
         DetailVO tagEntity = hostCapabilitySearch.entity();
@@ -1445,6 +1453,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         if (hypervisorType != null) {
             sc.setParameters("hypervisorType", hypervisorType.toString());
         }
+        return listBy(sc);
+    }
+
+    @Override
+    public List<HostVO> listAllRoutingHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType) {
+        SearchCriteria<HostVO> sc = DcSearch.create();
+        sc.setParameters("dc", zoneId);
+        sc.setParameters("hypervisorType", hypervisorType.toString());
+        sc.setParameters("type", Type.Routing);
+
         return listBy(sc);
     }
 

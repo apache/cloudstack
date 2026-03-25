@@ -252,7 +252,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     protected Gson jsonParser = new GsonBuilder().setVersion(1.3).create();
 
-    protected Set<State> availableVmStateOnAssignProxy = new HashSet<>(Arrays.asList(State.Starting, State.Running, State.Stopping, State.Migrating));
+    protected Set<State> availableVmStateOnAssignProxy = new HashSet<>(Arrays.asList(State.Starting, State.Running, State.Stopping, State.Migrating, State.BackingUp, State.BackupError));
 
     @Inject
     private KeystoreDao _ksDao;

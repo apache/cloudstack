@@ -489,7 +489,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Integer> ClusterVMMetaDataSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vmmetadata.sync.interval", "180", "Cluster VM metadata sync interval in seconds",
             false);
 
-    static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
+    public static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
             Long.class, "vm.job.check.interval", "3000",
             "Interval in milliseconds to check if the job is complete", false);
     static final ConfigKey<Long> VmJobTimeout = new ConfigKey<Long>("Advanced",
@@ -1001,7 +1001,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
                                     logger.debug("Successfully transitioned to start state for {} reservation id = {}", vm, work.getId());
                                     if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-                                        _resourceLimitMgr.incrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template);
+                                        _resourceLimitMgr.incrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template, null);
                                     }
                                     return new Ternary<>(vm, context, work);
                                 }
@@ -1673,9 +1673,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             }
         } finally {
+            long hostId = vm.getHostId();
             if (startedVm == null) {
                 if (VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
-                    _resourceLimitMgr.decrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template);
+                    _resourceLimitMgr.decrementVmResourceCount(owner.getAccountId(), vm.isDisplay(), offering, template, null);
                 }
                 if (canRetry) {
                     try {
@@ -1689,6 +1690,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
             if (planToDeploy != null) {
                 planToDeploy.setAvoids(avoids);
+            }
+
+            if (params != null && Boolean.TRUE.equals(params.get(VirtualMachineProfile.Param.ReturnAfterVolumePrepare))) {
+                vm.setHostId(null);
+                vm.setLastHostId(hostId);
+                _vmDao.update(vm.getId(), vm);
             }
         }
 
@@ -2595,7 +2602,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (result && VirtualMachine.Type.User.equals(vm.type) && ResourceCountRunningVMsonly.value()) {
                         ServiceOfferingVO offering = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
                         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-                        _resourceLimitMgr.decrementVmResourceCount(vm.getAccountId(), vm.isDisplay(), offering, template);
+                        _resourceLimitMgr.decrementVmResourceCount(vm.getAccountId(), vm.isDisplay(), offering, template, null);
                     }
                     return result;
                 }

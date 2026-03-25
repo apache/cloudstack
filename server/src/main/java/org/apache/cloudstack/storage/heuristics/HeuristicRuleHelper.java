@@ -27,6 +27,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -36,6 +38,7 @@ import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Account;
+import org.apache.cloudstack.storage.heuristics.presetvariables.Backup;
 import org.apache.cloudstack.storage.heuristics.presetvariables.Domain;
 import org.apache.cloudstack.storage.heuristics.presetvariables.PresetVariables;
 import org.apache.cloudstack.storage.heuristics.presetvariables.SecondaryStorage;
@@ -77,6 +80,9 @@ public class HeuristicRuleHelper {
 
     @Inject
     private DataCenterDao zoneDao;
+
+    @Inject
+    private BackupOfferingDao backupOfferingDao;
 
     /**
      * Returns the {@link DataStore} object if the zone, specified by the ID, has an active heuristic rule for the given {@link HeuristicType}.
@@ -120,6 +126,10 @@ public class HeuristicRuleHelper {
                 presetVariables.setVolume(setVolumePresetVariable((com.cloud.storage.Volume) obj));
                 accountId = ((com.cloud.storage.Volume) obj).getAccountId();
                 break;
+            case BACKUP:
+                presetVariables.setBackup(setBackupPresetVariable((BackupVO) obj));
+                accountId = ((BackupVO) obj).getAccountId();
+                break;
         }
         presetVariables.setAccount(setAccountPresetVariable(accountId));
         presetVariables.setSecondaryStorages(setSecondaryStoragesVariable(zoneId));
@@ -152,6 +162,10 @@ public class HeuristicRuleHelper {
 
         if (presetVariables.getVolume() != null) {
             jsInterpreter.injectVariable("volume", presetVariables.getVolume());
+        }
+
+        if (presetVariables.getBackup() != null) {
+            jsInterpreter.injectVariable("backup", presetVariables.getBackup().toString());
         }
 
         if (presetVariables.getAccount() != null) {
@@ -209,6 +223,16 @@ public class HeuristicRuleHelper {
         snapshot.setHypervisorType(snapshotInfo.getHypervisorType().toString());
 
         return snapshot;
+    }
+
+    protected Backup setBackupPresetVariable(BackupVO backupVO) {
+        Backup backup = new Backup();
+
+        backup.setName(backupVO.getName());
+        backup.setVirtualSize(backupVO.getProtectedSize());
+        backup.setOfferingUuid(backupOfferingDao.findById(backupVO.getBackupOfferingId()).getUuid());
+
+        return backup;
     }
 
     protected Account setAccountPresetVariable(Long accountId) {

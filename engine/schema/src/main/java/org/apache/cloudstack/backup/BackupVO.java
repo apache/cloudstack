@@ -19,7 +19,6 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.Gson;
-
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -66,7 +65,7 @@ public class BackupVO implements Backup {
     private String externalId;
 
     @Column(name = "type")
-    private String backupType;
+    private String type;
 
     @Column(name = "date")
     @Temporal(value = TemporalType.DATE)
@@ -80,6 +79,9 @@ public class BackupVO implements Backup {
 
     @Column(name = "protected_size")
     private Long protectedSize;
+
+    @Column(name = "uncompressed_size")
+    private Long uncompressedSize;
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "status")
@@ -103,11 +105,35 @@ public class BackupVO implements Backup {
     @Column(name = "backup_schedule_id")
     private Long backupScheduleId;
 
+    @Column(name = "compression_status")
+    private CompressionStatus compressionStatus;
+
+    @Column(name = "validation_status")
+    private ValidationStatus validationStatus;
+
     @Transient
     Map<String, String> details;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
+        this.compressionStatus = CompressionStatus.Uncompressed;
+        this.validationStatus = ValidationStatus.NotValidated;
+    }
+
+    public BackupVO(String name, long vmId, long backupOfferingId, long accountId, long domainId, long zoneId, long virtualSize, Status status, Long backupScheduleId) {
+        this.name = name;
+        this.vmId = vmId;
+        this.backupOfferingId = backupOfferingId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.zoneId = zoneId;
+        this.protectedSize = virtualSize;
+        this.status = status;
+        this.setType("FULL");
+        this.uuid = UUID.randomUUID().toString();
+        this.backupScheduleId = backupScheduleId;
+        this.compressionStatus = CompressionStatus.Uncompressed;
+        this.validationStatus = ValidationStatus.NotValidated;
     }
 
     @Override
@@ -144,12 +170,13 @@ public class BackupVO implements Backup {
         this.externalId = externalId;
     }
 
+    @Override
     public String getType() {
-        return backupType;
+        return type;
     }
 
     public void setType(String type) {
-        this.backupType = type;
+        this.type = type;
     }
 
     @Override
@@ -287,5 +314,31 @@ public class BackupVO implements Backup {
 
     public void setBackupScheduleId(Long backupScheduleId) {
         this.backupScheduleId = backupScheduleId;
+    }
+
+    @Override
+    public CompressionStatus getCompressionStatus() {
+        return compressionStatus;
+    }
+
+    public void setCompressionStatus(CompressionStatus compressionStatus) {
+        this.compressionStatus = compressionStatus;
+    }
+
+    @Override
+    public ValidationStatus getValidationStatus() {
+        return validationStatus;
+    }
+
+    public void setValidationStatus(ValidationStatus validationStatus) {
+        this.validationStatus = validationStatus;
+    }
+
+    public Long getUncompressedSize() {
+        return uncompressedSize;
+    }
+
+    public void setUncompressedSize(Long uncompressedSize) {
+        this.uncompressedSize = uncompressedSize;
     }
 }

@@ -90,6 +90,8 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         backupSearch.and("external_id", backupSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
         backupSearch.and("backup_offering_id", backupSearch.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        backupSearch.and("status", backupSearch.entity().getStatus(), SearchCriteria.Op.IN);
+        backupSearch.and("created_before", backupSearch.entity().getDate(), SearchCriteria.Op.LT);
         backupSearch.done();
 
         backupVmSearchInZone = createSearchBuilder(Long.class);

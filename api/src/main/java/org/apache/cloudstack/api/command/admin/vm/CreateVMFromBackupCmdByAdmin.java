@@ -52,4 +52,11 @@ public class CreateVMFromBackupCmdByAdmin extends CreateVMFromBackupCmd implemen
     public Long getClusterId() {
         return clusterId;
     }
+
+    public CreateVMFromBackupCmdByAdmin(){}
+
+    public CreateVMFromBackupCmdByAdmin(String hypervisor) {
+        this.displayVm = false;
+        this.hypervisor = hypervisor;
+    }
 }

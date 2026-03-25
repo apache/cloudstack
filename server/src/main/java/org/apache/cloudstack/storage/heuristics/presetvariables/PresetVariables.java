@@ -30,6 +30,8 @@ public class PresetVariables {
 
     private Volume volume;
 
+    private Backup backup;
+
     public List<SecondaryStorage> getSecondaryStorages() {
         return secondaryStorages;
     }
@@ -60,6 +62,14 @@ public class PresetVariables {
 
     public void setVolume(Volume volume) {
         this.volume = volume;
+    }
+
+    public Backup getBackup() {
+        return backup;
+    }
+
+    public void setBackup(Backup backup) {
+        this.backup = backup;
     }
 
     public Account getAccount() {

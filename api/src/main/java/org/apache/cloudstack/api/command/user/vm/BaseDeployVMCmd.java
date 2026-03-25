@@ -138,7 +138,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which to deploy the virtual machine. "
             + "The parameter is required and respected only when hypervisor info is not set on the ISO/Template passed to the call")
-    private String hypervisor;
+    protected String hypervisor;
 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING,
             description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
@@ -208,7 +208,7 @@ public abstract class BaseDeployVMCmd extends BaseAsyncCreateCustomIdCmd impleme
     private List<String> affinityGroupNameList;
 
     @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, since = "4.2", description = "an optional field, whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
-    private Boolean displayVm;
+    protected Boolean displayVm;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.3", description = "used to specify the custom parameters. 'extraconfig' is not allowed to be passed in details")
     private Map details;

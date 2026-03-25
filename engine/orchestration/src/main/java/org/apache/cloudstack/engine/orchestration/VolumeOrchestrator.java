@@ -50,6 +50,7 @@ import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.backup.NativeBackupService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -279,6 +280,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Inject
     private DataStoreProviderManager dataStoreProviderMgr;
+
+    @Inject
+    private NativeBackupService nativeBackupService;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -1190,21 +1194,27 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volumeInfo, HypervisorType rootDiskHyperType, StoragePool storagePool) throws NoTransitionException {
+    public VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volumeInfo, HypervisorType rootDiskHyperType, StoragePool storagePool, Long clusterId, Long podId)
+            throws NoTransitionException {
         String volumeToString = getReflectOnlySelectedFields(volumeInfo.getVolume());
 
         VirtualMachineTemplate rootDiskTmplt = _entityMgr.findById(VirtualMachineTemplate.class, vm.getTemplateId());
         DataCenter dcVO = _entityMgr.findById(DataCenter.class, vm.getDataCenterId());
-        logger.trace("storage-pool {}/{} is associated with pod {}",storagePool.getName(), storagePool.getUuid(), storagePool.getPodId());
-        Long podId = storagePool.getPodId() != null ? storagePool.getPodId() : vm.getPodIdToDeployIn();
+
+        if (storagePool != null) {
+            logger.trace("storage-pool {}/{} is associated with pod {}", storagePool.getName(), storagePool.getUuid(), storagePool.getPodId());
+            podId = storagePool.getPodId() != null ? storagePool.getPodId() : vm.getPodIdToDeployIn();
+            clusterId = storagePool.getClusterId();
+            logger.trace("storage-pool {}/{} is associated with cluster {}",storagePool.getName(), storagePool.getUuid(), clusterId);
+        }
+
         Pod pod = _entityMgr.findById(Pod.class, podId);
 
         ServiceOffering svo = _entityMgr.findById(ServiceOffering.class, vm.getServiceOfferingId());
         DiskOffering diskVO = _entityMgr.findById(DiskOffering.class, volumeInfo.getDiskOfferingId());
-        Long clusterId = storagePool.getClusterId();
-        logger.trace("storage-pool {}/{} is associated with cluster {}",storagePool.getName(), storagePool.getUuid(), clusterId);
+
         Long hostId = vm.getHostId();
-        if (hostId == null && storagePool.isLocal()) {
+        if (hostId == null && storagePool != null && storagePool.isLocal()) {
             List<StoragePoolHostVO> poolHosts = storagePoolHostDao.listByPoolId(storagePool.getId());
             if (poolHosts.size() > 0) {
                 hostId = poolHosts.get(0).getHostId();
@@ -1452,6 +1462,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     _snapshotDao.updateVolumeIds(vol.getId(), result.getVolume().getId());
                     _snapshotDataStoreDao.updateVolumeIds(vol.getId(), result.getVolume().getId());
                 }
+                nativeBackupService.updateVolumeId(vol.getId(), result.getVolume().getId());
             }
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
@@ -1507,6 +1518,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (destPool == null) {
                 throw new CloudRuntimeException(String.format("Failed to find the destination storage pool [%s] to migrate the volume [%s] to.", storagePoolToString, volumeToString));
             }
+
+            nativeBackupService.prepareVolumeForMigration(volume);
 
             volumeMap.put(volFactory.getVolume(volume.getId()), (DataStore)destPool);
         }
@@ -2244,7 +2257,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (volume.getState() == Volume.State.Allocated) {
                 _volsDao.remove(volume.getId());
                 stateTransitTo(volume, Volume.Event.DestroyRequested);
-                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()));
+                _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId()),
+                        null);
             } else {
                 destroyVolumeInContext(volume);
             }

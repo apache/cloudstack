@@ -88,7 +88,7 @@ public class LibvirtGetVolumesOnStorageCommandWrapperTest {
         Mockito.when(pool.getUuid()).thenReturn(poolUuid);
         Mockito.when(pool.getType()).thenReturn(poolType);
         Mockito.when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
-        Mockito.when(storagePoolMgr.getStoragePool(poolType, poolUuid, true)).thenReturn(storagePool);
+        Mockito.when(storagePoolMgr.getStoragePool(poolType, poolUuid, true, true)).thenReturn(storagePool);
 
         qemuImg = Mockito.mockConstruction(QemuImg.class, (mock, context) -> {
             Mockito.when(mock.info(Mockito.any(QemuImgFile.class), Mockito.eq(true))).thenReturn(qemuImgInfo);

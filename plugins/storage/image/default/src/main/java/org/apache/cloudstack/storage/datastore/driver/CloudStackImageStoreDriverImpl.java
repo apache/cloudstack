@@ -66,9 +66,9 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
     }
 
     private String createObjectNameForExtractUrl(String installPath, ImageFormat format, DataObject dataObject) {
-        String objectNameInUrl = dataObject.getName();
+        String objectNameInUrl;
         try {
-            objectNameInUrl = cleanObjectName(objectNameInUrl);
+            objectNameInUrl = cleanObjectName(dataObject.getName());
         } catch (Exception e) {
             objectNameInUrl = UUID.randomUUID().toString();
         }

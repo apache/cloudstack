@@ -44,14 +44,14 @@ import com.cloud.user.UserVO;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
-import com.cloud.dc.Pod;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.org.Cluster;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.cluster.ManagementServerHostPeerJoinVO;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -96,6 +96,7 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
@@ -118,6 +119,7 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupServiceJobResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
@@ -155,7 +157,12 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.NativeBackupServiceJobType;
+import org.apache.cloudstack.backup.NativeBackupServiceJobVO;
 import org.apache.cloudstack.backup.BackupOfferingVO;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.dao.NativeBackupServiceJobDao;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -656,6 +663,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     RoleDao roleDao;
+
+    @Inject
+    private NativeBackupServiceJobDao nativeBackupServiceJobDao;
+
+    @Inject
+    private BackupDao backupDao;
 
     /*
      * (non-Javadoc)
@@ -5471,6 +5484,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             options.put(VmDetailConstants.GUEST_CPU_MODEL, Collections.emptyList());
             options.put(VmDetailConstants.KVM_GUEST_OS_MACHINE_TYPE, Collections.emptyList());
             options.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, Arrays.asList("true", "false"));
+            options.put(VmDetailConstants.VALIDATION_COMMAND, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_ARGUMENTS, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_EXPECTED_RESULT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_COMMAND_TIMEOUT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_BOOT_TIMEOUT, Collections.emptyList());
+            options.put(VmDetailConstants.VALIDATION_SCREENSHOT_WAIT, Collections.emptyList());
+
         }
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
@@ -6323,6 +6343,60 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return bucketDao.searchByIds(bktIds);
+    }
+
+    @Override
+    public ListResponse<BackupServiceJobResponse> listBackupServiceJobs(ListBackupServiceJobsCmd cmd) {
+        ListResponse<BackupServiceJobResponse> responses = new ListResponse<>();
+        Pair<List<NativeBackupServiceJobVO>, Integer> result = listBackupServiceJobsInternal(cmd);
+        List<BackupServiceJobResponse> compressionJobResponses = new ArrayList<>();
+
+        for (NativeBackupServiceJobVO jobVO : result.first()) {
+            BackupVO backup = backupDao.findByIdIncludingRemoved(jobVO.getBackupId());
+            DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(jobVO.getZoneId());
+
+            BackupServiceJobResponse response =  new BackupServiceJobResponse(jobVO.getId(), backup.getUuid(), zone.getUuid(), jobVO.getAttempts(),
+                    jobVO.getType().toString(), jobVO.getStartTime(), jobVO.getScheduledStartTime(), jobVO.getRemoved());
+
+            if (jobVO.getHostId() != null) {
+                response.setHostId(hostDao.findByIdIncludingRemoved(jobVO.getHostId()).getUuid());
+            }
+            compressionJobResponses.add(response);
+        }
+
+        responses.setResponses(compressionJobResponses, result.second());
+        return responses;
+    }
+
+    private Pair<List<NativeBackupServiceJobVO>, Integer> listBackupServiceJobsInternal(ListBackupServiceJobsCmd cmd) {
+        SearchBuilder<NativeBackupServiceJobVO> sb = nativeBackupServiceJobDao.createSearchBuilder();
+
+        sb.and("id", sb.entity().getId(), Op.EQ);
+        sb.and("backup_id", sb.entity().getBackupId(), Op.EQ);
+        sb.and("host_id", sb.entity().getHostId(), Op.EQ);
+        sb.and("zone_id", sb.entity().getZoneId(), Op.EQ);
+        sb.and("type", sb.entity().getType(), Op.EQ);
+
+        boolean removed = !cmd.getExecuting() && !cmd.getScheduled();
+        if (cmd.getExecuting() && !cmd.getScheduled()) {
+            sb.and("executing", sb.entity().getStartTime(), Op.NNULL);
+        } else if (cmd.getScheduled() && !cmd.getExecuting()) {
+            sb.and("scheduled", sb.entity().getStartTime(), Op.NULL);
+        }
+
+        SearchCriteria<NativeBackupServiceJobVO> sc = sb.create();
+
+        sc.setParametersIfNotNull("id", cmd.getId());
+        sc.setParametersIfNotNull("backup_id", cmd.getBackupId());
+        sc.setParametersIfNotNull("host_id", cmd.getHostId());
+        sc.setParametersIfNotNull("zone_id", cmd.getZoneId());
+        if (cmd.getType() != null) {
+            sc.setParameters("type", NativeBackupServiceJobType.valueOf(cmd.getType()));
+        }
+
+        Filter filter = new Filter(NativeBackupServiceJobVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        return nativeBackupServiceJobDao.searchAndCount(sc, filter, removed);
     }
 
     @Override

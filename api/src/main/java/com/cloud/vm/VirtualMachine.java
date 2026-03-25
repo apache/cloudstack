@@ -58,7 +58,10 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
         Error(false, "VM is in error"),
         Unknown(false, "VM state is unknown."),
         Shutdown(false, "VM state is shutdown from inside"),
-        Restoring(true, "VM is being restored from backup");
+        Restoring(true, "VM is being restored from backup"),
+        BackingUp(true, "VM is being backed up"),
+        BackupError(false, "VM backup is in a inconsistent state. Operator should analyse the logs and restore the VM"),
+        RestoreError(false, "VM restore left the VM in a inconsistent state. Operator should analyse the logs and restore the VM");
 
         private final boolean _transitional;
         String _description;
@@ -131,6 +134,14 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
             s_fsm.addTransition(new Transition<State, Event>(State.Destroyed, Event.RestoringRequested, State.Restoring, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Restoring, Event.RestoringSuccess, State.Stopped, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Restoring, Event.RestoringFailed, State.Stopped, null));
+            s_fsm.addTransition(new Transition<>(State.Running, Event.BackupRequested, State.BackingUp, null));
+            s_fsm.addTransition(new Transition<>(State.Stopped, Event.BackupRequested, State.BackingUp, null));
+            s_fsm.addTransition(new Transition<>(State.BackingUp, Event.BackupSucceededRunning, State.Running, null));
+            s_fsm.addTransition(new Transition<>(State.BackingUp, Event.BackupSucceededStopped, State.Stopped, null));
+            s_fsm.addTransition(new Transition<>(State.BackingUp, Event.OperationFailedToError, State.BackupError, null));
+            s_fsm.addTransition(new Transition<>(State.BackingUp, Event.OperationFailedToRunning, State.Running, null));
+            s_fsm.addTransition(new Transition<>(State.BackingUp, Event.OperationFailedToStopped, State.Stopped, null));
+            s_fsm.addTransition(new Transition<State, Event>(State.RestoreError, Event.RestoringFailed, State.RestoreError, null));
 
             s_fsm.addTransition(new Transition<State, Event>(State.Starting, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running, Arrays.asList(new Impact[]{Impact.USAGE})));
             s_fsm.addTransition(new Transition<State, Event>(State.Stopping, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running, null));
@@ -209,6 +220,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
         ExpungeOperation,
         OperationSucceeded,
         OperationFailed,
+        OperationFailedToRunning,
+        OperationFailedToStopped,
         OperationFailedToError,
         OperationRetry,
         AgentReportShutdowned,
@@ -218,6 +231,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
         RestoringRequested,
         RestoringFailed,
         RestoringSuccess,
+        BackupRequested,
+        BackupSucceededStopped,
+        BackupSucceededRunning,
 
         // added for new VMSync logic
         FollowAgentPowerOnReport,

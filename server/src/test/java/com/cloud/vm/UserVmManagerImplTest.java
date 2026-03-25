@@ -65,10 +65,8 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
-import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
@@ -79,6 +77,7 @@ import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
@@ -416,6 +415,9 @@ public class UserVmManagerImplTest {
     SSHKeyPairDao sshKeyPairDao;
 
     @Mock
+    private BackupProvider backupProviderMock;
+
+    @Mock
     private VMInstanceVO vmInstanceMock;
 
     @Mock
@@ -723,7 +725,7 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
-        Mockito.doNothing().when(userVmManagerImpl).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -3155,7 +3157,7 @@ public class UserVmManagerImplTest {
             Assert.assertThrows(CloudRuntimeException.class, () -> userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock,
                     userVmVoMock, serviceOfferingVoMock, volumes, virtualMachineTemplateMock, 1l));
 
-            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
             Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
         }
@@ -3178,7 +3180,7 @@ public class UserVmManagerImplTest {
             Assert.assertThrows(CloudRuntimeException.class, () -> userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock,
                     userVmVoMock, serviceOfferingVoMock, volumes, virtualMachineTemplateMock, 1l));
 
-            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
             Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
         }
@@ -3200,11 +3202,11 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock, userVmVoMock, serviceOfferingVoMock, volumes,
                     virtualMachineTemplateMock, 1L);
 
-            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
             Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
             Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            Mockito.verify(userVmManagerImpl).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         }
     }
 
@@ -3223,11 +3225,11 @@ public class UserVmManagerImplTest {
             userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock, userVmVoMock, serviceOfferingVoMock, volumes,
                     virtualMachineTemplateMock, 1l);
 
-            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
             Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
             Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            Mockito.verify(userVmManagerImpl, Mockito.never()).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl, Mockito.never()).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         }
     }
 
@@ -3633,12 +3635,12 @@ public class UserVmManagerImplTest {
         when(vm.getState()).thenReturn(VirtualMachine.State.Running);
         when(vm.getTemplateId()).thenReturn(templateId);
 
-        when(backupManager.restoreBackupToVM(backupId, vmId)).thenReturn(true);
+        when(backupManager.restoreBackupToVM(backupId, vmId, false)).thenReturn(true);
 
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
         Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> vmPair = new Pair<>(vm, params);
-        doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), isNull(), anyMap(), isNull());
-        doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), anyLong(), anyMap(), isNull());
+        doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), isNull(), anyMap(), isNull(), anyBoolean());
+        doReturn(vmPair).when(userVmManagerImpl).startVirtualMachine(anyLong(), isNull(), isNull(), anyLong(), anyMap(), isNull(), anyBoolean());
         when(userVmDao.findById(vmId)).thenReturn(vm);
         when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(mock(VMTemplateVO.class));
 
@@ -3646,7 +3648,7 @@ public class UserVmManagerImplTest {
 
         assertNotNull(result);
         assertEquals(vm, result);
-        Mockito.verify(backupManager).restoreBackupToVM(backupId, vmId);
+        Mockito.verify(backupManager).restoreBackupToVM(backupId, vmId, false);
     }
 
     @Test
@@ -3659,10 +3661,7 @@ public class UserVmManagerImplTest {
         ReflectionTestUtils.setField(userVmManagerImpl, "_uuidMgr", uuidMgr);
         CallContext callContext = mock(CallContext.class);
         Account callingAccount = mock(Account.class);
-        when(callingAccount.getId()).thenReturn(accountId);
         when(callContext.getCallingAccount()).thenReturn(callingAccount);
-        when(accountManager.isAdmin(callingAccount.getId())).thenReturn(true);
-        doNothing().when(accountManager).checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class), null);
         try (MockedStatic<CallContext> mockedCallContext = mockStatic(CallContext.class)) {
             mockedCallContext.when(CallContext::current).thenReturn(callContext);
             mockedCallContext.when(() -> CallContext.register(callContext, ApiCommandResourceType.Volume)).thenReturn(callContext);
@@ -3673,8 +3672,6 @@ public class UserVmManagerImplTest {
             List<Long> volumeIds = List.of(volumeId);
             when(cmd.getVolumeIds()).thenReturn(volumeIds);
             AsyncJobVO asyncJobMock = mock(AsyncJobVO.class);
-            when(cmd.getJob()).thenReturn(asyncJobMock);
-            when(asyncJobMock.getCmdInfo()).thenReturn("{}");
 
             UserVmVO vm = mock(UserVmVO.class);
             when(vm.getId()).thenReturn(vmId);
@@ -3692,15 +3689,13 @@ public class UserVmManagerImplTest {
             List<VolumeVO> dataVolumes = new ArrayList<>();
             when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.DATADISK)).thenReturn(dataVolumes);
 
-            when(volumeApiService.destroyVolume(volumeId, CallContext.current().getCallingAccount(), expunge, false)).thenReturn(vol);
-
             doReturn(vm).when(userVmManagerImpl).stopVirtualMachine(anyLong(), anyBoolean());
             doReturn(vm).when(userVmManagerImpl).destroyVm(vmId, expunge);
             doReturn(true).when(userVmManagerImpl).expunge(vm);
 
             try (MockedStatic<UsageEventUtils> mockedUsageEventUtils = mockStatic(UsageEventUtils.class)) {
 
-                UserVm result = userVmManagerImpl.destroyVm(cmd);
+                UserVm result = userVmManagerImpl.destroyVm(cmd, false);
 
                 assertNotNull(result);
                 assertEquals(vm, result);
