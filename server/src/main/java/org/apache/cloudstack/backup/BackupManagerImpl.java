@@ -460,32 +460,34 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         List<Long> filteredDomainIds = cmd.getDomainIds() == null ? new ArrayList<>() : new ArrayList<>(cmd.getDomainIds());
         Collections.sort(filteredDomainIds);
-        updateBackupOfferingDomainDetail(savedOffering, filteredDomainIds);
-        List<BackupOfferingDetailsVO> details = backupOfferingDetailsDao.listDetails(sourceOffering.getId());
-        details.removeIf(backupOfferingDetailsVO -> ApiConstants.DOMAIN_ID.equals(backupOfferingDetailsVO.getName()) || ApiConstants.ZONE_ID.equals(backupOfferingDetailsVO.getName()));
-        details.forEach(detail -> detail.setResourceId(savedOffering.getId()));
-        backupOfferingDetailsDao.saveDetails(details);
+        updateBackupOfferingDetails(savedOffering, sourceOffering, filteredDomainIds);
 
         logger.debug("Successfully cloned backup offering '" + sourceOffering.getName() + "' (ID: " + cmd.getSourceOfferingId() + ") to '" + cmd.getName() + "' (ID: " + savedOffering.getId() + ")");
         return savedOffering;
     }
 
-    private void updateBackupOfferingDomainDetail(BackupOfferingVO savedOffering, List<Long> filteredDomainIds) {
+    private void updateBackupOfferingDetails(BackupOfferingVO savedOffering, BackupOfferingVO sourceOffering, List<Long> filteredDomainIds) {
         if (filteredDomainIds.size() > 1) {
             filteredDomainIds = domainHelper.filterChildSubDomains(filteredDomainIds);
         }
 
+        List<BackupOfferingDetailsVO> detailsVOList = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(filteredDomainIds)) {
-            List<BackupOfferingDetailsVO> detailsVOList = new ArrayList<>();
             for (Long domainId : filteredDomainIds) {
                 if (domainDao.findById(domainId) == null) {
                     throw new InvalidParameterValueException("Please specify a valid domain id");
                 }
                 detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
             }
-            if (!detailsVOList.isEmpty()) {
-                backupOfferingDetailsDao.saveDetails(detailsVOList);
-            }
+        }
+
+        List<BackupOfferingDetailsVO> details = backupOfferingDetailsDao.listDetails(sourceOffering.getId());
+        details.removeIf(backupOfferingDetailsVO -> ApiConstants.DOMAIN_ID.equals(backupOfferingDetailsVO.getName()));
+        details.forEach(detail -> detail.setResourceId(savedOffering.getId()));
+        detailsVOList.addAll(details);
+
+        if (!detailsVOList.isEmpty()) {
+            backupOfferingDetailsDao.saveDetails(detailsVOList);
         }
     }
 

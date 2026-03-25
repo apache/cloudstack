@@ -93,7 +93,7 @@ public class BackupOfferingDaoImpl extends GenericDaoBase<BackupOfferingVO, Long
         if (crossZoneInstanceCreation) {
             response.setCrossZoneInstanceCreation(true);
         }
-        details.removeIf(backupOfferingDetailsVO -> ApiConstants.DOMAIN_ID.equals(backupOfferingDetailsVO.getName()) || ApiConstants.ZONE_ID.equals(backupOfferingDetailsVO.getName()));
+        details.removeIf(backupOfferingDetailsVO -> ApiConstants.DOMAIN_ID.equals(backupOfferingDetailsVO.getName()));
         Map<String, String> detailString = new HashMap<>();
         for (BackupOfferingDetailsVO detail : details) {
             detailString.put(detail.getName(), detail.getValue());
