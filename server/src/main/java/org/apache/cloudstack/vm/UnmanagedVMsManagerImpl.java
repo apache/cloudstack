@@ -155,8 +155,6 @@ import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
 import org.apache.cloudstack.api.command.admin.vm.UnmanageVMInstanceCmd;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.NicResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceDiskResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -195,15 +193,15 @@ import java.util.stream.Collectors;
 
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
 import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
+import static org.apache.cloudstack.storage.volume.VolumeImportUnmanageService.AllowImportVolumeWithBackingFile;
 import static org.apache.cloudstack.vm.ImportVmTask.Step.CloningInstance;
 import static org.apache.cloudstack.vm.ImportVmTask.Step.Completed;
 import static org.apache.cloudstack.vm.ImportVmTask.Step.ConvertingInstance;
 import static org.apache.cloudstack.vm.ImportVmTask.Step.Importing;
 
 public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
-    public static final String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
-    public static final String KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME = "kvm-default-vm-import-dummy-template";
     protected Logger logger = LogManager.getLogger(UnmanagedVMsManagerImpl.class);
+    private static final long OTHER_LINUX_64_GUEST_OS_ID = 99;
     private static final List<Hypervisor.HypervisorType> importUnmanagedInstancesSupportedHypervisors =
             Arrays.asList(Hypervisor.HypervisorType.VMware, Hypervisor.HypervisorType.KVM);
 
@@ -326,7 +324,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             template = VMTemplateVO.createSystemIso(templateDao.getNextInSequence(Long.class, "id"), templateName, templateName, true,
                     "", true, 64, Account.ACCOUNT_ID_SYSTEM, "",
-                    "VM Import Default Template", false, 1);
+                    "VM Import Default Template", false, OTHER_LINUX_64_GUEST_OS_ID);
             template.setState(VirtualMachineTemplate.State.Inactive);
             template = templateDao.persist(template);
             if (template == null) {
@@ -338,68 +336,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             logger.error("Unable to create default dummy template for VM import", e);
         }
         return template;
-    }
-
-    private UnmanagedInstanceResponse createUnmanagedInstanceResponse(UnmanagedInstanceTO instance, Cluster cluster, Host host) {
-        UnmanagedInstanceResponse response = new UnmanagedInstanceResponse();
-        response.setName(instance.getName());
-
-        if (cluster != null) {
-            response.setClusterId(cluster.getUuid());
-        }
-        if (host != null) {
-            response.setHostId(host.getUuid());
-            response.setHostName(host.getName());
-        }
-        response.setPowerState(instance.getPowerState().toString());
-        response.setCpuCores(instance.getCpuCores());
-        response.setCpuSpeed(instance.getCpuSpeed());
-        response.setCpuCoresPerSocket(instance.getCpuCoresPerSocket());
-        response.setMemory(instance.getMemory());
-        response.setOperatingSystemId(instance.getOperatingSystemId());
-        response.setOperatingSystem(instance.getOperatingSystem());
-        response.setObjectName("unmanagedinstance");
-
-        if (instance.getDisks() != null) {
-            for (UnmanagedInstanceTO.Disk disk : instance.getDisks()) {
-                UnmanagedInstanceDiskResponse diskResponse = new UnmanagedInstanceDiskResponse();
-                diskResponse.setDiskId(disk.getDiskId());
-                if (StringUtils.isNotEmpty(disk.getLabel())) {
-                    diskResponse.setLabel(disk.getLabel());
-                }
-                diskResponse.setCapacity(disk.getCapacity());
-                diskResponse.setController(disk.getController());
-                diskResponse.setControllerUnit(disk.getControllerUnit());
-                diskResponse.setPosition(disk.getPosition());
-                diskResponse.setImagePath(disk.getImagePath());
-                diskResponse.setDatastoreName(disk.getDatastoreName());
-                diskResponse.setDatastoreHost(disk.getDatastoreHost());
-                diskResponse.setDatastorePath(disk.getDatastorePath());
-                diskResponse.setDatastoreType(disk.getDatastoreType());
-                response.addDisk(diskResponse);
-            }
-        }
-
-        if (instance.getNics() != null) {
-            for (UnmanagedInstanceTO.Nic nic : instance.getNics()) {
-                NicResponse nicResponse = new NicResponse();
-                nicResponse.setId(nic.getNicId());
-                nicResponse.setNetworkName(nic.getNetwork());
-                nicResponse.setMacAddress(nic.getMacAddress());
-                if (StringUtils.isNotEmpty(nic.getAdapterType())) {
-                    nicResponse.setAdapterType(nic.getAdapterType());
-                }
-                if (!CollectionUtils.isEmpty(nic.getIpAddress())) {
-                    nicResponse.setIpAddresses(nic.getIpAddress());
-                }
-                nicResponse.setVlanId(nic.getVlan());
-                nicResponse.setIsolatedPvlanId(nic.getPvlan());
-                nicResponse.setIsolatedPvlanType(nic.getPvlanType());
-                response.addNic(nicResponse);
-            }
-        }
-
-        return response;
     }
 
     private List<String> getAdditionalNameFilters(Cluster cluster) {
@@ -1145,7 +1081,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private UserVm importVirtualMachineInternal(final UnmanagedInstanceTO unmanagedInstance, final String instanceNameInternal, final DataCenter zone, final Cluster cluster, final HostVO host,
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
                                                 final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
-                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
+                                                final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap, final Long guestOsId,
                                                 final Map<String, String> details, final boolean migrateAllowed, final boolean forced, final boolean isImportUnmanagedFromSameHypervisor) {
         logger.debug(LogUtils.logGsonWithoutException("Trying to import VM [%s] with name [%s], in zone [%s], cluster [%s], and host [%s], using template [%s], service offering [%s], disks map [%s], NICs map [%s] and details [%s].",
                 unmanagedInstance, displayName, zone, cluster, host, template, serviceOffering, dataDiskOfferingMap, nicNetworkMap, details));
@@ -1231,7 +1167,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             userVm = userVmManager.importVM(zone, host, template, internalCSName, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
-                    validatedServiceOffering, null, hostName,
+                    validatedServiceOffering, null, guestOsId, hostName,
                     cluster.getHypervisorType(), allDetails, powerState, null);
         } catch (InsufficientCapacityException ice) {
             String errorMsg = String.format("Failed to import VM [%s] due to [%s].", displayName, ice.getMessage());
@@ -1550,11 +1486,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     protected VMTemplateVO getTemplateForImportInstance(Long templateId, Hypervisor.HypervisorType hypervisorType) {
         VMTemplateVO template;
         if (templateId == null) {
-            template = templateDao.findByName(VM_IMPORT_DEFAULT_TEMPLATE_NAME);
+            boolean isKVMHypervisor = Hypervisor.HypervisorType.KVM.equals(hypervisorType);
+            String templateName = (isKVMHypervisor) ? KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME : VM_IMPORT_DEFAULT_TEMPLATE_NAME;
+            template = templateDao.findByName(templateName);
             if (template == null) {
-                template = createDefaultDummyVmImportTemplate(Hypervisor.HypervisorType.KVM == hypervisorType);
+                template = createDefaultDummyVmImportTemplate(isKVMHypervisor);
                 if (template == null) {
-                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, hypervisorType.toString()));
+                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", templateName, hypervisorType.toString()));
                 }
             }
         } else {
@@ -1632,7 +1570,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 userVm = importVirtualMachineInternal(unmanagedInstance, instanceName, zone, cluster, host,
                         template, displayName, hostName, CallContext.current().getCallingAccount(), owner, userId,
                         serviceOffering, dataDiskOfferingMap,
-                        nicNetworkMap, nicIpAddressMap,
+                        nicNetworkMap, nicIpAddressMap, null,
                         details, migrateAllowed, forced, true);
                 break;
             }
@@ -1712,6 +1650,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         Long convertStoragePoolId = cmd.getConvertStoragePoolId();
         String extraParams = cmd.getExtraParams();
         boolean forceConvertToPool = cmd.getForceConvertToPool();
+        Long guestOsId = cmd.getGuestOsId();
 
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
@@ -1799,7 +1738,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             UserVm userVm = importVirtualMachineInternal(convertedInstance, null, zone, destinationCluster, null,
                     template, displayName, hostName, caller, owner, userId,
                     serviceOffering, dataDiskOfferingMap,
-                    nicNetworkMap, nicIpAddressMap,
+                    nicNetworkMap, nicIpAddressMap, guestOsId,
                     details, false, forced, false);
             long timeElapsedInSecs = (System.currentTimeMillis() - importStartTime) / 1000;
             logger.debug(String.format("VMware VM %s imported successfully to CloudStack instance %s (%s), Time taken: %d secs, OVF files imported from %s, Source VMware VM details - OS: %s, PowerState: %s, Disks: %s, NICs: %s",
@@ -2676,7 +2615,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
-                    serviceOffering, null, hostName,
+                    serviceOffering, null, null, hostName,
                     Hypervisor.HypervisorType.KVM, allDetails, powerState, null);
         } catch (InsufficientCapacityException ice) {
             logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
@@ -2814,7 +2753,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         try {
             userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
-                    serviceOffering, null, hostName,
+                    serviceOffering, null, null, hostName,
                     Hypervisor.HypervisorType.KVM, allDetails, powerState, networkNicMap);
         } catch (InsufficientCapacityException ice) {
             logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
@@ -2908,7 +2847,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         if (volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
             String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
-            if (StringUtils.isNotBlank(backingFile)) {
+            if (StringUtils.isNotBlank(backingFile) && !AllowImportVolumeWithBackingFile.value()) {
                 logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
             }
         }
@@ -2999,9 +2938,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     !instance.getName().toLowerCase().contains(keyword)) {
                 continue;
             }
-            responses.add(createUnmanagedInstanceResponse(instance, null, null));
+            responses.add(responseGenerator.createUnmanagedInstanceResponse(instance, null, null));
         }
-
         ListResponse<UnmanagedInstanceResponse> listResponses = new ListResponse<>();
         listResponses.setResponses(responses, responses.size());
         return listResponses;
