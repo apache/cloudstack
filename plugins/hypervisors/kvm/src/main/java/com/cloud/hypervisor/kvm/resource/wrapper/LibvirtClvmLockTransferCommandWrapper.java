@@ -39,8 +39,8 @@ public class LibvirtClvmLockTransferCommandWrapper
         ClvmLockTransferCommand.Operation operation = cmd.getOperation();
         String volumeUuid = cmd.getVolumeUuid();
 
-        logger.info(String.format("Executing CLVM lock transfer: operation=%s, lv=%s, volume=%s",
-                operation, lvPath, volumeUuid));
+        logger.info("Executing CLVM lock transfer: operation={}, lv={}, volume={}",
+                operation, lvPath, volumeUuid);
 
         try {
             String lvchangeOpt;
@@ -69,20 +69,20 @@ public class LibvirtClvmLockTransferCommandWrapper
             String result = script.execute();
 
             if (result != null) {
-                logger.error("CLVM lock transfer failed for volume {}: {}}",
+                logger.error("CLVM lock transfer failed for volume {}: {}",
                         volumeUuid, result);
                 return new Answer(cmd, false,
                     String.format("lvchange %s %s failed: %s", lvchangeOpt, lvPath, result));
             }
 
-            logger.info("Successfully executed CLVM lock transfer: {} {}} for volume {}}",
+            logger.info("Successfully executed CLVM lock transfer: {} {} for volume {}",
                     lvchangeOpt, lvPath, volumeUuid);
 
             return new Answer(cmd, true,
                 String.format("Successfully %s CLVM volume %s", operationDesc, volumeUuid));
 
         } catch (Exception e) {
-            logger.error("Exception during CLVM lock transfer for volume {}: {}}",
+            logger.error("Exception during CLVM lock transfer for volume {}: {}",
                     volumeUuid, e.getMessage(), e);
             return new Answer(cmd, false, "Exception: " + e.getMessage());
         }

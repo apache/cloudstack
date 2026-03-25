@@ -2697,16 +2697,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     /**
-     * Checks if a storage pool is CLVM type.
-     *
-     * @param pool Storage pool to check
-     * @return true if pool is CLVM type
-     */
-    private boolean isClvmPool(StoragePoolVO pool) {
-        return pool != null && pool.getPoolType() == StoragePoolType.CLVM;
-    }
-
-    /**
      * Extracts the Volume Group (VG) name from a CLVM storage pool path.
      * For CLVM, the path is typically: /vgname
      *
@@ -2797,7 +2787,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         StoragePoolVO volumePool = pools.first();
         StoragePoolVO vmPool = pools.second();
 
-        if (!isClvmPool(volumePool)) {
+        if (volumePool != null && !ClvmLockManager.isClvmPoolType(volumePool.getPoolType())) {
             return false;
         }
 

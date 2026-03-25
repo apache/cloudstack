@@ -223,6 +223,26 @@ public class KVMStorageProcessor implements StorageProcessor {
             "  </devices>\n" +
             "</domain>";
 
+    private static final String DUMMY_VM_XML_BLOCK = "<domain type='qemu'>\n" +
+            "  <name>%s</name>\n" +
+            "  <memory unit='MiB'>256</memory>\n" +
+            "  <currentMemory unit='MiB'>256</currentMemory>\n" +
+            "  <vcpu>1</vcpu>\n" +
+            "  <os>\n" +
+            "    <type arch='%s' machine='%s'>hvm</type>\n" +
+            "    <boot dev='hd'/>\n" +
+            "  </os>\n" +
+            "  <devices>\n" +
+            "    <emulator>%s</emulator>\n" +
+            "    <disk type='block' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n"+
+            "      <source dev='%s'/>\n" +
+            "      <target dev='sda'/>\n" +
+            "    </disk>\n" +
+            "    <graphics type='vnc' port='-1'/>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
 
     public KVMStorageProcessor(final KVMStoragePoolManager storagePoolMgr, final LibvirtComputingResource resource) {
         this.storagePoolMgr = storagePoolMgr;
@@ -2038,9 +2058,21 @@ public class KVMStorageProcessor implements StorageProcessor {
                         newSnapshot.setPhysicalSize(snapshotSize);
                     }
                 } else if (primaryPool.getType() == StoragePoolType.CLVM || primaryPool.getType() == StoragePoolType.CLVM_NG) {
-                    CreateObjectAnswer result = takeClvmVolumeSnapshotOfStoppedVm(disk, snapshotName);
-                    if (result != null) return result;
-                    newSnapshot.setPath(snapshotPath);
+                    if (primaryPool.getType() == StoragePoolType.CLVM_NG && snapshotTO.isKvmIncrementalSnapshot()) {
+                        if (secondaryPool == null) {
+                            String errorMsg = String.format("Incremental snapshots for CLVM_NG require secondary storage. " +
+                                    "Please configure secondary storage or disable incremental snapshots for volume [%s].", volume.getName());
+                            logger.error(errorMsg);
+                            return new CreateObjectAnswer(errorMsg);
+                        }
+                        logger.info("Taking incremental snapshot of CLVM_NG volume [{}] using QCOW2 backup to secondary storage.", volume.getName());
+                        newSnapshot = takeIncrementalVolumeSnapshotOfStoppedVm(snapshotTO, primaryPool, secondaryPool,
+                                imageStoreTo.getUrl(), snapshotName, volume, conn, cmd.getWait());
+                    } else {
+                        CreateObjectAnswer result = takeClvmVolumeSnapshotOfStoppedVm(disk, snapshotName);
+                        if (result != null) return result;
+                        newSnapshot.setPath(snapshotPath);
+                    }
                 } else {
                     if (snapshotTO.isKvmIncrementalSnapshot()) {
                         newSnapshot = takeIncrementalVolumeSnapshotOfStoppedVm(snapshotTO, primaryPool, secondaryPool, imageStoreTo != null ? imageStoreTo.getUrl() : null, snapshotName, volume, conn, cmd.getWait());
@@ -2113,7 +2145,11 @@ public class KVMStorageProcessor implements StorageProcessor {
         String machine = resource.isGuestAarch64() ? LibvirtComputingResource.VIRT : LibvirtComputingResource.PC;
         String cpuArch = resource.getGuestCpuArch() != null ? resource.getGuestCpuArch() : "x86_64";
 
-        return String.format(DUMMY_VM_XML, vmName, cpuArch, machine, resource.getHypervisorPath(), primaryPool.getLocalPathFor(volumeObjectTo.getPath()));
+        String volumePath = primaryPool.getLocalPathFor(volumeObjectTo.getPath());
+        boolean isClvmNg = StoragePoolType.CLVM_NG == primaryPool.getType();
+
+        String xmlTemplate = isClvmNg ? DUMMY_VM_XML_BLOCK : DUMMY_VM_XML;
+        return String.format(xmlTemplate, vmName, cpuArch, machine, resource.getHypervisorPath(), volumePath);
     }
 
     private SnapshotObjectTO takeIncrementalVolumeSnapshotOfRunningVm(SnapshotObjectTO snapshotObjectTO, KVMStoragePool primaryPool, KVMStoragePool secondaryPool,
