@@ -17,14 +17,19 @@
 
 package org.apache.cloudstack.dns;
 
+import static com.cloud.event.EventTypes.EVENT_NIC_CREATE;
+import static com.cloud.event.EventTypes.EVENT_NIC_DELETE;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.dns.AddDnsServerCmd;
@@ -60,6 +65,9 @@ import org.apache.cloudstack.dns.vo.DnsServerVO;
 import org.apache.cloudstack.dns.vo.DnsZoneJoinVO;
 import org.apache.cloudstack.dns.vo.DnsZoneNetworkMapVO;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
@@ -85,10 +93,14 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicDetailVO;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderManager, PluggableService {
@@ -117,6 +129,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     AccountDao accountDao;
     @Inject
     NicDetailsDao nicDetailsDao;
+    @Inject
+    MessageBus messageBus;
+    @Inject
+    VMInstanceDao vmInstanceDao;
 
     private DnsProvider getProviderByType(DnsProviderType type) {
         if (type == null) {
@@ -463,7 +479,11 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             record.setName(cmd.getName());
             record.setType(cmd.getType());
             DnsProvider provider = getProviderByType(server.getProviderType());
-            return provider.deleteRecord(server, zone, record) != null;
+            String deletedDnsRecord = provider.deleteRecord(server, zone, record);
+            if (deletedDnsRecord != null) {
+                messageBus.publish(_name, DnsProvider.Topics.DNS_RECORD_DELETE, PublishScope.GLOBAL, deletedDnsRecord);
+            }
+            return deletedDnsRecord != null;
         } catch (Exception ex) {
             logger.error("Failed to delete DNS record via provider", ex);
             throw new CloudRuntimeException(String.format("Failed to delete DNS record: %s", cmd.getName()));
@@ -813,6 +833,21 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        messageBus.subscribe(VirtualMachineManager.Topics.VM_LIFECYCLE, new VmLifecycleSubscriber());
+        messageBus.subscribe(Nic.Topics.NIC_LIFECYCLE, new NicLifecycleSubscriber());
+        messageBus.subscribe(DnsProvider.Topics.DNS_RECORD_DELETE, (senderAddress, subject, args) -> {
+            try {
+                String deletedDnsRecord = (String) args;
+                nicDetailsDao.removeDetailsForValuesIn(ApiConstants.NIC_DNS_RECORD, Collections.singletonList(deletedDnsRecord));
+            } catch (Exception ex) {
+                logger.error("Failed to process DNS record deletion event", ex);
+            }
+        });
+        return true;
+    }
+
+    @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<>();
 
@@ -844,5 +879,113 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
     public void setDnsProviders(List<DnsProvider> dnsProviders) {
         this.dnsProviders = dnsProviders;
+    }
+
+    class VmLifecycleSubscriber implements MessageSubscriber {
+
+        @Override
+        public void onPublishMessage(String senderAddress, String subject, Object args) {
+            try {
+                logger.trace("VM lifecycle event: {},  {}, {}", senderAddress, subject, args);
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> event = (Map<String, Object>) args;
+                VirtualMachine.State oldState = (VirtualMachine.State) event.get(ApiConstants.OLD_STATE);
+                VirtualMachine.State newState = (VirtualMachine.State) event.get(ApiConstants.NEW_STATE);
+                if (oldState == newState) {
+                    logger.debug("Instance state is unchanged, skip event processing");
+                    return;
+                }
+                long instanceId = (long) event.get(ApiConstants.INSTANCE_ID);
+                switch (newState) {
+                    case Running:
+                        handleVmEvent(instanceId, true);
+                        break;
+                    case Stopped:
+                    case Destroyed:
+                        handleVmEvent(instanceId, false);
+                        break;
+                    default:
+                        logger.warn("Ignoring lifecycle event for Instance ID: {}, unsupported state={}", instanceId, newState);
+                        break;
+                }
+            } catch (Exception ex) {
+                logger.error("Failed to process Instance lifecycle event", ex);
+            }
+        }
+    }
+
+    class NicLifecycleSubscriber implements MessageSubscriber {
+        @Override
+        public void onPublishMessage(String senderAddress, String subject, Object args) {
+            try {
+                logger.trace("NIC lifecycle event: {},  {}, {}", senderAddress, subject, args);
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> event = (Map<String, Object>) args;
+                String eventType = (String) event.get(ApiConstants.EVENT_TYPE);
+                Long nicId = (Long) event.get(ApiConstants.NIC_ID);
+                Long instanceId = (Long) event.get(ApiConstants.INSTANCE_ID);
+                if (nicId == null || instanceId == null) {
+                    logger.warn("Insufficient data to process NIC lifecycle event: {}", args);
+                    return;
+                }
+                if (EVENT_NIC_CREATE.equals(eventType)) {
+                    handleNicEvent(nicId, instanceId, true);
+                } else if (EVENT_NIC_DELETE.equals(eventType)) {
+                    handleNicEvent(nicId, instanceId, false);
+                } else {
+                    logger.warn("Ignoring lifecycle event for NIC with ID: {}, unsupported eventType={}", nicId, eventType);
+                }
+            } catch (Exception ex) {
+                logger.error("Failed to process NIC lifecycle event", ex);
+            }
+
+        }
+    }
+
+
+
+    private void handleNicEvent(long nicId, long instanceId, boolean isAddDnsRecord) {
+        VMInstanceVO vmInstanceVO = vmInstanceDao.findById(instanceId);
+        if (vmInstanceVO == null) {
+            logger.error("Unable to find Instance with ID: {}", instanceId);
+            return;
+        }
+        Nic nic = nicDao.findByIdIncludingRemoved(nicId);
+        if (nic == null) {
+            logger.error("NIC is not found for the ID: {}", nicId);
+            return;
+        }
+        Network network = networkDao.findById(nic.getNetworkId());
+        if (network == null || !Network.GuestType.Shared.equals(network.getGuestType())) {
+            logger.warn("Network is not eligible for DNS record registration");
+            return;
+        }
+        processEventForDnsRecord(vmInstanceVO, network, nic, isAddDnsRecord);
+    }
+
+    private void handleVmEvent(long instanceId, boolean isAddDnsRecord) {
+        VMInstanceVO vmInstanceVO = vmInstanceDao.findByIdIncludingRemoved(instanceId);
+        if (vmInstanceVO == null) {
+            logger.error("Unable to find Instance with ID: {}", instanceId);
+            return;
+        }
+        List<NicVO> vmNics = nicDao.listByVmIdIncludingRemoved(vmInstanceVO.getId());
+        for (NicVO nic : vmNics) {
+            Network network = networkDao.findById(nic.getNetworkId());
+            if (network == null || !Network.GuestType.Shared.equals(network.getGuestType())) {
+                continue;
+            }
+            processEventForDnsRecord(vmInstanceVO, network, nic, isAddDnsRecord);
+        }
+    }
+
+    void processEventForDnsRecord(VMInstanceVO vmInstanceVO, Network network, Nic nic, boolean isAddDnsRecord) {
+        if (isAddDnsRecord) {
+            addDnsRecordForVM(vmInstanceVO, network, nic);
+        } else {
+            deleteDnsRecordForVM(vmInstanceVO, network, nic);
+        }
     }
 }

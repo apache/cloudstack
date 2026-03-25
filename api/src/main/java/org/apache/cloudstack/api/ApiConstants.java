@@ -1370,6 +1370,10 @@ public class ApiConstants {
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String NATIVE_ZONE = "Native";
     public static final String NIC_DNS_RECORD = "nicdnsrecord";
+    public static final String TIME_STAMP = "timestamp";
+    public static final String INSTANCE_ID = "instanceId";
+    public static final String OLD_STATE = "oldState";
+    public static final String NEW_STATE = "newState";
 
 
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +

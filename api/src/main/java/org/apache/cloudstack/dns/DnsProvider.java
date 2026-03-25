@@ -25,6 +25,10 @@ import com.cloud.utils.component.Adapter;
 
 public interface DnsProvider extends Adapter {
 
+    interface Topics {
+        String DNS_RECORD_DELETE = "dns.record.delete";
+    }
+
     DnsProviderType getProviderType();
 
     // Validates connectivity to the server

@@ -112,6 +112,7 @@ public interface VirtualMachineManager extends Manager {
 
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
+        String VM_LIFECYCLE = "vm.lifecycle";
     }
 
     /**

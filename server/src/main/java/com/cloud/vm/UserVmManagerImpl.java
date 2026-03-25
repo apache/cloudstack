@@ -16,9 +16,12 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.event.EventTypes.EVENT_NIC_CREATE;
+import static com.cloud.event.EventTypes.EVENT_NIC_DELETE;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.Functionality;
 import static com.cloud.storage.Volume.IOPS_LIMIT;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import static com.cloud.vm.VirtualMachineManager.Topics.VM_LIFECYCLE;
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
 import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
 
@@ -1435,7 +1438,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NIC_CREATE, eventDescription = "Creating NIC", async = true)
+    @ActionEvent(eventType = EVENT_NIC_CREATE, eventDescription = "Creating NIC", async = true)
     public UserVm addNicToVirtualMachine(AddNicToVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, CloudRuntimeException {
         Long vmId = cmd.getVmId();
         Long networkId = cmd.getNetworkId();
@@ -1537,7 +1540,39 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         CallContext.current().putContextParameter(Nic.class, guestNic.getUuid());
         logger.debug(String.format("Successful addition of %s from %s through %s", network, vmInstance, guestNic));
+        publishNicEventMessageBus(vmInstance.getId(), vmInstance.getAccountId(), guestNic.getId(), EVENT_NIC_CREATE);
         return _vmDao.findById(vmInstance.getId());
+    }
+
+    private void publishVmLifecycleMessageBus(UserVm instance, @Nullable VirtualMachine.State oldState, VirtualMachine.State newState) {
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put(ApiConstants.EVENT_ID, UUID.randomUUID().toString());
+            event.put(ApiConstants.INSTANCE_ID, instance.getId());
+            event.put(ApiConstants.ACCOUNT_ID, instance.getAccountId());
+            event.put(ApiConstants.OLD_STATE, oldState != null ? oldState : State.Unknown);
+            event.put(ApiConstants.NEW_STATE, newState);
+            event.put(ApiConstants.TIME_STAMP, System.currentTimeMillis());
+            messageBus.publish(_name, VM_LIFECYCLE, PublishScope.GLOBAL, event);
+        } catch (Exception ex) {
+            logger.warn("Failed to publish lifecycle event for Instance: {}",  instance.getUuid(), ex);
+        }
+    }
+
+    private void publishNicEventMessageBus(Long instanceId, Long accountId, Long nicId, String eventType) {
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put(ApiConstants.EVENT_ID, UUID.randomUUID().toString());
+            event.put(ApiConstants.INSTANCE_ID, instanceId);
+            event.put(ApiConstants.ACCOUNT_ID, accountId);
+            event.put(ApiConstants.NIC_ID, nicId);
+            event.put(ApiConstants.EVENT_TYPE, eventType); // NIC_CREATE or NIC_DELETE
+            event.put(ApiConstants.TIME_STAMP, System.currentTimeMillis());
+
+            messageBus.publish(_name, Nic.Topics.NIC_LIFECYCLE, PublishScope.GLOBAL, event);
+        } catch (Exception ex) {
+            logger.error("Failed to publish lifecycle event for NIC with ID: {}", nicId, ex);
+        }
     }
 
     /**
@@ -1654,6 +1689,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         logger.debug("Successful removal of " + network + " from " + vmInstance);
+        publishNicEventMessageBus(vmInstance.getId(), vmInstance.getAccountId(), nic.getId(), EVENT_NIC_DELETE);
         return _vmDao.findById(vmInstance.getId());
     }
 
@@ -3384,8 +3420,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (cmd.getConsiderLastHost() != null) {
             additonalParams.put(VirtualMachineProfile.Param.ConsiderLastHost, cmd.getConsiderLastHost().toString());
         }
-
-        return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
+        UserVmVO vm = _vmDao.findById(cmd.getId());
+        UserVm userVm = startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
+        publishVmLifecycleMessageBus(userVm, vm.getState(), VirtualMachine.State.Running);
+        return userVm;
     }
 
     @Override
@@ -3570,7 +3608,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 logger.warn("Tried to destroy ROOT volume for VM [{}], but couldn't retrieve it.", vm);
             }
         }
-
+        publishVmLifecycleMessageBus(destroyedVm, vm.getState(), VirtualMachine.State.Destroyed);
         return destroyedVm;
     }
 
@@ -5272,7 +5310,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             additionalParams.put(VirtualMachineProfile.Param.VmPassword, cmd.getPassword());
         }
 
-        return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additionalParams, cmd.getDeploymentPlanner());
+        UserVm userVm = startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additionalParams, cmd.getDeploymentPlanner());
+        publishVmLifecycleMessageBus(userVm, null, VirtualMachine.State.Running);
+        return userVm;
     }
 
     private UserVm startVirtualMachine(long vmId, Long podId, Long clusterId, Long hostId, Map<Long, DiskOffering> diskOfferingMap
@@ -5631,6 +5671,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 status = vmEntity.stop(Long.toString(userId));
             }
             if (status) {
+                publishVmLifecycleMessageBus(vm, vm.getState(), VirtualMachine.State.Stopped);
                 return _vmDao.findById(vmId);
             } else {
                 return null;
