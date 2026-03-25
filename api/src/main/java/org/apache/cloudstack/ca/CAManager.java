@@ -88,6 +88,12 @@ public interface CAManager extends CAService, Configurable, PluggableService {
                     "The actual implementation will depend on the configured CA provider.",
             false);
 
+    ConfigKey<Boolean> CaInjectDefaultTruststore = new ConfigKey<>("Advanced", Boolean.class,
+            "ca.framework.inject.default.truststore", "true",
+            "When true, injects the CA provider's certificate into the JVM default truststore on management server startup. " +
+            "This allows outgoing HTTPS connections from the management server to trust servers with certificates signed by the configured CA. " +
+            "Restart management server(s) when changed.", true);
+
     /**
      * Returns a list of available CA provider plugins
      * @return returns list of CAProvider
