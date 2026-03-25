@@ -121,7 +121,7 @@ public class CAManagerImplTest {
         Mockito.when(agentManager.send(anyLong(), any(SetupCertificateCommand.class))).thenReturn(new SetupCertificateAnswer(true));
         Mockito.when(agentManager.send(anyLong(), any(SetupKeyStoreCommand.class))).thenReturn(new SetupKeystoreAnswer("someCsr"));
         Mockito.doNothing().when(agentManager).reconnect(Mockito.anyLong());
-        Assert.assertTrue(caManager.provisionCertificate(host, true, null));
+        Assert.assertTrue(caManager.provisionCertificate(host, true, null, false));
         Mockito.verify(agentManager, Mockito.times(1)).send(Mockito.anyLong(), any(SetupKeyStoreCommand.class));
         Mockito.verify(agentManager, Mockito.times(1)).send(Mockito.anyLong(), any(SetupCertificateCommand.class));
         Mockito.verify(agentManager, Mockito.times(1)).reconnect(Mockito.anyLong());

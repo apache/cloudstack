@@ -29,6 +29,7 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,6 +43,18 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+
+import com.trilead.ssh2.Connection;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import com.cloud.host.HostVO;
+import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.ssh.SSHCmdHelper;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -63,6 +76,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.certificate.CrlVO;
 import com.cloud.certificate.dao.CrlDao;
@@ -83,6 +97,12 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
     private CrlDao crlDao;
     @Inject
     private HostDao hostDao;
+    @Inject
+    private VMInstanceDao vmInstanceDao;
+    @Inject
+    private NetworkOrchestrationService networkOrchestrationService;
+    @Inject
+    private ConfigurationDao configDao;
     @Inject
     private AgentManager agentManager;
     @Inject
@@ -180,12 +200,17 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CA_CERTIFICATE_PROVISION, eventDescription = "provisioning certificate for host", async = true)
-    public boolean provisionCertificate(final Host host, final Boolean reconnect, final String caProvider) {
+    public boolean provisionCertificate(final Host host, final Boolean reconnect, final String caProvider, final boolean forced) {
         if (host == null) {
             throw new CloudRuntimeException("Unable to find valid host to renew certificate for");
         }
         CallContext.current().setEventDetails("Host ID: " + host.getUuid());
         CallContext.current().putContextParameter(Host.class, host.getUuid());
+
+        if (forced) {
+            return provisionCertificateForced(host, reconnect, caProvider);
+        }
+
         String csr = null;
 
         try {
@@ -200,6 +225,138 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         } catch (final AgentUnavailableException | OperationTimedoutException e) {
             logger.error("Host/agent is not available or operation timed out, failed to setup keystore and generate CSR for host/agent {}, due to: ", host, e);
             throw new CloudRuntimeException(String.format("Failed to generate keystore and get CSR from the host/agent %s", host));
+        }
+    }
+
+    private boolean provisionCertificateForced(Host host, Boolean reconnect, String caProvider) {
+        if (host.getType() == Host.Type.Routing && host.getHypervisorType() == com.cloud.hypervisor.Hypervisor.HypervisorType.KVM) {
+            return provisionKvmHostViaSsh(host);
+        } else if (host.getType() == Host.Type.ConsoleProxy || host.getType() == Host.Type.SecondaryStorageVM) {
+            return provisionSystemVmViaSsh(host, reconnect);
+        }
+        throw new CloudRuntimeException("Forced certificate provisioning is only supported for KVM hosts and SystemVMs.");
+    }
+
+    @Override
+    public void provisionCertificateViaSsh(final Connection sshConnection, final String agentIp, final String agentHostname) {
+        Integer validityPeriod = CAManager.CertValidityPeriod.value();
+        if (validityPeriod < 1) {
+            validityPeriod = 1;
+        }
+
+        String keystorePassword = PasswordGenerator.generateRandomPassword(16);
+
+        // 1. Setup Keystore and Generate CSR
+        final SSHCmdHelper.SSHCmdResult keystoreSetupResult = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection,
+                String.format("sudo /usr/share/cloudstack-common/scripts/util/%s " +
+                              "/etc/cloudstack/agent/agent.properties " +
+                              "/etc/cloudstack/agent/%s " +
+                              "%s %d " +
+                              "/etc/cloudstack/agent/%s",
+                        KeyStoreUtils.KS_SETUP_SCRIPT,
+                        KeyStoreUtils.KS_FILENAME,
+                        keystorePassword,
+                        validityPeriod,
+                        KeyStoreUtils.CSR_FILENAME));
+
+        if (!keystoreSetupResult.isSuccess()) {
+            throw new CloudRuntimeException("Failed to setup keystore and generate CSR via SSH on host: " + agentIp);
+        }
+
+        // 2. Issue Certificate based on returned CSR
+        final String csr = keystoreSetupResult.getStdOut();
+        final Certificate certificate = issueCertificate(csr, Arrays.asList(agentHostname, agentIp),
+                Collections.singletonList(agentIp), null, null);
+
+        if (certificate == null || certificate.getClientCertificate() == null) {
+            throw new CloudRuntimeException("Failed to issue certificates for host: " + agentIp);
+        }
+
+        // 3. Import Certificate into agent keystore
+        final SetupCertificateCommand certificateCommand = new SetupCertificateCommand(certificate);
+        final SSHCmdHelper.SSHCmdResult setupCertResult = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection,
+                String.format("sudo /usr/share/cloudstack-common/scripts/util/%s " +
+                              "/etc/cloudstack/agent/agent.properties %s " +
+                              "/etc/cloudstack/agent/%s %s " +
+                              "/etc/cloudstack/agent/%s \"%s\" " +
+                              "/etc/cloudstack/agent/%s \"%s\" " +
+                              "/etc/cloudstack/agent/%s \"%s\"",
+                        KeyStoreUtils.KS_IMPORT_SCRIPT,
+                        keystorePassword,
+                        KeyStoreUtils.KS_FILENAME,
+                        KeyStoreUtils.SSH_MODE,
+                        KeyStoreUtils.CERT_FILENAME,
+                        certificateCommand.getEncodedCertificate(),
+                        KeyStoreUtils.CACERT_FILENAME,
+                        certificateCommand.getEncodedCaCertificates(),
+                        KeyStoreUtils.PKEY_FILENAME,
+                        certificateCommand.getEncodedPrivateKey()));
+
+        if (!setupCertResult.isSuccess()) {
+            throw new CloudRuntimeException("Failed to import certificates into agent keystore via SSH on host: " + agentIp);
+        }
+    }
+
+    private boolean provisionKvmHostViaSsh(Host host) {
+        final HostVO hostVO = (HostVO) host;
+        hostDao.loadDetails(hostVO);
+        String username = hostVO.getDetail(ApiConstants.USERNAME);
+        String password = hostVO.getDetail(ApiConstants.PASSWORD);
+        String hostIp = host.getPrivateIpAddress();
+
+        int port = AgentManager.KVMHostDiscoverySshPort.valueIn(host.getClusterId());
+        if (hostVO.getDetail(Host.HOST_SSH_PORT) != null) {
+            port = NumberUtils.toInt(hostVO.getDetail(Host.HOST_SSH_PORT), port);
+        }
+
+        Connection sshConnection = null;
+        try {
+            sshConnection = new Connection(hostIp, port);
+            sshConnection.connect(null, 60000, 60000);
+
+            String privateKey = configDao.getValue("ssh.privatekey");
+            if (!SSHCmdHelper.acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
+                if (StringUtils.isEmpty(password) || !sshConnection.authenticateWithPassword(username, password)) {
+                    throw new CloudRuntimeException("Failed to authenticate to host via SSH for forced provisioning: " + hostIp);
+                }
+            }
+
+            provisionCertificateViaSsh(sshConnection, hostIp, host.getName());
+
+            SSHCmdHelper.sshExecuteCmd(sshConnection, "sudo service cloudstack-agent restart");
+            return true;
+        } catch (Exception e) {
+            logger.error("Error during forced SSH provisioning for KVM host " + host.getUuid(), e);
+            return false;
+        } finally {
+            if (sshConnection != null) {
+                sshConnection.close();
+            }
+        }
+    }
+
+    private boolean provisionSystemVmViaSsh(Host host, Boolean reconnect) {
+        VMInstanceVO vm = vmInstanceDao.findVMByInstanceName(host.getName());
+        if (vm == null) {
+            throw new CloudRuntimeException("Cannot find underlying VM for host: " + host.getName());
+        }
+
+        final Map<String, String> sshAccessDetails = networkOrchestrationService.getSystemVMAccessDetails(vm);
+        final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
+        ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
+
+        try {
+            final Host hypervisorHost = hostDao.findById(vm.getHostId());
+            if (hypervisorHost == null) {
+                throw new CloudRuntimeException("Cannot find hypervisor host for system VM: " + host.getName());
+            }
+
+            final Certificate certificate = issueCertificate(null, Arrays.asList(vm.getHostName(), vm.getInstanceName()),
+                    new ArrayList<>(ipAddressDetails.values()), CertValidityPeriod.value(), null);
+            return deployCertificate(hypervisorHost, certificate, reconnect, sshAccessDetails);
+        } catch (Exception e) {
+            logger.error("Failed to provision system VM " + host.getName() + " via hypervisor SSH proxy. Ensure the hypervisor host is connected.", e);
+            return false;
         }
     }
 
@@ -343,7 +500,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
                         if (AutomaticCertRenewal.valueIn(host.getClusterId())) {
                             try {
                                 logger.debug("Attempting certificate auto-renewal for " + hostDescription, e);
-                                boolean result = caManager.provisionCertificate(host, false, null);
+                                boolean result = caManager.provisionCertificate(host, false, null, false);
                                 if (result) {
                                     logger.debug("Succeeded in auto-renewing certificate for " + hostDescription, e);
                                 } else {
@@ -421,12 +578,12 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             trustStore.load(null, null);
 
             // Copy existing default trusted certs
-            final TrustManagerFactory defaultTmf = TrustManagerFactory.getInstance("SunX509");
+            final TrustManagerFactory defaultTmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             defaultTmf.init((KeyStore) null);
             final X509TrustManager defaultTm = (X509TrustManager) defaultTmf.getTrustManagers()[0];
+            int aliasIndex = 0;
             for (final X509Certificate cert : defaultTm.getAcceptedIssuers()) {
-                final String alias = cert.getSubjectX500Principal().getName();
-                trustStore.setCertificateEntry(alias, cert);
+                trustStore.setCertificateEntry("default-ca-" + aliasIndex++, cert);
             }
 
             // Add CA provider's certificates

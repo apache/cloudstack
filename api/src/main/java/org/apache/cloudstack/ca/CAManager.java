@@ -23,6 +23,8 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 
+import com.trilead.ssh2.Connection;
+
 import org.apache.cloudstack.framework.ca.CAProvider;
 import org.apache.cloudstack.framework.ca.CAService;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -139,12 +141,25 @@ public interface CAManager extends CAService, Configurable, PluggableService {
     boolean revokeCertificate(final BigInteger certSerial, final String certCn, final String provider);
 
     /**
-     * Provisions certificate for given active and connected agent host
+     * Provisions certificate for given agent host.
+     * When forced=true, uses SSH to re-provision bypassing the NIO agent connection (for disconnected agents).
      * @param host
+     * @param reconnect
      * @param provider
+     * @param forced when true, provisions via SSH instead of NIO; supports KVM hosts and SystemVMs
      * @return returns success/failure as boolean
      */
-    boolean provisionCertificate(final Host host, final Boolean reconnect, final String provider);
+    boolean provisionCertificate(final Host host, final Boolean reconnect, final String provider, final boolean forced);
+
+    /**
+     * Provisions certificate for a KVM host using an existing SSH connection.
+     * Runs keystore-setup to generate a CSR, issues a certificate, then runs keystore-cert-import.
+     * Used during host discovery and for forced re-provisioning when the NIO agent is unreachable.
+     * @param sshConnection active SSH connection to the KVM host
+     * @param agentIp IP address of the KVM host agent
+     * @param agentHostname hostname of the KVM host agent
+     */
+    void provisionCertificateViaSsh(Connection sshConnection, String agentIp, String agentHostname);
 
     /**
      * Setups up a new keystore and generates CSR for a host
