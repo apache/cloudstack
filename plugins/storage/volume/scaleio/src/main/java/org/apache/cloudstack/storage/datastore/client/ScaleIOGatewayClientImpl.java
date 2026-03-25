@@ -628,7 +628,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
 
         Boolean overwriteVolumeContentStatus = post(
                 "/instances/Volume::" + destVolumeId + "/action/overwriteVolumeContent",
-                requestBody,Boolean.class);
+                requestBody, Boolean.class);
         if (overwriteVolumeContentStatus != null) {
             return overwriteVolumeContentStatus;
         }
