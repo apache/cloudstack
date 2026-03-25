@@ -347,8 +347,6 @@
 
     <bean id="backupRepositoryService" class="org.apache.cloudstack.backup.BackupRepositoryServiceImpl" />
 
-    <bean id="nativeBackupOfferingService" class="org.apache.cloudstack.backup.NativeBackupOfferingServiceImpl" />
-
     <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
 
     <bean id="nfsMountManager" class="org.apache.cloudstack.storage.NfsMountManagerImpl" >

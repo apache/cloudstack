@@ -48,7 +48,7 @@ public class BackupValidationServiceController extends NativeBackupServiceJobCon
             " the limit, meaning that as many validations as possible will be done at the same time.", true, ConfigKey.Scope.Cluster);
 
     protected ConfigKey<Integer> backupValidationMaxConcurrentOperations = new ConfigKey<>("Advanced", Integer.class,
-            "backup.validation.max.concurrent.operations", "0", "Determines the maximum number of concurrent backup validations in the zone. Values lower than 0 remove" +
+            "backup.validation.max.concurrent.operations", "10", "Determines the maximum number of concurrent backup validations in the zone. Values lower than 1 remove" +
             " the limit, meaning that as many validations as possible will be done at the same time.", true, ConfigKey.Scope.Zone);
 
     protected ConfigKey<Integer> backupValidationInterval = new ConfigKey<>("Advanced", Integer.class,
@@ -124,7 +124,7 @@ public class BackupValidationServiceController extends NativeBackupServiceJobCon
                 }
                 logger.debug("Found [{}] validation jobs to submit.", jobsToStart.size());
                 Pair<HashMap<HostVO, Long>, Integer> hostToNumberOfExecutingJobsAndTotalExecutingJobs = getHostToNumberOfExecutingJobsAndTotalExecutingJobs(zone, NativeBackupServiceJobType.BackupValidation);
-                thinJobsToStartList(zone, jobsToStart, hostToNumberOfExecutingJobsAndTotalExecutingJobs.second(), backupValidationMaxConcurrentOperations);
+                jobsToStart = thinJobsToStartList(zone, jobsToStart, hostToNumberOfExecutingJobsAndTotalExecutingJobs.second(), backupValidationMaxConcurrentOperations);
 
                 List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList = filterHostsWithTooManyJobs(hostToNumberOfExecutingJobsAndTotalExecutingJobs.first(), backupValidationMaxConcurrentOperationsPerHost);
                 Set<Long> busyInstances = nativeBackupServiceJobDao.listExecutingJobsByZoneIdAndJobType(zone.getId(), NativeBackupServiceJobType.StartCompression,

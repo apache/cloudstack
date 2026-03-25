@@ -42,7 +42,6 @@ import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupServiceJobsCmd;
-import org.apache.cloudstack.api.command.user.backup.nativeoffering.ListNativeBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
@@ -79,7 +78,6 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
-import org.apache.cloudstack.api.response.NativeBackupOfferingResponse;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
@@ -228,8 +226,6 @@ public interface QueryService {
     ListResponse<ObjectStoreResponse> searchForObjectStores(ListObjectStoragePoolsCmd listObjectStoragePoolsCmd);
 
     ListResponse<BucketResponse> searchForBuckets(ListBucketsCmd listBucketsCmd);
-
-    ListResponse<NativeBackupOfferingResponse> listNativeBackupOfferings(ListNativeBackupOfferingsCmd cmd);
 
     ListResponse<BackupServiceJobResponse> listBackupServiceJobs(ListBackupServiceJobsCmd cmd);
 }

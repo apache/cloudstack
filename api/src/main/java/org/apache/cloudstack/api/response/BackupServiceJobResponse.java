@@ -62,7 +62,7 @@ public class BackupServiceJobResponse extends BaseResponse {
     private Date removed;
 
     public BackupServiceJobResponse(Long id, String backupId, String zoneId, Integer attempts, String type, Date startDate, Date scheduledDate, Date removed) {
-        super("backupcompressionjob");
+        super("backupservicejob");
         this.id = id;
         this.backupId = backupId;
         this.zoneId = zoneId;

@@ -50,7 +50,7 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
             " the limit, meaning that as many compressions as possible will be done at the same time.", true, ConfigKey.Scope.Cluster);
 
     protected ConfigKey<Integer> backupCompressionMaxConcurrentOperations = new ConfigKey<>("Advanced", Integer.class,
-            "backup.compression.max.concurrent.operations", "0", "Determines the maximum number of concurrent backup compressions in the zone. Values lower than 0 remove" +
+            "backup.compression.max.concurrent.operations", "10", "Determines the maximum number of concurrent backup compressions in the zone. Values lower than 1 remove" +
             " the limit, meaning that as many compressions as possible will be done at the same time.", true, ConfigKey.Scope.Zone);
 
     protected ConfigKey<Integer> backupCompressionMaxJobRetries = new ConfigKey<>("Advanced", Integer.class,
@@ -115,7 +115,7 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
                 if (jobsToStart.isEmpty()) {
                     continue;
                 }
-                logger.debug("Found [{}] compression jobs to submit.");
+                logger.debug("Found [{}] compression jobs to submit.", jobsToStart.size());
                 Pair<HashMap<HostVO, Long>, Integer> hostToNumberOfExecutingJobsAndTotalExecutingJobs = getHostToNumberOfExecutingJobsAndTotalExecutingJobs(zone, NativeBackupServiceJobType.StartCompression);
                 List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList = filterHostsWithTooManyJobs(hostToNumberOfExecutingJobsAndTotalExecutingJobs.first(),
                         backupCompressionMaxConcurrentOperationsPerHost);
@@ -123,7 +123,7 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
                 busyInstances.addAll(nativeBackupServiceJobDao.listExecutingJobsByZoneIdAndJobType(zone.getId(), NativeBackupServiceJobType.BackupValidation).stream().
                         map(NativeBackupServiceJobVO::getInstanceId).collect(Collectors.toSet()));
 
-                thinJobsToStartList(zone, jobsToStart, hostToNumberOfExecutingJobsAndTotalExecutingJobs.second(), backupCompressionMaxConcurrentOperations);
+                jobsToStart = thinJobsToStartList(zone, jobsToStart, hostToNumberOfExecutingJobsAndTotalExecutingJobs.second(), backupCompressionMaxConcurrentOperations);
                 submitQueuedJobsForExecution(jobsToStart, hostAndNumberOfJobsPairList, busyInstances, backupCompressionMaxConcurrentOperationsPerHost, zone.getId());
             }
 

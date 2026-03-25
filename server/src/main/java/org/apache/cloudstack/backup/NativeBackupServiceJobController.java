@@ -196,16 +196,16 @@ public abstract class NativeBackupServiceJobController extends ManagerBase {
     protected List<NativeBackupServiceJobVO> thinJobsToStartList(DataCenterVO zone, List<NativeBackupServiceJobVO> jobsToStart, Integer totalExecutingJobs,
             ConfigKey<Integer> jobsPerZoneConfiguration) {
         Integer maxConcurrentJobsInTheZone = jobsPerZoneConfiguration.valueIn(zone.getId());
-        if (maxConcurrentJobsInTheZone < 0) {
+        if (maxConcurrentJobsInTheZone < 1) {
             return jobsToStart;
         }
         logger.debug("Since [{}] is set to [{}]. We will only execute up to [{}] at the same time. We already have [{}] executing jobs.",
                 jobsPerZoneConfiguration.toString(), maxConcurrentJobsInTheZone, maxConcurrentJobsInTheZone, totalExecutingJobs);
-        if (maxConcurrentJobsInTheZone >= totalExecutingJobs) {
+        if (maxConcurrentJobsInTheZone <= totalExecutingJobs) {
             logger.debug("We are already executing the maximum amount of jobs in this zone, we will not execute any new jobs.");
             return List.of();
         }
-        return jobsToStart.subList(0, maxConcurrentJobsInTheZone);
+        return jobsToStart.subList(0, maxConcurrentJobsInTheZone - totalExecutingJobs);
     }
 
     protected List<Pair<HostVO, Long>> filterHostsWithTooManyJobs(HashMap<HostVO, Long> hostToNumberOfExecutingJobs, ConfigKey<Integer> jobsPerHostConfiguration) {

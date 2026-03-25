@@ -141,23 +141,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_store_ref` (
     CONSTRAINT `fk_native_backup_store_ref__volume_id` FOREIGN KEY (`volume_id`) REFERENCES `volumes`(`id`)
     );
 
-
-CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_offering` (
-    `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
-    `uuid` varchar(40) NOT NULL,
-    `name` varchar(255) NOT NULL,
-    `compress` tinyint(1) UNSIGNED NOT NULL,
-    `validate` tinyint(1) UNSIGNED NOT NULL,
-    `validation_steps` varchar(255),
-    `allow_quick_restore` tinyint(1) UNSIGNED NOT NULL,
-    `allow_extract_file` tinyint(1) UNSIGNED NOT NULL,
-    `backup_chain_size` INT,
-    `compression_library` varchar(55) NOT NULL DEFAULT 'zstd',
-    `created` datetime NOT NULL,
-    `removed` datetime,
-    PRIMARY KEY (`id`)
-    );
-
 CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_service_job` (
     `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
     `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',

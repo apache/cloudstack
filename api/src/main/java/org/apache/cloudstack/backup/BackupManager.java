@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
+import org.apache.cloudstack.api.command.user.backup.CreateBackupOfferingCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ValidatedConfigKey;
@@ -138,6 +139,12 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @param cmd import backup offering cmd
      */
     BackupOffering importBackupOffering(final ImportBackupOfferingCmd cmd);
+
+    /**
+     * Add a new Backup and Recovery policy to CloudStack. Currently only supported for KNIB.
+     * @param cmd import backup offering cmd
+     */
+    BackupOffering createBackupOffering(final CreateBackupOfferingCmd cmd);
 
     List<Long> getBackupOfferingDomains(final Long offeringId);
 

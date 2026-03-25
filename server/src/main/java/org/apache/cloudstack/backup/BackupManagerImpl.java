@@ -71,9 +71,7 @@ import org.apache.cloudstack.api.command.user.backup.RemoveVirtualMachineFromBac
 import org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreVolumeFromBackupAndAttachToVMCmd;
 import org.apache.cloudstack.api.command.user.backup.UpdateBackupScheduleCmd;
-import org.apache.cloudstack.api.command.user.backup.nativeoffering.CreateNativeBackupOfferingCmd;
-import org.apache.cloudstack.api.command.user.backup.nativeoffering.DeleteNativeBackupOfferingCmd;
-import org.apache.cloudstack.api.command.user.backup.nativeoffering.ListNativeBackupOfferingsCmd;
+import org.apache.cloudstack.api.command.user.backup.CreateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.AddBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.DeleteBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.ListBackupRepositoriesCmd;
@@ -346,6 +344,76 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
+    public BackupOffering createBackupOffering(CreateBackupOfferingCmd cmd) {
+        validateBackupForZone(cmd.getZoneId());
+        if (backupOfferingDao.findByName(cmd.getName(), cmd.getZoneId()) != null) {
+            throw new CloudRuntimeException("A backup offering with the same name already exists in this zone");
+        }
+
+        if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
+            for (final Long domainId: cmd.getDomainIds()) {
+                if (domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
+        }
+
+        List<Long> filteredDomainIds = cmd.getDomainIds() == null ? new ArrayList<>() : new ArrayList<>(cmd.getDomainIds());
+        if (filteredDomainIds.size() > 1) {
+            filteredDomainIds = domainHelper.filterChildSubDomains(filteredDomainIds);
+        }
+
+        final BackupProvider provider = getBackupProvider(cmd.getZoneId());
+        if (!KNIB_BACKUP_PROVIDER.equals(provider.getName())) {
+            throw new InvalidParameterValueException("Only KNIB supports this API currently.");
+        }
+
+        if (!provider.isValidProviderOffering(cmd.getZoneId(), null)) {
+            throw new CloudRuntimeException(String.format("Backup offering is not valid for provider [%s] in zone [%s]", provider, cmd.getZoneId()));
+        }
+
+        final BackupOfferingVO offering = new BackupOfferingVO(cmd.getZoneId(), provider.getName(), cmd.getName(), cmd.getDescription(), cmd.getUserDrivenBackups());
+
+        final BackupOfferingVO savedOffering = backupOfferingDao.persist(offering);
+        if (savedOffering == null) {
+            throw new CloudRuntimeException("Unable to create backup offering: " + cmd.getName());
+        }
+        List<BackupOfferingDetailsVO> detailsVOList = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(filteredDomainIds)) {
+            for (Long domainId : filteredDomainIds) {
+                detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+            }
+        }
+        if (cmd.isCompress()) {
+            detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.COMPRESS, "true", true));
+        }
+        if (cmd.isValidate()) {
+            detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.VALIDATE, "true", true));
+        }
+        if (cmd.isAllowExtractFile()) {
+            detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.ALLOW_EXTRACT_FILE, "true", true));
+        }
+        if (cmd.isAllowQuickRestore()) {
+            detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.ALLOW_QUICK_RESTORE, "true", true));
+        }
+        if (cmd.getBackupChainSize() != null) {
+            detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.BACKUP_CHAIN_SIZE, cmd.getBackupChainSize().toString(), true));
+        }
+        if (cmd.getCompressionLibrary() != null) {
+            detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.COMPRESSION_LIBRARY, cmd.getCompressionLibrary().name(), true));
+        }
+        if (cmd.getValidationSteps() != null) {
+            detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.VALIDATION_STEPS, cmd.getValidationSteps(), true));
+        }
+
+        if (!detailsVOList.isEmpty()) {
+            backupOfferingDetailsDao.saveDetails(detailsVOList);
+        }
+        logger.debug("Successfully created backup offering [{}] mapped to backup provider offering [{}].",cmd.getName(), savedOffering.getUuid());
+        return savedOffering;
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_OFFERING_CLONE, eventDescription = "cloning backup offering")
     public BackupOffering cloneBackupOffering(final CloneBackupOfferingCmd cmd) {
         final BackupOfferingVO sourceOffering = backupOfferingDao.findById(cmd.getSourceOfferingId());
@@ -393,6 +461,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         List<Long> filteredDomainIds = cmd.getDomainIds() == null ? new ArrayList<>() : new ArrayList<>(cmd.getDomainIds());
         Collections.sort(filteredDomainIds);
         updateBackupOfferingDomainDetail(savedOffering, filteredDomainIds);
+        List<BackupOfferingDetailsVO> details = backupOfferingDetailsDao.listDetails(sourceOffering.getId());
+        details.removeIf(backupOfferingDetailsVO -> ApiConstants.DOMAIN_ID.equals(backupOfferingDetailsVO.getName()) || ApiConstants.ZONE_ID.equals(backupOfferingDetailsVO.getName()));
+        details.forEach(detail -> detail.setResourceId(savedOffering.getId()));
+        backupOfferingDetailsDao.saveDetails(details);
 
         logger.debug("Successfully cloned backup offering '" + sourceOffering.getName() + "' (ID: " + cmd.getSourceOfferingId() + ") to '" + cmd.getName() + "' (ID: " + savedOffering.getId() + ")");
         return savedOffering;
@@ -1928,9 +2000,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(ListBackupRepositoriesCmd.class);
         cmdList.add(CreateVMFromBackupCmd.class);
         cmdList.add(CreateVMFromBackupCmdByAdmin.class);
-        cmdList.add(CreateNativeBackupOfferingCmd.class);
-        cmdList.add(ListNativeBackupOfferingsCmd.class);
-        cmdList.add(DeleteNativeBackupOfferingCmd.class);
+        cmdList.add(CreateBackupOfferingCmd.class);
         cmdList.add(DownloadValidationScreenshotCmd.class);
         cmdList.add(ListBackupServiceJobsCmd.class);
         return cmdList;

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.backup.nativeoffering;
+package org.apache.cloudstack.api.command.user.backup;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -28,19 +28,23 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.NativeBackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.NativeBackupOffering;
-import org.apache.cloudstack.backup.NativeBackupOfferingService;
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.BackupOffering;
+
 
 import javax.inject.Inject;
+import java.util.List;
 
-@APICommand(name = "createNativeBackupOffering", description = "Creates a native backup offering", responseObject = NativeBackupOfferingResponse.class,
+@APICommand(name = "createBackupOffering", description = "Creates a backup offering", responseObject = BackupOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin}, since = "4.23.0")
-public class CreateNativeBackupOfferingCmd extends BaseCmd {
+public class CreateBackupOfferingCmd extends BaseCmd {
 
     @Inject
-    private NativeBackupOfferingService nativeBackupOfferingService;
+    protected BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -48,6 +52,10 @@ public class CreateNativeBackupOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Backup offering name.", required = true)
     private String name;
+
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true,
+            description = "The description of the backup offering")
+    private String description;
 
     @Parameter(name = ApiConstants.COMPRESS, type = CommandType.BOOLEAN, description = "Whether the backups should be compressed or not.")
     private Boolean compress;
@@ -71,6 +79,18 @@ public class CreateNativeBackupOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.COMPRESSION_LIBRARY, type = CommandType.STRING, description = "Compression library, for offerings that support compression. Accepted values " +
             "are zstd and zlib. By default, zstd is used for images that support it. If the image only supports zlib, it will be used regardless of this parameter.")
     private String compressionLibrary;
+
+    @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
+            description = "The zone ID", required = true)
+    private Long zoneId;
+
+    @Parameter(name = ApiConstants.ALLOW_USER_DRIVEN_BACKUPS, type = CommandType.BOOLEAN,
+            description = "Whether users are allowed to create adhoc backups and backup schedules", required = true)
+    private Boolean userDrivenBackups;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = DomainResponse.class,
+            description = "the ID of the containing domain(s), null for public offerings")
+    private List<Long> domainIds;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -130,14 +150,30 @@ public class CreateNativeBackupOfferingCmd extends BaseCmd {
         return sb.toString();
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public List<Long> getDomainIds() {
+        return domainIds;
+    }
+
+    public Boolean getUserDrivenBackups() {
+        return userDrivenBackups;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
-        NativeBackupOffering offering = nativeBackupOfferingService.createNativeBackupOffering(this);
-        NativeBackupOfferingResponse response = _responseGenerator.createNativeBackupOfferingResponse(offering);
+        BackupOffering offering = backupManager.createBackupOffering(this);
+        BackupOfferingResponse response = _responseGenerator.createBackupOfferingResponse(offering);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

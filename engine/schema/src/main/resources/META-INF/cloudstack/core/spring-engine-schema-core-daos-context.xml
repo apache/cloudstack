@@ -275,7 +275,6 @@
   <bean id="nativeBackupStoragePoolDaoImpl" class="org.apache.cloudstack.backup.dao.NativeBackupStoragePoolDaoImpl" />
   <bean id="nativeBackupDataStoreDaoImpl" class="org.apache.cloudstack.backup.dao.NativeBackupDataStoreDaoImpl" />
   <bean id="nativeBackupJoinDaoImpl" class="org.apache.cloudstack.backup.dao.NativeBackupJoinDaoImpl" />
-  <bean id="nativeBackupOfferingDaoImpl" class="org.apache.cloudstack.backup.dao.NativeBackupOfferingDaoImpl" />
   <bean id="nativeBackupServiceJobDaoImpl" class="org.apache.cloudstack.backup.dao.NativeBackupServiceJobDaoImpl" />
   <bean id="backupRepositoryDaoImpl" class="org.apache.cloudstack.backup.dao.BackupRepositoryDaoImpl" />
   <bean id="directDownloadCertificateDaoImpl" class="org.apache.cloudstack.direct.download.DirectDownloadCertificateDaoImpl" />

@@ -90,9 +90,9 @@ import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDetailsDao;
 import org.apache.cloudstack.backup.dao.NativeBackupDataStoreDao;
 import org.apache.cloudstack.backup.dao.NativeBackupJoinDao;
-import org.apache.cloudstack.backup.dao.NativeBackupOfferingDao;
 import org.apache.cloudstack.backup.dao.NativeBackupServiceJobDao;
 import org.apache.cloudstack.backup.dao.NativeBackupStoragePoolDao;
 import org.apache.cloudstack.context.CallContext;
@@ -208,10 +208,10 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
     private NativeBackupDataStoreDao nativeBackupDataStoreDao;
 
     @Inject
-    private NativeBackupOfferingDao nativeBackupOfferingDao;
+    private BackupOfferingDao backupOfferingDao;
 
     @Inject
-    private BackupOfferingDao backupOfferingDao;
+    private BackupOfferingDetailsDao backupOfferingDetailsDao;
 
     @Inject
     private HeuristicRuleHelper heuristicRuleHelper;
@@ -288,12 +288,12 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
 
     @Override
     public List<BackupOffering> listBackupOfferings(Long zoneId) {
-        return new ArrayList<>(nativeBackupOfferingDao.listAll());
+        return List.of();
     }
 
     @Override
     public boolean isValidProviderOffering(Long zoneId, String uuid) {
-        return nativeBackupOfferingDao.findByUuid(uuid) != null;
+        return true;
     }
 
     @Override
@@ -395,7 +395,6 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         logger.info("Starting VM backup process for VM [{}].", userVm.getUuid());
 
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
-        NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuidIncludingRemoved(backupOfferingVO.getExternalId());
 
         backupVO.setDate(new Date());
         List<NativeBackupJoinVO> backupChain = getBackupJoinParents(backupVO, true);
@@ -403,7 +402,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         if (isolated) {
             setBackupAsIsolated(backupVO);
         } else {
-            parentBackup = getParentAndSetEndOfChain(backupVO, backupChain, nativeBackupOfferingVO);
+            parentBackup = getParentAndSetEndOfChain(backupVO, backupChain, backupOfferingVO);
         }
         NativeBackupJoinVO newBackupJoin = nativeBackupJoinDao.findById(backup.getId());
         boolean fullBackup = parentBackup == null;
@@ -769,11 +768,12 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         long minFreeStorage = Math.round(backupVO.getSize() * backupCompressionMinimumFreeStorage.valueIn(hostVO.getDataCenterId()));
 
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findByIdIncludingRemoved(backupVO.getBackupOfferingId());
-        NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuidIncludingRemoved(backupOfferingVO.getExternalId());
+        BackupOfferingDetailsVO detail = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.COMPRESSION_LIBRARY);
         List<NativeBackupJoinVO> backupChain = getBackupJoinParents(backupVO, true);
         List<String> chainImageStoreUrls = getChainImageStoreUrls(backupChain);
-        CompressBackupCommand cmd = new CompressBackupCommand(deltasToCompressAndParents, chainImageStoreUrls, minFreeStorage, nativeBackupOfferingVO.getCompressionLibrary(),
-                backupCompressionCoroutines.valueIn(hostVO.getClusterId()), backupCompressionRateLimit.valueIn(hostVO.getClusterId()));
+        CompressBackupCommand cmd = new CompressBackupCommand(deltasToCompressAndParents, chainImageStoreUrls, minFreeStorage, detail == null ? null :
+                Backup.CompressionLibrary.valueOf(detail.getValue()), backupCompressionCoroutines.valueIn(hostVO.getClusterId()),
+                backupCompressionRateLimit.valueIn(hostVO.getClusterId()));
         cmd.setWait(backupCompressionTimeout.valueIn(hostVO.getClusterId()));
         Answer answer = agentManager.easySend(hostId, cmd);
 
@@ -1804,7 +1804,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
      * @param newBackup the new backup being created.
      * @param backupChain newBackup's ancestors.
      * */
-    protected NativeBackupJoinVO getParentAndSetEndOfChain(BackupVO newBackup, List<NativeBackupJoinVO> backupChain, NativeBackupOfferingVO offering) {
+    protected NativeBackupJoinVO getParentAndSetEndOfChain(BackupVO newBackup, List<NativeBackupJoinVO> backupChain, BackupOfferingVO offering) {
         int chainSize = getChainSizeForBackup(offering, newBackup.getZoneId());
         if (CollectionUtils.isEmpty(backupChain)) {
             setEndOfChainTrueIfRemainingChainSizeIsOneOrLess(chainSize, chainSize, newBackup.getId(), newBackup.getUuid());
@@ -2338,9 +2338,10 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         return ancestorBackups;
     }
 
-    protected int getChainSizeForBackup(NativeBackupOfferingVO offering, long zoneId) {
-        if (offering.getBackupChainSize() != null) {
-            return offering.getBackupChainSize();
+    protected int getChainSizeForBackup(BackupOfferingVO offering, long zoneId) {
+        BackupOfferingDetailsVO detailsVO = backupOfferingDetailsDao.findDetail(offering.getId(), ApiConstants.BACKUP_CHAIN_SIZE);
+        if (detailsVO != null) {
+            return Integer.parseInt(detailsVO.getValue());
         }
         return backupChainSize.valueIn(zoneId);
     }
@@ -2436,8 +2437,8 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
 
     private void configureValidationSteps(ValidateKnibVmCommand cmd, BackupVO backup) {
         BackupOfferingVO offeringVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
-        NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuidIncludingRemoved(offeringVO.getExternalId());
-        String validationSteps = nativeBackupOfferingVO.getValidationSteps();
+        BackupOfferingDetailsVO detailsVO = backupOfferingDetailsDao.findDetail(offeringVO.getId(), ApiConstants.VALIDATION_STEPS);
+        String validationSteps = detailsVO.getValue();
         for (String step : validationSteps.split(",")) {
             Backup.ValidationSteps enumStep = Backup.ValidationSteps.valueOf(step);
             switch (enumStep) {
@@ -2526,8 +2527,8 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
 
     private void validateQuickRestore(Backup backup, boolean quickRestore) {
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
-        NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuidIncludingRemoved(backupOfferingVO.getExternalId());
-        if (!nativeBackupOfferingVO.isAllowQuickRestore() && quickRestore) {
+        BackupOfferingDetailsVO detail = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.QUICK_RESTORE);
+        if (quickRestore && (detail == null || !Boolean.parseBoolean(detail.getValue()))) {
             throw new BackupProviderException(String.format("Unable to quick restore backup [%s] using offering [%s] as the offering does not support quick restoration.",
                     backup.getUuid(), backupOfferingVO.getUuid()));
         }
@@ -2535,10 +2536,9 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
 
     private boolean offeringSupportsValidation(NativeBackupJoinVO backup) {
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
-        NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuidIncludingRemoved(backupOfferingVO.getExternalId());
-        if (!nativeBackupOfferingVO.isValidate()) {
-            logger.debug("Backup [{}] will not be validated as offering [{}] with external id [{}] does not support it.", backup, backupOfferingVO.getUuid(),
-                    nativeBackupOfferingVO.getExternalId());
+        BackupOfferingDetailsVO detail = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.VALIDATE);
+        if (detail == null || !Boolean.parseBoolean(detail.getValue())) {
+            logger.debug("Backup [{}] will not be validated as offering [{}] does not support it.", backup, backupOfferingVO.getUuid());
             return false;
         }
         return true;
@@ -2546,10 +2546,9 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
 
     private boolean offeringSupportsCompression(NativeBackupJoinVO backup) {
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
-        NativeBackupOfferingVO nativeBackupOfferingVO = nativeBackupOfferingDao.findByUuidIncludingRemoved(backupOfferingVO.getExternalId());
-        if (!nativeBackupOfferingVO.isCompress()) {
-            logger.debug("Backup [{}] will not be compressed as offering [{}] with external id [{}] does not support it.", backup, backupOfferingVO.getUuid(),
-                    nativeBackupOfferingVO.getExternalId());
+        BackupOfferingDetailsVO detail = backupOfferingDetailsDao.findDetail(backupOfferingVO.getId(), ApiConstants.COMPRESS);
+        if (detail == null || !Boolean.parseBoolean(detail.getValue())) {
+            logger.debug("Backup [{}] will not be compressed as offering [{}] does not support it.", backup, backupOfferingVO.getUuid());
             return false;
         }
         return true;
