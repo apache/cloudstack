@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;
@@ -49,4 +50,6 @@ public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
     List<UserVmJoinVO> listEligibleInstancesWithExpiredLease();
 
     List<UserVmJoinVO> listLeaseInstancesExpiringInDays(int days);
+
+    List<UserVmJoinVO> listByHypervisorType(Hypervisor.HypervisorType hypervisorType);
 }

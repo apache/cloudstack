@@ -144,6 +144,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
@@ -465,7 +466,7 @@ public class ServerAdapter extends ManagerBase {
         if (dataCenterVO == null) {
             throw new InvalidParameterValueException("DataCenter with ID " + uuid + " not found");
         }
-        List<NetworkVO> networks = networkDao.listAll();
+        List<NetworkVO> networks = networkDao.listByZoneAndTrafficType(dataCenterVO.getId(), Networks.TrafficType.Guest);
         return NetworkVOToNetworkConverter.toNetworkList(networks, (dcId) -> dataCenterVO);
     }
 
@@ -509,7 +510,7 @@ public class ServerAdapter extends ManagerBase {
     }
 
     public List<VnicProfile> listAllVnicProfiles() {
-        final List<NetworkVO> networks = networkDao.listAll();
+        final List<NetworkVO> networks = networkDao.listByTrafficType(Networks.TrafficType.Guest);
         return NetworkVOToVnicProfileConverter.toVnicProfileList(networks, this::getZoneById);
     }
 
@@ -522,7 +523,7 @@ public class ServerAdapter extends ManagerBase {
     }
 
     public List<Vm> listAllInstances() {
-        List<UserVmJoinVO> vms = userVmJoinDao.listAll();
+        List<UserVmJoinVO> vms = userVmJoinDao.listByHypervisorType(Hypervisor.HypervisorType.KVM);
         return UserVmJoinVOToVmConverter.toVmList(vms, this::getHostById, this::getDetailsByInstanceId);
     }
 
@@ -996,9 +997,6 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("Request disk data is empty");
         }
         String name = request.getName();
-        if (StringUtils.isBlank(name) && !name.startsWith("Veeam_KvmBackupDisk_")) {
-            throw new InvalidParameterValueException("Only worker VM disk creation is supported");
-        }
         if (request.getStorageDomains() == null || CollectionUtils.isEmpty(request.getStorageDomains().getItems()) ||
                 request.getStorageDomains().getItems().size() > 1) {
             throw new InvalidParameterValueException("Exactly one storage domain must be specified");

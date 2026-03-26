@@ -98,6 +98,8 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType);
 
+    List<NetworkVO> listByTrafficType(TrafficType trafficType);
+
     void setCheckForGc(long networkId);
 
     int getNetworkCountByNetworkOffId(long networkOfferingId);

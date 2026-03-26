@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -830,6 +831,16 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             Date nextDate = calendar.getTime();
             sc.setParameters("leaseExpiryEndDate", nextDate);
         }
+        return listBy(sc);
+    }
+
+    @Override
+    public List<UserVmJoinVO> listByHypervisorType(Hypervisor.HypervisorType hypervisorType) {
+        SearchBuilder<UserVmJoinVO> sb = createSearchBuilder();
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), Op.EQ);
+        sb.done();
+        SearchCriteria<UserVmJoinVO> sc = sb.create();
+        sc.setParameters("hypervisorType", hypervisorType);
         return listBy(sc);
     }
 }
