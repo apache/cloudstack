@@ -25,17 +25,28 @@ import org.apache.cloudstack.api.command.admin.volume.ImportVolumeCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 import java.util.Arrays;
 import java.util.List;
 
-public interface VolumeImportUnmanageService extends PluggableService {
+public interface VolumeImportUnmanageService extends PluggableService, Configurable {
 
      List<Hypervisor.HypervisorType> SUPPORTED_HYPERVISORS =
             Arrays.asList(Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.VMware);
 
     List<Storage.StoragePoolType> SUPPORTED_STORAGE_POOL_TYPES_FOR_KVM = Arrays.asList(Storage.StoragePoolType.NetworkFilesystem,
             Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.RBD);
+
+    ConfigKey<Boolean> AllowImportVolumeWithBackingFile = new ConfigKey<>(Boolean.class,
+            "allow.import.volume.with.backing.file",
+            "Advanced",
+            "false",
+            "If enabled, allows QCOW2 volumes with backing files to be imported or unmanaged",
+            true,
+            ConfigKey.Scope.Global,
+            null);
 
     ListResponse<VolumeForImportResponse> listVolumesForImport(ListVolumesForImportCmd cmd);
 
