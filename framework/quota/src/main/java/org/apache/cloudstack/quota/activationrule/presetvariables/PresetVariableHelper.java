@@ -34,6 +34,7 @@ import javax.inject.Inject;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.backup.BackupOfferingVO;
@@ -778,6 +779,18 @@ public class PresetVariableHelper {
         value.setId(network.getUuid());
         value.setName(network.getName());
         value.setState(usageRecord.getState());
+        value.setResourceCounting(getPresetVariableValueNetworkResourceCounting(networkId));
+    }
+
+    private ResourceCounting getPresetVariableValueNetworkResourceCounting(Long networkId) {
+        ResourceCounting resourceCounting = new ResourceCounting();
+        List<VMInstanceVO> vmInstancesVO = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(networkId, VirtualMachine.Type.User);
+        int runningVms = (int) vmInstancesVO.stream().filter(vm -> vm.getState().equals(VirtualMachine.State.Running)).count();
+        int stoppedVms = (int) vmInstancesVO.stream().filter(vm -> vm.getState().equals(VirtualMachine.State.Stopped)).count();
+
+        resourceCounting.setRunningVms(runningVms);
+        resourceCounting.setStoppedVms(stoppedVms);
+        return resourceCounting;
     }
 
     protected void loadPresetVariableValueForVpc(UsageVO usageRecord, Value value) {
