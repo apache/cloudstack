@@ -2982,7 +2982,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 ThreadsOnMSToImportVMwareVMFiles,
                 ThreadsOnKVMHostToImportVMwareVMFiles,
                 ConvertVmwareInstanceToKvmExtraParamsAllowed,
-                ConvertVmwareInstanceToKvmExtraParamsAllowedList
+                ConvertVmwareInstanceToKvmExtraParamsAllowedList,
+                VmUnmanageLibvirtMetadataCleanup
         };
     }
 }
