@@ -2976,7 +2976,7 @@ public class VolumeServiceImpl implements VolumeService {
             return false;
         }
 
-        logger.info("Transferring CLVM lock for volume {} (pool: {}) from host {} to host {}", 
+        logger.info("Transferring CLVM lock for volume {} (pool: {}) from host {} to host {}",
                 volume.getUuid(), pool.getName(), sourceHostId, destHostId);
 
         return clvmLockManager.transferClvmVolumeLock(volume.getUuid(), volume.getId(), volume.getPath(),
@@ -3000,7 +3000,7 @@ public class VolumeServiceImpl implements VolumeService {
         if (instanceId != null) {
             VMInstanceVO vmInstance = vmDao.findById(instanceId);
             if (vmInstance != null && vmInstance.getHostId() != null) {
-                logger.debug("Volume {} is attached to VM {} on host {}", 
+                logger.debug("Volume {} is attached to VM {} on host {}",
                         volume.getUuid(), vmInstance.getUuid(), vmInstance.getHostId());
                 return vmInstance.getHostId();
             }
@@ -3012,7 +3012,7 @@ public class VolumeServiceImpl implements VolumeService {
             if (hosts != null && !hosts.isEmpty()) {
                 for (HostVO host : hosts) {
                     if (host.getStatus() == com.cloud.host.Status.Up) {
-                        logger.debug("Using fallback: first UP host {} in cluster {} for volume {}", 
+                        logger.debug("Using fallback: first UP host {} in cluster {} for volume {}",
                                 host.getId(), pool.getClusterId(), volume.getUuid());
                         return host.getId();
                     }
@@ -3031,33 +3031,33 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         String volumeUuid = volume.getUuid();
-        logger.info("Starting CLVM lock migration for volume {} (id: {}) to host {}", 
+        logger.info("Starting CLVM lock migration for volume {} (id: {}) to host {}",
                 volumeUuid, volume.getUuid(), destHostId);
 
         Long sourceHostId = findVolumeLockHost(volume);
         if (sourceHostId == null) {
-            logger.warn("Could not determine source host for CLVM volume {} lock, assuming volume is not exclusively locked", 
+            logger.warn("Could not determine source host for CLVM volume {} lock, assuming volume is not exclusively locked",
                     volumeUuid);
             sourceHostId = destHostId;
         }
 
         if (sourceHostId.equals(destHostId)) {
-            logger.info("CLVM volume {} already has lock on destination host {}, no migration needed", 
+            logger.info("CLVM volume {} already has lock on destination host {}, no migration needed",
                     volumeUuid, destHostId);
             return volume;
         }
 
-        logger.info("Migrating CLVM volume {} lock from host {} to host {}", 
+        logger.info("Migrating CLVM volume {} lock from host {} to host {}",
                 volumeUuid, sourceHostId, destHostId);
 
         boolean success = transferVolumeLock(volume, sourceHostId, destHostId);
         if (!success) {
             throw new CloudRuntimeException(
-                    String.format("Failed to transfer CLVM lock for volume %s from host %s to host %s", 
+                    String.format("Failed to transfer CLVM lock for volume %s from host %s to host %s",
                             volumeUuid, sourceHostId, destHostId));
         }
 
-        logger.info("Successfully migrated CLVM volume {} lock from host {} to host {}", 
+        logger.info("Successfully migrated CLVM volume {} lock from host {} to host {}",
                 volumeUuid, sourceHostId, destHostId);
 
         return volFactory.getVolume(volume.getId());

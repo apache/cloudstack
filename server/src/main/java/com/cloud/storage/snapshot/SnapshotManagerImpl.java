@@ -1667,7 +1667,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
             // For CLVM_NG with incremental snapshots, the snapshot is already created directly on secondary storage
             boolean isClvmNgIncremental = storagePool.getPoolType() == StoragePoolType.CLVM_NG &&
-                                          snapshot.isKvmIncrementalSnapshot();
+                                          payload.isKvmIncrementalSnapshot();
 
             if (backupSnapToSecondary) {
                 if (!isKvmAndFileBasedStorage && !isClvmNgIncremental) {

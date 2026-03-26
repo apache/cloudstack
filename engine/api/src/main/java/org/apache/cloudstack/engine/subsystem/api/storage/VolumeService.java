@@ -177,7 +177,7 @@ public interface VolumeService {
      * @param vmHostId VM's current host ID (or last host ID if stopped)
      * @return true if CLVM lock transfer is needed
      */
-    boolean isLockTransferRequired(VolumeInfo volumeToAttach, StoragePoolType volumePoolType, StoragePoolType vmPoolType, 
+    boolean isLockTransferRequired(VolumeInfo volumeToAttach, StoragePoolType volumePoolType, StoragePoolType vmPoolType,
                                    Long volumePoolId, Long vmPoolId, Long vmHostId);
 
     /**
@@ -189,6 +189,6 @@ public interface VolumeService {
      * @param vmPoolPath Storage pool path for the VM
      * @return true if lightweight migration should be used
      */
-    boolean isLightweightMigrationNeeded(StoragePoolType volumePoolType, StoragePoolType vmPoolType, 
+    boolean isLightweightMigrationNeeded(StoragePoolType volumePoolType, StoragePoolType vmPoolType,
                                          String volumePoolPath, String vmPoolPath);
 }
