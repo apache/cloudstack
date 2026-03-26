@@ -84,64 +84,64 @@ import CheckBoxInputPair from '@/components/CheckBoxInputPair'
 export default {
   name: 'MultiDiskSelection',
   components: {
-    CheckBoxInputPair
+    CheckBoxInputPair,
   },
   props: {
     items: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     zoneId: {
       type: String,
-      default: () => ''
+      default: () => '',
     },
     domainid: {
       type: String,
-      default: ''
+      default: '',
     },
     account: {
       type: String,
-      default: ''
+      default: '',
     },
     projectid: {
       type: String,
-      default: ''
+      default: '',
     },
     selectionEnabled: {
       type: Boolean,
-      default: true
+      default: true,
     },
     filterUnimplementedNetworks: {
       type: Boolean,
-      default: false
+      default: false,
     },
     filterMatchKey: {
       type: String,
-      default: null
+      default: null,
     },
     hypervisor: {
       type: String,
-      default: null
-    }
+      default: null,
+    },
   },
-  data () {
+  data() {
     return {
       columns: [
         {
           key: 'name',
           dataIndex: 'name',
-          title: this.$t('label.nic')
+          title: this.$t('label.nic'),
         },
         {
           key: 'network',
           dataIndex: 'network',
-          title: this.$t('label.network')
+          title: this.$t('label.network'),
         },
         {
           key: 'ipaddress',
           dataIndex: 'ipaddress',
-          title: this.$t('label.ipaddress')
-        }
+          title: this.$t('label.ipaddress'),
+        },
       ],
       loading: false,
       selectedRowKeys: [],
@@ -153,48 +153,48 @@ export default {
       ipAddresses: {},
       indexNum: 1,
       sendValuesTimer: null,
-      accountNetworkUpdateTimer: null
+      accountNetworkUpdateTimer: null,
     }
   },
   computed: {
-    tableSource () {
+    tableSource() {
       return this.items.map((item) => {
         var nic = { ...item, disabled: this.validNetworks[item.id] && this.validNetworks[item.id].length === 0 }
         nic.name = item.displaytext || item.name
         return nic
       })
     },
-    rowSelection () {
+    rowSelection() {
       if (this.selectionEnabled === true) {
         return {
           type: 'checkbox',
           selectedRowKeys: this.selectedRowKeys,
           getCheckboxProps: (record) => ({
             props: {
-              disabled: record.disabled
-            }
+              disabled: record.disabled,
+            },
           }),
           onChange: (rows) => {
             this.selectedRowKeys = rows
             this.sendValues()
-          }
+          },
         }
       }
       return null
-    }
+    },
   },
   watch: {
     items: {
       deep: true,
-      handler () {
+      handler() {
         this.selectedRowKeys = []
         this.fetchNetworks()
-      }
+      },
     },
-    zoneId () {
+    zoneId() {
       this.fetchNetworks()
     },
-    account () {
+    account() {
       clearTimeout(this.accountNetworkUpdateTimer)
       this.accountNetworkUpdateTimer = setTimeout(() => {
         if (this.account) {
@@ -202,15 +202,15 @@ export default {
         }
       }, 750)
     },
-    projectid () {
+    projectid() {
       this.fetchNetworks()
-    }
+    },
   },
-  created () {
+  created() {
     this.fetchNetworks()
   },
   methods: {
-    fetchNetworks () {
+    fetchNetworks() {
       this.networks = []
       if (!this.zoneId || this.zoneId.length === 0) {
         return
@@ -218,14 +218,13 @@ export default {
       this.loading = true
       var params = {
         zoneid: this.zoneId,
-        listall: true
-      }
-      if (this.domainid && this.account) {
-        params.domainid = this.domainid
-        params.account = this.account
+        listall: true,
       }
       if (this.projectid) {
         params.projectid = this.projectid
+      } else if (this.domainid && this.account) {
+        params.domainid = this.domainid
+        params.account = this.account
       }
       getAPI('listNetworks', params)
         .then((response) => {
@@ -239,14 +238,14 @@ export default {
           this.loading = false
         })
     },
-    orderNetworks () {
+    orderNetworks() {
       this.loading = true
       this.validNetworks = {}
       for (const item of this.items) {
         this.validNetworks[item.id] = this.networks
         if (this.filterUnimplementedNetworks) {
           this.validNetworks[item.id] = this.validNetworks[item.id].filter(
-            (x) => x.state === 'Implemented' || (x.state === 'Setup' && ['Shared', 'L2'].includes(x.type))
+            (x) => x.state === 'Implemented' || (x.state === 'Setup' && ['Shared', 'L2'].includes(x.type)),
           )
         }
         if (this.filterMatchKey) {
@@ -263,17 +262,17 @@ export default {
       this.setDefaultValues()
       this.loading = false
     },
-    setIpAddressEnabled (nic, network) {
+    setIpAddressEnabled(nic, network) {
       this.ipAddressesEnabled[nic.id] = network && network.type !== 'L2'
       this.ipAddresses[nic.id] = !network || network.type === 'L2' ? null : 'auto'
       this.values[nic.id] = network ? network.id : null
       this.indexNum = (this.indexNum % 2) + 1
     },
-    setIpAddress (nicId, autoAssign, ipAddress) {
+    setIpAddress(nicId, autoAssign, ipAddress) {
       this.ipAddresses[nicId] = autoAssign ? 'auto' : ipAddress
       this.sendValuesTimed()
     },
-    setDefaultValues () {
+    setDefaultValues() {
       this.values = {}
       this.ipAddresses = {}
       for (const item of this.items) {
@@ -293,30 +292,30 @@ export default {
       }
       this.sendValuesTimed()
     },
-    handleNetworkChange (nic, networkId) {
+    handleNetworkChange(nic, networkId) {
       if (this.hypervisor === 'KVM') {
         this.setIpAddressEnabled(
           nic,
-          _.find(this.networks, (option) => option.id === networkId)
+          _.find(this.networks, (option) => option.id === networkId),
         )
       } else {
         this.setIpAddressEnabled(
           nic,
-          _.find(this.validNetworks[nic.id], (option) => option.id === networkId)
+          _.find(this.validNetworks[nic.id], (option) => option.id === networkId),
         )
       }
       this.sendValuesTimed()
     },
-    getDefaultNetwork (record) {
+    getDefaultNetwork(record) {
       return this.values[record.id] || this.validNetworks[record.id]?.[0]?.id
     },
-    sendValuesTimed () {
+    sendValuesTimed() {
       clearTimeout(this.sendValuesTimer)
       this.sendValuesTimer = setTimeout(() => {
         this.sendValues(this.selectedScope)
       }, 500)
     },
-    sendValues () {
+    sendValues() {
       const data = {}
       if (this.selectionEnabled) {
         this.selectedRowKeys.map((x) => {
@@ -336,8 +335,8 @@ export default {
         }
       }
       this.$emit('select-multi-network', data)
-    }
-  }
+    },
+  },
 }
 </script>
 

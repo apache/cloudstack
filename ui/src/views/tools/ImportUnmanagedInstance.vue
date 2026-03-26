@@ -515,80 +515,80 @@ export default {
     MultiNetworkSelection,
     OsLogo,
     ResourceIcon,
-    CheckBoxSelectPair
+    CheckBoxSelectPair,
   },
   props: {
     cluster: {
       type: Object,
-      required: true
+      required: true,
     },
     host: {
       type: Object,
-      required: true
+      required: true,
     },
     pool: {
       type: Object,
-      required: true
+      required: true,
     },
     resource: {
       type: Object,
-      required: true
+      required: true,
     },
     isOpen: {
       type: Boolean,
-      required: false
+      required: false,
     },
     zoneid: {
       type: String,
-      required: false
+      required: false,
     },
     importsource: {
       type: String,
-      required: false
+      required: false,
     },
     hypervisor: {
       type: String,
-      required: false
+      required: false,
     },
     exthost: {
       type: String,
-      required: false
+      required: false,
     },
     username: {
       type: String,
-      required: false
+      required: false,
     },
     password: {
       type: String,
-      required: false
+      required: false,
     },
     tmppath: {
       type: String,
-      required: false
+      required: false,
     },
     diskpath: {
       type: String,
-      required: false
+      required: false,
     },
     selectedVmwareVcenter: {
       type: Array,
-      required: false
-    }
+      required: false,
+    },
   },
-  data () {
+  data() {
     return {
       options: {
         domains: [],
         projects: [],
         networks: [],
-        templates: []
+        templates: [],
       },
       rowCount: {},
       optionsLoading: {
         domains: false,
         projects: false,
         networks: false,
-        templates: false
+        templates: false,
       },
       domains: [],
       domainLoading: false,
@@ -617,12 +617,12 @@ export default {
       storageOptionsForConversion: [
         {
           id: 'secondary',
-          name: 'Secondary Storage'
+          name: 'Secondary Storage',
         },
         {
           id: 'primary',
-          name: 'Primary Storage'
-        }
+          name: 'Primary Storage',
+        },
       ],
       storagePoolsForConversion: [],
       selectedStorageOptionForConversion: null,
@@ -632,16 +632,16 @@ export default {
         {
           key: 'name',
           dataIndex: 'name',
-          title: this.$t('label.rootdisk')
-        }
+          title: this.$t('label.rootdisk'),
+        },
       ],
       selectedRootDiskSources: [],
       vmwareToKvmExtraParamsAllowed: false,
       vmwareToKvmExtraParamsSelected: false,
-      vmwareToKvmExtraParams: ''
+      vmwareToKvmExtraParams: '',
     }
   },
-  beforeCreate () {
+  beforeCreate() {
     this.apiConfig = this.$store.getters.apis.importUnmanagedInstance || {}
     this.apiParams = {}
     this.apiConfig.params.forEach((param) => {
@@ -654,12 +654,12 @@ export default {
       }
     })
   },
-  created () {
+  created() {
     this.initForm()
     this.fetchData()
   },
   computed: {
-    params () {
+    params() {
       return {
         domains: {
           list: 'listDomains',
@@ -667,8 +667,8 @@ export default {
           field: 'domainid',
           options: {
             details: 'min',
-            showicon: true
-          }
+            showicon: true,
+          },
         },
         projects: {
           list: 'listProjects',
@@ -676,8 +676,8 @@ export default {
           field: 'projectid',
           options: {
             details: 'min',
-            showicon: true
-          }
+            showicon: true,
+          },
         },
         networks: {
           list: 'listNetworks',
@@ -685,8 +685,9 @@ export default {
           field: 'networkid',
           options: {
             zoneid: this.zoneid,
-            details: 'min'
-          }
+            details: 'min',
+            projectid: this.form && this.form.projectid ? this.form.projectid : undefined,
+          },
         },
         templates: {
           list: 'listTemplates',
@@ -695,90 +696,90 @@ export default {
             templatefilter: 'all',
             isready: true,
             hypervisor: this.cluster.hypervisortype,
-            showicon: true
+            showicon: true,
           },
-          field: 'templateid'
-        }
+          field: 'templateid',
+        },
       }
     },
-    isVmRunning () {
+    isVmRunning() {
       if (this.resource && this.resource.powerstate === 'PowerOn') {
         return true
       }
       return false
     },
-    isDiskImport () {
+    isDiskImport() {
       if (this.importsource === 'local' || this.importsource === 'shared') {
         return true
       }
       return false
     },
-    isExternalImport () {
+    isExternalImport() {
       if (this.importsource === 'external') {
         return true
       }
       return false
     },
-    isKVMUnmanage () {
+    isKVMUnmanage() {
       return (
         this.hypervisor &&
         this.hypervisor === 'kvm' &&
         (this.importsource === 'unmanaged' || this.importsource === 'external')
       )
     },
-    domainSelectOptions () {
+    domainSelectOptions() {
       var domains = this.options.domains.map((domain) => {
         return {
           label: domain.path || domain.name,
           value: domain.id,
-          icon: domain?.icon?.base64image || ''
+          icon: domain?.icon?.base64image || '',
         }
       })
       domains.unshift({
         label: '',
-        value: null
+        value: null,
       })
       return domains
     },
-    projectSelectOptions () {
+    projectSelectOptions() {
       var projects = this.options.projects.map((project) => {
         return {
           label: project.name,
           value: project.id,
-          icon: project?.icon?.base64image || ''
+          icon: project?.icon?.base64image || '',
         }
       })
       projects.unshift({
         label: '',
-        value: null
+        value: null,
       })
       return projects
     },
-    networkSelectOptions () {
+    networkSelectOptions() {
       var networks = this.options.networks.map((network) => {
         return {
           label: network.name + ' (' + network.displaytext + ')',
-          value: network.id
+          value: network.id,
         }
       })
       networks.unshift({
         label: '',
-        value: null
+        value: null,
       })
       return networks
     },
-    templateSelectOptions () {
+    templateSelectOptions() {
       return this.options.templates.map((template) => {
         return {
           label: template.name,
           value: template.id,
           icon: template?.icon?.base64image || '',
           ostypeid: template.ostypeid,
-          ostypename: template.ostypename
+          ostypename: template.ostypename,
         }
       })
     },
-    dataDisks () {
+    dataDisks() {
       var disks = []
       if (this.resource.disk && this.resource.disk.length > 1) {
         for (var index = 0; index < this.resource.disk.length; ++index) {
@@ -789,7 +790,7 @@ export default {
             disk.meta = this.getMeta(disk, {
               controller: 'controller',
               datastorename: 'datastore',
-              position: 'position'
+              position: 'position',
             })
             disks.push(disk)
           }
@@ -797,7 +798,7 @@ export default {
       }
       return disks
     },
-    nics () {
+    nics() {
       var nics = []
       if (this.resource.nic && this.resource.nic.length > 0) {
         for (var nicEntry of this.resource.nic) {
@@ -822,19 +823,19 @@ export default {
         }
       }
       return nics
-    }
+    },
   },
   watch: {
-    isOpen (newValue) {
+    isOpen(newValue) {
       if (newValue) {
         this.resetForm()
         this.$refs.displayname.focus()
         this.selectMatchingComputeOffering()
       }
-    }
+    },
   },
   methods: {
-    initForm () {
+    initForm() {
       this.formRef = ref()
       this.form = reactive({
         rootdiskid: 0,
@@ -843,15 +844,15 @@ export default {
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
         forceconverttopool: this.switches.forceConvertToPool,
         domainid: null,
-        account: null
+        account: null,
       })
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],
         templateid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }],
-        rootdiskid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }]
+        rootdiskid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }],
       })
     },
-    fetchData () {
+    fetchData() {
       _.each(this.params, (param, name) => {
         if (param.isLoad) {
           this.fetchOptions(param, name)
@@ -860,7 +861,7 @@ export default {
       this.fetchComputeOfferings({
         keyword: '',
         pageSize: 10,
-        page: 1
+        page: 1,
       })
       this.fetchKvmHostsForConversion()
       this.fetchKvmHostsForImporting()
@@ -869,9 +870,9 @@ export default {
       }
       this.fetchVmwareToKVMExtraConfigsSetting()
     },
-    fetchVmwareToKVMExtraConfigsSetting () {
+    fetchVmwareToKVMExtraConfigsSetting() {
       const params = {
-        name: 'convert.vmware.instance.to.kvm.extra.params.allowed'
+        name: 'convert.vmware.instance.to.kvm.extra.params.allowed',
       }
       getAPI('listConfigurations', params).then((json) => {
         if (json.listconfigurationsresponse.configuration !== null) {
@@ -882,7 +883,7 @@ export default {
         }
       })
     },
-    getMeta (obj, metaKeys) {
+    getMeta(obj, metaKeys) {
       var meta = []
       for (var key in metaKeys) {
         if (key in obj) {
@@ -891,7 +892,7 @@ export default {
       }
       return meta
     },
-    getMinCpu () {
+    getMinCpu() {
       if (this.isVmRunning) {
         return this.resource.cpunumber
       }
@@ -899,7 +900,7 @@ export default {
         ? this.computeOffering.serviceofferingdetails.mincpunumber * 1
         : 1
     },
-    getMinMemory () {
+    getMinMemory() {
       if (this.isVmRunning) {
         return this.resource.memory
       }
@@ -907,7 +908,7 @@ export default {
         ? this.computeOffering.serviceofferingdetails.minmemory * 1
         : 32
     },
-    getMaxCpu () {
+    getMaxCpu() {
       if (this.isVmRunning) {
         return this.resource.cpunumber
       }
@@ -915,7 +916,7 @@ export default {
         ? this.computeOffering.serviceofferingdetails.maxcpunumber * 1
         : Number.MAX_SAFE_INTEGER
     },
-    getMaxMemory () {
+    getMaxMemory() {
       if (this.isVmRunning) {
         return this.resource.memory
       }
@@ -923,7 +924,7 @@ export default {
         ? this.computeOffering.serviceofferingdetails.maxmemory * 1
         : Number.MAX_SAFE_INTEGER
     },
-    getCPUSpeed () {
+    getCPUSpeed() {
       if (!this.computeOffering) {
         return 0
       }
@@ -932,7 +933,7 @@ export default {
       }
       return this.resource.cpuspeed * 1 || 0
     },
-    fetchOptions (param, name, exclude) {
+    fetchOptions(param, name, exclude) {
       if (exclude && exclude.length > 0) {
         if (exclude.includes(name)) {
           return
@@ -975,7 +976,7 @@ export default {
           this.optionsLoading[name] = false
         })
     },
-    fetchComputeOfferings (options) {
+    fetchComputeOfferings(options) {
       this.computeOfferingLoading = true
       this.totalComputeOfferings = 0
       this.computeOfferings = []
@@ -985,7 +986,7 @@ export default {
         page: options.page,
         pageSize: options.pageSize,
         details: 'min',
-        response: 'json'
+        response: 'json',
       })
         .then((response) => {
           this.totalComputeOfferings = response.listserviceofferingsresponse.count
@@ -1002,7 +1003,7 @@ export default {
           this.selectMatchingComputeOffering()
         })
     },
-    updateCpuSpeed (name, value) {
+    updateCpuSpeed(name, value) {
       if (this.computeOffering.iscustomized) {
         if (this.computeOffering.serviceofferingdetails) {
           this.updateFieldValue(this.cpuSpeedKey, this.computeOffering.cpuspeed)
@@ -1011,10 +1012,10 @@ export default {
         }
       }
     },
-    updateFieldValue (name, value) {
+    updateFieldValue(name, value) {
       this.form[name] = value
     },
-    updateComputeOffering (id) {
+    updateComputeOffering(id) {
       this.updateFieldValue('computeofferingid', id)
       this.computeOffering = this.computeOfferings.filter((x) => x.id === id)[0]
       if (this.computeOffering && !this.computeOffering.iscustomizediops) {
@@ -1022,19 +1023,19 @@ export default {
         this.updateFieldValue(this.maxIopsKey, undefined)
       }
     },
-    updateMultiDiskOffering (data) {
+    updateMultiDiskOffering(data) {
       this.dataDisksOfferingsMapping = data
     },
-    updateMultiNetworkOffering (data) {
+    updateMultiNetworkOffering(data) {
       this.nicsNetworksMapping = data
     },
-    defaultTemplateType () {
+    defaultTemplateType() {
       if (this.cluster.hypervisortype === 'VMware') {
         return 'auto'
       }
       return 'custom'
     },
-    changeTemplateType (e) {
+    changeTemplateType(e) {
       this.templateType = e.target.value
       if (this.templateType === 'auto') {
         this.updateFieldValue('templateid', undefined)
@@ -1042,10 +1043,10 @@ export default {
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],
         templateid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }],
-        rootdiskid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }]
+        rootdiskid: [{ required: this.templateType !== 'auto', message: this.$t('message.error.input.value') }],
       })
     },
-    selectMatchingComputeOffering () {
+    selectMatchingComputeOffering() {
       var offerings = [...this.computeOfferings]
       offerings.sort(function (a, b) {
         return a.cpunumber - b.cpunumber
@@ -1078,16 +1079,16 @@ export default {
         }
       }
     },
-    fetchKvmHostsForConversion () {
+    fetchKvmHostsForConversion() {
       getAPI('listHosts', {
         zoneid: this.zoneid,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
-        state: 'Up'
+        state: 'Up',
       }).then((json) => {
         this.kvmHostsForConversion = json.listhostsresponse.host || []
         this.kvmHostsForConversion = this.kvmHostsForConversion.filter((host) =>
-          ['Enabled', 'Disabled'].includes(host.resourcestate)
+          ['Enabled', 'Disabled'].includes(host.resourcestate),
         )
         this.kvmHostsForConversion.map((host) => {
           host.name = host.name + ' [Pod=' + host.podname + '] [Cluster=' + host.clustername + ']'
@@ -1109,22 +1110,22 @@ export default {
         })
       })
     },
-    fetchKvmHostsForImporting () {
+    fetchKvmHostsForImporting() {
       getAPI('listHosts', {
         clusterid: this.cluster.id,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
         state: 'Up',
-        resourcestate: 'Enabled'
+        resourcestate: 'Enabled',
       }).then((json) => {
         this.kvmHostsForImporting = json.listhostsresponse.host || []
       })
     },
-    fetchStoragePoolsForConversion () {
+    fetchStoragePoolsForConversion() {
       if (this.selectedStorageOptionForConversion === 'primary') {
         const params = {
           clusterid: this.cluster.id,
-          status: 'Up'
+          status: 'Up',
         }
         if (this.selectedKvmHostForConversion) {
           const kvmHost = this.kvmHostsForConversion.filter((x) => x.id === this.selectedKvmHostForConversion)[0]
@@ -1140,13 +1141,13 @@ export default {
         getAPI('listStoragePools', {
           scope: 'HOST',
           ipaddress: kvmHost.ipaddress,
-          status: 'Up'
+          status: 'Up',
         }).then((json) => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
         })
       }
     },
-    updateSelectedKvmHostForImporting (clusterid, checked, value) {
+    updateSelectedKvmHostForImporting(clusterid, checked, value) {
       if (checked) {
         this.selectedKvmHostForImporting = value
       } else {
@@ -1154,14 +1155,14 @@ export default {
         this.resetStorageOptionsForConversion()
       }
     },
-    updateSelectedKvmHostForConversion (clusterid, checked, value) {
+    updateSelectedKvmHostForConversion(clusterid, checked, value) {
       if (checked) {
         this.selectedKvmHostForConversion = value
         const kvmHost = this.kvmHostsForConversion.filter((x) => x.id === this.selectedKvmHostForConversion)[0]
         if (kvmHost.islocalstorageactive) {
           this.storageOptionsForConversion.push({
             id: 'local',
-            name: 'Host Local Storage'
+            name: 'Host Local Storage',
           })
         } else {
           this.resetStorageOptionsForConversion()
@@ -1171,7 +1172,7 @@ export default {
         this.resetStorageOptionsForConversion()
       }
     },
-    updateSelectedStorageOptionForConversion (clusterid, checked, value) {
+    updateSelectedStorageOptionForConversion(clusterid, checked, value) {
       if (checked) {
         this.selectedStorageOptionForConversion = value
         this.fetchStoragePoolsForConversion()
@@ -1181,40 +1182,40 @@ export default {
         this.selectedStoragePoolForConversion = null
       }
     },
-    resetStorageOptionsForConversion () {
+    resetStorageOptionsForConversion() {
       this.storageOptionsForConversion = this.switches.forceConvertToPool
         ? []
         : [
-          {
-            id: 'secondary',
-            name: 'Secondary Storage'
-          }
-        ]
+            {
+              id: 'secondary',
+              name: 'Secondary Storage',
+            },
+          ]
       this.storageOptionsForConversion.push({
         id: 'primary',
-        name: 'Primary Storage'
+        name: 'Primary Storage',
       })
     },
-    onSelectRootDisk (val) {
+    onSelectRootDisk(val) {
       this.selectedRootDiskIndex = val
       this.updateSelectedRootDisk()
     },
-    onForceConvertToPoolChange (val) {
+    onForceConvertToPoolChange(val) {
       this.switches.forceConvertToPool = val
       this.resetStorageOptionsForConversion()
     },
-    updateSelectedRootDisk () {
+    updateSelectedRootDisk() {
       var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
       rootDisk.size = rootDisk.capacity / (1024 * 1024 * 1024)
       rootDisk.name = `${rootDisk.label} (${rootDisk.size} GB)`
       rootDisk.meta = this.getMeta(rootDisk, {
         controller: 'controller',
         datastorename: 'datastore',
-        position: 'position'
+        position: 'position',
       })
       this.selectedRootDiskSources = [rootDisk]
     },
-    handleSubmit (e) {
+    handleSubmit(e) {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value
@@ -1235,7 +1236,7 @@ export default {
             hostid: this.host.id,
             storageid: this.pool.id,
             diskpath: this.diskpath,
-            temppath: this.tmppath
+            temppath: this.tmppath,
           }
           var importapi = 'importUnmanagedInstance'
           if (this.isExternalImport || this.isDiskImport || this.selectedVmwareVcenter) {
@@ -1244,7 +1245,7 @@ export default {
               if (!values.networkid) {
                 this.$notification.error({
                   message: this.$t('message.request.failed'),
-                  description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.network')
+                  description: this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.network'),
                 })
                 return
               }
@@ -1255,7 +1256,7 @@ export default {
           if (!this.computeOffering || !this.computeOffering.id) {
             this.$notification.error({
               message: this.$t('message.request.failed'),
-              description: this.$t('message.step.2.continue')
+              description: this.$t('message.step.2.continue'),
             })
             return
           }
@@ -1267,7 +1268,7 @@ export default {
                 this.$notification.error({
                   message: this.$t('message.request.failed'),
                   description:
-                    this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + detail.toLowerCase())
+                    this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + detail.toLowerCase()),
                 })
                 return
               }
@@ -1283,7 +1284,7 @@ export default {
                 this.$notification.error({
                   message: this.$t('message.request.failed'),
                   description:
-                    this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + iopsDetail.toLowerCase())
+                    this.$t('message.please.enter.valid.value') + ': ' + this.$t('label.' + iopsDetail.toLowerCase()),
                 })
                 return
               }
@@ -1292,7 +1293,7 @@ export default {
             if (values[this.minIopsKey] > values[this.maxIopsKey]) {
               this.$notification.error({
                 message: this.$t('message.request.failed'),
-                description: this.$t('error.form.message')
+                description: this.$t('error.form.message'),
               })
             }
           }
@@ -1305,7 +1306,7 @@ export default {
                   'Incompatible Storage. Import Source is: ' +
                   this.importsource +
                   '. Storage Type in service offering is: ' +
-                  storageType
+                  storageType,
               })
               return
             }
@@ -1345,7 +1346,7 @@ export default {
             'account',
             'migrateallowed',
             'forced',
-            'forcemstoimportvmfiles'
+            'forcemstoimportvmfiles',
           ]
           if (this.templateType !== 'auto') {
             keys.push('templateid')
@@ -1360,7 +1361,7 @@ export default {
             if (!this.dataDisksOfferingsMapping[diskId]) {
               this.$notification.error({
                 message: this.$t('message.request.failed'),
-                description: this.$t('message.select.disk.offering') + ': ' + diskId
+                description: this.$t('message.select.disk.offering') + ': ' + diskId,
               })
               return
             }
@@ -1376,7 +1377,7 @@ export default {
             if (!this.nicsNetworksMapping[nicId].network) {
               this.$notification.error({
                 message: this.$t('message.request.failed'),
-                description: this.$t('message.select.nic.network') + ': ' + nicId
+                description: this.$t('message.select.nic.network') + ': ' + nicId,
               })
               return
             }
@@ -1388,7 +1389,7 @@ export default {
             } else {
               this.$notification.error({
                 message: this.$t('message.request.failed'),
-                description: 'Same network cannot be assigned to multiple Nics'
+                description: 'Same network cannot be assigned to multiple Nics',
               })
               return
             }
@@ -1397,7 +1398,7 @@ export default {
               if (!this.nicsNetworksMapping[nicId].ipAddress) {
                 this.$notification.error({
                   message: this.$t('message.request.failed'),
-                  description: this.$t('message.enter.valid.nic.ip') + ': ' + nicId
+                  description: this.$t('message.enter.valid.nic.ip') + ': ' + nicId,
                 })
                 return
               }
@@ -1420,7 +1421,7 @@ export default {
                 let msgLoading = this.$t('label.import.instance') + ' ' + name + ' ' + this.$t('label.in.progress')
                 if (this.selectedKvmHostForConversion) {
                   const kvmHost = this.kvmHostsForConversion.filter(
-                    (x) => x.id === this.selectedKvmHostForConversion
+                    (x) => x.id === this.selectedKvmHostForConversion,
                   )[0]
                   msgLoading += ' on host ' + kvmHost.name
                 }
@@ -1438,7 +1439,7 @@ export default {
                   errorMethod: (result) => {
                     this.updateLoading(false)
                     reject(result.jobresult.errortext)
-                  }
+                  },
                 })
               })
               .catch((error) => {
@@ -1455,11 +1456,11 @@ export default {
           this.$emit('loading-changed', false)
         })
     },
-    updateLoading (value) {
+    updateLoading(value) {
       this.loading = value
       this.$emit('loading-changed', value)
     },
-    resetForm () {
+    resetForm() {
       var fields = ['displayname', 'hostname', 'domainid', 'account', 'projectid', 'computeofferingid']
       for (var field of fields) {
         this.updateFieldValue(field, undefined)
@@ -1468,10 +1469,10 @@ export default {
       this.updateComputeOffering(undefined)
       this.switches = {}
     },
-    closeAction () {
+    closeAction() {
       this.$emit('close-action')
-    }
-  }
+    },
+  },
 }
 </script>
 
