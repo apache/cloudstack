@@ -27,6 +27,8 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -274,9 +276,9 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     }
 
     protected String getConfigStringValueInternal(Ternary<String, ConfigKey.Scope, Long> cacheKey) {
-        String key = cacheKey.first();
-        ConfigKey.Scope scope = cacheKey.second();
-        Long scopeId = cacheKey.third();
+        final String key = cacheKey.first();
+        final ConfigKey.Scope scope = cacheKey.second();
+        final Long scopeId = cacheKey.third();
         if (!ConfigKey.Scope.Global.equals(scope) && scopeId != null) {
             ScopedConfigStorage scopedConfigStorage = null;
             for (ScopedConfigStorage storage : _scopedStorages) {
@@ -287,7 +289,8 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             if (scopedConfigStorage == null) {
                 throw new CloudRuntimeException("Unable to find config storage for this scope: " + scope + " for " + key);
             }
-            return scopedConfigStorage.getConfigValue(scopeId, key);
+            final ScopedConfigStorage scopedConfigStorageFinal = scopedConfigStorage;
+            return Transaction.execute((TransactionCallback<String>) status -> scopedConfigStorageFinal.getConfigValue(scopeId, key));
         }
         ConfigurationVO configurationVO = _configDao.findById(key);
         if (configurationVO != null) {
