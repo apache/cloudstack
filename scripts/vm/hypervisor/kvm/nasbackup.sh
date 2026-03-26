@@ -32,6 +32,10 @@ MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
 QUIESCE=""
+COMPRESS=""
+BANDWIDTH=""
+ENCRYPT_PASSFILE=""
+VERIFY=""
 logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
@@ -87,6 +91,52 @@ sanity_checks() {
   log -ne "Environment Sanity Checks successfully passed"
 }
 
+encrypt_backup() {
+  local backup_dir="$1"
+  if [[ -z "$ENCRYPT_PASSFILE" ]]; then
+    return
+  fi
+  if [[ ! -f "$ENCRYPT_PASSFILE" ]]; then
+    echo "Encryption passphrase file not found: $ENCRYPT_PASSFILE"
+    exit 1
+  fi
+  log -ne "Encrypting backup files with LUKS"
+  for img in "$backup_dir"/*.qcow2; do
+    [[ -f "$img" ]] || continue
+    local tmp_img="${img}.luks"
+    if qemu-img convert -O qcow2 \
+        --object "secret,id=sec0,file=$ENCRYPT_PASSFILE" \
+        -o "encrypt.format=luks,encrypt.key-secret=sec0" \
+        "$img" "$tmp_img" 2>&1 | tee -a "$logFile"; then
+      mv "$tmp_img" "$img"
+      log -ne "Encrypted: $img"
+    else
+      echo "Encryption failed for $img"
+      rm -f "$tmp_img"
+      exit 1
+    fi
+  done
+}
+
+verify_backup() {
+  local backup_dir="$1"
+  local failed=0
+  for img in "$backup_dir"/*.qcow2; do
+    [[ -f "$img" ]] || continue
+    if ! qemu-img check "$img" > /dev/null 2>&1; then
+      echo "Backup verification failed for $img"
+      log -ne "Backup verification FAILED: $img"
+      failed=1
+    else
+      log -ne "Backup verification passed: $img"
+    fi
+  done
+  if [[ $failed -ne 0 ]]; then
+    echo "One or more backup files failed verification"
+    exit 1
+  fi
+}
+
 ### Operation methods ###
 
 backup_running_vm() {
@@ -128,6 +178,14 @@ backup_running_vm() {
     exit 1
   fi
 
+  # Throttle backup bandwidth if requested (MiB/s per disk)
+  if [[ -n "$BANDWIDTH" ]]; then
+    for disk in $(virsh -c qemu:///system domblklist $VM --details 2>/dev/null | awk '/disk/{print$3}'); do
+      virsh -c qemu:///system blockjob $VM $disk --bandwidth "${BANDWIDTH}" 2>/dev/null || true
+    done
+    log -ne "Backup bandwidth limited to ${BANDWIDTH} MiB/s per disk for $VM"
+  fi
+
   # Backup domain information
   virsh -c qemu:///system dumpxml $VM > $dest/domain-config.xml 2>/dev/null
   virsh -c qemu:///system dominfo $VM > $dest/dominfo.xml 2>/dev/null
@@ -147,7 +205,31 @@ backup_running_vm() {
   done
 
   rm -f $dest/backup.xml
+
+  # Compress backup files if requested
+  if [[ "$COMPRESS" == "true" ]]; then
+    log -ne "Compressing backup files for $VM"
+    for img in "$dest"/*.qcow2; do
+      [[ -f "$img" ]] || continue
+      local tmp_img="${img}.tmp"
+      if qemu-img convert -c -O qcow2 "$img" "$tmp_img" 2>&1 | tee -a "$logFile"; then
+        mv "$tmp_img" "$img"
+      else
+        log -ne "Warning: compression failed for $img, keeping uncompressed"
+        rm -f "$tmp_img"
+      fi
+    done
+  fi
+
+  # Encrypt backup files if requested
+  encrypt_backup "$dest"
+
   sync
+
+  # Verify backup integrity if requested
+  if [[ "$VERIFY" == "true" ]]; then
+    verify_backup "$dest"
+  fi
 
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
@@ -174,13 +256,22 @@ backup_stopped_vm() {
       volUuid="${disk##*/}"
     fi
     output="$dest/$name.$volUuid.qcow2"
-    if ! qemu-img convert -O qcow2 "$disk" "$output" > "$logFile" 2> >(cat >&2); then
+    if ! ionice -c 3 qemu-img convert $([[ "$COMPRESS" == "true" ]] && echo "-c") $([[ -n "$BANDWIDTH" ]] && echo "-r" "${BANDWIDTH}M") -O qcow2 "$disk" "$output" > "$logFile" 2> >(cat >&2); then
       echo "qemu-img convert failed for $disk $output"
       cleanup
     fi
     name="datadisk"
   done
+
+  # Encrypt backup files if requested
+  encrypt_backup "$dest"
+
   sync
+
+  # Verify backup integrity if requested
+  if [[ "$VERIFY" == "true" ]]; then
+    verify_backup "$dest"
+  fi
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
 }
@@ -233,7 +324,7 @@ cleanup() {
 
 function usage {
   echo ""
-  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
+  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false> [-c] [-b <MiB/s>] [-e <passphrase file>] [--verify]"
   echo ""
   exit 1
 }
@@ -278,6 +369,24 @@ while [[ $# -gt 0 ]]; do
     -d|--diskpaths)
       DISK_PATHS="$2"
       shift
+      shift
+      ;;
+    -c|--compress)
+      COMPRESS="true"
+      shift
+      ;;
+    -b|--bandwidth)
+      BANDWIDTH="$2"
+      shift
+      shift
+      ;;
+    -e|--encrypt)
+      ENCRYPT_PASSFILE="$2"
+      shift
+      shift
+      ;;
+    --verify)
+      VERIFY="true"
       shift
       ;;
     -h|--help)
