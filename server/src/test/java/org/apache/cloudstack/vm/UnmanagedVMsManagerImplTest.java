@@ -37,8 +37,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -55,6 +57,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -72,6 +75,7 @@ import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.AgentManager;
@@ -168,7 +172,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class UnmanagedVMsManagerImplTest {
 
     @InjectMocks
-    private UnmanagedVMsManagerImpl unmanagedVMsManager = new UnmanagedVMsManagerImpl();
+    @Spy
+    private UnmanagedVMsManagerImpl unmanagedVMsManager;
 
     @Mock
     private UserVmManager userVmManager;
@@ -237,6 +242,14 @@ public class UnmanagedVMsManagerImplTest {
     EntityManager entityMgr;
     @Mock
     DeploymentPlanningManager deploymentPlanningManager;
+    @Mock
+    private Account accountMock;
+    @Mock
+    private ServiceOfferingVO serviceOfferingMock;
+    @Mock
+    private VMTemplateVO templateMock;
+    @Mock
+    private UnmanagedInstanceTO unmanagedInstanceMock;
 
     private static final long virtualMachineId = 1L;
 
@@ -363,6 +376,11 @@ public class UnmanagedVMsManagerImplTest {
 
         when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
+
+        when(unmanagedInstanceMock.getCpuCores()).thenReturn(8);
+        when(unmanagedInstanceMock.getMemory()).thenReturn(4096);
+        when(serviceOfferingMock.getCpu()).thenReturn(4);
+        when(serviceOfferingMock.getRamSize()).thenReturn(2048);
     }
 
     @NotNull
@@ -1109,5 +1127,103 @@ public class UnmanagedVMsManagerImplTest {
         when(hostDao.findById(hostId)).thenReturn(null);
 
         unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId);
+    }
+
+    @Test
+    public void checkVmResourceLimitsForUnmanagedInstanceImportTestUsesInformationFromHypervisorWhenOfferingIsDynamic() throws Exception {
+        when(serviceOfferingMock.isDynamic()).thenReturn(true);
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockedConstruction = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.checkVmResourceLimitsForUnmanagedInstanceImport(accountMock, unmanagedInstanceMock, serviceOfferingMock, templateMock, reservations);
+
+            Assert.assertEquals(3, mockedConstruction.constructed().size());
+            Assert.assertEquals(3, reservations.size());
+            verify(unmanagedInstanceMock).getCpuCores();
+            verify(unmanagedInstanceMock).getMemory();
+        }
+    }
+
+    @Test
+    public void checkVmResourceLimitsForUnmanagedInstanceImportTestUsesInformationFromHypervisorWhenVmIsPoweredOn() throws Exception {
+        when(unmanagedInstanceMock.getPowerState()).thenReturn(UnmanagedInstanceTO.PowerState.PowerOn);
+        when(serviceOfferingMock.isDynamic()).thenReturn(false);
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockedConstruction = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.checkVmResourceLimitsForUnmanagedInstanceImport(accountMock, unmanagedInstanceMock, serviceOfferingMock, templateMock, reservations);
+
+            Assert.assertEquals(3, mockedConstruction.constructed().size());
+            Assert.assertEquals(3, reservations.size());
+            verify(unmanagedInstanceMock).getCpuCores();
+            verify(unmanagedInstanceMock).getMemory();
+        }
+    }
+
+    @Test
+    public void checkVmResourceLimitsForUnmanagedInstanceImportTestUsesInformationFromOfferingWhenOfferingIsNotDynamicAndVmIsPoweredOff() throws Exception {
+        when(unmanagedInstanceMock.getPowerState()).thenReturn(UnmanagedInstanceTO.PowerState.PowerOff);
+        when(serviceOfferingMock.isDynamic()).thenReturn(false);
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockedConstruction = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.checkVmResourceLimitsForUnmanagedInstanceImport(accountMock, unmanagedInstanceMock, serviceOfferingMock, templateMock, reservations);
+
+            Assert.assertEquals(3, mockedConstruction.constructed().size());
+            Assert.assertEquals(3, reservations.size());
+            verify(serviceOfferingMock).getCpu();
+            verify(serviceOfferingMock).getRamSize();
+            verify(unmanagedInstanceMock, Mockito.never()).getCpuCores();
+            verify(unmanagedInstanceMock, Mockito.never()).getMemory();
+        }
+    }
+
+    @Test
+    public void checkVmResourceLimitsForExternalKvmVmImportTestUsesInformationFromOfferingWhenOfferingIsNotDynamic() throws ResourceAllocationException {
+        when(serviceOfferingMock.isDynamic()).thenReturn(false);
+        Map<String, String> details = new HashMap<>();
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockedConstruction = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.checkVmResourceLimitsForExternalKvmVmImport(accountMock, serviceOfferingMock, templateMock, details, reservations);
+
+            Assert.assertEquals(3, mockedConstruction.constructed().size());
+            Assert.assertEquals(3, reservations.size());
+            verify(serviceOfferingMock).getCpu();
+            verify(serviceOfferingMock).getRamSize();
+            verify(unmanagedVMsManager, Mockito.never()).getDetailAsInteger(VmDetailConstants.CPU_NUMBER, details);
+            verify(unmanagedVMsManager, Mockito.never()).getDetailAsInteger(VmDetailConstants.MEMORY, details);
+        }
+    }
+
+    @Test
+    public void checkVmResourceLimitsForExternalKvmVmImportTestUsesInformationFromDetailsWhenOfferingIsDynamic() throws ResourceAllocationException {
+        when(serviceOfferingMock.isDynamic()).thenReturn(true);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.CPU_NUMBER, "8");
+        details.put(VmDetailConstants.MEMORY, "4096");
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockedConstruction = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.checkVmResourceLimitsForExternalKvmVmImport(accountMock, serviceOfferingMock, templateMock, details, reservations);
+
+            Assert.assertEquals(3, mockedConstruction.constructed().size());
+            Assert.assertEquals(3, reservations.size());
+            verify(unmanagedVMsManager).getDetailAsInteger(VmDetailConstants.CPU_NUMBER, details);
+            verify(unmanagedVMsManager).getDetailAsInteger(VmDetailConstants.MEMORY, details);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getDetailAsIntegerTestThrowsInvalidParameterValueExceptionWhenDetailIsNull() {
+        Map<String, String> details = new HashMap<>();
+        unmanagedVMsManager.getDetailAsInteger("non-existent", details);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getDetailAsIntegerTestThrowsInvalidParameterValueExceptionWhenValueIsInvalid() {
+        Map<String, String> details = new HashMap<>();
+        details.put("key", "not-a-number");
+        unmanagedVMsManager.getDetailAsInteger("key", details);
     }
 }

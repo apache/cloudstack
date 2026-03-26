@@ -1559,7 +1559,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         return userVm;
     }
 
-    private void checkVmResourceLimitsForUnmanagedInstanceImport(Account owner, UnmanagedInstanceTO unmanagedInstance, ServiceOfferingVO serviceOffering, VMTemplateVO template, List<Reserver> reservations) throws ResourceAllocationException {
+    protected void checkVmResourceLimitsForUnmanagedInstanceImport(Account owner, UnmanagedInstanceTO unmanagedInstance, ServiceOfferingVO serviceOffering, VMTemplateVO template, List<Reserver> reservations) throws ResourceAllocationException {
         // When importing an unmanaged instance, the amount of CPUs and memory is obtained from the hypervisor unless powered off
         // and not using a dynamic offering, unlike the external VM import that always obtains it from the compute offering
         Integer cpu = serviceOffering.getCpu();
@@ -2766,7 +2766,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
     }
 
-    private void checkVmResourceLimitsForExternalKvmVmImport(Account owner, ServiceOfferingVO serviceOffering, VMTemplateVO template, Map<String, String> details, List<Reserver> reservations) throws ResourceAllocationException {
+    protected void checkVmResourceLimitsForExternalKvmVmImport(Account owner, ServiceOfferingVO serviceOffering, VMTemplateVO template, Map<String, String> details, List<Reserver> reservations) throws ResourceAllocationException {
         // When importing an external VM, the amount of CPUs and memory is always obtained from the compute offering,
         // unlike the unmanaged instance import that obtains it from the hypervisor unless the VM is powered off and the offering is fixed
         Integer cpu = serviceOffering.getCpu();
@@ -2789,7 +2789,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         reservations.add(memReservation);
     }
 
-    private Integer getDetailAsInteger(String key, Map<String, String> details) {
+    protected Integer getDetailAsInteger(String key, Map<String, String> details) {
         String detail = details.get(key);
         if (detail == null) {
             throw new InvalidParameterValueException(String.format("Detail '%s' must be provided.", key));
