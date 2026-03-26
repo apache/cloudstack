@@ -73,6 +73,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "VPC offering name the VPC is created from", since = "4.13.2")
     private String vpcOfferingName;
 
+    @SerializedName(ApiConstants.VPC_OFFERING_CONSERVE_MODE)
+    @Param(description = "true if VPC offering is ip conserve mode enabled", since = "4.23")
+    private Boolean vpcOfferingConserveMode;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "The date this VPC was created")
     private Date created;
@@ -195,6 +199,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
 
     public void setDisplayText(final String displayText) {
         this.displayText = displayText;
+    }
+
+    public void setVpcOfferingConserveMode(Boolean vpcOfferingConserveMode) {
+        this.vpcOfferingConserveMode = vpcOfferingConserveMode;
     }
 
     public void setCreated(final Date created) {

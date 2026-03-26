@@ -146,6 +146,7 @@ jobs:
                   smoke/test_vm_snapshot_kvm
                   smoke/test_vm_snapshots
                   smoke/test_volumes
+                  smoke/test_vpc_conserve_mode
                   smoke/test_vpc_ipv6
                   smoke/test_vpc_redundant
                   smoke/test_vpc_router_nics

@@ -588,6 +588,7 @@ import { mixinForm } from '@/utils/mixin'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { buildServiceCapabilityParams } from '@/composables/useServiceCapabilityParams'
 
 export default {
   name: 'AddNetworkOffering',
@@ -1173,99 +1174,7 @@ export default {
           }
         }
         if (this.selectedServiceProviderMap != null) {
-          var supportedServices = Object.keys(this.selectedServiceProviderMap)
-          params.supportedservices = supportedServices.join(',')
-          for (var k in supportedServices) {
-            params['serviceProviderList[' + k + '].service'] = supportedServices[k]
-            params['serviceProviderList[' + k + '].provider'] = this.selectedServiceProviderMap[supportedServices[k]]
-          }
-          var serviceCapabilityIndex = 0
-          if (supportedServices.includes('Connectivity')) {
-            if (values.supportsstrechedl2subnet === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RegionLevelVpc'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            if (values.supportspublicaccess === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Connectivity'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'DistributedRouter'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            delete params.supportsstrechedl2subnet
-            delete params.supportspublicaccess
-          }
-          if (supportedServices.includes('SourceNat')) {
-            if (values.redundantroutercapability === true) {
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedSourceNatTypes'
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.sourcenattype
-            serviceCapabilityIndex++
-            delete params.redundantroutercapability
-            delete params.sourcenattype
-          } else if (values.redundantroutercapability === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'Gateway'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-          }
-          if (supportedServices.includes('SourceNat')) {
-            if (values.elasticip === true) {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticIp'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            if (values.elasticip === true || values.associatepublicip === true) {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'StaticNat'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'associatePublicIP'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.associatepublicip
-              serviceCapabilityIndex++
-            }
-            delete params.elasticip
-            delete params.associatepublicip
-          }
-          if (supportedServices.includes('Lb')) {
-            if ('vmautoscalingcapability' in values) {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'VmAutoScaling'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.vmautoscalingcapability
-              serviceCapabilityIndex++
-            }
-            if (values.elasticlb === true) {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticLb'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-              serviceCapabilityIndex++
-            }
-            if (values.inlinemode === true && ((this.selectedServiceProviderMap.Lb === 'F5BigIp') || (this.selectedServiceProviderMap.Lb === 'Netscaler'))) {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'InlineMode'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.inlinemode
-              serviceCapabilityIndex++
-            }
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedLbIsolation'
-            params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.isolation
-            serviceCapabilityIndex++
-            if (this.selectedServiceProviderMap.Lb === 'InternalLbVm') {
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'lbSchemes'
-              params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = 'internal'
-              serviceCapabilityIndex++
-            }
-            if ('netscalerservicepackages' in values &&
-              this.registeredServicePackages.length > values.netscalerservicepackages &&
-              'netscalerservicepackagesdescription' in values) {
-              params['details[' + 0 + '].servicepackageuuid'] = this.registeredServicePackages[values.netscalerservicepackages].id
-              params['details[' + 1 + '].servicepackagedescription'] = values.netscalerservicepackagesdescription
-            }
-          }
+          buildServiceCapabilityParams(params, values, this.selectedServiceProviderMap, this.registeredServicePackages)
         } else {
           if (!('supportedservices' in params)) {
             params.supportedservices = ''

@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.PermissionDeniedException;
@@ -105,7 +106,7 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     }
 
     @Override
-    public boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException {
+    public boolean checkAccess(User user, String apiCommandName, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException {
         if (!isEnabled()) {
             return true;
         }
@@ -150,7 +151,7 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     }
 
     @Override
-    public boolean checkAccess(Account account, String apiCommandName) throws PermissionDeniedException {
+    public boolean checkAccess(Account account, String apiCommandName, ApiKeyPairPermission... apiKeyPairPermissions) throws PermissionDeniedException {
         return true;
     }
 
@@ -180,6 +181,11 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         return true;
+    }
+
+    @Override
+    public List<RolePermissionEntity> getImplicitRolePermissions(RoleType roleType) {
+        return List.of();
     }
 
     @Override
