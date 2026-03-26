@@ -18,7 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import tungsten from '@/assets/icons/tungsten.svg?inline'
-import { isAdmin } from '@/role'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { isZoneCreated } from '@/utils/zone'
 import { vueProps } from '@/vue-app'
 
@@ -49,7 +49,10 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber',
+          'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account',
+          'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2',
+          'publicmtu', 'privatemtu', 'dnszone', 'dnssubdomain']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
@@ -197,6 +200,36 @@ export default {
               api: 'listNetworkACLLists',
               params: (record) => { return { vpcid: record.vpcid } }
             },
+            networkid: {
+              value: (record) => { return record.id }
+            }
+          }
+        },
+        {
+          api: 'associateDnsZoneToNetwork',
+          icon: 'link-outlined',
+          label: 'label.action.associate.dns.zone',
+          dataView: true,
+          show: (record, store) => {
+            return (record.type === 'Shared' && record.dnszone === undefined &&
+              (record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype)))
+          },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AssociateDnsZone.vue')))
+        },
+        {
+          api: 'disassociateDnsZoneFromNetwork',
+          icon: 'disconnect-outlined',
+          label: 'label.action.disassociate.dns.zone',
+          message: 'message.action.disassociate.dns.zone',
+          dataView: true,
+          popup: true,
+          args: ['networkid'],
+          show: (record, store) => {
+            return record.dnszone !== undefined && record.type === 'Shared' &&
+              (record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype))
+          },
+          mapping: {
             networkid: {
               value: (record) => { return record.id }
             }
@@ -1489,6 +1522,103 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'dnsserver',
+      title: 'label.dns.server',
+      icon: 'cloud-server-outlined',
+      permission: ['listDnsServers'],
+      columns: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix'],
+      details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix', 'domain', 'account'],
+      related: [{
+        name: 'dnszone',
+        title: 'label.dns.zone',
+        param: 'dnsserverid'
+      }],
+      actions: [
+        {
+          api: 'addDnsServer',
+          icon: 'plus-outlined',
+          label: 'label.dns.add.server',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AddDnsServer.vue'))),
+          show: () => {
+            return true
+          }
+        },
+        {
+          api: 'updateDnsServer',
+          icon: 'edit-outlined',
+          label: 'label.dns.update.server',
+          dataView: true,
+          popup: true,
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsServer.vue')))
+        },
+        {
+          api: 'deleteDnsServer',
+          icon: 'delete-outlined',
+          label: 'label.dns.delete.server',
+          message: 'message.action.delete.dns.server',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DeleteDnsServer.vue'))),
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          groupAction: false,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'dnszone',
+      title: 'label.dns.zones',
+      icon: 'apartment-outlined',
+      permission: ['listDnsZones'],
+      columns: ['name', 'state', 'dnsservername', 'account', 'description'],
+      details: ['name', 'id', 'state', 'dnsservername', 'dnsserverid', 'account', 'domainpath', 'description'],
+      tabs: [{
+        name: 'details',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+      },
+      {
+        name: 'dns.records',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DnsRecordsTab.vue'))),
+        show: () => true
+      }],
+      actions: [
+        {
+          api: 'createDnsZone',
+          icon: 'plus-outlined',
+          label: 'label.dns.create.zone',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/CreateDnsZone.vue'))),
+          show: () => {
+            return true
+          }
+        },
+        {
+          api: 'updateDnsZone',
+          icon: 'edit-outlined',
+          label: 'label.dns.update.zone',
+          dataView: true,
+          popup: true,
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsZone.vue')))
+        },
+        {
+          api: 'deleteDnsZone',
+          icon: 'delete-outlined',
+          label: 'label.dns.delete.zone',
+          message: 'message.action.delete.dns.zone',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DeleteDnsZone.vue'))),
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          groupAction: false
         }
       ]
     }

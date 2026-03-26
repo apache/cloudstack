@@ -17,17 +17,40 @@
 package com.cloud.vm.dao;
 
 
+import java.util.List;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.NicDetailVO;
 
 @Component
 public class NicDetailsDaoImpl extends ResourceDetailsDaoBase<NicDetailVO> implements NicDetailsDao {
+    private final SearchBuilder<NicDetailVO> NameValuesSearch;
+
+    public NicDetailsDaoImpl() {
+        super();
+        NameValuesSearch = createSearchBuilder();
+        NameValuesSearch.and(ApiConstants.NAME, NameValuesSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameValuesSearch.and(ApiConstants.VALUE, NameValuesSearch.entity().getValue(), SearchCriteria.Op.IN);
+        NameValuesSearch.done();
+    }
+
 
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
         super.addDetail(new NicDetailVO(resourceId, key, value, display));
+    }
+
+    @Override
+    public void removeDetailsForValuesIn(String resourceName, List<String> values) {
+        SearchCriteria<NicDetailVO> sc = NameValuesSearch.create();
+        sc.setParameters(ApiConstants.NAME, resourceName);
+        sc.setParameters(ApiConstants.VALUE, values.toArray());
+        remove(sc);
     }
 }

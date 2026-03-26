@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventDistributor;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -85,6 +86,8 @@ public class ActionEventUtils {
     EntityManager entityMgr;
     @Inject
     ConfigurationDao configDao;
+    @Inject
+    MessageBus messageBus;
 
     public ActionEventUtils() {
     }
@@ -97,6 +100,7 @@ public class ActionEventUtils {
         s_projectDao = projectDao;
         s_entityMgr = entityMgr;
         s_configDao = configDao;
+        messageBus = messageBus;
     }
 
     public static Long onActionEvent(Long userId, Long accountId, Long domainId, String type, String description, Long resourceId, String resourceType) {
