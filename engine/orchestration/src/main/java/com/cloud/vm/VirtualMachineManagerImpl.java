@@ -933,16 +933,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             advanceStart(vmUuid, params, planToDeploy, planner);
         } catch (ConcurrentOperationException e) {
-            throw new CloudRuntimeException(String.format("Unable to start a VM [%s] due to [%s].", vmUuid, e.getMessage()), e).add(VirtualMachine.class, vmUuid);
+            final CallContext cctxt = CallContext.current();
+            final Account account = cctxt.getCallingAccount();
+            if (canExposeError(account)) {
+                throw new CloudRuntimeException(String.format("Unable to start a VM [%s] due to [%s].", vmUuid, e.getMessage()), e).add(VirtualMachine.class, vmUuid);
+            }
+            throw new CloudRuntimeException(String.format("Unable to start a VM [%s] due to concurrent operation.", vmUuid), e).add(VirtualMachine.class, vmUuid);
         } catch (final InsufficientCapacityException e) {
             final CallContext cctxt = CallContext.current();
             final Account account = cctxt.getCallingAccount();
-            if (account.getType() == Account.Type.ADMIN) {
-                throw new CloudRuntimeException("Unable to start a VM due to insufficient capacity: " + e.getMessage(), e).add(VirtualMachine.class, vmUuid);
+            if (canExposeError(account)) {
+                throw new CloudRuntimeException(String.format("Unable to start a VM [%s] due to [%s].", vmUuid, e.getMessage()), e).add(VirtualMachine.class, vmUuid);
             }
-            throw new CloudRuntimeException(String.format("Unable to start a VM [%s] due to [%s].", vmUuid, e.getMessage()), e).add(VirtualMachine.class, vmUuid);
+            throw new CloudRuntimeException(String.format("Unable to start a VM [%s] due to insufficient capacity.", vmUuid), e).add(VirtualMachine.class, vmUuid);
         } catch (final ResourceUnavailableException e) {
-            if (e.getScope() != null && e.getScope().equals(VirtualRouter.class)){
+            if (e.getScope() != null && e.getScope().equals(VirtualRouter.class)) {
                 throw new CloudRuntimeException("Network is unavailable. Please contact administrator", e).add(VirtualMachine.class, vmUuid);
             }
             throw new CloudRuntimeException(String.format("Unable to start a VM [%s] due to [%s].", vmUuid, e.getMessage()), e).add(VirtualMachine.class, vmUuid);
@@ -1461,7 +1466,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         continue;
                     }
                     String message = String.format("Unable to create a deployment for %s after %s attempts", vmProfile, attemptNumber);
-                    if ((account.getType() == Account.Type.ADMIN || Boolean.TRUE.equals(EXPOSE_ERRORS_TO_USER.value())) && lastKnownError != null) {
+                    if (canExposeError(account) && lastKnownError != null) {
                         message += String.format(" Last known error: %s", lastKnownError.getMessage());
                         throw new CloudRuntimeException(message, lastKnownError);
                     } else {
@@ -1711,7 +1716,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (startedVm == null) {
             String messageTmpl = "Unable to start Instance '%s' (%s)%s";
             String details;
-            if ((account.getType() == Account.Type.ADMIN || Boolean.TRUE.equals(EXPOSE_ERRORS_TO_USER.value())) && lastKnownError != null) {
+            if (canExposeError(account) && lastKnownError != null) {
                 details = ": " + lastKnownError.getMessage();
             } else {
                 details = ", see management server log for details";
@@ -1719,6 +1724,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             String message = String.format(messageTmpl, vm.getHostName(), vm.getUuid(), details);
             throw new CloudRuntimeException(message, lastKnownError);
         }
+    }
+
+    private boolean canExposeError(Account account) {
+        return (account != null && account.getType() == Account.Type.ADMIN) || Boolean.TRUE.equals(EXPOSE_ERRORS_TO_USER.value());
     }
 
     protected void updateStartCommandWithExternalDetails(Host host, VirtualMachineTO vmTO, StartCommand command) {
