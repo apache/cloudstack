@@ -1560,12 +1560,12 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     }
 
     private void checkVmResourceLimitsForUnmanagedInstanceImport(Account owner, UnmanagedInstanceTO unmanagedInstance, ServiceOfferingVO serviceOffering, VMTemplateVO template, List<Reserver> reservations) throws ResourceAllocationException {
-        // When importing a unmanaged instance, the amount of CPUs and memory is obtained from the hypervisor unless powered off
+        // When importing an unmanaged instance, the amount of CPUs and memory is obtained from the hypervisor unless powered off
         // and not using a dynamic offering, unlike the external VM import that always obtains it from the compute offering
         Integer cpu = serviceOffering.getCpu();
         Integer memory = serviceOffering.getRamSize();
 
-        if (serviceOffering.isDynamic() || !unmanagedInstance.getPowerState().equals(UnmanagedInstanceTO.PowerState.PowerOff)) {
+        if (serviceOffering.isDynamic() || !UnmanagedInstanceTO.PowerState.PowerOff.equals(unmanagedInstance.getPowerState())) {
             cpu = unmanagedInstance.getCpuCores();
             memory = unmanagedInstance.getMemory();
         }
@@ -1671,7 +1671,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
 
-            // Ensure that the configured resource limits will not be exceeded before beggining the conversion process
+            // Ensure that the configured resource limits will not be exceeded before beginning the conversion process
             checkVmResourceLimitsForUnmanagedInstanceImport(owner, sourceVMwareInstance, serviceOffering, template, reservations);
 
             boolean isWindowsVm = sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
