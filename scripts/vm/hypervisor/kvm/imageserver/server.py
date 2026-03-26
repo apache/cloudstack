@@ -54,7 +54,7 @@ def make_handler(
     Create a Handler subclass with injected dependencies.
 
     BaseHTTPRequestHandler is instantiated per-request by the server, so we
-    cannot pass constructor args.  Instead we set class-level attributes.
+    cannot pass constructor args. Instead, we set class-level attributes.
     """
 
     class ConfiguredHandler(Handler):

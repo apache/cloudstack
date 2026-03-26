@@ -28,7 +28,7 @@ from ..constants import (
     NBD_STATE_HOLE,
     NBD_STATE_ZERO,
 )
-from ..util import merge_dirty_zero_extents
+from ..util import coalesce_allocation_extents, merge_dirty_zero_extents
 from .base import BackendSession, ImageBackend
 
 
@@ -225,7 +225,7 @@ class NbdConnection:
             return [{"start": 0, "length": size, "zero": False}]
         if not allocation_extents:
             return [{"start": 0, "length": size, "zero": False}]
-        return allocation_extents
+        return coalesce_allocation_extents(allocation_extents)
 
     def get_extents_dirty_and_zero(
         self, dirty_bitmap_context: str

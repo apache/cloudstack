@@ -20,6 +20,52 @@ import time
 from typing import Any, Dict, List, Set, Tuple
 
 
+def coalesce_allocation_extents(
+    extents: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Merge contiguous extents that share the same ``zero`` flag."""
+    if not extents:
+        return []
+    out: List[Dict[str, Any]] = [dict(extents[0])]
+    for e in extents[1:]:
+        prev = out[-1]
+        if (
+            prev["start"] + prev["length"] == e["start"]
+            and prev["zero"] == e["zero"]
+        ):
+            prev["length"] += e["length"]
+        else:
+            out.append({"start": e["start"], "length": e["length"], "zero": e["zero"]})
+    return out
+
+
+def coalesce_dirty_zero_extents(
+    extents: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Merge contiguous extents that share the same ``dirty`` and ``zero`` flags."""
+    if not extents:
+        return []
+    out: List[Dict[str, Any]] = [dict(extents[0])]
+    for e in extents[1:]:
+        prev = out[-1]
+        if (
+            prev["start"] + prev["length"] == e["start"]
+            and prev["dirty"] == e["dirty"]
+            and prev["zero"] == e["zero"]
+        ):
+            prev["length"] += e["length"]
+        else:
+            out.append(
+                {
+                    "start": e["start"],
+                    "length": e["length"],
+                    "dirty": e["dirty"],
+                    "zero": e["zero"],
+                }
+            )
+    return out
+
+
 def json_bytes(obj: Any) -> bytes:
     return json.dumps(obj, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
@@ -63,7 +109,7 @@ def merge_dirty_zero_extents(
                 "zero": lookup(allocation_extents, a, False),
             }
         )
-    return result
+    return coalesce_dirty_zero_extents(result)
 
 
 def is_fallback_dirty_response(extents: List[Dict[str, Any]]) -> bool:

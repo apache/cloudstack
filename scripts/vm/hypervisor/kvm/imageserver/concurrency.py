@@ -29,8 +29,8 @@ class ConcurrencyManager:
     """
     Manages per-image read/write semaphores and per-image mutual-exclusion locks.
 
-    Each image_id gets its own independent pool of read slots (default 8)
-    and write slots (default 1), so concurrent transfers to different images
+    Each image_id gets its own independent pool of read slots (default MAX_PARALLEL_READS)
+    and write slots (default MAX_PARALLEL_WRITES), so concurrent transfers to different images
     do not contend with each other.
 
     The per-image lock serialises operations that must not overlap on the
