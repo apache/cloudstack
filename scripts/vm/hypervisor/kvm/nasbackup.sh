@@ -142,7 +142,8 @@ backup_running_vm() {
         break ;;
       Failed)
         echo "Virsh backup job failed"
-        cleanup ;;
+        cleanup
+        exit 1 ;;
     esac
     sleep 5
   done
@@ -178,6 +179,7 @@ backup_stopped_vm() {
     if ! qemu-img convert -O qcow2 "$disk" "$output" > "$logFile" 2> >(cat >&2); then
       echo "qemu-img convert failed for $disk $output"
       cleanup
+      exit 1
     fi
     name="datadisk"
   done
@@ -221,6 +223,19 @@ mount_operation() {
 
 cleanup() {
   local status=0
+
+  # Resume the VM if it was paused during backup to prevent it from
+  # remaining indefinitely paused when the backup job fails (e.g. due
+  # to storage full or I/O errors on the backup target)
+  local vm_state
+  vm_state=$(virsh -c qemu:///system domstate "$VM" 2>/dev/null)
+  if [[ "$vm_state" == "paused" ]]; then
+    log -ne "Resuming paused VM $VM during backup cleanup"
+    if ! virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
+      echo "Failed to resume VM $VM"
+      status=1
+    fi
+  fi
 
   rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
   umount "$mount_point" || { echo "Failed to unmount $mount_point"; status=1; }
