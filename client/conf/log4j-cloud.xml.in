@@ -37,7 +37,6 @@ under the License.
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
       </RollingFile>
 
-
       <RollingFile name="APISERVER" append="true" fileName="@APISERVERLOG@" filePattern="@APISERVERLOG@.%d{yyyy-MM-dd}.gz">
          <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
          <Policies>
@@ -70,7 +69,7 @@ under the License.
 
       <Console name="CONSOLE" target="SYSTEM_OUT">
          <ThresholdFilter level="OFF" onMatch="ACCEPT" onMismatch="DENY"/>
-         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
       </Console>
 
       <!-- ============================== -->
