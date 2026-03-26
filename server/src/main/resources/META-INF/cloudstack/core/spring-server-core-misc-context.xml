@@ -83,4 +83,9 @@
 
     <bean id="domainHelper" class="com.cloud.utils.DomainHelper" />
 
+    <bean id="jsonConfigValidator" class="org.apache.cloudstack.gui.theme.json.config.validator.JsonConfigValidator" />
+    <bean id="errorAttribute" class="org.apache.cloudstack.gui.theme.json.config.validator.attributes.ErrorAttribute" />
+    <bean id="pluginsAttribute" class="org.apache.cloudstack.gui.theme.json.config.validator.attributes.PluginsAttribute" />
+    <bean id="themeAttribute" class="org.apache.cloudstack.gui.theme.json.config.validator.attributes.ThemeAttribute" />
+    <bean id="userCardAttribute" class="org.apache.cloudstack.gui.theme.json.config.validator.attributes.UserCardAttribute" />
 </beans>
