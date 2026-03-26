@@ -2304,6 +2304,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
      * Perform validations before attempting to unmanage a VM from CloudStack:
      * - VM must not have any associated volume snapshot
      * - VM must not have an attached ISO
+     * - VM must not belong to any CKS cluster
+     * @throws UnsupportedServiceException in case any of the validations above fail
      */
     void performUnmanageVMInstancePrechecks(VMInstanceVO vmVO) {
         if (hasVolumeSnapshotsPriorToUnmanageVM(vmVO)) {
@@ -2314,6 +2316,11 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         if (hasISOAttached(vmVO)) {
             throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
                     " as there is an ISO attached. Please detach ISO before unmanaging.");
+        }
+
+        if (userVmManager.isVMPartOfAnyCKSCluster(vmVO)) {
+            throw new UnsupportedServiceException("Cannot unmanage VM with id = " + vmVO.getUuid() +
+                    " as it belongs to a CKS cluster. Please remove the VM from the CKS cluster before unmanaging.");
         }
     }
 
