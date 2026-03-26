@@ -2620,7 +2620,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (isClvmLockTransferNeeded) {
             // CLVM lock transfer - no data copy, no pool change needed
-            newVolumeOnPrimaryStorage = executeClvmLightweightMigration(
+            newVolumeOnPrimaryStorage = executeLightweightLockMigration(
                     newVolumeOnPrimaryStorage, vm, existingVolumeOfVm,
                     "CLVM lock transfer", "same pool to different host");
         } else if (moveVolumeNeeded) {
@@ -2634,7 +2634,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     newVolumeOnPrimaryStorage, existingVolumeOfVm, vm);
 
             if (isClvmLightweightMigration) {
-                newVolumeOnPrimaryStorage = executeClvmLightweightMigration(
+                newVolumeOnPrimaryStorage = executeLightweightLockMigration(
                         newVolumeOnPrimaryStorage, vm, existingVolumeOfVm,
                         "CLVM lightweight migration", "different pools, same VG");
             } else {
@@ -2685,43 +2685,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     /**
-     * Checks if both storage pools are CLVM type.
+     * Checks if both storage pools are CLVM type (CLVM or CLVM_NG).
+     * Delegates to VolumeService for the actual check.
      *
      * @param volumePool Storage pool for the volume
      * @param vmPool Storage pool for the VM
-     * @return true if both pools are CLVM type
+     * @return true if both pools are CLVM type (CLVM or CLVM_NG)
      */
     private boolean areBothPoolsClvmType(StoragePoolVO volumePool, StoragePoolVO vmPool) {
-        return volumePool.getPoolType() == StoragePoolType.CLVM &&
-               vmPool.getPoolType() == StoragePoolType.CLVM;
-    }
-
-    /**
-     * Extracts the Volume Group (VG) name from a CLVM storage pool path.
-     * For CLVM, the path is typically: /vgname
-     *
-     * @param poolPath The storage pool path
-     * @return VG name, or null if path is null
-     */
-    private String extractVgNameFromPath(String poolPath) {
-        if (poolPath == null) {
-            return null;
-        }
-        return poolPath.startsWith("/") ? poolPath.substring(1) : poolPath;
-    }
-
-    /**
-     * Checks if two CLVM storage pools are in the same Volume Group.
-     *
-     * @param volumePool Storage pool for the volume
-     * @param vmPool Storage pool for the VM
-     * @return true if both pools are in the same VG
-     */
-    private boolean arePoolsInSameVolumeGroup(StoragePoolVO volumePool, StoragePoolVO vmPool) {
-        String volumeVgName = extractVgNameFromPath(volumePool.getPath());
-        String vmVgName = extractVgNameFromPath(vmPool.getPath());
-
-        return volumeVgName != null && volumeVgName.equals(vmVgName);
+        return volService.areBothPoolsClvmType(volumePool.getPoolType(), vmPool.getPoolType());
     }
 
     /**
@@ -2746,19 +2718,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         StoragePoolVO volumePool = pools.first();
         StoragePoolVO vmPool = pools.second();
 
-        if (!areBothPoolsClvmType(volumePool, vmPool)) {
-            return false;
-        }
-
-        if (arePoolsInSameVolumeGroup(volumePool, vmPool)) {
-            String vgName = extractVgNameFromPath(volumePool.getPath());
-            logger.info("CLVM lightweight migration detected: Volume {} is in same VG ({}) as VM {} volumes, " +
-                    "only lock transfer needed (no data copy)",
-                    volumeToAttach.getUuid(), vgName, vm.getUuid());
-            return true;
-        }
-
-        return false;
+        return volService.isLightweightMigrationNeeded(volumePool.getPoolType(), vmPool.getPoolType(),
+                volumePool.getPath(), vmPool.getPath());
     }
 
     /**
@@ -2787,37 +2748,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         StoragePoolVO volumePool = pools.first();
         StoragePoolVO vmPool = pools.second();
 
-        if (volumePool != null && !ClvmLockManager.isClvmPoolType(volumePool.getPoolType())) {
-            return false;
-        }
-
-        if (volumePool.getId() != vmPool.getId()) {
-            return false;
-        }
-
-        Long volumeLockHostId = findClvmVolumeLockHost(volumeToAttach);
-
         Long vmHostId = vm.getHostId();
         if (vmHostId == null) {
             vmHostId = vm.getLastHostId();
         }
 
-        if (volumeLockHostId == null) {
-            VolumeVO volumeVO = _volsDao.findById(volumeToAttach.getId());
-            if (volumeVO != null && volumeVO.getState() == Volume.State.Ready && volumeVO.getInstanceId() == null) {
-                logger.debug("CLVM volume {} is detached on same pool as VM {}, lock transfer may be needed",
-                        volumeToAttach.getUuid(), vm.getUuid());
-                return true;
-            }
-        }
-
-        if (volumeLockHostId != null && vmHostId != null && !volumeLockHostId.equals(vmHostId)) {
-            logger.info("CLVM lock transfer required: Volume {} lock is on host {} but VM {} is on host {}",
-                    volumeToAttach.getUuid(), volumeLockHostId, vm.getUuid(), vmHostId);
-            return true;
-        }
-
-        return false;
+        return volService.isLockTransferRequired(volumeToAttach, volumePool.getPoolType(), vmPool.getPoolType(),
+                volumePool.getId(), vmPool.getId(), vmHostId);
     }
 
     /**
@@ -2871,13 +2808,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * @return Updated VolumeInfo after lock migration
      * @throws CloudRuntimeException if migration fails
      */
-    private VolumeInfo executeClvmLightweightMigration(VolumeInfo volume, UserVmVO vm, VolumeVO vmExistingVolume,
+    private VolumeInfo executeLightweightLockMigration(VolumeInfo volume, UserVmVO vm, VolumeVO vmExistingVolume,
                                                         String operationType, String scenarioDescription) {
         logger.info("Performing {} for volume {} to VM {} ({})",
                 operationType, volume.getUuid(), vm.getUuid(), scenarioDescription);
 
         try {
-            return performClvmLightweightMigration(volume, vm, vmExistingVolume);
+            return performLightweightLockMigration(volume, vm, vmExistingVolume);
         } catch (Exception e) {
             logger.error("{} failed for volume {}: {}",
                     operationType, volume.getUuid(), e.getMessage(), e);
@@ -2887,9 +2824,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     /**
      * Performs lightweight CLVM lock migration for volume attachment.
-     *
-     * This transfers the LVM exclusive lock from the current host to the VM's host
-     * without copying data (since CLVM volumes are on cluster-wide shared storage).
+     * Delegates to VolumeService for the actual lock migration.
      *
      * @param volume The volume to migrate locks for
      * @param vm The VM to attach the volume to
@@ -2897,13 +2832,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * @return Updated VolumeInfo after lock migration
      * @throws Exception if lock migration fails
      */
-    private VolumeInfo performClvmLightweightMigration(VolumeInfo volume, UserVmVO vm, VolumeVO vmExistingVolume) throws Exception {
-        String volumeUuid = volume.getUuid();
-        Long vmId = vm.getId();
-
-        logger.info("Starting CLVM lightweight lock migration for volume {} (id: {}) to VM {} (id: {})",
-                volumeUuid, volume.getId(), vm.getUuid(), vmId);
-
+    private VolumeInfo performLightweightLockMigration(VolumeInfo volume, UserVmVO vm, VolumeVO vmExistingVolume) throws CloudRuntimeException {
         Long destHostId = determineClvmLockDestinationHost(vm, vmExistingVolume);
 
         if (destHostId == null) {
@@ -2911,91 +2840,25 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 "Cannot determine destination host for CLVM lock migration - VM has no host and no available cluster hosts");
         }
 
-        Long sourceHostId = findClvmVolumeLockHost(volume);
-
-        if (sourceHostId == null) {
-            logger.warn("Could not determine source host for CLVM volume {} lock, " +
-                    "assuming volume is not exclusively locked", volumeUuid);
-            sourceHostId = destHostId;
+        try {
+            return volService.performLockMigration(volume, destHostId);
+        } catch (CloudRuntimeException e) {
+            logger.error("CLVM lock migration failed for volume {}: {}", volume.getUuid(), e.getMessage(), e);
+            throw e;
         }
-
-        if (sourceHostId.equals(destHostId)) {
-            logger.info("CLVM volume {} already has lock on destination host {}, no migration needed",
-                    volumeUuid, destHostId);
-            return volume;
-        }
-
-        logger.info("Migrating CLVM volume {} lock from host {} to host {}",
-                volumeUuid, sourceHostId, destHostId);
-
-        boolean success = transferClvmVolumeLock(volume, sourceHostId, destHostId);
-
-        if (!success) {
-            throw new CloudRuntimeException(
-                String.format("Failed to transfer CLVM lock for volume %s from host %s to host %s",
-                    volumeUuid, sourceHostId, destHostId));
-        }
-
-        logger.info("Successfully migrated CLVM volume {} lock from host {} to host {}",
-                volumeUuid, sourceHostId, destHostId);
-
-        return volFactory.getVolume(volume.getId());
     }
 
     /**
      * Finds which host currently has the exclusive lock on a CLVM volume.
+     * Delegates to VolumeService for the actual lookup.
      *
      * @param volume The CLVM volume
      * @return Host ID that has the exclusive lock, or null if cannot be determined
      */
-    private Long findClvmVolumeLockHost(VolumeInfo volume) {
-        Long lockHostId = clvmLockManager.getClvmLockHostId(volume.getId(), volume.getUuid());
-        if (lockHostId != null) {
-            return lockHostId;
-        }
-
-        Long instanceId = volume.getInstanceId();
-        if (instanceId != null) {
-            VMInstanceVO vmInstance = _vmInstanceDao.findById(instanceId);
-            if (vmInstance != null && vmInstance.getHostId() != null) {
-                return vmInstance.getHostId();
-            }
-        }
-
-        StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-        if (pool != null && pool.getClusterId() != null) {
-            List<HostVO> hosts = _hostDao.findByClusterId(pool.getClusterId());
-            if (hosts != null && !hosts.isEmpty()) {
-                // Return first available UP host
-                for (HostVO host : hosts) {
-                    if (host.getStatus() == Status.Up) {
-                        return host.getId();
-                    }
-                }
-            }
-        }
-
-        return null;
+    private Long findVolumeLockHost(VolumeInfo volume) {
+        return volService.findVolumeLockHost(volume);
     }
 
-    /**
-     * Transfers CLVM volume exclusive lock from source host to destination host.
-     *
-     * @param volume The volume to transfer lock for
-     * @param sourceHostId Host currently holding the lock
-     * @param destHostId Host to transfer lock to
-     * @return true if successful, false otherwise
-     */
-    private boolean transferClvmVolumeLock(VolumeInfo volume, Long sourceHostId, Long destHostId) {
-        StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-        if (pool == null) {
-            logger.error("Cannot find storage pool for volume {}", volume.getUuid());
-            return false;
-        }
-
-        return clvmLockManager.transferClvmVolumeLock(volume.getUuid(), volume.getId(),
-                volume.getPath(), pool, sourceHostId, destHostId);
-    }
 
     public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS) {
         Account caller = CallContext.current().getCallingAccount();
