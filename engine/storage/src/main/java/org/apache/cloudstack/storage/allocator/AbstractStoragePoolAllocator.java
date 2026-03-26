@@ -204,6 +204,30 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return reorderedPools;
     }
 
+    /**
+     * Reorders storage pools based on available free space in descending order.
+     * Pools with the most available free space will be prioritized first.
+     *
+     * @param pools List of storage pools to be reordered
+     * @return List of storage pools sorted by free space (highest to lowest)
+     */
+    protected List<StoragePool> reorderPoolsByFreeSpace(List<StoragePool> pools) {
+        if (CollectionUtils.isEmpty(pools)) {
+            logger.debug("No storage pools provided for free space reordering, returning original list.");
+            return pools;
+        }
+
+        List<StoragePool> sortedPools = new ArrayList<>(pools);
+
+        sortedPools.sort((p1, p2) -> {
+            long free1 = p1.getCapacityBytes() - p1.getUsedBytes();
+            long free2 = p2.getCapacityBytes() - p2.getUsedBytes();
+            return Long.compare(free2, free1);
+        });
+
+        logger.debug("Storage pools reordered by free space (descending): {}", sortedPools);
+        return sortedPools;
+    }
     @Override
     public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan, DiskProfile dskCh) {
         if (logger.isTraceEnabled()) {
@@ -238,9 +262,14 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return pools;
     }
 
+    /**
+     * Reorders storage pools based on the configured volume allocation algorithm.
+     * Different algorithms provide different strategies for pool selection and ordering.
+     */
     List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
         String volumeAllocationAlgorithm = VolumeOrchestrationService.VolumeAllocationAlgorithm.value();
-        logger.debug("Using volume allocation algorithm {} to reorder pools.", volumeAllocationAlgorithm);
+        logger.debug("Using volume allocation algorithm '{}' to reorder storage pools.", volumeAllocationAlgorithm);
+
         if (volumeAllocationAlgorithm.equals("random") || (account == null)) {
             reorderRandomPools(pools);
         } else if (StringUtils.equalsAny(volumeAllocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {
@@ -253,6 +282,10 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             } else {
                 pools = reorderPoolsByCapacity(plan, pools);
             }
+        } else if (volumeAllocationAlgorithm.equals("maxfree")) {
+            // MaxFree algorithm: Prioritize pools with maximum available free space
+            logger.debug("Applying maxfree algorithm - prioritizing storage pools with most available free space.");
+            pools = reorderPoolsByFreeSpace(pools);
         }
         return pools;
     }
