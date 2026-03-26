@@ -17,6 +17,7 @@
 package com.cloud.upgrade.dao;
 
 import java.io.InputStream;
+import java.sql.Connection;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -41,5 +42,16 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
         }
 
         return new InputStream[] {script};
+    }
+
+    @Override
+    public void performDataMigration(Connection conn) {
+        addIndexes(conn);
+    }
+
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexWithNameIfNeeded(conn, "event", "i_event__multiple_columns_for_generic_search",
+                "account_id", "domain_id", "archived",  "display", "resource_type", "resource_id", "start_id", "type", "level",
+                "created", "id");
     }
 }
