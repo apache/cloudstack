@@ -32,13 +32,17 @@ export default {
       permission: ['listServiceOfferings'],
       searchFilters: ['name', 'gpuenabled', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
       params: () => {
-        var params = {}
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          params = { isrecursive: 'true' }
+          return { isrecursive: 'true' }
         }
-        return params
+        return { state: 'Active' }
       },
-      filters: ['active', 'inactive'],
+      filters: () => {
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          return ['active', 'inactive']
+        }
+        return []
+      },
       columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'gpu', 'domain', 'zone', 'order'],
       details: () => {
         var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'gpucardid', 'gpucardname', 'vgpuprofileid', 'vgpuprofilename', 'gpucount', 'gpudisplay', 'leaseexpiryaction', 'externaldetails']
@@ -425,7 +429,7 @@ export default {
       name: 'networkoffering',
       title: 'label.network.offerings',
       icon: 'wifi-outlined',
-      docHelp: 'adminguide/networking.html#network-offerings',
+      docHelp: 'adminguide/networking.html#network-offerings  ',
       permission: ['listNetworkOfferings'],
       filters: ['all', 'forvpc', 'guestnetwork'],
       searchFilters: ['name', 'zoneid', 'domainid', 'guestiptype', 'tags'],
