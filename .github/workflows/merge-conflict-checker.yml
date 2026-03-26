@@ -21,7 +21,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
-permissions:  # added using https://github.com/step-security/secure-workflows
+permissions: # added using https://github.com/step-security/secure-workflows
   contents: read
 
 concurrency:
@@ -31,14 +31,14 @@ concurrency:
 jobs:
   triage:
     permissions:
-      pull-requests: write  # for eps1lon/actions-label-merge-conflict to label PRs
-    runs-on: ubuntu-22.04
+      pull-requests: write # for eps1lon/actions-label-merge-conflict to label PRs
+    runs-on: ubuntu-24.04
     steps:
-    - name: Conflict Check
-      uses: eps1lon/actions-label-merge-conflict@v2.0.0
-      with:
-        repoToken: "${{ secrets.GITHUB_TOKEN }}"
-        dirtyLabel: "status:has-conflicts"
-        removeOnDirtyLabel: "status:ready-for-review"
-        continueOnMissingPermissions: true
-        commentOnDirty: "This pull request has merge conflicts. Dear author, please fix the conflicts and sync your branch with the base branch."
+      - name: Conflict Check
+        uses: eps1lon/actions-label-merge-conflict@v3
+        with:
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          dirtyLabel: "status:has-conflicts"
+          removeOnDirtyLabel: "status:ready-for-review"
+          continueOnMissingPermissions: true
+          commentOnDirty: "This pull request has merge conflicts. Dear author, please fix the conflicts and sync your branch with the base branch."

@@ -1,0 +1,58 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+name: 'Setup CloudStack Environment'
+description: 'Sets up JDK (with Maven cache), optionally Python, and optionally APT build dependencies for CloudStack.'
+
+inputs:
+  java-version:
+    description: 'The JDK version to use'
+    required: false
+    default: '17'
+  install-python:
+    description: 'Whether to install Python 3.10'
+    required: false
+    default: 'false'
+  install-apt-deps:
+    description: 'Whether to install CloudStack APT build dependencies'
+    required: false
+    default: 'false'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up JDK ${{ inputs.java-version }}
+      uses: actions/setup-java@v5
+      with:
+        java-version: ${{ inputs.java-version }}
+        distribution: 'temurin'
+        architecture: x64
+        cache: 'maven'
+
+    - name: Set up Python
+      if: ${{ inputs.install-python == 'true' }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.10'
+        architecture: x64
+
+    - name: Install Build Dependencies
+      if: ${{ inputs.install-apt-deps == 'true' }}
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git uuid-runtime genisoimage netcat-openbsd ipmitool build-essential libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 libpython3-dev libssl-dev libffi-dev python3-openssl python3-dev python3-setuptools
