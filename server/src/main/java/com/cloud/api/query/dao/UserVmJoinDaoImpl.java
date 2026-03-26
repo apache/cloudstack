@@ -384,6 +384,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                     for (NicSecondaryIpVO ip : secondaryIps) {
                         NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                         ipRes.setId(ip.getUuid());
+                        ipRes.setDescription(ip.getDescription());
                         ApiResponseHelper.setResponseIpAddress(ip, ipRes);
                         ipList.add(ipRes);
                     }
