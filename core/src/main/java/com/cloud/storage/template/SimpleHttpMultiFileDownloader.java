@@ -143,6 +143,7 @@ public class SimpleHttpMultiFileDownloader extends ManagedContextRunnable implem
                 continue;
             }
             HeadMethod headMethod = new HeadMethod(downloadUrl);
+            headMethod.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
             try {
                 if (client.executeMethod(headMethod) != HttpStatus.SC_OK) {
                     continue;

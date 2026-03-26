@@ -115,6 +115,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     public boolean checkUrl(String url) {
         HeadMethod httpHead = new HeadMethod(url);
         httpHead.setFollowRedirects(this.isFollowRedirects());
+        httpHead.getParams().setParameter(HttpMethodParams.USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
         try {
             int responseCode = client.executeMethod(httpHead);
             if (responseCode != HttpStatus.SC_OK) {
