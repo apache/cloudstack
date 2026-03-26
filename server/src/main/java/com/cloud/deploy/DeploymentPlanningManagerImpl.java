@@ -36,8 +36,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.gpu.dao.VgpuProfileDao;
-import com.cloud.resource.ResourceState;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -46,6 +44,7 @@ import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -84,6 +83,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DedicatedResourceVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -96,6 +96,7 @@ import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -107,6 +108,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
@@ -277,6 +279,38 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     private static final List<CPU.CPUArch> clusterArchTypes = Arrays.asList(CPU.CPUArch.amd64, CPU.CPUArch.arm64);
 
+    private DataCenterVO findDataCenter(final Long dataCenterId) {
+        if (dataCenterId == null) {
+            return null;
+        }
+        return CallContext.current().getRequestEntityCache().get(DataCenterVO.class, dataCenterId,
+                () -> _dcDao.findById(dataCenterId));
+    }
+
+    private HostPodVO findPod(final Long podId) {
+        if (podId == null) {
+            return null;
+        }
+        return CallContext.current().getRequestEntityCache().get(HostPodVO.class, podId,
+                () -> _podDao.findById(podId));
+    }
+
+    private ClusterVO findCluster(final Long clusterId) {
+        if (clusterId == null) {
+            return null;
+        }
+        return CallContext.current().getRequestEntityCache().get(ClusterVO.class, clusterId,
+                () -> _clusterDao.findById(clusterId));
+    }
+
+    private HostVO findHost(final Long hostId) {
+        if (hostId == null) {
+            return null;
+        }
+        return CallContext.current().getRequestEntityCache().get(HostVO.class, hostId,
+                () -> _hostDao.findById(hostId));
+    }
+
     protected void avoidOtherClustersForDeploymentIfMigrationDisabled(VirtualMachine vm, Host lastHost, ExcludeList avoids) {
         if (lastHost == null || lastHost.getClusterId() == null ||
                 ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS.valueIn(vm.getDataCenterId())) {
@@ -315,7 +349,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         int cpuRequested = offering.getCpu() * offering.getSpeed();
         long ramRequested = offering.getRamSize() * 1024L * 1024L;
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+        DataCenter dc = findDataCenter(vm.getDataCenterId());
         boolean volumesRequireEncryption = anyVolumeRequiresEncryption(_volsDao.findByInstance(vm.getId()));
 
         if (vm.getType() == VirtualMachine.Type.User || vm.getType() == VirtualMachine.Type.DomainRouter) {
@@ -325,7 +359,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
         logger.debug("Trying to allocate a host and storage pools from datacenter [{}], " +
                 "pod [{}], cluster [{}], to deploy VM [{}] with requested CPU [{}] and requested RAM [{}].",
-                dc::toString, () -> _podDao.findById(plan.getPodId()), () -> _clusterDao.findById(plan.getClusterId()),
+                dc::toString, () -> findPod(plan.getPodId()), () -> findCluster(plan.getClusterId()),
                 vm::toString, () -> cpuRequested, () -> toHumanReadableSize(ramRequested));
 
         logger.debug("ROOT volume [{}] {} to deploy VM [{}].",
@@ -361,7 +395,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
 
         // call planners
-        // DataCenter dc = _dcDao.findById(vm.getDataCenterId());
         // check if datacenter is in avoid set
         if (avoids.shouldAvoid(dc)) {
             if (logger.isDebugEnabled()) {
@@ -452,7 +485,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         return dest;
     }
 
-    private void avoidDifferentArchResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
+    protected void avoidDifferentArchResources(VirtualMachineProfile vmProfile, DataCenter dc, ExcludeList avoids) {
         VirtualMachineTemplate template = vmProfile.getTemplate();
         for (CPU.CPUArch arch : clusterArchTypes) {
             if (arch.equals(template.getArch())) {
@@ -480,7 +513,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
 
         logger.debug("This VM has last host_id: {}", vm.getLastHostId());
-        HostVO lastHost = _hostDao.findById(vm.getLastHostId());
+        HostVO lastHost = findHost(vm.getLastHostId());
         if (canUseLastHost(lastHost, avoids, plan, vm, offering, volumesRequireEncryption)) {
             _hostDao.loadHostTags(lastHost);
             _hostDao.loadDetails(lastHost);
@@ -513,8 +546,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     logger.debug("Cannot deploy VM [{}] to the last host [{}] because this host does not have enough capacity to deploy this VM.", vm, lastHost);
                     return null;
                 }
-                Pod pod = _podDao.findById(lastHost.getPodId());
-                Cluster cluster = _clusterDao.findById(lastHost.getClusterId());
+                Pod pod = findPod(lastHost.getPodId());
+                Cluster cluster = findCluster(lastHost.getClusterId());
 
                 logger.debug("Last host [{}] of VM [{}] is UP and has enough capacity. Checking for suitable pools for this host under zone [{}], pod [{}] and cluster [{}].",
                         lastHost, vm, dc, pod, cluster);
@@ -612,7 +645,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         Long hostIdSpecified = plan.getHostId();
         logger.debug("DeploymentPlan [{}] has specified host [{}] without HA flag. Choosing this host to deploy VM [{}].", plan.getClass().getSimpleName(), hostIdSpecified, vm);
 
-        HostVO host = _hostDao.findById(hostIdSpecified);
+        HostVO host = findHost(hostIdSpecified);
         if (host != null && StringUtils.isNotBlank(uefiFlag) && "yes".equalsIgnoreCase(uefiFlag)) {
             _hostDao.loadDetails(host);
             if (MapUtils.isNotEmpty(host.getDetails()) && host.getDetails().containsKey(Host.HOST_UEFI_ENABLE) && "false".equalsIgnoreCase(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
@@ -629,8 +662,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return null;
         }
 
-        Pod pod = _podDao.findById(host.getPodId());
-        Cluster cluster = _clusterDao.findById(host.getClusterId());
+        Pod pod = findPod(host.getPodId());
+        Cluster cluster = findCluster(host.getClusterId());
 
         logger.debug("Trying to find suitable pools for host [{}] under pod [{}], cluster [{}] and zone [{}], to deploy VM [{}].",
                 host, dc, pod, cluster, vm);
@@ -1243,7 +1276,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             @Override
             public void onPublishMessage(String senderAddress, String subject, Object obj) {
                 VMInstanceVO vm = ((VMInstanceVO)obj);
-                Host host = _hostDao.findById(vm.getLastHostId());
+                Host host = findHost(vm.getLastHostId());
                 logger.debug("MessageBus message: host reserved capacity released for VM: {}, checking if host reservation can be released for host:{}", vm, host);
                 checkHostReservationRelease(host);
             }
@@ -1307,7 +1340,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
 
         for (Long clusterId : clusterList) {
-            ClusterVO clusterVO = _clusterDao.findById(clusterId);
+            ClusterVO clusterVO = findCluster(clusterId);
 
             if (clusterVO.getHypervisorType() != vmProfile.getHypervisorType()) {
                 logger.debug("Adding cluster [{}] to the avoid set because the cluster's hypervisor [{}] does not match the VM [{}] hypervisor: [{}]. Skipping this cluster.",
@@ -1316,7 +1349,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 continue;
             }
 
-            Pod pod = _podDao.findById(clusterVO.getPodId());
+            Pod pod = findPod(clusterVO.getPodId());
             logger.debug("Checking resources in Cluster: " + clusterVO + " under Pod: " + pod);
             // search for resources(hosts and storage) under this zone, pod,
             // cluster.
@@ -1617,7 +1650,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
             }
 
-            HostVO potentialHostVO = _hostDao.findById(potentialHost.getId());
+            HostVO potentialHostVO = findHost(potentialHost.getId());
             _hostDao.loadDetails(potentialHostVO);
 
             boolean hostHasEncryption = Boolean.parseBoolean(potentialHostVO.getDetail(Host.HOST_VOLUME_ENCRYPTION));
@@ -1792,7 +1825,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
             boolean useLocalStorage = false;
             if (vmProfile.getType() != VirtualMachine.Type.User) {
-                DataCenterVO zone = _dcDao.findById(plan.getDataCenterId());
+                DataCenterVO zone = findDataCenter(plan.getDataCenterId());
                 assert (zone != null) : "Invalid zone in deployment plan";
                 Boolean useLocalStorageForSystemVM = ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(zone.getId());
                 if (useLocalStorageForSystemVM != null) {
@@ -1948,19 +1981,19 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     private boolean isEnabledForAllocation(long zoneId, Long podId, Long clusterId) {
         // Check if the zone exists in the system
-        DataCenterVO zone = _dcDao.findById(zoneId);
+        DataCenterVO zone = findDataCenter(zoneId);
         if (zone != null && Grouping.AllocationState.Disabled == zone.getAllocationState()) {
             logger.info("Zone is currently disabled, cannot allocate to this zone: {}", zone);
             return false;
         }
 
-        Pod pod = _podDao.findById(podId);
+        Pod pod = findPod(podId);
         if (pod != null && Grouping.AllocationState.Disabled == pod.getAllocationState()) {
             logger.info("Pod is currently disabled, cannot allocate to this pod: {}", pod);
             return false;
         }
 
-        Cluster cluster = _clusterDao.findById(clusterId);
+        Cluster cluster = findCluster(clusterId);
         if (cluster != null && Grouping.AllocationState.Disabled == cluster.getAllocationState()) {
             logger.info("Cluster is currently disabled, cannot allocate to this cluster: {}", cluster);
             return false;
