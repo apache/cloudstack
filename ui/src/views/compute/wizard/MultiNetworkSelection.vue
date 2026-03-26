@@ -1,19 +1,10 @@
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// Licensed to the Apache Software Foundation (ASF) under one // or more contributor license agreements. See the NOTICE
+file // distributed with this work for additional information // regarding copyright ownership. The ASF licenses this
+file // to you under the Apache License, Version 2.0 (the // "License"); you may not use this file except in compliance
+// with the License. You may obtain a copy of the License at // // http://www.apache.org/licenses/LICENSE-2.0 // //
+Unless required by applicable law or agreed to in writing, // software distributed under the License is distributed on
+an // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY // KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations // under the License.
 
 <template>
   <div>
@@ -21,11 +12,11 @@
       :loading="loading"
       :columns="columns"
       :dataSource="tableSource"
-      :rowKey="record => record.id"
+      :rowKey="(record) => record.id"
       :pagination="false"
       :rowSelection="rowSelection"
-      :scroll="{ y: 225 }" >
-
+      :scroll="{ y: 225 }"
+    >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
           <span>{{ record.displaytext || record.name }}</span>
@@ -48,16 +39,20 @@
             style="width: 100%"
             v-if="validNetworks[record.id] && validNetworks[record.id].length > 0"
             :defaultValue="getDefaultNetwork(record)"
-            @change="val => handleNetworkChange(record, val)"
+            @change="(val) => handleNetworkChange(record, val)"
             showSearch
             optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
+            :filterOption="
+              (input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }
+            "
+          >
             <a-select-option
               v-for="network in hypervisor !== 'KVM' ? validNetworks[record.id] : networks"
               :key="network.id"
-              :label="network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '')">
+              :label="network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '')"
+            >
               <div>{{ network.displaytext + (network.broadcasturi ? ' (' + network.broadcasturi + ')' : '') }}</div>
             </a-select-option>
           </a-select>
@@ -72,8 +67,9 @@
             :checkBoxLabel="$t('label.auto.assign.random.ip')"
             :defaultCheckBoxValue="true"
             :reversed="true"
-            :visible="(indexNum > 0 && ipAddressesEnabled[record.id])"
-            @handle-checkinputpair-change="setIpAddress" />
+            :visible="indexNum > 0 && ipAddressesEnabled[record.id]"
+            @handle-checkinputpair-change="setIpAddress"
+          />
         </template>
       </template>
     </a-table>
@@ -88,60 +84,64 @@ import CheckBoxInputPair from '@/components/CheckBoxInputPair'
 export default {
   name: 'MultiDiskSelection',
   components: {
-    CheckBoxInputPair
+    CheckBoxInputPair,
   },
   props: {
     items: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     zoneId: {
       type: String,
-      default: () => ''
+      default: () => '',
     },
     domainid: {
       type: String,
-      default: ''
+      default: '',
     },
     account: {
       type: String,
-      default: ''
+      default: '',
+    },
+    projectid: {
+      type: String,
+      default: '',
     },
     selectionEnabled: {
       type: Boolean,
-      default: true
+      default: true,
     },
     filterUnimplementedNetworks: {
       type: Boolean,
-      default: false
+      default: false,
     },
     filterMatchKey: {
       type: String,
-      default: null
+      default: null,
     },
     hypervisor: {
       type: String,
-      default: null
-    }
+      default: null,
+    },
   },
-  data () {
+  data() {
     return {
       columns: [
         {
           key: 'name',
           dataIndex: 'name',
-          title: this.$t('label.nic')
+          title: this.$t('label.nic'),
         },
         {
           key: 'network',
           dataIndex: 'network',
-          title: this.$t('label.network')
+          title: this.$t('label.network'),
         },
         {
           key: 'ipaddress',
           dataIndex: 'ipaddress',
-          title: this.$t('label.ipaddress')
-        }
+          title: this.$t('label.ipaddress'),
+        },
       ],
       loading: false,
       selectedRowKeys: [],
@@ -153,61 +153,64 @@ export default {
       ipAddresses: {},
       indexNum: 1,
       sendValuesTimer: null,
-      accountNetworkUpdateTimer: null
+      accountNetworkUpdateTimer: null,
     }
   },
   computed: {
-    tableSource () {
-      return this.items.map(item => {
+    tableSource() {
+      return this.items.map((item) => {
         var nic = { ...item, disabled: this.validNetworks[item.id] && this.validNetworks[item.id].length === 0 }
         nic.name = item.displaytext || item.name
         return nic
       })
     },
-    rowSelection () {
+    rowSelection() {
       if (this.selectionEnabled === true) {
         return {
           type: 'checkbox',
           selectedRowKeys: this.selectedRowKeys,
-          getCheckboxProps: record => ({
+          getCheckboxProps: (record) => ({
             props: {
-              disabled: record.disabled
-            }
+              disabled: record.disabled,
+            },
           }),
           onChange: (rows) => {
             this.selectedRowKeys = rows
             this.sendValues()
-          }
+          },
         }
       }
       return null
-    }
+    },
   },
   watch: {
     items: {
       deep: true,
-      handler () {
+      handler() {
         this.selectedRowKeys = []
         this.fetchNetworks()
-      }
+      },
     },
-    zoneId () {
+    zoneId() {
       this.fetchNetworks()
     },
-    account () {
+    account() {
       clearTimeout(this.accountNetworkUpdateTimer)
       this.accountNetworkUpdateTimer = setTimeout(() => {
         if (this.account) {
           this.fetchNetworks()
         }
       }, 750)
-    }
+    },
+    projectid() {
+      this.fetchNetworks()
+    },
   },
-  created () {
+  created() {
     this.fetchNetworks()
   },
   methods: {
-    fetchNetworks () {
+    fetchNetworks() {
       this.networks = []
       if (!this.zoneId || this.zoneId.length === 0) {
         return
@@ -215,34 +218,42 @@ export default {
       this.loading = true
       var params = {
         zoneid: this.zoneId,
-        listall: true
+        listall: true,
       }
-      if (this.domainid && this.account) {
+      if (this.projectid) {
+        params.projectid = this.projectid
+      } else if (this.domainid && this.account) {
         params.domainid = this.domainid
         params.account = this.account
       }
-      getAPI('listNetworks', params).then(response => {
-        this.networks = response.listnetworksresponse.network || []
-      }).catch(() => {
-        this.networks = []
-      }).finally(() => {
-        this.orderNetworks()
-        this.loading = false
-      })
+      getAPI('listNetworks', params)
+        .then((response) => {
+          this.networks = response.listnetworksresponse.network || []
+        })
+        .catch(() => {
+          this.networks = []
+        })
+        .finally(() => {
+          this.orderNetworks()
+          this.loading = false
+        })
     },
-    orderNetworks () {
+    orderNetworks() {
       this.loading = true
       this.validNetworks = {}
       for (const item of this.items) {
         this.validNetworks[item.id] = this.networks
         if (this.filterUnimplementedNetworks) {
-          this.validNetworks[item.id] = this.validNetworks[item.id].filter(x => (x.state === 'Implemented' || (x.state === 'Setup' && ['Shared', 'L2'].includes(x.type))))
+          this.validNetworks[item.id] = this.validNetworks[item.id].filter(
+            (x) => x.state === 'Implemented' || (x.state === 'Setup' && ['Shared', 'L2'].includes(x.type)),
+          )
         }
         if (this.filterMatchKey) {
-          const filtered = this.networks.filter(x => x[this.filterMatchKey] === item[this.filterMatchKey])
+          const filtered = this.networks.filter((x) => x[this.filterMatchKey] === item[this.filterMatchKey])
           if (this.hypervisor === 'KVM') {
             this.unableToMatch = filtered.length === 0
-            this.validNetworks[item.id] = filtered.length === 0 ? this.networks : filtered.concat(this.networks.filter(x => filtered.includes(x)))
+            this.validNetworks[item.id] =
+              filtered.length === 0 ? this.networks : filtered.concat(this.networks.filter((x) => filtered.includes(x)))
           } else {
             this.validNetworks[item.id] = filtered
           }
@@ -251,23 +262,23 @@ export default {
       this.setDefaultValues()
       this.loading = false
     },
-    setIpAddressEnabled (nic, network) {
+    setIpAddressEnabled(nic, network) {
       this.ipAddressesEnabled[nic.id] = network && network.type !== 'L2'
-      this.ipAddresses[nic.id] = (!network || network.type === 'L2') ? null : 'auto'
+      this.ipAddresses[nic.id] = !network || network.type === 'L2' ? null : 'auto'
       this.values[nic.id] = network ? network.id : null
       this.indexNum = (this.indexNum % 2) + 1
     },
-    setIpAddress (nicId, autoAssign, ipAddress) {
+    setIpAddress(nicId, autoAssign, ipAddress) {
       this.ipAddresses[nicId] = autoAssign ? 'auto' : ipAddress
       this.sendValuesTimed()
     },
-    setDefaultValues () {
+    setDefaultValues() {
       this.values = {}
       this.ipAddresses = {}
       for (const item of this.items) {
         let network = null
         if (item.vlanid && item.vlanid !== -1) {
-          const matched = this.validNetworks[item.id].filter(x => Number(x.vlan) === item.vlanid)
+          const matched = this.validNetworks[item.id].filter((x) => Number(x.vlan) === item.vlanid)
           if (matched.length > 0) {
             network = matched[0]
           }
@@ -276,32 +287,38 @@ export default {
           network = this.validNetworks[item.id]?.[0] || null
         }
         this.values[item.id] = network ? network.id : ''
-        this.ipAddresses[item.id] = (!network || network.type === 'L2') ? null : 'auto'
+        this.ipAddresses[item.id] = !network || network.type === 'L2' ? null : 'auto'
         this.setIpAddressEnabled(item, network)
       }
       this.sendValuesTimed()
     },
-    handleNetworkChange (nic, networkId) {
+    handleNetworkChange(nic, networkId) {
       if (this.hypervisor === 'KVM') {
-        this.setIpAddressEnabled(nic, _.find(this.networks, (option) => option.id === networkId))
+        this.setIpAddressEnabled(
+          nic,
+          _.find(this.networks, (option) => option.id === networkId),
+        )
       } else {
-        this.setIpAddressEnabled(nic, _.find(this.validNetworks[nic.id], (option) => option.id === networkId))
+        this.setIpAddressEnabled(
+          nic,
+          _.find(this.validNetworks[nic.id], (option) => option.id === networkId),
+        )
       }
       this.sendValuesTimed()
     },
-    getDefaultNetwork (record) {
+    getDefaultNetwork(record) {
       return this.values[record.id] || this.validNetworks[record.id]?.[0]?.id
     },
-    sendValuesTimed () {
+    sendValuesTimed() {
       clearTimeout(this.sendValuesTimer)
       this.sendValuesTimer = setTimeout(() => {
         this.sendValues(this.selectedScope)
       }, 500)
     },
-    sendValues () {
+    sendValues() {
       const data = {}
       if (this.selectionEnabled) {
-        this.selectedRowKeys.map(x => {
+        this.selectedRowKeys.map((x) => {
           var d = { network: this.values[x] }
           if (this.ipAddresses[x]) {
             d.ipAddress = this.ipAddresses[x]
@@ -318,13 +335,13 @@ export default {
         }
       }
       this.$emit('select-multi-network', data)
-    }
-  }
+    },
+  },
 }
 </script>
 
 <style lang="less" scoped>
-  .ant-table-wrapper {
-    margin: 2rem 0;
-  }
+.ant-table-wrapper {
+  margin: 2rem 0;
+}
 </style>
