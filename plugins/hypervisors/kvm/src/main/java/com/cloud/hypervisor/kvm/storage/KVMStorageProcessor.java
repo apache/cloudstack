@@ -2442,7 +2442,7 @@ public class KVMStorageProcessor implements StorageProcessor {
      * @return SnapshotObjectTO if fallback to full snapshot occurred, null if validation passed
      * @throws LibvirtException if libvirt operations fail
      */
-    private SnapshotObjectTO validateClvmNgBitmapAndFallbackIfNeeded(SnapshotObjectTO snapshotObjectTO,
+    protected SnapshotObjectTO validateClvmNgBitmapAndFallbackIfNeeded(SnapshotObjectTO snapshotObjectTO,
                                                                       KVMStoragePool primaryPool,
                                                                       KVMStoragePool secondaryPool,
                                                                       String secondaryPoolUrl,

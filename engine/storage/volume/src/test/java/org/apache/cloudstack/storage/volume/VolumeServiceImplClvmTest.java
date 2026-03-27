@@ -17,11 +17,21 @@
 package org.apache.cloudstack.storage.volume;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ClvmLockManager;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,13 +59,34 @@ public class VolumeServiceImplClvmTest {
     private VolumeDao volumeDao;
 
     @Mock
+    private PrimaryDataStoreDao storagePoolDao;
+
+    @Mock
+    private HostDao _hostDao;
+
+    @Mock
+    private VMInstanceDao vmDao;
+
+    @Mock
+    private VolumeDataFactory volFactory;
+
+    @Mock
     private VolumeInfo volumeInfoMock;
 
     @Mock
     private VolumeVO volumeVOMock;
 
     @Mock
-    ClvmLockManager clvmLockManager;
+    private StoragePoolVO storagePoolVOMock;
+
+    @Mock
+    private HostVO hostVOMock;
+
+    @Mock
+    private VMInstanceVO vmInstanceVOMock;
+
+    @Mock
+    private ClvmLockManager clvmLockManager;
 
     private static final Long VOLUME_ID = 1L;
     private static final Long POOL_ID_1 = 100L;
@@ -63,12 +94,19 @@ public class VolumeServiceImplClvmTest {
     private static final Long HOST_ID_1 = 10L;
     private static final Long HOST_ID_2 = 20L;
     private static final String POOL_PATH_VG1 = "/vg1";
-    private static final String POOL_PATH_VG2 = "/vg2";
 
     @Before
     public void setup() {
         when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
         when(volumeInfoMock.getUuid()).thenReturn("test-volume-uuid");
+        
+        // Setup volumeService dependencies
+        volumeService.storagePoolDao = storagePoolDao;
+        volumeService._hostDao = _hostDao;
+        volumeService.vmDao = vmDao;
+        volumeService.volFactory = volFactory;
+        volumeService._volumeDao = volumeDao;
+        volumeService.clvmLockManager = clvmLockManager;
     }
 
     @Test
@@ -307,5 +345,158 @@ public class VolumeServiceImplClvmTest {
         assertFalse(volumeService.isLightweightMigrationNeeded(
                 StoragePoolType.CLVM, StoragePoolType.CLVM,
                 "/cloudstack-vg-01", "/cloudstack-vg-02"));
+    }
+
+    @Test
+    public void testTransferVolumeLock_Success() {
+        when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
+        when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
+        when(volumeInfoMock.getPath()).thenReturn("/dev/vg1/volume-1");
+        when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
+        when(storagePoolVOMock.getName()).thenReturn("test-pool");
+        when(clvmLockManager.transferClvmVolumeLock(
+                "test-volume-uuid", VOLUME_ID, "/dev/vg1/volume-1", storagePoolVOMock, HOST_ID_1, HOST_ID_2))
+                .thenReturn(true);
+
+        assertTrue(volumeService.transferVolumeLock(volumeInfoMock, HOST_ID_1, HOST_ID_2));
+    }
+
+    @Test
+    public void testTransferVolumeLock_Failure() {
+        when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
+        when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
+        when(volumeInfoMock.getPath()).thenReturn("/dev/vg1/volume-1");
+        when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
+        when(storagePoolVOMock.getName()).thenReturn("test-pool");
+        when(clvmLockManager.transferClvmVolumeLock(
+                "test-volume-uuid", VOLUME_ID, "/dev/vg1/volume-1", storagePoolVOMock, HOST_ID_1, HOST_ID_2))
+                .thenReturn(false);
+
+        assertFalse(volumeService.transferVolumeLock(volumeInfoMock, HOST_ID_1, HOST_ID_2));
+    }
+
+    @Test
+    public void testTransferVolumeLock_PoolNotFound() {
+        when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
+        when(storagePoolDao.findById(POOL_ID_1)).thenReturn(null);
+
+        assertFalse(volumeService.transferVolumeLock(volumeInfoMock, HOST_ID_1, HOST_ID_2));
+    }
+
+    @Test
+    public void testFindVolumeLockHost_NullVolume() {
+        Long result = volumeService.findVolumeLockHost(null);
+        assertNull(result);
+    }
+
+    @Test
+    public void testFindVolumeLockHost_ExplicitLockFound() {
+        when(clvmLockManager.getClvmLockHostId(VOLUME_ID, "test-volume-uuid"))
+                .thenReturn(HOST_ID_1);
+
+        Long result = volumeService.findVolumeLockHost(volumeInfoMock);
+        assertEquals(HOST_ID_1, result);
+    }
+
+    @Test
+    public void testFindVolumeLockHost_FromAttachedVM() {
+        when(clvmLockManager.getClvmLockHostId(VOLUME_ID, "test-volume-uuid"))
+                .thenReturn(null);
+        when(volumeInfoMock.getInstanceId()).thenReturn(100L);
+        when(vmDao.findById(100L)).thenReturn(vmInstanceVOMock);
+        when(vmInstanceVOMock.getUuid()).thenReturn("vm-uuid");
+        when(vmInstanceVOMock.getHostId()).thenReturn(HOST_ID_1);
+
+        Long result = volumeService.findVolumeLockHost(volumeInfoMock);
+        assertEquals(HOST_ID_1, result);
+    }
+
+    @Test
+    public void testFindVolumeLockHost_FallbackToClusterHost() {
+        when(clvmLockManager.getClvmLockHostId(VOLUME_ID, "test-volume-uuid"))
+                .thenReturn(null);
+        when(volumeInfoMock.getInstanceId()).thenReturn(null);
+        when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
+        when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
+        when(storagePoolVOMock.getClusterId()).thenReturn(10L);
+        when(hostVOMock.getId()).thenReturn(HOST_ID_1);
+        when(hostVOMock.getStatus()).thenReturn(com.cloud.host.Status.Up);
+        when(_hostDao.findByClusterId(10L)).thenReturn(java.util.Collections.singletonList(hostVOMock));
+
+        Long result = volumeService.findVolumeLockHost(volumeInfoMock);
+        assertEquals(HOST_ID_1, result);
+    }
+
+    @Test
+    public void testFindVolumeLockHost_NoHostFound() {
+        when(clvmLockManager.getClvmLockHostId(VOLUME_ID, "test-volume-uuid"))
+                .thenReturn(null);
+        when(volumeInfoMock.getInstanceId()).thenReturn(null);
+        when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
+        when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
+        when(storagePoolVOMock.getClusterId()).thenReturn(10L);
+        when(_hostDao.findByClusterId(10L)).thenReturn(java.util.Collections.emptyList());
+
+        Long result = volumeService.findVolumeLockHost(volumeInfoMock);
+        assertNull(result);
+    }
+
+    @Test
+    public void testPerformLockMigration_Success() {
+        when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
+        when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
+        when(volumeInfoMock.getPath()).thenReturn("/dev/vg1/volume-1");
+        when(clvmLockManager.getClvmLockHostId(VOLUME_ID, "test-volume-uuid")).thenReturn(HOST_ID_1);
+        when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
+        when(storagePoolVOMock.getName()).thenReturn("test-pool");
+        when(clvmLockManager.transferClvmVolumeLock(
+                "test-volume-uuid", VOLUME_ID, "/dev/vg1/volume-1", storagePoolVOMock, HOST_ID_1, HOST_ID_2))
+                .thenReturn(true);
+        when(volFactory.getVolume(VOLUME_ID)).thenReturn(volumeInfoMock);
+
+        VolumeInfo result = volumeService.performLockMigration(volumeInfoMock, HOST_ID_2);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testPerformLockMigration_SameHost() {
+        when(clvmLockManager.getClvmLockHostId(VOLUME_ID, "test-volume-uuid")).thenReturn(HOST_ID_1);
+
+        VolumeInfo result = volumeService.performLockMigration(volumeInfoMock, HOST_ID_1);
+        assertEquals(volumeInfoMock, result);
+    }
+
+    @Test
+    public void testPerformLockMigration_SourceHostNull() {
+        when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
+        when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
+        when(clvmLockManager.getClvmLockHostId(VOLUME_ID, "test-volume-uuid")).thenReturn(null);
+        when(volumeInfoMock.getInstanceId()).thenReturn(null);
+        when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
+        when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
+        when(storagePoolVOMock.getClusterId()).thenReturn(null);
+
+        VolumeInfo result = volumeService.performLockMigration(volumeInfoMock, HOST_ID_2);
+        assertNotNull(result);
+    }
+
+    @Test(expected = com.cloud.utils.exception.CloudRuntimeException.class)
+    public void testPerformLockMigration_NullVolume() {
+        volumeService.performLockMigration(null, HOST_ID_2);
+    }
+
+    @Test(expected = com.cloud.utils.exception.CloudRuntimeException.class)
+    public void testPerformLockMigration_TransferFails() {
+        when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
+        when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
+        when(volumeInfoMock.getPath()).thenReturn("/dev/vg1/volume-1");
+        when(clvmLockManager.getClvmLockHostId(VOLUME_ID, "test-volume-uuid")).thenReturn(HOST_ID_1);
+        when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
+        when(storagePoolVOMock.getName()).thenReturn("test-pool");
+        when(clvmLockManager.transferClvmVolumeLock(
+                "test-volume-uuid", VOLUME_ID, "/dev/vg1/volume-1", storagePoolVOMock, HOST_ID_1, HOST_ID_2))
+                .thenReturn(false);
+
+        volumeService.performLockMigration(volumeInfoMock, HOST_ID_2);
     }
 }
