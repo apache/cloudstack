@@ -38,6 +38,8 @@ public interface KVMStoragePool {
     public static final long HeartBeatUpdateMaxTries = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_MAX_TRIES);
     public static final long HeartBeatUpdateRetrySleep = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
     public static final long HeartBeatCheckerTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_CHECKER_TIMEOUT);
+    public static final String CLVM_SECURE_ZERO_FILL = "clvmsecurezerofill";
+
 
     public default KVMPhysicalDisk createPhysicalDisk(String volumeUuid, PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
         return createPhysicalDisk(volumeUuid, format, provisioningType, size, passphrase);

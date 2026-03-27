@@ -36,6 +36,7 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.resource.ResourceManager;
+import com.cloud.storage.ClvmLockManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -87,6 +88,7 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.agent.api.ModifyTargetsAnswer;
 import com.cloud.agent.api.ModifyTargetsCommand;
+import com.cloud.agent.api.PreMigrationCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
@@ -206,6 +208,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private VolumeDataFactory _volFactory;
     @Inject
     ResourceManager resourceManager;
+    @Inject
+    private ClvmLockManager clvmLockManager;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -2071,6 +2075,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 setVolumeMigrationOptions(srcVolumeInfo, destVolumeInfo, vmTO, srcHost, destStoragePool, migrationType);
 
+                if (ClvmLockManager.isClvmPoolType(destStoragePool.getPoolType())) {
+                    destVolumeInfo.setDestinationHostId(destHost.getId());
+                    clvmLockManager.setClvmLockHostId(destVolume.getId(), destHost.getId());
+                    logger.info("Set CLVM lock host {} for volume {} during migration to ensure creation on destination host",
+                            destHost.getId(), destVolumeInfo.getUuid());
+                }
+
                 // create a volume on the destination storage
                 destDataStore.getDriver().createAsync(destDataStore, destVolumeInfo, null);
 
@@ -2096,7 +2107,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 MigrateCommand.MigrateDiskInfo migrateDiskInfo;
 
-                boolean isNonManagedToNfs = supportStoragePoolType(sourceStoragePool.getPoolType(), StoragePoolType.Filesystem) && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
+                boolean isNonManagedToNfs = supportStoragePoolType(sourceStoragePool.getPoolType(), StoragePoolType.Filesystem, StoragePoolType.CLVM, StoragePoolType.CLVM_NG) && destStoragePool.getPoolType() == StoragePoolType.NetworkFilesystem && !managedStorageDestination;
                 if (isNonManagedToNfs) {
                     migrateDiskInfo = new MigrateCommand.MigrateDiskInfo(srcVolumeInfo.getPath(),
                             MigrateCommand.MigrateDiskInfo.DiskType.FILE,
@@ -2106,15 +2117,20 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 } else {
                     String backingPath = generateBackingPath(destStoragePool, destVolumeInfo);
                     migrateDiskInfo = configureMigrateDiskInfo(srcVolumeInfo, destPath, backingPath);
+                    migrateDiskInfo = updateMigrateDiskInfoForBlockDevice(migrateDiskInfo, destStoragePool);
                     migrateDiskInfo.setSourceDiskOnStorageFileSystem(isStoragePoolTypeOfFile(sourceStoragePool));
                     migrateDiskInfoList.add(migrateDiskInfo);
                 }
+                migrateDiskInfo.setSourcePoolType(sourceStoragePool.getPoolType());
+                migrateDiskInfo.setDestPoolType(destVolumeInfo.getStoragePoolType());
                 prepareDiskWithSecretConsumerDetail(vmTO, srcVolumeInfo, destVolumeInfo.getPath());
 
                 migrateStorage.put(srcVolumeInfo.getPath(), migrateDiskInfo);
 
                 srcVolumeInfoToDestVolumeInfo.put(srcVolumeInfo, destVolumeInfo);
             }
+
+            prepareDisksForMigrationForClvm(vmTO, volumeDataStoreMap, srcHost);
 
             PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(vmTO);
             Answer pfma;
@@ -2211,10 +2227,42 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         }
     }
 
+    private void prepareDisksForMigrationForClvm(VirtualMachineTO vmTO, Map<VolumeInfo, DataStore> volumeDataStoreMap, Host srcHost) {
+        // For CLVM/CLVM_NG source pools, convert volumes from exclusive to shared mode
+        // on the source host BEFORE PrepareForMigrationCommand on the destination.
+        boolean hasClvmSource = volumeDataStoreMap.keySet().stream()
+                .map(v -> _storagePoolDao.findById(v.getPoolId()))
+                .anyMatch(p -> p != null && (p.getPoolType() == StoragePoolType.CLVM || p.getPoolType() == StoragePoolType.CLVM_NG));
+
+        if (hasClvmSource) {
+            logger.info("CLVM/CLVM_NG source pool detected for VM [{}], sending PreMigrationCommand to source host [{}] to convert volumes to shared mode.", vmTO.getName(), srcHost.getId());
+            PreMigrationCommand preMigCmd = new PreMigrationCommand(vmTO, vmTO.getName());
+            try {
+                Answer preMigAnswer = agentManager.send(srcHost.getId(), preMigCmd);
+                if (preMigAnswer == null || !preMigAnswer.getResult()) {
+                    String details = preMigAnswer != null ? preMigAnswer.getDetails() : "null answer returned";
+                    logger.warn("PreMigrationCommand failed for CLVM/CLVM_NG VM [{}] on source host [{}]: {}. Migration will continue but may fail if volumes are exclusively locked.", vmTO.getName(), srcHost.getId(), details);
+                } else {
+                    logger.info("Successfully converted CLVM/CLVM_NG volumes to shared mode on source host [{}] for VM [{}].", srcHost.getId(), vmTO.getName());
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to send PreMigrationCommand to source host [{}] for VM [{}]: {}. Migration will continue but may fail if volumes are exclusively locked.", srcHost.getId(), vmTO.getName(), e.getMessage());
+            }
+        }
+    }
+
     private MigrationOptions.Type decideMigrationTypeAndCopyTemplateIfNeeded(Host destHost, VMInstanceVO vmInstance, VolumeInfo srcVolumeInfo, StoragePoolVO sourceStoragePool, StoragePoolVO destStoragePool, DataStore destDataStore) {
         VMTemplateVO vmTemplate = _vmTemplateDao.findById(vmInstance.getTemplateId());
         String srcVolumeBackingFile = getVolumeBackingFile(srcVolumeInfo);
+
+        // Check if source is CLVM/CLVM_NG (block device storage)
+        // LinkedClone (VIR_MIGRATE_NON_SHARED_INC) only works for file → file migrations
+        // For block device sources, use FullClone (VIR_MIGRATE_NON_SHARED_DISK)
+        boolean sourceIsBlockDevice = sourceStoragePool.getPoolType() == StoragePoolType.CLVM ||
+                                       sourceStoragePool.getPoolType() == StoragePoolType.CLVM_NG;
+
         if (StringUtils.isNotBlank(srcVolumeBackingFile) && supportStoragePoolType(destStoragePool.getPoolType(), StoragePoolType.Filesystem) &&
+                !sourceIsBlockDevice &&
                 srcVolumeInfo.getTemplateId() != null &&
                 Objects.nonNull(vmTemplate) &&
                 !Arrays.asList(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME).contains(vmTemplate.getName())) {
@@ -2222,8 +2270,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
             return MigrationOptions.Type.LinkedClone;
         }
-        logger.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a " +
-                "template or we are doing full clone migration.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
+
+        if (sourceIsBlockDevice) {
+            logger.debug(String.format("Source storage pool [%s] is block device (CLVM/CLVM_NG). Using FullClone migration for volume [%s] to target storage pool [%s]. Template copy skipped as entire volume will be copied.", sourceStoragePool.getId(), srcVolumeInfo.getId(), destStoragePool.getId()));
+        } else {
+            logger.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a template or we are doing full clone migration.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
+        }
         return MigrationOptions.Type.FullClone;
     }
 
@@ -2287,6 +2339,39 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 MigrateCommand.MigrateDiskInfo.DiskType.BLOCK,
                 MigrateCommand.MigrateDiskInfo.DriverType.RAW,
                 MigrateCommand.MigrateDiskInfo.Source.DEV, destPath, backingPath);
+    }
+
+    /**
+     * UpdatesMigrateDiskInfo for CLVM/CLVM_NG block devices by returning a new instance with corrected disk type, driver type, and source.
+     * For CLVM/CLVM_NG destinations, returns a new MigrateDiskInfo with BLOCK disk type, DEV source, and appropriate driver type (QCOW2 for CLVM_NG, RAW for CLVM).
+     * For other storage types, returns the original MigrateDiskInfo unchanged.
+     *
+     * @param migrateDiskInfo The original MigrateDiskInfo object
+     * @param destStoragePool The destination storage pool
+     * @return A new MigrateDiskInfo with updated values for CLVM/CLVM_NG, or the original for other storage types
+     */
+    protected MigrateCommand.MigrateDiskInfo updateMigrateDiskInfoForBlockDevice(MigrateCommand.MigrateDiskInfo migrateDiskInfo,
+                                                                                   StoragePoolVO destStoragePool) {
+        if (ClvmLockManager.isClvmPoolType(destStoragePool.getPoolType())) {
+
+            MigrateCommand.MigrateDiskInfo.DriverType driverType =
+                (destStoragePool.getPoolType() == StoragePoolType.CLVM_NG) ?
+                MigrateCommand.MigrateDiskInfo.DriverType.QCOW2 :
+                MigrateCommand.MigrateDiskInfo.DriverType.RAW;
+
+            logger.debug("Updating MigrateDiskInfo for {} destination: setting BLOCK disk type, DEV source, and {} driver type",
+                destStoragePool.getPoolType(), driverType);
+
+            return new MigrateCommand.MigrateDiskInfo(
+                migrateDiskInfo.getSerialNumber(),
+                MigrateCommand.MigrateDiskInfo.DiskType.BLOCK,
+                driverType,
+                MigrateCommand.MigrateDiskInfo.Source.DEV,
+                migrateDiskInfo.getSourceText(),
+                migrateDiskInfo.getBackingStoreText());
+        }
+
+        return migrateDiskInfo;
     }
 
     /**

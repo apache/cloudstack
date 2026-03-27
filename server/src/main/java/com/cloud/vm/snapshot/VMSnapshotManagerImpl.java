@@ -436,6 +436,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             vmSnapshotType = VMSnapshot.Type.Disk;
         }
 
+        // CLVM_NG: Block VM snapshots until Phase 2 implementation is complete
+        if (rootVolumePool.getPoolType() == Storage.StoragePoolType.CLVM_NG) {
+            throw new InvalidParameterValueException("VM snapshots are not yet supported on CLVM_NG storage pools. " +
+                    "This feature will be available in a future release.");
+        }
+
         try {
             return createAndPersistVMSnapshot(userVmVo, vsDescription, vmSnapshotName, vsDisplayName, vmSnapshotType);
         } catch (Exception e) {

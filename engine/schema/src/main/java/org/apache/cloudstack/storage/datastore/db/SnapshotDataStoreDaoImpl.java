@@ -151,6 +151,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         idStateNinSearch.and(STATE, idStateNinSearch.entity().getState(), SearchCriteria.Op.NOTIN);
         idStateNinSearch.done();
 
+
         snapshotVOSearch = snapshotDao.createSearchBuilder();
         snapshotVOSearch.and(VOLUME_ID, snapshotVOSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         snapshotVOSearch.done();

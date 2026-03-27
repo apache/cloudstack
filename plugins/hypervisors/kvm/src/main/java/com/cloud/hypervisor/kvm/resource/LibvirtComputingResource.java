@@ -2484,7 +2484,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else if ((poolType == StoragePoolType.NetworkFilesystem
                 || poolType == StoragePoolType.SharedMountPoint
                 || poolType == StoragePoolType.Filesystem
-                || poolType == StoragePoolType.Gluster)
+                || poolType == StoragePoolType.Gluster
+                || poolType == StoragePoolType.CLVM_NG)
                 && volFormat == PhysicalDiskFormat.QCOW2 ) {
             return "QCOW2";
         } else if (poolType == StoragePoolType.Linstor) {
@@ -3680,13 +3681,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     final String glusterVolume = pool.getSourceDir().replace("/", "");
                     disk.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), pool.getSourceHost(), pool.getSourcePort(), null,
                             null, devId, diskBusType, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
-                } else if (pool.getType() == StoragePoolType.CLVM || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
+                } else if (pool.getType() == StoragePoolType.CLVM || pool.getType() == StoragePoolType.CLVM_NG || physicalDisk.getFormat() == PhysicalDiskFormat.RAW) {
                     if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
-                    }
-                    else {
+                    } else {
                         disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusType);
                     }
+
+                    // CLVM_NG uses QCOW2 format on block devices, override the default RAW format
+                    if (pool.getType() == StoragePoolType.CLVM_NG) {
+                        disk.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
+                    }
+
                     if (pool.getType() == StoragePoolType.Linstor && isQemuDiscardBugFree(diskBusType)) {
                         disk.setDiscard(DiscardType.UNMAP);
                     }
@@ -6522,5 +6528,243 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     public String getGuestCpuArch() {
         return guestCpuArch;
+    }
+
+    /**
+     * CLVM volume state for migration operations on source host
+     */
+    public enum ClvmVolumeState {
+        /** Shared mode (-asy) - used before migration to allow both hosts to access volume */
+        SHARED("-asy", "shared", "Before migration: activating in shared mode"),
+
+        /** Deactivate (-an) - used after successful migration to release volume on source */
+        DEACTIVATE("-an", "deactivated", "After successful migration: deactivating volume"),
+
+        /** Exclusive mode (-aey) - used after failed migration to revert to original exclusive state */
+        EXCLUSIVE("-aey", "exclusive", "After failed migration: reverting to exclusive mode");
+
+        private final String lvchangeFlag;
+        private final String description;
+        private final String logMessage;
+
+        ClvmVolumeState(String lvchangeFlag, String description, String logMessage) {
+            this.lvchangeFlag = lvchangeFlag;
+            this.description = description;
+            this.logMessage = logMessage;
+        }
+
+        public String getLvchangeFlag() {
+            return lvchangeFlag;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public String getLogMessage() {
+            return logMessage;
+        }
+    }
+
+    public static void modifyClvmVolumesStateForMigration(List<DiskDef> disks, LibvirtComputingResource resource,
+                                                             VirtualMachineTO vmSpec, ClvmVolumeState state) {
+        for (DiskDef disk : disks) {
+            if (isClvmVolume(disk, resource, vmSpec)) {
+                String volumePath = disk.getDiskPath();
+                try {
+                    modifyClvmVolumeState(volumePath, state.getLvchangeFlag(), state.getDescription(), state.getLogMessage());
+                } catch (Exception e) {
+                    LOGGER.error("[CLVM Migration] Exception while setting volume [{}] to {} state: {}",
+                            volumePath, state.getDescription(), e.getMessage(), e);
+                }
+            }
+        }
+    }
+
+    private static void modifyClvmVolumeState(String volumePath, String lvchangeFlag,
+                                       String stateDescription, String logMessage) {
+        try {
+            LOGGER.info("{} for volume [{}]", logMessage, volumePath);
+
+            Script cmd = new Script("lvchange", Duration.standardSeconds(300), LOGGER);
+            cmd.add(lvchangeFlag);
+            cmd.add(volumePath);
+
+            String result = cmd.execute();
+            if (result != null) {
+                String errorMsg = String.format(
+                        "Failed to set volume [%s] to %s state. Command result: %s",
+                        volumePath, stateDescription, result);
+                LOGGER.error(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
+            } else {
+                LOGGER.info("Successfully set volume [{}] to {} state.",
+                        volumePath, stateDescription);
+            }
+        } catch (CloudRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            String errorMsg = String.format(
+                    "Exception while setting volume [%s] to %s state: %s",
+                    volumePath, stateDescription, e.getMessage());
+            LOGGER.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg, e);
+        }
+    }
+
+    public static void activateClvmVolumeExclusive(String volumePath) {
+        modifyClvmVolumeState(volumePath, ClvmVolumeState.EXCLUSIVE.getLvchangeFlag(),
+                ClvmVolumeState.EXCLUSIVE.getDescription(),
+                "Activating CLVM volume in exclusive mode");
+    }
+
+    public static void deactivateClvmVolume(String volumePath) {
+        try {
+            modifyClvmVolumeState(volumePath, ClvmVolumeState.DEACTIVATE.getLvchangeFlag(),
+                    ClvmVolumeState.DEACTIVATE.getDescription(),
+                    "Deactivating CLVM volume");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to deactivate CLVM volume {}: {}", volumePath, e.getMessage());
+        }
+    }
+
+    public static void setClvmVolumeToSharedMode(String volumePath) {
+        try {
+            modifyClvmVolumeState(volumePath, ClvmVolumeState.SHARED.getLvchangeFlag(),
+                    ClvmVolumeState.SHARED.getDescription(),
+                    "Setting CLVM volume to shared mode");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to set CLVM volume {} to shared mode: {}", volumePath, e.getMessage());
+        }
+    }
+
+    /**
+     * Determines if a disk is on a CLVM storage pool by checking the actual pool type from VirtualMachineTO.
+     * This is the most reliable method as it uses CloudStack's own storage pool information.
+     *
+     * @param disk The disk definition to check
+     * @param resource The LibvirtComputingResource instance (unused but kept for compatibility)
+     * @param vmSpec The VirtualMachineTO specification containing disk and pool information
+     * @return true if the disk is on a CLVM storage pool, false otherwise
+     */
+    private static boolean isClvmVolume(DiskDef disk, LibvirtComputingResource resource, VirtualMachineTO vmSpec) {
+        String diskPath = disk.getDiskPath();
+        if (diskPath == null || vmSpec == null) {
+            return false;
+        }
+
+        try {
+            if (vmSpec.getDisks() != null) {
+                for (DiskTO diskTO : vmSpec.getDisks()) {
+                    if (diskTO.getData() instanceof VolumeObjectTO) {
+                        VolumeObjectTO volumeTO = (VolumeObjectTO) diskTO.getData();
+                        if (diskPath.equals(volumeTO.getPath()) || diskPath.equals(diskTO.getPath())) {
+                            DataStoreTO dataStore = volumeTO.getDataStore();
+                            if (dataStore instanceof PrimaryDataStoreTO) {
+                                PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO) dataStore;
+                                boolean isClvm = StoragePoolType.CLVM == primaryStore.getPoolType() ||
+                                                StoragePoolType.CLVM_NG == primaryStore.getPoolType();
+                                LOGGER.debug("Disk {} identified as CLVM/CLVM_NG={} via VirtualMachineTO pool type: {}",
+                                            diskPath, isClvm, primaryStore.getPoolType());
+                                return isClvm;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Fallback: Check VG attributes using vgs command (reliable)
+            // CLVM VGs have the 'c' (clustered) or 's' (shared) flag in their attributes
+            // Example: 'wz--ns' = shared, 'wz--n-' = not clustered
+            if (diskPath.startsWith("/dev/") && !diskPath.contains("/dev/mapper/")) {
+                String vgName = extractVolumeGroupFromPath(diskPath);
+                if (vgName != null) {
+                    boolean isClustered = checkIfVolumeGroupIsClustered(vgName);
+                    LOGGER.debug("Disk {} VG {} identified as clustered={} via vgs attribute check",
+                                diskPath, vgName, isClustered);
+                    return isClustered;
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Error determining if volume {} is CLVM: {}", diskPath, e.getMessage(), e);
+        }
+
+        return false;
+    }
+
+    /**
+     * Extracts the volume group name from a device path.
+     *
+     * @param devicePath The device path (e.g., /dev/vgname/lvname)
+     * @return The volume group name, or null if cannot be determined
+     */
+     static String extractVolumeGroupFromPath(String devicePath) {
+        if (devicePath == null || !devicePath.startsWith("/dev/")) {
+            return null;
+        }
+
+        // Format: /dev/<vgname>/<lvname>
+        String[] parts = devicePath.split("/");
+        if (parts.length >= 3) {
+            return parts[2]; // ["", "dev", "vgname", ...]
+        }
+
+        return null;
+    }
+
+    /**
+     * Checks if a volume group is clustered (CLVM) by examining its attributes.
+     * Uses 'vgs' command to check for the clustered/shared flag in VG attributes.
+     *
+     * VG Attr format (6 characters): wz--nc or wz--ns
+     *   Position 6: Clustered flag - 'c' = CLVM (clustered), 's' = shared (lvmlockd), '-' = not clustered
+     *
+     * @param vgName The volume group name
+     * @return true if the VG is clustered or shared, false otherwise
+     */
+     static boolean checkIfVolumeGroupIsClustered(String vgName) {
+        if (vgName == null) {
+            return false;
+        }
+
+        try {
+            // Use vgs with --noheadings and -o attr to get VG attributes
+            OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+            Script vgsCmd = new Script("vgs", 5000, LOGGER);
+            vgsCmd.add("--noheadings");
+            vgsCmd.add("--unbuffered");
+            vgsCmd.add("-o");
+            vgsCmd.add("vg_attr");
+            vgsCmd.add(vgName);
+
+            String result = vgsCmd.execute(parser);
+
+            if (result == null && parser.getLines() != null) {
+                String output = parser.getLines();
+                if (output != null && !output.isEmpty()) {
+                    // Parse VG attributes (format: wz--nc or wz--ns or wz--n-)
+                    // Position 6 (0-indexed 5) indicates clustering/sharing:
+                    // 'c' = clustered (CLVM) or 's' = shared (lvmlockd) or '-' = not clustered/shared
+                    String vgAttr = output.trim();
+                    if (vgAttr.length() >= 6) {
+                        char clusterFlag = vgAttr.charAt(5);  // Position 6 (0-indexed 5)
+                        boolean isClustered = (clusterFlag == 'c' || clusterFlag == 's');
+                        LOGGER.debug("VG {} has attributes '{}', cluster/shared flag '{}' = {}",
+                                    vgName, vgAttr, clusterFlag, isClustered);
+                        return isClustered;
+                    } else {
+                        LOGGER.warn("VG {} attributes '{}' have unexpected format (expected 6+ chars)", vgName, vgAttr);
+                    }
+                }
+            } else {
+                LOGGER.warn("Failed to get VG attributes for {}: {}", vgName, result);
+            }
+
+        } catch (Exception e) {
+            LOGGER.debug("Error checking if VG {} is clustered: {}", vgName, e.getMessage());
+        }
+
+        return false;
     }
 }
