@@ -19,11 +19,11 @@
 -- Schema upgrade from 4.22.1.0 to 4.23.0.0
 --;
 
-ALTER TABLE `cloud`.`oauth_provider` ADD COLUMN `domain_id` bigint unsigned DEFAULT NULL COMMENT 'NULL for global provider, domain ID for domain-specific' AFTER `redirect_uri`;
-ALTER TABLE `cloud`.`oauth_provider` ADD CONSTRAINT `fk_oauth_provider__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`);
-ALTER TABLE `cloud`.`oauth_provider` ADD INDEX `i_oauth_provider__domain_id`(`domain_id`);
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.oauth_provider', 'domain_id', 'bigint unsigned DEFAULT NULL COMMENT "NULL for global provider, domain ID for domain-specific" AFTER `redirect_uri`');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.oauth_provider', 'fk_oauth_provider__domain_id', '(`domain_id`)', '`domain`(`id`)');
+CALL `cloud`.`IDEMPOTENT_ADD_KEY`('i_oauth_provider__domain_id', 'cloud.oauth_provider', '(`domain_id`)');
 
-ALTER TABLE `cloud`.`oauth_provider` ADD UNIQUE KEY `uk_oauth_provider__provider_domain` (`provider`, `domain_id`);
+CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.oauth_provider', 'uk_oauth_provider__provider_domain', '(`provider`, `domain_id`)');
 
 CREATE TABLE `cloud`.`backup_offering_details` (
     `id` bigint unsigned NOT NULL auto_increment,
