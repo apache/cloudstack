@@ -203,4 +203,6 @@ public interface VolumeApiService {
     Pair<String, String> checkAndRepairVolume(CheckAndRepairVolumeCmd cmd) throws ResourceAllocationException;
 
     Long getVolumePhysicalSize(Storage.ImageFormat format, String path, String chainInfo);
+
+    Long getVolumeTotalPhysicalSize(Storage.ImageFormat format, String path, String chainInfo);
 }
