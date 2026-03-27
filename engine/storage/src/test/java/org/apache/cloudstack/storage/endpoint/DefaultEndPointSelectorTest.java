@@ -85,7 +85,7 @@ public class DefaultEndPointSelectorTest {
     @Before
     public void setup() {
         Mockito.doReturn(volumeInfoMock).when(snapshotInfoMock).getBaseVolume();
-        
+
         // Common volume mock setup
         Mockito.when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
         Mockito.when(volumeInfoMock.getUuid()).thenReturn(VOLUME_UUID);
@@ -234,11 +234,9 @@ public class DefaultEndPointSelectorTest {
         Mockito.verify(defaultEndPointSelectorSpy, Mockito.times(1)).select(snapshotInfoMock, false);
     }
 
-    // ==================== CLVM/CLVM_NG Tests ====================
 
     @Test
     public void testSelectClvmEndpoint_VolumeWithDestinationHost_CLVM() {
-        // Setup CLVM pool
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -256,7 +254,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectClvmEndpoint_VolumeWithDestinationHost_CLVM_NG() {
-        // Setup CLVM_NG pool
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -274,7 +271,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectClvmEndpoint_VolumeWithoutDestinationHost() {
-        // Setup CLVM pool but no destination host
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -293,7 +289,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectClvmEndpoint_NonCLVMPool() {
-        // Setup NFS pool (non-CLVM)
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -311,7 +306,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectClvmEndpoint_SnapshotWithBaseVolumeDestHost() {
-        // Setup snapshot with base volume having destination host
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(snapshotInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -331,7 +325,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectWithAction_DeleteVolume_CLVMWithLockHost() {
-        // Setup CLVM volume with lock host
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -351,7 +344,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectWithAction_DeleteVolume_CLVM_NG_WithLockHost() {
-        // Setup CLVM_NG volume with lock host
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -371,7 +363,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectWithAction_DeleteVolume_CLVMWithoutLockHost() {
-        // Setup CLVM volume without lock host
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -390,7 +381,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectWithAction_DeleteVolume_NonCLVM() {
-        // Setup non-CLVM volume (NFS)
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -408,7 +398,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectObject_CLVMVolumeWithLockHost() {
-        // Setup CLVM volume with lock host tracked in volume_details
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -427,7 +416,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectObject_CLVM_NG_VolumeWithLockHost() {
-        // Setup CLVM_NG volume with lock host tracked in volume_details
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -446,7 +434,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectObject_CLVMVolumeWithoutLockHost() {
-        // Setup CLVM volume without lock host
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -464,7 +451,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectObject_CLVMVolumeWithInvalidLockHostId() {
-        // Setup CLVM volume with invalid lock host ID (non-numeric)
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -483,7 +469,6 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectObject_CLVMVolumeWithEmptyLockHostId() {
-        // Setup CLVM volume with empty lock host ID
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
@@ -502,10 +487,8 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectTwoObjects_TemplateToVolume_CLVMWithDestHost() {
-        // Test template-to-volume copy for CLVM with destination host
         DataObject srcDataMock = Mockito.mock(DataObject.class);
-        DataStore srcStoreMock = Mockito.mock(DataStore.class);
-        
+
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);
@@ -523,13 +506,12 @@ public class DefaultEndPointSelectorTest {
 
     @Test
     public void testSelectTwoObjects_TemplateToVolume_CLVMWithoutDestHost() {
-        // Test template-to-volume copy for CLVM without destination host
         DataObject srcDataMock = Mockito.mock(DataObject.class);
         DataStore srcStoreMock = Mockito.mock(DataStore.class);
-        
+
         Mockito.when(srcDataMock.getDataStore()).thenReturn(srcStoreMock);
         Mockito.when(srcStoreMock.getRole()).thenReturn(DataStoreRole.Image);
-        
+
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
         Mockito.when(datastoreMock.getRole()).thenReturn(DataStoreRole.Primary);
         Mockito.when(datastoreMock.getId()).thenReturn(STORE_ID);

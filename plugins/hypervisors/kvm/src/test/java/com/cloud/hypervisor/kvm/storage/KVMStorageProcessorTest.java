@@ -829,7 +829,7 @@ public class KVMStorageProcessorTest {
     @Test
     public void testComputeMd5Hash_ValidInput() {
         String input = "snapshot-uuid-123";
-        
+
         try {
             Method method = KVMStorageProcessor.class.getDeclaredMethod(
                     "computeMd5Hash", String.class);
@@ -847,7 +847,7 @@ public class KVMStorageProcessorTest {
     @Test
     public void testComputeMd5Hash_EmptyInput() {
         String input = "";
-        
+
         try {
             java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
                     "computeMd5Hash", String.class);
@@ -864,7 +864,7 @@ public class KVMStorageProcessorTest {
     @Test
     public void testComputeMd5Hash_ConsistentResults() {
         String input = "snapshot-uuid-456";
-        
+
         try {
             java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
                     "computeMd5Hash", String.class);
@@ -938,6 +938,9 @@ public class KVMStorageProcessorTest {
             method.invoke(storageProcessorSpy, kvmStoragePoolMock, volumeObjectToMock, bitmapName);
 
             Assert.assertTrue("Method should handle null volume path gracefully", true);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            Assert.fail("Method should handle null volume path internally, but threw: " +
+                       (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()));
         } catch (Exception e) {
             Assert.fail("Failed to test cleanupBrokenBitmap: " + e.getMessage());
         }
