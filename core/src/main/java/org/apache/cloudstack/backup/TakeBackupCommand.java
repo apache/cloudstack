@@ -23,7 +23,9 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TakeBackupCommand extends Command {
     private String vmName;
@@ -35,6 +37,7 @@ public class TakeBackupCommand extends Command {
     private Boolean quiesce;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
+    private Map<String, String> details = new HashMap<>();
 
     public TakeBackupCommand(String vmName, String backupPath) {
         super();
@@ -104,6 +107,18 @@ public class TakeBackupCommand extends Command {
 
     public void setQuiesce(Boolean quiesce) {
         this.quiesce = quiesce;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
+
+    public void addDetail(String key, String value) {
+        this.details.put(key, value);
     }
 
     @Override
