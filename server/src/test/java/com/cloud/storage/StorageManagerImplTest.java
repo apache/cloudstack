@@ -18,6 +18,7 @@ package com.cloud.storage;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +48,8 @@ import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplian
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -85,6 +88,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.utils.Pair;
@@ -129,6 +133,10 @@ public class StorageManagerImplTest {
     AccountManagerImpl accountMgr;
     @Mock
     StoragePoolDetailsDao storagePoolDetailsDao;
+    @Mock
+    SnapshotDao snapshotDao;
+    @Mock
+    SnapshotDataStoreDao snapshotStoreDao;
 
     @Mock
     ClusterDao clusterDao;
@@ -1715,5 +1723,63 @@ public class StorageManagerImplTest {
         Mockito.when(lifeCycle.initialize(Mockito.any())).thenThrow(new RuntimeException("Initialization failed"));
 
         storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
+    }
+
+    @Test
+    public void testCleanupSnapshotRecordsInPrimaryStorageOnly() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getId()).thenReturn(1L);
+
+        SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
+        Mockito.when(snapshot.getId()).thenReturn(10L);
+        Mockito.when(snapshot.getState()).thenReturn(Snapshot.State.BackedUp);
+        Mockito.when(snapshotDao.listByVolumeId(1L)).thenReturn(List.of(snapshot));
+
+        SnapshotDataStoreVO snapshotOnPrimaryStorage = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotOnPrimaryStorage.getId()).thenReturn(100L);
+        Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Primary)).thenReturn(List.of(snapshotOnPrimaryStorage));
+        Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Image)).thenReturn(Collections.emptyList());
+
+        storageManagerImpl.cleanupSnapshotRecordsInPrimaryStorageOnly(volume);
+
+        Mockito.verify(snapshotStoreDao).expunge(100L);
+        Mockito.verify(snapshot).setState(Snapshot.State.Destroyed);
+        Mockito.verify(snapshotDao).update(10L, snapshot);
+    }
+
+    @Test
+    public void testCleanupSnapshotRecordsInPrimaryStorageOnlySkipsWhenSecondaryExists() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getId()).thenReturn(1L);
+
+        SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
+        Mockito.when(snapshot.getId()).thenReturn(10L);
+        Mockito.when(snapshot.getState()).thenReturn(Snapshot.State.BackedUp);
+        Mockito.when(snapshotDao.listByVolumeId(1L)).thenReturn(List.of(snapshot));
+
+        SnapshotDataStoreVO snapshotOnPrimaryStorage = Mockito.mock(SnapshotDataStoreVO.class);
+        SnapshotDataStoreVO snapshotOnSecondaryStorage = Mockito.mock(SnapshotDataStoreVO.class);
+        Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Primary)).thenReturn(List.of(snapshotOnPrimaryStorage));
+        Mockito.when(snapshotStoreDao.listBySnapshotAndDataStoreRole(10L, DataStoreRole.Image)).thenReturn(List.of(snapshotOnSecondaryStorage));
+
+        storageManagerImpl.cleanupSnapshotRecordsInPrimaryStorageOnly(volume);
+
+        Mockito.verify(snapshotStoreDao, Mockito.never()).expunge(Mockito.anyLong());
+        Mockito.verify(snapshotDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any(SnapshotVO.class));
+    }
+
+    @Test
+    public void testCleanupSnapshotRecordsInPrimaryStorageOnlySkipsDestroyedSnapshots() {
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        Mockito.when(volume.getId()).thenReturn(1L);
+
+        SnapshotVO snapshot = Mockito.mock(SnapshotVO.class);
+        Mockito.when(snapshot.getState()).thenReturn(Snapshot.State.Destroyed);
+        Mockito.when(snapshotDao.listByVolumeId(1L)).thenReturn(List.of(snapshot));
+
+        storageManagerImpl.cleanupSnapshotRecordsInPrimaryStorageOnly(volume);
+
+        Mockito.verify(snapshotStoreDao, Mockito.never()).listBySnapshotAndDataStoreRole(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(snapshotStoreDao, Mockito.never()).expunge(Mockito.anyLong());
     }
 }
