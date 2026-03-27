@@ -73,6 +73,7 @@ import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.projects.ProjectVO;
 
 public class AccountManagerImplTest extends AccountManagentImplTestBase {
 
@@ -1388,6 +1389,9 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         List<Long> managedProjectIds = List.of(1L);
 
         Mockito.when(_projectAccountDao.listAdministratedProjectIds(accountId)).thenReturn(managedProjectIds);
+        ProjectVO project = Mockito.mock(ProjectVO.class);
+        Mockito.when(project.getRemoved()).thenReturn(null);
+        Mockito.when(_projectDao.findById(1L)).thenReturn(project);
         accountManagerImpl.checkIfAccountManagesProjects(accountId);
     }
 
