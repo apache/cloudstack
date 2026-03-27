@@ -29,8 +29,10 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.gui.theme.dao.GuiThemeDetailsDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
 import org.apache.cloudstack.utils.mailing.MailAddress;
@@ -45,6 +47,7 @@ import java.io.StringWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -64,6 +67,9 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
 
     @Inject
     private UserDao userDao;
+
+    @Inject
+    private GuiThemeDetailsDao guiThemeDetailsDao;
 
     private SMTPMailSender mailSender;
 
@@ -182,26 +188,11 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         final String email = userAccount.getEmail();
         final String username = userAccount.getUsername();
         final String subject = "Password Reset Request";
-        String domainUrl = UserPasswordResetDomainURL.value();
-        if (StringUtils.isBlank(domainUrl)) {
-            String mgmtServerAddr = ManagementServerAddresses.value().split(",")[0];
-            if (ServerProperties.isHttpsEnabled()) {
-                domainUrl = "https://" + mgmtServerAddr + ":" + ServerProperties.getHttpsPort();
-            } else {
-                domainUrl = "http://" + mgmtServerAddr + ":" + ServerProperties.getHttpPort();
-            }
-        } else if (!domainUrl.startsWith("http://") && !domainUrl.startsWith("https://")) {
-            if (ServerProperties.isHttpsEnabled()) {
-                domainUrl = "https://" + domainUrl;
-            } else {
-                domainUrl = "http://" + domainUrl;
-            }
-        }
 
-        domainUrl = domainUrl.replaceAll("/+$", "");
-
+        String requestDomain = CallContext.current().getRequestRemoteAddress();
+        String resetLinkDomain = getResetLinkDomain(requestDomain);
         String resetLink = String.format("%s/client/#/user/resetPassword?username=%s&token=%s",
-                domainUrl, username, resetToken);
+                resetLinkDomain, username, resetToken);
         String content = getMessageBody(userAccount, resetToken, resetLink);
 
         SMTPMailProperties mailProperties = new SMTPMailProperties();
@@ -220,6 +211,49 @@ public class UserPasswordResetManagerImpl extends ManagerBase implements UserPas
         mailSender.sendMail(mailProperties);
         logger.debug("User password reset email for user {} account id: {} domain id: {} sent to {} with token expiry at {}",
                 userAccount, userAccount.getAccountId(), userAccount.getDomainId(), email, resetTokenExpiryTime);
+    }
+
+    private String getResetLinkDomain(String requestDomain) {
+        String domain = "";
+
+        if (StringUtils.isNotBlank(requestDomain)) {
+            logger.debug("Searching for GUI theme with common name that matches the request's domain: [{}]", requestDomain);
+            List<Long> commonNameDetails = guiThemeDetailsDao.listGuiThemeIdsByCommonName(requestDomain);
+
+            if (!commonNameDetails.isEmpty()) {
+                logger.debug("GUI theme with ID {} was found; using request's domain for password reset link.", commonNameDetails.get(0));
+                domain = requestDomain;
+            } else {
+                logger.debug("No GUI theme was found with a common name that matches the request's domain.");
+            }
+        }
+
+        String configurationDomain = UserPasswordResetDomainURL.value();
+        if (StringUtils.isBlank(domain) && !StringUtils.isBlank(configurationDomain)) {
+            logger.debug("Defaulting reset link's domain to the [{}] configuration value: [{}].", UserPasswordResetDomainURL.key(), UserPasswordResetDomainURL.value());
+            domain = configurationDomain;
+        }
+
+        if (StringUtils.isBlank(domain)) {
+            logger.debug("Using the first IP address in the [{}] configuration for the reset password email domain because the [{}] configuration is not defined.", ManagementServerAddresses.key(), UserPasswordResetDomainURL.key());
+            domain = ManagementServerAddresses.value().split(",")[0];
+
+            if (ServerProperties.isHttpsEnabled()) {
+                domain = "https://" + domain + ":" + ServerProperties.getHttpsPort();
+            } else {
+                domain = "http://" + domain + ":" + ServerProperties.getHttpPort();
+            }
+        }
+
+        if (!domain.startsWith("http")) {
+            if (ServerProperties.isHttpsEnabled()) {
+                domain = "https://" + domain;
+            } else {
+                domain = "http://" + domain;
+            }
+        }
+
+        return domain.replaceAll("/+$", "");
     }
 
     @Override

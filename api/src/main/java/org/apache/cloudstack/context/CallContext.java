@@ -66,6 +66,7 @@ public class CallContext {
     private final Map<String, UUID> apiResourcesUuids = new HashMap<>();
     private Project project;
     private String apiName;
+    private String requestRemoteAddress;
 
     static EntityManager s_entityMgr;
 
@@ -399,6 +400,14 @@ public class CallContext {
 
     public Map<Object, Object> getContextParameters() {
         return context;
+    }
+
+    public String getRequestRemoteAddress() {
+        return requestRemoteAddress;
+    }
+
+    public void setRequestRemoteAddress(String remoteAddress) {
+        this.requestRemoteAddress = remoteAddress;
     }
 
     public void putContextParameters(Map<Object, Object> details){
