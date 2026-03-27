@@ -639,7 +639,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         if (isVersionAtLeast(4, 0)) {
             logger.debug("Using PowerFlex 4.0+ overwriteVolumeContent request body");
             return String.format("{\"srcVolumeId\":\"%s\"}", srcVolumeId);
-        }
+        } else {
         else {
             logger.debug("Using pre-4.0 overwriteVolumeContent request body");
             return String.format("{\"srcVolumeId\":\"%s\",\"allowOnExtManagedVol\":\"TRUE\"}", srcVolumeId);                }
