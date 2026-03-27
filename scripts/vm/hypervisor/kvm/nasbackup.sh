@@ -16,11 +16,9 @@
 ## specific language governing permissions and limitations
 ## under the License.
 
-set -e
+set -eo pipefail
 
 # CloudStack B&R NAS Backup and Recovery Tool for KVM
-
-# TODO: do libvirt/logging etc checks
 
 ### Declare variables ###
 
@@ -31,7 +29,16 @@ NAS_ADDRESS=""
 MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
+QUIESCE=""
 logFile="/var/log/cloudstack/agent/agent.log"
+
+# Exit codes
+EXIT_CLEANUP_FAILED=20
+
+# Backup job timeout in seconds (default: 6 hours)
+BACKUP_TIMEOUT=${BACKUP_TIMEOUT:-21600}
+# Minimum free space required on backup target in bytes (default: 1 GB)
+MIN_FREE_SPACE=${MIN_FREE_SPACE:-1073741824}
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -39,6 +46,56 @@ log() {
     builtin echo -e "$(date '+%Y-%m-%d %H-%M-%S>')" "${@: 2}" >> "$logFile"
   else
     builtin echo "$(date '+%Y-%m-%d %H-%M-%S>')" "$@" >> "$logFile"
+  fi
+}
+
+cleanup() {
+  local status=0
+
+  # Resume the VM if it was paused during backup to prevent it from
+  # remaining indefinitely paused when the backup job fails (e.g. due
+  # to storage full or I/O errors on the backup target)
+  if [[ -n "$VM" ]]; then
+    local vm_state
+    vm_state=$(virsh -c qemu:///system domstate "$VM" 2>/dev/null || true)
+    if [[ "$vm_state" == "paused" ]]; then
+      log -ne "Resuming paused VM $VM during backup cleanup"
+      if ! virsh -c qemu:///system resume "$VM" > /dev/null 2>&1; then
+        echo "Failed to resume VM $VM"
+        status=1
+      fi
+    fi
+  fi
+
+  if [[ -n "$dest" && -d "$dest" ]]; then
+    rm -rf "$dest" || { echo "Failed to delete $dest"; status=1; }
+  fi
+  if [[ -n "$mount_point" && -d "$mount_point" ]]; then
+    umount "$mount_point" 2>/dev/null || { echo "Failed to unmount $mount_point"; status=1; }
+    rmdir "$mount_point" 2>/dev/null || true
+  fi
+
+  if [[ $status -ne 0 ]]; then
+    echo "Backup cleanup failed"
+    exit $EXIT_CLEANUP_FAILED
+  fi
+}
+
+# Trap ensures cleanup always runs on exit (error, signal, or normal exit)
+# This prevents orphan NFS mounts from accumulating after failed backups
+trap cleanup EXIT
+
+check_free_space() {
+  local free_bytes
+  free_bytes=$(df -P "$mount_point" 2>/dev/null | awk 'NR==2 {print $4}')
+  if [[ -n "$free_bytes" ]]; then
+    # df reports in 1K blocks, convert to bytes
+    free_bytes=$((free_bytes * 1024))
+    if [[ $free_bytes -lt $MIN_FREE_SPACE ]]; then
+      echo "Insufficient free space on backup target: $((free_bytes / 1048576)) MB available, $((MIN_FREE_SPACE / 1048576)) MB required"
+      exit 1
+    fi
+    log -ne "Backup target has $((free_bytes / 1073741824)) GB free space"
   fi
 }
 
@@ -88,6 +145,7 @@ sanity_checks() {
 
 backup_running_vm() {
   mount_operation
+  check_free_space
   mkdir -p $dest
 
   name="root"
@@ -99,8 +157,29 @@ backup_running_vm() {
   done
   echo "</disks></domainbackup>" >> $dest/backup.xml
 
+  # Quiesce guest filesystem before backup if requested and agent is available
+  if [[ "$QUIESCE" == "true" ]]; then
+    if virsh -c qemu:///system qemu-agent-command $VM '{"execute":"guest-ping"}' > /dev/null 2>&1; then
+      log -ne "Quiescing guest filesystem on $VM"
+      virsh -c qemu:///system domfsfreeze $VM > /dev/null 2>&1 || log -ne "Warning: fsfreeze failed on $VM, proceeding without quiesce"
+    else
+      log -ne "Warning: qemu-guest-agent not available on $VM, skipping quiesce"
+    fi
+  fi
+
   # Start push backup
-  virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml > /dev/null 2>/dev/null
+  if ! virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml > /dev/null 2>&1; then
+    echo "Failed to start backup for VM $VM"
+    # Thaw filesystem if we froze it
+    [[ "$QUIESCE" == "true" ]] && virsh -c qemu:///system domfsthaw $VM > /dev/null 2>&1 || true
+    exit 1
+  fi
+
+  # Thaw filesystem immediately after backup-begin (QEMU has its own consistent snapshot)
+  if [[ "$QUIESCE" == "true" ]]; then
+    virsh -c qemu:///system domfsthaw $VM > /dev/null 2>&1 || true
+    log -ne "Thawed guest filesystem on $VM"
+  fi
 
   # Backup domain information
   virsh -c qemu:///system dumpxml $VM > $dest/domain-config.xml 2>/dev/null
@@ -108,8 +187,16 @@ backup_running_vm() {
   virsh -c qemu:///system domiflist $VM > $dest/domiflist.xml 2>/dev/null
   virsh -c qemu:///system domblklist $VM > $dest/domblklist.xml 2>/dev/null
 
+  # Wait for backup to complete with timeout
+  local elapsed=0
   until virsh -c qemu:///system domjobinfo $VM --completed --keep-completed 2>/dev/null | grep "Completed" > /dev/null; do
+    if [[ $elapsed -ge $BACKUP_TIMEOUT ]]; then
+      echo "Backup timed out after ${BACKUP_TIMEOUT}s for VM $VM"
+      virsh -c qemu:///system domjobabort $VM > /dev/null 2>&1 || true
+      exit 1
+    fi
     sleep 5
+    elapsed=$((elapsed + 5))
   done
   rm -f $dest/backup.xml
   sync
@@ -117,13 +204,11 @@ backup_running_vm() {
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
   du -sb $dest | cut -f1
-
-  umount $mount_point
-  rmdir $mount_point
 }
 
 backup_stopped_vm() {
   mount_operation
+  check_free_space
   mkdir -p $dest
 
   IFS=","
@@ -131,7 +216,10 @@ backup_stopped_vm() {
   name="root"
   for disk in $DISK_PATHS; do
     volUuid="${disk##*/}"
-    qemu-img convert -O qcow2 $disk $dest/$name.$volUuid.qcow2  | tee -a "$logFile"
+    if ! qemu-img convert -O qcow2 "$disk" "$dest/$name.$volUuid.qcow2" 2>&1 | tee -a "$logFile"; then
+      echo "Failed to convert disk $disk"
+      exit 1
+    fi
     name="datadisk"
   done
   sync
@@ -142,20 +230,18 @@ backup_stopped_vm() {
 delete_backup() {
   mount_operation
 
-  rm -frv $dest
+  rm -frv "$dest"
   sync
-  umount $mount_point
-  rmdir $mount_point
+  # cleanup trap handles umount and rmdir
 }
 
 mount_operation() {
   mount_point=$(mktemp -d -t csbackup.XXXXX)
   dest="$mount_point/${BACKUP_DIR}"
-  if [ ${NAS_TYPE} == "cifs" ]; then
+  if [[ "${NAS_TYPE}" == "cifs" ]]; then
     MOUNT_OPTS="${MOUNT_OPTS},nobrl"
   fi
-  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) | tee -a "$logFile"
-  if [ $? -eq 0 ]; then
+  if mount -t "${NAS_TYPE}" "${NAS_ADDRESS}" "${mount_point}" $([[ -n "${MOUNT_OPTS}" ]] && echo "-o" "${MOUNT_OPTS}") 2>&1 | tee -a "$logFile"; then
       log -ne "Successfully mounted ${NAS_TYPE} store"
   else
       echo "Failed to mount ${NAS_TYPE} store"
@@ -165,7 +251,17 @@ mount_operation() {
 
 function usage {
   echo ""
-  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path>"
+  echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> [-q]"
+  echo ""
+  echo "Options:"
+  echo "  -o, --operation   Operation to perform: backup, delete"
+  echo "  -v, --vm          VM domain name"
+  echo "  -t, --type        NAS type: nfs, cifs"
+  echo "  -s, --storage     NAS address (e.g. 192.168.1.1:/share)"
+  echo "  -m, --mount       Mount options"
+  echo "  -p, --path        Backup directory path on NAS"
+  echo "  -d, --diskpaths   Comma-separated disk paths (for stopped VM backup)"
+  echo "  -q, --quiesce     Quiesce guest filesystem before backup (requires qemu-guest-agent)"
   echo ""
   exit 1
 }
@@ -205,6 +301,10 @@ while [[ $# -gt 0 ]]; do
     -d|--diskpaths)
       DISK_PATHS="$2"
       shift
+      shift
+      ;;
+    -q|--quiesce)
+      QUIESCE="true"
       shift
       ;;
     -h|--help)
