@@ -2119,6 +2119,13 @@ public class KVMStorageProcessor implements StorageProcessor {
         logger.debug("Taking incremental volume snapshot of volume [{}]. Snapshot will be copied to [{}].", volumeObjectTo,
                 ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
         try {
+            // For CLVM_NG incremental snapshots, validate bitmap before proceeding
+            SnapshotObjectTO bitmapValidationResult = validateClvmNgBitmapAndFallbackIfNeeded(snapshotObjectTO, primaryPool,
+                    secondaryPool, secondaryPoolUrl, snapshotName, volumeObjectTo, conn, wait);
+            if (bitmapValidationResult != null) {
+                return bitmapValidationResult;
+            }
+
             String vmName = String.format("DUMMY-VM-%s", snapshotName);
 
             String vmXml = getVmXml(primaryPool, volumeObjectTo, vmName);
@@ -2307,6 +2314,209 @@ public class KVMStorageProcessor implements StorageProcessor {
     protected String getParentCheckpointName(String[] parents) {
         String immediateParentPath = parents[parents.length - 1];
         return immediateParentPath.substring(immediateParentPath.lastIndexOf(File.separator) + 1);
+    }
+
+    /**
+     * Checks if a QEMU bitmap exists in the volume and is usable (not in-use or corrupted).
+     * This is important after lock migration where bitmaps may be left in "in-use" state.
+     *
+     * @param pool The storage pool containing the volume
+     * @param volume The volume to check
+     * @param bitmapName The name of the bitmap to check
+     * @return true if bitmap exists and is usable, false if missing, in-use, or corrupted
+     */
+    protected boolean isBitmapUsable(KVMStoragePool pool, VolumeObjectTO volume, String bitmapName) {
+        try {
+            String volumePath = pool.getLocalPathFor(volume.getPath());
+
+            String command = String.format("qemu-img info --output=json -U %s", volumePath);
+            String jsonOutput = Script.runSimpleBashScriptWithFullResult(command, 30);
+
+            if (jsonOutput == null || jsonOutput.trim().isEmpty()) {
+                logger.warn("Failed to get qemu-img info for volume [{}]", volumePath);
+                return false;
+            }
+
+            logger.debug("qemu-img info output for volume [{}]: {}", volumePath, jsonOutput);
+
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode root = mapper.readTree(jsonOutput);
+
+                JsonNode formatSpecific = root.path("format-specific");
+                if (formatSpecific.isMissingNode()) {
+                    logger.debug("No format-specific data found for volume [{}], bitmap check skipped", volumePath);
+                    return false;
+                }
+
+                JsonNode data = formatSpecific.path("data");
+                JsonNode bitmaps = data.path("bitmaps");
+
+                if (bitmaps.isMissingNode() || !bitmaps.isArray()) {
+                    logger.debug("No bitmaps found in volume [{}]", volumePath);
+                    return false;
+                }
+
+                for (JsonNode bitmap : bitmaps) {
+                    String name = bitmap.path("name").asText();
+                    if (bitmapName.equals(name)) {
+                        JsonNode flags = bitmap.path("flags");
+                        if (flags.isArray()) {
+                            for (JsonNode flag : flags) {
+                                String flagValue = flag.asText();
+                                if ("in-use".equals(flagValue)) {
+                                    logger.warn("Bitmap [{}] in volume [{}] is marked as 'in-use' and cannot be used for incremental snapshot",
+                                               bitmapName, volumePath);
+                                    return false;
+                                }
+                            }
+                        }
+                        logger.debug("Bitmap [{}] found in volume [{}] and is usable", bitmapName, volumePath);
+                        return true;
+                    }
+                }
+
+                logger.warn("Bitmap [{}] not found in volume [{}]", bitmapName, volumePath);
+                return false;
+
+            } catch (JsonProcessingException e) {
+                logger.error("Failed to parse qemu-img JSON output for volume [{}]: {}", volumePath, e.getMessage(), e);
+                return false;
+            }
+
+        } catch (Exception e) {
+            logger.error("Error checking bitmap [{}] for volume [{}]: {}", bitmapName, volume, e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Removes a broken or unusable bitmap from a volume.
+     * Called before falling back to full snapshot to keep volume metadata clean.
+     *
+     * @param pool Storage pool containing the volume
+     * @param volume Volume with broken bitmap
+     * @param bitmapName Name of bitmap to remove
+     */
+    private void cleanupBrokenBitmap(KVMStoragePool pool, VolumeObjectTO volume, String bitmapName) {
+        try {
+            String volumePath = pool.getLocalPathFor(volume.getPath());
+
+            logger.info("Removing broken bitmap [{}] from volume [{}] before taking full snapshot",
+                       bitmapName, volumePath);
+
+            QemuImgFile volumeFile = new QemuImgFile(volumePath, PhysicalDiskFormat.QCOW2);
+            QemuImg qemuImg = new QemuImg(0);
+
+            try {
+                qemuImg.bitmap(QemuImg.BitmapOperation.Remove, volumeFile, bitmapName);
+                logger.info("Successfully removed broken bitmap [{}] from volume [{}]",
+                           bitmapName, volume.getPath());
+            } catch (QemuImgException e) {
+                logger.warn("Failed to remove broken bitmap [{}] from volume [{}]: {}. " +
+                           "Proceeding with fallback anyway.",
+                           bitmapName, volume.getPath(), e.getMessage());
+            }
+
+        } catch (Exception e) {
+            logger.warn("Exception while cleaning up broken bitmap [{}] for volume [{}]: {}. " +
+                       "Proceeding with fallback anyway.",
+                       bitmapName, volume.getPath(), e.getMessage());
+        }
+    }
+
+    /**
+     * Validates QEMU bitmap for CLVM_NG incremental snapshots and falls back to full snapshot if needed.
+     * This method checks if the bitmap from the parent checkpoint is usable. If the bitmap is corrupted,
+     * in-use, or missing, it cleans up the broken bitmap and falls back to taking a full snapshot with
+     * a new checkpoint to restart the incremental chain.
+     *
+     * @param snapshotObjectTO Snapshot being created
+     * @param primaryPool Primary storage pool
+     * @param secondaryPool Secondary storage pool for backup
+     * @param secondaryPoolUrl Secondary pool URL
+     * @param snapshotName Name of the snapshot
+     * @param volumeObjectTo Volume being snapshotted
+     * @param conn Libvirt connection
+     * @param wait Timeout for operations
+     * @return SnapshotObjectTO if fallback to full snapshot occurred, null if validation passed
+     * @throws LibvirtException if libvirt operations fail
+     */
+    private SnapshotObjectTO validateClvmNgBitmapAndFallbackIfNeeded(SnapshotObjectTO snapshotObjectTO,
+                                                                      KVMStoragePool primaryPool,
+                                                                      KVMStoragePool secondaryPool,
+                                                                      String secondaryPoolUrl,
+                                                                      String snapshotName,
+                                                                      VolumeObjectTO volumeObjectTo,
+                                                                      Connect conn,
+                                                                      int wait) throws LibvirtException {
+        if (primaryPool.getType() != StoragePoolType.CLVM_NG || snapshotObjectTO.getParentSnapshotPath() == null) {
+            return null;
+        }
+
+        String[] parents = snapshotObjectTO.getParents();
+        if (parents == null || parents.length == 0) {
+            return null;
+        }
+
+        String parentCheckpointName = getParentCheckpointName(parents);
+        logger.debug("Validating bitmap [{}] for CLVM_NG volume [{}] before taking incremental snapshot",
+                parentCheckpointName, volumeObjectTo.getPath());
+
+        if (!isBitmapUsable(primaryPool, volumeObjectTo, parentCheckpointName)) {
+            logger.warn("Bitmap [{}] is not usable for volume [{}]. Falling back to full snapshot with new checkpoint.",
+                    parentCheckpointName, volumeObjectTo.getPath());
+            cleanupBrokenBitmap(primaryPool, volumeObjectTo, parentCheckpointName);
+            return takeFullVolumeSnapshotOfStoppedVmForIncremental(snapshotObjectTO, primaryPool, secondaryPool,
+                    secondaryPoolUrl, snapshotName, volumeObjectTo, conn, wait);
+        }
+
+        logger.debug("Bitmap [{}] is valid and usable for incremental snapshot", parentCheckpointName);
+        return null;
+    }
+
+    /**
+     * Takes a full snapshot of a stopped VM and creates a new checkpoint to restart the incremental chain.
+     * This is used as a fallback when incremental snapshot fails due to bitmap issues.
+     */
+    private SnapshotObjectTO takeFullVolumeSnapshotOfStoppedVmForIncremental(SnapshotObjectTO snapshotObjectTO,
+                                                                              KVMStoragePool primaryPool,
+                                                                              KVMStoragePool secondaryPool,
+                                                                              String secondaryPoolUrl,
+                                                                              String snapshotName,
+                                                                              VolumeObjectTO volumeObjectTo,
+                                                                              Connect conn,
+                                                                              int wait) throws LibvirtException {
+        resource.validateLibvirtAndQemuVersionForIncrementalSnapshots();
+        Domain vm = null;
+        logger.info("Taking full volume snapshot (with new checkpoint) of volume [{}] to restart incremental chain. " +
+                   "Snapshot will be copied to [{}].", volumeObjectTo, ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
+        try {
+            String vmName = String.format("DUMMY-VM-%s", snapshotName);
+
+            String vmXml = getVmXml(primaryPool, volumeObjectTo, vmName);
+
+            logger.debug("Creating dummy VM with volume [{}] to take a full snapshot with checkpoint.", volumeObjectTo);
+            resource.startVM(conn, vmName, vmXml, Domain.CreateFlags.PAUSED);
+
+            vm = resource.getDomain(conn, vmName);
+
+            SnapshotObjectTO fullSnapshotTO = new SnapshotObjectTO();
+            fullSnapshotTO.setPath(snapshotObjectTO.getPath());
+            fullSnapshotTO.setVolume(snapshotObjectTO.getVolume());
+            fullSnapshotTO.setParentSnapshotPath(null); // No parent - forces full snapshot
+
+            return takeIncrementalVolumeSnapshotOfRunningVm(fullSnapshotTO, primaryPool, secondaryPool,
+                    secondaryPoolUrl, snapshotName, volumeObjectTo, vm, conn, wait);
+        } catch (InternalErrorException | LibvirtException | CloudRuntimeException e) {
+            logger.error("Failed to take full volume snapshot with checkpoint for volume [{}] due to {}.",
+                        volumeObjectTo, e.getMessage(), e);
+            throw new CloudRuntimeException(e);
+        } finally {
+            if (vm != null) {
+                vm.destroy();
+            }
+        }
     }
 
     private Path createFileAndWrite(String content, String dir, String fileName) {

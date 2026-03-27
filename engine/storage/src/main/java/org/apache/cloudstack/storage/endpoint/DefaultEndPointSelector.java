@@ -449,11 +449,22 @@ public class DefaultEndPointSelector implements EndPointSelector {
         DataStore store = object.getDataStore();
 
         // This ensures volumes are created on the correct host with exclusive locks
-        if (object instanceof VolumeInfo && store.getRole() == DataStoreRole.Primary) {
-            VolumeInfo volInfo = (VolumeInfo) object;
-            EndPoint clvmEndpoint = selectClvmEndpointIfApplicable(volInfo, "volume creation");
-            if (clvmEndpoint != null) {
-                return clvmEndpoint;
+        String operation = "";
+        if (DataStoreRole.Primary == store.getRole()) {
+            VolumeInfo volume = null;
+            if (object instanceof VolumeInfo) {
+                volume = (VolumeInfo) object;
+                operation = "volume creation";
+            } else if (object instanceof SnapshotInfo) {
+                volume = ((SnapshotInfo) object).getBaseVolume();
+                operation = "snapshot creation";
+            }
+
+            if (volume != null) {
+                EndPoint clvmEndpoint = selectClvmEndpointIfApplicable(volume, operation);
+                if (clvmEndpoint != null) {
+                    return clvmEndpoint;
+                }
             }
         }
 
