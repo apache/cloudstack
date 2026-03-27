@@ -127,7 +127,10 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
                 String name = authenticator.getName();
                 authenticatorPluginNames.add(name);
             }
-            if (Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, result.getDomainId(), true)) && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
+            boolean oauthEnabled = result.getDomainId() == null
+                    ? Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.value())
+                    : Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, result.getDomainId(), true));
+            if (oauthEnabled && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {
                 r.setEnabled(false);

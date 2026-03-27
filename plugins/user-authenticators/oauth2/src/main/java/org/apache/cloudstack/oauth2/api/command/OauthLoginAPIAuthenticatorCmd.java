@@ -144,7 +144,10 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
             domainId = userDomain.getId();
         }
 
-        if (!Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true))) {
+        boolean oauthEnabled = domainId == null
+                ? Boolean.TRUE.equals(OAuth2IsPluginEnabled.value())
+                : Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true));
+        if (!oauthEnabled) {
             throw new CloudAuthenticationException("OAuth is not enabled, users cannot login using OAuth");
         }
 

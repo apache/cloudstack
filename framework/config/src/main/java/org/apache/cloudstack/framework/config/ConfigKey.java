@@ -426,7 +426,7 @@ public class ConfigKey<T> {
 
     public T valueInScope(Scope scope, Long id, boolean strictScope) {
         if (id == null) {
-            return value();
+            return strictScope ? null : value();
         }
         String value = s_depot != null ? s_depot.getConfigStringValue(_name, scope, id) : null;
         if (value == null) {

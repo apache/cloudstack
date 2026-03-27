@@ -79,6 +79,9 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     }
 
     protected boolean isOAuthPluginEnabled(Long domainId) {
+        if (domainId == null) {
+            return Boolean.TRUE.equals(OAuth2IsPluginEnabled.value());
+        }
         return Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true));
     }
 
