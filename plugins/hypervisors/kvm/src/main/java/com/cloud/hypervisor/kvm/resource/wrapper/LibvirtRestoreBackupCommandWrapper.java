@@ -45,6 +45,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -52,7 +53,6 @@ import java.util.Objects;
 @ResourceWrapper(handles = RestoreBackupCommand.class)
 public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBackupCommand, Answer, LibvirtComputingResource> {
     private static final String BACKUP_TEMP_FILE_PREFIX = "csbackup";
-    private static final String MOUNT_COMMAND = "sudo mount -t %s %s %s";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String FILE_PATH_PLACEHOLDER = "%s/%s";
     private static final String ATTACH_QCOW2_DISK_COMMAND = " virsh attach-disk %s %s %s --driver qemu --subdriver qcow2 --cache none";
@@ -182,7 +182,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
 
     private String mountBackupDirectory(String backupRepoAddress, String backupRepoType, String mountOptions, Integer mountTimeout) {
         String randomChars = RandomStringUtils.random(5, true, false);
-        String mountDirectory = String.format("%s.%s",BACKUP_TEMP_FILE_PREFIX , randomChars);
+        String mountDirectory = String.format("%s.%s", BACKUP_TEMP_FILE_PREFIX, randomChars);
 
         try {
             mountDirectory = Files.createTempDirectory(mountDirectory).toString();
@@ -191,24 +191,41 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             throw new CloudRuntimeException("Failed to create the tmp mount directory for restore on the KVM host");
         }
 
-        String mount = String.format(MOUNT_COMMAND, backupRepoType, backupRepoAddress, mountDirectory);
-        if ("cifs".equals(backupRepoType)) {
+        if ("cifs".equalsIgnoreCase(backupRepoType)) {
             if (Objects.isNull(mountOptions) || mountOptions.trim().isEmpty()) {
                 mountOptions = "nobrl";
             } else {
                 mountOptions += ",nobrl";
             }
         }
-        if (Objects.nonNull(mountOptions) && !mountOptions.trim().isEmpty()) {
-            mount += " -o " + mountOptions;
-        }
 
-        int exitValue = Script.runSimpleBashScriptForExitValue(mount, mountTimeout, false);
-        if (exitValue != 0) {
-            logger.error("Failed to mount repository {} of type {} to the directory {}", backupRepoAddress, backupRepoType, mountDirectory);
+        executeMount(backupRepoAddress, backupRepoType, mountOptions, mountDirectory, mountTimeout);
+
+        return mountDirectory;
+    }
+
+    private void executeMount(String backupRepoAddress, String backupRepoType, String mountOptions,
+                              String mountDirectory, Integer mountTimeout) {
+        List<String[]> commands = new ArrayList<>();
+        List<String> cmd = new ArrayList<>();
+        cmd.add("sudo");
+        cmd.add("mount");
+        cmd.add("-t");
+        cmd.add(backupRepoType);
+        cmd.add(backupRepoAddress);
+        cmd.add(mountDirectory);
+        if (Objects.nonNull(mountOptions) && !mountOptions.trim().isEmpty()) {
+            cmd.add("-o");
+            cmd.add(mountOptions);
+        }
+        commands.add(cmd.toArray(new String[0]));
+
+        Pair<Integer, String> result = Script.executePipedCommands(commands, mountTimeout);
+        if (result.first() != 0) {
+            logger.error("Failed to mount repository {} of type {} to the directory {}. Error: {}",
+                    backupRepoAddress, backupRepoType, mountDirectory, result.second());
             throw new CloudRuntimeException("Failed to mount the backup repository on the KVM host");
         }
-        return mountDirectory;
     }
 
     private void unmountBackupDirectory(String backupDirectory) {
