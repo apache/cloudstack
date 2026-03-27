@@ -14,28 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.acl.dao;
 
-package org.apache.cloudstack.storage.heuristics.presetvariables;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.acl.ApiKeyPairPermissionVO;
 
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import java.util.List;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DomainTest {
+public interface ApiKeyPairPermissionsDao extends GenericDao<ApiKeyPairPermissionVO, Long> {
+        List<ApiKeyPairPermissionVO> findAllByApiKeyPairId(Long apiKeyPairId);
 
-    @Test
-    public void toStringTestReturnsValidJson() {
-        Domain variable = new Domain();
-        variable.setName("test name");
-        variable.setId("test id");
-
-        String expected = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(variable, "name", "id");
-        String result = variable.toString();
-
-        Assert.assertEquals(expected, result);
-    }
-
+        List<ApiKeyPairPermissionVO> findAllByKeyPairIdSorted(Long apiKeyPairId);
 }

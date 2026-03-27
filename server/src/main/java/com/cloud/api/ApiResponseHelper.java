@@ -39,8 +39,16 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ApiKeyPairState;
+import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.RoleVO;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
+import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -66,6 +74,7 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupRepositoryResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
 import org.apache.cloudstack.api.response.BgpPeerResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
@@ -113,6 +122,7 @@ import org.apache.cloudstack.api.response.IpRangeResponse;
 import org.apache.cloudstack.api.response.Ipv4RouteResponse;
 import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
@@ -541,6 +551,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         (domainPath.append(path)).deleteCharAt(domainPath.length() - 1);
         return domainPath.toString();
     }
+
+    @Inject
+    private RoleDao roleDao;
+
+    @Inject
+    private AccountDao accountDao;
+
+    @Inject
+    private DomainDao domainDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -4479,7 +4498,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (usageRecord.getUsageType() == UsageTypes.BACKUP) {
             resourceType = ResourceObjectType.Backup;
             final StringBuilder builder = new StringBuilder();
-            builder.append("Backup usage of size ").append(usageRecord.getUsageDisplay());
+            builder.append("Backup usage");
             if (vmInstance != null) {
                 resourceId = vmInstance.getId();
                 usageRecResponse.setResourceName(vmInstance.getInstanceName());
@@ -4492,9 +4511,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                             .append(" (").append(backupOffering.getUuid()).append(", user ad-hoc/scheduled backup allowed: ")
                             .append(backupOffering.isUserDrivenBackupAllowed()).append(")");
                 }
-
             }
+            builder.append(" with size ").append(toHumanReadableSize(usageRecord.getSize()));
+            builder.append(" and with virtual size ").append(toHumanReadableSize(usageRecord.getVirtualSize()));
             usageRecResponse.setDescription(builder.toString());
+            usageRecResponse.setSize(usageRecord.getSize());
+            usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
             resourceType = ResourceObjectType.VMSnapshot;
             VMSnapshotVO vmSnapshotVO = null;
@@ -5703,5 +5725,80 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
 
         consoleSessionResponse.setObjectName("consolesession");
         return consoleSessionResponse;
+    }
+
+    @Override
+    public ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair) {
+        ApiKeyPairResponse apiKeyPairResponse = new ApiKeyPairResponse();
+
+        populateApiKeyPairInApiKeyPairResponse(keyPair, apiKeyPairResponse);
+        populateUserInApiKeyPairResponse(keyPair, apiKeyPairResponse);
+
+        AccountVO account = accountDao.findByIdIncludingRemoved(keyPair.getAccountId());
+        apiKeyPairResponse.setAccountId(account.getUuid());
+        apiKeyPairResponse.setAccountName(account.getAccountName());
+        apiKeyPairResponse.setAccountType(account.getType().toString());
+
+        populateDomainInApiKeyPairResponse(account.getDomainId(), apiKeyPairResponse);
+        populateRoleInApiKeyPairResponse(account.getRoleId(), apiKeyPairResponse);
+
+        return apiKeyPairResponse;
+    }
+
+    protected void populateRoleInApiKeyPairResponse(Long roleId, ApiKeyPairResponse apiKeyPairResponse) {
+        RoleVO roleVO = roleDao.findById(roleId);
+        apiKeyPairResponse.setRoleId(roleVO.getUuid());
+        apiKeyPairResponse.setRoleName(roleVO.getName());
+        apiKeyPairResponse.setRoleType(roleVO.getRoleType().name());
+    }
+
+    protected static void populateApiKeyPairInApiKeyPairResponse(ApiKeyPair keyPair, ApiKeyPairResponse apiKeyPairResponse) {
+        apiKeyPairResponse.setName(keyPair.getName());
+        apiKeyPairResponse.setApiKey(keyPair.getApiKey());
+        apiKeyPairResponse.setSecretKey(keyPair.getSecretKey());
+        apiKeyPairResponse.setDescription(keyPair.getDescription());
+        apiKeyPairResponse.setId(keyPair.getUuid());
+        apiKeyPairResponse.setCreated(keyPair.getCreated());
+        apiKeyPairResponse.setStartDate(keyPair.getStartDate());
+        apiKeyPairResponse.setEndDate(keyPair.getEndDate());
+
+        ApiKeyPairState state = ApiKeyPairState.ENABLED;
+        if (keyPair.getRemoved() != null) {
+            state = ApiKeyPairState.REMOVED;
+        } else if (keyPair.hasEndDatePassed()) {
+            state = ApiKeyPairState.EXPIRED;
+        }
+        apiKeyPairResponse.setState(state);
+    }
+
+    protected void populateUserInApiKeyPairResponse(ApiKeyPair keyPair, ApiKeyPairResponse apiKeyPairResponse) {
+        User user = ApiDBUtils.findUserById(keyPair.getUserId());
+        apiKeyPairResponse.setUserId(user.getUuid());
+        apiKeyPairResponse.setUsername(user.getUsername());
+    }
+
+    protected void populateDomainInApiKeyPairResponse(Long domainId, ApiKeyPairResponse apiKeyPairResponse) {
+        DomainVO domainVO = domainDao.findById(domainId);
+        apiKeyPairResponse.setDomainId(domainVO.getUuid());
+        apiKeyPairResponse.setDomainName(domainVO.getName());
+        StringBuilder domainPath = new StringBuilder("ROOT");
+        (domainPath.append(domainVO.getPath())).deleteCharAt(domainPath.length() - 1);
+        apiKeyPairResponse.setDomainPath(domainPath.toString());
+    }
+
+    @Override
+    public ListResponse<BaseRolePermissionResponse> createKeypairPermissionsResponse(final List<ApiKeyPairPermission> permissions) {
+        final ListResponse<BaseRolePermissionResponse> response = new ListResponse<>();
+        final List<BaseRolePermissionResponse> permissionResponses = new ArrayList<>();
+        for (final ApiKeyPairPermission permission : permissions) {
+            BaseRolePermissionResponse permissionResponse = new BaseRolePermissionResponse();
+            permissionResponse.setRule(permission.getRule());
+            permissionResponse.setRulePermission(permission.getPermission());
+            permissionResponse.setDescription(permission.getDescription());
+            permissionResponse.setObjectName("keypermission");
+            permissionResponses.add(permissionResponse);
+        }
+        response.setResponses(permissionResponses);
+        return response;
     }
 }

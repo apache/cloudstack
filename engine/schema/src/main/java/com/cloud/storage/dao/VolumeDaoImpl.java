@@ -383,7 +383,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 
     public VolumeDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.IN);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("dcId", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("pod", AllFieldsSearch.entity().getPodId(), Op.EQ);
@@ -581,17 +581,16 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 
     @Override
     public List<VolumeVO> listVolumesToBeDestroyed() {
-        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("state", Volume.State.Destroy);
-
-        return listBy(sc);
+        return listVolumesToBeDestroyed(null);
     }
 
     @Override
     public List<VolumeVO> listVolumesToBeDestroyed(Date date) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("state", Volume.State.Destroy);
-        sc.setParameters("updateTime", date);
+        sc.setParameters("state", Volume.State.Destroy, Volume.State.Expunging);
+        if (date != null) {
+            sc.setParameters("updateTime", date);
+        }
 
         return listBy(sc);
     }

@@ -94,6 +94,16 @@ router.beforeEach((to, from, next) => {
         }
         store.commit('SET_LOGIN_FLAG', true)
       }
+      // store already loaded
+      if (store.getters.passwordChangeRequired) {
+        if (to.path === '/user/forceChangePassword') {
+          next()
+        } else {
+          next({ path: '/user/forceChangePassword' })
+          NProgress.done()
+        }
+        return
+      }
       if (Object.keys(store.getters.apis).length === 0) {
         const cachedApis = vueProps.$localStorage.get(APIS, {})
         if (Object.keys(cachedApis).length > 0) {
@@ -102,6 +112,19 @@ router.beforeEach((to, from, next) => {
         store
           .dispatch('GetInfo')
           .then(apis => {
+            // Essential for Page Refresh scenarios
+            if (store.getters.passwordChangeRequired) {
+              // Only allow the Change Password page
+              if (to.path === '/user/forceChangePassword') {
+                next()
+              } else {
+                // Redirect everything else (including dashboard, wildcards) to Change Password
+                next({ path: '/user/forceChangePassword' })
+                NProgress.done()
+              }
+              return
+            }
+
             store.dispatch('GenerateRoutes', { apis }).then(() => {
               store.getters.addRouters.map(route => {
                 router.addRoute(route)

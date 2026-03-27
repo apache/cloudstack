@@ -102,7 +102,7 @@ public class FeignConfiguration {
         return template -> {
             logger.info("Feign Request URL: {}", template.url());
             logger.info("HTTP Method: {}", template.method());
-            logger.info("Headers: {}", template.headers());
+            logger.trace("Headers: {}", template.headers());
             if (template.body() != null) {
                 logger.info("Body: {}", new String(template.body(), StandardCharsets.UTF_8));
             }

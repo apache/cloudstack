@@ -1454,7 +1454,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         throw ex;
 
                     }
-                    CallContext.current().setEventDetails("Ip Id: " + ip.getId());
+                    CallContext.current().setEventDetails("IP address ID: " + ip.getUuid());
                     Ip ipAddress = ip.getAddress();
 
                     logger.debug("Got {} to assign for account {} in zone {}", ipAddress, ipOwner, zone);

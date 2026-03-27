@@ -100,7 +100,7 @@ public class UpdateAutoScaleVmProfileCmdTest {
 
         Assert.assertEquals("updateautoscalevmprofileresponse", updateAutoScaleVmProfileCmd.getCommandName());
         Assert.assertEquals(EventTypes.EVENT_AUTOSCALEVMPROFILE_UPDATE, updateAutoScaleVmProfileCmd.getEventType());
-        Assert.assertEquals("Updating AutoScale Instance Profile. Instance Profile Id: " + profileId, updateAutoScaleVmProfileCmd.getEventDescription());
+        Assert.assertEquals("Updating AutoScale Instance Profile with ID: " + profileId, updateAutoScaleVmProfileCmd.getEventDescription());
     }
 
     @Test

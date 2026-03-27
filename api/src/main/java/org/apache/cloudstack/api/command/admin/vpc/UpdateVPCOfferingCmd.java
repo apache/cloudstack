@@ -127,7 +127,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd implements DomainAndZoneI
 
     @Override
     public String getEventDescription() {
-        return "Updating VPC offering id=" + getId();
+        return "Updating VPC offering with ID:" + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

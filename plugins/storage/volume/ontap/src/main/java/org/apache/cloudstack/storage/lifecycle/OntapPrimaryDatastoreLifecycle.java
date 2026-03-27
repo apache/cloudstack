@@ -409,10 +409,11 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
                 for (HostVO host : hosts) {
                     if (host != null) {
                         ip =  host.getStorageIpAddress() != null ? host.getStorageIpAddress().trim() : "";
-                        if (ip.isEmpty() && host.getPrivateIpAddress() != null || host.getPrivateIpAddress().trim().isEmpty()) {
-                            return false;
-                        } else {
-                            ip = ip.isEmpty() ? host.getPrivateIpAddress().trim() : ip;
+                        if (ip.isEmpty()) {
+                            if (host.getPrivateIpAddress() == null || host.getPrivateIpAddress().trim().isEmpty()) {
+                                return false;
+                            }
+                            ip = host.getPrivateIpAddress().trim();
                         }
                     }
                     hostIdentifiers.add(ip);
