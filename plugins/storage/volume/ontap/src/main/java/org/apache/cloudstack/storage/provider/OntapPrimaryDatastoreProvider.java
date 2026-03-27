@@ -28,7 +28,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvid
 import org.apache.cloudstack.storage.driver.OntapPrimaryDatastoreDriver;
 import org.apache.cloudstack.storage.lifecycle.OntapPrimaryDatastoreLifecycle;
 import org.apache.cloudstack.storage.listener.OntapHostListener;
-import org.apache.cloudstack.storage.utils.Constants;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -66,7 +66,7 @@ public class OntapPrimaryDatastoreProvider implements PrimaryDataStoreProvider {
     @Override
     public String getName() {
         s_logger.trace("OntapPrimaryDatastoreProvider: getName: Called");
-        return Constants.ONTAP_PLUGIN_NAME;
+        return OntapStorageConstants.ONTAP_PLUGIN_NAME;
     }
 
     @Override

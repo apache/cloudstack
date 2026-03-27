@@ -33,8 +33,8 @@ import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
-import org.apache.cloudstack.storage.utils.Constants;
-import org.apache.cloudstack.storage.utils.Utility;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
+import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,7 +50,7 @@ public class UnifiedSANStrategy extends SANStrategy {
 
     public UnifiedSANStrategy(OntapStorage ontapStorage) {
         super(ontapStorage);
-        String baseURL = Constants.HTTPS + ontapStorage.getManagementLIF();
+        String baseURL = OntapStorageConstants.HTTPS + ontapStorage.getManagementLIF();
         this.feignClientFactory = new FeignClientFactory();
         this.sanFeignClient = feignClientFactory.createClient(SANFeignClient.class, baseURL);
     }
@@ -97,15 +97,15 @@ public class UnifiedSANStrategy extends SANStrategy {
             Map<String, String> dataStoreDetails = accessGroup.getPrimaryDataStoreInfo().getDetails();
             s_logger.debug("createAccessGroup: Successfully fetched datastore details.");
 
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
 
             Igroup igroupRequest = new Igroup();
             List<String> hostsIdentifier = new ArrayList<>();
-            String svmName = dataStoreDetails.get(Constants.SVM_NAME);
-            igroupName = Utility.getIgroupName(svmName, accessGroup.getScope().getScopeType(), accessGroup.getScope().getScopeId());
+            String svmName = dataStoreDetails.get(OntapStorageConstants.SVM_NAME);
+            igroupName = OntapStorageUtils.getIgroupName(svmName, accessGroup.getScope().getScopeType(), accessGroup.getScope().getScopeId());
             Hypervisor.HypervisorType hypervisorType = accessGroup.getPrimaryDataStoreInfo().getHypervisor();
 
-            ProtocolType protocol = ProtocolType.valueOf(dataStoreDetails.get(Constants.PROTOCOL));
+            ProtocolType protocol = ProtocolType.valueOf(dataStoreDetails.get(OntapStorageConstants.PROTOCOL));
             if (accessGroup.getHostsToConnect() == null || accessGroup.getHostsToConnect().isEmpty()) {
                 throw new CloudRuntimeException("createAccessGroup : Failed to create Igroup, no hosts to connect provided in the request");
             }
@@ -184,22 +184,22 @@ public class UnifiedSANStrategy extends SANStrategy {
         }
 
         try {
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
 
             String svmName = storage.getSvmName();
 
             String igroupName;
             if (primaryDataStoreInfo.getClusterId() != null) {
-                igroupName = Utility.getIgroupName(svmName, com.cloud.storage.ScopeType.CLUSTER, primaryDataStoreInfo.getClusterId());
+                igroupName = OntapStorageUtils.getIgroupName(svmName, com.cloud.storage.ScopeType.CLUSTER, primaryDataStoreInfo.getClusterId());
                 s_logger.info("deleteAccessGroup: Deleting cluster-scoped iGroup '{}'", igroupName);
             } else {
-                igroupName = Utility.getIgroupName(svmName, com.cloud.storage.ScopeType.ZONE, primaryDataStoreInfo.getDataCenterId());
+                igroupName = OntapStorageUtils.getIgroupName(svmName, com.cloud.storage.ScopeType.ZONE, primaryDataStoreInfo.getDataCenterId());
                 s_logger.info("deleteAccessGroup: Deleting zone-scoped iGroup '{}'", igroupName);
             }
 
             Map<String, Object> igroupParams = Map.of(
-                    Constants.SVM_DOT_NAME, svmName,
-                    Constants.NAME, igroupName
+                    OntapStorageConstants.SVM_DOT_NAME, svmName,
+                    OntapStorageConstants.NAME, igroupName
             );
 
             try {
@@ -240,7 +240,7 @@ public class UnifiedSANStrategy extends SANStrategy {
     private boolean validateProtocolSupportAndFetchHostsIdentifier(List<HostVO> hosts, ProtocolType protocolType, List<String> hostIdentifiers) {
         switch (protocolType) {
             case ISCSI:
-                String protocolPrefix = Constants.IQN;
+                String protocolPrefix = OntapStorageConstants.IQN;
                 for (HostVO host : hosts) {
                     if (host == null || host.getStorageUrl() == null || host.getStorageUrl().trim().isEmpty()
                             || !host.getStorageUrl().startsWith(protocolPrefix)) {
@@ -268,15 +268,15 @@ public class UnifiedSANStrategy extends SANStrategy {
             s_logger.error("getAccessGroup: get Igroup failed. Invalid request: {}", values);
             throw new CloudRuntimeException("getAccessGroup : get Igroup Failed, invalid request");
         }
-        String svmName = values.get(Constants.SVM_DOT_NAME);
-        String igroupName = values.get(Constants.NAME);
+        String svmName = values.get(OntapStorageConstants.SVM_DOT_NAME);
+        String igroupName = values.get(OntapStorageConstants.NAME);
         if (svmName == null || igroupName == null || svmName.isEmpty() || igroupName.isEmpty()) {
             s_logger.error("getAccessGroup: get Igroup failed. Invalid svm:{} or igroup name: {}", svmName, igroupName);
             throw new CloudRuntimeException("getAccessGroup : Failed to get Igroup, invalid request");
         }
         try {
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
-            Map<String, Object> queryParams = Map.of(Constants.SVM_DOT_NAME, svmName, Constants.NAME, igroupName, Constants.FIELDS, Constants.INITIATORS);
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            Map<String, Object> queryParams = Map.of(OntapStorageConstants.SVM_DOT_NAME, svmName, OntapStorageConstants.NAME, igroupName, OntapStorageConstants.FIELDS, OntapStorageConstants.INITIATORS);
             OntapResponse<Igroup> igroupResponse = sanFeignClient.getIgroupResponse(authHeader, queryParams);
             if (igroupResponse == null || igroupResponse.getRecords() == null || igroupResponse.getRecords().isEmpty()) {
                 s_logger.warn("getAccessGroup: Igroup '{}' not found on SVM '{}'. Returning null.", igroupName, svmName);

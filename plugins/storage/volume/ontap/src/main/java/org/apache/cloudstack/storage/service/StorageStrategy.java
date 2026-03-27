@@ -17,7 +17,7 @@
  * under the License.
  */
 
-        package org.apache.cloudstack.storage.service;
+package org.apache.cloudstack.storage.service;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import feign.FeignException;
@@ -41,8 +41,8 @@ import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
-import org.apache.cloudstack.storage.utils.Constants;
-import org.apache.cloudstack.storage.utils.Utility;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
+import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -68,7 +68,7 @@ public abstract class StorageStrategy {
 
     public StorageStrategy(OntapStorage ontapStorage) {
         storage = ontapStorage;
-        String baseURL = Constants.HTTPS + storage.getManagementLIF();
+        String baseURL = OntapStorageConstants.HTTPS + storage.getManagementLIF();
         s_logger.info("Initializing StorageStrategy with base URL: " + baseURL);
         this.feignClientFactory = new FeignClientFactory();
         this.aggregateFeignClient = feignClientFactory.createClient(AggregateFeignClient.class, baseURL);
@@ -82,13 +82,13 @@ public abstract class StorageStrategy {
     public boolean connect() {
         s_logger.info("Attempting to connect to ONTAP cluster at " + storage.getManagementLIF() + " and validate SVM " +
                 storage.getSvmName() + ", protocol " + storage.getProtocol());
-        String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
         String svmName = storage.getSvmName();
         try {
             Svm svm = new Svm();
             s_logger.info("Fetching the SVM details...");
-            Map<String, Object> queryParams = Map.of(Constants.NAME, svmName, Constants.FIELDS, Constants.AGGREGATES +
-                    Constants.COMMA + Constants.STATE);
+            Map<String, Object> queryParams = Map.of(OntapStorageConstants.NAME, svmName, OntapStorageConstants.FIELDS, OntapStorageConstants.AGGREGATES +
+                    OntapStorageConstants.COMMA + OntapStorageConstants.STATE);
             OntapResponse<Svm> svms = svmFeignClient.getSvmResponse(queryParams, authHeader);
             if (svms != null && svms.getRecords() != null && !svms.getRecords().isEmpty()) {
                 svm = svms.getRecords().get(0);
@@ -98,14 +98,14 @@ public abstract class StorageStrategy {
             }
 
             s_logger.info("Validating SVM state and protocol settings...");
-            if (!Objects.equals(svm.getState(), Constants.RUNNING)) {
+            if (!Objects.equals(svm.getState(), OntapStorageConstants.RUNNING)) {
                 s_logger.error("SVM " + svmName + " is not in running state.");
                 return false;
             }
-            if (Objects.equals(storage.getProtocol(), Constants.NFS) && !svm.getNfsEnabled()) {
+            if (Objects.equals(storage.getProtocol(), OntapStorageConstants.NFS) && !svm.getNfsEnabled()) {
                 s_logger.error("NFS protocol is not enabled on SVM " + svmName);
                 return false;
-            } else if (Objects.equals(storage.getProtocol(), Constants.ISCSI) && !svm.getIscsiEnabled()) {
+            } else if (Objects.equals(storage.getProtocol(), OntapStorageConstants.ISCSI) && !svm.getIscsiEnabled()) {
                 s_logger.error("iSCSI protocol is not enabled on SVM " + svmName);
                 return false;
             }
@@ -155,13 +155,13 @@ public abstract class StorageStrategy {
             throw new CloudRuntimeException("Invalid volume size provided: " + size);
         }
 
-        String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
 
         Volume volumeRequest = new Volume();
         Svm svm = new Svm();
         svm.setName(svmName);
         Nas nas = new Nas();
-        nas.setPath(Constants.SLASH + volumeName);
+        nas.setPath(OntapStorageConstants.SLASH + volumeName);
 
         volumeRequest.setName(volumeName);
         volumeRequest.setSvm(svm);
@@ -231,7 +231,7 @@ public abstract class StorageStrategy {
             s_logger.error("Exception while creating volume: ", e);
             throw new CloudRuntimeException("Failed to create volume: " + e.getMessage());
         }
-        OntapResponse<Volume> volumesResponse = volumeFeignClient.getAllVolumes(authHeader, Map.of(Constants.NAME, volumeName));
+        OntapResponse<Volume> volumesResponse = volumeFeignClient.getAllVolumes(authHeader, Map.of(OntapStorageConstants.NAME, volumeName));
         if (volumesResponse == null || volumesResponse.getRecords() == null || volumesResponse.getRecords().isEmpty()) {
             s_logger.error("Volume " + volumeName + " not found after creation.");
             throw new CloudRuntimeException("Volume " + volumeName + " not found after creation.");
@@ -246,7 +246,7 @@ public abstract class StorageStrategy {
         }
         s_logger.info("Volume created successfully: " + volumeName);
         try {
-            Map<String, Object> queryParams = Map.of(Constants.NAME, volumeName);
+            Map<String, Object> queryParams = Map.of(OntapStorageConstants.NAME, volumeName);
             s_logger.debug("Fetching volume details for: " + volumeName);
 
             OntapResponse<Volume> ontapVolume = volumeFeignClient.getVolume(authHeader, queryParams);
@@ -284,7 +284,7 @@ public abstract class StorageStrategy {
 
     public void deleteStorageVolume(Volume volume) {
         s_logger.info("Deleting ONTAP volume by name: " + volume.getName() + " and uuid: " + volume.getUuid());
-        String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
         try {
             JobResponse jobResponse = volumeFeignClient.deleteVolume(authHeader, volume.getUuid());
             Boolean jobSucceeded = jobPollForSuccess(jobResponse.getJob().getUuid());
@@ -305,14 +305,14 @@ public abstract class StorageStrategy {
     }
 
     public String getStoragePath() {
-        String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
         String targetIqn = null;
         try {
             if (storage.getProtocol() == ProtocolType.ISCSI) {
                 s_logger.info("Fetching iSCSI target IQN for SVM: {}", storage.getSvmName());
 
                 Map<String, Object> queryParams = new HashMap<>();
-                queryParams.put(Constants.SVM_DOT_NAME, storage.getSvmName());
+                queryParams.put(OntapStorageConstants.SVM_DOT_NAME, storage.getSvmName());
                 queryParams.put("fields", "enabled,target");
                 queryParams.put("max_records", "1");
 
@@ -345,25 +345,25 @@ public abstract class StorageStrategy {
     }
 
     public String getNetworkInterface() {
-        String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
         try {
             Map<String, Object> queryParams = new HashMap<>();
-            queryParams.put(Constants.SVM_DOT_NAME, storage.getSvmName());
+            queryParams.put(OntapStorageConstants.SVM_DOT_NAME, storage.getSvmName());
             if (storage.getProtocol() != null) {
                 switch (storage.getProtocol()) {
                     case NFS3:
-                        queryParams.put(Constants.SERVICES, Constants.DATA_NFS);
+                        queryParams.put(OntapStorageConstants.SERVICES, OntapStorageConstants.DATA_NFS);
                         break;
                     case ISCSI:
-                        queryParams.put(Constants.SERVICES, Constants.DATA_ISCSI);
+                        queryParams.put(OntapStorageConstants.SERVICES, OntapStorageConstants.DATA_ISCSI);
                         break;
                     default:
                         s_logger.error("Unsupported protocol: " + storage.getProtocol());
                         throw new CloudRuntimeException("Unsupported protocol: " + storage.getProtocol());
                 }
             }
-            queryParams.put(Constants.FIELDS, Constants.IP_ADDRESS);
-            queryParams.put(Constants.RETURN_RECORDS, Constants.TRUE);
+            queryParams.put(OntapStorageConstants.FIELDS, OntapStorageConstants.IP_ADDRESS);
+            queryParams.put(OntapStorageConstants.RETURN_RECORDS, OntapStorageConstants.TRUE);
             OntapResponse<IpInterface> response =
                     networkFeignClient.getNetworkIpInterfaces(authHeader, queryParams);
             if (response != null && response.getRecords() != null && !response.getRecords().isEmpty()) {
@@ -419,9 +419,9 @@ public abstract class StorageStrategy {
         int jobRetryCount = 0;
         Job jobResp = null;
         try {
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
-            while (jobResp == null || !jobResp.getState().equals(Constants.JOB_SUCCESS)) {
-                if (jobRetryCount >= Constants.JOB_MAX_RETRIES) {
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            while (jobResp == null || !jobResp.getState().equals(OntapStorageConstants.JOB_SUCCESS)) {
+                if (jobRetryCount >= OntapStorageConstants.JOB_MAX_RETRIES) {
                     s_logger.error("Job did not complete within expected time.");
                     throw new CloudRuntimeException("Job did not complete within expected time.");
                 }
@@ -430,7 +430,7 @@ public abstract class StorageStrategy {
                     jobResp = jobFeignClient.getJobByUUID(authHeader, jobUUID);
                     if (jobResp == null) {
                         s_logger.warn("Job with UUID " + jobUUID + " not found. Retrying...");
-                    } else if (jobResp.getState().equals(Constants.JOB_FAILURE)) {
+                    } else if (jobResp.getState().equals(OntapStorageConstants.JOB_FAILURE)) {
                         throw new CloudRuntimeException("Job failed with error: " + jobResp.getMessage());
                     }
                 } catch (FeignException.FeignClientException e) {
@@ -438,9 +438,9 @@ public abstract class StorageStrategy {
                 }
 
                 jobRetryCount++;
-                Thread.sleep(Constants.CREATE_VOLUME_CHECK_SLEEP_TIME);
+                Thread.sleep(OntapStorageConstants.CREATE_VOLUME_CHECK_SLEEP_TIME);
             }
-            if (jobResp == null || !jobResp.getState().equals(Constants.JOB_SUCCESS)) {
+            if (jobResp == null || !jobResp.getState().equals(OntapStorageConstants.JOB_SUCCESS)) {
                 return false;
             }
         } catch (FeignException.FeignClientException e) {

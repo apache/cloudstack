@@ -32,9 +32,9 @@ import org.springframework.util.Base64Utils;
 
 import java.util.Map;
 
-public class Utility {
+public class OntapStorageUtils {
 
-    private static final Logger s_logger = LogManager.getLogger(Utility.class);
+    private static final Logger s_logger = LogManager.getLogger(OntapStorageUtils.class);
 
     private static final String BASIC = "Basic";
     private static final String AUTH_HEADER_COLON = ":";
@@ -49,27 +49,27 @@ public class Utility {
             s_logger.error("getStrategyByStoragePoolDetails: Storage pool details are null or empty");
             throw new CloudRuntimeException("getStrategyByStoragePoolDetails: Storage pool details are null or empty");
         }
-        String protocol = details.get(Constants.PROTOCOL);
-        OntapStorage ontapStorage = new OntapStorage(details.get(Constants.USERNAME), details.get(Constants.PASSWORD),
-                details.get(Constants.MANAGEMENT_LIF), details.get(Constants.SVM_NAME), Long.parseLong(details.get(Constants.SIZE)),
+        String protocol = details.get(OntapStorageConstants.PROTOCOL);
+        OntapStorage ontapStorage = new OntapStorage(details.get(OntapStorageConstants.USERNAME), details.get(OntapStorageConstants.PASSWORD),
+                details.get(OntapStorageConstants.MANAGEMENT_LIF), details.get(OntapStorageConstants.SVM_NAME), Long.parseLong(details.get(OntapStorageConstants.SIZE)),
                 ProtocolType.valueOf(protocol),
-                Boolean.parseBoolean(details.get(Constants.IS_DISAGGREGATED)));
+                Boolean.parseBoolean(details.get(OntapStorageConstants.IS_DISAGGREGATED)));
         StorageStrategy storageStrategy = StorageProviderFactory.getStrategy(ontapStorage);
         boolean isValid = storageStrategy.connect();
         if (isValid) {
-            s_logger.info("Connection to Ontap SVM [{}] successful", details.get(Constants.SVM_NAME));
+            s_logger.info("Connection to Ontap SVM [{}] successful", details.get(OntapStorageConstants.SVM_NAME));
             return storageStrategy;
         } else {
-            s_logger.error("getStrategyByStoragePoolDetails: Connection to Ontap SVM [" + details.get(Constants.SVM_NAME) + "] failed");
-            throw new CloudRuntimeException("getStrategyByStoragePoolDetails: Connection to Ontap SVM [" + details.get(Constants.SVM_NAME) + "] failed");
+            s_logger.error("getStrategyByStoragePoolDetails: Connection to Ontap SVM [" + details.get(OntapStorageConstants.SVM_NAME) + "] failed");
+            throw new CloudRuntimeException("getStrategyByStoragePoolDetails: Connection to Ontap SVM [" + details.get(OntapStorageConstants.SVM_NAME) + "] failed");
         }
     }
 
     public static String getIgroupName(String svmName, ScopeType scopeType, Long scopeId) {
-        return Constants.CS + Constants.UNDERSCORE + svmName + Constants.UNDERSCORE + scopeType.toString().toLowerCase() + Constants.UNDERSCORE + scopeId;
+        return OntapStorageConstants.CS + OntapStorageConstants.UNDERSCORE + svmName + OntapStorageConstants.UNDERSCORE + scopeType.toString().toLowerCase() + OntapStorageConstants.UNDERSCORE + scopeId;
     }
 
     public static String generateExportPolicyName(String svmName, String volumeName){
-        return Constants.EXPORT + Constants.HYPHEN + svmName + Constants.HYPHEN + volumeName;
+        return OntapStorageConstants.EXPORT + OntapStorageConstants.HYPHEN + svmName + OntapStorageConstants.HYPHEN + volumeName;
     }
 }
