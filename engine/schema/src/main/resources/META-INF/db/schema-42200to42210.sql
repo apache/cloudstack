@@ -42,4 +42,4 @@ SET value = 'Hello {{username}}!\nYou have requested to reset your password. Ple
 WHERE value IN (
     'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\nhttp://{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team',
     'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\n{{{domainUrl}}}{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team'
-)
+);
