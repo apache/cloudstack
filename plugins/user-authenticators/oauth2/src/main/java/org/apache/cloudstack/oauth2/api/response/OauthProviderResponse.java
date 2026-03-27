@@ -58,11 +58,11 @@ public class OauthProviderResponse extends BaseResponse {
     private String redirectUri;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "UUID of the domain the provider belongs to (empty for global)")
+    @Param(description = "UUID of the domain the provider belongs to (empty for global)", since = "4.23.0")
     private String domainUuid;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "name of the domain the provider belongs to (empty for global)")
+    @Param(description = "name of the domain the provider belongs to (empty for global)", since = "4.23.0")
     private String domainName;
 
     @SerializedName(ApiConstants.ENABLED)

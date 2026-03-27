@@ -64,11 +64,11 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
     private String provider;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
-            description = "List OAuth providers for a specific domain. Use -1 for global providers only.")
+            description = "List OAuth providers for a specific domain. Use -1 for global providers only.", since = "4.23.0")
     private Long domainId;
 
     @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
-            description = "Domain path for domain-specific OAuth provider lookup")
+            description = "Domain path for domain-specific OAuth provider lookup", since = "4.23.0")
     private String domainPath;
 
     /////////////////////////////////////////////////////

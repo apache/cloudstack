@@ -60,7 +60,7 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     private String redirectUri;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
-            description = "Domain ID for domain-specific OAuth provider. If not provided, registers as global provider")
+            description = "Domain ID for domain-specific OAuth provider. If not provided, registers as global provider", since = "4.23.0")
     private Long domainId;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,

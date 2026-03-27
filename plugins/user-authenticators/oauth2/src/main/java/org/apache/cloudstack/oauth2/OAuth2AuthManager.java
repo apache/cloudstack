@@ -34,7 +34,7 @@ public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableS
     Long GLOBAL_DOMAIN_ID = -1L;
 
     public static ConfigKey<Boolean> OAuth2IsPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "oauth2.enabled", "false",
-            "Indicates whether OAuth plugin is enabled or not. Can be configured at domain level.", true, ConfigKey.Scope.Domain);
+            "Indicates whether OAuth plugin is enabled or not. This can be configured at domain level.", true, ConfigKey.Scope.Domain);
     public static final ConfigKey<String> OAuth2Plugins = new ConfigKey<String>("Advanced", String.class, "oauth2.plugins", "google,github",
             "List of OAuth plugins", true);
     public static final ConfigKey<String> OAuth2PluginsExclude = new ConfigKey<String>("Advanced", String.class, "oauth2.plugins.exclude", "",

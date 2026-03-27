@@ -60,11 +60,11 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
     private String secretCode;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
-            description = "Domain ID for domain-specific OAuth provider lookup")
+            description = "Domain ID for domain-specific OAuth provider lookup", since = "4.23.0")
     private Long domainId;
 
     @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
-            description = "Domain path for domain-specific OAuth provider lookup")
+            description = "Domain path for domain-specific OAuth provider lookup", since = "4.23.0")
     private String domainPath;
 
     /////////////////////////////////////////////////////
