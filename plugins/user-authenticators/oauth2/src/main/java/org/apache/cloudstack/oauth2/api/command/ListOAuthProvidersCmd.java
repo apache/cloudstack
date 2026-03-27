@@ -145,7 +145,10 @@ public class ListOAuthProvidersCmd extends BaseListCmd implements APIAuthenticat
             Domain domain = result.getDomainId() != null ? ApiDBUtils.findDomainById(result.getDomainId()) : null;
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
                     result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), domain);
-            if (Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, result.getDomainId(), true)) && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
+            boolean oauthEnabled = result.getDomainId() == null
+                    ? Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.value())
+                    : Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, result.getDomainId(), true));
+            if (oauthEnabled && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {
                 r.setEnabled(false);
