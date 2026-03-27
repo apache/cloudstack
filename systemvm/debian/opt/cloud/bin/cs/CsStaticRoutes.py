@@ -20,6 +20,7 @@
 import logging
 from . import CsHelper
 from .CsDatabag import CsDataBag
+from .CsRoute import CsRoute
 
 
 class CsStaticRoutes(CsDataBag):
@@ -31,13 +32,46 @@ class CsStaticRoutes(CsDataBag):
                 continue
             self.__update(self.dbag[item])
 
+
+
     def __update(self, route):
+        network = route['network']
+        gateway = route['gateway']
+
         if route['revoke']:
-            command = "ip route del %s via %s" % (route['network'], route['gateway'])
+            # Delete from main table
+            command = "ip route del %s via %s" % (network, gateway)
             CsHelper.execute(command)
+
+            # Delete from PBR table if applicable
+            device = CsHelper.find_device_for_gateway(self.config, gateway)
+            if device:
+                cs_route = CsRoute()
+                table_name = cs_route.get_tablename(device)
+                command = "ip route del %s via %s table %s" % (network, gateway, table_name)
+                CsHelper.execute(command)
+                logging.info("Deleted static route %s via %s from PBR table %s" % (network, gateway, table_name))
         else:
-            command = "ip route show | grep %s | awk '{print $1, $3}'" % route['network']
+            # Add to main table (existing logic)
+            command = "ip route show | grep %s | awk '{print $1, $3}'" % network
             result = CsHelper.execute(command)
             if not result:
-                route_command = "ip route add %s via %s" % (route['network'], route['gateway'])
+                route_command = "ip route add %s via %s" % (network, gateway)
                 CsHelper.execute(route_command)
+                logging.info("Added static route %s via %s to main table" % (network, gateway))
+
+            # Add to PBR table if applicable
+            device = CsHelper.find_device_for_gateway(self.config, gateway)
+            if device:
+                cs_route = CsRoute()
+                table_name = cs_route.get_tablename(device)
+                # Check if route already exists in the PBR table
+                check_command = "ip route show table %s | grep %s | awk '{print $1, $3}'" % (table_name, network)
+                result = CsHelper.execute(check_command)
+                if not result:
+                    # Add route to the interface-specific table
+                    route_command = "ip route add %s via %s dev %s table %s" % (network, gateway, device, table_name)
+                    CsHelper.execute(route_command)
+                    logging.info("Added static route %s via %s to PBR table %s" % (network, gateway, table_name))
+            else:
+                logging.info("Static route %s via %s added to main table only (no matching interface found for PBR table)" % (network, gateway))
