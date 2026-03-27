@@ -1352,10 +1352,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<String> managedVms = new ArrayList<>(additionalNameFilters);
         managedVms.addAll(getHostsManagedVms(hosts));
 
-        List<String> resourceLimitHostTags = resourceLimitService.getResourceLimitHostTags(serviceOffering, template);
-        try (CheckedReservation vmReservation = new CheckedReservation(owner, Resource.ResourceType.user_vm, resourceLimitHostTags, 1L, reservationDao, resourceLimitService);
-             CheckedReservation cpuReservation = new CheckedReservation(owner, Resource.ResourceType.cpu, resourceLimitHostTags, Long.valueOf(serviceOffering.getCpu()), reservationDao, resourceLimitService);
-             CheckedReservation memReservation = new CheckedReservation(owner, Resource.ResourceType.memory, resourceLimitHostTags, Long.valueOf(serviceOffering.getRamSize()), reservationDao, resourceLimitService)) {
+        try {
 
         ActionEventUtils.onStartedActionEvent(userId, owner.getId(), EventTypes.EVENT_VM_IMPORT,
                 cmd.getEventDescription(), null, null, true, 0);
@@ -1497,7 +1494,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                          String hostName, Account caller, Account owner, long userId,
                                                          ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
                                                          Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                         Map<String, String> details, Boolean migrateAllowed, List<String> managedVms, boolean forced) {
+                                                         Map<String, String> details, Boolean migrateAllowed, List<String> managedVms, boolean forced) throws ResourceAllocationException {
         UserVm userVm = null;
         for (HostVO host : hosts) {
             HashMap<String, UnmanagedInstanceTO> unmanagedInstances = getUnmanagedInstancesForHost(host, instanceName, managedVms);
@@ -1541,11 +1538,18 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
                     template.setGuestOSId(guestOSHypervisor.getGuestOsId());
                 }
-                userVm = importVirtualMachineInternal(unmanagedInstance, instanceName, zone, cluster, host,
-                        template, displayName, hostName, CallContext.current().getCallingAccount(), owner, userId,
-                        serviceOffering, dataDiskOfferingMap,
-                        nicNetworkMap, nicIpAddressMap,
-                        details, migrateAllowed, forced, true);
+
+                List<Reserver> reservations = new ArrayList<>();
+                try {
+                    checkVmResourceLimitsForUnmanagedInstanceImport(owner, unmanagedInstance, serviceOffering, template, reservations);
+                    userVm = importVirtualMachineInternal(unmanagedInstance, instanceName, zone, cluster, host,
+                            template, displayName, hostName, CallContext.current().getCallingAccount(), owner, userId,
+                            serviceOffering, dataDiskOfferingMap,
+                            nicNetworkMap, nicIpAddressMap,
+                            details, migrateAllowed, forced, true);
+                } finally {
+                    ReservationHelper.closeAll(reservations);
+                }
                 break;
             }
             if (userVm != null) {
@@ -1553,6 +1557,36 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             }
         }
         return userVm;
+    }
+
+    protected void checkVmResourceLimitsForUnmanagedInstanceImport(Account owner, UnmanagedInstanceTO unmanagedInstance, ServiceOfferingVO serviceOffering, VMTemplateVO template, List<Reserver> reservations) throws ResourceAllocationException {
+        // When importing an unmanaged instance, the amount of CPUs and memory is obtained from the hypervisor unless powered off
+        // and not using a dynamic offering, unlike the external VM import that always obtains it from the compute offering
+        Integer cpu = serviceOffering.getCpu();
+        Integer memory = serviceOffering.getRamSize();
+
+        if (serviceOffering.isDynamic() || !UnmanagedInstanceTO.PowerState.PowerOff.equals(unmanagedInstance.getPowerState())) {
+            cpu = unmanagedInstance.getCpuCores();
+            memory = unmanagedInstance.getMemory();
+        }
+
+        if (cpu == null || cpu == 0) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("CPU cores [%s] is not valid for importing VM [%s].", cpu, unmanagedInstance.getName()));
+        }
+        if (memory == null || memory == 0) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Memory [%s] is not valid for importing VM [%s].", memory, unmanagedInstance.getName()));
+        }
+
+        List<String> resourceLimitHostTags = resourceLimitService.getResourceLimitHostTags(serviceOffering, template);
+
+        CheckedReservation vmReservation = new CheckedReservation(owner, Resource.ResourceType.user_vm, resourceLimitHostTags, 1L, reservationDao, resourceLimitService);
+        reservations.add(vmReservation);
+
+        CheckedReservation cpuReservation = new CheckedReservation(owner, Resource.ResourceType.cpu, resourceLimitHostTags, cpu.longValue(), reservationDao, resourceLimitService);
+        reservations.add(cpuReservation);
+
+        CheckedReservation memReservation = new CheckedReservation(owner, Resource.ResourceType.memory, resourceLimitHostTags, memory.longValue(), reservationDao, resourceLimitService);
+        reservations.add(memReservation);
     }
 
     private Pair<UnmanagedInstanceTO, Boolean> getSourceVmwareUnmanagedInstance(String vcenter, String datacenterName, String username,
@@ -1582,7 +1616,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                                                           Account caller, Account owner, long userId,
                                                           ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap,
                                                           Map<String, Long> nicNetworkMap, Map<String, Network.IpAddresses> nicIpAddressMap,
-                                                          Map<String, String> details, ImportVmCmd cmd, boolean forced) {
+                                                          Map<String, String> details, ImportVmCmd cmd, boolean forced) throws ResourceAllocationException {
         Long existingVcenterId = cmd.getExistingVcenterId();
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
@@ -1620,6 +1654,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         UnmanagedInstanceTO sourceVMwareInstance = null;
         DataStoreTO temporaryConvertLocation = null;
         String ovfTemplateOnConvertLocation = null;
+        List<Reserver> reservations = new ArrayList<>();
+
         try {
             HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId);
             HostVO importHost = selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
@@ -1634,6 +1670,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             Pair<UnmanagedInstanceTO, Boolean> sourceInstanceDetails = getSourceVmwareUnmanagedInstance(vcenter, datacenterName, username, password, clusterName, sourceHostName, sourceVMName);
             sourceVMwareInstance = sourceInstanceDetails.first();
             isClonedInstance = sourceInstanceDetails.second();
+
+            // Ensure that the configured resource limits will not be exceeded before beginning the conversion process
+            checkVmResourceLimitsForUnmanagedInstanceImport(owner, sourceVMwareInstance, serviceOffering, template, reservations);
+
             boolean isWindowsVm = sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
             if (isWindowsVm) {
                 checkConversionSupportOnHost(convertHost, sourceVMName, true);
@@ -1681,6 +1721,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (temporaryConvertLocation != null  && StringUtils.isNotBlank(ovfTemplateOnConvertLocation)) {
                 removeTemplate(temporaryConvertLocation, ovfTemplateOnConvertLocation);
             }
+            ReservationHelper.closeAll(reservations);
         }
     }
 
@@ -2400,10 +2441,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         UserVm userVm = null;
 
-        List<String> resourceLimitHostTags = resourceLimitService.getResourceLimitHostTags(serviceOffering, template);
-        try (CheckedReservation vmReservation = new CheckedReservation(owner, Resource.ResourceType.user_vm, resourceLimitHostTags, 1L, reservationDao, resourceLimitService);
-             CheckedReservation cpuReservation = new CheckedReservation(owner, Resource.ResourceType.cpu, resourceLimitHostTags, Long.valueOf(serviceOffering.getCpu()), reservationDao, resourceLimitService);
-             CheckedReservation memReservation = new CheckedReservation(owner, Resource.ResourceType.memory, resourceLimitHostTags, Long.valueOf(serviceOffering.getRamSize()), reservationDao, resourceLimitService)) {
+        try {
 
         if (ImportSource.EXTERNAL == importSource) {
             String username = cmd.getUsername();
@@ -2466,6 +2504,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
         List<Reserver> reservations = new ArrayList<>();
         try {
+            checkVmResourceLimitsForExternalKvmVmImport(owner, serviceOffering, (VMTemplateVO) template, details, reservations);
             checkVolumeResourceLimitsForExternalKvmVmImport(owner, rootDisk, dataDisks, diskOffering, dataDiskOfferingMap, reservations);
 
             // Check NICs and supplied networks
@@ -2630,24 +2669,20 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         profiles.add(nicProfile);
         networkNicMap.put(network.getUuid(), profiles);
 
+        List<Reserver> reservations = new ArrayList<>();
         try {
+            checkVmResourceLimitsForExternalKvmVmImport(owner, serviceOffering, (VMTemplateVO) template, details, reservations);
             userVm = userVmManager.importVM(zone, null, template, null, displayName, owner,
                     null, caller, true, null, owner.getAccountId(), userId,
                     serviceOffering, null, hostName,
                     Hypervisor.HypervisorType.KVM, allDetails, powerState, networkNicMap);
-        } catch (InsufficientCapacityException ice) {
-            logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
-            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
-        }
-        if (userVm == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
-        }
 
-        DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
+            if (userVm == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to import vm name: %s", instanceName));
+            }
 
-        List<Reserver> reservations = new ArrayList<>();
-        List<String> resourceLimitStorageTags = resourceLimitService.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering);
-        try {
+            DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
+            List<String> resourceLimitStorageTags = resourceLimitService.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering);
             CheckedReservation volumeReservation = new CheckedReservation(owner, Resource.ResourceType.volume, resourceLimitStorageTags,
                     CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? 1L : 0L, reservationDao, resourceLimitService);
             reservations.add(volumeReservation);
@@ -2720,11 +2755,49 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             publishVMUsageUpdateResourceCount(userVm, dummyOffering, template);
             return userVm;
 
+        } catch (InsufficientCapacityException ice) { // This will be thrown by com.cloud.vm.UserVmService.importVM
+            logger.error(String.format("Failed to import vm name: %s", instanceName), ice);
+            throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ice.getMessage());
         } catch (ResourceAllocationException e) {
             cleanupFailedImportVM(userVm);
             throw e;
         } finally {
             ReservationHelper.closeAll(reservations);
+        }
+    }
+
+    protected void checkVmResourceLimitsForExternalKvmVmImport(Account owner, ServiceOfferingVO serviceOffering, VMTemplateVO template, Map<String, String> details, List<Reserver> reservations) throws ResourceAllocationException {
+        // When importing an external VM, the amount of CPUs and memory is always obtained from the compute offering,
+        // unlike the unmanaged instance import that obtains it from the hypervisor unless the VM is powered off and the offering is fixed
+        Integer cpu = serviceOffering.getCpu();
+        Integer memory = serviceOffering.getRamSize();
+
+        if (serviceOffering.isDynamic()) {
+            cpu = getDetailAsInteger(VmDetailConstants.CPU_NUMBER, details);
+            memory = getDetailAsInteger(VmDetailConstants.MEMORY, details);
+        }
+
+        List<String> resourceLimitHostTags = resourceLimitService.getResourceLimitHostTags(serviceOffering, template);
+
+        CheckedReservation vmReservation = new CheckedReservation(owner, Resource.ResourceType.user_vm, resourceLimitHostTags, 1L, reservationDao, resourceLimitService);
+        reservations.add(vmReservation);
+
+        CheckedReservation cpuReservation = new CheckedReservation(owner, Resource.ResourceType.cpu, resourceLimitHostTags, cpu.longValue(), reservationDao, resourceLimitService);
+        reservations.add(cpuReservation);
+
+        CheckedReservation memReservation = new CheckedReservation(owner, Resource.ResourceType.memory, resourceLimitHostTags, memory.longValue(), reservationDao, resourceLimitService);
+        reservations.add(memReservation);
+    }
+
+    protected Integer getDetailAsInteger(String key, Map<String, String> details) {
+        String detail = details.get(key);
+        if (detail == null) {
+            throw new InvalidParameterValueException(String.format("Detail '%s' must be provided.", key));
+        }
+        try {
+            return Integer.valueOf(detail);
+        } catch (NumberFormatException e) {
+            throw new InvalidParameterValueException(String.format("Please provide a valid integer value for detail '%s'.", key));
         }
     }
 
