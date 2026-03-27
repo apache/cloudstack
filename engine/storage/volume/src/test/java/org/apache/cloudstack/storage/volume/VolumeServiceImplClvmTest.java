@@ -99,8 +99,7 @@ public class VolumeServiceImplClvmTest {
     public void setup() {
         when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
         when(volumeInfoMock.getUuid()).thenReturn("test-volume-uuid");
-        
-        // Setup volumeService dependencies
+
         volumeService.storagePoolDao = storagePoolDao;
         volumeService._hostDao = _hostDao;
         volumeService.vmDao = vmDao;
