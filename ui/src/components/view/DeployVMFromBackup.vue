@@ -1451,7 +1451,7 @@ export default {
     this.initForm()
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
     this.showOverrideDiskOfferingOption = this.dataPreFill.overridediskoffering
-
+    this.selectedArchitecture = this.dataPreFill.backupArch ? this.dataPreFill.backupArch : this.architectureTypes.opts[0].id
     if (this.dataPreFill.isIso) {
       this.tabKey = 'isoid'
     } else {
@@ -1539,46 +1539,6 @@ export default {
     },
     fillValue (field) {
       this.form[field] = this.dataPreFill[field]
-    },
-    fetchZoneByQuery () {
-      return new Promise(resolve => {
-        let zones = []
-        let apiName = ''
-        const params = {}
-        if (this.templateId) {
-          apiName = 'listTemplates'
-          params.listall = true
-          params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
-          params.id = this.templateId
-        } else if (this.isoId) {
-          apiName = 'listIsos'
-          params.listall = true
-          params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
-          params.id = this.isoId
-        } else if (this.networkId) {
-          params.listall = true
-          params.id = this.networkId
-          apiName = 'listNetworks'
-        }
-        if (!apiName) return resolve(zones)
-
-        getAPI(apiName, params).then(json => {
-          let objectName
-          const responseName = [apiName.toLowerCase(), 'response'].join('')
-          for (const key in json[responseName]) {
-            if (key === 'count') {
-              continue
-            }
-            objectName = key
-            break
-          }
-          const data = json?.[responseName]?.[objectName] || []
-          zones = data.map(item => item.zoneid)
-          return resolve(zones)
-        }).catch(() => {
-          return resolve(zones)
-        })
-      })
     },
     async fetchData () {
       this.fetchZones(null, null)
@@ -1718,6 +1678,7 @@ export default {
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
+          this.selectedArchitecture = template?.arch || 'x86_64'
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -2344,9 +2305,6 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.isZoneSelectedMultiArch = this.zone.ismultiarch
-      if (this.isZoneSelectedMultiArch) {
-        this.selectedArchitecture = this.architectureTypes.opts[0].id
-      }
       this.zoneSelected = true
       this.form.startvm = true
       this.selectedZone = this.zoneId
