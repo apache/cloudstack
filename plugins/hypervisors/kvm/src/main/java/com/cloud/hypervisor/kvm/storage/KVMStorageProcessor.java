@@ -2093,8 +2093,25 @@ public class KVMStorageProcessor implements StorageProcessor {
             QemuImg qemuImg = new QemuImg(wait);
             qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
         } catch (LibvirtException | QemuImgException e) {
-            logger.error("Exception while rebasing incremental snapshot [{}] due to: [{}].", snapshotName, e.getMessage(), e);
-            throw new CloudRuntimeException(e);
+            if (!StringUtils.contains(e.getMessage(), "Is another process using the image")) {
+                logger.error("Exception while rebasing incremental snapshot [{}] due to: [{}].", snapshotName, e.getMessage(), e);
+                throw new CloudRuntimeException(e);
+            }
+            retryRebase(snapshotName, wait, e, snapshotFile, parentSnapshotFile);
+        }
+    }
+
+    private void retryRebase(String snapshotName, int wait, Exception e, QemuImgFile snapshotFile, QemuImgFile parentSnapshotFile) {
+        logger.warn("Libvirt still has not released the lock, will wait 60 seconds and try again later.");
+        try {
+            Thread.sleep(60*1000);
+            QemuImg qemuImg = new QemuImg(wait);
+            qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
+        } catch (LibvirtException | QemuImgException | InterruptedException ex) {
+            logger.error("Unable to rebase snapshot [{}].", snapshotName, ex);
+            CloudRuntimeException cre = new CloudRuntimeException(ex);
+            cre.addSuppressed(e);
+            throw cre;
         }
     }
 
