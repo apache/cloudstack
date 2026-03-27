@@ -259,6 +259,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final int migrateDowntime = libvirtComputingResource.getMigrateDowntime();
             boolean isMigrateDowntimeSet = false;
 
+            final int migrateWait = libvirtComputingResource.getMigrateWait();
+            logger.info("vm.migrate.wait value set to: {}for VM: {}", migrateWait, vmName);
+
+            final int migratePauseAfter = libvirtComputingResource.getMigratePauseAfter();
+            logger.info("vm.migrate.pauseafter value set to: {} for VM: {}", migratePauseAfter, vmName);
+
             while (!executor.isTerminated()) {
                 Thread.sleep(100);
                 sleeptime += 100;
@@ -278,8 +284,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 }
 
                 // abort the vm migration if the job is executed more than vm.migrate.wait
-                final int migrateWait = libvirtComputingResource.getMigrateWait();
-                logger.info("vm.migrate.wait value set to: {}for VM: {}", migrateWait, vmName);
                 if (migrateWait > 0 && sleeptime > migrateWait * 1000) {
                     DomainState state = null;
                     try {
@@ -306,8 +310,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 }
 
                 // pause vm if we meet the vm.migrate.pauseafter threshold and not already paused
-                final int migratePauseAfter = libvirtComputingResource.getMigratePauseAfter();
-                logger.info("vm.migrate.pauseafter value set to: {} for VM: {}", migratePauseAfter, vmName);
                 if (migratePauseAfter > 0 && sleeptime > migratePauseAfter) {
                     DomainState state = null;
                     try {
