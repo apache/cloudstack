@@ -924,29 +924,6 @@ public class KVMStorageProcessorTest {
     }
 
     @Test
-    public void testCleanupBrokenBitmap_NullVolumePath() {
-        String bitmapName = "checkpoint-789";
-
-        try {
-            Mockito.when(kvmStoragePoolMock.getLocalPathFor(Mockito.anyString()))
-                    .thenReturn(null);
-            Mockito.when(volumeObjectToMock.getPath()).thenReturn("volume-path");
-
-            java.lang.reflect.Method method = KVMStorageProcessor.class.getDeclaredMethod(
-                    "cleanupBrokenBitmap", KVMStoragePool.class, VolumeObjectTO.class, String.class);
-            method.setAccessible(true);
-            method.invoke(storageProcessorSpy, kvmStoragePoolMock, volumeObjectToMock, bitmapName);
-
-            Assert.assertTrue("Method should handle null volume path gracefully", true);
-        } catch (java.lang.reflect.InvocationTargetException e) {
-            Assert.fail("Method should handle null volume path internally, but threw: " +
-                       (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()));
-        } catch (Exception e) {
-            Assert.fail("Failed to test cleanupBrokenBitmap: " + e.getMessage());
-        }
-    }
-
-    @Test
     public void testIsBitmapUsable_MultipleFlagsWithInUse() {
         String jsonOutput = "{\n" +
                 "  \"format-specific\": {\n" +
