@@ -41,7 +41,6 @@ import org.apache.cloudstack.api.command.admin.backup.StartBackupCmd;
 import org.apache.cloudstack.api.response.CheckpointResponse;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
@@ -75,6 +74,8 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static org.apache.cloudstack.backup.BackupManager.BackupProviderPlugin;
+
 @Component
 public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackupExportService {
 
@@ -97,29 +98,12 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     private AgentManager agentManager;
 
     @Inject
-    private BackupOfferingDao backupOfferingDao;
-
-    @Inject
     private HostDao hostDao;
 
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
 
     private Timer imageTransferTimer;
-
-    private boolean isDummyOffering(Long backupOfferingId) {
-        if (backupOfferingId == null) {
-            throw new CloudRuntimeException("VM not assigned a backup offering");
-        }
-        BackupOfferingVO offering = backupOfferingDao.findById(backupOfferingId);
-        if (offering == null) {
-            throw new CloudRuntimeException("Backup offering not found: " + backupOfferingId);
-        }
-        if ("dummy".equalsIgnoreCase(offering.getName())) {
-            return true;
-        }
-        return false;
-    }
 
     @Override
     public Backup createBackup(StartBackupCmd cmd) {
@@ -130,12 +114,13 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("VM not found: " + vmId);
         }
 
-        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-            throw new CloudRuntimeException("VM must be running or stopped to start backup");
+        if (!StringUtils.equals("veeam-kvm", BackupProviderPlugin.valueIn(vm.getDataCenterId()))) {
+            throw new CloudRuntimeException("Feature not enabled. Set Zone level config backup.framework.provider.plugin" +
+                    " to \"veeam-kvm\" to enable the feature.");
         }
 
-        if (vm.getBackupOfferingId() == null) {
-            throw new CloudRuntimeException("VM not assigned a backup offering");
+        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+            throw new CloudRuntimeException("VM must be running or stopped to start backup");
         }
 
         Backup existingBackup = backupDao.findByVmId(vmId);
@@ -158,7 +143,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
         backup.setStatus(Backup.Status.Queued);
-        backup.setBackupOfferingId(vm.getBackupOfferingId());
+        backup.setBackupOfferingId(0L);
         backup.setDate(new Date());
 
         String toCheckpointId = "ckp-" + UUID.randomUUID().toString().substring(0, 8);
@@ -175,7 +160,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         return backupDao.persist(backup);
     }
 
-    protected void removedFailedBackup(BackupVO backup) {
+    protected void removeFailedBackup(BackupVO backup) {
         backup.setStatus(Backup.Status.Error);
         backupDao.update(backup.getId(), backup);
         backupDao.remove(backup.getId());
@@ -208,23 +193,17 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             vm.getState() == State.Stopped
         );
 
-        boolean dummyOffering = isDummyOffering(vm.getBackupOfferingId());
-
         StartBackupAnswer answer;
         try {
-            if (dummyOffering) {
-                answer = new StartBackupAnswer(startCmd, true, "Dummy answer", System.currentTimeMillis());
-            } else {
-                answer = (StartBackupAnswer) agentManager.send(hostId, startCmd);
-            }
+            answer = (StartBackupAnswer) agentManager.send(hostId, startCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
-            removedFailedBackup(backup);
+            removeFailedBackup(backup);
             logger.error("Failed to communicate with agent on {} for {} start", host, backup, e);
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
 
         if (!answer.getResult()) {
-            removedFailedBackup(backup);
+            removeFailedBackup(backup);
             logger.error("Failed to start {} due to: {}", backup, answer.getDetails());
             throw new CloudRuntimeException("Failed to start backup: " + answer.getDetails());
         }
@@ -264,8 +243,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("VM not found: " + vmId);
         }
 
-        boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
-
         updateBackupState(backup, Backup.Status.FinalizingTransfer);
 
         List<ImageTransferVO> transfers = imageTransferDao.listByBackupId(backupId);
@@ -282,12 +259,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
             StopBackupAnswer answer;
             try {
-                if (dummyOffering) {
-                    answer = new StopBackupAnswer(stopCmd, true, "Dummy answer");
-                } else {
-                    answer = (StopBackupAnswer) agentManager.send(backup.getHostId(), stopCmd);
-                }
-
+                answer = (StopBackupAnswer) agentManager.send(backup.getHostId(), stopCmd);
             } catch (AgentUnavailableException | OperationTimedoutException e) {
                 updateBackupState(backup, Backup.Status.Failed);
                 throw new CloudRuntimeException("Failed to communicate with agent", e);
@@ -325,7 +297,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         if (backup == null) {
             throw new CloudRuntimeException("Backup not found: " + backupId);
         }
-        boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
         if (ImageTransfer.Backend.file.equals(backend)) {
             throw new CloudRuntimeException("File backend is not supported for download");
         }
@@ -349,11 +320,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
         try {
             CreateImageTransferAnswer answer;
-            if (dummyOffering) {
-                answer = new CreateImageTransferAnswer(transferCmd, true, "Dummy answer", "image-transfer-id", "nbd://127.0.0.1:10809/vda");
-            } else {
-                answer = (CreateImageTransferAnswer) agentManager.send(backup.getHostId(), transferCmd);
-            }
+            answer = (CreateImageTransferAnswer) agentManager.send(backup.getHostId(), transferCmd);
 
             if (!answer.getResult()) {
                 throw new CloudRuntimeException("Failed to create image transfer: " + answer.getDetails());
@@ -525,6 +492,15 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         ImageTransfer imageTransfer;
         VolumeVO volume = volumeDao.findById(volumeId);
 
+        if (volume == null) {
+            throw new CloudRuntimeException("Volume not found with the specified Id");
+        }
+
+        if (!StringUtils.equals("veeam-kvm", BackupProviderPlugin.valueIn(volume.getDataCenterId()))) {
+            throw new CloudRuntimeException("Feature not enabled. Set Zone level config backup.framework.provider.plugin" +
+                    " to \"veeam-kvm\" to enable the feature.");
+        }
+
         ImageTransferVO existingTransfer = imageTransferDao.findUnfinishedByVolume(volume.getId());
         if (existingTransfer != null) {
             throw new CloudRuntimeException("Image transfer already in progress for volume: " + volume.getUuid());
@@ -558,16 +534,10 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         FinalizeImageTransferCommand finalizeCmd = new FinalizeImageTransferCommand(transferId);
 
         BackupVO backup = backupDao.findById(imageTransfer.getBackupId());
-        boolean dummyOffering = isDummyOffering(backup.getBackupOfferingId());
 
         Answer answer;
         try {
-            if (dummyOffering) {
-                answer = new Answer(finalizeCmd, true, "Image transfer finalized.");
-            } else {
-                answer = agentManager.send(backup.getHostId(), finalizeCmd);
-            }
-
+            answer = agentManager.send(backup.getHostId(), finalizeCmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             throw new CloudRuntimeException("Failed to communicate with agent", e);
         }
@@ -695,6 +665,11 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         if (vm == null) {
             throw new CloudRuntimeException("VM not found: " + cmd.getVmId());
         }
+        if (!StringUtils.equals("veeam-kvm", BackupProviderPlugin.valueIn(vm.getDataCenterId()))) {
+            throw new CloudRuntimeException("Feature not enabled. Set Zone level config backup.framework.provider.plugin" +
+                    " to \"veeam-kvm\" to enable the feature.");
+        }
+
         vm.setActiveCheckpointId(null);
         vm.setActiveCheckpointCreateTime(null);
         vmInstanceDao.update(cmd.getVmId(), vm);

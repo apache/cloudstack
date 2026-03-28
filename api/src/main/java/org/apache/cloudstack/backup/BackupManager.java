@@ -58,7 +58,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     ConfigKey<String> BackupProviderPlugin = new ValidatedConfigKey<>("Advanced", String.class,
             "backup.framework.provider.plugin",
             "dummy",
-            "The backup and recovery provider plugin. Valid plugin values: dummy, veeam, networker and nas",
+            "The backup and recovery provider plugin. Valid plugin values: dummy, veeam, networker, nas and veeam-kvm",
             true, ConfigKey.Scope.Zone, BackupFrameworkEnabled.key(), value -> validateBackupProviderConfig((String)value));
 
     ConfigKey<Long> BackupSyncPollingInterval = new ConfigKey<>("Advanced", Long.class,
@@ -263,7 +263,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
         if (value != null && (value.contains(",") || value.trim().contains(" "))) {
             throw new IllegalArgumentException("Multiple backup provider plugins are not supported. Please provide a single plugin value.");
         }
-        List<String> validPlugins = List.of("dummy", "veeam", "networker", "nas");
+        List<String> validPlugins = List.of("dummy", "veeam", "networker", "nas", "veeam-kvm");
         if (value != null && !validPlugins.contains(value)) {
             throw new IllegalArgumentException("Invalid backup provider plugin: " + value + ". Valid plugin values are: " + String.join(", ", validPlugins));
         }

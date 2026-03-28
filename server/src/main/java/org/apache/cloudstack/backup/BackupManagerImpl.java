@@ -2411,8 +2411,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
         }
         response.setVolumes(backedUpVolumes);
-        response.setBackupOfferingId(offering.getUuid());
-        response.setBackupOffering(offering.getName());
+        if (offering != null) {
+            response.setBackupOfferingId(offering.getUuid());
+            response.setBackupOffering(offering.getName());
+        }
         response.setAccountId(account.getUuid());
         response.setAccount(account.getAccountName());
         response.setDomainId(domain.getUuid());
