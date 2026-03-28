@@ -28,7 +28,7 @@ MAX_PARALLEL_WRITES = 1
 
 # HTTP server defaults
 DEFAULT_LISTEN_ADDRESS = "127.0.0.1"
-DEFAULT_HTTP_PORT = 54323
+DEFAULT_HTTP_PORT = 54322
 
 # Control socket
 CONTROL_SOCKET = "/var/run/cloudstack/image-server.sock"

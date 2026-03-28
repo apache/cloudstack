@@ -41,7 +41,7 @@ public class LibvirtFinalizeImageTransferCommandWrapper extends CommandWrapper<F
 
     private boolean stopImageServer() {
         String unitName = "cloudstack-image-server";
-        final int imageServerPort = 54323;
+        final int imageServerPort = LibvirtComputingResource.IMAGE_SERVER_DEFAULT_PORT;
 
         Script checkScript = new Script("/bin/bash", logger);
         checkScript.add("-c");

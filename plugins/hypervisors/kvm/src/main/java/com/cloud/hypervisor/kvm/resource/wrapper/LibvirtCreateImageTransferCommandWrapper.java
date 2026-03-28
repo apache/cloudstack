@@ -135,7 +135,7 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
             }
         }
 
-        final int imageServerPort = 54323;
+        final int imageServerPort = LibvirtComputingResource.IMAGE_SERVER_DEFAULT_PORT;
         if (!startImageServerIfNotRunning(imageServerPort, resource)) {
             return new CreateImageTransferAnswer(cmd, false, "Failed to start image server.");
         }

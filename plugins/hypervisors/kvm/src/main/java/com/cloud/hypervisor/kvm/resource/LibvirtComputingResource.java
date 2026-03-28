@@ -382,6 +382,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s  --metadata";
 
+    public static final int IMAGE_SERVER_DEFAULT_PORT = 54322;
+
     protected int qcow2DeltaMergeTimeout;
 
     private String modifyVlanPath;

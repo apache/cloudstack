@@ -31,7 +31,7 @@ Supports two backends (configured per-transfer at registration time):
 Usage::
 
     # As a module
-    python -m imageserver --listen 127.0.0.1 --port 54323
+    python -m imageserver --listen 127.0.0.1 --port 54322
 
     # Or via the systemd service started by createImageTransfer
 """
