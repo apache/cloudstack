@@ -31,9 +31,9 @@ import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = "deleteVirtualMachineCheckpoint",
-        description = "Delete a VM checkpoint",
+        description = "Delete a VM checkpoint. This API is intended for testing only and is disabled by default.",
         responseObject = SuccessResponse.class,
-        since = "4.22.0",
+        since = "4.23.0",
         authorized = {RoleType.Admin})
 public class DeleteVmCheckpointCmd extends BaseCmd implements AdminCmd {
 

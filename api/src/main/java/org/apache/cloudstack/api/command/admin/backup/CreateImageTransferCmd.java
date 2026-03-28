@@ -35,9 +35,9 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.utils.EnumUtils;
 
 @APICommand(name = "createImageTransfer",
-        description = "Create image transfer for a disk in backup",
+        description = "Create image transfer for a disk in backup. This API is intended for testing only and is disabled by default.",
         responseObject = ImageTransferResponse.class,
-        since = "4.22.0",
+        since = "4.23.0",
         authorized = {RoleType.Admin})
 public class CreateImageTransferCmd extends BaseCmd implements AdminCmd {
 

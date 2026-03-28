@@ -34,9 +34,9 @@ import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = "listImageTransfers",
-        description = "List image transfers for a backup",
+        description = "List image transfers for a backup. This API is intended for testing only and is disabled by default.",
         responseObject = ImageTransferResponse.class,
-        since = "4.22.0",
+        since = "4.23.0",
         authorized = {RoleType.Admin})
 public class ListImageTransfersCmd extends BaseListCmd implements AdminCmd {
 

@@ -43,6 +43,10 @@ public interface KVMBackupExportService extends Configurable, PluggableService {
             "10",
             "The image transfer progress polling interval in seconds.", true, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> ExposeKVMBackupExportServiceApis = new ConfigKey<>("Hidden", Boolean.class,
+            "expose.kvm.backup.export.service.apis",
+            "false",
+            "Enable to expose APIs for testing the KVM Backup Export Service.", false, ConfigKey.Scope.Global);
     /**
      * Creates a backup session for a VM
      */

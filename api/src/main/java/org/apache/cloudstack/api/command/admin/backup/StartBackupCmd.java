@@ -37,9 +37,9 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 
 @APICommand(name = "startBackup",
-        description = "Start a VM backup session (oVirt-style incremental backup)",
+        description = "Start a VM backup session. This API is intended for testing only and is disabled by default.",
         responseObject = BackupResponse.class,
-        since = "4.22.0",
+        since = "4.23.0",
         authorized = {RoleType.Admin})
     public class StartBackupCmd extends BaseAsyncCreateCmd implements AdminCmd {
 

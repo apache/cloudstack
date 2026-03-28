@@ -33,9 +33,9 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.KVMBackupExportService;
 
 @APICommand(name = "listVirtualMachineCheckpoints",
-        description = "List checkpoints for a VM",
+        description = "List checkpoints for a VM. This API is intended for testing only and is disabled by default.",
         responseObject = CheckpointResponse.class,
-        since = "4.22.0",
+        since = "4.23.0",
         authorized = {RoleType.Admin})
 public class ListVmCheckpointsCmd extends BaseListCmd implements AdminCmd {
 

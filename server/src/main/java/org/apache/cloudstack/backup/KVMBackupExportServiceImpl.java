@@ -123,7 +123,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Override
     public Backup createBackup(StartBackupCmd cmd) {
-        //ToDo: add config check, access check, resource count check, etc.
         Long vmId = cmd.getVmId();
 
         VMInstanceVO vm = vmInstanceDao.findById(vmId);
@@ -705,13 +704,15 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<>();
-        cmdList.add(StartBackupCmd.class);
-        cmdList.add(FinalizeBackupCmd.class);
-        cmdList.add(CreateImageTransferCmd.class);
-        cmdList.add(FinalizeImageTransferCmd.class);
-        cmdList.add(ListImageTransfersCmd.class);
-        cmdList.add(ListVmCheckpointsCmd.class);
-        cmdList.add(DeleteVmCheckpointCmd.class);
+        if (ExposeKVMBackupExportServiceApis.value()) {
+            cmdList.add(StartBackupCmd.class);
+            cmdList.add(FinalizeBackupCmd.class);
+            cmdList.add(CreateImageTransferCmd.class);
+            cmdList.add(FinalizeImageTransferCmd.class);
+            cmdList.add(ListImageTransfersCmd.class);
+            cmdList.add(ListVmCheckpointsCmd.class);
+            cmdList.add(DeleteVmCheckpointCmd.class);
+        }
         return cmdList;
     }
 

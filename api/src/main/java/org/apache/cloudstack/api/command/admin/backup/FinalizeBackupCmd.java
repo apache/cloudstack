@@ -37,9 +37,9 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 
 @APICommand(name = "finalizeBackup",
-        description = "Finalize a VM backup session",
+        description = "Finalize a VM backup session. This API is intended for testing only and is disabled by default.",
         responseObject = BackupResponse.class,
-        since = "4.22.0",
+        since = "4.23.0",
         authorized = {RoleType.Admin})
 public class FinalizeBackupCmd extends BaseAsyncCmd implements AdminCmd {
 

@@ -31,9 +31,9 @@ import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = "finalizeImageTransfer",
-        description = "Finalize an image transfer",
+        description = "Finalize an image transfe. This API is intended for testing only and is disabled by default.r",
         responseObject = SuccessResponse.class,
-        since = "4.22.0",
+        since = "4.23.0",
         authorized = {RoleType.Admin})
 public class FinalizeImageTransferCmd extends BaseCmd implements AdminCmd {
 
