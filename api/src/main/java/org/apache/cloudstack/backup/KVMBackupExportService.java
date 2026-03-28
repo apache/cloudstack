@@ -36,7 +36,7 @@ import com.cloud.utils.component.PluggableService;
 /**
  * Service for managing oVirt-style incremental backups using libvirt checkpoints
  */
-public interface IncrementalBackupService extends Configurable, PluggableService {
+public interface KVMBackupExportService extends Configurable, PluggableService {
 
     ConfigKey<Long> ImageTransferPollingInterval = new ConfigKey<>("Advanced", Long.class,
             "image.transfer.polling.interval",

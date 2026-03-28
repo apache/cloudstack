@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.backup.ImageTransfer;
-import org.apache.cloudstack.backup.IncrementalBackupService;
+import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.utils.EnumUtils;
@@ -42,7 +42,7 @@ import com.cloud.utils.EnumUtils;
 public class CreateImageTransferCmd extends BaseCmd implements AdminCmd {
 
     @Inject
-    private IncrementalBackupService incrementalBackupService;
+    private KVMBackupExportService kvmBackupExportService;
 
     @Parameter(name = ApiConstants.BACKUP_ID,
             type = CommandType.UUID,
@@ -86,7 +86,7 @@ public class CreateImageTransferCmd extends BaseCmd implements AdminCmd {
 
    @Override
     public void execute() {
-        ImageTransferResponse response = incrementalBackupService.createImageTransfer(this);
+        ImageTransferResponse response = kvmBackupExportService.createImageTransfer(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

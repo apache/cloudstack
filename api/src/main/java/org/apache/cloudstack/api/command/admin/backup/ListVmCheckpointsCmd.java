@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.CheckpointResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.backup.IncrementalBackupService;
+import org.apache.cloudstack.backup.KVMBackupExportService;
 
 @APICommand(name = "listVirtualMachineCheckpoints",
         description = "List checkpoints for a VM",
@@ -40,7 +40,7 @@ import org.apache.cloudstack.backup.IncrementalBackupService;
 public class ListVmCheckpointsCmd extends BaseListCmd implements AdminCmd {
 
     @Inject
-    private IncrementalBackupService incrementalBackupService;
+    private KVMBackupExportService kvmBackupExportService;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -55,7 +55,7 @@ public class ListVmCheckpointsCmd extends BaseListCmd implements AdminCmd {
 
     @Override
     public void execute() {
-        List<CheckpointResponse> responses = incrementalBackupService.listVmCheckpoints(this);
+        List<CheckpointResponse> responses = kvmBackupExportService.listVmCheckpoints(this);
         ListResponse<CheckpointResponse> response = new ListResponse<>();
         response.setResponses(responses);
         response.setResponseName(getCommandName());

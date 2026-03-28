@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
-import org.apache.cloudstack.backup.IncrementalBackupService;
+import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -44,7 +44,7 @@ import com.cloud.event.EventTypes;
     public class StartBackupCmd extends BaseAsyncCreateCmd implements AdminCmd {
 
     @Inject
-    private IncrementalBackupService incrementalBackupService;
+    private KVMBackupExportService kvmBackupExportService;
 
     @Inject
     private BackupManager backupManager;
@@ -81,7 +81,7 @@ import com.cloud.event.EventTypes;
     @Override
     public void execute() {
         try {
-            Backup backup = incrementalBackupService.startBackup(this);
+            Backup backup = kvmBackupExportService.startBackup(this);
             BackupResponse response = backupManager.createBackupResponse(backup, null);
 
             response.setResponseName(getCommandName());
@@ -98,7 +98,7 @@ import com.cloud.event.EventTypes;
 
     @Override
     public void create() {
-        Backup backup = incrementalBackupService.createBackup(this);
+        Backup backup = kvmBackupExportService.createBackup(this);
 
         if (backup != null) {
             setEntityId(backup.getId());

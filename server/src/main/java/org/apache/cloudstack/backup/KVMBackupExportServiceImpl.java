@@ -76,7 +76,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-public class IncrementalBackupServiceImpl extends ManagerBase implements IncrementalBackupService {
+public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackupExportService {
 
     @Inject
     private VMInstanceDao vmInstanceDao;
@@ -874,7 +874,7 @@ public class IncrementalBackupServiceImpl extends ManagerBase implements Increme
 
     @Override
     public String getConfigComponentName() {
-        return IncrementalBackupService.class.getSimpleName();
+        return KVMBackupExportService.class.getSimpleName();
     }
 
     @Override

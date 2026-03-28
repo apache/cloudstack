@@ -69,7 +69,7 @@ import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.ImageTransfer.Direction;
 import org.apache.cloudstack.backup.ImageTransfer.Format;
 import org.apache.cloudstack.backup.ImageTransferVO;
-import org.apache.cloudstack.backup.IncrementalBackupService;
+import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.context.CallContext;
@@ -263,7 +263,7 @@ public class ServerAdapter extends ManagerBase {
     ImageTransferDao imageTransferDao;
 
     @Inject
-    IncrementalBackupService incrementalBackupService;
+    KVMBackupExportService kvmBackupExportService;
 
     @Inject
     QueryService queryService;
@@ -1212,7 +1212,7 @@ public class ServerAdapter extends ManagerBase {
         if (vo == null) {
             throw new InvalidParameterValueException("Image transfer with ID " + uuid + " not found");
         }
-        return incrementalBackupService.cancelImageTransfer(vo.getId());
+        return kvmBackupExportService.cancelImageTransfer(vo.getId());
     }
 
     public boolean finalizeImageTransfer(String uuid) {
@@ -1220,7 +1220,7 @@ public class ServerAdapter extends ManagerBase {
         if (vo == null) {
             throw new InvalidParameterValueException("Image transfer with ID " + uuid + " not found");
         }
-        return incrementalBackupService.finalizeImageTransfer(vo.getId());
+        return kvmBackupExportService.finalizeImageTransfer(vo.getId());
     }
 
     private ImageTransfer createImageTransfer(Long backupId, Long volumeId, Direction direction, Format format) {
@@ -1228,7 +1228,7 @@ public class ServerAdapter extends ManagerBase {
         CallContext.register(serviceUserAccount.first(), serviceUserAccount.second());
         try {
             org.apache.cloudstack.backup.ImageTransfer imageTransfer =
-                    incrementalBackupService.createImageTransfer(volumeId, backupId, direction, format);
+                    kvmBackupExportService.createImageTransfer(volumeId, backupId, direction, format);
             ImageTransferVO imageTransferVO = imageTransferDao.findById(imageTransfer.getId());
             return ImageTransferVOToImageTransferConverter.toImageTransfer(imageTransferVO, this::getHostById, this::getVolumeById);
         } finally {
@@ -1517,7 +1517,7 @@ public class ServerAdapter extends ManagerBase {
             DeleteVmCheckpointCmd cmd = new DeleteVmCheckpointCmd();
             ComponentContext.inject(cmd);
             cmd.setVmId(vo.getId());
-            incrementalBackupService.deleteVmCheckpoint(cmd);
+            kvmBackupExportService.deleteVmCheckpoint(cmd);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to delete checkpoint: " + e.getMessage(), e);
         } finally {

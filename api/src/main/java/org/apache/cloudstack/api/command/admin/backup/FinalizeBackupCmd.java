@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
-import org.apache.cloudstack.backup.IncrementalBackupService;
+import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -44,7 +44,7 @@ import com.cloud.event.EventTypes;
 public class FinalizeBackupCmd extends BaseAsyncCmd implements AdminCmd {
 
     @Inject
-    private IncrementalBackupService incrementalBackupService;
+    private KVMBackupExportService kvmBackupExportService;
 
     @Inject
     private BackupManager backupManager;
@@ -73,7 +73,7 @@ public class FinalizeBackupCmd extends BaseAsyncCmd implements AdminCmd {
 
     @Override
     public void execute() {
-        Backup backup = incrementalBackupService.finalizeBackup(this);
+        Backup backup = kvmBackupExportService.finalizeBackup(this);
 
         if (backup == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create Backup");

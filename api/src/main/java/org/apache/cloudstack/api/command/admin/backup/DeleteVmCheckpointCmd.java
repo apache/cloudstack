@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.backup.IncrementalBackupService;
+import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = "deleteVirtualMachineCheckpoint",
@@ -38,7 +38,7 @@ import org.apache.cloudstack.context.CallContext;
 public class DeleteVmCheckpointCmd extends BaseCmd implements AdminCmd {
 
     @Inject
-    private IncrementalBackupService incrementalBackupService;
+    private KVMBackupExportService kvmBackupExportService;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
@@ -71,7 +71,7 @@ public class DeleteVmCheckpointCmd extends BaseCmd implements AdminCmd {
 
     @Override
     public void execute() {
-        boolean result = incrementalBackupService.deleteVmCheckpoint(this);
+        boolean result = kvmBackupExportService.deleteVmCheckpoint(this);
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
         response.setResponseName(getCommandName());

@@ -347,7 +347,7 @@
 
     <bean id="backupRepositoryService" class="org.apache.cloudstack.backup.BackupRepositoryServiceImpl" />
 
-    <bean id="incrementalBackupService" class="org.apache.cloudstack.backup.IncrementalBackupServiceImpl" />
+    <bean id="kvmBackupExportService" class="org.apache.cloudstack.backup.KVMBackupExportServiceImpl" />
 
     <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
 

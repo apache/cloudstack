@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.backup.IncrementalBackupService;
+import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = "finalizeImageTransfer",
@@ -38,7 +38,7 @@ import org.apache.cloudstack.context.CallContext;
 public class FinalizeImageTransferCmd extends BaseCmd implements AdminCmd {
 
     @Inject
-    private IncrementalBackupService incrementalBackupService;
+    private KVMBackupExportService kvmBackupExportService;
 
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
@@ -53,7 +53,7 @@ public class FinalizeImageTransferCmd extends BaseCmd implements AdminCmd {
 
     @Override
     public void execute() {
-        boolean result = incrementalBackupService.finalizeImageTransfer(this);
+        boolean result = kvmBackupExportService.finalizeImageTransfer(this);
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
         response.setResponseName(getCommandName());
