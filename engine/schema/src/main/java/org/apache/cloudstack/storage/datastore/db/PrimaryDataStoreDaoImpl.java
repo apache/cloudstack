@@ -65,6 +65,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
     private final SearchBuilder<StoragePoolVO> ClustersSearch;
     private final SearchBuilder<StoragePoolVO> IdsSearch;
+    private final SearchBuilder<StoragePoolVO> DcsSearch;
 
     @Inject
     private StoragePoolDetailsDao _detailsDao;
@@ -167,6 +168,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         IdsSearch.and("ids", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
         IdsSearch.done();
 
+        DcsSearch = createSearchBuilder();
+        DcsSearch.and("dataCenterId", DcsSearch.entity().getDataCenterId(), SearchCriteria.Op.IN);
+        DcsSearch.done();
     }
 
     @Override
@@ -320,6 +324,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         pool = super.persist(pool);
         if (details != null) {
             for (Map.Entry<String, String> detail : details.entrySet()) {
+                if (detail.getKey().toLowerCase().contains("password") || detail.getKey().toLowerCase().contains("token")) {
+                    displayDetails = false;
+                }
                 StoragePoolDetailVO vo = new StoragePoolDetailVO(pool.getId(), detail.getKey(), detail.getValue(), displayDetails);
                 _detailsDao.persist(vo);
             }
@@ -921,6 +928,16 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         SearchCriteria<StoragePoolVO> sc = AllFieldSearch.create();
         sc.setParameters("poolType", storageType);
         sc.addAnd("dataCenterId", Op.EQ, zoneId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolVO> listByDataCenterIds(List<Long> dataCenterIds) {
+        if (CollectionUtils.isEmpty(dataCenterIds)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<StoragePoolVO> sc = DcsSearch.create();
+        sc.setParameters("dataCenterId", dataCenterIds.toArray());
         return listBy(sc);
     }
 

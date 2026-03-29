@@ -92,7 +92,7 @@ export default {
         }
       ],
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags', 'serviceofferingid', 'diskofferingid', 'isencrypted']
+        const filters = ['name', 'zoneid', 'domainid', 'account', 'state', 'tags', 'serviceofferingid', 'diskofferingid', 'isencrypted']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
         }
@@ -311,7 +311,10 @@ export default {
       permission: ['listSnapshots'],
       resourceType: 'Snapshot',
       columns: () => {
-        var fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
+        const fields = ['name', 'state', 'volumename', 'intervaltype', 'physicalsize', 'created']
+        if (store.getters.features.snapshotshowchainsize) {
+          fields.splice(fields.indexOf('created'), 0, 'chainsize', 'parentname')
+        }
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
           if (store.getters.listAllProjects) {
@@ -324,7 +327,13 @@ export default {
         fields.push('zonename')
         return fields
       },
-      details: ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'chainsize', 'account', 'domain', 'created'],
+      details: () => {
+        const fields = ['name', 'id', 'volumename', 'volumetype', 'snapshottype', 'intervaltype', 'physicalsize', 'virtualsize', 'account', 'domain', 'created']
+        if (store.getters.features.snapshotshowchainsize) {
+          fields.splice(fields.indexOf('account'), 0, 'chainsize', 'parentname')
+        }
+        return fields
+      },
       tabs: [
         {
           name: 'details',
@@ -346,7 +355,7 @@ export default {
         }
       ],
       searchFilters: () => {
-        var filters = ['name', 'domainid', 'account', 'tags', 'zoneid']
+        const filters = ['name', 'domainid', 'account', 'tags', 'zoneid']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')
@@ -410,6 +419,51 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'snapshotpolicy',
+      title: 'label.snapshotpolicies',
+      icon: 'build-outlined',
+      docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+      permission: ['listSnapshotPolicies'],
+      resourceType: 'SnapshotPolicy',
+      params: { listall: true },
+      columns: () => {
+        var fields = ['intervaltype', 'maxsnaps', 'schedule', 'timezone', 'volumename']
+        return fields
+      },
+      searchFilters: ['volumeid'],
+      actions: [
+        {
+          api: 'createSnapshotPolicy',
+          icon: 'plus-outlined',
+          docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+          label: 'label.action.create.recurring.snapshot',
+          listView: true,
+          show: () => { return 'createSnapshotPolicy' in store.getters.apis },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RecurringSnapshotVolume.vue'))),
+          mapping: {
+            intervaltype: {
+              options: ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY']
+            }
+          }
+        },
+        {
+          api: 'deleteSnapshotPolicies',
+          icon: 'delete-outlined',
+          label: 'label.delete.snapshot.policy',
+          message: 'message.action.delete.snapshot.policy',
+          dataView: true,
+          show: (record) => true,
+          args: ['id'],
+          mapping: {
+            id: {
+              value: (record) => record.id
+            }
+          }
         }
       ]
     },
@@ -494,6 +548,51 @@ export default {
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
           args: ['forced']
+        }
+      ]
+    },
+    {
+      name: 'backupschedule',
+      title: 'label.backup.schedules',
+      icon: 'build-outlined',
+      docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+      permission: ['listBackupSchedule'],
+      resourceType: 'backupSchedule',
+      params: { listall: true },
+      columns: () => {
+        var fields = ['intervaltype', 'maxbackups', 'schedule', 'timezone', 'virtualmachinename']
+        return fields
+      },
+      searchFilters: ['virtualmachineid'],
+      actions: [
+        {
+          api: 'createBackupSchedule',
+          icon: 'plus-outlined',
+          docHelp: 'adminguide/storage.html#working-with-volume-snapshots',
+          label: 'label.action.create.backup.schedule',
+          listView: true,
+          show: () => { return 'createBackupSchedule' in store.getters.apis },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/backup/CreateBackupSchedule.vue'))),
+          mapping: {
+            intervaltype: {
+              options: ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY']
+            }
+          }
+        },
+        {
+          api: 'deleteBackupSchedule',
+          icon: 'delete-outlined',
+          label: 'label.delete.backup.schedule',
+          message: 'message.action.delete.backup.schedule',
+          dataView: true,
+          show: (record) => true,
+          args: ['id'],
+          mapping: {
+            id: {
+              value: (record) => record.id
+            }
+          }
         }
       ]
     },

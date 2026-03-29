@@ -18,7 +18,6 @@ package com.cloud.agent.manager.allocator.impl;
 
 import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.firstfitleastconsumed;
 import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.random;
-import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random;
 import static com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm.userdispersing;
 
 import com.cloud.capacity.Capacity;
@@ -31,7 +30,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.FirstFitPlanner;
 import com.cloud.gpu.GPU;
-import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -97,8 +95,6 @@ public class FirstFitAllocator extends BaseAllocator {
     CapacityDao _capacityDao;
     @Inject
     VMInstanceDetailsDao vmInstanceDetailsDao;
-    @Inject
-    private VgpuProfileDao vgpuProfileDao;
 
     boolean _checkHvm = true;
 
@@ -206,7 +202,7 @@ public class FirstFitAllocator extends BaseAllocator {
     protected List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
                                     boolean considerReservedCapacity, Account account) {
         String vmAllocationAlgorithm = DeploymentClusterPlanner.VmAllocationAlgorithm.value();
-        if (List.of(random.toString(), userconcentratedpod_random.toString()).contains(vmAllocationAlgorithm)) {
+        if (random.toString().equals(vmAllocationAlgorithm)) {
             Collections.shuffle(hosts);
         } else if (userdispersing.toString().equals(vmAllocationAlgorithm)) {
             hosts = reorderHostsByNumberOfVms(plan, hosts, account);

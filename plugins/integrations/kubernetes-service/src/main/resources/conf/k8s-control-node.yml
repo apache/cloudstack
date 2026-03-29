@@ -179,6 +179,11 @@ write_files:
           mkdir -p /opt/provider
           cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
         fi
+        if [ -e "${BINARIES_DIR}/snapshot-crds.yaml" ]; then
+          mkdir -p /opt/csi
+          cp "${BINARIES_DIR}/snapshot-crds.yaml" /opt/csi/snapshot-crds.yaml
+          cp "${BINARIES_DIR}/manifest.yaml" /opt/csi/manifest.yaml
+        fi
 
         PAUSE_IMAGE=`ctr -n k8s.io images ls -q | grep "pause" | sort | tail -n 1`
         echo $PAUSE_IMAGE

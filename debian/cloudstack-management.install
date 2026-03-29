@@ -24,6 +24,7 @@
 /etc/cloudstack/management/config.json
 /etc/cloudstack/extensions/Proxmox/proxmox.sh
 /etc/cloudstack/extensions/HyperV/hyperv.py
+/etc/cloudstack/extensions/MaaS/maas.py
 /etc/default/cloudstack-management
 /etc/security/limits.d/cloudstack-limits.conf
 /etc/sudoers.d/cloudstack

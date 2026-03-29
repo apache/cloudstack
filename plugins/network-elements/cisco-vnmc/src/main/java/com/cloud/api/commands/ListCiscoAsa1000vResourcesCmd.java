@@ -53,7 +53,7 @@ public class ListCiscoAsa1000vResourcesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "The Physical Network ID")
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.UUID, entityType = CiscoAsa1000vResourceResponse.class, description = "Cisco ASA 1000v resource ID")

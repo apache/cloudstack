@@ -21,6 +21,7 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.LogLevel;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class TakeBackupCommand extends Command {
     private String backupPath;
     private String backupRepoType;
     private String backupRepoAddress;
+    private List<PrimaryDataStoreTO> volumePools;
     private List<String> volumePaths;
     private Boolean quiesce;
     @LogLevel(LogLevel.Log4jLevel.Off)
@@ -78,6 +80,14 @@ public class TakeBackupCommand extends Command {
 
     public void setMountOptions(String mountOptions) {
         this.mountOptions = mountOptions;
+    }
+
+    public List<PrimaryDataStoreTO> getVolumePools() {
+        return volumePools;
+    }
+
+    public void setVolumePools(List<PrimaryDataStoreTO> volumePools) {
+        this.volumePools = volumePools;
     }
 
     public List<String> getVolumePaths() {

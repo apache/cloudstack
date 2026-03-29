@@ -17,7 +17,9 @@
 
 package com.cloud.network.router;
 
+import com.cloud.api.ApiDBUtils;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import static com.cloud.vm.VirtualMachineManager.SystemVmEnableUserData;
 
 import java.lang.reflect.Type;
 import java.math.BigInteger;
@@ -50,6 +52,7 @@ import javax.naming.ConfigurationException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -71,6 +74,7 @@ import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
@@ -352,6 +356,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject
     BGPService bgpService;
 
+    @Inject
+    private UserDataManager userDataManager;
     private int _routerStatsInterval = 300;
     private int _routerCheckInterval = 30;
     private int _rvrStatusUpdatePoolSize = 10;
@@ -1743,8 +1749,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             scvm.setParameters("networkId", routerJoinVO.getNetworkId());
             scvm.setParameters("state", VirtualMachine.State.Running);
             List<UserVmJoinVO> vms = userVmJoinDao.search(scvm, null);
-            boolean isDhcpSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp);
-            boolean isDnsSupported = _ntwkSrvcDao.areServicesSupportedInNetwork(routerJoinVO.getNetworkId(), Service.Dns);
+            Provider provider = routerJoinVO.getVpcId() != 0 ? Provider.VPCVirtualRouter : Provider.VirtualRouter;
+            boolean isDhcpSupported = _ntwkSrvcDao.canProviderSupportServiceInNetwork(routerJoinVO.getNetworkId(), Service.Dhcp, provider);
+            boolean isDnsSupported = _ntwkSrvcDao.canProviderSupportServiceInNetwork(routerJoinVO.getNetworkId(), Service.Dns, provider);
             for (UserVmJoinVO vm : vms) {
                 vmsData.append("vmName=").append(vm.getName())
                         .append(",macAddress=").append(vm.getMacAddress())
@@ -2078,8 +2085,14 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             if (user == null) {
                 logger.warn("global setting[baremetal.provision.done.notification] is enabled but user baremetal-system-account is not found. Baremetal provision done notification will not be enabled");
             } else {
-                buf.append(String.format(" baremetalnotificationsecuritykey=%s", user.getSecretKey()));
-                buf.append(String.format(" baremetalnotificationapikey=%s", user.getApiKey()));
+                ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+
+                if (latestKeypair == null) {
+                    throw new InvalidParameterValueException(String.format("No API keypair for user [%s]. Please generate it.", user.getUsername()));
+                }
+
+                buf.append(String.format(" baremetalnotificationsecuritykey=%s", latestKeypair.getSecretKey()));
+                buf.append(String.format(" baremetalnotificationapikey=%s", latestKeypair.getApiKey()));
                 buf.append(" host=").append(ApiServiceConfiguration.ManagementServerAddresses.value());
                 buf.append(" port=").append(_configDao.getValue(Config.BaremetalProvisionDoneNotificationPort.key()));
             }
@@ -2095,6 +2108,18 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         logger.debug(String.format("The setting [%s] with value [%s] for the zone with UUID [%s], will be used to configure the logrotate service frequency" +
                 " on the virtual router.", RouterLogrotateFrequency.key(), routerLogrotateFrequency, dc.getUuid()));
         buf.append(String.format(" logrotatefrequency=%s", routerLogrotateFrequency));
+
+        if (SystemVmEnableUserData.valueIn(router.getDataCenterId())) {
+            String userDataUuid = VirtualRouterUserData.valueIn(dc.getId());
+            try {
+                String userData = userDataManager.validateAndGetUserDataForSystemVM(userDataUuid);
+                if (StringUtils.isNotBlank(userData)) {
+                    buf.append(" userdata=").append(userData);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to load user data for the virtual router, ignored", e);
+            }
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug("Boot Args for " + profile + ": " + buf);
@@ -3320,6 +3345,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 jobIds.add(jobId);
             } else {
                 logger.debug("Router: {} is already at the latest version. No upgrade required", router);
+                throw new CloudRuntimeException("Router is already at the latest version. No upgrade required");
             }
         }
         return jobIds;
@@ -3355,7 +3381,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksMaxMemoryUsageThreshold,
                 ExposeDnsAndBootpServer,
                 RouterLogrotateFrequency,
-                RemoveControlIpOnStop
+                RemoveControlIpOnStop,
+                VirtualRouterUserData
         };
     }
 

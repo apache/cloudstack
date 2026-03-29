@@ -20,8 +20,10 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.user.Account;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,13 +39,13 @@ import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.commons.lang.ArrayUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.user.Account;
 
 @APICommand(name = "verifyOAuthCodeAndGetUser", description = "Verify the OAuth Code and fetch the corresponding user from provider", responseObject = OauthProviderResponse.class, entityType = {},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.19.0")
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.19.0",
+        httpMethod = "GET")
 public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuthenticator {
 
     /////////////////////////////////////////////////////

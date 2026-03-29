@@ -324,7 +324,40 @@
 #           "used_by_vm": null
 #         }
 #       ]
-#     }
+#     },
+#	  {
+#	   "pci_address":"05:00.0",
+#   	"vendor_id":"1002",
+#	   "device_id":"74a5",
+#   	"vendor":"Advanced Micro Devices, Inc. [AMD/ATI]",
+#	   "device":"Aqua Vanjaram [Instinct MI325X]",
+#   	"driver":"amdgpu",
+#	   "pci_class":"Processing accelerators [1200]",
+#   	"iommu_group":"null",
+#	   "pci_root":"0000:05:00.0",
+#   	"numa_node":-1,
+#	   "sriov_totalvfs":0,
+#   	"sriov_numvfs":0,
+#	   "max_instances":null,
+#   	"video_ram":null,
+#	   "max_heads":null,
+#   	"max_resolution_x":null,
+#	   "max_resolution_y":null,
+#
+#   	"full_passthrough": {
+#     	  "enabled":1,
+#		  "libvirt_address": {
+#         "domain":"0x0000",
+#         "bus":"0x05",
+#         "slot":"0x00",
+#         "function":"0x0"
+#     	},
+#     	"used_by_vm":null
+#   	},
+
+#   	"vgpu_instances":[],
+#   	"vf_instances":[]
+# 	  }
 #   ]
 # }
 #
@@ -716,7 +749,7 @@ for LINE in "${LINES[@]}"; do
 	fi
 
 	# Only process GPU classes (3D controller)
-	if [[ ! "$PCI_CLASS" =~ (3D\ controller) ]]; then
+	if [[ ! "$PCI_CLASS" =~ (3D\ controller|Processing\ accelerators) ]]; then
 		continue
 	fi
 

@@ -17,9 +17,17 @@
 
 <template>
   <a
-    v-if="['vm', 'systemvm', 'router', 'ilbvm', 'vnfapp'].includes($route.meta.name) && 'listVirtualMachines' in $store.getters.apis && 'createConsoleEndpoint' in $store.getters.apis"
+    v-if="['vm', 'systemvm', 'router', 'ilbvm', 'vnfapp'].includes($route.meta.name) &&
+           'listVirtualMachines' in $store.getters.apis &&
+           'createConsoleEndpoint' in $store.getters.apis"
     @click="consoleUrl">
-    <a-button style="margin-left: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Restoring', 'Error', 'Destroyed'].includes(resource.state) || resource.hostcontrolstate === 'Offline'" >
+    <a-button
+      style="margin-left: 5px"
+      shape="circle"
+      type="dashed"
+      :size="size"
+      :disabled="['Stopped', 'Restoring', 'Error', 'Destroyed'].includes(resource.state) ||
+                 resource.hostcontrolstate === 'Offline'">
       <code-outlined v-if="!copyUrlToClipboard"/>
       <copy-outlined v-else />
     </a-button>
@@ -49,11 +57,29 @@ export default {
     }
   },
   methods: {
-    consoleUrl () {
-      const params = {}
-      params.virtualmachineid = this.resource.id
-      postAPI('createConsoleEndpoint', params).then(json => {
-        this.url = (json && json.createconsoleendpointresponse) ? json.createconsoleendpointresponse.consoleendpoint.url : '#/exception/404'
+    async consoleUrl () {
+      try {
+        const externalUrl = this.resource?.details?.['External:console_url']
+        if (externalUrl) {
+          this.url = externalUrl
+          if (this.copyUrlToClipboard) {
+            this.$copyText(this.url)
+            this.$message.success({
+              content: this.$t('label.copied.clipboard')
+            })
+          } else {
+            window.open(this.url, '_blank')
+          }
+          return
+        }
+
+        const params = { virtualmachineid: this.resource.id }
+        const json = await postAPI('createConsoleEndpoint', params)
+
+        this.url = (json && json.createconsoleendpointresponse)
+          ? json.createconsoleendpointresponse.consoleendpoint.url
+          : '#/exception/404'
+
         if (json.createconsoleendpointresponse.consoleendpoint.success) {
           if (this.copyUrlToClipboard) {
             this.$copyText(this.url)
@@ -69,9 +95,9 @@ export default {
             description: json.createconsoleendpointresponse.consoleendpoint.details
           })
         }
-      }).catch(error => {
+      } catch (error) {
         this.$notifyError(error)
-      })
+      }
     }
   },
   computed: {

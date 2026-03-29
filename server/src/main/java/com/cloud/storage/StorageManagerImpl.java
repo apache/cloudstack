@@ -56,10 +56,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.resource.ResourceManager;
-import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -189,9 +185,11 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -218,9 +216,11 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ManagementService;
 import com.cloud.server.StatsCollector;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
@@ -229,6 +229,7 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
@@ -414,6 +415,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ResourceManager _resourceMgr;
     @Inject
     StorageManager storageManager;
+    @Inject
+    ManagementService managementService;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -1031,6 +1034,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone is currently disabled: %s", zone));
         }
 
+        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
+                Boolean.TRUE.equals(cmd.isTagARule()));
+
         Map<String, Object> params = new HashMap<>();
         params.put("zoneId", zone.getId());
         params.put("clusterId", clusterId);
@@ -1213,6 +1219,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public PrimaryDataStoreInfo updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException {
         // Input validation
         Long id = cmd.getId();
+
+        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
+                Boolean.TRUE.equals(cmd.isTagARule()));
 
         StoragePoolVO pool = _storagePoolDao.findById(id);
         if (pool == null) {
@@ -1792,14 +1801,22 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     protected String getStoragePoolNonDestroyedVolumesLog(long storagePoolId) {
         StringBuilder sb = new StringBuilder();
-        List<VolumeVO> nonDestroyedVols = volumeDao.findByPoolId(storagePoolId, null).stream().filter(vol -> vol.getState() != Volume.State.Destroy).collect(Collectors.toList());
+        List<VolumeVO> nonDestroyedVols = volumeDao.findNonDestroyedVolumesByPoolId(storagePoolId, null);
         VMInstanceVO volInstance;
         List<String> logMessageInfo = new ArrayList<>();
 
         sb.append("[");
         for (VolumeVO vol : nonDestroyedVols) {
-            volInstance = _vmInstanceDao.findById(vol.getInstanceId());
-            logMessageInfo.add(String.format("Volume [%s] (attached to VM [%s])", vol.getUuid(), volInstance.getUuid()));
+            if (vol.getInstanceId() != null) {
+                volInstance = _vmInstanceDao.findById(vol.getInstanceId());
+                if (volInstance != null) {
+                    logMessageInfo.add(String.format("Volume [%s] (attached to VM [%s])", vol.getUuid(), volInstance.getUuid()));
+                } else {
+                    logMessageInfo.add(String.format("Volume [%s] (attached VM with ID [%d] doesn't exists)", vol.getUuid(), vol.getInstanceId()));
+                }
+            } else {
+                logMessageInfo.add(String.format("Volume [%s] (not attached to any VM)", vol.getUuid()));
+            }
         }
         sb.append(String.join(", ", logMessageInfo));
         sb.append("]");
@@ -2074,7 +2091,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             try {
 
                                 List<VMTemplateStoragePoolVO> unusedTemplatesInPool = _tmpltMgr.getUnusedTemplatesInPool(pool);
-                                logger.debug("Storage pool garbage collector found [{}] templates to be cleaned up in storage pool [{}].", unusedTemplatesInPool.size(), pool);
+                                logger.debug("Storage pool garbage collector found [{}] Templates to be cleaned up in storage pool [{}].", unusedTemplatesInPool.size(), pool);
                                 for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
                                     if (templatePoolVO.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
                                         logger.debug("Storage pool garbage collector is skipping " +
@@ -2101,41 +2118,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
                     }
 
-                    //destroy snapshots in destroying state in snapshot_store_ref
-                    List<SnapshotDataStoreVO> ssSnapshots = _snapshotStoreDao.listByState(ObjectInDataStoreStateMachine.State.Destroying);
-                    for (SnapshotDataStoreVO snapshotDataStoreVO : ssSnapshots) {
-                        String snapshotUuid = null;
-                        SnapshotVO snapshot = null;
-                        final String storeRole = snapshotDataStoreVO.getRole().toString().toLowerCase();
-                        if (logger.isDebugEnabled()) {
-                            snapshot = _snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
-                            if (snapshot == null) {
-                                logger.warn(String.format("Did not find snapshot [ID: %d] for which store reference is in destroying state; therefore, it cannot be destroyed.", snapshotDataStoreVO.getSnapshotId()));
-                                continue;
-                            }
-                            snapshotUuid = snapshot.getUuid();
-                        }
-
-                        try {
-                            if (logger.isDebugEnabled()) {
-                                logger.debug(String.format("Verifying if snapshot [%s] is in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
-                            }
-                            SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotDataStoreVO.getSnapshotId(), snapshotDataStoreVO.getDataStoreId(), snapshotDataStoreVO.getRole());
-                            if (snapshotInfo != null) {
-                                if (logger.isDebugEnabled()) {
-                                    logger.debug(String.format("Snapshot [%s] in destroying state found in %s data store [%s]; therefore, it will be destroyed.", snapshotUuid, storeRole, snapshotInfo.getDataStore().getUuid()));
-                                }
-                                _snapshotService.deleteSnapshot(snapshotInfo);
-                            } else if (logger.isDebugEnabled()) {
-                                logger.debug(String.format("Did not find snapshot [%s] in destroying state in %s data store ID: %d.", snapshotUuid, storeRole, snapshotDataStoreVO.getDataStoreId()));
-                            }
-                        } catch (Exception e) {
-                            logger.error("Failed to delete snapshot [{}] from storage due to: [{}].", snapshot, e.getMessage());
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Failed to delete snapshot [{}] from storage.", snapshot, e);
-                            }
-                        }
-                    }
+                    cleanupSnapshotsFromStoreRefInDestroyingState();
                     cleanupSecondaryStorage(recurring);
 
                     List<VolumeVO> vols = volumeDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)StorageCleanupDelay.value() << 10)));
@@ -2175,20 +2158,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
                     }
 
-                    // remove snapshots in Error state
-                    List<SnapshotVO> snapshots = _snapshotDao.listAllByStatus(Snapshot.State.Error);
-                    for (SnapshotVO snapshotVO : snapshots) {
-                        try {
-                            List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.findBySnapshotId(snapshotVO.getId());
-                            for (SnapshotDataStoreVO ref : storeRefs) {
-                                _snapshotStoreDao.expunge(ref.getId());
-                            }
-                            _snapshotDao.expunge(snapshotVO.getId());
-                        } catch (Exception e) {
-                            logger.error("Unable to destroy snapshot [{}] due to: [{}].", snapshotVO, e.getMessage());
-                            logger.debug("Unable to destroy snapshot [{}].", snapshotVO, e);
-                        }
-                    }
+                    removeSnapshotsInErrorStatus();
 
                     // destroy uploaded volumes in abandoned/error state
                     List<VolumeDataStoreVO> volumeDataStores = _volumeDataStoreDao.listByVolumeState(Volume.State.UploadError, Volume.State.UploadAbandoned);
@@ -2286,6 +2256,56 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         } finally {
             scanLock.releaseRef();
+        }
+    }
+
+    private void cleanupSnapshotsFromStoreRefInDestroyingState() {
+        List<SnapshotDataStoreVO> storeRefSnapshotsInDestroyingState = _snapshotStoreDao.listByState(ObjectInDataStoreStateMachine.State.Destroying);
+        for (SnapshotDataStoreVO snapshotDataStoreVO : storeRefSnapshotsInDestroyingState) {
+            SnapshotVO snapshot = _snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
+            if (snapshot == null) {
+                logger.warn("Did not find snapshot [ID: {}] for which store reference is in destroying state; therefore, it cannot be destroyed.", snapshotDataStoreVO.getSnapshotId());
+                continue;
+            }
+            deleteSnapshot(snapshot, snapshotDataStoreVO);
+        }
+    }
+
+    private void deleteSnapshot(SnapshotVO snapshot, SnapshotDataStoreVO snapshotDataStoreVO) {
+        if (snapshot == null || snapshotDataStoreVO == null) {
+            return;
+        }
+
+        try {
+            final String snapshotUuid = snapshot.getUuid();
+            final String storeRole = snapshotDataStoreVO.getRole().toString().toLowerCase();
+            logger.debug("Snapshot [{}] is in {} state on {} data store ID: {}.", snapshotUuid, snapshotDataStoreVO.getState(), storeRole, snapshotDataStoreVO.getDataStoreId());
+            SnapshotInfo snapshotInfo = snapshotFactory.getSnapshotIncludingRemoved(snapshotDataStoreVO.getSnapshotId(), snapshotDataStoreVO.getDataStoreId(), snapshotDataStoreVO.getRole());
+            if (snapshotInfo != null) {
+                logger.debug("Snapshot [{}] in {} state found on {} data store [{}], it will be deleted.", snapshotUuid, snapshotDataStoreVO.getState(), storeRole, snapshotInfo.getDataStore().getUuid());
+                _snapshotService.deleteSnapshot(snapshotInfo);
+            } else {
+                logger.debug("Did not find snapshot [{}] in {} state on {} data store ID: {}.", snapshotUuid, snapshotDataStoreVO.getState(), storeRole, snapshotDataStoreVO.getDataStoreId());
+            }
+        } catch (Exception e) {
+            logger.error("Failed to delete snapshot [{}] from storage due to: [{}].", snapshot, e.getMessage(), e);
+        }
+    }
+
+    private void removeSnapshotsInErrorStatus() {
+        List<SnapshotVO> snapshotsInErrorStatus = _snapshotDao.listAllByStatusIncludingRemoved(Snapshot.State.Error);
+        for (SnapshotVO snapshotVO : snapshotsInErrorStatus) {
+            try {
+                List<SnapshotDataStoreVO> storeRefSnapshotsInErrorStatus = _snapshotStoreDao.findBySnapshotId(snapshotVO.getId());
+                for (SnapshotDataStoreVO snapshotDataStoreVO : storeRefSnapshotsInErrorStatus) {
+                    deleteSnapshot(snapshotVO, snapshotDataStoreVO);
+                    _snapshotStoreDao.expunge(snapshotDataStoreVO.getId());
+                }
+                _snapshotDao.expunge(snapshotVO.getId());
+            } catch (Exception e) {
+                logger.error("Unable to destroy snapshot [{}] due to: [{}].", snapshotVO, e.getMessage());
+                logger.debug("Unable to destroy snapshot [{}].", snapshotVO, e);
+            }
         }
     }
 
@@ -2424,7 +2444,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 try {
                     long storeId = store.getId();
                     List<TemplateDataStoreVO> destroyedTemplateStoreVOs = _templateStoreDao.listDestroyed(storeId);
-                    logger.debug("Secondary storage garbage collector found {} templates to cleanup on template_store_ref for store: {}", destroyedTemplateStoreVOs.size(), store);
+                    logger.debug("Secondary storage garbage collector found {} Templates to cleanup on template_store_ref for store: {}", destroyedTemplateStoreVOs.size(), store);
                     for (TemplateDataStoreVO destroyedTemplateStoreVO : destroyedTemplateStoreVOs) {
                         if (logger.isDebugEnabled()) {
                             logger.debug("Deleting template store DB entry: " + destroyedTemplateStoreVO);
@@ -2432,7 +2452,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         _templateStoreDao.remove(destroyedTemplateStoreVO.getId());
                     }
                 } catch (Exception e) {
-                    logger.warn("problem cleaning up templates in template_store_ref for store: {}", store, e);
+                    logger.warn("Problem cleaning up Templates in template_store_ref for store: {}", store, e);
                 }
             }
 
@@ -3008,7 +3028,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         for (String childDatastoreUUID : childDatastoreUUIDs) {
             StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childDatastoreUUID);
-            List<VolumeVO> allVolumes = volumeDao.findByPoolId(dataStoreVO.getId());
+            List<VolumeVO> allVolumes = volumeDao.findNonDestroyedVolumesByPoolId(dataStoreVO.getId());
             allVolumes.removeIf(volumeVO -> volumeVO.getInstanceId() == null);
             allVolumes.removeIf(volumeVO -> volumeVO.getState() != Volume.State.Ready);
             for (VolumeVO volume : allVolumes) {
@@ -3049,6 +3069,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     StoragePoolVO storagePoolVO = _storagePoolDao.findByUuid(datastoreName);
                     if (storagePoolVO != null) {
                         volumeVO.setPoolId(storagePoolVO.getId());
+                        volumeVO.setPoolType(storagePoolVO.getPoolType());
                     } else {
                         logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreName, volumeVO);
                     }
@@ -3072,7 +3093,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     }
 
-    private void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer) {
+    @Override
+    public void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer) {
         StoragePoolHostVO poolHost = _storagePoolHostDao.findByPoolHost(pool.getId(), hostId);
         if (poolHost == null) {
             poolHost = new StoragePoolHostVO(pool.getId(), hostId, mspAnswer.getPoolInfo().getLocalPath().replaceAll("//", "/"));
@@ -3082,8 +3104,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
-        poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
-        poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        if (!Storage.StoragePoolType.StorPool.equals(poolVO.getPoolType())) {
+            poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
+            poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
+        }
 
         _storagePoolDao.update(pool.getId(), poolVO);
     }
@@ -3341,7 +3365,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             throw new InvalidParameterValueException(String.format("host: %s is not a secondary storage", secHost));
         }
 
-        URI uri = null;
+        URI uri;
         try {
             uri = new URI(UriUtils.encodeURIComponent(newUrl));
             if (uri.getScheme() == null) {
@@ -3364,7 +3388,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         String oldUrl = secHost.getStorageUrl();
 
-        URI oldUri = null;
+        URI oldUri;
         try {
             oldUri = new URI(UriUtils.encodeURIComponent(oldUrl));
             if (!oldUri.getScheme().equalsIgnoreCase(uri.getScheme())) {
@@ -3995,7 +4019,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return;
         }
         String templateName = getValidTemplateName(zoneId, hypervisorType);
-        VMTemplateVO registeredTemplate = systemVmTemplateRegistration.getRegisteredTemplate(templateName, arch);
+        VMTemplateVO registeredTemplate = systemVmTemplateRegistration.getRegisteredTemplate(templateName,
+                hypervisorType, arch, url);
         TemplateDataStoreVO templateDataStoreVO = null;
         if (registeredTemplate != null) {
             templateDataStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), registeredTemplate.getId());
@@ -4011,56 +4036,57 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
         SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath, nfsVersion);
-        if (templateDataStoreVO != null) {
-            systemVmTemplateRegistration.validateAndRegisterTemplate(hypervisorType, templateName,
-                    storeUrlAndId.second(), registeredTemplate, templateDataStoreVO, filePath);
+        if (registeredTemplate != null) {
+            systemVmTemplateRegistration.validateAndAddTemplateToStore(registeredTemplate, templateDataStoreVO, zoneId,
+                    storeUrlAndId.second(), filePath);
         } else {
-            systemVmTemplateRegistration.validateAndRegisterTemplateForNonExistingEntries(hypervisorType, arch,
-                    templateName, storeUrlAndId, filePath);
+            systemVmTemplateRegistration.validateAndRegisterNewTemplate(hypervisorType, arch, templateName, zoneId,
+                    storeUrlAndId.second(), filePath);
         }
     }
 
     private void registerSystemVmTemplateOnFirstNfsStore(Long zoneId, String providerName, String url, DataStore store) {
-        if (DataStoreProvider.NFS_IMAGE.equals(providerName) && zoneId != null) {
-            Transaction.execute(new TransactionCallbackNoReturn() {
-                @Override
-                public void doInTransactionWithoutResult(final TransactionStatus status) {
-                    List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZoneExceptId(zoneId, providerName,
-                            DataStoreRole.Image, store.getId());
-                    if (CollectionUtils.isEmpty(stores)) {
-                        List<Pair<HypervisorType, CPU.CPUArch>> hypervisorTypes =
-                                _clusterDao.listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
-                        TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
-                        SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
-                        String filePath = null;
-                        try {
-                            filePath = Files.createTempDirectory(SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE).toString();
-                            if (filePath == null) {
-                                throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
+        if (zoneId == null || !DataStoreProvider.NFS_IMAGE.equals(providerName)) {
+            logger.debug("Skipping system VM template registration as either zoneId is null or {} " +
+                    "provider is not NFS", store);
+            return;
+        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(final TransactionStatus status) {
+                List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZoneExceptId(zoneId, providerName,
+                        DataStoreRole.Image, store.getId());
+                if (CollectionUtils.isEmpty(stores)) {
+                    List<Pair<HypervisorType, CPU.CPUArch>> hypervisorArchTypes =
+                            _clusterDao.listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
+                    TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
+                    SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
+                    String filePath = null;
+                    try {
+                        filePath = Files.createTempDirectory(SystemVmTemplateRegistration.TEMPORARY_SECONDARY_STORE)
+                                .toString();
+                        Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
+                        String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
+                        for (Pair<HypervisorType, CPU.CPUArch> hypervisorArchType : hypervisorArchTypes) {
+                            try {
+                                registerSystemVmTemplateForHypervisorArch(hypervisorArchType.first(),
+                                        hypervisorArchType.second(), zoneId, url, store,
+                                        systemVmTemplateRegistration, filePath, storeUrlAndId, nfsVersion);
+                            } catch (CloudRuntimeException e) {
+                                SystemVmTemplateRegistration.unmountStore(filePath);
+                                logger.error("Failed to register system VM template for hypervisor: {} {}",
+                                        hypervisorArchType.first().name(), hypervisorArchType.second().name(), e);
                             }
-                            Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
-                            String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
-                            for (Pair<HypervisorType, CPU.CPUArch> hypervisorArchType : hypervisorTypes) {
-                                try {
-                                    registerSystemVmTemplateForHypervisorArch(hypervisorArchType.first(),
-                                            hypervisorArchType.second(), zoneId, url, store,
-                                            systemVmTemplateRegistration, filePath, storeUrlAndId, nfsVersion);
-                                } catch (CloudRuntimeException e) {
-                                    SystemVmTemplateRegistration.unmountStore(filePath);
-                                    logger.error("Failed to register system VM template for hypervisor: {} {}",
-                                            hypervisorArchType.first().name(), hypervisorArchType.second().name(), e);
-                                }
-                            }
-                        } catch (Exception e) {
-                            logger.error("Failed to register systemVM template(s) due to: ", e);
-                        } finally {
-                            SystemVmTemplateRegistration.unmountStore(filePath);
-                            txn.close();
                         }
+                    } catch (Exception e) {
+                        logger.error("Failed to register systemVM template(s) due to: ", e);
+                    } finally {
+                        SystemVmTemplateRegistration.unmountStore(filePath);
+                        txn.close();
                     }
                 }
-            });
-        }
+            }
+        });
     }
     @Override
     public ImageStore migrateToObjectStore(String name, String url, String providerName, Map<String, String> details) throws DiscoveryException, InvalidParameterValueException {
@@ -4258,7 +4284,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // search if there are user templates stored on this image store, excluding system, builtin templates
         List<TemplateJoinVO> templates = _templateViewDao.listActiveTemplates(storeId);
         if (templates != null && templates.size() > 0) {
-            throw new InvalidParameterValueException("Cannot delete image store with active templates backup!");
+            throw new InvalidParameterValueException("Cannot delete image store with active Templates backup!");
         }
 
         // ready to delete
@@ -4365,12 +4391,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         List<VolumeDataStoreVO> volumes = _volumeStoreDao.listActiveOnCache(storeId);
         if (volumes != null && volumes.size() > 0) {
-            throw new InvalidParameterValueException("Cannot delete cache store with staging volumes currently in use!");
+            throw new InvalidParameterValueException("Cannot delete cache store with staging Volumes currently in use!");
         }
 
         List<TemplateDataStoreVO> templates = _templateStoreDao.listActiveOnCache(storeId);
         if (templates != null && templates.size() > 0) {
-            throw new InvalidParameterValueException("Cannot delete cache store with staging templates currently in use!");
+            throw new InvalidParameterValueException("Cannot delete cache store with staging Templates currently in use!");
         }
 
         // ready to delete
@@ -4589,7 +4615,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 DataStoreDownloadFollowRedirects,
                 AllowVolumeReSizeBeyondAllocation,
                 StoragePoolHostConnectWorkers,
-                ObjectStorageCapacityThreshold
+                ObjectStorageCapacityThreshold,
+                COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES
         };
     }
 

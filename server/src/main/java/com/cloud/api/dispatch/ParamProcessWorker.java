@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.UUID;
 import java.util.regex.Matcher;
 
 import javax.inject.Inject;
@@ -43,6 +44,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -528,10 +530,16 @@ public class ParamProcessWorker implements DispatchWorker {
             } catch (final NumberFormatException e) {
                 internalId = null;
             }
-            if (internalId != null){
+            if (internalId != null) {
                 // Populate CallContext for each of the entity.
                 for (final Class<?> entity : entities) {
                     CallContext.current().putContextParameter(entity, internalId);
+                    final Object objVO = _entityMgr.findByIdIncludingRemoved(entity, internalId);
+                    if (!(objVO instanceof Identity)) {
+                        continue;
+                    }
+                    String entityUuid = ((Identity) objVO).getUuid();
+                    CallContext.current().putApiResourceUuid(annotation.name(), UUID.fromString(entityUuid));
                 }
                 validateNaturalNumber(internalId, annotation.name());
                 return internalId;
@@ -556,6 +564,7 @@ public class ParamProcessWorker implements DispatchWorker {
             }
             // Return on first non-null Id for the uuid entity
             if (internalId != null){
+                CallContext.current().putApiResourceUuid(annotation.name(), UUID.fromString(uuid));
                 CallContext.current().putContextParameter(entity, uuid);
                 break;
             }

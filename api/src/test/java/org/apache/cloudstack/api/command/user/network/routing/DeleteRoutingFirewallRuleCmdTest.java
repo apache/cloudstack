@@ -23,6 +23,7 @@ import com.cloud.network.rules.FirewallRule;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,6 +31,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,6 +49,7 @@ public class DeleteRoutingFirewallRuleCmdTest {
         ReflectionTestUtils.setField(cmd, "_firewallService", _firewallService);
 
         long id = 1L;
+        UUID uuid = UUID.randomUUID();
         long accountId = 2L;
         long networkId = 3L;
 
@@ -55,12 +59,14 @@ public class DeleteRoutingFirewallRuleCmdTest {
         Mockito.when(_firewallService.getFirewallRule(id)).thenReturn(firewallRule);
 
         ReflectionTestUtils.setField(cmd, "id", id);
+        CallContext.current().putApiResourceUuid("id", uuid);
+
         assertEquals(id, (long) cmd.getId());
         assertEquals(accountId, cmd.getEntityOwnerId());
         assertEquals(networkId, (long) cmd.getApiResourceId());
         assertEquals(ApiCommandResourceType.Network, cmd.getApiResourceType());
         assertEquals(EventTypes.EVENT_ROUTING_IPV4_FIREWALL_RULE_DELETE, cmd.getEventType());
-        assertEquals(String.format("Deleting ipv4 routing firewall rule ID=%s", id), cmd.getEventDescription());
+        assertEquals(String.format("Deleting IPv4 routing firewall rule with ID: %s", uuid), cmd.getEventDescription());
     }
 
 

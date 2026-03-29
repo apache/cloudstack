@@ -55,7 +55,7 @@ public class EnableRoleCmd extends BaseCmd {
         if (role == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Cannot find the role with provided id");
         }
-        CallContext.current().setEventDetails("Role id: " + role.getId());
+        CallContext.current().setEventDetails("Role ID: " + role.getUuid());
         boolean result = roleService.enableRole(role);
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);

@@ -28,7 +28,7 @@ public interface ScaleIOSDCManager {
     ConfigKey<Boolean> ConnectOnDemand = new ConfigKey<>("Storage",
             Boolean.class,
             "powerflex.connect.on.demand",
-            Boolean.FALSE.toString(),
+            Boolean.TRUE.toString(),
             "When true, connects PowerFlex client on Host when first Volume is mapped to SDC & client connections configured 'storage.pool.connected.clients.limit' are within the limit and disconnects when last Volume is unmapped from SDC; " +
                     "and When false, connects PowerFlex client on Host when host connects to storage pool & client connections configured 'storage.pool.connected.clients.limit' are within the limit and disconnects when host disconnects from storage pool & no volumes mapped to SDC.",
             Boolean.TRUE,

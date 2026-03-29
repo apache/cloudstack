@@ -80,10 +80,16 @@
       :footer="null"
       @cancel="closeModals">
       {{ $t('message.network.addvm.desc') }}
-      <a-form @finish="submitAddNetwork" v-ctrl-enter="submitAddNetwork">
-        <div class="modal-form">
-          <p class="modal-form__label">{{ $t('label.network') }}:</p>
+      <a-form
+        @finish="submitAddNetwork"
+        v-ctrl-enter="submitAddNetwork"
+        layout="vertical">
+        <a-form-item name="network" ref="network">
+          <template #label>
+            <tooltip-label :title="$t('label.network')" :tooltip="addNetworkData.apiParams.networkid.description"/>
+          </template>
           <a-select
+            :placeholder="addNetworkData.apiParams.networkid.description"
             :value="addNetworkData.network"
             @change="e => addNetworkData.network = e"
             v-focus="true"
@@ -104,14 +110,28 @@
               </span>
             </a-select-option>
           </a-select>
-          <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
-          <a-input v-model:value="addNetworkData.ip"></a-input>
-          <br>
+        </a-form-item>
+        <a-form-item name="ip" ref="ip">
+          <template #label>
+            <tooltip-label :title="$t('label.ipaddress')" :tooltip="addNetworkData.apiParams.ipaddress.description"/>
+          </template>
+          <a-input
+            :placeholder="addNetworkData.apiParams.ipaddress.description"
+            v-model:value="addNetworkData.ipaddress" />
+        </a-form-item>
+        <a-form-item name="macaddress" ref="macaddress">
+          <template #label>
+            <tooltip-label :title="$t('label.macaddress')" :tooltip="addNetworkData.apiParams.macaddress.description"/>
+          </template>
+          <a-input
+            :placeholder="addNetworkData.apiParams.macaddress.description"
+            v-model:value="addNetworkData.macaddress" />
+        </a-form-item>
+        <a-form-item name="makedefault" ref="makedefault">
           <a-checkbox v-model:checked="addNetworkData.makedefault">
             {{ $t('label.make.default') }}
           </a-checkbox>
-          <br>
-        </div>
+        </a-form-item>
 
         <div :span="24" class="action-button">
           <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
@@ -229,6 +249,7 @@
 <script>
 import { getAPI, postAPI } from '@/api'
 import NicsTable from '@/views/network/NicsTable'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
@@ -236,6 +257,7 @@ export default {
   name: 'NicsTab',
   components: {
     NicsTable,
+    TooltipLabel,
     TooltipButton,
     ResourceIcon
   },
@@ -279,6 +301,7 @@ export default {
   },
   created () {
     this.vm = this.resource
+    this.addNetworkData.apiParams = this.$getApiParams('addNicToVirtualMachine')
   },
   methods: {
     listNetworks () {
@@ -338,7 +361,8 @@ export default {
       this.showUpdateIpModal = false
       this.showSecondaryIpModal = false
       this.addNetworkData.network = ''
-      this.addNetworkData.ip = ''
+      this.addNetworkData.ipaddress = ''
+      this.addNetworkData.macaddress = ''
       this.addNetworkData.makedefault = false
       this.editIpAddressValue = ''
       this.newSecondaryIp = ''
@@ -367,8 +391,11 @@ export default {
       const params = {}
       params.virtualmachineid = this.vm.id
       params.networkid = this.addNetworkData.network
-      if (this.addNetworkData.ip) {
-        params.ipaddress = this.addNetworkData.ip
+      if (this.addNetworkData.ipaddress) {
+        params.ipaddress = this.addNetworkData.ipaddress
+      }
+      if (this.addNetworkData.macaddress) {
+        params.macaddress = this.addNetworkData.macaddress
       }
       this.showAddNetworkModal = false
       this.loadingNic = true
@@ -599,22 +626,6 @@ export default {
 
     &--no-margin {
       margin-top: 0;
-    }
-  }
-}
-
-.action-button {
-  display: flex;
-  flex-wrap: wrap;
-
-  button {
-    padding: 5px;
-    height: auto;
-    margin-bottom: 10px;
-    align-self: flex-start;
-
-    &:not(:last-child) {
-      margin-right: 10px;
     }
   }
 }

@@ -64,6 +64,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 
 public interface UserVmService {
@@ -523,6 +524,7 @@ public interface UserVmService {
      * @param userId user ID
      * @param serviceOffering service offering for the imported VM
      * @param sshPublicKey ssh key for the imported VM
+     * @param guestOsId guest OS ID for the imported VM (if not passed, then the guest OS of the template will be used)
      * @param hostName the name for the imported VM
      * @param hypervisorType hypervisor type for the imported VM
      * @param customParameters details for the imported VM
@@ -532,15 +534,16 @@ public interface UserVmService {
      * @throws InsufficientCapacityException in case of errors
      */
     UserVm importVM(final DataCenter zone, final Host host, final VirtualMachineTemplate template, final String instanceNameInternal, final String displayName, final Account owner, final String userData, final Account caller, final Boolean isDisplayVm, final String keyboard,
-                    final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey,
+                    final long accountId, final long userId, final ServiceOffering serviceOffering, final String sshPublicKey, final Long guestOsId,
                     final String hostName, final HypervisorType hypervisorType, final Map<String, String> customParameters,
                     final VirtualMachine.PowerState powerState, final LinkedHashMap<String, List<NicProfile>> networkNicMap) throws InsufficientCapacityException;
 
     /**
      * Unmanage a guest VM from CloudStack
-     * @return true if the VM is successfully unmanaged, false if not.
+     *
+     * @return (true if successful, false if not, hostUuid) if the VM is successfully unmanaged.
      */
-    boolean unmanageUserVM(Long vmId);
+    Pair<Boolean, String> unmanageUserVM(Long vmId, Long targetHostId);
 
     UserVm allocateVMFromBackup(CreateVMFromBackupCmd cmd) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException;
 

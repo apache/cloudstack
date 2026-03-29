@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMa
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.ScaleKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StartKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.StopKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpdateKubernetesClusterAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.UpgradeKubernetesClusterCmd;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
@@ -61,7 +62,7 @@ public interface KubernetesClusterService extends PluggableService, Configurable
             "cloud.kubernetes.cluster.network.offering",
             "DefaultNetworkOfferingforKubernetesService",
             "Name of the network offering that will be used to create isolated network in which Kubernetes cluster VMs will be launched",
-            false,
+            true,
             KubernetesServiceEnabled.key());
     static final ConfigKey<Long> KubernetesClusterStartTimeout = new ConfigKey<Long>("Advanced", Long.class,
             "cloud.kubernetes.cluster.start.timeout",
@@ -170,6 +171,8 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean scaleKubernetesCluster(ScaleKubernetesClusterCmd cmd) throws CloudRuntimeException;
 
     boolean upgradeKubernetesCluster(UpgradeKubernetesClusterCmd cmd) throws CloudRuntimeException;
+
+    boolean updateKubernetesClusterAffinityGroups(UpdateKubernetesClusterAffinityGroupCmd cmd) throws CloudRuntimeException;
 
     boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd);
 

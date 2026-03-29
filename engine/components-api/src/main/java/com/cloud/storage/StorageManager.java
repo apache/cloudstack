@@ -161,22 +161,22 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.StoragePool,
             null);
 
-    ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<Integer>("Storage", Integer.class, "primary.storage.download.wait", "10800",
+    ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<>("Storage", Integer.class, "primary.storage.download.wait", "10800",
             "In second, timeout for download template to primary storage", false);
 
-    ConfigKey<Integer>  SecStorageMaxMigrateSessions = new ConfigKey<Integer>("Advanced", Integer.class, "secstorage.max.migrate.sessions", "2",
+    ConfigKey<Integer>  SecStorageMaxMigrateSessions = new ConfigKey<>("Advanced", Integer.class, "secstorage.max.migrate.sessions", "2",
             "The max number of concurrent copy command execution sessions that an SSVM can handle", false, ConfigKey.Scope.Global);
 
-    ConfigKey<Boolean>  SecStorageVMAutoScaleDown = new ConfigKey<Boolean>("Advanced", Boolean.class, "secstorage.vm.auto.scale.down", "false",
+    ConfigKey<Boolean>  SecStorageVMAutoScaleDown = new ConfigKey<>("Advanced", Boolean.class, "secstorage.vm.auto.scale.down", "false",
             "Setting this to 'true' will auto scale down SSVMs", true, ConfigKey.Scope.Global);
 
-    ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<Integer>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
+    ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
             "Maximum wait time (in minutes) for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
-    ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<Boolean>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false",
+    ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false",
             "If set to true, the disk is created only when there is a suitable storage pool that supports the disk provisioning type specified by the service/disk offering. " +
                     "If set to false, the disk is created with a disk provisioning type supported by the pool. Default value is false, and this is currently supported for VMware only.",
             true, ConfigKey.Scope.Zone);
-    ConfigKey<String> PreferredStoragePool = new ConfigKey<String>(String.class, "preferred.storage.pool", "Advanced", "",
+    ConfigKey<String> PreferredStoragePool = new ConfigKey<>(String.class, "preferred.storage.pool", "Advanced", "",
             "The UUID of preferred storage pool for allocation.", true, ConfigKey.Scope.Account, null);
 
     ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
@@ -203,7 +203,7 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
-    static final ConfigKey<Boolean> DataStoreDownloadFollowRedirects = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
+    ConfigKey<Boolean> DataStoreDownloadFollowRedirects = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED,
             Boolean.class, "store.download.follow.redirects", "false",
             "Whether HTTP redirect is followed during store downloads for objects such as template, volume etc.",
             true, ConfigKey.Scope.Global);
@@ -211,7 +211,7 @@ public interface StorageManager extends StorageService {
     ConfigKey<Long> HEURISTICS_SCRIPT_TIMEOUT = new ConfigKey<>("Advanced", Long.class, "heuristics.script.timeout", "3000",
             "The maximum runtime, in milliseconds, to execute the heuristic rule; if it is reached, a timeout will happen.", true);
 
-    ConfigKey<Boolean> AllowVolumeReSizeBeyondAllocation = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.resize.allowed.beyond.allocation", "false",
+    ConfigKey<Boolean> AllowVolumeReSizeBeyondAllocation = new ConfigKey<>("Advanced", Boolean.class, "volume.resize.allowed.beyond.allocation", "false",
             "Determines whether volume size can exceed the pool capacity allocation disable threshold (pool.storage.allocated.capacity.disablethreshold) " +
                     "when resize a volume upto resize capacity disable threshold (pool.storage.allocated.resize.capacity.disablethreshold)",
             true, List.of(ConfigKey.Scope.StoragePool, ConfigKey.Scope.Zone));
@@ -228,9 +228,14 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.Global,
             null);
 
+    ConfigKey<Boolean> COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES = new ConfigKey<>(Boolean.class, "copy.templates.from.other.secondary.storages",
+            "Storage", "true", "When enabled, this feature allows templates to be copied from existing Secondary Storage servers (within the same zone or across zones) " +
+            "while adding a new Secondary Storage. If the copy operation fails, the system falls back to downloading the template from the source URL.",
+            true, ConfigKey.Scope.Zone, null);
+
     /**
      * should we execute in sequence not involving any storages?
-     * @return tru if commands should execute in sequence
+     * @return true if commands should execute in sequence
      */
     static boolean shouldExecuteInSequenceOnVmware() {
         return shouldExecuteInSequenceOnVmware(null, null);
@@ -252,14 +257,14 @@ public interface StorageManager extends StorageService {
 
     /**
      * Returns a comma separated list of tags for the specified storage pool
-     * @param poolId
+     * @param poolId the id of the pool to get tags for
      * @return comma separated list of tags
      */
     String getStoragePoolTags(long poolId);
 
     /**
      * Returns a list of Strings with tags for the specified storage pool
-     * @param poolId
+     * @param poolId the id of the pool to get tags for
      * @return comma separated list of tags
      */
     List<String> getStoragePoolTagList(long poolId);
@@ -276,7 +281,7 @@ public interface StorageManager extends StorageService {
 
     Pair<Long, Answer> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Command cmd) throws StorageUnavailableException;
 
-    public Answer getVolumeStats(StoragePool pool, Command cmd);
+    Answer getVolumeStats(StoragePool pool, Command cmd);
 
     boolean canPoolProvideStorageStats(StoragePool pool);
 
@@ -301,6 +306,8 @@ public interface StorageManager extends StorageService {
     void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated);
 
     Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
+
+    void updateStoragePoolHostVOAndBytes(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer);
 
     CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId);
 

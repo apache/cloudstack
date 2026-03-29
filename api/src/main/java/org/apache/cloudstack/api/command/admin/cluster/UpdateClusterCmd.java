@@ -39,26 +39,26 @@ import org.apache.commons.lang3.StringUtils;
 public class UpdateClusterCmd extends BaseCmd {
 
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "the ID of the Cluster")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ClusterResponse.class, required = true, description = "The ID of the Cluster")
     private Long id;
 
-    @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, description = "the cluster name")
+    @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, description = "The cluster name")
     private String clusterName;
 
-    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "hypervisor type of the cluster")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "Hypervisor type of the cluster")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "hypervisor type of the cluster")
+    @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, description = "Hypervisor type of the cluster")
     private String clusterType;
 
     @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Allocation state of this cluster for allocation of new resources")
     private String allocationState;
 
-    @Parameter(name = ApiConstants.MANAGED_STATE, type = CommandType.STRING, description = "whether this cluster is managed by cloudstack")
+    @Parameter(name = ApiConstants.MANAGED_STATE, type = CommandType.STRING, description = "Whether this cluster is managed by cloudstack")
     private String managedState;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
-            description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
+            description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64, s390x",
             since = "4.20")
     private String arch;
 

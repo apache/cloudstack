@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.command.ReconcileCommandService;
@@ -64,7 +65,6 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.agent.AgentManager;
@@ -1652,7 +1652,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         final String reason = shutdown.getReason();
                         logger.info("Host {} has informed us that it is shutting down with reason {} and detail {}", attache, reason, shutdown.getDetail());
                         if (reason.equals(ShutdownCommand.Update)) {
-                            // disconnectWithoutInvestigation(attache, Event.UpdateNeeded);
                             throw new CloudRuntimeException("Agent update not implemented");
                         } else if (reason.equals(ShutdownCommand.Requested)) {
                             disconnectWithoutInvestigation(attache, Event.ShutdownRequested);
@@ -1753,7 +1752,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         }
                     } catch (final UnsupportedVersionException e) {
                         logger.warn(e.getMessage());
-                        // upgradeAgent(task.getLink(), data, e.getReason());
                     } catch (final ClassNotFoundException e) {
                         final String message = String.format("Exception occurred when executing tasks! Error '%s'", e.getMessage());
                         logger.error(message);
@@ -2113,7 +2111,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
                 GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections,
-                RemoteAgentNewConnectionsMonitorInterval };
+                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort };
     }
 
     protected class SetHostParamsListener implements Listener {
@@ -2234,6 +2232,25 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance) {
         return true;
+    }
+
+    @Override
+    public int getHostSshPort(HostVO host) {
+        if (host == null) {
+            return KVMHostDiscoverySshPort.value();
+        }
+
+        if (host.getHypervisorType() != HypervisorType.KVM) {
+            return Host.DEFAULT_SSH_PORT;
+        }
+
+        _hostDao.loadDetails(host);
+        String hostPort = host.getDetail(Host.HOST_SSH_PORT);
+        if (StringUtils.isBlank(hostPort)) {
+            return KVMHostDiscoverySshPort.valueIn(host.getClusterId());
+        }
+
+        return Integer.parseInt(hostPort);
     }
 
     private GlobalLock getHostJoinLock(Long hostId) {

@@ -272,7 +272,8 @@ known_categories = {
     'Extension' : 'Extension',
     'Extensions' : 'Extension',
     'CustomAction' : 'Extension',
-    'CustomActions' : 'Extension'
+    'CustomActions' : 'Extension',
+    'ImportVmTask': 'Import VM Task'
 }
 
 

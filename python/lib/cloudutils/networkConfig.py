@@ -45,8 +45,11 @@ class networkConfig:
         if not cmd.isSuccess():
             logging.debug("Failed to get default route")
             raise CloudRuntimeException("Failed to get default route")
-
-        result = cmd.getStdout().split(" ")
+        output = cmd.getStdout().strip()
+        result = output.split(" ")
+        if len(result) < 2:
+            logging.debug("Output for the default route incomplete: %s. It should have been '<GATEWAY> <DEVICE>'" % output)
+            raise CloudRuntimeException("Output for the default route incomplete")
         gateway = result[0]
         dev = result[1]
 
@@ -150,10 +153,10 @@ class networkConfig:
             if line.find("HWaddr") != -1:
                 macAddr = line.split("HWaddr ")[1].strip(" ")
             elif line.find("inet ") != -1:
-                m = re.search("addr:(.*)\ *Bcast:(.*)\ *Mask:(.*)", line)
+                m = re.search(r"addr:([^\s]+)\s*Bcast:([^\s]+)\s*Mask:([^\s]+)", line)
                 if m is not None:
-                    ipAddr = m.group(1).rstrip(" ")
-                    netmask = m.group(3).rstrip(" ")
+                    ipAddr = m.group(1).strip()
+                    netmask = m.group(3).strip()
 
         if networkConfig.isBridgePort(dev):
             type = "brport"

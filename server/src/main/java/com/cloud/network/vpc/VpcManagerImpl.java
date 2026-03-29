@@ -63,6 +63,7 @@ import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.utils.DomainHelper;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.collect.Sets;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -70,6 +71,7 @@ import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.vpc.CloneVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayByAdminCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
@@ -285,6 +287,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     DomainDao domainDao;
     @Inject
+    DomainHelper domainHelper;
+    @Inject
     private AnnotationDao annotationDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
@@ -385,7 +389,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     }
                     createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap,
                             true, State.Enabled, null, false,
-                            false, false, null, null, false);
+                            false, false, null, null, false, false);
                 }
 
                 // configure default vpc offering with Netscaler as LB Provider
@@ -405,7 +409,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName,
-                            svcProviderMap, false, State.Enabled, null, false, false, false, null, null, false);
+                            svcProviderMap, false, State.Enabled, null, false, false, false, null, null, false, false);
 
                 }
 
@@ -426,7 +430,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled,
-                            null, false, false, true, null, null, false);
+                            null, false, false, true, null, null, false, false);
                 }
 
                 // configure default vpc offering with NSX as network service provider in NAT mode
@@ -443,7 +447,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false);
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false, false);
 
                 }
 
@@ -461,7 +465,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NSX_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false);
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false, false);
 
                 }
 
@@ -479,7 +483,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_ROUTE_NETRIS_OFFERING_NAME, VpcOffering.DEFAULT_VPC_ROUTE_NETRIS_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false);
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false, false);
 
                 }
 
@@ -497,7 +501,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         }
                     }
                     createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME, svcProviderMap, false,
-                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false);
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false, false);
 
                 }
             }
@@ -583,6 +587,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         boolean specifyAsNumber = cmd.getSpecifyAsNumber();
         String routingModeString = cmd.getRoutingMode();
+        boolean conserveMode = cmd.isConserveMode();
 
         // check if valid domain
         if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
@@ -621,7 +626,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
                 serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, provider, networkMode,
-                domainIds, zoneIds, (enable ? State.Enabled : State.Disabled), routingMode, specifyAsNumber);
+                domainIds, zoneIds, (enable ? State.Enabled : State.Disabled), routingMode, specifyAsNumber, conserveMode);
     }
 
     @Override
@@ -629,14 +634,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
                                          final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId,
                                          final String externalProvider, final NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, State state,
-                                         NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber) {
+                                         NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber, boolean conserveMode) {
+
+        boolean isExternalProvider = externalProvider != null &&
+                Arrays.asList("NSX", "Netris").stream().anyMatch(s -> s.equalsIgnoreCase(externalProvider));
+        if (!isExternalProvider && CollectionUtils.isEmpty(supportedServices)) {
+            throw new InvalidParameterValueException("Supported services needs to be provided");
+        }
 
         if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !(internetProtocol == null || NetUtils.InternetProtocol.IPv4.equals(internetProtocol))) {
             throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported VPC offering", Ipv6Service.Ipv6OfferingCreationEnabled.key()));
         }
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
 
         final Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         final Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
@@ -724,7 +735,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList, redundantRouterService);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
-                redundantRouter, networkMode, routingMode, specifyAsNumber);
+                redundantRouter, networkMode, routingMode, specifyAsNumber, conserveMode);
 
         if (offering != null) {
             List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
@@ -743,7 +754,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 vpcOfferingDetailsDao.saveDetails(detailsVO);
             }
         }
-        CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
+        CallContext.current().setEventDetails(" ID: " + offering.getUuid() + " Name: " + name);
         CallContext.current().putContextParameter(VpcOffering.class, offering.getUuid());
 
         return offering;
@@ -752,7 +763,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Service, Set<Provider>> svcProviderMap,
                                               final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                                              final boolean redundantRouter, NetworkOffering.NetworkMode networkMode, NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber) {
+                                              final boolean redundantRouter, NetworkOffering.NetworkMode networkMode, NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber, boolean conserveMode) {
 
         return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
@@ -768,6 +779,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (Objects.nonNull(routingMode)) {
                     offering.setRoutingMode(routingMode);
                 }
+                offering.setConserveMode(conserveMode);
 
                 logger.debug("Adding vpc offering " + offering);
                 offering = _vpcOffDao.persist(offering);
@@ -806,6 +818,349 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
         }
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CLONE, eventDescription = "cloning VPC offering")
+    public VpcOffering cloneVPCOffering(CloneVPCOfferingCmd cmd) {
+        Long sourceVpcOfferingId = cmd.getSourceOfferingId();
+
+        final VpcOffering sourceVpcOffering = _vpcOffDao.findById(sourceVpcOfferingId);
+        if (sourceVpcOffering == null) {
+            throw new InvalidParameterValueException("Unable to find source VPC offering by id " + sourceVpcOfferingId);
+        }
+
+        String name = cmd.getVpcOfferingName();
+        if (name == null || name.isEmpty()) {
+            throw new InvalidParameterValueException("Name is required when cloning a VPC offering");
+        }
+
+        VpcOfferingVO vpcOfferingVO = _vpcOffDao.findByUniqueName(name);
+        if (vpcOfferingVO != null) {
+            throw new InvalidParameterValueException(String.format("A VPC offering with name %s already exists", name));
+        }
+
+        logger.info("Cloning VPC offering {} (id: {}) to new offering with name: {}",
+                sourceVpcOffering.getName(), sourceVpcOfferingId, name);
+
+        Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap = getVpcOffSvcProvidersMap(sourceVpcOfferingId);
+        validateProvider(sourceVpcOffering, sourceServiceProviderMap, cmd.getProvider(), cmd.getNetworkMode());
+
+        applySourceOfferingValuesToCloneCmd(cmd, sourceServiceProviderMap, sourceVpcOffering);
+
+        return createVpcOffering(cmd);
+    }
+
+    private void validateProvider(VpcOffering sourceVpcOffering,
+                                  Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap,
+                                  String provider, String networkMode) {
+        provider = ConfigurationManagerImpl.getExternalNetworkProvider(provider, sourceServiceProviderMap);
+        if (provider != null && (provider.equals("NSX") || provider.equals("Netris"))) {
+            if (networkMode != null && sourceVpcOffering.getNetworkMode() != null) {
+                if (!networkMode.equalsIgnoreCase(sourceVpcOffering.getNetworkMode().toString())) {
+                    throw new InvalidParameterValueException(
+                            String.format("Cannot change network mode when cloning %s provider VPC offerings. " +
+                                            "Source offering has network mode '%s', but '%s' was specified. ",
+                                    provider, sourceVpcOffering.getNetworkMode(), networkMode));
+                }
+            }
+        }
+    }
+
+    private void applySourceOfferingValuesToCloneCmd(CloneVPCOfferingCmd cmd,
+                                                     Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap,
+                                                     VpcOffering sourceVpcOffering) {
+        Long sourceOfferingId = sourceVpcOffering.getId();
+
+        List<String> finalServices = resolveFinalServicesList(cmd, sourceServiceProviderMap);
+
+        Map finalServiceProviderMap = resolveServiceProviderMap(cmd, sourceServiceProviderMap, finalServices);
+
+        List<Long> sourceDomainIds = vpcOfferingDetailsDao.findDomainIds(sourceOfferingId);
+        List<Long> sourceZoneIds = vpcOfferingDetailsDao.findZoneIds(sourceOfferingId);
+
+        Map<String, String> sourceServiceCapabilityList = reconstructServiceCapabilityList(sourceVpcOffering);
+
+        applyResolvedValuesToCommand(cmd, (VpcOfferingVO)sourceVpcOffering, finalServices, finalServiceProviderMap,
+                sourceDomainIds, sourceZoneIds, sourceServiceCapabilityList);
+    }
+
+    /**
+     * Reconstructs the service capability list from the source VPC offering's stored capability flags.
+     * These capabilities were originally passed during creation and stored as boolean flags in the offering.
+     *
+     * Returns a Map in the format expected by CreateVPCOfferingCmd.serviceCapabilityList:
+     * Map<String, String> with keys like "0.service", "0.capabilitytype", "0.capabilityvalue"
+     */
+    private Map<String, String> reconstructServiceCapabilityList(VpcOffering sourceOffering) {
+        Map<String, String> capabilityList = new HashMap<>();
+        int index = 0;
+
+        if (sourceOffering.isOffersRegionLevelVPC()) {
+            capabilityList.put(index + ".service", Network.Service.Connectivity.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.RegionLevelVpc.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+        }
+
+        if (sourceOffering.isSupportsDistributedRouter()) {
+            capabilityList.put(index + ".service", Network.Service.Connectivity.getName());
+            capabilityList.put(index + ".capabilitytype", Network.Capability.DistributedRouter.getName());
+            capabilityList.put(index + ".capabilityvalue", "true");
+            index++;
+        }
+
+        if (sourceOffering.isRedundantRouter()) {
+            Map<Network.Service, Set<Network.Provider>> serviceProviderMap = getVpcOffSvcProvidersMap(sourceOffering.getId());
+
+            // Check which service has VPCVirtualRouter provider - SourceNat takes precedence
+            Network.Service redundantRouterService = null;
+            for (Network.Service service : Arrays.asList(Network.Service.SourceNat, Network.Service.Gateway, Network.Service.StaticNat)) {
+                Set<Network.Provider> providers = serviceProviderMap.get(service);
+                if (providers != null && providers.contains(Network.Provider.VPCVirtualRouter)) {
+                    redundantRouterService = service;
+                    break;
+                }
+            }
+
+            if (redundantRouterService != null) {
+                capabilityList.put(index + ".service", redundantRouterService.getName());
+                capabilityList.put(index + ".capabilitytype", Network.Capability.RedundantRouter.getName());
+                capabilityList.put(index + ".capabilityvalue", "true");
+            }
+        }
+
+        return capabilityList;
+    }
+
+    private List<String> resolveFinalServicesList(CloneVPCOfferingCmd cmd,
+                                                  Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap) {
+
+        List<String> cmdServices = cmd.getSupportedServices();
+        List<String> addServices = cmd.getAddServices();
+        List<String> dropServices = cmd.getDropServices();
+
+        if (cmdServices != null && !cmdServices.isEmpty()) {
+            return cmdServices;
+        }
+
+        List<String> finalServices = new ArrayList<>();
+        for (Network.Service service : sourceServiceProviderMap.keySet()) {
+            finalServices.add(service.getName());
+        }
+
+        if (dropServices != null && !dropServices.isEmpty()) {
+            List<String> normalizedDropServices = new ArrayList<>();
+            for (String serviceName : dropServices) {
+                Network.Service service = Network.Service.getService(serviceName);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Service " + serviceName + " is not supported in VPC");
+                }
+                normalizedDropServices.add(service.getName());
+            }
+            finalServices.removeAll(normalizedDropServices);
+            logger.debug("Dropped services from clone: {}", dropServices);
+        }
+
+        if (addServices != null && !addServices.isEmpty()) {
+            List<String> normalizedAddServices = new ArrayList<>();
+            for (String serviceName : addServices) {
+                Network.Service service = Network.Service.getService(serviceName);
+                if (service == null) {
+                    throw new InvalidParameterValueException("Service " + serviceName + " is not supported in VPC");
+                }
+                String canonicalName = service.getName();
+                if (!finalServices.contains(canonicalName)) {
+                    finalServices.add(canonicalName);
+                    normalizedAddServices.add(canonicalName);
+                }
+            }
+            logger.debug("Added services to clone: {}", addServices);
+        }
+
+        return finalServices;
+    }
+
+    private Map<String, List<String>> resolveServiceProviderMap(CloneVPCOfferingCmd cmd,
+                                                                Map<Network.Service, Set<Network.Provider>> sourceServiceProviderMap, List<String> finalServices) {
+
+        if (cmd.getServiceProviders() != null && !cmd.getServiceProviders().isEmpty()) {
+            return cmd.getServiceProviders();
+        }
+
+        Map<String, List<String>> finalMap = new HashMap<>();
+        for (Map.Entry<Network.Service, Set<Network.Provider>> entry : sourceServiceProviderMap.entrySet()) {
+            String serviceName = entry.getKey().getName();
+            if (finalServices.contains(serviceName)) {
+                List<String> providers = new ArrayList<>();
+                for (Network.Provider provider : entry.getValue()) {
+                    providers.add(provider.getName());
+                }
+                finalMap.put(serviceName, providers);
+            }
+        }
+
+        return finalMap;
+    }
+
+    /**
+     * Converts service provider map from Map<String, List<String>> to the indexed format
+     * expected by CreateVPCOfferingCmd.serviceProviderList parameter.
+     *
+     * Input: {"Dhcp": ["VpcVirtualRouter"], "Dns": ["VpcVirtualRouter"]}
+     * Output: {"0": {"service": "Dhcp", "provider": "VpcVirtualRouter"},
+     *          "1": {"service": "Dns", "provider": "VpcVirtualRouter"}}
+     */
+    private Map<String, Map<String, String>> convertToServiceProviderListFormat(Map<String, List<String>> serviceProviderMap) {
+        Map<String, Map<String, String>> result = new HashMap<>();
+        int index = 0;
+
+        for (Map.Entry<String, List<String>> entry : serviceProviderMap.entrySet()) {
+            String serviceName = entry.getKey();
+            List<String> providers = entry.getValue();
+
+            for (String providerName : providers) {
+                Map<String, String> serviceProviderEntry = new HashMap<>();
+                serviceProviderEntry.put("service", serviceName);
+                serviceProviderEntry.put("provider", providerName);
+                result.put(String.valueOf(index++), serviceProviderEntry);
+            }
+        }
+
+        return result;
+    }
+
+    private void applyResolvedValuesToCommand(CloneVPCOfferingCmd cmd, VpcOfferingVO sourceOffering,
+                                              List<String> finalServices, Map finalServiceProviderMap,
+                                              List<Long> sourceDomainIds, List<Long> sourceZoneIds,
+                                              Map<String, String> sourceServiceCapabilityList) {
+        try {
+            if (cmd.getSupportedServices() == null || cmd.getSupportedServices().isEmpty()) {
+                logger.debug("Setting supportedServices to {} services from source offering", finalServices.size());
+                ConfigurationManagerImpl.setField(cmd, "supportedServices", finalServices);
+            }
+
+            if (cmd.getServiceProviders() == null || cmd.getServiceProviders().isEmpty()) {
+                Map<String, Map<String, String>> convertedProviderMap = convertToServiceProviderListFormat(finalServiceProviderMap);
+                logger.debug("Setting serviceProviderList with {} provider mappings", convertedProviderMap.size());
+                ConfigurationManagerImpl.setField(cmd, "serviceProviderList", convertedProviderMap);
+            }
+
+            if ((cmd.getServiceCapabilityList() == null || cmd.getServiceCapabilityList().isEmpty())
+                    && sourceServiceCapabilityList != null && !sourceServiceCapabilityList.isEmpty()) {
+                Map<String, String> filteredCapabilities = filterServiceCapabilities(sourceServiceCapabilityList, finalServices);
+                if (!filteredCapabilities.isEmpty()) {
+                    ConfigurationManagerImpl.setField(cmd, "serviceCapabilityList", filteredCapabilities);
+                }
+            }
+
+            if (cmd.getDisplayText() == null && sourceOffering.getDisplayText() != null) {
+                ConfigurationManagerImpl.setField(cmd, "displayText", sourceOffering.getDisplayText());
+            }
+
+            if (cmd.getServiceOfferingId() == null && sourceOffering.getServiceOfferingId() != null) {
+                ConfigurationManagerImpl.setField(cmd, "serviceOfferingId", sourceOffering.getServiceOfferingId());
+            }
+
+            Boolean enableFieldValue = getRawFieldValue(cmd, "enable", Boolean.class);
+            if (enableFieldValue == null) {
+                Boolean enableState = sourceOffering.getState() == VpcOffering.State.Enabled;
+                ConfigurationManagerImpl.setField(cmd, "enable", enableState);
+            }
+
+            Boolean specifyAsNumberFieldValue = getRawFieldValue(cmd, "specifyAsNumber", Boolean.class);
+            if (specifyAsNumberFieldValue == null) {
+                ConfigurationManagerImpl.setField(cmd, "specifyAsNumber", sourceOffering.isSpecifyAsNumber());
+            }
+
+            if (cmd.getInternetProtocol() == null) {
+                String internetProtocol = vpcOfferingDetailsDao.getDetail(sourceOffering.getId(), ApiConstants.INTERNET_PROTOCOL);
+                if (internetProtocol != null) {
+                    ConfigurationManagerImpl.setField(cmd, "internetProtocol", internetProtocol);
+                }
+            }
+
+            if (cmd.getNetworkMode() == null && sourceOffering.getNetworkMode() != null) {
+                ConfigurationManagerImpl.setField(cmd, "networkMode", sourceOffering.getNetworkMode().toString());
+            }
+
+            if (cmd.getRoutingMode() == null && sourceOffering.getRoutingMode() != null) {
+                ConfigurationManagerImpl.setField(cmd, "routingMode", sourceOffering.getRoutingMode().toString());
+            }
+
+            if (cmd.getDomainIds() == null || cmd.getDomainIds().isEmpty()) {
+                if (sourceDomainIds != null && !sourceDomainIds.isEmpty()) {
+                    ConfigurationManagerImpl.setField(cmd, "domainIds", sourceDomainIds);
+                }
+            }
+
+            if (cmd.getZoneIds() == null || cmd.getZoneIds().isEmpty()) {
+                if (sourceZoneIds != null && !sourceZoneIds.isEmpty()) {
+                    ConfigurationManagerImpl.setField(cmd, "zoneIds", sourceZoneIds);
+                }
+            }
+
+        } catch (Exception e) {
+            logger.error("Failed to apply source offering parameters during clone: {}", e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to apply source offering parameters during VPC offering clone", e);
+        }
+    }
+
+    private <T> T getRawFieldValue(Object obj, String fieldName, Class<T> expectedType) {
+        try {
+            java.lang.reflect.Field field = ConfigurationManagerImpl.findField(obj.getClass(), fieldName);
+            if (field != null) {
+                field.setAccessible(true);
+                Object value = field.get(obj);
+                if (value == null || expectedType.isInstance(value)) {
+                    return expectedType.cast(value);
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Could not get raw field value for {}: {}", fieldName, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Filters service capabilities to only include those for services present in the final services list.
+     * This ensures that when services are dropped during cloning, their associated capabilities are also removed.
+     *
+     * @param sourceServiceCapabilityList The original capability list from the source VPC offering
+     *                                     in format: Map with keys like "0.service", "0.capabilitytype", "0.capabilityvalue"
+     * @param finalServices The list of service names that should be retained in the cloned offering
+     * @return Filtered map containing only capabilities for services in finalServices
+     */
+    private Map<String, String> filterServiceCapabilities(Map<String, String> sourceServiceCapabilityList,
+                                                          List<String> finalServices) {
+        Map<String, String> filteredCapabilities = new HashMap<>();
+
+        for (Map.Entry<String, String> entry : sourceServiceCapabilityList.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            // Check if this is a service key (e.g., "0.service", "1.service")
+            if (key.endsWith(".service")) {
+                String serviceName = value;
+                if (finalServices.contains(serviceName)) {
+                    // Include this service and its associated capability entries
+                    String prefix = key.substring(0, key.lastIndexOf('.'));
+                    filteredCapabilities.put(key, value);
+
+                    // Also include the capability type and value for this service
+                    String capabilityTypeKey = prefix + ".capabilitytype";
+                    String capabilityValueKey = prefix + ".capabilityvalue";
+                    if (sourceServiceCapabilityList.containsKey(capabilityTypeKey)) {
+                        filteredCapabilities.put(capabilityTypeKey, sourceServiceCapabilityList.get(capabilityTypeKey));
+                    }
+                    if (sourceServiceCapabilityList.containsKey(capabilityValueKey)) {
+                        filteredCapabilities.put(capabilityValueKey, sourceServiceCapabilityList.get(capabilityValueKey));
+                    }
+                }
+            }
+        }
+
+        return filteredCapabilities;
     }
 
     private void validateConnectivtyServiceCapabilities(final Set<Provider> providers, final Map serviceCapabilitystList) {
@@ -1037,13 +1392,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_DELETE, eventDescription = "deleting vpc offering")
     public boolean deleteVpcOffering(final long offId) {
-        CallContext.current().setEventDetails(" Id: " + offId);
-
         // Verify vpc offering id
         final VpcOfferingVO offering = _vpcOffDao.findById(offId);
         if (offering == null) {
             throw new InvalidParameterValueException("unable to find vpc offering " + offId);
         }
+        CallContext.current().setEventDetails(" ID: " + offering.getUuid());
 
         // Don't allow to delete default vpc offerings
         if (offering.isDefault() == true) {
@@ -1102,13 +1456,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     private VpcOffering updateVpcOfferingInternal(long vpcOffId, String vpcOfferingName, String displayText, String state, Integer sortKey, final List<Long> domainIds, final List<Long> zoneIds) {
-        CallContext.current().setEventDetails(" Id: " + vpcOffId);
-
         // Verify input parameters
         final VpcOfferingVO offeringToUpdate = _vpcOffDao.findById(vpcOffId);
         if (offeringToUpdate == null) {
             throw new InvalidParameterValueException("Unable to find vpc offering " + vpcOffId);
         }
+        CallContext.current().setEventDetails(" ID: " + offeringToUpdate.getUuid());
 
         List<Long> existingDomainIds = vpcOfferingDetailsDao.findDomainIds(vpcOffId);
         Collections.sort(existingDomainIds);
@@ -1118,7 +1471,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
 
         // Filter child domains when both parent and child domains are present
-        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        List<Long> filteredDomainIds = domainHelper.filterChildSubDomains(domainIds);
         Collections.sort(filteredDomainIds);
 
         List<Long> filteredZoneIds = new ArrayList<>();
@@ -1512,7 +1865,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_DELETE, eventDescription = "deleting VPC")
     public boolean deleteVpc(final long vpcId) throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails(" Id: " + vpcId);
         final CallContext ctx = CallContext.current();
 
         // Verify vpc id
@@ -1520,6 +1872,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (vpc == null) {
             throw new InvalidParameterValueException("unable to find VPC id=" + vpcId);
         }
+
+        CallContext.current().setEventDetails(" ID: " + vpc.getUuid());
 
         // verify permissions
         _accountMgr.checkAccess(ctx.getCallingAccount(), null, false, vpc);
@@ -1591,7 +1945,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
     public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId, final Boolean displayVpc, Integer mtu, String sourceNatIp) throws ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails(" Id: " + vpcId);
         final Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
@@ -1599,6 +1952,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (vpcToUpdate == null) {
             throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
         }
+
+        CallContext.current().setEventDetails(" ID: " + vpcToUpdate.getUuid());
 
         _accountMgr.checkAccess(caller, null, false, vpcToUpdate);
 
@@ -2608,7 +2963,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new IllegalStateException(e);
         }
 
-        CallContext.current().setEventDetails("Private Gateway Id: " + gatewayVO.getId());
+        CallContext.current().setEventDetails("Private Gateway ID: " + gatewayVO.getUuid());
         return getVpcPrivateGateway(gatewayVO.getId());
     }
 
@@ -2728,7 +3083,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     _vpcGatewayDao.update(vo.getId(), vo);
                     logger.debug("Marke gateway " + gateway + " with state " + VpcGateway.State.Ready);
                 }
-                CallContext.current().setEventDetails("Private Gateway Id: " + gatewayId);
+                CallContext.current().setEventDetails("Private Gateway ID: " + gateway.getUuid());
                 return getVpcPrivateGateway(gatewayId);
             } else {
                 logger.warn("Private gateway " + gateway + " failed to apply on the backend");
@@ -2951,6 +3306,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return true;
     }
 
+    protected boolean isNetworkOnVpc(Network network) {
+        return network.getVpcId() != null;
+    }
+
+    @Override
+    public boolean isNetworkOnVpcEnabledConserveMode(Network newRuleNetwork) {
+        if (isNetworkOnVpc(newRuleNetwork)) {
+            Vpc vpc = getActiveVpc(newRuleNetwork.getVpcId());
+            VpcOfferingVO vpcOffering = vpc != null ? _vpcOffDao.findById(vpc.getVpcOfferingId()) : null;
+            return vpcOffering != null && vpcOffering.isConserveMode();
+        }
+        return false;
+    }
+
     protected boolean applyStaticRoutes(final List<StaticRouteVO> routes, final Account caller, final boolean updateRoutesInDB) throws ResourceUnavailableException {
         final boolean success = true;
         final List<StaticRouteProfile> staticRouteProfiles = getVpcStaticRoutes(routes);
@@ -3125,7 +3494,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 if (!_staticRouteDao.setStateToAdd(newRoute)) {
                     throw new CloudRuntimeException("Unable to update the state to add for " + newRoute);
                 }
-                CallContext.current().setEventDetails("Static route Id: " + newRoute.getId());
+                CallContext.current().setEventDetails("Static route ID: " + newRoute.getUuid());
 
                 return newRoute;
             }
@@ -3656,30 +4025,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return _ntwkMgr.areRoutersRunning(routerDao.listByVpcId(vpc.getId()));
-    }
-
-    private List<Long> filterChildSubDomains(final List<Long> domainIds) {
-        List<Long> filteredDomainIds = new ArrayList<>();
-        if (domainIds != null) {
-            filteredDomainIds.addAll(domainIds);
-        }
-        if (filteredDomainIds.size() > 1) {
-            for (int i = filteredDomainIds.size() - 1; i >= 1; i--) {
-                long first = filteredDomainIds.get(i);
-                for (int j = i - 1; j >= 0; j--) {
-                    long second = filteredDomainIds.get(j);
-                    if (domainDao.isChildDomain(filteredDomainIds.get(i), filteredDomainIds.get(j))) {
-                        filteredDomainIds.remove(j);
-                        i--;
-                    }
-                    if (domainDao.isChildDomain(filteredDomainIds.get(j), filteredDomainIds.get(i))) {
-                        filteredDomainIds.remove(i);
-                        break;
-                    }
-                }
-            }
-        }
-        return filteredDomainIds;
     }
 
     protected boolean isGlobalAcl(Long aclVpcId) {

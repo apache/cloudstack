@@ -64,8 +64,8 @@
           </div>
           <div v-else-if="$route.meta.name === 'backup' && item === 'volumes'">
             <div v-for="(volume, idx) in JSON.parse(dataResource[item])" :key="idx">
-              <router-link v-if="!dataResource['vmbackupofferingremoved']" :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.path }}</router-link>
-              <span v-else>{{ volume.type }} - {{ volume.path }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
+              <router-link v-if="!dataResource['vmbackupofferingremoved']" :to="{ path: '/volume/' + volume.uuid }">{{ volume.type }} - {{ volume.uuid }}</router-link>
+              <span v-else>{{ volume.type }} - {{ volume.uuid }}</span> ({{ parseFloat(volume.size / (1024.0 * 1024.0 * 1024.0)).toFixed(1) }} GB)
             </div>
           </div>
           <div v-else-if="$route.meta.name === 'computeoffering' && item === 'rootdisksize'">
@@ -155,6 +155,13 @@
         </div>
       </a-list-item>
       <a-list-item v-else-if="(item === 'privatemtu' && !['L2', 'Shared'].includes(dataResource['type'])) || (item === 'publicmtu' && dataResource['type'] !== 'L2')">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>{{ dataResource[item] }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="(item === 'zoneid' && $route.path.includes('/snapshotpolicy'))">
         <div>
           <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
           <br/>

@@ -271,6 +271,7 @@ public class UriUtilsTest {
         Assert.assertTrue(UriUtils.isUrlForCompressedFile("https://abc.com/xyz.bz2"));
         Assert.assertTrue(UriUtils.isUrlForCompressedFile("http://abc.com/xyz.zip"));
         Assert.assertTrue(UriUtils.isUrlForCompressedFile("https://abc.com/xyz.gz"));
+        Assert.assertTrue(UriUtils.isUrlForCompressedFile("http://abc.com/xyz.xz"));
         Assert.assertFalse(UriUtils.isUrlForCompressedFile("http://abc.com/xyz.qcow2"));
     }
 

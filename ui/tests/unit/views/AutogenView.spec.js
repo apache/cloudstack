@@ -113,6 +113,10 @@ store = common.createMockStore(state, actions, mutations)
 i18n = common.createMockI18n('en', mockData.messages)
 
 mocks = {
+  $config: {
+    showSearchFilters: true,
+    docBase: 'http://docs.cloudstack.apache.org/en/latest'
+  },
   $notifyError: jest.fn((error) => {
     return error
   }),
@@ -652,12 +656,12 @@ describe('Views > AutogenView.vue', () => {
           testapinamecase1response: {
             count: 0,
             testapinamecase1: [{
-              id: 'test-id-1',
+              id: 'uuid1',
               name: 'test-name-1'
             }]
           }
         })
-        await router.push({ name: 'testRouter13', params: { id: 'test-id' } })
+        await router.push({ name: 'testRouter13', params: { id: 'uuid1' } })
         await flushPromises()
 
         expect(mockAxios).toHaveBeenCalled()
@@ -668,8 +672,7 @@ describe('Views > AutogenView.vue', () => {
             command: 'testApiNameCase1',
             response: 'json',
             listall: true,
-            id: 'test-id',
-            hostname: 'test-id',
+            id: 'uuid1',
             page: 1,
             pagesize: 20
           })
@@ -777,6 +780,7 @@ describe('Views > AutogenView.vue', () => {
           testapinamecase1response: {
             count: 1,
             testapinamecase1: [{
+              id: 'uuid1',
               name: 'test-name-value',
               hostname: 'test-hostname-value'
             }]
@@ -786,13 +790,13 @@ describe('Views > AutogenView.vue', () => {
         await flushPromises()
 
         expect(wrapper.vm.items).toEqual([{
-          id: 'test-hostname-value',
+          id: 'uuid1',
           name: 'test-name-value',
           hostname: 'test-hostname-value',
           key: 0
         }])
         expect(wrapper.vm.resource).toEqual({
-          id: 'test-hostname-value',
+          id: 'uuid1',
           name: 'test-name-value',
           hostname: 'test-hostname-value',
           key: 0

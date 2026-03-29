@@ -21,12 +21,18 @@
       <a-tab-pane :tab="$t('label.schedule')" key="1">
         <FormSchedule
           :loading="loading"
-          :resource="resource"/>
+          :resource="resource"
+          :dataSource="dataSource"
+          @close-action="closeAction"
+          @refresh="handleRefresh"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.scheduled.backups')" key="2">
         <BackupSchedule
           :loading="loading"
-          :dataSource="dataSource" />
+          :resource="resource"
+          :dataSource="dataSource"
+          @refresh="handleRefresh"
+          @close-action="closeAction" />
       </a-tab-pane>
     </a-tabs>
   </div>
@@ -52,7 +58,7 @@ export default {
   data () {
     return {
       loading: false,
-      dataSource: {}
+      dataSource: []
     }
   },
   provide () {
@@ -67,16 +73,28 @@ export default {
   methods: {
     fetchData () {
       const params = {}
-      this.dataSource = {}
+      this.dataSource = []
       this.loading = true
-      params.virtualmachineid = this.resource.id
+      params.virtualmachineid = this.resource.id || this.resource.virtualmachineid
+
+      if (!params.virtualmachineid) {
+        console.error('No VM ID found in resource:', this.resource)
+        this.loading = false
+        return
+      }
+
       getAPI('listBackupSchedule', params).then(json => {
-        this.dataSource = json.listbackupscheduleresponse.backupschedule || {}
+        this.dataSource = json.listbackupscheduleresponse.backupschedule || []
       }).finally(() => {
         this.loading = false
       })
     },
+    handleRefresh () {
+      this.fetchData()
+      this.$emit('refresh')
+    },
     closeAction () {
+      this.$emit('refresh')
       this.$emit('close-action')
     }
   }

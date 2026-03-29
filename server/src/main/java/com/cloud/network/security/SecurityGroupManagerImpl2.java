@@ -98,7 +98,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
             return;
         }
         if (_schedulerDisabled) {
-            logger.debug("Security Group Mgr v2: scheduler disabled, doing nothing for " + affectedVms.size() + " vms");
+            logger.debug("Security Group Mgr v2: scheduler disabled, doing nothing for " + affectedVms.size() + " Instances");
             return;
         }
         Set<Long> workItems = new TreeSet<Long>();
@@ -106,7 +106,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         workItems.removeAll(_disabledVms);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() +
+            logger.debug("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " Instances " + " (unique=" + workItems.size() +
                 "), current queue size=" + _workQueue.size());
         }
 
@@ -123,7 +123,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         _mBean.logScheduledDetails(workItems);
         p.stop();
         if (logger.isDebugEnabled()) {
-            logger.debug("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + newJobs +
+            logger.debug("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " Instances: num new jobs=" + newJobs +
                 " num rows insert or updated=" + updated + " time taken=" + p.getDurationInMillis());
         }
     }

@@ -1,3 +1,22 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # Apache CloudStack
 
 [![Build Status](https://github.com/apache/cloudstack/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/build.yml)
@@ -11,6 +30,24 @@
 [![UI Build](https://github.com/apache/cloudstack/actions/workflows/ui.yml/badge.svg?branch=main)](https://github.com/apache/cloudstack/actions/workflows/ui.yml)
 
 [![Apache CloudStack](tools/logo/apache_cloudstack.png)](https://cloudstack.apache.org/)
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+- [Who Uses CloudStack?](#who-uses-cloudstack)
+- [Demo](#demo)
+- [Getting Started](#getting-started)
+- [Getting Source Repository](#getting-source-repository)
+- [Documentation](#documentation)
+- [News and Events](#news-and-events)
+- [Getting Involved and Contributing](#getting-involved-and-contributing)
+- [Reporting Security Vulnerabilities](#reporting-security-vulnerabilities)
+- [License](#license)
+- [Notice of Cryptographic Software](#notice-of-cryptographic-software)
+- [Star History](#star-history)
+- [Contributors](#contributors)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 Apache CloudStack is open source software designed to deploy and manage large
 networks of virtual machines, as a highly available, highly scalable

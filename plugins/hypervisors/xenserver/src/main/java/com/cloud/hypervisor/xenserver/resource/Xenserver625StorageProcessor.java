@@ -220,7 +220,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             srUuid = sr.getUuid(conn);
             Set<PBD> pbDs = sr.getPBDs(conn);
             for (PBD pbd : pbDs) {
-                logger.debug(String.format("Unpluging PBD [%s] of SR [%s] as it is not working properly.", pbd.getUuid(conn), srUuid));
+                logger.debug(String.format("Unplugging PBD [%s] of SR [%s] as it is not working properly.", pbd.getUuid(conn), srUuid));
                 unplugPbd(conn, pbd);
             }
             logger.debug(String.format("Forgetting SR [%s] as it is not working properly.", srUuid));
@@ -239,7 +239,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             pbdUuid = pbd.getUuid(conn);
             pbd.unplug(conn);
         } catch (XenAPIException | XmlRpcException e) {
-            throw new CloudRuntimeException(String.format("Exception while unpluging PBD [%s].", pbdUuid));
+            throw new CloudRuntimeException(String.format("Exception while unplugging PBD [%s].", pbdUuid));
         }
     }
 

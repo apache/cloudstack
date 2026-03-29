@@ -68,6 +68,7 @@ import org.apache.cloudstack.api.response.VolumeForImportResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -394,7 +395,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         Map<VolumeOnStorageTO.Detail, String> volumeDetails = volume.getDetails();
         if (volumeDetails != null && volumeDetails.containsKey(VolumeOnStorageTO.Detail.BACKING_FILE)) {
             String backingFile = volumeDetails.get(VolumeOnStorageTO.Detail.BACKING_FILE);
-            if (StringUtils.isNotBlank(backingFile)) {
+            if (StringUtils.isNotBlank(backingFile) && !AllowImportVolumeWithBackingFile.value()) {
                 logFailureAndThrowException("Volume with backing file cannot be imported or unmanaged.");
             }
         }
@@ -452,7 +453,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
                                           Account owner, StoragePoolVO pool, String volumeName) {
         DiskProfile diskProfile = volumeManager.importVolume(Volume.Type.DATADISK, volumeName, diskOffering,
                 volume.getVirtualSize(), null, null, pool.getDataCenterId(), volume.getHypervisorType(), null, null,
-                owner, null, pool.getId(), volume.getPath(), null);
+                owner, null, pool.getId(), pool.getPoolType(), volume.getPath(), null);
         return volumeDao.findById(diskProfile.getVolumeId());
     }
 
@@ -512,5 +513,17 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         volume.setState(Volume.State.Destroy);
         volume.setRemoved(new Date());
         volumeDao.update(volume.getId(), volume);
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VolumeImportUnmanageManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{
+                AllowImportVolumeWithBackingFile
+        };
     }
 }
