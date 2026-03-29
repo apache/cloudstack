@@ -884,7 +884,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected StorageSubsystemCommandHandler storageHandler;
 
     private boolean convertInstanceVerboseMode = false;
-    private String[] convertInstanceEnv = null;
+    private Map<String, String> convertInstanceEnv = null;
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
@@ -949,7 +949,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return convertInstanceVerboseMode;
     }
 
-    public String[] getConvertInstanceEnv() {
+    public Map<String, String> getConvertInstanceEnv() {
         return convertInstanceEnv;
     }
 
@@ -1439,14 +1439,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return;
         }
         if (StringUtils.isNotBlank(convertEnvTmpDir) && StringUtils.isNotBlank(convertEnvVirtv2vTmpDir)) {
-            convertInstanceEnv = new String[2];
-            convertInstanceEnv[0] = String.format("%s=%s", "TMPDIR", convertEnvTmpDir);
-            convertInstanceEnv[1] = String.format("%s=%s", "VIRT_V2V_TMPDIR", convertEnvVirtv2vTmpDir);
+            convertInstanceEnv = new HashMap<>(2);
+            convertInstanceEnv.put("TMPDIR", convertEnvTmpDir);
+            convertInstanceEnv.put("VIRT_V2V_TMPDIR", convertEnvVirtv2vTmpDir);
         } else {
-            convertInstanceEnv = new String[1];
+            convertInstanceEnv = new HashMap<>(1);
             String key = StringUtils.isNotBlank(convertEnvTmpDir) ? "TMPDIR" : "VIRT_V2V_TMPDIR";
             String value = StringUtils.isNotBlank(convertEnvTmpDir) ? convertEnvTmpDir : convertEnvVirtv2vTmpDir;
-            convertInstanceEnv[0] = String.format("%s=%s", key, value);
+            convertInstanceEnv.put(key, value);
         }
     }
 
@@ -1971,7 +1971,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (final String ifNamePattern : ifNamePatterns) {
             commonPattern.append("|(").append(ifNamePattern).append(".*)");
         }
-        if(fname.matches(commonPattern.toString())) {
+        if (fname.matches(commonPattern.toString())) {
             return true;
         }
         return false;
@@ -2498,11 +2498,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)(\\D*)(\\d*)");
         final Matcher matcher = pattern.matcher(pif);
         LOGGER.debug("getting broadcast uri for pif " + pif + " and bridge " + brName);
-        if(matcher.find()) {
+        if (matcher.find()) {
             if (brName.startsWith("brvx")){
                 return BroadcastDomainType.Vxlan.toUri(matcher.group(2)).toString();
-            }
-            else{
+            } else {
                 if (!matcher.group(6).isEmpty()) {
                     return BroadcastDomainType.Vlan.toUri(matcher.group(6)).toString();
                 } else if (!matcher.group(4).isEmpty()) {
@@ -3742,7 +3741,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 } else if (volume.getType() == Volume.Type.DATADISK) {
                     final KVMPhysicalDisk physicalDisk = storagePoolManager.getPhysicalDisk(store.getPoolType(), store.getUuid(), data.getPath());
                     final KVMStoragePool pool = physicalDisk.getPool();
-                    if(StoragePoolType.RBD.equals(pool.getType())) {
+                    if (StoragePoolType.RBD.equals(pool.getType())) {
                         final int devId = volume.getDiskSeq().intValue();
                         final String device = mapRbdDevice(physicalDisk);
                         if (device != null) {
@@ -4787,12 +4786,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         String dataDiskController = details.get(VmDetailConstants.DATA_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(dataDiskController)) {
-            LOGGER.debug("Passed custom disk controller for DATA disk " + dataDiskController);
-            for (DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
-                if (bus.toString().equalsIgnoreCase(dataDiskController)) {
-                    LOGGER.debug("Found matching enum for disk controller for DATA disk " + dataDiskController);
-                    return bus;
-                }
+            LOGGER.debug("Passed custom disk controller for DATA disk {}", dataDiskController);
+            DiskDef.DiskBus bus = DiskDef.DiskBus.fromValue(dataDiskController);
+            if (bus != null) {
+                LOGGER.debug("Found matching enum for disk controller for DATA disk {}", dataDiskController);
+                return bus;
             }
         }
         return null;
@@ -5201,7 +5199,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         for (int i = 0; i < memoryStats.length; i++) {
-            if(memoryStats[i].getTag() == UNUSEDMEMORY) {
+            if (memoryStats[i].getTag() == UNUSEDMEMORY) {
                 freeMemory = memoryStats[i].getValue();
                 break;
             }
@@ -5773,12 +5771,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return hypervisorType;
     }
 
-    public String mapRbdDevice(final KVMPhysicalDisk disk){
+    public String mapRbdDevice(final KVMPhysicalDisk disk) {
         final KVMStoragePool pool = disk.getPool();
         //Check if rbd image is already mapped
         final String[] splitPoolImage = disk.getPath().split("/");
         String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"[ ]*"+splitPoolImage[1]+"\" | grep -o \"[^ ]*[ ]*$\"");
-        if(device == null) {
+        if (device == null) {
             //If not mapped, map and return mapped device
             Script.runSimpleBashScript("rbd map " + disk.getPath() + " --id " + pool.getAuthUserName());
             device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"[ ]*"+splitPoolImage[1]+"\" | grep -o \"[^ ]*[ ]*$\"");

@@ -40,8 +40,10 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -59,8 +61,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import com.cloud.domain.Domain;
-import com.cloud.storage.dao.SnapshotPolicyDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -88,6 +88,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
@@ -117,6 +119,7 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
@@ -142,9 +145,9 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
@@ -172,6 +175,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -194,6 +198,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
@@ -467,6 +472,24 @@ public class UserVmManagerImplTest {
     Class<InvalidParameterValueException> expectedInvalidParameterValueException = InvalidParameterValueException.class;
     Class<CloudRuntimeException> expectedCloudRuntimeException = CloudRuntimeException.class;
 
+    private Map<ConfigKey, Object> originalConfigValues = new HashMap<>();
+
+
+    private void updateDefaultConfigValue(final ConfigKey configKey, final Object o, boolean revert) {
+        try {
+            final String name = "_defaultValue";
+            Field f = ConfigKey.class.getDeclaredField(name);
+            f.setAccessible(true);
+            String stringVal = String.valueOf(o);
+            if (!revert) {
+                originalConfigValues.put(configKey, f.get(configKey));
+            }
+            f.set(configKey, stringVal);
+        } catch (IllegalAccessException | NoSuchFieldException  e) {
+            Assert.fail("Failed to mock config " + configKey.key() + " value due to " + e.getMessage());
+        }
+    }
+
     @Before
     public void beforeTest() {
         userVmManagerImpl.resourceLimitService = resourceLimitMgr;
@@ -496,6 +519,9 @@ public class UserVmManagerImplTest {
     public void afterTest() {
         CallContext.unregister();
         unmanagedVMsManagerMockedStatic.close();
+        for (Map.Entry<ConfigKey, Object> entry : originalConfigValues.entrySet()) {
+            updateDefaultConfigValue(entry.getKey(), entry.getValue(), true);
+        }
     }
 
     @Test
@@ -1476,6 +1502,7 @@ public class UserVmManagerImplTest {
         when(cmd.getVmId()).thenReturn(vmId);
         when(cmd.getTemplateId()).thenReturn(2L);
         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        Mockito.doReturn(false).when(userVmManagerImpl).isVMPartOfAnyCKSCluster(userVmVoMock);
 
         userVmManagerImpl.restoreVM(cmd);
     }
@@ -1799,35 +1826,35 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
         Mockito.doReturn(false).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
 
-        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock, null));
     }
     @Test
     public void checkExpungeVmPermissionTestAccountIsNotAdminConfigTrueNoApiAccessThrowsPermissionDeniedException () {
         Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
         Mockito.doReturn(true).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
-        doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine");
+        doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine", null);
 
-        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock, null));
     }
     @Test
     public void checkExpungeVmPermissionTestAccountIsNotAdminConfigTrueHasApiAccessReturnNothing () {
         Mockito.doReturn(false).when(accountManager).isAdmin(Mockito.anyLong());
         Mockito.doReturn(true).when(userVmManagerImpl).getConfigAllowUserExpungeRecoverVm(Mockito.anyLong());
 
-        userVmManagerImpl.checkExpungeVmPermission(accountMock);
+        userVmManagerImpl.checkExpungeVmPermission(accountMock, null);
     }
     @Test
     public void checkExpungeVmPermissionTestAccountIsAdminNoApiAccessThrowsPermissionDeniedException () {
         Mockito.doReturn(true).when(accountManager).isAdmin(Mockito.anyLong());
-        doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine");
+        doThrow(PermissionDeniedException.class).when(accountManager).checkApiAccess(accountMock, "expungeVirtualMachine", null);
 
-        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock));
+        Assert.assertThrows(PermissionDeniedException.class, () -> userVmManagerImpl.checkExpungeVmPermission(accountMock, null));
     }
     @Test
     public void checkExpungeVmPermissionTestAccountIsAdminHasApiAccessReturnNothing () {
         Mockito.doReturn(true).when(accountManager).isAdmin(Mockito.anyLong());
 
-        userVmManagerImpl.checkExpungeVmPermission(accountMock);
+        userVmManagerImpl.checkExpungeVmPermission(accountMock, null);
     }
 
     @Test
@@ -3637,7 +3664,7 @@ public class UserVmManagerImplTest {
         when(callingAccount.getId()).thenReturn(accountId);
         when(callContext.getCallingAccount()).thenReturn(callingAccount);
         when(accountManager.isAdmin(callingAccount.getId())).thenReturn(true);
-        doNothing().when(accountManager).checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class));
+        doNothing().when(accountManager).checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class), null);
         try (MockedStatic<CallContext> mockedCallContext = mockStatic(CallContext.class)) {
             mockedCallContext.when(CallContext::current).thenReturn(callContext);
             mockedCallContext.when(() -> CallContext.register(callContext, ApiCommandResourceType.Volume)).thenReturn(callContext);
@@ -3647,6 +3674,9 @@ public class UserVmManagerImplTest {
             when(cmd.getExpunge()).thenReturn(expunge);
             List<Long> volumeIds = List.of(volumeId);
             when(cmd.getVolumeIds()).thenReturn(volumeIds);
+            AsyncJobVO asyncJobMock = mock(AsyncJobVO.class);
+            when(cmd.getJob()).thenReturn(asyncJobMock);
+            when(asyncJobMock.getCmdInfo()).thenReturn("{}");
 
             UserVmVO vm = mock(UserVmVO.class);
             when(vm.getId()).thenReturn(vmId);
@@ -4178,4 +4208,101 @@ public class UserVmManagerImplTest {
         verify(userVmDao, times(1)).releaseFromLockTable(vmId);
     }
 
+    @Test
+    public void updateVmExtraConfigCleansUpWhenCleanupFlagIsTrue() {
+        UserVmVO userVm = mock(UserVmVO.class);
+        when(userVm.getUuid()).thenReturn("test-uuid");
+        when(userVm.getId()).thenReturn(1L);
+
+        userVmManagerImpl.updateVmExtraConfig(userVm, "someConfig", true);
+
+        verify(vmInstanceDetailsDao, times(1)).removeDetailsWithPrefix(1L, ApiConstants.EXTRA_CONFIG);
+        verifyNoMoreInteractions(vmInstanceDetailsDao);
+    }
+
+    @Test
+    public void updateVmExtraConfigAddsConfigWhenValidAndEnabled() {
+        UserVmVO userVm = mock(UserVmVO.class);
+        when(userVm.getUuid()).thenReturn("test-uuid");
+        when(userVm.getAccountId()).thenReturn(1L);
+        when(userVm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        doNothing().when(userVmManagerImpl).persistExtraConfigKvm(anyString(), eq(userVm));
+        updateDefaultConfigValue(UserVmManagerImpl.EnableAdditionalVmConfig, true, false);
+
+        userVmManagerImpl.updateVmExtraConfig(userVm, "validConfig", false);
+
+        verify(vmInstanceDetailsDao, never()).removeDetailsWithPrefix(anyLong(), anyString());
+        verify(userVmManagerImpl, times(1)).addExtraConfig(userVm, "validConfig");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void updateVmExtraConfigThrowsExceptionWhenConfigDisabled() {
+        UserVmVO userVm = mock(UserVmVO.class);
+        when(userVm.getAccountId()).thenReturn(1L);
+        updateDefaultConfigValue(UserVmManagerImpl.EnableAdditionalVmConfig, false, false);
+
+        userVmManagerImpl.updateVmExtraConfig(userVm, "validConfig", false);
+    }
+
+    @Test
+    public void updateVmExtraConfigDoesNothingWhenExtraConfigIsBlank() {
+        UserVmVO userVm = mock(UserVmVO.class);
+
+        userVmManagerImpl.updateVmExtraConfig(userVm, "", false);
+
+        verify(vmInstanceDetailsDao, never()).removeDetailsWithPrefix(anyLong(), anyString());
+        verify(userVmManagerImpl, never()).addExtraConfig(any(UserVmVO.class), anyString());
+    }
+
+    @Test
+    public void testTransitionExpungingToErrorVmInExpungingState() throws Exception {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Expunging);
+        when(vm.getUuid()).thenReturn("test-uuid");
+        when(userVmDao.findById(vmId)).thenReturn(vm);
+        when(virtualMachineManager.stateTransitTo(eq(vm), eq(VirtualMachine.Event.OperationFailedToError), eq(null))).thenReturn(true);
+
+        java.lang.reflect.Method method = UserVmManagerImpl.class.getDeclaredMethod("transitionExpungingToError", long.class);
+        method.setAccessible(true);
+        method.invoke(userVmManagerImpl, vmId);
+
+        Mockito.verify(virtualMachineManager).stateTransitTo(vm, VirtualMachine.Event.OperationFailedToError, null);
+    }
+
+    @Test
+    public void testTransitionExpungingToErrorVmNotInExpungingState() throws Exception {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(userVmDao.findById(vmId)).thenReturn(vm);
+
+        java.lang.reflect.Method method = UserVmManagerImpl.class.getDeclaredMethod("transitionExpungingToError", long.class);
+        method.setAccessible(true);
+        method.invoke(userVmManagerImpl, vmId);
+
+        Mockito.verify(virtualMachineManager, Mockito.never()).stateTransitTo(any(VirtualMachine.class), any(VirtualMachine.Event.class), any());
+    }
+
+    @Test
+    public void testTransitionExpungingToErrorVmNotFound() throws Exception {
+        when(userVmDao.findById(vmId)).thenReturn(null);
+
+        java.lang.reflect.Method method = UserVmManagerImpl.class.getDeclaredMethod("transitionExpungingToError", long.class);
+        method.setAccessible(true);
+        method.invoke(userVmManagerImpl, vmId);
+
+        Mockito.verify(virtualMachineManager, Mockito.never()).stateTransitTo(any(VirtualMachine.class), any(VirtualMachine.Event.class), any());
+    }
+
+    @Test
+    public void testTransitionExpungingToErrorHandlesNoTransitionException() throws Exception {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Expunging);
+        when(userVmDao.findById(vmId)).thenReturn(vm);
+        when(virtualMachineManager.stateTransitTo(eq(vm), eq(VirtualMachine.Event.OperationFailedToError), eq(null)))
+                .thenThrow(new NoTransitionException("no transition"));
+
+        java.lang.reflect.Method method = UserVmManagerImpl.class.getDeclaredMethod("transitionExpungingToError", long.class);
+        method.setAccessible(true);
+        method.invoke(userVmManagerImpl, vmId);
+    }
 }

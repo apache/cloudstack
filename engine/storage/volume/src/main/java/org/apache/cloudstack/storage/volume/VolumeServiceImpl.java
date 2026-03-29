@@ -436,6 +436,9 @@ public class VolumeServiceImpl implements VolumeService {
             // no need to change state in volumes table
             volume.processEventOnly(Event.DestroyRequested);
         } else if (volume.getDataStore().getRole() == DataStoreRole.Primary) {
+            if (vol.getState() == Volume.State.Expunging) {
+                logger.info("Volume {} is already in Expunging, retrying", volume);
+            }
             volume.processEvent(Event.ExpungeRequested);
         }
 

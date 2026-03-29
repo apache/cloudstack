@@ -16,13 +16,11 @@
 // under the License.
 package org.apache.cloudstack.storage.heuristics.presetvariables;
 
-import com.cloud.storage.Storage;
-
 public class Volume extends GenericHeuristicPresetVariable {
 
     private Long size;
 
-    private Storage.ImageFormat format;
+    private String format;
 
     public Long getSize() {
         return size;
@@ -30,15 +28,13 @@ public class Volume extends GenericHeuristicPresetVariable {
 
     public void setSize(Long size) {
         this.size = size;
-        fieldNamesToIncludeInToString.add("size");
     }
 
-    public Storage.ImageFormat getFormat() {
+    public String getFormat() {
         return format;
     }
 
-    public void setFormat(Storage.ImageFormat format) {
+    public void setFormat(String format) {
         this.format = format;
-        fieldNamesToIncludeInToString.add("format");
     }
 }

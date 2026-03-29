@@ -16,16 +16,16 @@
 // under the License.
 package com.cloud.resourcelimit;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventTypes;
-import com.cloud.utils.db.EntityManager;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.AccountResponse;
@@ -62,6 +62,8 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -75,20 +77,18 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
-import com.cloud.user.User;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vpc.MockResourceLimitManagerImpl;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ResourceLimitManagerImplTest {
@@ -1397,5 +1397,54 @@ public class ResourceLimitManagerImplTest {
                     "Resource limit updated. Resource Type: " + Resource.ResourceType.backup_storage.toString() + ", New Value: " + maxBytes,
                     domainId, ApiCommandResourceType.Domain.toString()));
         }
+    }
+
+    @Test
+    public void consolidatedResourceLimitsForAllResourceTypesWithAccountId() {
+        Long accountId = 1L;
+        Long domainId = null;
+        List<ResourceLimitVO> foundLimits = new ArrayList<>();
+        ResourceLimitVO limit = new ResourceLimitVO(Resource.ResourceType.cpu, 10L, accountId, Resource.ResourceOwnerType.Account);
+        foundLimits.add(limit);
+
+        Mockito.when(accountManager.getAccount(accountId)).thenReturn(Mockito.mock(Account.class));
+        Mockito.doReturn(20L).when(resourceLimitManager).findCorrectResourceLimitForAccount(Mockito.any(Account.class), Mockito.any(Resource.ResourceType.class), Mockito.isNull());
+
+        List<ResourceLimitVO> result = resourceLimitManager.getConsolidatedResourceLimitsForAllResourceTypes(accountId, domainId, foundLimits, true);
+
+        Assert.assertEquals(EnumSet.allOf(Resource.ResourceType.class).size(), result.size());
+        Assert.assertTrue(result.contains(limit));
+    }
+
+    @Test
+    public void consolidatedResourceLimitsForAllResourceTypesWithDomainId() {
+        Long accountId = null;
+        Long domainId = 1L;
+        List<ResourceLimitVO> foundLimits = new ArrayList<>();
+        ResourceLimitVO limit = new ResourceLimitVO(Resource.ResourceType.memory, 15L, domainId, Resource.ResourceOwnerType.Domain);
+        foundLimits.add(limit);
+
+        Mockito.when(domainDao.findById(domainId)).thenReturn(Mockito.mock(DomainVO.class));
+        Mockito.doReturn(30L).when(resourceLimitManager).findCorrectResourceLimitForDomain(Mockito.any(Domain.class), Mockito.any(Resource.ResourceType.class), Mockito.isNull());
+
+        List<ResourceLimitVO> result = resourceLimitManager.getConsolidatedResourceLimitsForAllResourceTypes(accountId, domainId, foundLimits, false);
+
+        Assert.assertEquals(EnumSet.allOf(Resource.ResourceType.class).size(), result.size());
+        Assert.assertTrue(result.contains(limit));
+    }
+
+    @Test
+    public void consolidatedResourceLimitsForAllResourceTypesWithEmptyFoundLimits() {
+        Long accountId = 1L;
+        Long domainId = null;
+        List<ResourceLimitVO> foundLimits = new ArrayList<>();
+
+        Mockito.when(accountManager.getAccount(accountId)).thenReturn(Mockito.mock(Account.class));
+        Mockito.doReturn(25L).when(resourceLimitManager).findCorrectResourceLimitForAccount(Mockito.any(Account.class), Mockito.any(Resource.ResourceType.class), Mockito.isNull());
+
+        List<ResourceLimitVO> result = resourceLimitManager.getConsolidatedResourceLimitsForAllResourceTypes(accountId, domainId, foundLimits, true);
+
+        Assert.assertEquals(EnumSet.allOf(Resource.ResourceType.class).size(), result.size());
+        Assert.assertEquals(25L, result.get(0).getMax().longValue());
     }
 }

@@ -46,7 +46,6 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.GATEWAY_ID,
                type = CommandType.UUID,
                entityType = PrivateGatewayResponse.class,
-               required = true,
                description = "The gateway ID we are creating static route for. Mutually exclusive with the nexthop parameter")
     private Long gatewayId;
 
@@ -116,7 +115,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd {
         boolean success = false;
         StaticRoute route = null;
         try {
-            CallContext.current().setEventDetails("Static route Id: " + getEntityId());
+            CallContext.current().setEventDetails("Static route ID: " + getEntityUuid());
             success = _vpcService.applyStaticRoute(getEntityId());
             // State is different after the route is applied, so retrieve the object only here
             route = _entityMgr.findById(StaticRoute.class, getEntityId());
