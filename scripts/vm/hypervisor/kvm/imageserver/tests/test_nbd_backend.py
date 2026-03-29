@@ -18,19 +18,27 @@
 """Tests for HTTP operations against an NBD-backend transfer (real qemu-nbd)."""
 
 import json
+import os
+import subprocess
 import unittest
+import uuid
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+
+from imageserver.constants import MAX_PARALLEL_READS, MAX_PARALLEL_WRITES
 
 from .test_base import (
     IMAGE_SIZE,
     ImageServerTestCase,
+    get_tmp_dir,
     http_get,
     http_options,
     http_patch,
     http_post,
     http_put,
     make_nbd_transfer,
+    make_nbd_transfer_existing_disk,
     randbytes,
     shutdown_image_server,
 )
@@ -320,6 +328,311 @@ class TestExtents(NbdBackendTestCase):
         self.assertGreaterEqual(len(extents), 1)
         total = sum(e["length"] for e in extents)
         self.assertEqual(total, IMAGE_SIZE)
+
+
+def _allocated_subranges(extents, granularity):
+    """Split each non-hole extent (zero=False) into [start, end] inclusive byte ranges."""
+    out = []
+    for ext in extents:
+        if ext.get("zero"):
+            continue
+        start = int(ext["start"])
+        length = int(ext["length"])
+        pos = start
+        end_abs = start + length
+        while pos < end_abs:
+            chunk_end = min(pos + granularity, end_abs)
+            out.append((pos, chunk_end - 1))
+            pos = chunk_end
+    return out
+
+
+def _qemu_img_virtual_size(path: str) -> int:
+    """Return virtual size in bytes (requires ``qemu-img`` on PATH)."""
+    # stdout=PIPE + universal_newlines: Python 3.6 compatible (no capture_output/text).
+    cp = subprocess.run(
+        ["qemu-img", "info", "--output=json", path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+        check=True,
+    )
+    return int(json.loads(cp.stdout)["virtual-size"])
+
+
+def _http_error_detail(exc: urllib.error.HTTPError) -> str:
+    """Build a readable message from an ``HTTPError`` (status, url, JSON/text body)."""
+    parts = ["HTTP %s %r" % (exc.code, exc.reason), "url=%r" % getattr(exc, "url", "")]
+    try:
+        if exc.fp is not None:
+            raw = exc.fp.read()
+            if raw:
+                text = raw.decode("utf-8", errors="replace")
+                parts.append("response_body=%r" % (text,))
+    except Exception as read_err:
+        parts.append("read_body_error=%r" % (read_err,))
+    return "; ".join(parts)
+
+
+def _http_get_checked(
+    url,
+    headers=None,
+    expected_status=200,
+    label="GET",
+):
+    """
+    Like ``http_get`` but raises ``AssertionError`` with ``_http_error_detail`` on failure.
+    """
+    try:
+        resp = http_get(url, headers=headers)
+    except urllib.error.HTTPError as e:
+        raise AssertionError(
+            "%s failed for %r: %s" % (label, url, _http_error_detail(e))
+        ) from e
+    if resp.status != expected_status:
+        body = resp.read()
+        raise AssertionError(
+            "%s %r: expected HTTP %s, got %s; body=%r"
+            % (label, url, expected_status, resp.status, body)
+        )
+    return resp
+
+
+def _http_put_checked(url, data, headers, label="PUT"):
+    try:
+        resp = http_put(url, data, headers=headers)
+    except urllib.error.HTTPError as e:
+        raise AssertionError(
+            "%s failed for %r: %s" % (label, url, _http_error_detail(e))
+        ) from e
+    body = resp.read()
+    if resp.status != 200:
+        raise AssertionError(
+            "%s %r: expected HTTP 200, got %s; body=%r"
+            % (label, url, resp.status, body)
+        )
+    return resp, body
+
+
+def _http_post_checked(url, data=b"", headers=None, label="POST"):
+    try:
+        resp = http_post(url, data=data, headers=headers)
+    except urllib.error.HTTPError as e:
+        raise AssertionError(
+            "%s failed for %r: %s" % (label, url, _http_error_detail(e))
+        ) from e
+    body = resp.read()
+    if resp.status != 200:
+        raise AssertionError(
+            "%s %r: expected HTTP 200, got %s; body=%r"
+            % (label, url, resp.status, body)
+        )
+    return resp, body
+
+
+class TestQcow2ExtentsParallelReads(ImageServerTestCase):
+    """
+    Optional integration tests: export a user-supplied qcow2 via qemu-nbd, fetch
+    allocation extents, parallel range GETs over allocated regions, and (second
+    test) per-range GET-then-PUT pipeline with ``min(MAX_PARALLEL_READS,
+    MAX_PARALLEL_WRITES)`` workers.
+
+    Requires ``qemu-img`` and ``qemu-nbd`` on PATH.
+
+    Set IMAGESERVER_TEST_QCOW2 to the absolute path of a qcow2 file.
+    Optional: IMAGESERVER_TEST_QCOW2_READ_GRANULARITY — byte step (default 4 MiB).
+    """
+
+    def setUp(self):
+        super().setUp()
+        self._qcow2_path = os.environ.get("IMAGESERVER_TEST_QCOW2", "").strip()
+        if not self._qcow2_path or not os.path.isfile(self._qcow2_path):
+            self.skipTest(
+                "Set IMAGESERVER_TEST_QCOW2 to an existing qcow2 path to run this test"
+            )
+        raw_g = os.environ.get("IMAGESERVER_TEST_QCOW2_READ_GRANULARITY", "").strip()
+        self._read_granularity = int(raw_g) if raw_g else 4 * 1024 * 1024
+        if self._read_granularity <= 0:
+            self.skipTest("IMAGESERVER_TEST_QCOW2_READ_GRANULARITY must be positive")
+
+    def test_parallel_range_reads_allocated_extents(self):
+        _, url, _, cleanup = make_nbd_transfer_existing_disk(
+            self._qcow2_path, "qcow2"
+        )
+        try:
+            resp = _http_get_checked(
+                "%s/extents" % (url,),
+                expected_status=200,
+                label="GET /extents",
+            )
+            extents = json.loads(resp.read())
+            self.assertIsInstance(extents, list)
+            ranges = _allocated_subranges(extents, self._read_granularity)
+            if not ranges:
+                self.skipTest("no allocated extents (all holes/zero) in qcow2")
+
+            def fetch(span):
+                start_b, end_b = span
+                range_hdr = "bytes=%s-%s" % (start_b, end_b)
+                r = _http_get_checked(
+                    url,
+                    headers={"Range": range_hdr},
+                    expected_status=206,
+                    label="Range GET %s" % (range_hdr,),
+                )
+                data = r.read()
+                expected_len = end_b - start_b + 1
+                if len(data) != expected_len:
+                    raise AssertionError(
+                        "Range GET %s: got %d bytes, expected %d (url=%r)"
+                        % (range_hdr, len(data), expected_len, url)
+                    )
+
+            with ThreadPoolExecutor(max_workers=MAX_PARALLEL_READS) as pool:
+                pool.map(fetch, ranges)
+        finally:
+            cleanup()
+
+    def test_parallel_reads_then_put_range_copy_matches_source(self):
+        """
+        Create an empty qcow2 with the same virtual size as the source, copy every
+        allocated range using one worker pool: for each span, Range GET from src
+        then Content-Range PUT to dest.
+        Worker count is ``min(MAX_PARALLEL_READS, MAX_PARALLEL_WRITES)`` so each
+        worker holds at most one chunk.
+        """
+        src_path = self._qcow2_path
+        try:
+            vsize = _qemu_img_virtual_size(src_path)
+        except (FileNotFoundError, subprocess.CalledProcessError, KeyError, json.JSONDecodeError, TypeError, ValueError) as e:
+            self.skipTest(f"qemu-img info failed: {e}")
+
+        tmp = get_tmp_dir()
+        dest_path = os.path.join(tmp, f"qcow2_copy_{uuid.uuid4().hex[:8]}.qcow2")
+        try:
+            subprocess.run(
+                ["qemu-img", "create", "-f", "qcow2", dest_path, str(vsize)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                check=True,
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError) as e:
+            self.skipTest(f"qemu-img create failed: {e}")
+
+        _, src_url, _, cleanup_src = make_nbd_transfer_existing_disk(
+            src_path, "qcow2"
+        )
+        _, dest_url, _, cleanup_dest = make_nbd_transfer_existing_disk(
+            dest_path, "qcow2"
+        )
+        try:
+            resp = _http_get_checked(
+                "%s/extents" % (src_url,),
+                expected_status=200,
+                label="GET src /extents",
+            )
+            extents = json.loads(resp.read())
+            ranges = _allocated_subranges(extents, self._read_granularity)
+            if not ranges:
+                self.skipTest("no allocated extents (all holes/zero) in qcow2")
+
+            transfer_workers = max(
+                1, min(MAX_PARALLEL_READS, MAX_PARALLEL_WRITES)
+            )
+
+            def transfer_span(span):
+                start_b, end_b = span
+                range_hdr = "bytes=%s-%s" % (start_b, end_b)
+                r = _http_get_checked(
+                    src_url,
+                    headers={"Range": range_hdr},
+                    expected_status=206,
+                    label="Range GET src %s" % (range_hdr,),
+                )
+                data = r.read()
+                expected_len = end_b - start_b + 1
+                if len(data) != expected_len:
+                    raise AssertionError(
+                        "Range GET src %s: got %d bytes, expected %d (url=%r)"
+                        % (range_hdr, len(data), expected_len, src_url)
+                    )
+                end_inclusive = start_b + len(data) - 1
+                cr = "bytes %s-%s/*" % (start_b, end_inclusive)
+                _put_resp, put_body = _http_put_checked(
+                    dest_url,
+                    data,
+                    headers={
+                        "Content-Range": cr,
+                        "Content-Length": str(len(data)),
+                    },
+                    label="PUT dest %s" % (cr,),
+                )
+                try:
+                    body = json.loads(put_body)
+                except ValueError:
+                    raise AssertionError(
+                        "PUT dest %s: invalid JSON body=%r (url=%r)"
+                        % (cr, put_body, dest_url)
+                    )
+                if not body.get("ok"):
+                    raise AssertionError(
+                        "PUT dest %s: JSON ok=false, full=%r (url=%r)"
+                        % (cr, body, dest_url)
+                    )
+                if body.get("bytes_written") != len(data):
+                    raise AssertionError(
+                        "PUT dest %s: bytes_written=%r expected %d (url=%r)"
+                        % (cr, body.get("bytes_written"), len(data), dest_url)
+                    )
+
+            with ThreadPoolExecutor(max_workers=transfer_workers) as pool:
+                pool.map(transfer_span, ranges)
+
+            _flush, flush_body = _http_post_checked(
+                "%s/flush" % (dest_url,),
+                label="POST dest /flush",
+            )
+            try:
+                flush_json = json.loads(flush_body)
+            except ValueError:
+                raise AssertionError(
+                    "POST dest /flush: invalid JSON body=%r (url=%r)"
+                    % (flush_body, dest_url)
+                )
+            if not flush_json.get("ok"):
+                raise AssertionError(
+                    "POST dest /flush: ok=false, full=%r (url=%r)"
+                    % (flush_json, dest_url)
+                )
+        finally:
+            cleanup_dest()
+            cleanup_src()
+
+        try:
+            cmp = subprocess.run(
+                ["qemu-img", "compare", src_path, dest_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+            self.assertEqual(
+                cmp.returncode,
+                0,
+                "qemu-img compare %r vs %r failed (rc=%s): stderr=%r stdout=%r"
+                % (
+                    src_path,
+                    dest_path,
+                    cmp.returncode,
+                    cmp.stderr,
+                    cmp.stdout,
+                ),
+            )
+        finally:
+            try:
+                os.unlink(dest_path)
+            except FileNotFoundError:
+                pass
 
 
 class TestErrorCases(NbdBackendTestCase):
