@@ -251,11 +251,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             command.addDetail("compression", "true");
         }
         if (Boolean.TRUE.equals(NASBackupEncryptionEnabled.valueIn(zoneId))) {
-            command.addDetail("encryption", "true");
             String passphrase = NASBackupEncryptionPassphrase.valueIn(zoneId);
-            if (passphrase != null && !passphrase.isEmpty()) {
-                command.addDetail("encryption_passphrase", passphrase);
+            if (passphrase == null || passphrase.isEmpty()) {
+                throw new CloudRuntimeException("NAS backup encryption is enabled but no passphrase is configured (nas.backup.encryption.passphrase)");
             }
+            command.addDetail("encryption", "true");
+            command.addDetail("encryption_passphrase", passphrase);
         }
         Integer bandwidthLimit = NASBackupBandwidthLimitMbps.valueIn(zoneId);
         if (bandwidthLimit != null && bandwidthLimit > 0) {

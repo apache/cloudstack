@@ -19,14 +19,18 @@ package org.apache.cloudstack.backup;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -47,6 +51,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -348,5 +353,204 @@ public class NASBackupProviderTest {
         Mockito.verify(hostDao).findById(hostId);
         Mockito.verify(hostDao).findHypervisorHostInCluster(clusterId);
         Mockito.verify(resourceManager).findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
+    }
+
+    private void overrideConfigValue(final ConfigKey configKey, final Object value) {
+        try {
+            Field f = ConfigKey.class.getDeclaredField("_value");
+            f.setAccessible(true);
+            f.set(configKey, value);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            Assert.fail(e.getMessage());
+        }
+    }
+
+    private VMInstanceVO setupVmForTakeBackup(Long vmId, Long hostId, Long backupOfferingId,
+            Long accountId, Long domainId, Long zoneId) {
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        Mockito.when(vm.getHostId()).thenReturn(hostId);
+        Mockito.when(vm.getInstanceName()).thenReturn("test-vm");
+        Mockito.when(vm.getBackupOfferingId()).thenReturn(backupOfferingId);
+        Mockito.when(vm.getAccountId()).thenReturn(accountId);
+        Mockito.when(vm.getDomainId()).thenReturn(domainId);
+        Mockito.when(vm.getDataCenterId()).thenReturn(zoneId);
+        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
+        return vm;
+    }
+
+    private void setupHostAndRepo(Long hostId, Long backupOfferingId) {
+        BackupRepository backupRepository = mock(BackupRepository.class);
+        Mockito.when(backupRepository.getType()).thenReturn("nfs");
+        Mockito.when(backupRepository.getAddress()).thenReturn("address");
+        Mockito.when(backupRepository.getMountOptions()).thenReturn("sync");
+        Mockito.when(backupRepositoryDao.findByBackupOfferingId(backupOfferingId)).thenReturn(backupRepository);
+
+        HostVO host = mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(host.getStatus()).thenReturn(Status.Up);
+        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+    }
+
+    @Test
+    public void testTakeBackupDetailsCompressionEnabled() throws AgentUnavailableException, OperationTimedoutException {
+        Long vmId = 1L; Long hostId = 2L; Long backupOfferingId = 3L;
+        Long accountId = 4L; Long domainId = 5L; Long zoneId = 6L;
+
+        VMInstanceVO vm = setupVmForTakeBackup(vmId, hostId, backupOfferingId, accountId, domainId, zoneId);
+        setupHostAndRepo(hostId, backupOfferingId);
+
+        VolumeVO volume = mock(VolumeVO.class);
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getSize()).thenReturn(100L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+
+        overrideConfigValue(nasBackupProvider.NASBackupCompressionEnabled, "true");
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(answer.getSize()).thenReturn(100L);
+
+        ArgumentCaptor<TakeBackupCommand> cmdCaptor = ArgumentCaptor.forClass(TakeBackupCommand.class);
+        Mockito.when(agentManager.send(anyLong(), cmdCaptor.capture())).thenReturn(answer);
+        Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Mockito.when(backupDao.update(Mockito.anyLong(), Mockito.any(BackupVO.class))).thenReturn(true);
+
+        nasBackupProvider.takeBackup(vm, false);
+
+        TakeBackupCommand capturedCmd = cmdCaptor.getValue();
+        Map<String, String> details = capturedCmd.getDetails();
+        Assert.assertEquals("true", details.get("compression"));
+
+        // Reset config
+        overrideConfigValue(nasBackupProvider.NASBackupCompressionEnabled, "false");
+    }
+
+    @Test
+    public void testTakeBackupDetailsBandwidthLimit() throws AgentUnavailableException, OperationTimedoutException {
+        Long vmId = 1L; Long hostId = 2L; Long backupOfferingId = 3L;
+        Long accountId = 4L; Long domainId = 5L; Long zoneId = 6L;
+
+        VMInstanceVO vm = setupVmForTakeBackup(vmId, hostId, backupOfferingId, accountId, domainId, zoneId);
+        setupHostAndRepo(hostId, backupOfferingId);
+
+        VolumeVO volume = mock(VolumeVO.class);
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getSize()).thenReturn(100L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+
+        overrideConfigValue(nasBackupProvider.NASBackupBandwidthLimitMbps, "50");
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(answer.getSize()).thenReturn(100L);
+
+        ArgumentCaptor<TakeBackupCommand> cmdCaptor = ArgumentCaptor.forClass(TakeBackupCommand.class);
+        Mockito.when(agentManager.send(anyLong(), cmdCaptor.capture())).thenReturn(answer);
+        Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Mockito.when(backupDao.update(Mockito.anyLong(), Mockito.any(BackupVO.class))).thenReturn(true);
+
+        nasBackupProvider.takeBackup(vm, false);
+
+        TakeBackupCommand capturedCmd = cmdCaptor.getValue();
+        Map<String, String> details = capturedCmd.getDetails();
+        Assert.assertEquals("50", details.get("bandwidth_limit"));
+
+        overrideConfigValue(nasBackupProvider.NASBackupBandwidthLimitMbps, "0");
+    }
+
+    @Test
+    public void testTakeBackupDetailsIntegrityCheck() throws AgentUnavailableException, OperationTimedoutException {
+        Long vmId = 1L; Long hostId = 2L; Long backupOfferingId = 3L;
+        Long accountId = 4L; Long domainId = 5L; Long zoneId = 6L;
+
+        VMInstanceVO vm = setupVmForTakeBackup(vmId, hostId, backupOfferingId, accountId, domainId, zoneId);
+        setupHostAndRepo(hostId, backupOfferingId);
+
+        VolumeVO volume = mock(VolumeVO.class);
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getSize()).thenReturn(100L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+
+        overrideConfigValue(nasBackupProvider.NASBackupIntegrityCheckEnabled, "true");
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(answer.getSize()).thenReturn(100L);
+
+        ArgumentCaptor<TakeBackupCommand> cmdCaptor = ArgumentCaptor.forClass(TakeBackupCommand.class);
+        Mockito.when(agentManager.send(anyLong(), cmdCaptor.capture())).thenReturn(answer);
+        Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Mockito.when(backupDao.update(Mockito.anyLong(), Mockito.any(BackupVO.class))).thenReturn(true);
+
+        nasBackupProvider.takeBackup(vm, false);
+
+        TakeBackupCommand capturedCmd = cmdCaptor.getValue();
+        Map<String, String> details = capturedCmd.getDetails();
+        Assert.assertEquals("true", details.get("integrity_check"));
+
+        overrideConfigValue(nasBackupProvider.NASBackupIntegrityCheckEnabled, "false");
+    }
+
+    @Test
+    public void testTakeBackupDetailsEncryptionWithPassphrase() throws AgentUnavailableException, OperationTimedoutException {
+        Long vmId = 1L; Long hostId = 2L; Long backupOfferingId = 3L;
+        Long accountId = 4L; Long domainId = 5L; Long zoneId = 6L;
+
+        VMInstanceVO vm = setupVmForTakeBackup(vmId, hostId, backupOfferingId, accountId, domainId, zoneId);
+        setupHostAndRepo(hostId, backupOfferingId);
+
+        VolumeVO volume = mock(VolumeVO.class);
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getSize()).thenReturn(100L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+
+        overrideConfigValue(nasBackupProvider.NASBackupEncryptionEnabled, "true");
+        overrideConfigValue(nasBackupProvider.NASBackupEncryptionPassphrase, "my-secret-passphrase");
+
+        BackupAnswer answer = mock(BackupAnswer.class);
+        Mockito.when(answer.getResult()).thenReturn(true);
+        Mockito.when(answer.getSize()).thenReturn(100L);
+
+        ArgumentCaptor<TakeBackupCommand> cmdCaptor = ArgumentCaptor.forClass(TakeBackupCommand.class);
+        Mockito.when(agentManager.send(anyLong(), cmdCaptor.capture())).thenReturn(answer);
+        Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Mockito.when(backupDao.update(Mockito.anyLong(), Mockito.any(BackupVO.class))).thenReturn(true);
+
+        nasBackupProvider.takeBackup(vm, false);
+
+        TakeBackupCommand capturedCmd = cmdCaptor.getValue();
+        Map<String, String> details = capturedCmd.getDetails();
+        Assert.assertEquals("true", details.get("encryption"));
+        Assert.assertEquals("my-secret-passphrase", details.get("encryption_passphrase"));
+
+        overrideConfigValue(nasBackupProvider.NASBackupEncryptionEnabled, "false");
+        overrideConfigValue(nasBackupProvider.NASBackupEncryptionPassphrase, "");
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testTakeBackupEncryptionWithoutPassphraseThrows() throws AgentUnavailableException, OperationTimedoutException {
+        Long vmId = 1L; Long hostId = 2L; Long backupOfferingId = 3L;
+        Long accountId = 4L; Long domainId = 5L; Long zoneId = 6L;
+
+        VMInstanceVO vm = setupVmForTakeBackup(vmId, hostId, backupOfferingId, accountId, domainId, zoneId);
+        setupHostAndRepo(hostId, backupOfferingId);
+
+        VolumeVO volume = mock(VolumeVO.class);
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getSize()).thenReturn(100L);
+        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+
+        overrideConfigValue(nasBackupProvider.NASBackupEncryptionEnabled, "true");
+        overrideConfigValue(nasBackupProvider.NASBackupEncryptionPassphrase, "");
+
+        Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        try {
+            nasBackupProvider.takeBackup(vm, false);
+        } finally {
+            overrideConfigValue(nasBackupProvider.NASBackupEncryptionEnabled, "false");
+        }
     }
 }

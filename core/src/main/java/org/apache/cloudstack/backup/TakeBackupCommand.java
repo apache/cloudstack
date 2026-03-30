@@ -37,6 +37,7 @@ public class TakeBackupCommand extends Command {
     private Boolean quiesce;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
+    @LogLevel(LogLevel.Log4jLevel.Off)
     private Map<String, String> details = new HashMap<>();
 
     public TakeBackupCommand(String vmName, String backupPath) {
@@ -114,7 +115,7 @@ public class TakeBackupCommand extends Command {
     }
 
     public void setDetails(Map<String, String> details) {
-        this.details = details;
+        this.details = details != null ? details : new HashMap<>();
     }
 
     public void addDetail(String key, String value) {

@@ -35,10 +35,16 @@ import org.apache.cloudstack.backup.TakeBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.FileOutputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -92,18 +98,24 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             }
             if ("true".equals(details.get("encryption"))) {
                 String passphrase = details.get("encryption_passphrase");
-                if (passphrase != null && !passphrase.isEmpty()) {
-                    try {
-                        passphraseFile = File.createTempFile("cs-backup-enc-", ".key");
-                        passphraseFile.deleteOnExit();
-                        try (FileWriter fw = new FileWriter(passphraseFile)) {
-                            fw.write(passphrase);
-                        }
-                        cmdArgs.add("-e"); cmdArgs.add(passphraseFile.getAbsolutePath());
-                    } catch (IOException e) {
-                        logger.error("Failed to create encryption passphrase file", e);
-                        return new BackupAnswer(command, false, "Failed to create encryption passphrase file: " + e.getMessage());
+                if (passphrase == null || passphrase.isEmpty()) {
+                    return new BackupAnswer(command, false, "Encryption is enabled but no passphrase was provided");
+                }
+                try {
+                    passphraseFile = File.createTempFile("cs-backup-enc-", ".key");
+                    passphraseFile.deleteOnExit();
+                    Files.setPosixFilePermissions(passphraseFile.toPath(),
+                            EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+                    try (Writer fw = new OutputStreamWriter(new FileOutputStream(passphraseFile), StandardCharsets.UTF_8)) {
+                        fw.write(passphrase);
                     }
+                    cmdArgs.add("-e"); cmdArgs.add(passphraseFile.getAbsolutePath());
+                } catch (IOException e) {
+                    logger.error("Failed to create encryption passphrase file", e);
+                    if (passphraseFile != null && passphraseFile.exists()) {
+                        passphraseFile.delete();
+                    }
+                    return new BackupAnswer(command, false, "Failed to create encryption passphrase file: " + e.getMessage());
                 }
             }
             String bwLimit = details.get("bandwidth_limit");
@@ -118,11 +130,14 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         List<String[]> commands = new ArrayList<>();
         commands.add(cmdArgs.toArray(new String[0]));
 
-        Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
-
-        // Clean up passphrase file after backup completes
-        if (passphraseFile != null && passphraseFile.exists()) {
-            passphraseFile.delete();
+        Pair<Integer, String> result;
+        try {
+            result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
+        } finally {
+            // Clean up passphrase file after backup completes
+            if (passphraseFile != null && passphraseFile.exists()) {
+                passphraseFile.delete();
+            }
         }
 
         if (result.first() != 0) {

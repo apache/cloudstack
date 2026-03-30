@@ -98,7 +98,7 @@ encrypt_backup() {
   fi
   if [[ ! -f "$ENCRYPT_PASSFILE" ]]; then
     echo "Encryption passphrase file not found: $ENCRYPT_PASSFILE"
-    exit 1
+    return 1
   fi
   log -ne "Encrypting backup files with LUKS"
   for img in "$backup_dir"/*.qcow2; do
@@ -113,7 +113,7 @@ encrypt_backup() {
     else
       echo "Encryption failed for $img"
       rm -f "$tmp_img"
-      exit 1
+      return 1
     fi
   done
 }
@@ -133,7 +133,7 @@ verify_backup() {
   done
   if [[ $failed -ne 0 ]]; then
     echo "One or more backup files failed verification"
-    exit 1
+    return 1
   fi
 }
 
@@ -222,13 +222,19 @@ backup_running_vm() {
   fi
 
   # Encrypt backup files if requested
-  encrypt_backup "$dest"
+  if ! encrypt_backup "$dest"; then
+    cleanup
+    return 1
+  fi
 
   sync
 
   # Verify backup integrity if requested
   if [[ "$VERIFY" == "true" ]]; then
-    verify_backup "$dest"
+    if ! verify_backup "$dest"; then
+      cleanup
+      return 1
+    fi
   fi
 
   # Print statistics
@@ -256,21 +262,28 @@ backup_stopped_vm() {
       volUuid="${disk##*/}"
     fi
     output="$dest/$name.$volUuid.qcow2"
-    if ! ionice -c 3 qemu-img convert $([[ "$COMPRESS" == "true" ]] && echo "-c") $([[ -n "$BANDWIDTH" ]] && echo "-r" "${BANDWIDTH}M") -O qcow2 "$disk" "$output" > "$logFile" 2> >(cat >&2); then
+    if ! ionice -c 3 qemu-img convert $([[ "$COMPRESS" == "true" ]] && echo "-c") $([[ -n "$BANDWIDTH" ]] && echo "-r" "${BANDWIDTH}M") -O qcow2 "$disk" "$output" >> "$logFile" 2> >(cat >&2); then
       echo "qemu-img convert failed for $disk $output"
       cleanup
+      return 1
     fi
     name="datadisk"
   done
 
   # Encrypt backup files if requested
-  encrypt_backup "$dest"
+  if ! encrypt_backup "$dest"; then
+    cleanup
+    return 1
+  fi
 
   sync
 
   # Verify backup integrity if requested
   if [[ "$VERIFY" == "true" ]]; then
-    verify_backup "$dest"
+    if ! verify_backup "$dest"; then
+      cleanup
+      return 1
+    fi
   fi
 
   ls -l --numeric-uid-gid $dest | awk '{print $5}'
