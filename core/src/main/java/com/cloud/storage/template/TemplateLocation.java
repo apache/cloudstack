@@ -103,7 +103,7 @@ public class TemplateLocation {
         try (FileInputStream strm = new FileInputStream(_file);) {
             _props.load(strm);
         } catch (IOException e) {
-            logger.warn("Unable to load the template properties for '" + _file + "': ", e);
+            logger.warn("Unable to load the Template properties for '" + _file + "': ", e);
         }
 
         for (ImageFormat format : ImageFormat.values()) {
@@ -161,7 +161,7 @@ public class TemplateLocation {
         try (FileOutputStream strm =  new FileOutputStream(_file);) {
             _props.store(strm, "");
         } catch (IOException e) {
-            logger.warn("Unable to save the template properties ", e);
+            logger.warn("Unable to save the Template properties ", e);
             return false;
         }
         return true;

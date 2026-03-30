@@ -204,6 +204,11 @@
                   {{ instance.loadbalancerruleinstance.displayname }}
                 </router-link>
               </div>
+              <div v-if="this.vpcConserveMode">
+                <router-link :to="{ path: '/guestnetwork/' + instance.loadbalancerruleinstance.nic[0].networkid }">
+                  {{ instance.loadbalancerruleinstance.nic[0].networkname }}
+                </router-link>
+              </div>
               <div>{{ ip }}</div>
               <tooltip-button
                 :disabled='record.autoscalevmgroup'
@@ -451,6 +456,22 @@
             <a-select-option value="ssl" :label="$t('label.ssl')">{{ $t('label.ssl') }}</a-select-option>
           </a-select>
         </div>
+        <div v-if="lbProvider !== 'Netris'" class="edit-rule__item">
+          <p class="edit-rule__label">
+            {{ $t('label.sourcecidrlist') }}
+            <tooltip-label
+              :title="''"
+              bold
+              :tooltip="createLoadBalancerRuleParams.cidrlist.description || 'Enter a comma-separated list of CIDR blocks.'"
+              :tooltip-placement="'right'"
+              style="display: inline; margin-left: 5px;"
+            />
+          </p>
+          <a-input
+            v-model:value="editRuleDetails.cidrlist"
+            :placeholder="$t('label.sourcecidrlist')"
+          />
+        </div>
         <div :span="24" class="action-button">
           <a-button @click="() => editRuleModalVisible = false">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" @click="handleSubmitEditForm">{{ $t('label.ok') }}</a-button>
@@ -471,10 +492,10 @@
     >
       <div @keyup.ctrl.enter="handleAddNewRule">
         <span
-          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+          v-if="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+            v-focus="'vpcid' in resource && (!('associatednetworkid' in resource) || vpcConserveMode)"
             v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
@@ -837,7 +858,8 @@ export default {
       editRuleDetails: {
         name: '',
         algorithm: '',
-        protocol: ''
+        protocol: '',
+        cidrlist: ''
       },
       newRule: {
         algorithm: 'roundrobin',
@@ -1005,7 +1027,8 @@ export default {
         urlpath: '/'
       },
       healthMonitorLoading: false,
-      isNetrisZone: false
+      isNetrisZone: false,
+      vpcConserveMode: false
     }
   },
   computed: {
@@ -1062,9 +1085,23 @@ export default {
       })
     },
     fetchData () {
+      this.fetchVpc()
       this.fetchListTiers()
       this.fetchLBRules()
       this.fetchZone()
+    },
+    fetchVpc () {
+      if (!this.resource.vpcid) {
+        return
+      }
+      this.vpcConserveMode = false
+      getAPI('listVPCs', {
+        id: this.resource.vpcid
+      }).then(json => {
+        this.vpcConserveMode = json.listvpcsresponse?.vpc?.[0].vpcofferingconservemode || false
+      }).catch(error => {
+        this.$notifyError(error)
+      })
     },
     fetchListTiers () {
       this.tiers.loading = true
@@ -1625,14 +1662,28 @@ export default {
       this.editRuleDetails.name = this.selectedRule.name
       this.editRuleDetails.algorithm = this.lbProvider !== 'Netris' ? this.selectedRule.algorithm : undefined
       this.editRuleDetails.protocol = this.selectedRule.protocol
+      // Normalize cidrlist: replace spaces with commas and clean up
+      this.editRuleDetails.cidrlist = (this.selectedRule.cidrlist || '')
+        .split(/[\s,]+/) // Split on spaces or commas
+        .map(c => c.trim())
+        .filter(c => c)
+        .join(',') || ''
     },
     handleSubmitEditForm () {
       if (this.editRuleModalLoading) return
       this.loading = true
       this.editRuleModalLoading = true
+      const payload = {
+        ...this.editRuleDetails,
+        id: this.selectedRule.id,
+        ...(this.editRuleDetails.cidrlist && {
+          cidrList: (this.editRuleDetails.cidrlist || '').split(',').map(c => c.trim()).filter(c => c)
+        })
+      }
       postAPI('updateLoadBalancerRule', {
         ...this.editRuleDetails,
-        id: this.selectedRule.id
+        id: this.selectedRule.id,
+        ...payload
       }).then(response => {
         this.$pollJob({
           jobId: response.updateloadbalancerruleresponse.jobid,
@@ -1799,7 +1850,7 @@ export default {
 
       getAPI('listNics', {
         virtualmachineid: e.target.value,
-        networkid: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+        networkid: ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
         if (!response || !response.listnicsresponse || !response.listnicsresponse.nic[0]) return
         const newItem = []
@@ -1819,7 +1870,7 @@ export default {
       this.vmCount = 0
       this.vms = []
       this.addVmModalLoading = true
-      const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
+      const networkId = ('vpcid' in this.resource && (!('associatednetworkid' in this.resource) || this.vpcConserveMode)) ? this.selectedTier : this.resource.associatednetworkid
       if (!networkId) {
         this.addVmModalLoading = false
         return
@@ -1904,11 +1955,17 @@ export default {
           ip.forEach(i => {
             vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
             vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = i
+            if (this.vpcConserveMode) {
+              vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = this.selectedTier
+            }
             innerCount++
           })
         } else {
           vmIDIpMap[`vmidipmap[${innerCount}].vmid`] = this.newRule.virtualmachineid[count]
           vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = ip
+          if (this.vpcConserveMode && ip != null) {
+            vmIDIpMap[`vmidipmap[${innerCount}].vmnetworkid`] = this.selectedTier
+          }
           innerCount++
         }
         if (this.newRule.virtualmachineid[count]) {

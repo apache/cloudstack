@@ -43,7 +43,7 @@ public class ReleaseDedicatedPodCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "the ID of the Pod")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, required = true, description = "The ID of the Pod")
     private Long podId;
 
     /////////////////////////////////////////////////////
@@ -81,6 +81,6 @@ public class ReleaseDedicatedPodCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "releasing dedicated pod";
+        return "Releasing dedicated pod with ID: " + getResourceUuid(ApiConstants.POD_ID);
     }
 }

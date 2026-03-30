@@ -51,6 +51,7 @@ import java.util.concurrent.TimeoutException;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.xensource.xenapi.VTPM;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
@@ -622,7 +623,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     try {
                         destroyVm(vm, conn);
                     } catch (final Exception e) {
-                        logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy VM " + vmRec.nameLabel + " due to ", e);
+                        logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy Instance " + vmRec.nameLabel + " due to ", e);
                         success = false;
                     }
                 }
@@ -697,7 +698,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
             }
         } catch (final Exception e) {
-            logger.debug("Ip Assoc failure on applying one ip due to exception:  ", e);
+            logger.debug("IP Assoc failure on applying one IP due to exception:  ", e);
             return new ExecutionResult(false, e.getMessage());
         }
         return new ExecutionResult(true, null);
@@ -803,7 +804,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
             }
         } catch (final Throwable e) {
-            final String msg = "Unable to get vms through host " + _host.getUuid() + " due to " + e;
+            final String msg = "Unable to get Instances through host " + _host.getUuid() + " due to " + e;
             logger.warn(msg, e);
             throw new CloudRuntimeException(msg);
         }
@@ -982,7 +983,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         final Connection conn = getConnection();
         final String hostPath = "/tmp/";
 
-        logger.debug("Copying VR with ip " + routerIp + " config file into host " + _host.getIp());
+        logger.debug("Copying VR with IP " + routerIp + " config file into host " + _host.getIp());
         try {
             SshHelper.scpTo(_host.getIp(), 22, _username, null, _password.peek(), hostPath, content.getBytes(Charset.defaultCharset()), filename, null);
         } catch (final Exception e) {
@@ -1247,10 +1248,10 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     }
 
     public VIF createVif(final Connection conn, final String vmName, final VM vm, final VirtualMachineTO vmSpec, final NicTO nic) throws XmlRpcException, XenAPIException {
-        assert nic.getUuid() != null : "Nic should have a uuid value";
+        assert nic.getUuid() != null : "NIC should have a UUID value";
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Creating VIF for " + vmName + " on nic " + nic);
+            logger.debug("Creating VIF for " + vmName + " on NIC " + nic);
         }
         VIF.Record vifr = new VIF.Record();
         vifr.VM = vm;
@@ -1296,9 +1297,9 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         final String guestOsTypeName = getGuestOsType(vmSpec.getPlatformEmulator());
         final Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         if (templates == null || templates.isEmpty()) {
-            throw new CloudRuntimeException("Cannot find template " + guestOsTypeName + " on XenServer host");
+            throw new CloudRuntimeException("Cannot find Template " + guestOsTypeName + " on XenServer host");
         }
-        assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
+        assert templates.size() == 1 : "Should only have 1 Template but found " + templates.size();
         final VM template = templates.iterator().next();
 
         final VM.Record vmr = template.getRecord(conn);
@@ -1347,7 +1348,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         } else {
             // scaling disallowed, set static memory target
             if (vmSpec.isEnableDynamicallyScaleVm() && !isDmcEnabled(conn, host)) {
-                logger.warn("Host " + host.getHostname(conn) + " does not support dynamic scaling, so the vm " + vmSpec.getName() + " is not dynamically scalable");
+                logger.warn("Host " + host.getHostname(conn) + " does not support dynamic scaling, so the Instance " + vmSpec.getName() + " is not dynamically scalable");
             }
             vmr.memoryStaticMin = vmSpec.getMinRam();
             vmr.memoryStaticMax = vmSpec.getMaxRam();
@@ -1373,7 +1374,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         }
 
         final VM vm = VM.create(conn, vmr);
-        logger.debug("Created VM " + vm.getUuid(conn) + " for " + vmSpec.getName());
+        logger.debug("Created Instance " + vm.getUuid(conn) + " for " + vmSpec.getName());
 
         final Map<String, String> vcpuParams = new HashMap<>();
 
@@ -1451,14 +1452,14 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         try {
             finalizeVmMetaData(vm, vmr, conn, vmSpec);
         } catch (final Exception e) {
-            throw new CloudRuntimeException("Unable to finalize VM MetaData: " + vmSpec);
+            throw new CloudRuntimeException("Unable to finalize Instance MetaData: " + vmSpec);
         }
         try {
             String bootMode = StringUtils.defaultIfEmpty(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()), null);
             String bootType = (bootMode == null) ? ApiConstants.BootType.BIOS.toString() : ApiConstants.BootType.UEFI.toString();
             setVmBootDetails(vm, conn, bootType, bootMode);
         } catch (final XenAPIException | XmlRpcException e) {
-            throw new CloudRuntimeException(String.format("Unable to handle VM boot options: %s", vmSpec), e);
+            throw new CloudRuntimeException(String.format("Unable to handle Instance boot options: %s", vmSpec), e);
         }
         return vm;
     }
@@ -1543,12 +1544,12 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                             vbd.eject(conn);
                         }
                     } catch (Exception e) {
-                        logger.debug("Cannot eject CD-ROM device for VM " + vmName + " due to " + e, e);
+                        logger.debug("Cannot eject CD-ROM device for Instance " + vmName + " due to " + e, e);
                     }
                     try {
                         vbd.destroy(conn);
                     } catch (Exception e) {
-                        logger.debug("Cannot destroy CD-ROM device for VM " + vmName + " due to " + e, e);
+                        logger.debug("Cannot destroy CD-ROM device for Instance " + vmName + " due to " + e, e);
                     }
                     break;
                 }
@@ -2366,7 +2367,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 vm_map = VM.getAllRecords(conn);
                 break;
             } catch (final Throwable e) {
-                logger.warn("Unable to get vms", e);
+                logger.warn("Unable to get Instances", e);
             }
             try {
                 Thread.sleep(1000);
@@ -2852,7 +2853,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         final String name = nic.getName();
         final XsLocalNetwork network = getNativeNetworkForTraffic(conn, nic.getType(), name);
         if (network == null) {
-            logger.error("Network is not configured on the backend for nic " + nic);
+            logger.error("Network is not configured on the backend for NIC: " + nic);
             throw new CloudRuntimeException("Network for the backend is not configured correctly for network broadcast domain: " + nic.getBroadcastUri());
         }
         final URI uri = nic.getBroadcastUri();
@@ -2908,7 +2909,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
      * within a XenServer that's under CloudStack control.
      *
      * - Native Networks: these are networks that are untagged on the XenServer
-     * and are used to crate VLAN networks on. These are created by the user and
+     * and are used to create VLAN networks on. These are created by the user and
      * is assumed to be one per cluster. - VLAN Networks: these are dynamically
      * created by CloudStack and can have problems with duplicated names. -
      * LinkLocal Networks: these are dynamically created by CloudStack and can
@@ -3414,7 +3415,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     }
                 }
             } catch (final Exception e) {
-                logger.debug("Exception occurs when calculate snapshot capacity for volumes: due to " + e);
+                logger.debug("Exception occurs when calculate Snapshot capacity for volumes: due to " + e);
             }
         }
         if (volumeTo.getVolumeType() == Volume.Type.ROOT) {
@@ -3441,7 +3442,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                                 }
                             }
                         } catch (Exception e) {
-                            logger.debug("Exception occurs when calculate snapshot capacity for memory: due to " + e);
+                            logger.debug("Exception occurs when calculate Snapshot capacity for memory: due to " + e);
                         }
 
                     }
@@ -3773,7 +3774,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 Host host = pbd.getHost(conn);
                 if (!isRefNull(host) && StringUtils.equals(host.getUuid(conn), _host.getUuid())) {
                     if (!pbd.getCurrentlyAttached(conn)) {
-                        logger.debug(String.format("PBD [%s] of local SR [%s] was unplugged, pluggin it now", pbd.getUuid(conn), srRec.uuid));
+                        logger.debug(String.format("PBD [%s] of local SR [%s] was unplugged, plugging it in now", pbd.getUuid(conn), srRec.uuid));
                         pbd.plug(conn);
                     }
                     logger.debug("Scanning local SR: " + srRec.uuid);
@@ -4396,7 +4397,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
             }
         } catch (final InternalErrorException e) {
-            logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
+            logger.error("IP Assoc failure on applying one IP due to exception:  ", e);
             return new ExecutionResult(false, e.getMessage());
         } catch (final Exception e) {
             return new ExecutionResult(false, e.getMessage());
@@ -4417,7 +4418,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 setNicDevIdIfCorrectVifIsNotNull(conn, ip, correctVif);
             }
         } catch (final Exception e) {
-            logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
+            logger.error("IP Assoc failure on applying one IP due to exception:  ", e);
             return new ExecutionResult(false, e.getMessage());
         }
 
@@ -4441,7 +4442,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 }
                 nic.setDeviceId(Integer.parseInt(vif.getDevice(conn)));
             } else {
-                final String msg = "Prepare SetNetworkACL failed due to nic is null for : " + routerName;
+                final String msg = "Prepare SetNetworkACL failed due to NIC is null for : " + routerName;
                 logger.error(msg);
                 return new ExecutionResult(false, msg);
             }
@@ -4644,7 +4645,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                     continue;
                 }
                 if (waittime >= 1800000) {
-                    final String msg = "This template is being used, try late time";
+                    final String msg = "This Template is being used, try later";
                     logger.warn(msg);
                     return msg;
                 }
@@ -5255,7 +5256,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         try {
             callHostPlugin(conn, "vmopsSnapshot", "unmountSnapshotsDir", "dcId", dcId.toString());
         } catch (final Exception e) {
-            logger.debug("Failed to umount snapshot dir", e);
+            logger.debug("Failed to umount Snapshot dir", e);
         }
     }
 
@@ -5825,5 +5826,83 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     public void destroyVm(VM vm, Connection connection) throws XenAPIException, XmlRpcException {
         destroyVm(vm, connection, false);
+    }
+
+    /**
+     * Configure vTPM (Virtual Trusted Platform Module) support for a VM.
+     * vTPM provides a virtual TPM 2.0 device for VMs, enabling features like Secure Boot and disk encryption.
+     *
+     * Requirements:
+     * - XenServer/XCP-ng 8.3 (and above)
+     * - UEFI Secure Boot enabled
+     * - VM in halted state
+     *
+     * @param conn XenServer connection
+     * @param vm The VM to configure
+     * @param vmSpec VM specification containing vTPM settings
+     */
+    public void configureVTPM(Connection conn, VM vm, VirtualMachineTO vmSpec) throws XenAPIException, XmlRpcException {
+        if (vmSpec == null || vmSpec.getDetails() == null) {
+            return;
+        }
+
+        String vtpmEnabled = vmSpec.getDetails().getOrDefault(VmDetailConstants.VIRTUAL_TPM_ENABLED, null);
+
+        final Map<String, String> platform = vm.getPlatform(conn);
+        if (platform != null) {
+            final String guestRequiresVtpm = platform.get("vtpm");
+            if (guestRequiresVtpm != null && Boolean.parseBoolean(guestRequiresVtpm) && !Boolean.parseBoolean(vtpmEnabled)) {
+                logger.warn("Guest OS requires vTPM by default, even if VM details doesn't have the setting: {}", vmSpec.getName());
+                return;
+            }
+        }
+
+        if (!Boolean.parseBoolean(vtpmEnabled)) {
+            return;
+        }
+
+        String bootMode = StringUtils.defaultIfEmpty(vmSpec.getDetails().get(ApiConstants.BootType.UEFI.toString()), null);
+        String bootType = (bootMode == null) ? ApiConstants.BootType.BIOS.toString() : ApiConstants.BootType.UEFI.toString();
+
+        if (!ApiConstants.BootType.UEFI.toString().equals(bootType)) {
+            logger.warn("vTPM requires UEFI boot mode. Skipping vTPM configuration for VM: {}", vmSpec.getName());
+            return;
+        }
+
+        try {
+            Set<VTPM> existingVtpms = vm.getVTPMs(conn);
+            if (!existingVtpms.isEmpty()) {
+                logger.debug("vTPM already exists for VM: {}", vmSpec.getName());
+                return;
+            }
+
+            // Creates vTPM using: xe vtpm-create vm-uuid=<uuid>
+            String vmUuid = vm.getUuid(conn);
+            String result = callHostPlugin(conn, "vmops", "create_vtpm", "vm_uuid", vmUuid);
+
+            if (result == null || result.isEmpty() || result.startsWith("ERROR:") || result.startsWith("EXCEPTION:")) {
+                throw new CloudRuntimeException("Failed to create vTPM, result: " + result);
+            }
+
+            logger.info("Successfully created vTPM {} for VM: {}", result.trim(), vmSpec.getName());
+        } catch (Exception e) {
+            logger.warn("Failed to configure vTPM for VM: {}, continuing without vTPM", vmSpec.getName(), e);
+        }
+    }
+
+    public boolean isVTPMSupported(Connection conn, Host host) {
+        try {
+            Host.Record hostRecord = host.getRecord(conn);
+            String productVersion = hostRecord.softwareVersion.get("product_version");
+            if (productVersion == null) {
+                return false;
+            }
+            ComparableVersion currentVersion = new ComparableVersion(productVersion);
+            ComparableVersion minVersion = new ComparableVersion("8.2.0");
+            return currentVersion.compareTo(minVersion) >= 0;
+        } catch (Exception e) {
+            logger.warn("Failed to check vTPM support on host", e);
+            return false;
+        }
     }
 }

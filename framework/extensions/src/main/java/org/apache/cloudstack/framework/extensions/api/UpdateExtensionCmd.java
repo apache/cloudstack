@@ -74,7 +74,7 @@ public class UpdateExtensionCmd extends BaseCmd {
     @Parameter(name = ApiConstants.CLEAN_UP_DETAILS,
             type = CommandType.BOOLEAN,
             description = "Optional boolean field, which indicates if details should be cleaned up or not " +
-                    "(If set to true, details removed for this action, details field ignored; " +
+                    "(If set to true, details removed for this extension, details field ignored; " +
                     "if false or not set, no action)")
     private Boolean cleanupDetails;
 

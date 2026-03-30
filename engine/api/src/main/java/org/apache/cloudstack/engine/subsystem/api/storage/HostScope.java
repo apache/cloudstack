@@ -19,8 +19,10 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.storage.ScopeType;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class HostScope extends AbstractScope {
+    private ScopeType type = ScopeType.HOST;
     private Long hostId;
     private Long clusterId;
     private Long zoneId;
@@ -34,7 +36,7 @@ public class HostScope extends AbstractScope {
 
     @Override
     public ScopeType getScopeType() {
-        return ScopeType.HOST;
+        return this.type;
     }
 
     @Override
@@ -48,5 +50,11 @@ public class HostScope extends AbstractScope {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("HostScope %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "zoneId", "clusterId", "hostId"));
     }
 }

@@ -41,13 +41,23 @@ import com.cloud.utils.net.Ip;
 public interface LoadBalancingRulesService {
     /**
      * Create a load balancer rule from the given ipAddress/port to the given private port
+     * @param xId an existing UUID for this rule (for instance a device generated one)
+     * @param name
+     * @param description
+     * @param srcPortStart
+     * @param srcPortEnd
+     * @param defPortStart
+     * @param defPortEnd
+     * @param ipAddrId
+     * @param protocol
+     * @param algorithm
+     * @param networkId
+     * @param lbOwnerId
      * @param openFirewall
-     *            TODO
-     * @param forDisplay TODO
-     * @param cmd
-     *            the command specifying the ip address, public port, protocol, private port, and algorithm
-     *
+     * @param lbProtocol
+     * @param forDisplay
      * @return the newly created LoadBalancerVO if successful, null otherwise
+     * @throws NetworkRuleConflictException
      * @throws InsufficientAddressCapacityException
      */
     LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,
@@ -98,7 +108,7 @@ public interface LoadBalancingRulesService {
     /**
      * Assign a virtual machine or list of virtual machines, or Map of <vmId vmIp> to a load balancer.
      */
-    boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds, Map<Long, List<String>> vmIdIpMap, boolean isAutoScaleVM);
+    boolean assignToLoadBalancer(long lbRuleId, List<Long> vmIds, Map<Long, List<String>> vmIdIpMap, Map<Long, Long> vmIdNetworkMap, boolean isAutoScaleVM);
 
     boolean assignSSLCertToLoadBalancerRule(Long lbRuleId, String certName, String publicCert, String privateKey);
 

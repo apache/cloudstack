@@ -74,10 +74,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     private final SearchBuilder<VolumeVO> storeAndInstallPathSearch;
     private final SearchBuilder<VolumeVO> volumeIdSearch;
     protected GenericSearchBuilder<VolumeVO, Long> CountByAccount;
+    protected final SearchBuilder<VolumeVO> ExternalUuidSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch;
     protected GenericSearchBuilder<VolumeVO, SumCount> primaryStorageSearch2;
     protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
     private final SearchBuilder<VolumeVO> poolAndPathSearch;
+    final GenericSearchBuilder<VolumeVO, Integer> CountByOfferingId;
 
     @Inject
     ReservationDao reservationDao;
@@ -135,7 +137,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> findByPoolId(long poolId) {
+    public List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
         sc.setParameters("notDestroyed", Volume.State.Destroy, Volume.State.Expunged);
@@ -144,7 +146,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> findByInstanceIdAndPoolId(long instanceId, long poolId) {
+    public List<VolumeVO> findNonDestroyedVolumesByInstanceIdAndPoolId(long instanceId, long poolId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", instanceId);
         sc.setParameters("poolId", poolId);
@@ -161,7 +163,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public List<VolumeVO> findByPoolId(long poolId, Volume.Type volumeType) {
+    public List<VolumeVO> findNonDestroyedVolumesByPoolId(long poolId, Volume.Type volumeType) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
         sc.setParameters("notDestroyed", Volume.State.Destroy, Volume.State.Expunged);
@@ -382,7 +384,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 
     public VolumeDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.IN);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("dcId", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("pod", AllFieldsSearch.entity().getPodId(), Op.EQ);
@@ -458,6 +460,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         CountByAccount.and("idNIN", CountByAccount.entity().getId(), Op.NIN);
         CountByAccount.done();
 
+        ExternalUuidSearch = createSearchBuilder();
+        ExternalUuidSearch.and("externalUuid", ExternalUuidSearch.entity().getExternalUuid(), Op.EQ);
+        ExternalUuidSearch.done();
+
         primaryStorageSearch = createSearchBuilder(SumCount.class);
         primaryStorageSearch.select("sum", Func.SUM, primaryStorageSearch.entity().getSize());
         primaryStorageSearch.and("accountId", primaryStorageSearch.entity().getAccountId(), Op.EQ);
@@ -506,6 +512,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         poolAndPathSearch.and("poolId", poolAndPathSearch.entity().getPoolId(), Op.EQ);
         poolAndPathSearch.and("path", poolAndPathSearch.entity().getPath(), Op.EQ);
         poolAndPathSearch.done();
+
+        CountByOfferingId = createSearchBuilder(Integer.class);
+        CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
+        CountByOfferingId.and("diskOfferingId", CountByOfferingId.entity().getDiskOfferingId(), Op.EQ);
+        CountByOfferingId.done();
     }
 
     @Override
@@ -575,17 +586,16 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 
     @Override
     public List<VolumeVO> listVolumesToBeDestroyed() {
-        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("state", Volume.State.Destroy);
-
-        return listBy(sc);
+        return listVolumesToBeDestroyed(null);
     }
 
     @Override
     public List<VolumeVO> listVolumesToBeDestroyed(Date date) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("state", Volume.State.Destroy);
-        sc.setParameters("updateTime", date);
+        sc.setParameters("state", Volume.State.Destroy, Volume.State.Expunging);
+        if (date != null) {
+            sc.setParameters("updateTime", date);
+        }
 
         return listBy(sc);
     }
@@ -822,6 +832,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         if (volume.getState() != Volume.State.Destroy) {
             volume.setState(Volume.State.Destroy);
             volume.setPoolId(null);
+            volume.setPoolType(null);
             volume.setInstanceId(null);
             update(volume.getId(), volume);
             remove(volume.getId());
@@ -914,10 +925,25 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public int getVolumeCountByOfferingId(long diskOfferingId) {
+        SearchCriteria<Integer> sc = CountByOfferingId.create();
+        sc.setParameters("diskOfferingId", diskOfferingId);
+        List<Integer> results = customSearch(sc, null);
+        return results.get(0);
+    }
+
+    @Override
     public VolumeVO findByLastIdAndState(long lastVolumeId, State ...states) {
         QueryBuilder<VolumeVO> sc = QueryBuilder.create(VolumeVO.class);
         sc.and(sc.entity().getLastId(), SearchCriteria.Op.EQ,  lastVolumeId);
         sc.and(sc.entity().getState(), SearchCriteria.Op.IN,  (Object[]) states);
         return sc.find();
+    }
+
+    @Override
+    public VolumeVO findByExternalUuid(String externalUuid) {
+        SearchCriteria<VolumeVO> sc = ExternalUuidSearch.create();
+        sc.setParameters("externalUuid", externalUuid);
+        return findOneBy(sc);
     }
 }

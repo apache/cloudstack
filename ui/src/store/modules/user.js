@@ -44,7 +44,8 @@ import {
   MS_ID,
   OAUTH_DOMAIN,
   OAUTH_PROVIDER,
-  LATEST_CS_VERSION
+  LATEST_CS_VERSION,
+  PASSWORD_CHANGE_REQUIRED
 } from '@/store/mutation-types'
 
 import {
@@ -80,7 +81,8 @@ const user = {
     twoFaProvider: '',
     twoFaIssuer: '',
     customHypervisorName: 'Custom',
-    readyForShutdownPollingJob: ''
+    readyForShutdownPollingJob: '',
+    passwordChangeRequired: false
   },
 
   mutations: {
@@ -196,6 +198,14 @@ const user = {
         vueProps.$localStorage.set(LATEST_CS_VERSION, version)
         state.latestVersion = version
       }
+    },
+    SET_PASSWORD_CHANGE_REQUIRED: (state, required) => {
+      state.passwordChangeRequired = required
+      if (required) {
+        vueProps.$localStorage.set(PASSWORD_CHANGE_REQUIRED, true)
+      } else {
+        vueProps.$localStorage.remove(PASSWORD_CHANGE_REQUIRED)
+      }
     }
   },
 
@@ -243,6 +253,13 @@ const user = {
           commit('SET_LOGIN_FLAG', false)
           if (result && result.managementserverid) {
             commit('SET_MS_ID', result.managementserverid)
+          }
+          if (result.passwordchangerequired) {
+            commit('SET_PASSWORD_CHANGE_REQUIRED', true)
+            commit('SET_APIS', {})
+            vueProps.$localStorage.remove(APIS)
+          } else {
+            commit('SET_PASSWORD_CHANGE_REQUIRED', false)
           }
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
           commit('SET_LATEST_VERSION', latestVersion)
@@ -323,6 +340,15 @@ const user = {
         commit('SET_DOMAIN_STORE', domainStore)
         commit('SET_DARK_MODE', darkMode)
         commit('SET_LATEST_VERSION', latestVersion)
+
+        // This block is to enforce password change for first time login after admin resets password
+        const isPwdChangeRequired = vueProps.$localStorage.get(PASSWORD_CHANGE_REQUIRED)
+        commit('SET_PASSWORD_CHANGE_REQUIRED', isPwdChangeRequired)
+        if (isPwdChangeRequired) {
+          resolve()
+          return
+        }
+
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -338,7 +364,6 @@ const user = {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
-            store.dispatch('SetCsLatestVersion', result.rolename)
             resolve(cachedApis)
           }).catch(error => {
             reject(error)
@@ -486,6 +511,8 @@ const user = {
         vueProps.$localStorage.remove(ACCESS_TOKEN)
         vueProps.$localStorage.remove(HEADER_NOTICES)
 
+        commit('SET_PASSWORD_CHANGE_REQUIRED', false)
+
         logout(state.token).then(() => {
           message.destroy()
           if (cloudianUrl) {
@@ -563,15 +590,16 @@ const user = {
         }).catch(error => {
           reject(error)
         })
-
-        getAPI('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
-          if (json.listconfigurationsresponse.configuration !== null) {
-            const config = json.listconfigurationsresponse.configuration[0]
-            commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
-          }
-        }).catch(error => {
-          reject(error)
-        })
+        if ('listConfigurations' in store.getters.apis) {
+          getAPI('listConfigurations', { name: 'hypervisor.custom.display.name' }).then(json => {
+            if (json.listconfigurationsresponse.configuration !== null) {
+              const config = json.listconfigurationsresponse.configuration[0]
+              commit('SET_CUSTOM_HYPERVISOR_NAME', config.value)
+            }
+          }).catch(error => {
+            reject(error)
+          })
+        }
       })
     },
     UpdateConfiguration ({ commit }) {
@@ -588,6 +616,9 @@ const user = {
       commit('SET_DOMAIN_STORE', domainStore)
     },
     SetCsLatestVersion ({ commit }, rolename) {
+      if (!vueProps.$config.notifyLatestCSVersion) {
+        return
+      }
       const lastFetchTs = store.getters.latestVersion?.fetchedTs ? store.getters.latestVersion.fetchedTs : 0
       if (rolename === 'Root Admin' && (+new Date() - lastFetchTs) > 24 * 60 * 60 * 1000) {
         axios.get(

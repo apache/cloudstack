@@ -46,15 +46,15 @@
         <template #label>
           <tooltip-label :title="$t('label.path')" :tooltip="apiParams.path.description"/>
         </template>
-        <div class="entry-point-input-container">
-          <span v-if="!!safeName" :title="extenstionBasePath" class="entry-point-input-base-path">
-            {{ extenstionBasePath }}
+        <div class="path-input-container">
+          <span v-if="!!safeName" :title="extensionBasePath" class="path-input-base">
+            {{ extensionBasePath }}
           </span>
           <a-input
             v-model:value="form.path"
             :placeholder="apiParams.path.description"
             @input="markPathModified"
-            class="entry-point-input-relative-path"
+            class="path-input-relative"
           />
         </div>
       </a-form-item>
@@ -137,7 +137,7 @@ export default {
       }
       return value.replace(/[^a-zA-Z0-9._-]/g, '_').toLowerCase()
     },
-    extenstionBasePath () {
+    extensionBasePath () {
       return (this.$store.getters.features.extensionspath || '[EXTENSIONS_PATH]') + '/' + this.safeName + '/'
     }
   },
@@ -236,20 +236,20 @@ export default {
   }
 }
 
-.entry-point-input-container {
+.path-input-container {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.entry-point-input-base-path {
+.path-input-base {
   max-width: 70%;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.entry-point-input-relative-path {
+.path-input-relative {
   flex: 1 1 0%;
   min-width: 0;
 }

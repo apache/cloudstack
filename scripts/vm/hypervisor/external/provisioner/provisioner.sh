@@ -18,7 +18,7 @@
 
 parse_json() {
     local json_string=$1
-    echo "$json_string" | jq '.' > /dev/null || { echo '{"error":"Invalid JSON input"}'; exit 1; }
+    echo "$json_string" | jq '.' > /dev/null || { echo '{"status": "error", "error": "Invalid JSON input"}'; exit 1; }
 }
 
 generate_random_mac() {
@@ -99,17 +99,32 @@ status() {
     echo '{"status": "success", "power_state": "poweron"}'
 }
 
+statuses() {
+    parse_json "$1" || exit 1
+    # This external system can not return an output like the following:
+    # {"status":"success","power_state":{"i-3-23-VM":"poweroff","i-2-25-VM":"poweron"}}
+    # CloudStack can fallback to retrieving the power state of the single VM using the "status" action
+    echo '{"status": "error", "message": "Not supported"}'
+}
+
+get_console() {
+    parse_json "$1" || exit 1
+    local response
+    jq -n '{status:"error", error: "Operation not supported"}'
+    exit 1
+}
+
 action=$1
 parameters_file="$2"
 wait_time="$3"
 
 if [[ -z "$action" || -z "$parameters_file" ]]; then
-    echo '{"error":"Missing required arguments"}'
+    echo '{"status": "error", "error": "Missing required arguments"}'
     exit 1
 fi
 
 if [[ ! -r "$parameters_file" ]]; then
-    echo '{"error":"File not found or unreadable"}'
+    echo '{"status": "error", "error": "File not found or unreadable"}'
     exit 1
 fi
 
@@ -138,8 +153,14 @@ case $action in
     status)
         status "$parameters"
         ;;
+    statuses)
+        statuses "$parameters"
+        ;;
+    getconsole)
+        get_console "$parameters"
+        ;;
     *)
-        echo '{"error":"Invalid action"}'
+        echo '{"status": "error", "error": "Invalid action"}'
         exit 1
         ;;
 esac

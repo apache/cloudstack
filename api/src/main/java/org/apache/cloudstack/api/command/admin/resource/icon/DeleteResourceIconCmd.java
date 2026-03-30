@@ -31,7 +31,7 @@ import org.apache.cloudstack.context.CallContext;
 
 import java.util.List;
 
-@APICommand(name = "deleteResourceIcon", description = "deletes the resource icon from the specified resource(s)",
+@APICommand(name = "deleteResourceIcon", description = "Deletes the resource icon from the specified resource(s)",
         responseObject = SuccessResponse.class, since = "4.16.0.0", entityType = {ResourceIcon.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
@@ -45,10 +45,10 @@ public class DeleteResourceIconCmd extends BaseCmd {
             type = BaseCmd.CommandType.LIST,
             required = true,
             collectionType = BaseCmd.CommandType.STRING,
-            description = "list of resources to upload the icon/image for")
+            description = "List of resources to upload the icon/image for")
     private List<String> resourceIds;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = BaseCmd.CommandType.STRING, required = true, description = "type of the resource")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = BaseCmd.CommandType.STRING, required = true, description = "Type of the resource")
     private String resourceType;
 
     /////////////////////////////////////////////////////

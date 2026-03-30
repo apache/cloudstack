@@ -69,9 +69,11 @@ import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VnfTemplateDetailVO;
 import com.cloud.storage.VnfTemplateNicVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VnfTemplateDetailsDao;
 import com.cloud.storage.dao.VnfTemplateNicDao;
 import com.cloud.user.Account;
@@ -124,6 +126,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private ServiceOfferingDao serviceOfferingDao;
     @Inject
     private VgpuProfileDao vgpuProfileDao;
+    @Inject
+    VMTemplateDao vmTemplateDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -194,21 +198,13 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDisplayName(userVm.getName());
         }
 
-        if (userVm.getAccountType() == Account.Type.PROJECT) {
-            userVmResponse.setProjectId(userVm.getProjectUuid());
-            userVmResponse.setProjectName(userVm.getProjectName());
-        } else {
-            userVmResponse.setAccountName(userVm.getAccountName());
-        }
+        ApiResponseHelper.populateOwner(userVmResponse, userVm);
 
         User user = _userDao.getUser(userVm.getUserId());
         if (user != null) {
             userVmResponse.setUserId(user.getUuid());
             userVmResponse.setUserName(user.getUsername());
         }
-        userVmResponse.setDomainId(userVm.getDomainUuid());
-        userVmResponse.setDomainName(userVm.getDomainName());
-        userVmResponse.setDomainPath(userVm.getDomainPath());
 
         userVmResponse.setCreated(userVm.getCreated());
         userVmResponse.setLastUpdated(userVm.getLastUpdated());
@@ -472,6 +468,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDetails(resourceDetails);
             if (caller.getType() != Account.Type.ADMIN) {
                 userVmResponse.setReadOnlyDetails(QueryService.UserVMReadOnlyDetails.value());
+            }
+            VMTemplateVO template = vmTemplateDao.findByIdIncludingRemoved(userVm.getTemplateId());
+            if (template != null && template.isDeployAsIs() && UserVmManager.VmwareAdditionalDetailsFromOvaEnabled.valueIn(userVm.getDataCenterId())) {
+                userVmResponse.setAllowedDetails(UserVmManager.VmwareAllowedAdditionalDetailsFromOva.valueIn(userVm.getDataCenterId()));
             }
         }
 

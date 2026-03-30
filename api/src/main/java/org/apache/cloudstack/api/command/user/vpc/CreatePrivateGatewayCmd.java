@@ -44,7 +44,7 @@ import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
 
-@APICommand(name = "createPrivateGateway", description = "Creates a private gateway",
+@APICommand(name = "createPrivateGateway", description = "Creates a private Gateway",
         responseObject = PrivateGatewayResponse.class,
         responseView = ResponseView.Restricted,
         entityType = {VpcGateway.class},
@@ -58,40 +58,40 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "the gateway of the Private gateway")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "The Gateway of the Private Gateway")
     private String gateway;
 
-    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "the netmask of the Private gateway")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "The Netmask of the Private Gateway")
     private String netmask;
 
-    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = true, description = "the IP address of the Private gateaway")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = true, description = "The IP address of the Private Gateway")
     private String ipAddress;
 
     @Parameter(name = ApiConstants.NETWORK_OFFERING_ID,
                type = CommandType.UUID,
                required = false,
                entityType = NetworkOfferingResponse.class,
-               description = "the uuid of the network offering to use for the private gateways network connection")
+               description = "The UUID of the Network offering to use for the private gateways Network connection")
     private Long networkOfferingId;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "the VPC network belongs to")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "The VPC Network belongs to")
     private Long vpcId;
 
     @Parameter(name = ApiConstants.SOURCE_NAT_SUPPORTED,
                type = CommandType.BOOLEAN,
                required = false,
-               description = "source NAT supported value. Default value false. If 'true' source NAT is enabled on the private gateway"
+               description = "Source NAT supported value. Default value: false. When 'true', the source NAT is enabled on the private gateway"
                    + " 'false': sourcenat is not supported")
     private Boolean isSourceNat;
 
-    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = false, description = "the ID of the network ACL")
+    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = false, description = "The ID of the Network ACL")
     private Long aclId;
 
     @Parameter(name = ApiConstants.ASSOCIATED_NETWORK_ID,
             type = CommandType.UUID,
             entityType = NetworkResponse.class,
             since = "4.17.0",
-            description = "The isolated network this private gateway is associated to.")
+            description = "The Isolated Network this private gateway is associated to.")
     private Long associatedNetworkId;
 
     /////////////////////////////////////////////////////
@@ -179,7 +179,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
     public long getEntityOwnerId() {
         Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
         if (vpc == null) {
-            throw new InvalidParameterValueException("Invalid id is specified for the vpc");
+            throw new InvalidParameterValueException("Invalid id is specified for the VPC");
         }
         return vpc.getAccountId();
     }
@@ -203,7 +203,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserC
     public Long getSyncObjId() {
         Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
         if (vpc == null) {
-            throw new InvalidParameterValueException("Invalid id is specified for the vpc");
+            throw new InvalidParameterValueException("Invalid ID is specified for the VPC");
         }
         return vpc.getId();
     }

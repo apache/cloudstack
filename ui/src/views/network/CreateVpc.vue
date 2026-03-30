@@ -220,6 +220,7 @@
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
+import { isValidIPv4Cidr } from '@/utils/util.js'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
@@ -291,6 +292,7 @@ export default {
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneid: [{ required: true, message: this.$t('label.required') }],
+        cidr: [{ validator: isValidIPv4Cidr }],
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]
       })
     },
@@ -417,7 +419,7 @@ export default {
     },
     updateCidrRule () {
       if (!this.selectedVpcOfferingHavingRoutedNetworkMode) {
-        this.rules.cidr = [{ required: true, message: this.$t('message.error.required.input') }]
+        this.rules.cidr = [{ required: true, message: this.$t('message.error.required.input') }, { validator: isValidIPv4Cidr }]
       } else {
         delete this.rules.cidr
       }

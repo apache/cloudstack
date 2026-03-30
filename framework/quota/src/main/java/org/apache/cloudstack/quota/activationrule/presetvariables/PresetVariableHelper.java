@@ -255,7 +255,7 @@ public class PresetVariableHelper {
         Role role = new Role();
         role.setId(roleVo.getUuid());
         role.setName(roleVo.getName());
-        role.setType(roleVo.getRoleType());
+        role.setType(roleVo.getRoleType().toString());
 
         return role;
     }
@@ -539,8 +539,8 @@ public class PresetVariableHelper {
         value.setDiskOffering(getPresetVariableValueDiskOffering(volumeVo.getDiskOfferingId()));
         value.setId(volumeVo.getUuid());
         value.setName(volumeVo.getName());
-        value.setProvisioningType(volumeVo.getProvisioningType());
-        value.setVolumeType(volumeVo.getVolumeType());
+        value.setVolumeType(volumeVo.getVolumeType().toString());
+        value.setProvisioningType(volumeVo.getProvisioningType().toString());
 
         Long poolId = volumeVo.getPoolId();
         if (poolId == null) {
@@ -595,7 +595,7 @@ public class PresetVariableHelper {
         storage = new Storage();
         storage.setId(storagePoolVo.getUuid());
         storage.setName(storagePoolVo.getName());
-        storage.setScope(storagePoolVo.getScope());
+        storage.setScope(storagePoolVo.getScope().toString());
         List<StoragePoolTagVO> storagePoolTagVOList = storagePoolTagsDao.findStoragePoolTags(storageId);
         List<String> storageTags = new ArrayList<>();
         boolean isTagARule = false;
@@ -664,7 +664,7 @@ public class PresetVariableHelper {
         value.setId(snapshotVo.getUuid());
         value.setName(snapshotVo.getName());
         value.setSize(ByteScaleUtils.bytesToMebibytes(snapshotVo.getSize()));
-        value.setSnapshotType(Snapshot.Type.values()[snapshotVo.getSnapshotType()]);
+        value.setSnapshotType(Snapshot.Type.values()[snapshotVo.getSnapshotType()].toString());
         value.setStorage(getPresetVariableValueStorage(getSnapshotDataStoreId(snapshotId, usageRecord.getZoneId()), usageType));
         value.setTags(getPresetVariableValueResourceTags(snapshotId, ResourceObjectType.Snapshot));
         Hypervisor.HypervisorType hypervisorType = snapshotVo.getHypervisorType();
@@ -733,7 +733,7 @@ public class PresetVariableHelper {
         value.setId(vmSnapshotVo.getUuid());
         value.setName(vmSnapshotVo.getName());
         value.setTags(getPresetVariableValueResourceTags(vmSnapshotId, ResourceObjectType.VMSnapshot));
-        value.setVmSnapshotType(vmSnapshotVo.getType());
+        value.setVmSnapshotType(vmSnapshotVo.getType().toString());
 
         VMInstanceVO vmVo = vmInstanceDao.findByIdIncludingRemoved(vmSnapshotVo.getVmId());
         if (vmVo != null && vmVo.getHypervisorType() != null) {

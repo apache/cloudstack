@@ -68,10 +68,16 @@ public class BackupScheduleVO implements BackupSchedule {
     @Column(name = "quiescevm")
     Boolean quiesceVM = false;
 
+    @Column(name = "account_id")
+    Long accountId;
+
+    @Column(name = "domain_id")
+    Long domainId;
+
     public BackupScheduleVO() {
     }
 
-    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, int maxBackups, Boolean quiesceVM) {
+    public BackupScheduleVO(Long vmId, DateUtil.IntervalType scheduleType, String schedule, String timezone, Date scheduledTimestamp, int maxBackups, Boolean quiesceVM, Long accountId, Long domainId) {
         this.vmId = vmId;
         this.scheduleType = (short) scheduleType.ordinal();
         this.schedule = schedule;
@@ -79,6 +85,8 @@ public class BackupScheduleVO implements BackupSchedule {
         this.scheduledTimestamp = scheduledTimestamp;
         this.maxBackups = maxBackups;
         this.quiesceVM = quiesceVM;
+        this.accountId = accountId;
+        this.domainId = domainId;
     }
 
     @Override
@@ -160,5 +168,33 @@ public class BackupScheduleVO implements BackupSchedule {
 
     public Boolean getQuiesceVM() {
         return quiesceVM;
+    }
+
+    @Override
+    public Class<?> getEntityType() {
+        return BackupSchedule.class;
+    }
+
+    @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
     }
 }

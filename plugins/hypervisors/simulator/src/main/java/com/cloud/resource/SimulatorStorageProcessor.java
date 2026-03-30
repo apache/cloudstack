@@ -270,7 +270,11 @@ public class SimulatorStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer copyVolumeFromPrimaryToPrimary(CopyCommand cmd) {
-        return null;
+        VolumeObjectTO volume = new VolumeObjectTO();
+        volume.setPath(UUID.randomUUID().toString());
+        volume.setSize(100);
+        volume.setFormat(Storage.ImageFormat.RAW);
+        return new CopyCmdAnswer(volume);
     }
 
     @Override
