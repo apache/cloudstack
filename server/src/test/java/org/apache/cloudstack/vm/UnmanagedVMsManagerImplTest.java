@@ -714,7 +714,17 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     private enum VcenterParameter {
-        EXISTING, EXTERNAL, BOTH, NONE, EXISTING_INVALID, AGENT_UNAVAILABLE, CONVERT_FAILURE
+        EXISTING,
+        EXTERNAL,
+        BOTH,
+        NONE,
+        EXISTING_INVALID,
+        AGENT_UNAVAILABLE,
+        CONVERT_FAILURE,
+        FORCE_MS_AND_USE_VDDK,
+        USE_VDDK_OVF_UNSUPPORTED,
+        USE_VDDK_OVF_SUPPORTED,
+        USE_VDDK_DETAILS_OVERRIDES
     }
 
     private void baseTestImportVmFromVmwareToKvm(VcenterParameter vcenterParameter, boolean selectConvertHost,
@@ -751,6 +761,35 @@ public class UnmanagedVMsManagerImplTest {
         when(importVmCmd.getConvertInstanceHostId()).thenReturn(null);
         when(importVmCmd.getImportInstanceHostId()).thenReturn(null);
         when(importVmCmd.getConvertStoragePoolId()).thenReturn(null);
+        when(importVmCmd.getExistingVcenterId()).thenReturn(null);
+        when(importVmCmd.getVcenter()).thenReturn(null);
+        when(importVmCmd.getDatacenterName()).thenReturn(null);
+        when(importVmCmd.getUsername()).thenReturn(null);
+        when(importVmCmd.getPassword()).thenReturn(null);
+        when(importVmCmd.getDetails()).thenReturn(new HashMap<>());
+
+        boolean forceMsToImportVmFiles = false;
+        boolean useVddk = false;
+        boolean ovfExportSupported = false;
+        if (VcenterParameter.FORCE_MS_AND_USE_VDDK == vcenterParameter) {
+            forceMsToImportVmFiles = true;
+            useVddk = true;
+        } else if (VcenterParameter.USE_VDDK_OVF_UNSUPPORTED == vcenterParameter) {
+            useVddk = true;
+        } else if (VcenterParameter.USE_VDDK_OVF_SUPPORTED == vcenterParameter) {
+            useVddk = true;
+            ovfExportSupported = true;
+        } else if (VcenterParameter.USE_VDDK_DETAILS_OVERRIDES == vcenterParameter) {
+            useVddk = true;
+            ovfExportSupported = true;
+            when(importVmCmd.getDetails()).thenReturn(Map.of(
+                    "libguestfs.backend", "libvirt",
+                    "vddk.lib.dir", "/opt/vmware-vddk/override",
+                    "vddk.transports", "nbd:nbdssl",
+                    "vddk.thumbprint", "AA:BB:CC:DD:EE"));
+        }
+        when(importVmCmd.getForceMsToImportVmFiles()).thenReturn(forceMsToImportVmFiles);
+        when(importVmCmd.getUseVddk()).thenReturn(useVddk);
 
         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
         when(networkVO.getGuestType()).thenReturn(Network.GuestType.L2);
@@ -812,11 +851,6 @@ public class UnmanagedVMsManagerImplTest {
             when(datacenterVO.getPassword()).thenReturn(password);
             when(importVmCmd.getExistingVcenterId()).thenReturn(existingDatacenterId);
             when(vmwareDatacenterDao.findById(existingDatacenterId)).thenReturn(datacenterVO);
-        } else if (VcenterParameter.EXTERNAL == vcenterParameter) {
-            when(importVmCmd.getVcenter()).thenReturn(vcenterHost);
-            when(importVmCmd.getDatacenterName()).thenReturn(datacenter);
-            when(importVmCmd.getUsername()).thenReturn(username);
-            when(importVmCmd.getPassword()).thenReturn(password);
         }
 
         if (VcenterParameter.BOTH == vcenterParameter) {
@@ -830,8 +864,20 @@ public class UnmanagedVMsManagerImplTest {
             when(vmwareDatacenterDao.findById(existingDatacenterId)).thenReturn(null);
         }
 
+        if (VcenterParameter.FORCE_MS_AND_USE_VDDK == vcenterParameter
+                || VcenterParameter.USE_VDDK_OVF_UNSUPPORTED == vcenterParameter
+                || VcenterParameter.USE_VDDK_OVF_SUPPORTED == vcenterParameter
+                || VcenterParameter.USE_VDDK_DETAILS_OVERRIDES == vcenterParameter) {
+            Mockito.doReturn((Long) null).when(importVmCmd).getExistingVcenterId();
+            Mockito.doReturn(vcenterHost).when(importVmCmd).getVcenter();
+            Mockito.doReturn(datacenter).when(importVmCmd).getDatacenterName();
+            Mockito.doReturn(username).when(importVmCmd).getUsername();
+            Mockito.doReturn(password).when(importVmCmd).getPassword();
+        }
+
         CheckConvertInstanceAnswer checkConvertInstanceAnswer = mock(CheckConvertInstanceAnswer.class);
         when(checkConvertInstanceAnswer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
+        when(checkConvertInstanceAnswer.isOvfExportSupported()).thenReturn(ovfExportSupported);
         if (VcenterParameter.AGENT_UNAVAILABLE != vcenterParameter) {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
         }
@@ -853,9 +899,30 @@ public class UnmanagedVMsManagerImplTest {
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
             unmanagedVMsManager.importVm(importVmCmd);
             verify(vmwareGuru).getHypervisorVMOutOfBandAndCloneIfRequired(Mockito.eq(host), Mockito.eq(vmName), anyMap());
-            verify(vmwareGuru).createVMTemplateOutOfBand(Mockito.eq(host), Mockito.eq(vmName), anyMap(), any(DataStoreTO.class), anyInt());
+            if (VcenterParameter.USE_VDDK_OVF_SUPPORTED == vcenterParameter) {
+                verify(vmwareGuru, Mockito.never()).createVMTemplateOutOfBand(anyString(), anyString(), anyMap(), any(DataStoreTO.class), anyInt());
+                verify(agentManager).send(Mockito.eq(convertHostId), Mockito.<com.cloud.agent.api.Command>argThat(command ->
+                        command instanceof ConvertInstanceCommand && ((ConvertInstanceCommand) command).isUseVddk()));
+                verify(vmwareGuru, Mockito.never()).removeVMTemplateOutOfBand(any(DataStoreTO.class), anyString());
+            } else if (VcenterParameter.USE_VDDK_DETAILS_OVERRIDES == vcenterParameter) {
+                verify(vmwareGuru, Mockito.never()).createVMTemplateOutOfBand(anyString(), anyString(), anyMap(), any(DataStoreTO.class), anyInt());
+                verify(agentManager).send(Mockito.eq(convertHostId), Mockito.<com.cloud.agent.api.Command>argThat(command -> {
+                    if (!(command instanceof ConvertInstanceCommand)) {
+                        return false;
+                    }
+                    ConvertInstanceCommand convertCmd = (ConvertInstanceCommand) command;
+                    return convertCmd.isUseVddk()
+                            && "libvirt".equals(convertCmd.getLibguestfsBackend())
+                            && "/opt/vmware-vddk/override".equals(convertCmd.getVddkLibDir())
+                            && "nbd:nbdssl".equals(convertCmd.getVddkTransports())
+                            && "AA:BB:CC:DD:EE".equals(convertCmd.getVddkThumbprint());
+                }));
+                verify(vmwareGuru, Mockito.never()).removeVMTemplateOutOfBand(any(DataStoreTO.class), anyString());
+            } else {
+                verify(vmwareGuru).createVMTemplateOutOfBand(Mockito.eq(host), Mockito.eq(vmName), anyMap(), any(DataStoreTO.class), anyInt());
+                verify(vmwareGuru).removeVMTemplateOutOfBand(any(DataStoreTO.class), anyString());
+            }
             verify(vmwareGuru).removeClonedHypervisorVMOutOfBand(Mockito.eq(host), Mockito.eq(vmName), anyMap());
-            verify(vmwareGuru).removeVMTemplateOutOfBand(any(DataStoreTO.class), anyString());
         }
     }
 
@@ -946,6 +1013,21 @@ public class UnmanagedVMsManagerImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void testImportVmFromVmwareToKvmExistingVcenterConvertFailure() throws OperationTimedoutException, AgentUnavailableException {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.CONVERT_FAILURE, false, false);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testImportVmFromVmwareToKvmForceMsMutuallyExclusiveWithUseVddk() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.FORCE_MS_AND_USE_VDDK, false, false);
+    }
+
+    @Test
+    public void testImportVmFromVmwareToKvmUseVddkIsPassedToConvertCommand() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.USE_VDDK_OVF_SUPPORTED, false, false);
+    }
+
+    @Test
+    public void testImportVmFromVmwareToKvmDetailsOverrideVddkSettings() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.USE_VDDK_DETAILS_OVERRIDES, false, false);
     }
 
     private ClusterVO getClusterForTests() {

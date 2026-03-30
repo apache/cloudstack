@@ -20,10 +20,15 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.commons.collections4.MapUtils;
@@ -51,6 +56,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
     private static final List<Hypervisor.HypervisorType> supportedInstanceConvertSourceHypervisors =
             List.of(Hypervisor.HypervisorType.VMware);
+    private static final Pattern SHA1_FINGERPRINT_PATTERN = Pattern.compile("(?i)(?:SHA1\\s+)?Fingerprint\\s*=\\s*([0-9A-F:]+)");
 
     @Override
     public Answer execute(ConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
@@ -61,7 +67,8 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
         long timeout = (long) cmd.getWait() * 1000;
         String extraParams = cmd.getExtraParams();
-        String originalVMName = cmd.getOriginalVMName(); // For logging purposes, as the sourceInstance may have been cloned
+        boolean useVddk = cmd.isUseVddk();
+        String originalVMName = cmd.getOriginalVMName();
 
         if (cmd.getCheckConversionSupport() && !serverResource.hostSupportsInstanceConversion()) {
             String msg = String.format("Cannot convert the instance %s from VMware as the virt-v2v binary is not found. " +
@@ -84,61 +91,77 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         logger.info(String.format("(%s) Attempting to convert the instance %s from %s to KVM",
                 originalVMName, sourceInstanceName, sourceHypervisorType));
         final String temporaryConvertPath = temporaryStoragePool.getLocalPath();
-
-        String ovfTemplateDirOnConversionLocation;
-        String sourceOVFDirPath;
-        boolean ovfExported = false;
-        if (cmd.getExportOvfToConversionLocation()) {
-            String exportInstanceOVAUrl = getExportInstanceOVAUrl(sourceInstance, originalVMName);
-            if (StringUtils.isBlank(exportInstanceOVAUrl)) {
-                String err = String.format("Couldn't export OVA for the VM %s, due to empty url", sourceInstanceName);
-                logger.error(String.format("(%s) %s", originalVMName, err));
-                return new Answer(cmd, false, err);
-            }
-
-            int noOfThreads = cmd.getThreadsCountToExportOvf();
-            if (noOfThreads > 1 && !serverResource.ovfExportToolSupportsParallelThreads()) {
-                noOfThreads = 0;
-            }
-            ovfTemplateDirOnConversionLocation = UUID.randomUUID().toString();
-            temporaryStoragePool.createFolder(ovfTemplateDirOnConversionLocation);
-            sourceOVFDirPath = String.format("%s/%s/", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
-            ovfExported = exportOVAFromVMOnVcenter(exportInstanceOVAUrl, sourceOVFDirPath, noOfThreads, originalVMName, timeout);
-            if (!ovfExported) {
-                String err = String.format("Export OVA for the VM %s failed", sourceInstanceName);
-                logger.error(String.format("(%s) %s", originalVMName, err));
-                return new Answer(cmd, false, err);
-            }
-            sourceOVFDirPath = String.format("%s%s/", sourceOVFDirPath, sourceInstanceName);
-        } else {
-            ovfTemplateDirOnConversionLocation = cmd.getTemplateDirOnConversionLocation();
-            sourceOVFDirPath = String.format("%s/%s/", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
-        }
-
-        logger.info(String.format("(%s) Attempting to convert the OVF %s of the instance %s from %s to KVM",
-                originalVMName, ovfTemplateDirOnConversionLocation, sourceInstanceName, sourceHypervisorType));
-
         final String temporaryConvertUuid = UUID.randomUUID().toString();
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
         boolean cleanupSecondaryStorage = false;
+        boolean ovfExported = false;
+        String ovfTemplateDirOnConversionLocation = null;
+
         try {
-            boolean result = performInstanceConversion(originalVMName, sourceOVFDirPath, temporaryConvertPath, temporaryConvertUuid,
-                    timeout, verboseModeEnabled, extraParams, serverResource);
+            boolean result;
+            if (useVddk) {
+                logger.info("({}) Using VDDK-based conversion (direct from VMware)", originalVMName);
+                String vddkLibDir = resolveVddkSetting(cmd.getVddkLibDir(), serverResource.getVddkLibDir());
+                if (StringUtils.isBlank(vddkLibDir)) {
+                    String err = String.format("VDDK lib dir is not configured on the host. " +
+                            "Set '%s' in agent.properties to use VDDK-based conversion.", "vddk.lib.dir");
+                    logger.error("({}) {}", originalVMName, err);
+                    return new Answer(cmd, false, err);
+                }
+                String libguestfsBackend = StringUtils.defaultIfBlank(resolveVddkSetting(cmd.getLibguestfsBackend(), serverResource.getLibguestfsBackend()), "direct");
+                String vddkTransports = resolveVddkSetting(cmd.getVddkTransports(), serverResource.getVddkTransports());
+                String configuredVddkThumbprint = resolveVddkSetting(cmd.getVddkThumbprint(), serverResource.getVddkThumbprint());
+                result = performInstanceConversionVddk(sourceInstance, originalVMName, temporaryConvertPath,
+                        vddkLibDir, libguestfsBackend, vddkTransports, configuredVddkThumbprint,
+                        timeout, verboseModeEnabled, extraParams);
+            } else {
+                logger.info("({}) Using OVF-based conversion (export + local convert)", originalVMName);
+                String sourceOVFDirPath;
+                if (cmd.getExportOvfToConversionLocation()) {
+                    String exportInstanceOVAUrl = getExportInstanceOVAUrl(sourceInstance, originalVMName);
+
+                    if (StringUtils.isBlank(exportInstanceOVAUrl)) {
+                        String err = String.format("Couldn't export OVA for the VM %s, due to empty url", sourceInstanceName);
+                        logger.error("({}) {}", originalVMName, err);
+                        return new Answer(cmd, false, err);
+                    }
+
+                    int noOfThreads = cmd.getThreadsCountToExportOvf();
+                    if (noOfThreads > 1 && !serverResource.ovfExportToolSupportsParallelThreads()) {
+                        noOfThreads = 0;
+                    }
+                    ovfTemplateDirOnConversionLocation = UUID.randomUUID().toString();
+                    temporaryStoragePool.createFolder(ovfTemplateDirOnConversionLocation);
+                    sourceOVFDirPath = String.format("%s/%s/", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
+                    ovfExported = exportOVAFromVMOnVcenter(exportInstanceOVAUrl, sourceOVFDirPath, noOfThreads, originalVMName, timeout);
+
+                    if (!ovfExported) {
+                        String err = String.format("Export OVA for the VM %s failed", sourceInstanceName);
+                        logger.error("({}) {}", originalVMName, err);
+                        return new Answer(cmd, false, err);
+                    }
+                    sourceOVFDirPath = String.format("%s%s/", sourceOVFDirPath, sourceInstanceName);
+                } else {
+                    ovfTemplateDirOnConversionLocation = cmd.getTemplateDirOnConversionLocation();
+                    sourceOVFDirPath = String.format("%s/%s/", temporaryConvertPath, ovfTemplateDirOnConversionLocation);
+                }
+
+                result = performInstanceConversion(originalVMName, sourceOVFDirPath, temporaryConvertPath, temporaryConvertUuid,
+                        timeout, verboseModeEnabled, extraParams, serverResource);
+            }
+
             if (!result) {
-                String err = String.format(
-                        "The virt-v2v conversion for the OVF %s failed. Please check the agent logs " +
-                                "for the virt-v2v output. Please try on a different kvm host which " +
-                                "has a different virt-v2v version.",
-                        ovfTemplateDirOnConversionLocation);
-                logger.error(String.format("(%s) %s", originalVMName, err));
+                String err = String.format("Instance conversion failed for VM %s. Please check virt-v2v logs.", sourceInstanceName);
+                logger.error("({}) {}", originalVMName, err);
                 return new Answer(cmd, false, err);
             }
+
             return new ConvertInstanceAnswer(cmd, temporaryConvertUuid);
+
         } catch (Exception e) {
-            String error = String.format("Error converting instance %s from %s, due to: %s",
-                    sourceInstanceName, sourceHypervisorType, e.getMessage());
-            logger.error(String.format("(%s) %s", originalVMName, error), e);
+            String error = String.format("Error converting instance %s from %s, due to: %s", sourceInstanceName, sourceHypervisorType, e.getMessage());
+            logger.error("({}) {}", originalVMName, error, e);
             cleanupSecondaryStorage = true;
             return new Answer(cmd, false, error);
         } finally {
@@ -274,5 +297,186 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
     protected String encodeUsername(String username) {
         return URLEncoder.encode(username, Charset.defaultCharset());
+    }
+
+    private String resolveVddkSetting(String commandValue, String agentValue) {
+        return StringUtils.defaultIfBlank(StringUtils.trimToNull(commandValue), StringUtils.trimToNull(agentValue));
+    }
+
+    protected boolean performInstanceConversionVddk(RemoteInstanceTO vmwareInstance, String originalVMName,
+                                                    String temporaryConvertFolder, String vddkLibDir,
+                                                    String libguestfsBackend, String vddkTransports,
+                                                    String configuredVddkThumbprint,
+                                                    long timeout, boolean verboseModeEnabled, String extraParams) {
+
+        String vcenterPassword = vmwareInstance.getVcenterPassword();
+        if (StringUtils.isBlank(vcenterPassword)) {
+            logger.error("({}) Could not determine vCenter password for {}", originalVMName, vmwareInstance.getVcenterHost());
+            return false;
+        }
+
+        String passwordFilePath = "/root/v2v.pass.cloud";
+        try {
+            Files.writeString(Path.of(passwordFilePath), vcenterPassword);
+            logger.debug("({}) Written vCenter password to {}", originalVMName, passwordFilePath);
+        } catch (Exception e) {
+            logger.error("({}) Failed to write vCenter password file {}: {}", originalVMName, passwordFilePath, e.getMessage());
+            return false;
+        }
+
+        String vpxUrl = buildVpxUrl(vmwareInstance, originalVMName);
+
+        StringBuilder cmd = new StringBuilder();
+
+        String effectiveLibguestfsBackend = StringUtils.defaultIfBlank(libguestfsBackend, "direct");
+        cmd.append("export LIBGUESTFS_BACKEND=").append(effectiveLibguestfsBackend).append(" && ");
+
+        cmd.append("virt-v2v ");
+        cmd.append("--root first ");
+        cmd.append("-ic '").append(vpxUrl).append("' ");
+        cmd.append("--password-file ").append(passwordFilePath).append(" ");
+        cmd.append("-it vddk ");
+        cmd.append("-io vddk-libdir=").append(vddkLibDir).append(" ");
+        String vddkThumbprint = StringUtils.trimToNull(configuredVddkThumbprint);
+        if (StringUtils.isBlank(vddkThumbprint)) {
+            vddkThumbprint = getVcenterThumbprint(vmwareInstance.getVcenterHost(), timeout, originalVMName);
+        }
+        if (StringUtils.isBlank(vddkThumbprint)) {
+            logger.error("({}) Could not determine vCenter thumbprint for {}", originalVMName, vmwareInstance.getVcenterHost());
+            return false;
+        }
+        cmd.append("-io vddk-thumbprint=").append(vddkThumbprint).append(" ");
+        if (StringUtils.isNotBlank(vddkTransports)) {
+            cmd.append("-io vddk-transports=").append(vddkTransports).append(" ");
+        }
+        cmd.append(originalVMName).append(" ");
+        cmd.append("-o local ");
+        cmd.append("-os ").append(temporaryConvertFolder).append(" ");
+        cmd.append("-of qcow2 ");
+
+        if (verboseModeEnabled) {
+            cmd.append("-v ");
+        }
+
+        if (StringUtils.isNotBlank(extraParams)) {
+            cmd.append(extraParams).append(" ");
+        }
+
+        Script script = new Script("/bin/bash", timeout, logger);
+        script.add("-c");
+        script.add(cmd.toString());
+
+        String logPrefix = String.format("(%s) virt-v2v vddk import", originalVMName);
+        OutputInterpreter.LineByLineOutputLogger outputLogger =
+                new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
+
+        logger.info("({}) Starting virt-v2v VDDK conversion", originalVMName);
+        script.execute(outputLogger);
+
+        int exitValue = script.getExitValue();
+        if (exitValue != 0) {
+            logger.error("({}) virt-v2v failed with exit code {}", originalVMName, exitValue);
+        }
+        try {
+            Files.deleteIfExists(Path.of(passwordFilePath));
+            logger.debug("({}) Deleted password file {}", originalVMName, passwordFilePath);
+        } catch (Exception e) {
+            logger.warn("({}) Failed to delete password file {}: {}", originalVMName, passwordFilePath, e.getMessage());
+        }
+
+        return exitValue == 0;
+    }
+
+    protected String getVcenterThumbprint(String vcenterHost, long timeout, String originalVMName) {
+        if (StringUtils.isBlank(vcenterHost)) {
+            return null;
+        }
+
+        String endpoint = String.format("%s:443", vcenterHost);
+        String command = String.format("openssl s_client -connect '%s' </dev/null 2>/dev/null | " +
+                "openssl x509 -fingerprint -sha1 -noout", endpoint);
+
+        Script script = new Script("/bin/bash", timeout, logger);
+        script.add("-c");
+        script.add(command);
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        script.execute(parser);
+
+        String output = parser.getLines();
+        if (script.getExitValue() != 0) {
+            logger.error("({}) Failed to fetch vCenter thumbprint for {}", originalVMName, vcenterHost);
+            return null;
+        }
+
+        String thumbprint = extractSha1Fingerprint(output);
+        if (StringUtils.isBlank(thumbprint)) {
+            logger.error("({}) Failed to parse vCenter thumbprint from output for {}", originalVMName, vcenterHost);
+            return null;
+        }
+        return thumbprint;
+    }
+
+    private String extractSha1Fingerprint(String output) {
+        String parsedOutput = StringUtils.trimToEmpty(output);
+        if (StringUtils.isBlank(parsedOutput)) {
+            return null;
+        }
+
+        for (String line : parsedOutput.split("\\R")) {
+            String trimmedLine = StringUtils.trimToEmpty(line);
+            if (StringUtils.isBlank(trimmedLine)) {
+                continue;
+            }
+
+            Matcher matcher = SHA1_FINGERPRINT_PATTERN.matcher(trimmedLine);
+            if (matcher.find()) {
+                return matcher.group(1).toUpperCase(Locale.ROOT);
+            }
+
+            // Fallback for raw fingerprint-only output.
+            if (trimmedLine.matches("(?i)[0-9a-f]{2}(:[0-9a-f]{2})+")) {
+                return trimmedLine.toUpperCase(Locale.ROOT);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Build vpx:// URL for virt-v2v
+     *
+     * Format:
+     * vpx://user@vcenter/DC/cluster/host?no_verify=1
+     */
+    private String buildVpxUrl(RemoteInstanceTO vmwareInstance, String originalVMName) {
+
+        String vcenter = vmwareInstance.getVcenterHost();
+        String username = vmwareInstance.getVcenterUsername();
+        String datacenter = vmwareInstance.getDatacenterName();
+        String cluster = vmwareInstance.getClusterName();
+        String host = vmwareInstance.getHostName();
+
+        String encodedUsername = encodeUsername(username);
+
+        StringBuilder url = new StringBuilder();
+        url.append("vpx://")
+                .append(encodedUsername)
+                .append("@")
+                .append(vcenter)
+                .append("/")
+                .append(datacenter);
+
+        if (StringUtils.isNotBlank(cluster)) {
+            url.append("/").append(cluster);
+        }
+
+        if (StringUtils.isNotBlank(host)) {
+            url.append("/").append(host);
+        }
+
+        url.append("?no_verify=1");
+
+        logger.info("({}) Using VPX URL: {}", originalVMName, url);
+        return url.toString();
     }
 }
