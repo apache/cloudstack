@@ -1000,12 +1000,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             for (UserVmVO vm : vms) {
-                if (vm.isDeleteProtection()) {
-                    logger.warn("Instance [id = {}, name = {}] has delete protection enabled and cannot be deleted.",
-                            vm.getUuid(), vm.getName());
-                    continue;
-                }
-
                 if (vm.getState() != VirtualMachine.State.Destroyed && vm.getState() != VirtualMachine.State.Expunging) {
                     try {
                         _vmMgr.destroyVm(vm.getId(), false);
