@@ -782,7 +782,7 @@ public class PresetVariableHelper {
         value.setResourceCounting(getPresetVariableValueNetworkResourceCounting(networkId));
     }
 
-    private ResourceCounting getPresetVariableValueNetworkResourceCounting(Long networkId) {
+    protected ResourceCounting getPresetVariableValueNetworkResourceCounting(Long networkId) {
         ResourceCounting resourceCounting = new ResourceCounting();
         List<VMInstanceVO> vmInstancesVO = vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(networkId, VirtualMachine.Type.User);
         int runningVms = (int) vmInstancesVO.stream().filter(vm -> vm.getState().equals(VirtualMachine.State.Running)).count();
