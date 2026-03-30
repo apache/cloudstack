@@ -305,7 +305,7 @@ public class DownloadListener implements Listener {
             }
             _imageSrv.handleSysTemplateDownload(hostHyper, agent.getDataCenterId());
             // update template_zone_ref for cross-zone templates
-            _imageSrv.associateCrosszoneTemplatesToZone(agent.getDataCenterId());
+            _imageSrv.associateCrossZoneTemplatesToZone(agent.getDataCenterId());
 
         }
         /* This can be removed

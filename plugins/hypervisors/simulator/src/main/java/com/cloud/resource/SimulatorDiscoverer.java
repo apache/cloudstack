@@ -18,10 +18,11 @@ package com.cloud.resource;
 
 import java.net.URI;
 import java.net.URLDecoder;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -46,10 +47,9 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 
 public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
 
@@ -63,6 +63,8 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     AgentManager _agentMgr = null;
     @Inject
     MockAgentManager _mockAgentMgr = null;
+    @Inject
+    TemplateService templateService;
     @Inject
     MockStorageManager _mockStorageMgr = null;
 
@@ -194,23 +196,12 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     @Override
     public void postDiscovery(List<HostVO> hosts, long msId) {
 
+        Set<Long> dcIds = new HashSet<>();
         for (HostVO h : hosts) {
-            associateTemplatesToZone(h.getId(), h.getDataCenterId());
+            dcIds.add(h.getDataCenterId());
         }
-    }
-
-    private void associateTemplatesToZone(long hostId, long dcId) {
-        VMTemplateZoneVO tmpltZone;
-
-        List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
-        for (VMTemplateVO vt : allTemplates) {
-            if (vt.isCrossZones()) {
-                tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
-                if (tmpltZone == null) {
-                    VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
-                    _vmTemplateZoneDao.persist(vmTemplateZone);
-                }
-            }
+        for (Long dcId : dcIds) {
+            templateService.associateCrossZoneTemplatesToZone(dcId);
         }
     }
 
