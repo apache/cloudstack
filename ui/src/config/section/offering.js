@@ -429,7 +429,7 @@ export default {
       name: 'networkoffering',
       title: 'label.network.offerings',
       icon: 'wifi-outlined',
-      docHelp: 'adminguide/networking.html#network-offerings  ',
+      docHelp: 'adminguide/networking.html#network-offerings',
       permission: ['listNetworkOfferings'],
       filters: ['all', 'forvpc', 'guestnetwork'],
       searchFilters: ['name', 'zoneid', 'domainid', 'guestiptype', 'tags'],
