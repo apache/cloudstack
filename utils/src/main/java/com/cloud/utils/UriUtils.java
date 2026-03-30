@@ -638,7 +638,7 @@ public class UriUtils {
             if (url.startsWith("rbd://")) {
                 return getRbdUrlInfo(url);
             }
-            if (url.startsWith("clvm://") || url.startsWith("clvm_ng://")) {
+            if (url.toLowerCase().startsWith("clvm://") || url.toLowerCase().startsWith("clvm_ng://")) {
                 return getClvmUrlInfo(url);
             }
             URI uri = new URI(UriUtils.encodeURIComponent(url));
