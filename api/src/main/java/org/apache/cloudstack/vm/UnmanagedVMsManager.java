@@ -26,6 +26,8 @@ import static com.cloud.hypervisor.Hypervisor.HypervisorType.VMware;
 
 public interface UnmanagedVMsManager extends VmImportService, UnmanageVMService, PluggableService, Configurable {
 
+    String VM_IMPORT_DEFAULT_TEMPLATE_NAME = "system-default-vm-import-dummy-template.iso";
+    String KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME = "kvm-default-vm-import-dummy-template";
     ConfigKey<Boolean> UnmanageVMPreserveNic = new ConfigKey<>("Advanced", Boolean.class, "unmanage.vm.preserve.nics", "false",
             "If set to true, do not remove VM nics (and its MAC addresses) when unmanaging a VM, leaving them allocated but not reserved. " +
                     "If set to false, nics are removed and MAC addresses can be reassigned", true, ConfigKey.Scope.Zone);

@@ -19,6 +19,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.GetUnmanagedInstancesAnswer;
 import com.cloud.agent.api.GetUnmanagedInstancesCommand;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtDomainXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
@@ -130,6 +131,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             if (parser.getCpuModeDef() != null) {
                 instance.setCpuCoresPerSocket(parser.getCpuModeDef().getCoresPerSocket());
             }
+            instance.setHypervisorType(Hypervisor.HypervisorType.KVM.name());
             instance.setPowerState(getPowerState(libvirtComputingResource.getVmState(conn,domain.getName())));
             instance.setMemory((int) LibvirtComputingResource.getDomainMemory(domain) / 1024);
             instance.setNics(getUnmanagedInstanceNics(libvirtComputingResource, parser.getInterfaces()));
