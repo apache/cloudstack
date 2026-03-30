@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -106,6 +107,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> IdsPowerStateSelectSearch;
     GenericSearchBuilder<VMInstanceVO, Integer> CountByOfferingId;
     GenericSearchBuilder<VMInstanceVO, Integer> CountUserVmNotInDomain;
+    SearchBuilder<VMInstanceVO> DeleteProtectedVmSearch;
 
     @Inject
     ResourceTagDao tagsDao;
@@ -368,6 +370,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         CountUserVmNotInDomain.and("domainIdsNotIn", CountUserVmNotInDomain.entity().getDomainId(), Op.NIN);
         CountUserVmNotInDomain.done();
 
+        DeleteProtectedVmSearch = createSearchBuilder();
+        DeleteProtectedVmSearch.selectFields(DeleteProtectedVmSearch.entity().getUuid());
+        DeleteProtectedVmSearch.and(ApiConstants.ACCOUNT_ID, DeleteProtectedVmSearch.entity().getAccountId(), Op.EQ);
+        DeleteProtectedVmSearch.and(ApiConstants.DELETE_PROTECTION, DeleteProtectedVmSearch.entity().isDeleteProtection(), Op.EQ);
+        DeleteProtectedVmSearch.and(ApiConstants.REMOVED, DeleteProtectedVmSearch.entity().getRemoved(), Op.NULL);
+        DeleteProtectedVmSearch.done();
     }
 
     @Override
@@ -1295,5 +1303,13 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = idsSearch.create();
         sc.setParameters("ids", ids.toArray());
         return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listDeleteProtectedVmsByAccountId(long accountId)  {
+        SearchCriteria<VMInstanceVO> sc = DeleteProtectedVmSearch.create();
+        sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
+        sc.setParameters(ApiConstants.DELETE_PROTECTION, true);
+        return listBy(sc);
     }
 }

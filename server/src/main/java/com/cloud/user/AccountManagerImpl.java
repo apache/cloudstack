@@ -2103,6 +2103,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return true;
         }
 
+        validateNoDeleteProtectedVms(account);
         checkIfAccountManagesProjects(accountId);
         verifyCallerPrivilegeForUserOrAccountOperations(account);
 
@@ -2142,6 +2143,24 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("The account is default and can't be removed");
         }
         return true;
+    }
+
+    private void validateNoDeleteProtectedVms(Account account) {
+        long accountId = account.getId();
+        List<VMInstanceVO> deleteProtectedVms = _vmDao.listDeleteProtectedVmsByAccountId(accountId);
+        if (deleteProtectedVms.isEmpty()) {
+            return;
+        }
+
+        if (logger.isDebugEnabled()) {
+            List<String> vmUuids = deleteProtectedVms.stream().map(VMInstanceVO::getUuid).collect(Collectors.toList());
+            logger.debug("Cannot delete Account {} (id={}), delete protection enabled for Instances: {}",
+                    account.getAccountName(), accountId, vmUuids);
+        }
+
+        throw new InvalidParameterValueException(
+                String.format("Cannot delete Account '%s'. One or more Instances have delete protection enabled.",
+                        account.getAccountName()));
     }
 
     @Override
