@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Conflict Check
-      uses: eps1lon/actions-label-merge-conflict@v2.0.0
+      uses: eps1lon/actions-label-merge-conflict@v3.0.3
       with:
         repoToken: "${{ secrets.GITHUB_TOKEN }}"
         dirtyLabel: "status:has-conflicts"
