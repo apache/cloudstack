@@ -3116,21 +3116,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VirtualMachineTO to = toVmTO(profile);
 
-        logger.info("Sending PreMigrationCommand to source host {} for VM {}", srcHostId, vm.getInstanceName());
-        final PreMigrationCommand preMigCmd = new PreMigrationCommand(to, vm.getInstanceName());
-        Answer preMigAnswer = null;
-        try {
-            preMigAnswer = _agentMgr.send(srcHostId, preMigCmd);
-            if (preMigAnswer == null || !preMigAnswer.getResult()) {
-                final String details = preMigAnswer != null ? preMigAnswer.getDetails() : "null answer returned";
-                final String msg = "Failed to prepare source host for migration: " + details;
-                logger.error("Failed to prepare source host {} for migration of VM {}: {}", srcHostId, vm.getInstanceName(), details);
-                throw new CloudRuntimeException(msg);
-            }
-            logger.info("Successfully prepared source host {} for migration of VM {}", srcHostId, vm.getInstanceName());
-        } catch (final AgentUnavailableException | OperationTimedoutException e) {
-            logger.error("Failed to send PreMigrationCommand to source host {}: {}", srcHostId, e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to prepare source host for migration: " + e.getMessage(), e);
+        if (vm.getHypervisorType() == HypervisorType.KVM && hasClvmVolumes(vm.getId())) {
+            executePreMigrationCommand(to, vm.getInstanceName(), srcHostId);
         }
 
         final PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
@@ -3264,21 +3251,23 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 logger.warn("Error while checking the vm {} on host {}", vm, dest.getHost(), e);
             }
             migrated = true;
-            try {
-                logger.info("Executing post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostId);
-                final PostMigrationCommand postMigrationCommand = new PostMigrationCommand(to, vm.getInstanceName());
-                final Answer postMigrationAnswer = _agentMgr.send(dstHostId, postMigrationCommand);
+            if (vm.getHypervisorType() == HypervisorType.KVM && hasClvmVolumes(vm.getId())) {
+                try {
+                    logger.info("Executing post-migration tasks for VM {} with CLVM volumes on destination host {}", vm.getInstanceName(), dstHostId);
+                    final PostMigrationCommand postMigrationCommand = new PostMigrationCommand(to, vm.getInstanceName());
+                    final Answer postMigrationAnswer = _agentMgr.send(dstHostId, postMigrationCommand);
 
-                if (postMigrationAnswer == null || !postMigrationAnswer.getResult()) {
-                    final String details = postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
-                    logger.warn("Post-migration tasks failed for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
-                        vm.getInstanceName(), dstHostId, details);
-                } else {
-                    logger.info("Successfully completed post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostId);
+                    if (postMigrationAnswer == null || !postMigrationAnswer.getResult()) {
+                        final String details = postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
+                        logger.warn("Post-migration tasks failed for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
+                            vm.getInstanceName(), dstHostId, details);
+                    } else {
+                        logger.info("Successfully completed post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostId);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Exception during post-migration tasks for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
+                        vm.getInstanceName(), dstHostId, e.getMessage(), e);
                 }
-            } catch (Exception e) {
-                logger.warn("Exception during post-migration tasks for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
-                    vm.getInstanceName(), dstHostId, e.getMessage(), e);
             }
 
             updateClvmLockHostForVmVolumes(vm.getId(), dstHostId);
@@ -4965,21 +4954,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         // Step 1: Send PreMigrationCommand to source host to convert CLVM volumes to shared mode
         // This must happen BEFORE PrepareForMigrationCommand on destination to avoid lock conflicts
-        logger.info("Sending PreMigrationCommand to source host {} for VM {}", srcHostId, vm.getInstanceName());
-        final PreMigrationCommand preMigCmd = new PreMigrationCommand(to, vm.getInstanceName());
-        Answer preMigAnswer = null;
-        try {
-            preMigAnswer = _agentMgr.send(srcHostId, preMigCmd);
-            if (preMigAnswer == null || !preMigAnswer.getResult()) {
-                final String details = preMigAnswer != null ? preMigAnswer.getDetails() : "null answer returned";
-                final String msg = "Failed to prepare source host for migration: " + details;
-                logger.error("Failed to prepare source host {} for migration of VM {}: {}", srcHostId, vm.getInstanceName(), details);
-                throw new CloudRuntimeException(msg);
-            }
-            logger.info("Successfully prepared source host {} for migration of VM {}", srcHostId, vm.getInstanceName());
-        } catch (final AgentUnavailableException | OperationTimedoutException e) {
-            logger.error("Failed to send PreMigrationCommand to source host {}: {}", srcHostId, e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to prepare source host for migration: " + e.getMessage(), e);
+        if (vm.getHypervisorType() == HypervisorType.KVM && hasClvmVolumes(vm.getId())) {
+            executePreMigrationCommand(to, vm.getInstanceName(), srcHostId);
         }
 
         // Step 2: Send PrepareForMigrationCommand to destination host
@@ -6404,6 +6380,32 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm) {
         return findClusterAndHostIdForVm(vm, false);
+    }
+
+    private boolean hasClvmVolumes(long vmId) {
+        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+        return volumes.stream()
+            .map(v -> _storagePoolDao.findById(v.getPoolId()))
+            .anyMatch(pool -> pool != null && ClvmLockManager.isClvmPoolType(pool.getPoolType()));
+    }
+
+    private void executePreMigrationCommand(VirtualMachineTO to, String vmInstanceName, long srcHostId) {
+        logger.info("Sending PreMigrationCommand to source host {} for VM {} with CLVM volumes", srcHostId, vmInstanceName);
+        final PreMigrationCommand preMigCmd = new PreMigrationCommand(to, vmInstanceName);
+        Answer preMigAnswer = null;
+        try {
+            preMigAnswer = _agentMgr.send(srcHostId, preMigCmd);
+            if (preMigAnswer == null || !preMigAnswer.getResult()) {
+                final String details = preMigAnswer != null ? preMigAnswer.getDetails() : "null answer returned";
+                final String msg = "Failed to prepare source host for migration: " + details;
+                logger.error("Failed to prepare source host {} for migration of VM {}: {}", srcHostId, vmInstanceName, details);
+                throw new CloudRuntimeException(msg);
+            }
+            logger.info("Successfully prepared source host {} for migration of VM {}", srcHostId, vmInstanceName);
+        } catch (final AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Failed to send PreMigrationCommand to source host {}: {}", srcHostId, e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to prepare source host for migration: " + e.getMessage(), e);
+        }
     }
 
     @Override

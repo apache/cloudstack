@@ -2233,8 +2233,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         boolean hasClvmSource = volumeDataStoreMap.keySet().stream()
                 .map(v -> _storagePoolDao.findById(v.getPoolId()))
                 .anyMatch(p -> p != null && (p.getPoolType() == StoragePoolType.CLVM || p.getPoolType() == StoragePoolType.CLVM_NG));
-
-        if (hasClvmSource) {
+        if (hasClvmSource && srcHost.getHypervisorType() == HypervisorType.KVM) {
             logger.info("CLVM/CLVM_NG source pool detected for VM [{}], sending PreMigrationCommand to source host [{}] to convert volumes to shared mode.", vmTO.getName(), srcHost.getId());
             PreMigrationCommand preMigCmd = new PreMigrationCommand(vmTO, vmTO.getName());
             try {
@@ -2248,6 +2247,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             } catch (Exception e) {
                 logger.warn("Failed to send PreMigrationCommand to source host [{}] for VM [{}]: {}. Migration will continue but may fail if volumes are exclusively locked.", srcHost.getId(), vmTO.getName(), e.getMessage());
             }
+        } else if (hasClvmSource) {
+            logger.debug("Skipping PreMigrationCommand for non-KVM hypervisor type: {} on host [{}]", srcHost.getHypervisorType(), srcHost.getId());
         }
     }
 
