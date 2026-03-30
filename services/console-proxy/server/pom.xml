@@ -80,7 +80,7 @@
             <resource>
                 <directory>certs</directory>
                 <excludes>
-                    <exclude>realhostip.csr</exclude>
+                    <exclude>systemvm.csr</exclude>
                 </excludes>
             </resource>
         </resources>
