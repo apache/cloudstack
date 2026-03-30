@@ -5401,8 +5401,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (host != null) {
             response.setHostId(host.getUuid());
             response.setHostName(host.getName());
-        } else if (instance.getHostName() != null) {
-            response.setHostName(instance.getHostName());
+            if (host.getHypervisorType() != null) {
+                response.setHypervisor(host.getHypervisorType().name());
+            }
+            response.setHypervisorVersion(host.getHypervisorVersion());
+        } else {
+            // In case the unmanaged instance is on an external host
+            if (instance.getHostName() != null) {
+                response.setHostName(instance.getHostName());
+            }
+            if (instance.getHypervisorType() != null) {
+                response.setHypervisor(instance.getHypervisorType());
+            }
+            if (instance.getHostHypervisorVersion() != null) {
+                response.setHypervisorVersion(instance.getHostHypervisorVersion());
+            }
         }
         response.setPowerState((instance.getPowerState() != null)? instance.getPowerState().toString() : UnmanagedInstanceTO.PowerState.PowerUnknown.toString());
         response.setCpuCores(instance.getCpuCores());
