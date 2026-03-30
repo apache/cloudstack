@@ -582,4 +582,64 @@ public class LibvirtStorageAdaptorTest {
             throw e.getCause();
         }
     }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetPhysicalDiskViaDirectBlockDevice_VolumeNotFound() throws Throwable {
+        String volumeUuid = UUID.randomUUID().toString();
+        String vgName = "testvg";
+
+        Mockito.when(mockPool.getLocalPath()).thenReturn(vgName);
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> {
+                when(mock.execute()).thenReturn("  Volume not found");
+            });
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "getPhysicalDiskViaDirectBlockDevice",
+            String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        try {
+            method.invoke(libvirtStorageAdaptor, volumeUuid, mockPool);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            throw e.getCause();
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetPhysicalDiskViaDirectBlockDevice_NullPoolPath() throws Throwable {
+        String volumeUuid = UUID.randomUUID().toString();
+
+        Mockito.when(mockPool.getLocalPath()).thenReturn(null);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "getPhysicalDiskViaDirectBlockDevice",
+            String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        try {
+            method.invoke(libvirtStorageAdaptor, volumeUuid, mockPool);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            throw e.getCause();
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetPhysicalDiskViaDirectBlockDevice_EmptyPoolPath() throws Throwable {
+        String volumeUuid = UUID.randomUUID().toString();
+
+        Mockito.when(mockPool.getLocalPath()).thenReturn("");
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "getPhysicalDiskViaDirectBlockDevice",
+            String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        try {
+            method.invoke(libvirtStorageAdaptor, volumeUuid, mockPool);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            throw e.getCause();
+        }
+    }
 }
