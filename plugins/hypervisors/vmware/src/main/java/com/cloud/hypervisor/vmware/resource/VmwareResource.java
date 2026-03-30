@@ -876,8 +876,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         boolean managed = cmd.isManaged();
         String poolUUID = cmd.getPoolUuid();
         String chainInfo = cmd.getChainInfo();
-        Long newMinIops = cmd.getNewMinIops();
-        Long newMaxIops = cmd.getNewMaxIops();
+        Long newReadRateIops = cmd.getNewReadRateIops();
+        Long newWriteRateIops = cmd.getNewWriteRateIops();
         boolean useWorkerVm = false;
 
         VmwareContext context = getServiceContext();
@@ -985,7 +985,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             VirtualDisk disk = getDiskAfterResizeDiskValidations(vmMo, path);
             String vmdkAbsFile = VmwareHelper.getAbsoluteVmdkFile(disk);
 
-            setDiskIops(disk, newMinIops, newMaxIops);
+            setDiskIops(disk, newReadRateIops, newWriteRateIops);
 
             if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
                 vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);
@@ -1039,14 +1039,14 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     /**
-     * Sets the disk IOPS which is the sum of min IOPS and max IOPS; if they are null, the IOPS limit is set to -1 (unlimited).
+     * Sets the disk IOPS which is the sum of read rate IOPS and write rate IOPS; if they are null, the IOPS limit is set to -1 (unlimited).
      */
-    private void setDiskIops(VirtualDisk disk, Long newMinIops, Long newMaxIops) {
+    private void setDiskIops(VirtualDisk disk, Long newReadRateIops, Long newWriteRateIops) {
         StorageIOAllocationInfo storageIOAllocation = new StorageIOAllocationInfo();
         Long iops = -1L;
 
-        if (ObjectUtils.allNotNull(newMinIops, newMaxIops) && newMinIops > 0 && newMaxIops > 0) {
-            iops = newMinIops + newMaxIops;
+        if (ObjectUtils.allNotNull(newReadRateIops, newWriteRateIops) && newReadRateIops > 0 && newWriteRateIops > 0) {
+            iops = newReadRateIops + newWriteRateIops;
         }
 
         storageIOAllocation.setLimit(iops);
@@ -5218,11 +5218,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
      */
     private void setDiskIops(MigrateVolumeCommand cmd, VirtualMachineMO vmMo, String volumePath) throws Exception {
         Long newIops = -1L;
-        Long newMinIops = cmd.getNewMinIops();
-        Long newMaxIops = cmd.getNewMaxIops();
+        Long readRateIops = cmd.getNewReadRateIops();
+        Long writeRateIops = cmd.getNewWriteRateIops();
 
-        if (ObjectUtils.allNotNull(newMinIops, newMaxIops) && newMinIops > 0 && newMaxIops > 0) {
-            newIops = newMinIops + newMaxIops;
+        if (ObjectUtils.allNotNull(readRateIops, writeRateIops) && readRateIops > 0 && writeRateIops > 0) {
+            newIops = readRateIops + writeRateIops;
         }
 
         VirtualDisk disk = vmMo.getDiskDevice(volumePath, true, true).first();

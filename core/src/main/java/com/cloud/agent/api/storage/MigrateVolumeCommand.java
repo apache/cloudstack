@@ -36,8 +36,8 @@ public class MigrateVolumeCommand extends Command {
     String attachedVmName;
     Volume.Type volumeType;
     String hostGuidInTargetCluster;
-    Long newMaxIops;
-    Long newMinIops;
+    Long newReadRateIops;
+    Long newWriteRateIops;
 
     private DataTO srcData;
     private DataTO destData;
@@ -153,19 +153,19 @@ public class MigrateVolumeCommand extends Command {
         return true;
     }
 
-    public Long getNewMinIops() {
-        return newMinIops;
+    public Long getNewWriteRateIops() {
+        return newWriteRateIops;
     }
 
-    public void setNewMinIops(Long newMinIops) {
-        this.newMinIops = newMinIops;
+    public void setNewWriteRateIops(Long newWriteRateIops) {
+        this.newWriteRateIops = newWriteRateIops;
     }
 
-    public Long getNewMaxIops() {
-        return newMaxIops;
+    public Long getNewReadRateIops() {
+        return newReadRateIops;
     }
 
-    public void setNewMaxIops(Long newMaxIops) {
-        this.newMaxIops = newMaxIops;
+    public void setNewReadRateIops(Long newReadRateIops) {
+        this.newReadRateIops = newReadRateIops;
     }
 }

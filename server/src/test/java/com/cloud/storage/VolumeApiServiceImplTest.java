@@ -2837,7 +2837,8 @@ public class VolumeApiServiceImplTest {
         doReturn(outcomemock).when(volumeApiServiceImpl).resizeVolumeThroughJobQueue(
                 anyLong(), anyLong(), anyLong(), anyLong(),
                 nullable(Long.class), nullable(Long.class),
-                nullable(Integer.class), nullable(Long.class), anyBoolean());
+                nullable(Integer.class), nullable(Long.class), anyBoolean(),
+                nullable(Long.class), nullable(Long.class));
 
         // resizeVolumeInternal(VolumeVO, DiskOfferingVO, Long, Long, Long, Long, Integer, boolean)
         try {
