@@ -289,6 +289,5 @@ public class Value extends GenericPresetVariable {
 
     public void setResourceCounting(ResourceCounting resourceCounting) {
         this.resourceCounting = resourceCounting;
-        fieldNamesToIncludeInToString.add("resourceCounting");
     }
 }
