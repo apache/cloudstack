@@ -126,7 +126,28 @@ patch_systemvm() {
 
   if [ "$TYPE" = "consoleproxy" ] || [ "$TYPE" = "secstorage" ]; then
     # Import global cacerts into 'cloud' service's keystore
-    keytool -importkeystore -srckeystore /etc/ssl/certs/java/cacerts -destkeystore /usr/local/cloud/systemvm/certs/realhostip.keystore -srcstorepass changeit -deststorepass vmops.com -noprompt 2>/dev/null || true
+    REALHOSTIP_KS_FILE="/usr/local/cloud/systemvm/certs/realhostip.keystore"
+    REALHOSTIP_PASS="vmops.com"
+
+    keytool -importkeystore -srckeystore /etc/ssl/certs/java/cacerts \
+        -destkeystore "$REALHOSTIP_KS_FILE" -srcstorepass changeit -deststorepass \
+        "$REALHOSTIP_PASS" -noprompt 2>/dev/null || true
+
+    # Import CA cert(s) into realhostip.keystore so the SSVM JVM
+    # (which overrides the truststore via -Djavax.net.ssl.trustStore in _run.sh)
+    # can trust servers signed by the CloudStack CA
+    CACERT_FILE="/usr/local/share/ca-certificates/cloudstack/ca.crt"
+
+    if [ -f "$CACERT_FILE" ] && [ -f "$REALHOSTIP_KS_FILE" ]; then
+        awk 'BEGIN{n=0} /-----BEGIN CERTIFICATE-----/{n++}{print > "cloudca." n }' "$CACERT_FILE"
+        for caChain in $(ls cloudca.* 2>/dev/null); do
+            keytool -delete -noprompt -alias "$caChain" -keystore "$REALHOSTIP_KS_FILE" \
+                -storepass "$REALHOSTIP_PASS" > /dev/null 2>&1 || true
+            keytool -import -noprompt -trustcacerts -alias "$caChain" -file "$caChain" \
+                -keystore "$REALHOSTIP_KS_FILE" -storepass "$REALHOSTIP_PASS" > /dev/null 2>&1
+        done
+        rm -f cloudca.*
+    fi
   fi
 
   update_checksum $newpath/cloud-scripts.tgz
