@@ -559,6 +559,7 @@ public class ApiConstants {
     public static final String USE_STORAGE_REPLICATION = "usestoragereplication";
 
     public static final String SOURCE_CIDR_LIST = "sourcecidrlist";
+    public static final String SOURCE_OFFERING_ID = "sourceofferingid";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String SSL_VERIFICATION = "sslverification";
     public static final String START_ASN = "startasn";
@@ -986,6 +987,7 @@ public class ApiConstants {
     public static final String REGION_ID = "regionid";
     public static final String VPC_OFF_ID = "vpcofferingid";
     public static final String VPC_OFF_NAME = "vpcofferingname";
+    public static final String VPC_OFFERING_CONSERVE_MODE = "vpcofferingconservemode";
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
     public static final String VPC_NAME = "vpcname";
@@ -1244,6 +1246,13 @@ public class ApiConstants {
     public static final String MAX_SIZE = "maxsize";
     public static final String NODE_TYPE_OFFERING_MAP = "nodeofferings";
     public static final String NODE_TYPE_TEMPLATE_MAP = "nodetemplates";
+    public static final String NODE_TYPE_AFFINITY_GROUP_MAP = "nodeaffinitygroups";
+    public static final String CONTROL_AFFINITY_GROUP_IDS = "controlaffinitygroupids";
+    public static final String CONTROL_AFFINITY_GROUP_NAMES = "controlaffinitygroupnames";
+    public static final String WORKER_AFFINITY_GROUP_IDS = "workeraffinitygroupids";
+    public static final String WORKER_AFFINITY_GROUP_NAMES = "workeraffinitygroupnames";
+    public static final String ETCD_AFFINITY_GROUP_IDS = "etcdaffinitygroupids";
+    public static final String ETCD_AFFINITY_GROUP_NAMES = "etcdaffinitygroupnames";
 
     public static final String BOOT_TYPE = "boottype";
     public static final String BOOT_MODE = "bootmode";

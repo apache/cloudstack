@@ -38,6 +38,7 @@ select
     `vpc_offerings`.`sort_key` AS `sort_key`,
     `vpc_offerings`.`routing_mode` AS `routing_mode`,
     `vpc_offerings`.`specify_as_number` AS `specify_as_number`,
+    `vpc_offerings`.`conserve_mode` AS `conserve_mode`,
     group_concat(distinct `domain`.`id` separator ',') AS `domain_id`,
     group_concat(distinct `domain`.`uuid` separator ',') AS `domain_uuid`,
     group_concat(distinct `domain`.`name` separator ',') AS `domain_name`,

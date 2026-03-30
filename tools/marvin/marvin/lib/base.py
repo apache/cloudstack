@@ -5227,6 +5227,8 @@ class VpcOffering:
             cmd.networkmode = services["networkmode"]
         if "routingmode" in services:
             cmd.routingmode = services["routingmode"]
+        if "conservemode" in services:
+            cmd.conservemode = services["conservemode"]
         return VpcOffering(apiclient.createVPCOffering(cmd).__dict__)
 
     def update(self, apiclient, name=None, displaytext=None, state=None):
