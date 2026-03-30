@@ -158,8 +158,9 @@ public interface CAManager extends CAService, Configurable, PluggableService {
      * @param sshConnection active SSH connection to the KVM host
      * @param agentIp IP address of the KVM host agent
      * @param agentHostname hostname of the KVM host agent
+     * @param caProvider optional CA provider plugin name (null uses default)
      */
-    void provisionCertificateViaSsh(Connection sshConnection, String agentIp, String agentHostname);
+    void provisionCertificateViaSsh(Connection sshConnection, String agentIp, String agentHostname, String caProvider);
 
     /**
      * Setups up a new keystore and generates CSR for a host

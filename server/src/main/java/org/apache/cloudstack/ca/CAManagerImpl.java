@@ -230,15 +230,15 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
     private boolean provisionCertificateForced(Host host, Boolean reconnect, String caProvider) {
         if (host.getType() == Host.Type.Routing && host.getHypervisorType() == com.cloud.hypervisor.Hypervisor.HypervisorType.KVM) {
-            return provisionKvmHostViaSsh(host);
+            return provisionKvmHostViaSsh(host, caProvider);
         } else if (host.getType() == Host.Type.ConsoleProxy || host.getType() == Host.Type.SecondaryStorageVM) {
-            return provisionSystemVmViaSsh(host, reconnect);
+            return provisionSystemVmViaSsh(host, reconnect, caProvider);
         }
         throw new CloudRuntimeException("Forced certificate provisioning is only supported for KVM hosts and SystemVMs.");
     }
 
     @Override
-    public void provisionCertificateViaSsh(final Connection sshConnection, final String agentIp, final String agentHostname) {
+    public void provisionCertificateViaSsh(final Connection sshConnection, final String agentIp, final String agentHostname, final String caProvider) {
         Integer validityPeriod = CAManager.CertValidityPeriod.value();
         if (validityPeriod < 1) {
             validityPeriod = 1;
@@ -266,7 +266,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         // 2. Issue Certificate based on returned CSR
         final String csr = keystoreSetupResult.getStdOut();
         final Certificate certificate = issueCertificate(csr, Arrays.asList(agentHostname, agentIp),
-                Collections.singletonList(agentIp), null, null);
+                Collections.singletonList(agentIp), null, caProvider);
 
         if (certificate == null || certificate.getClientCertificate() == null) {
             throw new CloudRuntimeException("Failed to issue certificates for host: " + agentIp);
@@ -297,7 +297,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         }
     }
 
-    private boolean provisionKvmHostViaSsh(Host host) {
+    private boolean provisionKvmHostViaSsh(Host host, String caProvider) {
         final HostVO hostVO = (HostVO) host;
         hostDao.loadDetails(hostVO);
         String username = hostVO.getDetail(ApiConstants.USERNAME);
@@ -321,7 +321,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
                 }
             }
 
-            provisionCertificateViaSsh(sshConnection, hostIp, host.getName());
+            provisionCertificateViaSsh(sshConnection, hostIp, host.getName(), caProvider);
 
             SSHCmdHelper.sshExecuteCmd(sshConnection, "sudo service cloudstack-agent restart");
             return true;
@@ -335,7 +335,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         }
     }
 
-    private boolean provisionSystemVmViaSsh(Host host, Boolean reconnect) {
+    private boolean provisionSystemVmViaSsh(Host host, Boolean reconnect, String caProvider) {
         VMInstanceVO vm = vmInstanceDao.findVMByInstanceName(host.getName());
         if (vm == null) {
             throw new CloudRuntimeException("Cannot find underlying VM for host: " + host.getName());
@@ -352,7 +352,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             }
 
             final Certificate certificate = issueCertificate(null, Arrays.asList(vm.getHostName(), vm.getInstanceName()),
-                    new ArrayList<>(ipAddressDetails.values()), CertValidityPeriod.value(), null);
+                    new ArrayList<>(ipAddressDetails.values()), CertValidityPeriod.value(), caProvider);
             return deployCertificate(hypervisorHost, certificate, reconnect, sshAccessDetails);
         } catch (Exception e) {
             logger.error("Failed to provision system VM " + host.getName() + " via hypervisor SSH proxy. Ensure the hypervisor host is connected.", e);

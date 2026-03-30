@@ -169,7 +169,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             throw new CloudRuntimeException("Cannot secure agent communication because SSH connection is invalid for host IP=" + agentIp);
         }
 
-        caManager.provisionCertificateViaSsh(sshConnection, agentIp, agentHostname);
+        caManager.provisionCertificateViaSsh(sshConnection, agentIp, agentHostname, null);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Succeeded to import certificate in the keystore for agent on the KVM host: " + agentIp + ". Agent secured and trusted.");

@@ -139,7 +139,7 @@ patch_systemvm() {
     CACERT_FILE="/usr/local/share/ca-certificates/cloudstack/ca.crt"
 
     if [ -f "$CACERT_FILE" ] && [ -f "$REALHOSTIP_KS_FILE" ]; then
-        awk 'BEGIN{n=0} /-----BEGIN CERTIFICATE-----/{n++}{print > "cloudca." n }' "$CACERT_FILE"
+        awk 'BEGIN{n=0} /-----BEGIN CERTIFICATE-----/{n++} n>0{print > "cloudca." n }' "$CACERT_FILE"
         for caChain in $(ls cloudca.* 2>/dev/null); do
             keytool -delete -noprompt -alias "$caChain" -keystore "$REALHOSTIP_KS_FILE" \
                 -storepass "$REALHOSTIP_PASS" > /dev/null 2>&1 || true
