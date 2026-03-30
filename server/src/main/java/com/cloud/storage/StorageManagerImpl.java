@@ -4230,8 +4230,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     private void associateCrosszoneTemplatesToZone(Long zoneId) {
-        VMTemplateZoneVO tmpltZone;
-
         List<Long> dcIds = new ArrayList<>();
         if (zoneId != null) {
             dcIds.add(zoneId);
@@ -4244,15 +4242,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
 
-        List<VMTemplateVO> crossZoneTemplates = _vmTemplateDao.listAllCrossZoneTemplates();
-        for (VMTemplateVO vt : crossZoneTemplates) {
-            for (Long dcId : dcIds) {
-                tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
-                if (tmpltZone == null) {
-                    VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, vt.getId(), new Date());
-                    _vmTemplateZoneDao.persist(vmTemplateZone);
-                }
-            }
+        for (Long dcId : dcIds) {
+            _imageSrv.associateCrossZoneTemplatesToZone(dcId);
         }
     }
 
