@@ -883,10 +883,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private boolean convertInstanceVerboseMode = false;
     private Map<String, String> convertInstanceEnv = null;
+    private String vddkLibDir = null;
+    private String libguestfsBackend = "direct";
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
     protected String cachePath;
+    private String vddkTransports = null;
+    private String vddkThumbprint = null;
     protected String javaTempDir = System.getProperty("java.io.tmpdir");
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
@@ -949,6 +953,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public Map<String, String> getConvertInstanceEnv() {
         return convertInstanceEnv;
+    }
+
+    public String getVddkLibDir() {
+        return vddkLibDir;
+    }
+
+    public String getLibguestfsBackend() {
+        return libguestfsBackend;
+    }
+
+    public String getVddkTransports() {
+        return vddkTransports;
+    }
+
+    public String getVddkThumbprint() {
+        return vddkThumbprint;
     }
 
     /**
@@ -1150,6 +1170,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String convertEnvVirtv2vTmpDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONVERT_ENV_VIRTV2V_TMPDIR);
 
         setConvertInstanceEnv(convertEnvTmpDir, convertEnvVirtv2vTmpDir);
+
+        vddkLibDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_LIB_DIR);
+        libguestfsBackend = StringUtils.defaultIfBlank(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBGUESTFS_BACKEND), "direct");
+        vddkTransports = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_TRANSPORTS));
+        vddkThumbprint = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_THUMBPRINT));
 
         pool = (String)params.get("pool");
         if (pool == null) {
