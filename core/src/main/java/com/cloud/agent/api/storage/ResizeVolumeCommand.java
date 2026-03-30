@@ -33,8 +33,8 @@ public class ResizeVolumeCommand extends Command {
     private boolean shrinkOk;
     private String vmInstance;
     private String chainInfo;
-    private Long newMaxIops;
-    private Long newMinIops;
+    private Long newReadRateIops;
+    private Long newWriteRateIops;
 
     /* For managed storage */
     private boolean managed;
@@ -74,6 +74,13 @@ public class ResizeVolumeCommand extends Command {
         this(path, pool, currentSize, newSize, shrinkOk, vmInstance);
         this.iScsiName = iScsiName;
         this.managed = isManaged;
+    }
+
+    public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance,
+                               String chainInfo, byte[] passphrase, String encryptFormat, Long newReadRateIops, Long newWriteRateIops) {
+        this(path, pool, currentSize, newSize, shrinkOk, vmInstance, chainInfo, passphrase, encryptFormat);
+        this.newReadRateIops = newReadRateIops;
+        this.newWriteRateIops = newWriteRateIops;
     }
 
     public String getPath() {
@@ -122,19 +129,11 @@ public class ResizeVolumeCommand extends Command {
         return false;
     }
 
-    public Long getNewMaxIops() {
-        return newMaxIops;
+    public Long getNewReadRateIops() {
+        return newReadRateIops;
     }
 
-    public void setNewMaxIops(Long newMaxIops) {
-        this.newMaxIops = newMaxIops;
-    }
-
-    public Long getNewMinIops() {
-        return newMinIops;
-    }
-
-    public void setNewMinIops(Long newMinIops) {
-        this.newMinIops = newMinIops;
+    public Long getNewWriteRateIops() {
+        return newWriteRateIops;
     }
 }

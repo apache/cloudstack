@@ -39,7 +39,6 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -258,18 +257,11 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         if (volume.getpayload() instanceof DiskOfferingVO) {
             DiskOfferingVO offering = (DiskOfferingVO) volume.getpayload();
 
-            Long offeringIopsReadRate = offering.getIopsReadRate();
-            Long offeringIopsWriteRate = offering.getIopsWriteRate();
+            Long offeringReadRateIops = offering.getIopsReadRate();
+            Long offeringWriteRateIops = offering.getIopsWriteRate();
 
-            Long minIops = null;
-            Long maxIops = null;
-            if (ObjectUtils.allNotNull(offeringIopsReadRate, offeringIopsWriteRate)) {
-                minIops = Math.min(offeringIopsReadRate, offeringIopsWriteRate);
-                maxIops = Math.max(offeringIopsReadRate, offeringIopsWriteRate);
-            }
-
-            cmd.setNewMinIops(minIops);
-            cmd.setNewMaxIops(maxIops);
+            cmd.setNewReadRateIops(offeringReadRateIops);
+            cmd.setNewWriteRateIops(offeringWriteRateIops);
         }
 
         if (sourcePool.getParent() != 0) {

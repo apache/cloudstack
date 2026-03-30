@@ -27,9 +27,11 @@ public class VmWorkResizeVolume extends VmWork {
     private Integer newHypervisorSnapshotReserve;
     private Long newServiceOfferingId;
     private boolean shrinkOk;
+    private Long newReadRateIops;
+    private Long newWriteRateIops;
 
     public VmWorkResizeVolume(long userId, long accountId, long vmId, String handlerName, long volumeId, long currentSize, long newSize,
-                              Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, Long newServiceOfferingId, boolean shrinkOk) {
+                              Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, Long newServiceOfferingId, boolean shrinkOk, Long newReadRateIops, Long newWriteRateIops) {
         super(userId, accountId, vmId, handlerName);
 
         this.volumeId = volumeId;
@@ -40,6 +42,8 @@ public class VmWorkResizeVolume extends VmWork {
         this.newHypervisorSnapshotReserve = newHypervisorSnapshotReserve;
         this.newServiceOfferingId = newServiceOfferingId;
         this.shrinkOk = shrinkOk;
+        this.newReadRateIops = newReadRateIops;
+        this.newWriteRateIops = newWriteRateIops;
     }
 
     public long getVolumeId() {
@@ -71,4 +75,12 @@ public class VmWorkResizeVolume extends VmWork {
     }
 
     public Integer getNewHypervisorSnapshotReserve() { return newHypervisorSnapshotReserve; }
+
+    public Long getNewReadRateIops() {
+        return newReadRateIops;
+    }
+
+    public Long getNewWriteRateIops() {
+        return newWriteRateIops;
+    }
 }

@@ -1118,6 +1118,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long newSize = cmd.getSize();
         Long newMinIops = cmd.getMinIops();
         Long newMaxIops = cmd.getMaxIops();
+        Long newReadRateIops = null;
+        Long newWriteRateIops = null;
         Integer newHypervisorSnapshotReserve = null;
         boolean shrinkOk = cmd.isShrinkOk();
         boolean autoMigrateVolume = cmd.getAutoMigrate();
@@ -1268,22 +1270,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             } else {
                 newMinIops = newDiskOffering.getMinIops();
                 newMaxIops = newDiskOffering.getMaxIops();
-
-                if (newDiskOffering.getMinIops() != null) {
-                    newMinIops = newDiskOffering.getMinIops();
-                }
-
-                if (newDiskOffering.getMaxIops() != null) {
-                    newMaxIops = newDiskOffering.getMaxIops();
-                }
-
-                Long newDiskOfferingIopsReadRate = newDiskOffering.getIopsReadRate();
-                Long newDiskOfferingIopsWriteRate = newDiskOffering.getIopsWriteRate();
-                if (ObjectUtils.allNull(newMinIops, newMaxIops) && ObjectUtils.allNotNull(newDiskOfferingIopsReadRate, newDiskOfferingIopsWriteRate)) {
-                    newMaxIops = Math.max(newDiskOfferingIopsReadRate, newDiskOfferingIopsWriteRate);
-                    newMinIops = Math.min(newDiskOfferingIopsReadRate, newDiskOfferingIopsWriteRate);
-                }
             }
+
+            newReadRateIops = ObjectUtils.defaultIfNull(newDiskOffering.getIopsReadRate(), 0L);
+            newWriteRateIops = ObjectUtils.defaultIfNull(newDiskOffering.getIopsWriteRate(), 0L);
 
             // if the hypervisor snapshot reserve value is null, it must remain null (currently only KVM uses null and null is all KVM uses for a value here)
             newHypervisorSnapshotReserve = volume.getHypervisorSnapshotReserve() != null ? newDiskOffering.getHypervisorSnapshotReserve() : null;
@@ -1351,7 +1341,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         boolean volumeResizeRequired = currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops());
-        if (!volumeMigrateRequired && !volumeResizeRequired && newDiskOffering != null) {
+        if (!volumeMigrateRequired && !volumeResizeRequired && newDiskOffering != null && !HypervisorType.VMware.equals(hypervisorType)) {
             _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
             volume = _volsDao.findById(volume.getId());
             updateStorageWithTheNewDiskOffering(volume, newDiskOffering);
@@ -1387,13 +1377,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 try {
                     return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve,
-                            newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+                            newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk, newReadRateIops, newWriteRateIops);
                 } finally {
                     _workJobDao.expunge(placeHolder.getId());
                 }
             } else {
                 Outcome<Volume> outcome = resizeVolumeThroughJobQueue(userVm.getId(), volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve,
-                        newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+                        newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk, newReadRateIops, newWriteRateIops);
 
                 try {
                     outcome.get();
@@ -1415,14 +1405,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     } else if (jobResult instanceof Throwable) {
                         throw new RuntimeException("Unexpected exception", (Throwable) jobResult);
                     } else if (jobResult instanceof Long) {
-                        Long volumeId = (Long) jobResult;
-                        if (newDiskOffering != null) {
-                            _volsDao.updateDiskOffering(volumeId, newDiskOffering.getId());
-                        }
-                        volume.setMinIops(newMinIops);
-                        volume.setMinIops(newMaxIops);
-                        _volsDao.update(volumeId, volume);
-                        return _volsDao.findById(volumeId);
+                        return _volsDao.findById((Long) jobResult);
                     }
                 }
 
@@ -1431,7 +1414,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, newDiskOffering != null ? cmd.getNewDiskOfferingId() : null,
-                shrinkOk);
+                shrinkOk, newWriteRateIops, newReadRateIops);
     }
 
     protected void validateNoVmSnapshots(VolumeVO volume) {
@@ -1502,7 +1485,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private VolumeVO orchestrateResizeVolume(long volumeId, long currentSize, long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, Long newDiskOfferingId,
-                                             boolean shrinkOk) {
+                                             boolean shrinkOk, Long newReadRateIops, Long newWriteRateIops) {
         VolumeVO volume = _volsDao.findById(volumeId);
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
@@ -1560,7 +1543,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        ResizeVolumePayload payload = new ResizeVolumePayload(newSize, newMinIops, newMaxIops, newDiskOfferingId, newHypervisorSnapshotReserve, shrinkOk, instanceName, hosts, isManaged);
+        ResizeVolumePayload payload = new ResizeVolumePayload(newSize, newMinIops, newMaxIops, newDiskOfferingId, newReadRateIops, newWriteRateIops, newHypervisorSnapshotReserve, shrinkOk, instanceName, hosts, isManaged);
 
         try {
             VolumeInfo vol = volFactory.getVolume(volume.getId());
@@ -2256,6 +2239,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private VolumeVO resizeVolumeInternal(VolumeVO volume, DiskOfferingVO newDiskOffering, Long currentSize, Long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, boolean shrinkOk) throws ResourceAllocationException {
         UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+        Long newDiskOfferingId = null;
+        Long newDiskOfferingReadRateIops = null;
+        Long newDiskOfferingWriteRateIops = null;
+
+        if (newDiskOffering != null) {
+            newDiskOfferingId = newDiskOffering.getId();
+            newDiskOfferingReadRateIops = newDiskOffering.getIopsReadRate();
+            newDiskOfferingWriteRateIops = newDiskOffering.getIopsWriteRate();
+        }
 
         if (userVm != null) {
             if (volume.getVolumeType().equals(Volume.Type.ROOT) && userVm.getPowerState() != VirtualMachine.PowerState.PowerOff && hypervisorType == HypervisorType.VMware) {
@@ -2274,13 +2266,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 try {
                     return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve,
-                            newDiskOffering != null ? newDiskOffering.getId() : null, shrinkOk);
+                            newDiskOfferingId, shrinkOk, newDiskOfferingReadRateIops, newDiskOfferingWriteRateIops);
                 } finally {
                     _workJobDao.expunge(placeHolder.getId());
                 }
             } else {
                 Outcome<Volume> outcome = resizeVolumeThroughJobQueue(userVm.getId(), volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve,
-                        newDiskOffering != null ? newDiskOffering.getId() : null, shrinkOk);
+                        newDiskOffering != null ? newDiskOffering.getId() : null, shrinkOk, newDiskOfferingReadRateIops, newDiskOfferingWriteRateIops);
 
                 try {
                     outcome.get();
@@ -2310,8 +2302,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, newDiskOffering != null ? newDiskOffering.getId() : null,
-                shrinkOk);
+        return orchestrateResizeVolume(volume.getId(), currentSize, newSize, newMinIops, newMaxIops, newHypervisorSnapshotReserve, newDiskOfferingId,
+                shrinkOk, newDiskOfferingReadRateIops, newDiskOfferingWriteRateIops);
     }
 
     private void validateVolumeReadyStateAndHypervisorChecks(VolumeVO volume, long currentSize, Long newSize) {
@@ -5165,7 +5157,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     public Outcome<Volume> resizeVolumeThroughJobQueue(final Long vmId, final long volumeId, final long currentSize, final long newSize, final Long newMinIops, final Long newMaxIops,
-                                                       final Integer newHypervisorSnapshotReserve, final Long newServiceOfferingId, final boolean shrinkOk) {
+                                                       final Integer newHypervisorSnapshotReserve, final Long newServiceOfferingId, final boolean shrinkOk, final Long newReadRateIops, final Long newWriteRateIops) {
         final CallContext context = CallContext.current();
         final User callingUser = context.getCallingUser();
         final Account callingAccount = context.getCallingAccount();
@@ -5186,7 +5178,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // save work context info (there are some duplications)
         VmWorkResizeVolume workInfo = new VmWorkResizeVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, currentSize, newSize,
-                newMinIops, newMaxIops, newHypervisorSnapshotReserve, newServiceOfferingId, shrinkOk);
+                newMinIops, newMaxIops, newHypervisorSnapshotReserve, newServiceOfferingId, shrinkOk, newReadRateIops, newWriteRateIops);
         workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
         _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -5313,7 +5305,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @ReflectionUse
     private Pair<JobInfo.Status, String> orchestrateResizeVolume(VmWorkResizeVolume work) throws Exception {
         Volume vol = orchestrateResizeVolume(work.getVolumeId(), work.getCurrentSize(), work.getNewSize(), work.getNewMinIops(), work.getNewMaxIops(), work.getNewHypervisorSnapshotReserve(),
-                work.getNewServiceOfferingId(), work.isShrinkOk());
+                work.getNewServiceOfferingId(), work.isShrinkOk(), work.getNewReadRateIops(), work.getNewWriteRateIops());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(new Long(vol.getId())));
     }
 
