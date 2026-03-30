@@ -24,6 +24,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostTagVO;
@@ -43,9 +44,12 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     private final SearchBuilder<HostTagVO> stSearch;
     private final SearchBuilder<HostTagVO> tagIdsearch;
     private final SearchBuilder<HostTagVO> ImplicitTagsSearch;
+    private final GenericSearchBuilder<HostTagVO, String> tagSearch;
 
     @Inject
     private ConfigurationDao _configDao;
+    @Autowired
+    private HostDao hostDao;
 
     public HostTagsDaoImpl() {
         HostSearch = createSearchBuilder();
@@ -72,6 +76,11 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
         ImplicitTagsSearch.and("hostId", ImplicitTagsSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         ImplicitTagsSearch.and("isImplicit", ImplicitTagsSearch.entity().getIsImplicit(), SearchCriteria.Op.EQ);
         ImplicitTagsSearch.done();
+
+        tagSearch = createSearchBuilder(String.class);
+        tagSearch.selectFields(tagSearch.entity().getTag());
+        tagSearch.and("idIN", tagSearch.entity().getId(), SearchCriteria.Op.IN);
+        tagSearch.done();
     }
 
     @Override
@@ -234,5 +243,13 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
         }
 
         return tagList;
+    }
+
+    @Override
+    public List<String> listByClusterId(Long clusterId) {
+        List<Long> hostIds = hostDao.listIdsByClusterId(clusterId);
+        SearchCriteria<String> sc = tagSearch.create();
+        sc.setParameters("idIN", hostIds.toArray());
+        return customSearch(sc, null);
     }
 }
