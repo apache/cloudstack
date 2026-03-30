@@ -268,7 +268,6 @@ public class Value extends GenericPresetVariable {
 
     public void setNetworkOffering(GenericPresetVariable networkOffering) {
         this.networkOffering = networkOffering;
-        fieldNamesToIncludeInToString.add("networkOffering");
     }
 
     public GenericPresetVariable getVpcOffering() {
@@ -277,6 +276,5 @@ public class Value extends GenericPresetVariable {
 
     public void setVpcOffering(GenericPresetVariable vpcOffering) {
         this.vpcOffering = vpcOffering;
-        fieldNamesToIncludeInToString.add("vpcOffering");
     }
 }

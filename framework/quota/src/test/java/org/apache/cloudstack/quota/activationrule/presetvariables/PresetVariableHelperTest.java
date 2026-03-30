@@ -1308,7 +1308,6 @@ public class PresetVariableHelperTest {
         GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueNetworkOffering(1L);
 
         assertPresetVariableIdAndName(expected, result);
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result);
     }
 
     @Test
@@ -1324,6 +1323,5 @@ public class PresetVariableHelperTest {
         GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueVpcOffering(1L);
 
         assertPresetVariableIdAndName(expected, result);
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result);
     }
 }

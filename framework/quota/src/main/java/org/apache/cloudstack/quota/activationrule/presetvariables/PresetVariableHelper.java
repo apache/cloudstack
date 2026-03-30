@@ -814,7 +814,7 @@ public class PresetVariableHelper {
         value.setVpcOffering(getPresetVariableValueVpcOffering(vpc.getVpcOfferingId()));
     }
 
-    protected GenericPresetVariable getPresetVariableValueVpcOffering(long vpcOfferingId) {
+    protected GenericPresetVariable getPresetVariableValueVpcOffering(Long vpcOfferingId) {
         VpcOfferingVO vpcOfferingVo = vpcOfferingDao.findByIdIncludingRemoved(vpcOfferingId);
         validateIfObjectIsNull(vpcOfferingVo, vpcOfferingId, "vpc offering");
 
