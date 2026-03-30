@@ -31,6 +31,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -75,7 +76,7 @@ public class RootCAProviderTest {
 
         addField(provider, "caKeyPair", caKeyPair);
         addField(provider, "caCertificate", caCertificate);
-        addField(provider, "caKeyPair", caKeyPair);
+        addField(provider, "caCertificates", Collections.singletonList(caCertificate));
     }
 
     @After

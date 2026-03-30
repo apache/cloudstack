@@ -98,9 +98,17 @@ public class CertUtils {
         return keyFactory;
     }
 
-    public static X509Certificate pemToX509Certificate(final String pem) throws CertificateException, IOException {
+    public static List<X509Certificate> pemToX509Certificates(final String pem) throws CertificateException, IOException {
+        final List<X509Certificate> certs = new ArrayList<>();
         final PEMParser pemParser = new PEMParser(new StringReader(pem));
-        return new JcaX509CertificateConverter().setProvider("BC").getCertificate((X509CertificateHolder) pemParser.readObject());
+        final JcaX509CertificateConverter certConverter = new JcaX509CertificateConverter().setProvider("BC");
+        Object parsedObj;
+        while ((parsedObj = pemParser.readObject()) != null) {
+            if (parsedObj instanceof X509CertificateHolder) {
+                certs.add(certConverter.getCertificate((X509CertificateHolder) parsedObj));
+            }
+        }
+        return certs;
     }
 
     public static String x509CertificateToPem(final X509Certificate cert) throws IOException {

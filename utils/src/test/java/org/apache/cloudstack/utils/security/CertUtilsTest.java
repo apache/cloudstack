@@ -53,7 +53,7 @@ public class CertUtilsTest {
     public void testCertificateConversionMethods() throws Exception {
         final X509Certificate in = caCertificate;
         final String pem = CertUtils.x509CertificateToPem(in);
-        final X509Certificate out = CertUtils.pemToX509Certificate(pem);
+        final X509Certificate out = CertUtils.pemToX509Certificates(pem).get(0);
         Assert.assertTrue(pem.startsWith("-----BEGIN CERTIFICATE-----\n"));
         Assert.assertTrue(pem.endsWith("-----END CERTIFICATE-----\n"));
         Assert.assertEquals(in.getSerialNumber(), out.getSerialNumber());
