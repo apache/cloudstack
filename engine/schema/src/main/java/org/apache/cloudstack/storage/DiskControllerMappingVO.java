@@ -198,6 +198,11 @@ public class DiskControllerMappingVO implements DiskControllerMapping {
     }
 
     @Override
+    public int hashCode() {
+        return controllerReference.hashCode();
+    }
+
+    @Override
     public String toString() {
         return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "controllerReference",
                 "busName", "hypervisor", "maxDeviceCount", "maxControllerCount", "vmdkAdapterType", "minHardwareVersion");

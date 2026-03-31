@@ -2104,7 +2104,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (isAttach) {
                 // Let's first find which disk controller should be used for the volume being attached.
                 //
-                // `controllerInfo` can not be null here. It is always defined when creating the `AttachComand` in
+                // `controllerInfo` can not be null here. It is always defined when creating the `AttachCommand` in
                 // `com.cloud.storage.VolumeApiServiceImpl#sendAttachVolumeCommand`.
                 //
                 // If `VmDetailConstants.ROOT_DISK_CONTROLLER` or `VmDetailConstants.DATA_DISK_CONTROLLER` are not present

@@ -77,6 +77,7 @@ import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.storage.DiskControllerMappingVO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
@@ -146,6 +147,7 @@ public class VmwareHelper {
     private static List<DiskControllerMappingVO> supportedDiskControllers;
 
     public static void setSupportedDiskControllers(List<DiskControllerMappingVO> controllers) {
+        controllers.sort(Comparator.comparing(DiskControllerMappingVO::getControllerReference));
         supportedDiskControllers = controllers;
     }
 
@@ -1172,7 +1174,7 @@ public class VmwareHelper {
                 continue;
             }
             for (int bus = 0; bus < diskController.getMaxControllerCount(); bus++) {
-                VirtualController controller = (VirtualController) controllerClass.newInstance();
+                VirtualController controller = (VirtualController) controllerClass.getDeclaredConstructor().newInstance();
                 controller.setBusNumber(bus);
                 controller.setKey(currentKey);
                 currentKey--;
@@ -1269,6 +1271,12 @@ public class VmwareHelper {
             try {
                 if (!DiskControllerType.osdefault.toString().equals(mapping.getName())) {
                     Class.forName(mapping.getControllerReference());
+                    if (ObjectUtils.anyNull(mapping.getMaxDeviceCount(), mapping.getMaxControllerCount(), mapping.getVmdkAdapterType())) {
+                        LOGGER.debug("Disk controller mapping with name [{}] and controller reference [{}] is invalid " +
+                                        "because it has null required values (max_device_count, max_controller_count, and/or vmdk_adapter_type); ignoring it.",
+                                mapping.getName(), mapping.getControllerReference());
+                        continue;
+                    }
                 }
                 LOGGER.debug("Adding disk controller mapping with name [{}] and controller reference [{}] to the list of available disk controllers.",
                         mapping.getName(), mapping.getControllerReference());

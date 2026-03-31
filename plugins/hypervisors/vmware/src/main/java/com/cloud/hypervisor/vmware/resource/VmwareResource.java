@@ -2041,7 +2041,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         if (!unsupportedDiskControllers.isEmpty()) {
             String names = unsupportedDiskControllers.stream().map(DiskControllerMappingVO::getName).collect(Collectors.joining(", "));
             String requiredVersions = unsupportedDiskControllers.stream().map(DiskControllerMappingVO::getMinHardwareVersion).collect(Collectors.joining(", "));
-            logger.debug("Virtual machine [{}] does not support disk controllers [{}], as its virtual hardware version is [{}] but the controllers require, respectfully, versions [{}].",
+            logger.debug("Virtual machine [{}] does not support disk controllers [{}], as its virtual hardware version is [{}] but the controllers require, respectively, versions [{}].",
                     vmMo, names, hardwareVersion, requiredVersions);
             throw new CloudRuntimeException(String.format("Disk controllers [%s] are not supported.", names));
         }

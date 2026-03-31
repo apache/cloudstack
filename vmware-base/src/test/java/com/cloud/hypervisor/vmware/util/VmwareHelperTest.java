@@ -338,8 +338,8 @@ public class VmwareHelperTest {
 
         VmwareHelper.addDiskControllersToVmConfigSpec(virtualMachineConfigSpecMock, requiredControllers, false);
 
-        int expectedControllerAmmount = nvmeMapping.getMaxControllerCount() + sataMapping.getMaxControllerCount();
-        Assert.assertEquals(expectedControllerAmmount, virtualMachineConfigSpecMock.getDeviceChange().size());
+        int expectedControllerAmount = nvmeMapping.getMaxControllerCount() + sataMapping.getMaxControllerCount();
+        Assert.assertEquals(expectedControllerAmount, virtualMachineConfigSpecMock.getDeviceChange().size());
 
         Set<Integer> usedKeys = new HashSet<>();
         Map<String, Set<Integer>> usedBusNumbers = new HashMap<>();
@@ -351,7 +351,7 @@ public class VmwareHelperTest {
             usedKeys.add(controller.getKey());
             usedBusNumbers.get(controller.getClass().getName()).add(controller.getBusNumber());
         }
-        Assert.assertEquals(expectedControllerAmmount, usedKeys.size());
+        Assert.assertEquals(expectedControllerAmount, usedKeys.size());
         Assert.assertEquals((int) nvmeMapping.getMaxControllerCount(), usedBusNumbers.get(nvmeMapping.getControllerReference()).size());
         Assert.assertEquals((int) sataMapping.getMaxControllerCount(), usedBusNumbers.get(sataMapping.getControllerReference()).size());
     }
