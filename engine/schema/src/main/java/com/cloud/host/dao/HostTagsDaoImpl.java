@@ -25,7 +25,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostTagVO;
@@ -49,7 +48,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
 
     @Inject
     private ConfigurationDao _configDao;
-    @Autowired
+    @Inject
     private HostDao hostDao;
 
     public HostTagsDaoImpl() {
