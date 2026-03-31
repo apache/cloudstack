@@ -165,6 +165,19 @@ repos:
         files: ^(LICENSE|NOTICE)$|\.(bat|cfg|cs|css|gitignore|header|in|install|java|md|properties|py|rb|rc|sh|sql|te|template|txt|ucls|vue|xml|xsl|yaml|yml)$|^cloud-cli/bindir/cloud-tool$|^debian/changelog$
         args: [--markdown-linebreak-ext=md]
         exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-check-mock-methods
+        name: run check for not-real mock methods
+        description: Prevent common mistakes of assert mck.not_called(), assert mck.called_once_with(...) and mck.assert_called
+      - id: python-use-type-annotations
+        name: run check for type annotations not comments
+        description: Enforce that python3.6+ type annotations are used instead of type comments
+        exclude: ^scripts/vm/hypervisor/xenserver/xenserver56/InterfaceReconfigure\.py$
+      - id: text-unicode-replacement-char
+        name: run check for no unicode replacement char
+        description: Forbid files which have a UTF-8 Unicode replacement character
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
