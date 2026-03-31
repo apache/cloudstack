@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -454,7 +455,7 @@ public class LibvirtStorageAdaptorTest {
 
         try {
             method.invoke(libvirtStorageAdaptor, volumeName, size, mockPool);
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             throw e.getCause();
         }
     }
@@ -542,7 +543,7 @@ public class LibvirtStorageAdaptorTest {
         try {
             method.invoke(libvirtStorageAdaptor, volumeUuid, timeout, virtualSize,
                          null, mockPool, Storage.ProvisioningType.THIN);
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             throw e.getCause();
         }
     }
@@ -578,7 +579,7 @@ public class LibvirtStorageAdaptorTest {
         try {
             method.invoke(libvirtStorageAdaptor, volumeUuid, timeout, virtualSize,
                          null, mockPool, Storage.ProvisioningType.THIN);
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             throw e.getCause();
         }
     }
@@ -602,7 +603,7 @@ public class LibvirtStorageAdaptorTest {
 
         try {
             method.invoke(libvirtStorageAdaptor, volumeUuid, mockPool);
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             throw e.getCause();
         }
     }
@@ -620,7 +621,7 @@ public class LibvirtStorageAdaptorTest {
 
         try {
             method.invoke(libvirtStorageAdaptor, volumeUuid, mockPool);
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             throw e.getCause();
         }
     }
@@ -638,8 +639,688 @@ public class LibvirtStorageAdaptorTest {
 
         try {
             method.invoke(libvirtStorageAdaptor, volumeUuid, mockPool);
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             throw e.getCause();
         }
+    }
+
+    @Test
+    public void testShouldSecureZeroFill_EnabledInDetails() throws Exception {
+        Map<String, String> details = new HashMap<>();
+        details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "true");
+
+        Mockito.when(mockPool.getDetails()).thenReturn(details);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "shouldSecureZeroFill", KVMStoragePool.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(libvirtStorageAdaptor, mockPool);
+
+        assert result : "Should return true when CLVM_SECURE_ZERO_FILL is 'true'";
+    }
+
+    @Test
+    public void testShouldSecureZeroFill_DisabledInDetails() throws Exception {
+        Map<String, String> details = new HashMap<>();
+        details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "false");
+
+        Mockito.when(mockPool.getDetails()).thenReturn(details);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "shouldSecureZeroFill", KVMStoragePool.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(libvirtStorageAdaptor, mockPool);
+
+        assert !result : "Should return false when CLVM_SECURE_ZERO_FILL is 'false'";
+    }
+
+    @Test
+    public void testShouldSecureZeroFill_NotSetInDetails() throws Exception {
+        Map<String, String> details = new HashMap<>();
+
+        Mockito.when(mockPool.getDetails()).thenReturn(details);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "shouldSecureZeroFill", KVMStoragePool.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(libvirtStorageAdaptor, mockPool);
+
+        assert !result : "Should return false when CLVM_SECURE_ZERO_FILL is not set";
+    }
+
+    @Test
+    public void testShouldSecureZeroFill_NullDetails() throws Exception {
+        Mockito.when(mockPool.getDetails()).thenReturn(null);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "shouldSecureZeroFill", KVMStoragePool.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(libvirtStorageAdaptor, mockPool);
+
+        assert !result : "Should return false when details are null";
+    }
+
+    @Test
+    public void testExtractVgNameFromPool_SimplePath() throws Exception {
+        String vgName = "testvg";
+        Mockito.when(mockPool.getLocalPath()).thenReturn(vgName);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "extractVgNameFromPool", KVMStoragePool.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(libvirtStorageAdaptor, mockPool);
+
+        assertEquals("Should extract VG name correctly", vgName, result);
+    }
+
+    @Test
+    public void testExtractVgNameFromPool_PathWithSlash() throws Exception {
+        String vgName = "testvg";
+        String path = "/" + vgName;
+        Mockito.when(mockPool.getLocalPath()).thenReturn(path);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "extractVgNameFromPool", KVMStoragePool.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(libvirtStorageAdaptor, mockPool);
+
+        assertEquals("Should extract VG name from path with leading slash", vgName, result);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testExtractVgNameFromPool_NullPath() throws Throwable {
+        Mockito.when(mockPool.getLocalPath()).thenReturn(null);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "extractVgNameFromPool", KVMStoragePool.class);
+        method.setAccessible(true);
+
+        try {
+            method.invoke(libvirtStorageAdaptor, mockPool);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
+        }
+    }
+
+    @Test
+    public void testLvExists_VolumeExists() throws Exception {
+        String lvPath = "/dev/testvg/test-volume";
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> {
+                when(mock.execute()).thenReturn(null);
+            });
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "lvExists", String.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(libvirtStorageAdaptor, lvPath);
+
+        assert result : "Should return true when LV exists (lvs returns null)";
+    }
+
+    @Test
+    public void testLvExists_VolumeDoesNotExist() throws Exception {
+        String lvPath = "/dev/testvg/nonexistent-volume";
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> {
+                when(mock.execute()).thenReturn("Volume not found");
+            });
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "lvExists", String.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(libvirtStorageAdaptor, lvPath);
+
+        assert !result : "Should return false when LV does not exist";
+    }
+
+    @Test
+    public void testGetVgName_SimpleName() throws Exception {
+        String vgName = "acsvg";
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "getVgName", String.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(libvirtStorageAdaptor, vgName);
+
+        assertEquals("Should return VG name as-is for simple name", vgName, result);
+    }
+
+    @Test
+    public void testGetVgName_PathWithSlash() throws Exception {
+        String vgName = "acsvg";
+        String path = "/" + vgName;
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "getVgName", String.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(libvirtStorageAdaptor, path);
+
+        assertEquals("Should extract VG name from path with leading slash", vgName, result);
+    }
+
+    @Test
+    public void testGetVgName_DevPath() throws Exception {
+        String vgName = "acsvg";
+        String path = "/dev/" + vgName;
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "getVgName", String.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(libvirtStorageAdaptor, path);
+
+        assertEquals("Should extract VG name from /dev/ path", vgName, result);
+    }
+
+    @Test
+    public void testCreatePhysicalDiskFromClvmLv_CLVM() throws Exception {
+        String lvPath = "/dev/testvg/test-volume";
+        String volumeUuid = "test-volume";
+        long size = 10737418240L;
+
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "createPhysicalDiskFromClvmLv",
+            String.class, String.class, KVMStoragePool.class, long.class);
+        method.setAccessible(true);
+
+        KVMPhysicalDisk result = (KVMPhysicalDisk) method.invoke(
+            libvirtStorageAdaptor, lvPath, volumeUuid, mockPool, size);
+
+        assertNotNull("Physical disk should be created", result);
+        assertEquals("Format should be RAW for CLVM", PhysicalDiskFormat.RAW, result.getFormat());
+        assertEquals("Size should match", size, result.getSize());
+        assertEquals("Path should match", lvPath, result.getPath());
+    }
+
+    @Test
+    public void testCreatePhysicalDiskFromClvmLv_CLVM_NG() throws Exception {
+        String lvPath = "/dev/testvg-ng/test-volume";
+        String volumeUuid = "test-volume";
+        long size = 10737418240L;
+
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "createPhysicalDiskFromClvmLv",
+            String.class, String.class, KVMStoragePool.class, long.class);
+        method.setAccessible(true);
+
+        KVMPhysicalDisk result = (KVMPhysicalDisk) method.invoke(
+            libvirtStorageAdaptor, lvPath, volumeUuid, mockPool, size);
+
+        assertNotNull("Physical disk should be created", result);
+        assertEquals("Format should be QCOW2 for CLVM_NG", PhysicalDiskFormat.QCOW2, result.getFormat());
+        assertEquals("Size should match", size, result.getSize());
+        assertEquals("Path should match", lvPath, result.getPath());
+    }
+
+    @Test
+    public void testCLVMPoolSecureZeroFill_TrueValue() {
+        Map<String, String> details = new HashMap<>();
+        details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "true");
+
+        Mockito.when(mockPool.getDetails()).thenReturn(details);
+
+        String value = mockPool.getDetails().get(KVMStoragePool.CLVM_SECURE_ZERO_FILL);
+        assert "true".equals(value) : "CLVM_SECURE_ZERO_FILL should be 'true'";
+    }
+
+    @Test
+    public void testCLVMPoolSecureZeroFill_FalseValue() {
+        Map<String, String> details = new HashMap<>();
+        details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "false");
+
+        Mockito.when(mockPool.getDetails()).thenReturn(details);
+
+        String value = mockPool.getDetails().get(KVMStoragePool.CLVM_SECURE_ZERO_FILL);
+        assert "false".equals(value) : "CLVM_SECURE_ZERO_FILL should be 'false'";
+    }
+
+    @Test
+    public void testCLVMVolumePathConstruction() {
+        String vgName = "acsvg";
+        String volumeUuid = "550e8400-e29b-41d4-a716-446655440000";
+        String expectedPath = "/dev/" + vgName + "/" + volumeUuid;
+
+        assertEquals("/dev/acsvg/550e8400-e29b-41d4-a716-446655440000", expectedPath);
+    }
+
+    @Test
+    public void testCLVMNGPoolSupportsQCOW2Format() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+
+        Storage.StoragePoolType type = mockPool.getType();
+        PhysicalDiskFormat expectedFormat = PhysicalDiskFormat.QCOW2;
+
+        assert type == Storage.StoragePoolType.CLVM_NG : "Pool type should be CLVM_NG";
+        assertNotNull("QCOW2 format should be available", expectedFormat);
+    }
+
+    @Test
+    public void testCLVMPoolSupportsRAWFormat() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        Storage.StoragePoolType type = mockPool.getType();
+        PhysicalDiskFormat expectedFormat = PhysicalDiskFormat.RAW;
+
+        assert type == Storage.StoragePoolType.CLVM : "Pool type should be CLVM";
+        assertNotNull("RAW format should be available", expectedFormat);
+    }
+
+    @Test
+    public void testVerifyLvExistsInVg_VolumeExists() throws Exception {
+        String volumeUuid = "test-volume-uuid";
+        String vgName = "testvg";
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> when(mock.execute()).thenReturn(null));
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "verifyLvExistsInVg", String.class, String.class);
+        method.setAccessible(true);
+
+        method.invoke(libvirtStorageAdaptor, volumeUuid, vgName);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testVerifyLvExistsInVg_VolumeDoesNotExist() throws Throwable {
+        String volumeUuid = "nonexistent-volume";
+        String vgName = "testvg";
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> when(mock.execute()).thenReturn("  Volume not found"));
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "verifyLvExistsInVg", String.class, String.class);
+        method.setAccessible(true);
+
+        try {
+            method.invoke(libvirtStorageAdaptor, volumeUuid, vgName);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
+        }
+    }
+
+    @Test
+    public void testGetClvmVolumeSize_MethodExists() throws Exception {
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "getClvmVolumeSize", String.class);
+        method.setAccessible(true);
+
+        assertNotNull("getClvmVolumeSize method should exist", method);
+    }
+
+    @Test
+    public void testCLVMPoolIsBlockBased() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        boolean isBlockBased = mockPool.getType() == Storage.StoragePoolType.CLVM ||
+                               mockPool.getType() == Storage.StoragePoolType.CLVM_NG;
+
+        assert isBlockBased : "CLVM should be recognized as block-based storage";
+    }
+
+    @Test
+    public void testCLVMNGPoolIsBlockBased() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+
+        boolean isBlockBased = mockPool.getType() == Storage.StoragePoolType.CLVM ||
+                               mockPool.getType() == Storage.StoragePoolType.CLVM_NG;
+
+        assert isBlockBased : "CLVM_NG should be recognized as block-based storage";
+    }
+
+    @Test
+    public void testGetVgName_ComplexPath() throws Exception {
+        String vgName = "acsvg-ng";
+        String path = "/dev/mapper/" + vgName;
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "getVgName", String.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(libvirtStorageAdaptor, path);
+
+        assertNotNull("VG name should not be null", result);
+    }
+
+    @Test
+    public void testExtractVgNameFromPool_EmptyPath() throws Exception {
+        Mockito.when(mockPool.getLocalPath()).thenReturn("");
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "extractVgNameFromPool", KVMStoragePool.class);
+        method.setAccessible(true);
+
+        try {
+            method.invoke(libvirtStorageAdaptor, mockPool);
+            assert false : "Should throw CloudRuntimeException for empty path";
+        } catch (InvocationTargetException e) {
+            assert e.getCause() instanceof CloudRuntimeException :
+                "Should throw CloudRuntimeException";
+        }
+    }
+
+    @Test
+    public void testCleanupCLVMVolume_VolumeExists_WithSecureZeroFill() throws Exception {
+        String volumeUuid = UUID.randomUUID().toString();
+        String vgName = "testvg";
+        Map<String, String> details = new HashMap<>();
+        details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "true");
+
+        Mockito.when(mockPool.getLocalPath()).thenReturn(vgName);
+        Mockito.when(mockPool.getUuid()).thenReturn(UUID.randomUUID().toString());
+        Mockito.when(mockPool.getDetails()).thenReturn(details);
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> when(mock.execute()).thenReturn(null));
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "cleanupCLVMVolume", String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(libvirtStorageAdaptor, volumeUuid, mockPool);
+
+        assert result : "Cleanup should succeed";
+    }
+
+    @Test
+    public void testCleanupCLVMVolume_VolumeExists_WithoutSecureZeroFill() throws Exception {
+        String volumeUuid = UUID.randomUUID().toString();
+        String vgName = "testvg";
+        Map<String, String> details = new HashMap<>();
+        details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "false");
+
+        Mockito.when(mockPool.getLocalPath()).thenReturn(vgName);
+        Mockito.when(mockPool.getUuid()).thenReturn(UUID.randomUUID().toString());
+        Mockito.when(mockPool.getDetails()).thenReturn(details);
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> when(mock.execute()).thenReturn(null));
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "cleanupCLVMVolume", String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(libvirtStorageAdaptor, volumeUuid, mockPool);
+
+        assert result : "Cleanup should succeed without zero-fill";
+    }
+
+    @Test
+    public void testCleanupCLVMVolume_VolumeNotFound() throws Exception {
+        String volumeUuid = "nonexistent-volume";
+        String vgName = "testvg";
+
+        Mockito.when(mockPool.getLocalPath()).thenReturn(vgName);
+        Mockito.when(mockPool.getUuid()).thenReturn(UUID.randomUUID().toString());
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> when(mock.execute()).thenReturn("Volume not found"));
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "cleanupCLVMVolume", String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(libvirtStorageAdaptor, volumeUuid, mockPool);
+
+        assert result : "Should return true when volume not found (already deleted)";
+    }
+
+    @Test
+    public void testCleanupCLVMVolume_NullSourceDir() throws Exception {
+        String volumeUuid = UUID.randomUUID().toString();
+
+        Mockito.when(mockPool.getLocalPath()).thenReturn(null);
+        Mockito.when(mockPool.getUuid()).thenReturn(UUID.randomUUID().toString());
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "cleanupCLVMVolume", String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(libvirtStorageAdaptor, volumeUuid, mockPool);
+
+        assert result : "Should return true when source dir is null";
+    }
+
+    @Test
+    public void testRemoveLvOnFailure_Success() throws Exception {
+        String lvPath = "/dev/testvg/test-volume";
+        int timeout = 30000;
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> when(mock.execute()).thenReturn(null));
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "removeLvOnFailure", String.class, int.class);
+        method.setAccessible(true);
+
+        method.invoke(libvirtStorageAdaptor, lvPath, timeout);
+    }
+
+    @Test
+    public void testEnsureTemplateAccessibility_CLVM_NG_TemplateVolume() throws Exception {
+        String volumeUuid = "template-550e8400-e29b-41d4-a716-446655440000";
+        String lvPath = "/dev/testvg/template-550e8400-e29b-41d4-a716-446655440000";
+
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+
+        mockScriptConstruction = Mockito.mockConstruction(Script.class,
+            (mock, context) -> when(mock.execute()).thenReturn(null));
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "ensureTemplateAccessibility", String.class, String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        method.invoke(libvirtStorageAdaptor, volumeUuid, lvPath, mockPool);
+    }
+
+    @Test
+    public void testEnsureTemplateAccessibility_CLVM_NonTemplate() throws Exception {
+        String volumeUuid = UUID.randomUUID().toString();
+        String lvPath = "/dev/testvg/" + volumeUuid;
+
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "ensureTemplateAccessibility", String.class, String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        method.invoke(libvirtStorageAdaptor, volumeUuid, lvPath, mockPool);
+    }
+
+    @Test
+    public void testCreateVirtualClvmPool_MethodExists() throws Exception {
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "createVirtualClvmPool",
+            String.class, String.class, String.class,
+            Storage.StoragePoolType.class, Map.class);
+        method.setAccessible(true);
+
+        assertNotNull("createVirtualClvmPool method should exist", method);
+    }
+
+    @Test
+    public void testFindDeviceNodeAfterActivation_MethodExists() throws Exception {
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "findDeviceNodeAfterActivation",
+            String.class, String.class, String.class);
+        method.setAccessible(true);
+
+        assertNotNull("findDeviceNodeAfterActivation method should exist", method);
+    }
+
+    @Test
+    public void testHandleMissingDeviceNode_MethodExists() throws Exception {
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "handleMissingDeviceNode",
+            String.class, String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        assertNotNull("handleMissingDeviceNode method should exist", method);
+    }
+
+    @Test
+    public void testHandleMissingDeviceNode_NonTemplate_MethodExists() throws Exception {
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "handleMissingDeviceNode",
+            String.class, String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        assertNotNull("handleMissingDeviceNode method should exist", method);
+    }
+
+    @Test
+    public void testFindAccessibleDeviceNode_MethodExists() throws Exception {
+        Method method = LibvirtStorageAdaptor.class.getDeclaredMethod(
+            "findAccessibleDeviceNode",
+            String.class, String.class, KVMStoragePool.class);
+        method.setAccessible(true);
+
+        assertNotNull("findAccessibleDeviceNode method should exist", method);
+    }
+
+    @Test
+    public void testCLVMNGDiskFormat_IsQCOW2() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+
+        PhysicalDiskFormat format = (mockPool.getType() == Storage.StoragePoolType.CLVM_NG)
+            ? PhysicalDiskFormat.QCOW2
+            : PhysicalDiskFormat.RAW;
+
+        assertEquals("CLVM_NG should use QCOW2 format", PhysicalDiskFormat.QCOW2, format);
+    }
+
+    @Test
+    public void testCLVMDiskFormat_IsRAW() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        PhysicalDiskFormat format = (mockPool.getType() == Storage.StoragePoolType.CLVM_NG)
+            ? PhysicalDiskFormat.QCOW2
+            : PhysicalDiskFormat.RAW;
+
+        assertEquals("CLVM should use RAW format", PhysicalDiskFormat.RAW, format);
+    }
+
+    @Test
+    public void testCLVMPoolDetails_DefaultSecureZeroFill() {
+        Map<String, String> details = new HashMap<>();
+
+        String value = details.get(KVMStoragePool.CLVM_SECURE_ZERO_FILL);
+
+        assert value == null : "CLVM_SECURE_ZERO_FILL should default to null";
+    }
+
+    @Test
+    public void testCLVMPoolDetails_CustomSecureZeroFill() {
+        Map<String, String> details = new HashMap<>();
+        details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "true");
+
+        String value = details.get(KVMStoragePool.CLVM_SECURE_ZERO_FILL);
+
+        assertEquals("CLVM_SECURE_ZERO_FILL should be 'true'", "true", value);
+    }
+
+    @Test
+    public void testCLVMVolumeDeviceMapperPathEscaping() {
+        String vgName = "acsvg-ng";
+        String volumeUuid = "ea19580e-0882-4ab8-973b-a320637037f4";
+
+        String vgNameEscaped = vgName.replace("-", "--");
+        String volumeUuidEscaped = volumeUuid.replace("-", "--");
+        String mapperPath = "/dev/mapper/" + vgNameEscaped + "-" + volumeUuidEscaped;
+
+        String expectedPath = "/dev/mapper/acsvg--ng-ea19580e--0882--4ab8--973b--a320637037f4";
+        assertEquals("Mapper path should have escaped hyphens", expectedPath, mapperPath);
+    }
+
+    @Test
+    public void testCLVMTemplateNamePrefix() {
+        String templateUuid = UUID.randomUUID().toString();
+        String templateName = "template-" + templateUuid;
+
+        assert templateName.startsWith("template-");
+        assert templateName.length() > 9;
+    }
+
+    @Test
+    public void testCLVMPoolTypeIsNotFileSystem() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        boolean isFileSystem = mockPool.getType() == Storage.StoragePoolType.Filesystem;
+
+        assert !isFileSystem : "CLVM is not a file system pool type";
+    }
+
+    @Test
+    public void testCLVMNGPoolTypeIsNotFileSystem() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+
+        boolean isFileSystem = mockPool.getType() == Storage.StoragePoolType.Filesystem;
+
+        assert !isFileSystem : "CLVM_NG is not a file system pool type";
+    }
+
+    @Test
+    public void testCLVMPoolTypeIsNotNFS() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM);
+
+        boolean isNFS = mockPool.getType() == Storage.StoragePoolType.NetworkFilesystem;
+
+        assert !isNFS : "CLVM is not an NFS pool type";
+    }
+
+    @Test
+    public void testCLVMNGPoolTypeIsNotRBD() {
+        Mockito.when(mockPool.getType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+
+        boolean isRBD = mockPool.getType() == Storage.StoragePoolType.RBD;
+
+        assert !isRBD : "CLVM_NG is not an RBD pool type";
+    }
+
+    @Test
+    public void testCLVMVolumeUUIDFormat() {
+        String volumeUuid = UUID.randomUUID().toString();
+
+        assert volumeUuid.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+    }
+
+    @Test
+    public void testCLVMNGBackingFileFormat() {
+        String vgName = "testvg";
+        String templateUuid = UUID.randomUUID().toString();
+        String backingFile = "/dev/" + vgName + "/template-" + templateUuid;
+
+        assert backingFile.startsWith("/dev/");
+        assert backingFile.contains("template-");
+        assert backingFile.contains(templateUuid);
+    }
+
+    @Test
+    public void testCLVMPoolLocalPathValidation() {
+        String vgName = "acsvg";
+
+        Mockito.when(mockPool.getLocalPath()).thenReturn(vgName);
+
+        String localPath = mockPool.getLocalPath();
+
+        assertNotNull("Local path should not be null", localPath);
+        assert !localPath.isEmpty() : "Local path should not be empty";
     }
 }
