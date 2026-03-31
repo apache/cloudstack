@@ -938,7 +938,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         List<DomainVO> domainChildren = _domainDao.findAllChildren(domain.getPath(), domain.getId());
         // for each child, update the path
         for (DomainVO dom : domainChildren) {
-            dom.setPath(dom.getPath().replaceFirst(domain.getPath(), updatedDomainPrefix));
+            dom.setPath(StringUtils.replaceOnce(dom.getPath(), domain.getPath(), updatedDomainPrefix));
             _domainDao.update(dom.getId(), dom);
         }
     }
