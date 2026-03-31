@@ -4502,7 +4502,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         List<String> clusterTags = _hostTagDao.listByClusterId(host.getClusterId());
         if (CollectionUtils.isEmpty(clusterTags)) {
-            logger.warn("No host tags defined for hosts in the cluster " + host.getClusterId());
+            logger.debug("No host tags defined for hosts in the cluster " + host.getClusterId());
             return;
         }
         Set<String> existingTagsSet = new HashSet<>(hostTags);
