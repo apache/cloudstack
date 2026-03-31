@@ -33,6 +33,11 @@ jobs:
     steps:
       - name: Check Out
         uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
       - name: Install
         run: pip install pre-commit
       - name: Set PY
