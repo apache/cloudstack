@@ -31,6 +31,14 @@ repos:
       - id: doctoc
         name: Add TOC for Markdown files
         files: ^CONTRIBUTING\.md$|^INSTALL\.md$|^README\.md$
+  - repo: local
+    hooks:
+      - id: validate-dependabot-yml
+        name: Validate dependabot.yml
+        entry: npx @bugron/validate-dependabot-yaml@0.3.3
+        language: system
+        files: ^\.github/dependabot\.yml$
+        stages: [manual]
   - repo: https://github.com/oxipng/oxipng
     rev: v9.1.5
     hooks:
