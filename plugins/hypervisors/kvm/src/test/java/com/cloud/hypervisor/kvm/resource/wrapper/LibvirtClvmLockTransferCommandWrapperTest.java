@@ -465,4 +465,3 @@ public class LibvirtClvmLockTransferCommandWrapperTest {
         }
     }
 }
-

@@ -7211,6 +7211,37 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    public void getInterfaceTestValidMacAddressReturnInterface() {
+        String macAddress = "a0:90:27:a9:9e:62";
+        final String vmName = "Test";
+        final InterfaceDef interfaceDef = Mockito.mock(InterfaceDef.class);
+        final List<InterfaceDef> interfaces = new ArrayList<>();
+        interfaces.add(interfaceDef);
+
+        Mockito.doReturn(macAddress).when(interfaceDef).getMacAddress();
+        Mockito.doReturn(interfaces).when(libvirtComputingResourceSpy).getInterfaces(Mockito.any(), Mockito.anyString());
+
+        InterfaceDef result = libvirtComputingResourceSpy.getInterface(connMock, vmName, macAddress);
+
+        Assert.assertNotNull(result);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void getInterfaceTestInvalidMacAddressThrowCloudRuntimeException() {
+        String invalidMacAddress = "ea:57:5d:f1:64:05";
+        String macAddress = "a0:90:27:a9:9e:62";
+        final String vmName = "Test";
+        final InterfaceDef interfaceDef = Mockito.mock(InterfaceDef.class);
+        final List<InterfaceDef> interfaces = new ArrayList<>();
+        interfaces.add(interfaceDef);
+
+        Mockito.doReturn(macAddress).when(interfaceDef).getMacAddress();
+        Mockito.doReturn(interfaces).when(libvirtComputingResourceSpy).getInterfaces(Mockito.any(), Mockito.anyString());
+
+        libvirtComputingResourceSpy.getInterface(connMock, vmName, invalidMacAddress);
+    }
+
+    @Test
     public void testExtractVolumeGroupFromPath_ValidPath() {
         String devicePath = "/dev/vg1/volume-123";
         String vgName = LibvirtComputingResource.extractVolumeGroupFromPath(devicePath);
