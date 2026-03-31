@@ -74,6 +74,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static org.apache.cloudstack.backup.BackupManager.BackupFrameworkEnabled;
 import static org.apache.cloudstack.backup.BackupManager.BackupProviderPlugin;
 
 @Component
@@ -105,6 +106,10 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     private Timer imageTransferTimer;
 
+    private boolean isKVMBackupExportServiceSupported(Long zoneId) {
+        return !BackupFrameworkEnabled.value() || StringUtils.equals("dummy", BackupProviderPlugin.valueIn(zoneId));
+    }
+
     @Override
     public Backup createBackup(StartBackupCmd cmd) {
         Long vmId = cmd.getVmId();
@@ -114,9 +119,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("VM not found: " + vmId);
         }
 
-        if (!StringUtils.equals("veeam-kvm", BackupProviderPlugin.valueIn(vm.getDataCenterId()))) {
-            throw new CloudRuntimeException("Feature not enabled. Set Zone level config backup.framework.provider.plugin" +
-                    " to \"veeam-kvm\" to enable the feature.");
+        if (!isKVMBackupExportServiceSupported(vm.getDataCenterId())) {
+            throw new CloudRuntimeException("Veeam-KVM integration can not be used along with the " + BackupProviderPlugin.valueIn(vm.getDataCenterId()) +
+                    " backup provider. Either set backup.framework.enabled to false or set the Zone level config backup.framework.provider.plugin to \"dummy\".");
         }
 
         if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
@@ -248,10 +253,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         List<ImageTransferVO> transfers = imageTransferDao.listByBackupId(backupId);
         for (ImageTransferVO transfer : transfers) {
             if (transfer.getPhase() != ImageTransferVO.Phase.finished) {
-                updateBackupState(backup, Backup.Status.Failed);
-                throw new CloudRuntimeException(String.format("Image transfer %s not finalized for backup: %s", transfer.getUuid(), backup.getUuid()));
+                logger.warn("Finalize called for backup {} while Image transfer {} is not finalized, attempting to finalize it", backup.getUuid(), transfer.getUuid());
+                finalizeImageTransfer(transfer.getId());
             }
-            imageTransferDao.remove(transfer.getId());
         }
 
         if (vm.getState() == State.Running) {
@@ -496,9 +500,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("Volume not found with the specified Id");
         }
 
-        if (!StringUtils.equals("veeam-kvm", BackupProviderPlugin.valueIn(volume.getDataCenterId()))) {
-            throw new CloudRuntimeException("Feature not enabled. Set Zone level config backup.framework.provider.plugin" +
-                    " to \"veeam-kvm\" to enable the feature.");
+        if (!isKVMBackupExportServiceSupported(volume.getDataCenterId())) {
+            throw new CloudRuntimeException("Veeam-KVM integration can not be used along with the " + BackupProviderPlugin.valueIn(volume.getDataCenterId()) +
+                    " backup provider. Either set backup.framework.enabled to false or set the Zone level config backup.framework.provider.plugin to \"dummy\".");
         }
 
         ImageTransferVO existingTransfer = imageTransferDao.findUnfinishedByVolume(volume.getId());
@@ -665,9 +669,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         if (vm == null) {
             throw new CloudRuntimeException("VM not found: " + cmd.getVmId());
         }
-        if (!StringUtils.equals("veeam-kvm", BackupProviderPlugin.valueIn(vm.getDataCenterId()))) {
-            throw new CloudRuntimeException("Feature not enabled. Set Zone level config backup.framework.provider.plugin" +
-                    " to \"veeam-kvm\" to enable the feature.");
+        if (!isKVMBackupExportServiceSupported(vm.getDataCenterId())) {
+            throw new CloudRuntimeException("Veeam-KVM integration can not be used along with the " + BackupProviderPlugin.valueIn(vm.getDataCenterId()) +
+                    " backup provider. Either set backup.framework.enabled to false or set the Zone level config backup.framework.provider.plugin to \"dummy\".");
         }
 
         vm.setActiveCheckpointId(null);
