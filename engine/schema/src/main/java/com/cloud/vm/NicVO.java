@@ -131,6 +131,9 @@ public class NicVO implements Nic {
     @Column(name = "mtu")
     Integer mtu;
 
+    @Column(name = "enabled")
+    boolean enabled;
+
     @Transient
     transient String nsxLogicalSwitchUuid;
 
@@ -143,6 +146,7 @@ public class NicVO implements Nic {
         this.networkId = configurationId;
         this.state = State.Allocated;
         this.vmType = vmType;
+        this.enabled = true;
     }
 
     @Override
@@ -395,6 +399,14 @@ public class NicVO implements Nic {
 
     public void setNsxLogicalSwitchPortUuid(String nsxLogicalSwitchPortUuid) {
         this.nsxLogicalSwitchPortUuid = nsxLogicalSwitchPortUuid;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     @Override
