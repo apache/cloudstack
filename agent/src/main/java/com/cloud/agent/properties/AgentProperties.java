@@ -124,6 +124,27 @@ public class AgentProperties{
     public static final Property<String> LOCAL_STORAGE_PATH = new Property<>("local.storage.path", "/var/lib/libvirt/images/");
 
     /**
+     * Enables TLS on the KVM image server transfer endpoint.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> IMAGE_SERVER_TLS_ENABLED = new Property<>("image.server.tls.enabled", false);
+
+    /**
+     * PEM certificate file used by the KVM image server when TLS is enabled.<br>
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> IMAGE_SERVER_TLS_CERT_FILE = new Property<>("image.server.tls.cert.file", null, String.class);
+
+    /**
+     * PEM private key file used by the KVM image server when TLS is enabled.<br>
+     * Data type: String.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<String> IMAGE_SERVER_TLS_KEY_FILE = new Property<>("image.server.tls.key.file", null, String.class);
+
+    /**
      * Directory where Qemu sockets are placed.<br>
      * These sockets are for the Qemu Guest Agent and SSVM provisioning.<br>
      * Make sure that AppArmor or SELinux allows Libvirt to write there.<br>

@@ -40,10 +40,23 @@ import com.cloud.utils.script.Script;
 public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<CreateImageTransferCommand, Answer, LibvirtComputingResource> {
     protected Logger logger = LogManager.getLogger(getClass());
 
+    private void resetService(String unitName) {
+        Script resetScript = new Script("/bin/bash", logger);
+        resetScript.add("-c");
+        resetScript.add(String.format("systemctl reset-failed %s || true", unitName));
+        resetScript.execute();
+    }
+
+    private static String shellQuote(String value) {
+        return "'" + value.replace("'", "'\\''") + "'";
+    }
+
     private boolean startImageServerIfNotRunning(int imageServerPort, LibvirtComputingResource resource) {
         final String imageServerPackageDir = resource.getImageServerPath();
         final String imageServerParentDir = new File(imageServerPackageDir).getParent();
         final String imageServerModuleName = new File(imageServerPackageDir).getName();
+        final String listenAddress = "0.0.0.0";
+        final boolean tlsEnabled = resource.isImageServerTlsEnabled();
         String unitName = "cloudstack-image-server";
 
         Script checkScript = new Script("/bin/bash", logger);
@@ -54,14 +67,21 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
             return true;
         }
 
+        resetService(unitName);
         if (checkResult != null) {
-            String systemdRunCmd = String.format(
-                    "systemd-run --unit=%s --property=Restart=no --property=WorkingDirectory=%s /usr/bin/python3 -m %s --listen 0.0.0.0 --port %d",
-                    unitName, imageServerParentDir, imageServerModuleName, imageServerPort);
+            StringBuilder systemdRunCmd = new StringBuilder(String.format(
+                    "systemd-run --unit=%s --property=Restart=no --property=WorkingDirectory=%s /usr/bin/python3 -m %s --listen %s --port %d",
+                    unitName, shellQuote(imageServerParentDir), imageServerModuleName, shellQuote(listenAddress), imageServerPort));
+
+            if (tlsEnabled) {
+                systemdRunCmd.append(" --tls-enabled");
+                systemdRunCmd.append(" --tls-cert-file ").append(shellQuote(resource.getImageServerTlsCertFile()));
+                systemdRunCmd.append(" --tls-key-file ").append(shellQuote(resource.getImageServerTlsKeyFile()));
+            }
 
             Script startScript = new Script("/bin/bash", logger);
             startScript.add("-c");
-            startScript.add(systemdRunCmd);
+            startScript.add(systemdRunCmd.toString());
             String startResult = startScript.execute();
 
             if (startResult != null) {
@@ -144,7 +164,8 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
             return new CreateImageTransferAnswer(cmd, false, "Failed to register transfer with image server.");
         }
 
-        final String transferUrl = String.format("http://%s:%d/images/%s", resource.getPrivateIp(), imageServerPort, transferId);
+        final String transferScheme = resource.isImageServerTlsEnabled() ? "https" : "http";
+        final String transferUrl = String.format("%s://%s:%d/images/%s", transferScheme, resource.getPrivateIp(), imageServerPort, transferId);
         return new CreateImageTransferAnswer(cmd, true, "Image transfer prepared on KVM host.", transferId, transferUrl);
     }
 }

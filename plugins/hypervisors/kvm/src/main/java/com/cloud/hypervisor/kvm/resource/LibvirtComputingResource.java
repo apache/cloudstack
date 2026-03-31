@@ -398,6 +398,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String vmActivityCheckPath;
     private String nasBackupPath;
     private String imageServerPath;
+    private boolean imageServerTlsEnabled = false;
+    private String imageServerTlsCertFile;
+    private String imageServerTlsKeyFile;
     private String securityGroupPath;
     private String ovsPvlanDhcpHostPath;
     private String ovsPvlanVmPath;
@@ -816,6 +819,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return imageServerPath;
     }
 
+    public boolean isImageServerTlsEnabled() {
+        return imageServerTlsEnabled;
+    }
+
+    public String getImageServerTlsCertFile() {
+        return imageServerTlsCertFile;
+    }
+
+    public String getImageServerTlsKeyFile() {
+        return imageServerTlsKeyFile;
+    }
+
     public String getOvsPvlanDhcpHostPath() {
         return ovsPvlanDhcpHostPath;
     }
@@ -1033,6 +1048,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         directDownloadTemporaryDownloadPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DIRECT_DOWNLOAD_TEMPORARY_DOWNLOAD_LOCATION);
 
         cachePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_CACHE_LOCATION);
+
+        imageServerTlsEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_TLS_ENABLED);
+        imageServerTlsCertFile = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_TLS_CERT_FILE);
+        imageServerTlsKeyFile = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_TLS_KEY_FILE);
+
+        if (imageServerTlsEnabled && (StringUtils.isBlank(imageServerTlsCertFile) || StringUtils.isBlank(imageServerTlsKeyFile))) {
+            throw new ConfigurationException("image server TLS is enabled but image.server.tls.cert.file or image.server.tls.key.file is missing");
+        }
 
         params.put("domr.scripts.dir", domrScriptsDir);
 

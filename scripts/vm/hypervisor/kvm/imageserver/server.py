@@ -20,6 +20,7 @@ import json
 import logging
 import os
 import socket
+import ssl
 import threading
 from http.server import HTTPServer
 from socketserver import ThreadingMixIn
@@ -184,7 +185,25 @@ def main() -> None:
         default=CONTROL_SOCKET,
         help="Path to the Unix domain control socket",
     )
+    parser.add_argument(
+        "--tls-enabled",
+        action="store_true",
+        help="Enable TLS for the HTTP transfer endpoint",
+    )
+    parser.add_argument(
+        "--tls-cert-file",
+        default=None,
+        help="Path to PEM certificate file used when TLS is enabled",
+    )
+    parser.add_argument(
+        "--tls-key-file",
+        default=None,
+        help="Path to PEM private key file used when TLS is enabled",
+    )
     args = parser.parse_args()
+
+    if args.tls_enabled and (not args.tls_cert_file or not args.tls_key_file):
+        parser.error("--tls-enabled requires --tls-cert-file and --tls-key-file")
 
     logging.basicConfig(
         level=logging.INFO,
@@ -204,5 +223,23 @@ def main() -> None:
 
     addr = (args.listen, args.port)
     httpd = ThreadingHTTPServer(addr, handler_cls)
-    logging.info("listening on http://%s:%d", args.listen, args.port)
+
+    scheme = "http"
+    if args.tls_enabled:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+
+        if hasattr(ssl, "TLSVersion") and hasattr(context, "minimum_version"):
+            context.minimum_version = ssl.TLSVersion.TLSv1_2
+        else:
+            if hasattr(ssl, "OP_NO_TLSv1"):
+                context.options |= ssl.OP_NO_TLSv1
+            if hasattr(ssl, "OP_NO_TLSv1_1"):
+                context.options |= ssl.OP_NO_TLSv1_1
+
+        context.load_cert_chain(certfile=args.tls_cert_file, keyfile=args.tls_key_file)
+
+        httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+        scheme = "https"
+
+    logging.info("listening on %s://%s:%d", scheme, args.listen, args.port)
     httpd.serve_forever()
