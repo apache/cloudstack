@@ -153,6 +153,8 @@ import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UnmanageInstanceCommand;
 import com.cloud.agent.api.UnregisterVMCommand;
+import com.cloud.agent.api.UpdateVmNicAnswer;
+import com.cloud.agent.api.UpdateVmNicCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
@@ -6268,6 +6270,80 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final boolean result = orchestrateUpdateDefaultNicForVM(vm, nic, defaultNic);
         return new Pair<>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(result));
+    }
+
+    @Override
+    public boolean updateVmNic(VirtualMachine vm, Nic nic, Boolean enabled) {
+        Outcome<VirtualMachine> outcome = updateVmNicThroughJobQueue(vm, nic, enabled);
+
+        retrieveVmFromJobOutcome(outcome, vm.getUuid(), "updateVmNic");
+
+        try {
+            Object jobResult = retrieveResultFromJobOutcomeAndThrowExceptionIfNeeded(outcome);
+            if (jobResult instanceof Boolean) {
+                return BooleanUtils.isTrue((Boolean) jobResult);
+            }
+        } catch (ResourceUnavailableException | InsufficientCapacityException ex) {
+            throw new CloudRuntimeException(String.format("Exception while updating VM [%s] NIC. Check the logs for more information.", vm.getUuid()));
+        }
+        throw new CloudRuntimeException("Unexpected job execution result.");
+    }
+
+    private boolean orchestrateUpdateVmNic(final VirtualMachine vm, final Nic nic, final Boolean enabled) throws ResourceUnavailableException {
+        if (vm.getState() == State.Running) {
+            try {
+                UpdateVmNicCommand updateVmNicCmd = new UpdateVmNicCommand(nic.getMacAddress(), vm.getName(), enabled);
+                Commands cmds = new Commands(Command.OnError.Stop);
+                cmds.addCommand("updatevmnic", updateVmNicCmd);
+
+                _agentMgr.send(vm.getHostId(), cmds);
+
+                UpdateVmNicAnswer updateVmNicAnswer = cmds.getAnswer(UpdateVmNicAnswer.class);
+                if (updateVmNicAnswer == null || !updateVmNicAnswer.getResult()) {
+                    logger.warn("Unable to update VM %s NIC [{}].", vm.getName(), nic.getUuid());
+                    return false;
+                }
+            } catch (final OperationTimedoutException e) {
+                throw new AgentUnavailableException(String.format("Unable to update NIC %s for VM %s.", nic.getUuid(), vm.getUuid()), vm.getHostId(), e);
+            }
+        }
+
+        NicVO nicVo = _nicsDao.findById(nic.getId());
+        nicVo.setEnabled(enabled);
+        _nicsDao.persist(nicVo);
+
+        return true;
+    }
+
+    public Outcome<VirtualMachine> updateVmNicThroughJobQueue(final VirtualMachine vm, final Nic nic, final Boolean isNicEnabled) {
+        Long vmId = vm.getId();
+        String commandName = VmWorkUpdateNic.class.getName();
+        Pair<VmWorkJobVO, Long> pendingWorkJob = retrievePendingWorkJob(vmId, commandName);
+
+        VmWorkJobVO workJob = pendingWorkJob.first();
+
+        if (workJob == null) {
+            Pair<VmWorkJobVO, VmWork> newVmWorkJobAndInfo = createWorkJobAndWorkInfo(commandName, vmId);
+
+            workJob = newVmWorkJobAndInfo.first();
+            VmWorkUpdateNic workInfo = new VmWorkUpdateNic(newVmWorkJobAndInfo.second(), nic.getId(), isNicEnabled);
+
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
+        }
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
+
+        return new VmJobVirtualMachineOutcome(workJob, vmId);
+    }
+
+    @ReflectionUse
+    private Pair<JobInfo.Status, String> orchestrateUpdateVmNic(final VmWorkUpdateNic work) throws Exception {
+        VMInstanceVO vm = findVmById(work.getVmId());
+        final NicVO nic = _entityMgr.findById(NicVO.class, work.getNicId());
+        if (nic == null) {
+            throw new CloudRuntimeException(String.format("Unable to find NIC with ID %s.", work.getNicId()));
+        }
+        final boolean result = orchestrateUpdateVmNic(vm, nic, work.isEnabled());
+        return new Pair<>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(result));
     }
 
     private Pair<Long, Long> findClusterAndHostIdForVmFromVolumes(long vmId) {
