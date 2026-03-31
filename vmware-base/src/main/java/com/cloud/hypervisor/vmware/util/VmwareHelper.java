@@ -753,7 +753,7 @@ public class VmwareHelper {
 
         recommendedController = guestOsDescriptor.getRecommendedDiskController();
 
-        // By-pass auto detected PVSCSI controller to use LsiLogic Parallel instead
+        // Bypass auto detected PVSCSI controller to use LsiLogic Parallel instead
         if (DiskControllerType.getType(recommendedController) == DiskControllerType.pvscsi) {
             recommendedController = DiskControllerType.lsilogic.toString();
         }

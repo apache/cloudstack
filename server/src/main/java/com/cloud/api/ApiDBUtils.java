@@ -2230,6 +2230,10 @@ public class ApiDBUtils {
         return s_nicSecondaryIpDao.listByNicId(nicId);
     }
 
+    public static NicVO findNicById(long nicId) {
+        return s_nicDao.findById(nicId);
+    }
+
     public static TemplateResponse newTemplateUpdateResponse(TemplateJoinVO vr) {
         return s_templateJoinDao.newUpdateResponse(vr);
     }
