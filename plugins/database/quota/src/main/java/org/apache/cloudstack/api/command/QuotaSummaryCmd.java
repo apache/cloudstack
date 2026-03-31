@@ -38,7 +38,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = "quotaSummary", responseObject = QuotaSummaryResponse.class, description = "Lists Quota balance summary of Accounts.", since = "4.7.0",
+@APICommand(name = "quotaSummary", responseObject = QuotaSummaryResponse.class, description = "Lists Quota balance summary of Accounts and Projects.", since = "4.7.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, httpMethod = "GET")
 public class QuotaSummaryCmd extends BaseListCmd {
 
@@ -49,19 +49,19 @@ public class QuotaSummaryCmd extends BaseListCmd {
     QuotaService quotaService;
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the account for which balance will be listed. Can not be specified with projectId.", since = "4.23.0")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "ID of the Account for which balance will be listed. Can not be specified with projectid.", since = "4.23.0")
     private Long accountId;
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Optional, Account Id for which statement needs to be generated")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = false, description = "Name of the Account for which balance will be listed.")
     private String accountName;
 
     @ACL
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "Optional, If domain Id is given and the caller is domain admin then the statement is generated for domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "ID of the Domain for which balance will be listed. May be used individually or with accountname.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "False (default) lists the Quota balance summary for calling Account. True lists balance summary for " +
-            "Accounts which the caller has access.")
+            "Accounts which the caller has access. If domain ID is informed, this parameter is considered as true.")
     private Boolean listAll;
 
     @Parameter(name = ApiConstants.ACCOUNT_STATE_TO_SHOW, type = CommandType.STRING, description =  "Possible values are [ALL, ACTIVE, REMOVED]. ALL will list summaries for " +
@@ -70,7 +70,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
     private String accountStateToShow;
 
     @ACL
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "ID of the project for which balance will be listed. Can not be specified with accountId.", since = "4.23.0")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "ID of the Project for which balance will be listed. Can not be specified with accountId.", since = "4.23.0")
     private Long projectId;
 
     @Override

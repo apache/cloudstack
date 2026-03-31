@@ -3904,7 +3904,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         if (accountName == null && domainId == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Either %s or %s is required.", ApiConstants.ACCOUNT_ID, ApiConstants.PROJECT_ID));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Either %s or %s must be informed.", ApiConstants.ACCOUNT_ID, ApiConstants.PROJECT_ID));
         }
 
         try {

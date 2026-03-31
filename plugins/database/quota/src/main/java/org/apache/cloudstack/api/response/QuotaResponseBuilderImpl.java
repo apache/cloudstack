@@ -51,7 +51,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
@@ -217,7 +216,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         Long accountId = cmd.getEntityOwnerId();
         if (accountId == -1) {
-            // No specific account was provided
             accountId = cmd.isListAll() ? null : caller.getAccountId();
         }
 
@@ -245,9 +243,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return domain.getPath();
     }
 
+    /**
+     * Returns a <code>List</code> of <code>QuotaSummaryResponse</code> based on the provided parameters.
+     * @param accountId ID of the Account to return the summaries for. If <code>-1</code>, either because no specific
+     *                  Account was provided, or list all is disabled, then the summary is generated for the calling Account.
+     * @param domainId ID of the Domain to return the summaries for.
+     * @param domainPath path of the Domain to return the summaries for.
+     */
     protected Pair<List<QuotaSummaryResponse>, Integer> getQuotaSummaryResponse(Long accountId, Long domainId, String domainPath, QuotaSummaryCmd cmd) {
         if (accountId != null && accountId == -1) {
-            // Either no specific account as provided, or list all is disabled
             accountId = CallContext.current().getCallingAccountId();
         }
 
