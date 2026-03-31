@@ -15,34 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: CodeQL Analysis
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-permissions:
-  actions: read
-  contents: read
-  security-events: write
-jobs:
-  codeql:
-    name: CodeQL
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ["actions"]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "Security"
+[codespell]
+ignore-words = .github/linters/codespell.txt
+skip = systemvm/agent/noVNC/*,ui/package.json,ui/package-lock.json,ui/public/js/less.min.js,ui/public/locales/*.json,server/src/test/java/org/apache/cloudstack/network/ssl/CertServiceTest.java,test/integration/smoke/test_ssl_offloading.py

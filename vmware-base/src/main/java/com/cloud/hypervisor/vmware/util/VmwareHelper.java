@@ -765,7 +765,7 @@ public class VmwareHelper {
     public static String getRecommendedDiskControllerFromDescriptor(GuestOsDescriptor guestOsDescriptor) throws Exception {
         String recommendedController = guestOsDescriptor.getRecommendedDiskController();
 
-        // By-pass auto detected PVSCSI controller to use LsiLogic Parallel instead
+        // Bypass auto detected PVSCSI controller to use LsiLogic Parallel instead
         if (ParaVirtualSCSIController.class.getSimpleName().equals(recommendedController)) {
             return VirtualLsiLogicController.class.getSimpleName();
         }
