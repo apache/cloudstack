@@ -260,10 +260,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             boolean isMigrateDowntimeSet = false;
 
             final int migrateWait = libvirtComputingResource.getMigrateWait();
-            logger.info("vm.migrate.wait value set to: {}for VM: {}", migrateWait, vmName);
+            logger.info("vm.migrate.wait value set to: {} secs for VM: {}", migrateWait, vmName);
 
             final int migratePauseAfter = libvirtComputingResource.getMigratePauseAfter();
-            logger.info("vm.migrate.pauseafter value set to: {} for VM: {}", migratePauseAfter, vmName);
+            logger.info("vm.migrate.pauseafter value set to: {} ms for VM: {}", migratePauseAfter, vmName);
 
             while (!executor.isTerminated()) {
                 Thread.sleep(100);
