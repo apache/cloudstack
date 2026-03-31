@@ -36,6 +36,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+
       - name: Set up JDK17
         uses: actions/setup-java@v5
         with:
