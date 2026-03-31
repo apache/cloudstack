@@ -88,6 +88,21 @@ public class CertUtilsTest {
     }
 
     @Test
+    public void testPemToX509CertificatesWithChain() throws Exception {
+        final KeyPair intermediateKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate intermediateCert = CertUtils.generateV3Certificate(caCertificate, caKeyPair,
+                intermediateKeyPair.getPublic(), "CN=intermediate", "SHA256withRSA", 365, null, null);
+
+        final String chainPem = CertUtils.x509CertificateToPem(intermediateCert)
+                + CertUtils.x509CertificateToPem(caCertificate);
+        final List<X509Certificate> parsed = CertUtils.pemToX509Certificates(chainPem);
+
+        Assert.assertEquals(2, parsed.size());
+        Assert.assertEquals(intermediateCert.getSerialNumber(), parsed.get(0).getSerialNumber());
+        Assert.assertEquals(caCertificate.getSerialNumber(), parsed.get(1).getSerialNumber());
+    }
+
+    @Test
     public void testGenerateCertificate() throws Exception {
         final KeyPair clientKeyPair = CertUtils.generateRandomKeyPair(1024);
         final List<String> domainNames = Arrays.asList("domain1.com", "www.2.domain2.com", "3.domain3.com");

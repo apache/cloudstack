@@ -228,7 +228,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         }
     }
 
-    private boolean provisionCertificateForced(Host host, Boolean reconnect, String caProvider) {
+    protected boolean provisionCertificateForced(Host host, Boolean reconnect, String caProvider) {
         if (host.getType() == Host.Type.Routing && host.getHypervisorType() == com.cloud.hypervisor.Hypervisor.HypervisorType.KVM) {
             return provisionKvmHostViaSsh(host, caProvider);
         } else if (host.getType() == Host.Type.ConsoleProxy || host.getType() == Host.Type.SecondaryStorageVM) {
@@ -369,11 +369,6 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         CallContext.current().setEventDetails("generating keystore and CSR for Host with ID: " + host.getUuid());
         final SetupKeystoreAnswer answer = (SetupKeystoreAnswer)agentManager.send(host.getId(), cmd);
         return answer.getCsr();
-    }
-
-    private boolean isValidSystemVMType(Host.Type type) {
-        return Host.Type.SecondaryStorageVM.equals(type) ||
-                Host.Type.ConsoleProxy.equals(type);
     }
 
     @Override

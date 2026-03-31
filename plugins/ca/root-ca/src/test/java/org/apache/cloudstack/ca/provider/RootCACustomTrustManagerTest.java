@@ -23,9 +23,11 @@ import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.junit.Assert;
@@ -126,6 +128,21 @@ public class RootCACustomTrustManagerTest {
         Mockito.when(crlDao.findBySerial(Mockito.any(BigInteger.class))).thenReturn(null);
         final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(clientIp, true, false, certMap, Collections.singletonList(caCertificate), crlDao);
         trustManager.checkClientTrusted(new X509Certificate[]{expiredClientCertificate}, "RSA");
+    }
+
+    @Test
+    public void testGetAcceptedIssuersWithChain() throws Exception {
+        final KeyPair rootKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate rootCert = CertUtils.generateV3Certificate(null, rootKeyPair, rootKeyPair.getPublic(),
+                "CN=root", "SHA256withRSA", 365, null, null);
+        final List<X509Certificate> chain = Arrays.asList(caCertificate, rootCert);
+        final RootCACustomTrustManager trustManager = new RootCACustomTrustManager(
+                clientIp, false, true, certMap, chain, crlDao);
+
+        final X509Certificate[] issuers = trustManager.getAcceptedIssuers();
+        Assert.assertEquals(2, issuers.length);
+        Assert.assertEquals(caCertificate, issuers[0]);
+        Assert.assertEquals(rootCert, issuers[1]);
     }
 
     @Test
