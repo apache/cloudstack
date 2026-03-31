@@ -45,6 +45,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -4330,7 +4331,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<String> hostTags = new ArrayList<>();
         if (currentVmOffering != null) {
             hostTags.addAll(com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag()));
-            addVmCurrentClusterHostTags(vmInstance, hostTags);
+            if (UserVmManager.AllowDifferentHostTagsOfferingsForVmScale.value()) {
+                addVmCurrentClusterHostTags(vmInstance, hostTags);
+            }
         }
 
         if (!hostTags.isEmpty()) {
