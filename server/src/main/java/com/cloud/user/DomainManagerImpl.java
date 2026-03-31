@@ -1074,7 +1074,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         for (Map.Entry<Long, List<String>> entry : idsOfDomainsWithResourcesUsedByDomainToBeMoved.entrySet()) {
             DomainVO domainWithResourceUsedByDomainToBeMoved = _domainDao.findById(entry.getKey());
 
-            Pattern pattern = Pattern.compile(domainWithResourceUsedByDomainToBeMoved.getPath().replace("/", "\\/").concat(".*"));
+            Pattern pattern = Pattern.compile(domainWithResourceUsedByDomainToBeMoved.getPath().replace("/", "\\/").concat(".*")); // This only scaped one Regex metacharacter (/). The wildcard `.` is more common and dangerous in my opinion. 
             Matcher matcher = pattern.matcher(newPathOfDomainToBeMoved);
             if (!matcher.matches()) {
                 domainsOfResourcesInaccessibleToNewParentDomain.put(domainWithResourceUsedByDomainToBeMoved, entry.getValue());
