@@ -189,8 +189,3 @@ public class LibvirtCheckVirtualMachineCommandWrapperTest {
         verify(libvirtUtilitiesHelper).getConnectionByVmName(VM_NAME);
     }
 }
-
-
-
-
-
