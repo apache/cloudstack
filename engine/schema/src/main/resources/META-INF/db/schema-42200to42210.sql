@@ -38,7 +38,7 @@ UPDATE `cloud`.`vm_template` SET guest_os_id = 99 WHERE name = 'kvm-default-vm-i
 
 -- Update `user.password.reset.mail.template` configuration value to match new logic
 UPDATE `cloud`.`configuration`
-SET value = 'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\n{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team'
+SET WHERE name = 'user.password.reset.mail.template' AND value = 'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\n{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team'
 WHERE value IN (
     'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\nhttp://{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team',
     'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\n{{{domainUrl}}}{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team'
