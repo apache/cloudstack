@@ -944,8 +944,6 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
     }
 
-
-
     private void handleNicEvent(long nicId, long instanceId, boolean isAddDnsRecord) {
         VMInstanceVO vmInstanceVO = vmInstanceDao.findById(instanceId);
         if (vmInstanceVO == null) {
