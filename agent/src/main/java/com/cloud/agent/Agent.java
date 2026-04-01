@@ -131,7 +131,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     CopyOnWriteArrayList<IAgentControlListener> controlListeners = new CopyOnWriteArrayList<>();
 
     IAgentShell shell;
-    NioConnection connection;
+    NioClient connection;
     ServerResource serverResource;
     Link link;
     Long id;
@@ -919,6 +919,20 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
     }
 
+    /**
+     * Saves the currently connected management server host after successful setup completion.
+     * This host is persisted and later added to the reconnection list as a fallback option.
+     * Called after receiving a Ready command from the management server, indicating that
+     * the agent has successfully completed its initialization and is ready to work.
+     *
+     * @param connectedHost the hostname or IP address of the successfully connected management server
+     */
+    private void updateLastSetupCompletedHost(String connectedHost) {
+        if (StringUtils.isNotBlank(connectedHost)) {
+            shell.setLastSetupCompletedHost(connectedHost);
+        }
+    }
+
     private Answer setupManagementServerList(final SetupMSListCommand cmd) {
         processManagementServerList(cmd.getMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval());
         return new SetupMSListAnswer(true);
@@ -959,6 +973,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
         verifyAgentArch(ready.getArch());
         processManagementServerList(ready.getMsHostList(), ready.getLbAlgorithm(), ready.getLbCheckInterval());
+        String connectedHost = shell.getConnectedHost();
+        updateLastSetupCompletedHost(connectedHost);
 
         logger.info("Ready command is processed for agent [id: {}, uuid: {}, name: {}]", getId(), getUuid(), getName());
     }

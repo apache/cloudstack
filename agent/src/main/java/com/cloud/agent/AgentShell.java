@@ -154,7 +154,20 @@ public class AgentShell implements IAgentShell, Daemon {
 
     @Override
     public String[] getHosts() {
-        return _host.split(",");
+        String lastSetupCompletedHost = getLastSetupCompletedHost();
+        String host;
+        // Add the last successful setup host as a fallback option at the end of the host list.
+        // This host is tried only after all configured hosts have failed, providing a
+        // last-resort connection option since this host previously completed setup successfully.
+        if (StringUtils.isNotBlank(lastSetupCompletedHost)
+                && StringUtils.isNotBlank(_host)
+                && !_host.contains(lastSetupCompletedHost)) {
+            host = _host + "," + lastSetupCompletedHost;
+        } else {
+            host = _host;
+        }
+
+        return host.split(",");
     }
 
     @Override
@@ -462,6 +475,21 @@ public class AgentShell implements IAgentShell, Daemon {
     @Override
     public Integer getSslHandshakeTimeout() {
         return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.SSL_HANDSHAKE_TIMEOUT);
+    }
+
+    @Override
+    public void setLastSetupCompletedHost(String host) {
+        setPersistentProperty(null, AgentProperties.LAST_SETUP_COMPLETED_HOST.getName(), host);
+    }
+
+    /**
+     * Gets the last host where the agent successfully completed its setup process
+     * and received a Ready command.
+     *
+     * @return the hostname or IP address of the last successfully setup host, or null if none exists
+     */
+    private String getLastSetupCompletedHost() {
+        return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LAST_SETUP_COMPLETED_HOST);
     }
 
     public synchronized int getNextAgentId() {
