@@ -42,3 +42,5 @@ SET `broadcast_uri` = NULL,
 	`ip6_gateway` = NULL,
 	`ip6_cidr` = NULL
 WHERE `traffic_type` = 'Public';
+
+UPDATE `cloud`.`vm_template` SET guest_os_id = 99 WHERE name = 'kvm-default-vm-import-dummy-template';
