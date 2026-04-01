@@ -2718,7 +2718,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 try {
                     _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailedToError, null);
                 } catch (NoTransitionException e1) {
-                    logger.error("Error when transitioning state of [{}] due to [{}].", vm, e1.getMessage());
+                    logger.error("Error when transitioning state of [{}].", vm, e1);
                 }
                 // destroy associated volumes for vm in error state
                 // get all volumes in non destroyed state
