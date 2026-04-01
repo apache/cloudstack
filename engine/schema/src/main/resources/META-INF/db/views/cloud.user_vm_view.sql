@@ -141,6 +141,7 @@ SELECT
     `nics`.`mac_address` AS `mac_address`,
     `nics`.`broadcast_uri` AS `broadcast_uri`,
     `nics`.`isolation_uri` AS `isolation_uri`,
+    `nics`.`enabled` AS `is_nic_enabled`,
     `nic_details`.`value` AS `dns_record_url`,
     `vpc`.`id` AS `vpc_id`,
     `vpc`.`uuid` AS `vpc_uuid`,

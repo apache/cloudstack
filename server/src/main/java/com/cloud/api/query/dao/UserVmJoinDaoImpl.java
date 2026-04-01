@@ -359,6 +359,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 nicResponse.setIp6Address(userVm.getIp6Address());
                 nicResponse.setIp6Gateway(userVm.getIp6Gateway());
                 nicResponse.setIp6Cidr(userVm.getIp6Cidr());
+                nicResponse.setEnabled(userVm.isNicEnabled());
                 nicResponse.setDnsRecordUrl(userVm.getDnsRecordUrl());
                 if (userVm.getBroadcastUri() != null) {
                     nicResponse.setBroadcastUri(userVm.getBroadcastUri().toString());
@@ -630,6 +631,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             /*17: default*/
             nicResponse.setIsDefault(uvo.isDefaultNic());
             nicResponse.setDeviceId(String.valueOf(uvo.getNicDeviceId()));
+            nicResponse.setEnabled(uvo.isNicEnabled());
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(uvo.getNicId());
             if (secondaryIps != null) {
                 List<NicSecondaryIpResponse> ipList = new ArrayList<NicSecondaryIpResponse>();
