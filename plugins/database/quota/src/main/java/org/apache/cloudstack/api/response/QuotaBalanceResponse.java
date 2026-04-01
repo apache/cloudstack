@@ -17,137 +17,65 @@
 package org.apache.cloudstack.api.response;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 
 import com.cloud.serializer.Param;
 
 public class QuotaBalanceResponse extends BaseResponse {
 
-    @SerializedName("accountid")
-    @Param(description = "Account ID")
-    private Long accountId;
-
-    @SerializedName("account")
-    @Param(description = "Account name")
-    private String accountName;
-
-    @SerializedName("domain")
-    @Param(description = "Domain ID")
-    private Long domainId;
-
-    @SerializedName("startquota")
-    @Param(description = "Quota started with")
-    private BigDecimal startQuota;
-
-    @SerializedName("endquota")
-    @Param(description = "Quota by end of this period")
-    private BigDecimal endQuota;
-
-    @SerializedName("credits")
-    @Param(description = "List of credits made during this period")
-    private List<QuotaCreditsResponse> credits = null;
-
-    @SerializedName("startdate")
-    @Param(description = "Start date")
-    private Date startDate = null;
-
-    @SerializedName("enddate")
-    @Param(description = "End date")
-    private Date endDate = null;
-
-    @SerializedName("currency")
-    @Param(description = "Currency")
+    @SerializedName(ApiConstants.CURRENCY)
+    @Param(description = "Balance's currency.")
     private String currency;
 
+    @SerializedName(ApiConstants.DATE)
+    @Param(description = "Balance's date.")
+    private Date date;
+
+    @SerializedName(ApiConstants.BALANCE)
+    @Param(description = "Balance's value.")
+    private BigDecimal balance;
+
+    @SerializedName(ApiConstants.BALANCES)
+    @Param(description = "List of balances in the period.")
+    private List<QuotaBalanceResponse> balances;
+
     public QuotaBalanceResponse() {
-        super();
-        credits = new ArrayList<QuotaCreditsResponse>();
+        super("balance");
     }
 
-    public Long getAccountId() {
-        return accountId;
+    public QuotaBalanceResponse(Date date, BigDecimal balance) {
+        super("balance");
+        this.date = date;
+        this.balance = balance;
     }
 
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
-    }
-
-    public BigDecimal getStartQuota() {
-        return startQuota;
-    }
-
-    public void setStartQuota(BigDecimal startQuota) {
-        this.startQuota = startQuota.setScale(2, RoundingMode.HALF_EVEN);
-    }
-
-    public BigDecimal getEndQuota() {
-        return endQuota;
-    }
-
-    public void setEndQuota(BigDecimal endQuota) {
-        this.endQuota = endQuota.setScale(2, RoundingMode.HALF_EVEN);
-    }
-
-    public List<QuotaCreditsResponse> getCredits() {
-        return credits;
-    }
-
-    public void setCredits(List<QuotaCreditsResponse> credits) {
-        this.credits = credits;
-    }
-
-    public void addCredits(QuotaBalanceVO credit) {
-        QuotaCreditsResponse cr = new QuotaCreditsResponse();
-        cr.setCredit(credit.getCreditBalance());
-        cr.setCreditedOn(credit.getUpdatedOn());
-        credits.add(0, cr);
-    }
-
-    public Date getStartDate() {
-        return startDate == null ? null : new Date(startDate.getTime());
-    }
-
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate == null ? null : new Date(startDate.getTime());
-    }
-
-    public Date getEndDate() {
-        return endDate == null ? null : new Date(endDate.getTime());
-    }
-
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate == null ? null : new Date(endDate.getTime());
+    public void setBalances(List<QuotaBalanceResponse> balances) {
+        this.balances = balances;
     }
 
     public String getCurrency() {
         return currency;
     }
 
-    public void setCurrency(String currency) {
-        this.currency = currency;
+    public List<QuotaBalanceResponse> getBalances() {
+        return balances;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public BigDecimal getBalance() {
+        return balance;
     }
 }

@@ -3900,7 +3900,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (getActiveAccountById(accountId) != null) {
                 return accountId;
             }
-            throw new InvalidParameterValueException(String.format("Unable to find account with ID [%s].", accountId));
+            throw new InvalidParameterValueException(String.format("Unable to find account with the specified ID."));
         }
 
         if (accountName == null && domainId == null) {
@@ -3916,16 +3916,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Both %s and %s are needed if using either. Consider using %s instead.",
                     ApiConstants.ACCOUNT, ApiConstants.DOMAIN_ID, ApiConstants.ACCOUNT_ID));
         }
-        throw new InvalidParameterValueException(String.format("Unable to find account by name [%s] on domain [%s].", accountName, domainId));
+        throw new InvalidParameterValueException(String.format("Unable to find account with name [%s] on the specified domain.", accountName));
     }
 
     protected long getActiveProjectAccountByProjectId(long projectId) {
         Project project = _projectMgr.getProject(projectId);
         if (project == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find project with ID [%s].", projectId));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Unable to find project with the specified ID.", projectId));
         }
         if (project.getState() != Project.State.Active) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Project with ID [%s] is not active.", projectId));
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("Project is not active.", projectId));
         }
         return project.getProjectAccountId();
     }
