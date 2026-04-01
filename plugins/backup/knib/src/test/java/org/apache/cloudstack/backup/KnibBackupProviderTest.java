@@ -538,7 +538,8 @@ public class KnibBackupProviderTest {
     public void createDeltaReferencesTestFullBackupEndOfChain() {
         doReturn(nativeBackupDataStoreVoMock).when(nativeBackupDataStoreDaoMock).persist(Mockito.any());
 
-        knibBackupProviderSpy.createDeltaReferences(true, true, true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KnibTO(volumeObjectToMock, List.of()), false);
+        knibBackupProviderSpy.createDeltaReferences(true,
+                true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KnibTO(volumeObjectToMock, List.of()));
 
         verify(nativeBackupDataStoreDaoMock, Mockito.times(1)).persist(Mockito.any());
     }
@@ -547,7 +548,8 @@ public class KnibBackupProviderTest {
     public void createDeltaReferencesTestIsolatedBackup() {
         doReturn(nativeBackupDataStoreVoMock).when(nativeBackupDataStoreDaoMock).persist(Mockito.any());
 
-        knibBackupProviderSpy.createDeltaReferences(true, false, true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KnibTO(volumeObjectToMock, List.of()), true);
+        knibBackupProviderSpy.createDeltaReferences(true,
+                true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KnibTO(volumeObjectToMock, List.of()));
 
         verify(nativeBackupDataStoreDaoMock, Mockito.times(1)).persist(Mockito.any());
         verify(knibBackupProviderSpy, Mockito.times(0)).findAndSetParentBackupPath(Mockito.any(), Mockito.any(), Mockito.any());
@@ -562,7 +564,7 @@ public class KnibBackupProviderTest {
         doReturn(null).when(knibBackupProviderSpy).createDeltaMergeTreeForVolume(false, true, List.of(), null, knibTO);
         doNothing().when(knibBackupProviderSpy).findAndSetParentBackupPath(List.of(), null, knibTO);
 
-        knibBackupProviderSpy.createDeltaReferences(false, true, true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, knibTO, false);
+        knibBackupProviderSpy.createDeltaReferences(false, true, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, knibTO);
 
         verify(nativeBackupDataStoreDaoMock, Mockito.times(1)).persist(Mockito.any());
         verify(knibBackupProviderSpy, Mockito.times(1)).findAndSetParentBackupPath(List.of(), null, knibTO);
@@ -572,7 +574,8 @@ public class KnibBackupProviderTest {
     public void createDeltaReferencesTestFullBackupNotEndOfChainDoesNotHaveVmSnapshotSucceedingLastBackup() {
         doReturn(nativeBackupDataStoreVoMock).when(nativeBackupDataStoreDaoMock).persist(Mockito.any());
 
-        knibBackupProviderSpy.createDeltaReferences(true, false, false, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KnibTO(volumeObjectToMock, List.of()), false);
+        knibBackupProviderSpy.createDeltaReferences(true,
+                false, true, backupVoMock, List.of(), List.of(), new HashMap<>(), new HashMap<>(), null, new KnibTO(volumeObjectToMock, List.of()));
 
         verify(nativeBackupDataStoreDaoMock, Mockito.times(1)).persist(Mockito.any());
     }

@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStrategy {
@@ -528,11 +529,12 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             quiesceVm = options.needQuiesceVM();
         }
 
-        long virtualSize = createVolumeSnapshotMetadataAndCalculateVirtualSize(vmSnapshot, volumeInfoToSnapshotObjectMap, volumeTOs);
+        List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths = volumeTOs.stream().map(volume -> new Pair<>(volume, UUID.randomUUID().toString())).collect(Collectors.toList());
+        long virtualSize = createVolumeSnapshotMetadataAndCalculateVirtualSize(vmSnapshot, volumeInfoToSnapshotObjectMap, volumeTosAndNewPaths);
 
         VMSnapshotTO target = new VMSnapshotTO(vmSnapshot.getId(), vmSnapshot.getName(), vmSnapshot.getType(), null, vmSnapshot.getDescription(), false, parentSnapshotTo, quiesceVm);
 
-        CreateDiskOnlyVmSnapshotCommand ccmd = new CreateDiskOnlyVmSnapshotCommand(userVm.getInstanceName(), target, volumeTOs, null, userVm.getState());
+        CreateDiskOnlyVmSnapshotCommand ccmd = new CreateDiskOnlyVmSnapshotCommand(userVm.getInstanceName(), target, volumeTosAndNewPaths, null, userVm.getState());
 
         logger.info("Sending disk-only VM snapshot creation of VM Snapshot [{}] command for host [{}].", vmSnapshot.getUuid(), hostId);
         Answer answer = agentMgr.easySend(hostId, ccmd);
@@ -551,12 +553,12 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
      * */
     private VMSnapshot processCreateVmSnapshotAnswer(VMSnapshot vmSnapshot, Map<VolumeInfo, SnapshotObject> volumeInfoToSnapshotObjectMap, CreateDiskOnlyVmSnapshotAnswer answer, UserVm userVm, VMSnapshotVO vmSnapshotVO, long virtualSize, VMSnapshotVO parentSnapshotVo) throws NoTransitionException {
         logger.debug("Processing CreateDiskOnlyVMSnapshotCommand answer for disk-only VM snapshot [{}].", vmSnapshot.getUuid());
-        Map<String, Pair<Long, String>> volumeUuidToSnapshotSizeAndNewVolumePathMap = answer.getMapVolumeToSnapshotSizeAndNewVolumePath();
+        Map<String, Long> volumeUuidToSnapshotSize = answer.getMapVolumeToSnapshotSize();
         long vmSnapshotSize = 0;
 
         for (VolumeInfo volumeInfo : volumeInfoToSnapshotObjectMap.keySet()) {
             VolumeVO volumeVO = (VolumeVO) volumeInfo.getVolume();
-            Pair<Long, String> snapSizeAndNewVolumePath = volumeUuidToSnapshotSizeAndNewVolumePathMap.get(volumeVO.getUuid());
+            Long snapSize = volumeUuidToSnapshotSize.get(volumeVO.getUuid());
 
             SnapshotObject snapshot = volumeInfoToSnapshotObjectMap.get(volumeInfo);
             snapshot.markBackedUp();
@@ -564,14 +566,15 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             logger.debug("Updating metadata for volume [{}] and its corresponding snapshot [{}].", volumeVO, snapshot.getSnapshotVO());
 
             SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findBySnapshotId(snapshot.getId()).get(0);
+            String newVolumePath = snapshotDataStoreVO.getInstallPath();
             snapshotDataStoreVO.setInstallPath(volumeVO.getPath());
-            snapshotDataStoreVO.setPhysicalSize(snapSizeAndNewVolumePath.first());
+            snapshotDataStoreVO.setPhysicalSize(snapSize);
             snapshotDataStoreVO.setState(ObjectInDataStoreStateMachine.State.Ready);
             snapshotDataStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
 
-            vmSnapshotSize += snapSizeAndNewVolumePath.first();
+            vmSnapshotSize += snapSize;
 
-            volumeVO.setPath(snapSizeAndNewVolumePath.second());
+            volumeVO.setPath(newVolumePath);
             volumeDao.update(volumeVO.getId(), volumeVO);
             volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
 
@@ -595,9 +598,11 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         return vmSnapshot;
     }
 
-    private long createVolumeSnapshotMetadataAndCalculateVirtualSize(VMSnapshot vmSnapshot, Map<VolumeInfo, SnapshotObject> volumeInfoToSnapshotObjectMap, List<VolumeObjectTO> volumeTOs) throws NoTransitionException {
+    private long createVolumeSnapshotMetadataAndCalculateVirtualSize(VMSnapshot vmSnapshot, Map<VolumeInfo, SnapshotObject> volumeInfoToSnapshotObjectMap,
+            List<Pair<VolumeObjectTO, String>> volumeToAndNewPaths) throws NoTransitionException {
         long virtualSize = 0;
-        for (VolumeObjectTO volumeObjectTO : volumeTOs) {
+        for (Pair<VolumeObjectTO, String> volumeToAndPath : volumeToAndNewPaths) {
+            VolumeObjectTO volumeObjectTO = volumeToAndPath.first();
             VolumeInfo volumeInfo = volumeDataFactory.getVolume(volumeObjectTO.getId());
             volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
             virtualSize += volumeInfo.getSize();
@@ -616,6 +621,9 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
             snapshotOnPrimary.processEvent(Snapshot.Event.CreateRequested);
             snapshotOnPrimary.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
+            SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findBySnapshotId(snapshot.getId()).get(0);
+            snapshotDataStoreVO.setInstallPath(volumeToAndPath.second());
+            snapshotDataStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
 
             volumeInfoToSnapshotObjectMap.put(volumeInfo, snapshotOnPrimary);
         }

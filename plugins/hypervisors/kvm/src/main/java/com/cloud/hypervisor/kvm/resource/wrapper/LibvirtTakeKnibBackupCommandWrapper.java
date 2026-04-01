@@ -21,17 +21,17 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.exception.BackupException;
-import org.apache.cloudstack.backup.TakeKnibBackupAnswer;
-import org.apache.cloudstack.storage.to.BackupDeltaTO;
-import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.BackupException;
+import org.apache.cloudstack.backup.TakeKnibBackupAnswer;
 import org.apache.cloudstack.backup.TakeKnibBackupCommand;
+import org.apache.cloudstack.storage.to.BackupDeltaTO;
+import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
 import org.apache.cloudstack.storage.to.KnibTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -60,9 +60,9 @@ public class LibvirtTakeKnibBackupCommandWrapper extends CommandWrapper<TakeKnib
         String vmName = command.getVmName();
         logger.info("Starting backup process for VM [{}].", vmName);
         List<KnibTO> knibTOs = command.getKnibTOs();
-        List<VolumeObjectTO> volumeObjectTOs = knibTOs.stream().map(KnibTO::getVolumeObjectTO).collect(Collectors.toList());
+        List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths =
+                knibTOs.stream().map(knibTO -> new Pair<>(knibTO.getVolumeObjectTO(), knibTO.getDeltaPathOnPrimary())).collect(Collectors.toList());
 
-        Map<String, Pair<Long, String>> mapVolumeUuidToDeltaSizeAndNewVolumePath;
         Map<String, Pair<String, Long>> mapVolumeUuidToDeltaPathOnSecondaryAndDeltaSize = new HashMap<>();
         Map<String, String> mapVolumeUuidToNewVolumePath = new HashMap<>();
 
@@ -71,14 +71,14 @@ public class LibvirtTakeKnibBackupCommandWrapper extends CommandWrapper<TakeKnib
 
         try {
             if (runningVM) {
-                mapVolumeUuidToDeltaSizeAndNewVolumePath = resource.createDiskOnlyVmSnapshotForRunningVm(volumeObjectTOs, vmName, UUID.randomUUID().toString(), command.isQuiesceVm());
+                resource.createDiskOnlyVmSnapshotForRunningVm(volumeTosAndNewPaths, vmName, UUID.randomUUID().toString(), command.isQuiesceVm());
             } else {
-                mapVolumeUuidToDeltaSizeAndNewVolumePath = resource.createDiskOnlyVMSnapshotOfStoppedVm(volumeObjectTOs, vmName);
+                resource.createDiskOnlyVMSnapshotOfStoppedVm(volumeTosAndNewPaths, vmName);
             }
 
-            backupVolumes(command, resource, storagePoolManager, knibTOs, mapVolumeUuidToDeltaSizeAndNewVolumePath, volumeObjectTOs, vmName, runningVM, mapVolumeUuidToDeltaPathOnSecondaryAndDeltaSize);
+            backupVolumes(command, resource, storagePoolManager, knibTOs, volumeTosAndNewPaths, vmName, runningVM, mapVolumeUuidToDeltaPathOnSecondaryAndDeltaSize);
 
-            cleanupVm(command, resource, knibTOs, mapVolumeUuidToDeltaSizeAndNewVolumePath, vmName, runningVM, mapVolumeUuidToNewVolumePath);
+            cleanupVm(command, resource, knibTOs, vmName, runningVM, mapVolumeUuidToNewVolumePath);
         } catch (BackupException ex) {
             return new TakeKnibBackupAnswer(command, ex);
         }
@@ -93,7 +93,7 @@ public class LibvirtTakeKnibBackupCommandWrapper extends CommandWrapper<TakeKnib
      * If an exception is caught while copying the volumes, will try to recover the VM to the previous state so that it is consistent.
      * */
     private void backupVolumes(TakeKnibBackupCommand command, LibvirtComputingResource resource, KVMStoragePoolManager storagePoolManager, List<KnibTO> knibTOs,
-            Map<String, Pair<Long, String>> mapVolumeUuidToDeltaSizeAndNewVolumePath, List<VolumeObjectTO> volumeObjectTOs, String vmName, boolean runningVM,
+            List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName, boolean runningVM,
             Map<String, Pair<String, Long>> mapVolumeUuidToDeltaPathOnSecondaryAndDeltaSize) {
         try {
             int maxWaitInMillis = command.getWait() * 1000;
@@ -110,7 +110,7 @@ public class LibvirtTakeKnibBackupCommandWrapper extends CommandWrapper<TakeKnib
                 maxWaitInMillis = calculateRemainingTime(maxWaitInMillis, startTimeMillis);
             }
         } catch (Exception ex) {
-            recoverPreviousVmStateAndDeletePartialBackup(resource, volumeObjectTOs, mapVolumeUuidToDeltaSizeAndNewVolumePath, vmName, runningVM,
+            recoverPreviousVmStateAndDeletePartialBackup(resource, volumeTosAndNewPaths, vmName, runningVM,
                     mapVolumeUuidToDeltaPathOnSecondaryAndDeltaSize, storagePoolManager, command.getImageStoreUrl());
             throw new BackupException(String.format("There was an exception during the backup process for VM [%s], but the VM has been successfully normalized.", vmName),
                     ex, true);
@@ -129,14 +129,14 @@ public class LibvirtTakeKnibBackupCommandWrapper extends CommandWrapper<TakeKnib
      * For each KnibTO, will merge its DeltaMergeTreeTO (if it exists). Also, if this is the end of the chain, will also end the chain for the volume.
      * Will populate the mapVolumeUuidToNewVolumePath argument.
      * */
-    private void cleanupVm(TakeKnibBackupCommand command, LibvirtComputingResource resource, List<KnibTO> knibTOs,
-            Map<String, Pair<Long, String>> mapVolumeUuidToDeltaSizeAndNewVolumePath, String vmName, boolean runningVM, Map<String, String> mapVolumeUuidToNewVolumePath) {
+    private void cleanupVm(TakeKnibBackupCommand command, LibvirtComputingResource resource, List<KnibTO> knibTOs, String vmName, boolean runningVM,
+            Map<String, String> mapVolumeUuidToNewVolumePath) {
         for (KnibTO knibTO : knibTOs) {
             VolumeObjectTO volumeObjectTO = knibTO.getVolumeObjectTO();
             String currentVolumePath = volumeObjectTO.getPath();
             String volumeUuid = volumeObjectTO.getUuid();
             DeltaMergeTreeTO deltaMergeTreeTO = knibTO.getDeltaMergeTreeTO();
-            volumeObjectTO.setPath(mapVolumeUuidToDeltaSizeAndNewVolumePath.get(volumeUuid).second());
+            volumeObjectTO.setPath(knibTO.getDeltaPathOnPrimary());
 
             if (deltaMergeTreeTO != null) {
                 List<String> snapshotDataStoreVos = knibTO.getVmSnapshotDeltaPaths();
@@ -151,7 +151,7 @@ public class LibvirtTakeKnibBackupCommandWrapper extends CommandWrapper<TakeKnib
                 endChainForVolume(resource, volumeObjectTO, vmName, runningVM, volumeUuid, baseVolumePath);
                 mapVolumeUuidToNewVolumePath.put(volumeUuid, baseVolumePath);
             } else {
-                mapVolumeUuidToNewVolumePath.put(volumeUuid, mapVolumeUuidToDeltaSizeAndNewVolumePath.get(volumeUuid).second());
+                mapVolumeUuidToNewVolumePath.put(volumeUuid, knibTO.getDeltaPathOnPrimary());
             }
         }
     }
@@ -171,7 +171,7 @@ public class LibvirtTakeKnibBackupCommandWrapper extends CommandWrapper<TakeKnib
         List<KVMStoragePool> chainImagePools = null;
         KVMStoragePool imagePool = null;
         long backupSize;
-        final String backupOnSecondary = getRelativePathOnSecondaryForBackup(delta.getAccountId(), delta.getVolumeId(), UUID.randomUUID().toString());
+        final String backupOnSecondary = knibTO.getDeltaPathOnSecondary();
         ArrayList<String> temporaryDeltasToRemove = new ArrayList<>();
         boolean result = false;
         try {
@@ -315,16 +315,16 @@ public class LibvirtTakeKnibBackupCommandWrapper extends CommandWrapper<TakeKnib
      *  - Merge back any backup deltas created;
      *  - Remove the data backed up to the secondary storage;
      * */
-    private void recoverPreviousVmStateAndDeletePartialBackup(LibvirtComputingResource resource, List<VolumeObjectTO> volumeObjectTos,
-            Map<String, Pair<Long, String>> mapVolumeUuidToDeltaSizeAndNewVolumePath, String vmName, boolean runningVm,
-            Map<String, Pair<String, Long>> mapVolumeUuidToDeltaPathOnSecondaryAndSize, KVMStoragePoolManager storagePoolManager, String imageStoreUrl) {
+    private void recoverPreviousVmStateAndDeletePartialBackup(LibvirtComputingResource resource, List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName,
+            boolean runningVm, Map<String, Pair<String, Long>> mapVolumeUuidToDeltaPathOnSecondaryAndSize, KVMStoragePoolManager storagePoolManager, String imageStoreUrl) {
         logger.error("There has been an exception during the backup creation process. We will try to revert the VM [{}] to its previous state.", vmName);
 
-        for (VolumeObjectTO volumeObjectTO : volumeObjectTos) {
+        for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
+            VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
             String volumeUuid = volumeObjectTO.getUuid();
 
             BackupDeltaTO oldDelta = new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, volumeObjectTO.getPath());
-            volumeObjectTO.setPath(mapVolumeUuidToDeltaSizeAndNewVolumePath.get(volumeUuid).second());
+            volumeObjectTO.setPath(volumeObjectTOAndNewPath.second());
             DeltaMergeTreeTO deltaMergeTreeTO = new DeltaMergeTreeTO(volumeObjectTO, oldDelta, volumeObjectTO, new ArrayList<>());
 
             mergeBackupDelta(resource, deltaMergeTreeTO, volumeObjectTO, vmName, runningVm, volumeUuid, false);

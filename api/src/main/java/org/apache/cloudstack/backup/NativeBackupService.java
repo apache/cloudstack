@@ -49,4 +49,6 @@ public interface NativeBackupService {
     boolean validateBackup(long backupId, long hostId, long zoneId);
 
     ExtractResponse downloadScreenshot(long backupId);
+
+    boolean finishBackupChain(long vmId);
 }

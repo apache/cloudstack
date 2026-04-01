@@ -26,6 +26,9 @@ public class KnibTO {
 
     private String pathBackupParentOnSecondary;
     private VolumeObjectTO volumeObjectTO;
+    private String deltaPathOnPrimary;
+    private String parentDeltaPathOnPrimary;
+    private String deltaPathOnSecondary;
 
     private DeltaMergeTreeTO deltaMergeTreeTO;
 
@@ -34,6 +37,12 @@ public class KnibTO {
     public KnibTO(VolumeObjectTO volumeObjectTO, List<SnapshotDataStoreVO> snapshotDataStoreVOs) {
         this.volumeObjectTO = volumeObjectTO;
         this.vmSnapshotDeltaPaths = snapshotDataStoreVOs.stream().map(SnapshotDataStoreVO::getInstallPath).collect(Collectors.toList());
+    }
+
+    public KnibTO(VolumeObjectTO volumeObjectTO, String deltaPathOnPrimary, String deltaPathOnSecondary) {
+        this.volumeObjectTO = volumeObjectTO;
+        this.deltaPathOnPrimary = deltaPathOnPrimary;
+        this.deltaPathOnSecondary = deltaPathOnSecondary;
     }
 
     public String getPathBackupParentOnSecondary() {
@@ -52,12 +61,36 @@ public class KnibTO {
         return vmSnapshotDeltaPaths;
     }
 
+    public String getDeltaPathOnPrimary() {
+        return deltaPathOnPrimary;
+    }
+
+    public String getDeltaPathOnSecondary() {
+        return deltaPathOnSecondary;
+    }
+
+    public String getParentDeltaPathOnPrimary() {
+        return parentDeltaPathOnPrimary;
+    }
+
+    public void setParentDeltaPathOnPrimary(String parentDeltaPathOnPrimary) {
+        this.parentDeltaPathOnPrimary = parentDeltaPathOnPrimary;
+    }
+
     public void setPathBackupParentOnSecondary(String pathBackupParentOnSecondary) {
         this.pathBackupParentOnSecondary = pathBackupParentOnSecondary;
     }
 
     public void setDeltaMergeTreeTO(DeltaMergeTreeTO deltaMergeTreeTO) {
         this.deltaMergeTreeTO = deltaMergeTreeTO;
+    }
+
+    public void setDeltaPathOnPrimary(String deltaPathOnPrimary) {
+        this.deltaPathOnPrimary = deltaPathOnPrimary;
+    }
+
+    public void setDeltaPathOnSecondary(String deltaPathOnSecondary) {
+        this.deltaPathOnSecondary = deltaPathOnSecondary;
     }
 
     @Override

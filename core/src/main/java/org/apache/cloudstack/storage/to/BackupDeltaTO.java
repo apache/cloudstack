@@ -91,6 +91,10 @@ public class BackupDeltaTO implements DataTO {
         return screenshotPath;
     }
 
+    public void setPath(String path) {
+        this.path = path;
+    }
+
     @Override
     public String toString() {
         return new ReflectionToStringBuilder(this, ToStringStyle.JSON_STYLE).setExcludeFieldNames("id").toString();

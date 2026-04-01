@@ -971,6 +971,7 @@ public class LibvirtVMDef {
         private BlockIOSize logicalBlockIOSize = null;
         private BlockIOSize physicalBlockIOSize = null;
         private DiskGeometry geometry = null;
+        private List<String> backingStoreList = null; // Ordered list of backing stores, the first in the list is the immediate backing store, and the last in the list is the base
 
         public DiscardType getDiscard() {
             return _discard;
@@ -1340,6 +1341,14 @@ public class LibvirtVMDef {
 
         public String getSourcePath() {
             return _sourcePath;
+        }
+
+        public List<String> getBackingStoreList() {
+            return backingStoreList;
+        }
+
+        public void setBackingStoreList(List<String> backingStoreList) {
+            this.backingStoreList = backingStoreList;
         }
 
         @Override

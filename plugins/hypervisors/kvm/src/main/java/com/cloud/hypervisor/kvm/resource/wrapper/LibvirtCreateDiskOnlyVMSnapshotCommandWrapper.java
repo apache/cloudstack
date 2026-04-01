@@ -36,10 +36,10 @@ public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
 
         try {
             if (VirtualMachine.State.Running.equals(state)) {
-                return new CreateDiskOnlyVmSnapshotAnswer(cmd, true, null, resource.createDiskOnlyVmSnapshotForRunningVm(cmd.getVolumeTOs(), cmd.getVmName(), cmd.getTarget().getSnapshotName(),
-                        cmd.getTarget().getQuiescevm()));
+                return new CreateDiskOnlyVmSnapshotAnswer(cmd, true, null, resource.createDiskOnlyVmSnapshotForRunningVm(cmd.getVolumeTosAndNewPaths(), cmd.getVmName(),
+                        cmd.getTarget().getSnapshotName(), cmd.getTarget().getQuiescevm()));
             }
-            return new CreateDiskOnlyVmSnapshotAnswer(cmd, true, null, resource.createDiskOnlyVMSnapshotOfStoppedVm(cmd.getVolumeTOs(), cmd.getVmName()));
+            return new CreateDiskOnlyVmSnapshotAnswer(cmd, true, null, resource.createDiskOnlyVMSnapshotOfStoppedVm(cmd.getVolumeTosAndNewPaths(), cmd.getVmName()));
         } catch (BackupException ex) {
             return new Answer(cmd, ex);
         }

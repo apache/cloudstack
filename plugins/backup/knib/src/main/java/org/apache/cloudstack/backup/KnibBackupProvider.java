@@ -117,6 +117,7 @@ import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.command.BackupDeleteAnswer;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -134,6 +135,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -146,6 +148,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -327,6 +330,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         }
         UserVmVO vmVO = userVmDao.findById(vm.getId());
         logger.error("Failed to merge deltas for VM [{}] during backup offering removal process. Changing its state to [{}].", vm, VirtualMachine.State.BackupError);
+        userVmDetailsDao.addDetail(vm.getId(), ApiConstants.LAST_KNOWN_STATE, vmVO.getState().name(), false);
         vmVO.setState(VirtualMachine.State.BackupError);
         userVmDao.update(vmVO.getId(), vmVO);
 
@@ -434,8 +438,8 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
             KnibTO knibTO = new KnibTO(volumeObjectTO, volumeIdToSnapshotDataStoreList.getOrDefault(volumeObjectTO.getId(), new ArrayList<>()));
             knibTOs.add(knibTO);
-            createDeltaReferences(fullBackup, newBackupJoin.getEndOfChain(), !succeedingVmSnapshotList.isEmpty(), runningVm, backup, parentBackupDeltasOnSecondary,
-                    parentBackupDeltasOnPrimary, volumeUuidToDeltaPrimaryRef, volumeUuidToDeltaSecondaryRef, succeedingVmSnapshot, knibTO, isolated);
+            createDeltaReferences(fullBackup, !succeedingVmSnapshotList.isEmpty(), runningVm, backup, parentBackupDeltasOnSecondary,
+                    parentBackupDeltasOnPrimary, volumeUuidToDeltaPrimaryRef, volumeUuidToDeltaSecondaryRef, succeedingVmSnapshot, knibTO);
         }
 
         TakeKnibBackupCommand command = new TakeKnibBackupCommand(quiesceVm, runningVm, newBackupJoin.getEndOfChain(), userVm.getInstanceName(), imageStore.getUri(),
@@ -449,7 +453,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         }
 
         processBackupSuccess(runningVm, volumeTOs, volumeUuidToDeltaPrimaryRef, volumeUuidToDeltaSecondaryRef, (TakeKnibBackupAnswer)answer, parentBackupDeltasOnPrimary,
-                succeedingVmSnapshotList, backupVO, fullBackup, userVm, hostId);
+                succeedingVmSnapshotList, backupVO, fullBackup, userVm, hostId, newBackupJoin.getEndOfChain(), isolated);
 
         if (!isolated) {
             updateCurrentBackup(newBackupJoin);
@@ -869,6 +873,71 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         }
 
         return new Pair<>(result, null);
+    }
+
+    @Override
+    public boolean finishBackupChain(VirtualMachine virtualMachine) {
+        UserVmVO userVmVO = userVmDao.findById(virtualMachine.getId());
+        if (allowedVmStates.contains(userVmVO.getState())) {
+            return endBackupChain(userVmVO);
+        }
+        if (userVmVO.getState() != VirtualMachine.State.BackupError) {
+            logger.error("VM [{}] is not in the right state to finish backup chain. It can only be in states [Running, Stopped and BackupError].", userVmVO.getUuid());
+            return false;
+        }
+        VMInstanceDetailVO detail = userVmDetailsDao.findDetail(userVmVO.getId(), ApiConstants.LAST_KNOWN_STATE);
+        boolean runningVM = detail == null || VirtualMachine.State.valueOf(detail.getValue()) == VirtualMachine.State.Running;
+
+        BackupVO backupVO = backupDao.findLatestByStatusAndVmId(Backup.Status.Error, userVmVO.getId());
+        NativeBackupJoinVO nativeBackupJoinVO = nativeBackupJoinDao.findById(backupVO.getId());
+        ImageStoreVO imageStoreVO = imageStoreDao.findById(nativeBackupJoinVO.getImageStoreId());
+
+        List<KnibTO> knibTOs = new ArrayList<>();
+        List<NativeBackupStoragePoolVO> deltasOnPrimary = nativeBackupStoragePoolDao.listByBackupId(nativeBackupJoinVO.getId());
+        NativeBackupJoinVO parent = nativeBackupJoinDao.findById(nativeBackupJoinVO.getParentId());
+
+        // There is a possibility that the cleanup step of the backup creation was executed, and thus we would have to merge with the old parent's parent
+        List<NativeBackupStoragePoolVO> parentDeltasOnPrimary = new ArrayList<>();
+        if (parent != null) {
+            parentDeltasOnPrimary = nativeBackupStoragePoolDao.listByBackupId(parent.getId());
+        }
+
+        List<NativeBackupDataStoreVO> deltasOnSecondary = nativeBackupDataStoreDao.listByBackupId(nativeBackupJoinVO.getId());
+        configureKnibTosForCleanup(userVmVO, deltasOnPrimary, deltasOnSecondary, runningVM, parentDeltasOnPrimary, knibTOs);
+        CleanupKnibBackupErrorCommand command = new CleanupKnibBackupErrorCommand(runningVM, userVmVO.getInstanceName(), imageStoreVO.getUrl(), knibTOs);
+
+        long hostId = userVmVO.getHostId() != null ? userVmVO.getHostId() : vmSnapshotHelper.pickRunningHost(userVmVO.getId());
+        Answer answer = sendBackupCommand(hostId, command);
+        if (answer == null || !answer.getResult()) {
+            logger.error("Unable to finish backup chain for VM [{}]. The host [{}] logs will have more information on why this happened.", userVmVO.getUuid(), hostId);
+            return false;
+        }
+
+        CleanupKnibBackupErrorAnswer cleanAnswer = (CleanupKnibBackupErrorAnswer)answer;
+        logger.info("Successfully finished chain for VM [{}] and normalizing the BackupError state. Cleaning up metadata.", userVmVO.getUuid());
+
+        boolean chainAlreadyEnded = false;
+        for (VolumeObjectTO volumeObjectTO : cleanAnswer.getVolumeObjectTos()) {
+            VolumeVO volumeVO = volumeDao.findById(volumeObjectTO.getId());
+            if (!volumeObjectTO.getPath().equals(volumeVO.getPath())) {
+                volumeVO.setPath(volumeObjectTO.getPath());
+                volumeDao.update(volumeVO.getId(), volumeVO);
+                chainAlreadyEnded = true;
+            }
+        }
+
+        userVmVO.setState(runningVM ? VirtualMachine.State.Running : VirtualMachine.State.Stopped);
+        userVmDao.update(userVmVO.getId(), userVmVO);
+        userVmDetailsDao.removeDetail(userVmVO.getId(), ApiConstants.LAST_KNOWN_STATE);
+
+        if (!chainAlreadyEnded) {
+            return endBackupChain(userVmVO);
+        }
+        NativeBackupJoinVO current = nativeBackupJoinDao.findCurrent(userVmVO.getId());
+        nativeBackupStoragePoolDao.expungeByBackupId(current.getId());
+        setEndOfChainAndRemoveCurrentForBackup(current);
+
+        return true;
     }
 
     @Override
@@ -1468,15 +1537,20 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
     /**
      * Creates the necessary delta references on both primary and secondary storage. Also maps the volume to the parent delta backup and create the delta merge tree.
      * */
-    protected void createDeltaReferences(boolean fullBackup, boolean endOfChain, boolean hasVmSnapshotSucceedingLastBackup, boolean runningVm, Backup backup,
+    protected void createDeltaReferences(boolean fullBackup, boolean hasVmSnapshotSucceedingLastBackup, boolean runningVm, Backup backup,
             List<NativeBackupDataStoreVO> parentBackupDeltasOnSecondary, List<NativeBackupStoragePoolVO> parentBackupDeltasOnPrimary,
             HashMap<String, NativeBackupStoragePoolVO> volumeUuidToDeltaPrimaryRef, HashMap<String, NativeBackupDataStoreVO> volumeUuidToDeltaSecondaryRef,
-            VMSnapshotVO succeedingVmSnapshot, KnibTO knibTO, boolean isolated) {
+            VMSnapshotVO succeedingVmSnapshot, KnibTO knibTO) {
         VolumeObjectTO volumeObjectTO = knibTO.getVolumeObjectTO();
         logger.debug("Creating delta references for backup [{}] of volume [{}].", backup.getUuid(), volumeObjectTO.getUuid());
 
-        NativeBackupDataStoreVO deltaSecondaryRef = new NativeBackupDataStoreVO(backup.getId(), volumeObjectTO.getVolumeId(), volumeObjectTO.getDeviceId(), null);
+        String filename = UUID.randomUUID().toString();
+        String relativePathOnSecondary = String.format("%s%s%s%s%s%s%s", "backups", File.separator, volumeObjectTO.getAccountId(), File.separator, volumeObjectTO.getId(),
+                File.separator, filename);
+        knibTO.setDeltaPathOnPrimary(filename);
+        knibTO.setDeltaPathOnSecondary(relativePathOnSecondary);
 
+        NativeBackupDataStoreVO deltaSecondaryRef = new NativeBackupDataStoreVO(backup.getId(), volumeObjectTO.getVolumeId(), volumeObjectTO.getDeviceId(), relativePathOnSecondary);
         if (!fullBackup) {
             NativeBackupStoragePoolVO parentDeltaOnPrimary = createDeltaMergeTreeForVolume(false, runningVm, parentBackupDeltasOnPrimary, succeedingVmSnapshot, knibTO);
             findAndSetParentBackupPath(parentBackupDeltasOnSecondary, parentDeltaOnPrimary, knibTO);
@@ -1486,12 +1560,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         logger.trace("Created reference [{}] for backup [{}] of volume [{}].", referenceOnSecondary, backup, volumeObjectTO);
         volumeUuidToDeltaSecondaryRef.put(volumeObjectTO.getUuid(), referenceOnSecondary);
 
-        if (endOfChain || isolated) {
-            logger.trace("Backup [{}] is [{}] and, thus, not creating a storage pool reference for its delta.", backup, endOfChain ? "end of chain" : "isolated");
-            return;
-        }
-
-        NativeBackupStoragePoolVO deltaPrimaryRef = new NativeBackupStoragePoolVO(backup.getId(), volumeObjectTO.getPoolId(), volumeObjectTO.getVolumeId(), null,
+        NativeBackupStoragePoolVO deltaPrimaryRef = new NativeBackupStoragePoolVO(backup.getId(), volumeObjectTO.getPoolId(), volumeObjectTO.getVolumeId(), filename,
                 volumeObjectTO.getPath());
 
         if (knibTO.getDeltaMergeTreeTO() != null && !hasVmSnapshotSucceedingLastBackup) {
@@ -1635,18 +1704,19 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
      * Updates the necessary references on the database. Also calculates the backup's physical size.
      * */
     private long updateDeltaReferencesAndCalculateBackupPhysicalSize(VolumeObjectTO volumeObjectTO, HashMap<String, NativeBackupStoragePoolVO> volumeUuidToDeltaPrimaryRef,
-            HashMap<String, NativeBackupDataStoreVO> volumeUuidToDeltaSecondaryRef, TakeKnibBackupAnswer answer, long physicalBackupSize) {
+            HashMap<String, NativeBackupDataStoreVO> volumeUuidToDeltaSecondaryRef, TakeKnibBackupAnswer answer, long physicalBackupSize, boolean endChain, boolean isolated,
+            BackupVO backupVO) {
         String volumeUuid = volumeObjectTO.getUuid();
         NativeBackupStoragePoolVO deltaPrimaryRef = volumeUuidToDeltaPrimaryRef.get(volumeUuid);
+        if (endChain || isolated) {
+            logger.trace("Since backup [{}] is [{}]. We will delete the delta reference on primary at [{}] as it does not exist anymore.", backupVO.getUuid(), endChain ?
+                    "end of chain" : "isolated", deltaPrimaryRef.getBackupDeltaPath());
+            nativeBackupStoragePoolDao.expunge(deltaPrimaryRef.getId());
+        }
+
         NativeBackupDataStoreVO deltaSecondaryRef = volumeUuidToDeltaSecondaryRef.get(volumeUuid);
 
         String newVolumePath = answer.getMapVolumeUuidToNewVolumePath().get(volumeUuid);
-
-        if (deltaPrimaryRef != null) {
-            logger.trace("Updating delta reference on primary [{}] path to [{}].", deltaPrimaryRef, newVolumePath);
-            deltaPrimaryRef.setBackupDeltaPath(newVolumePath);
-            nativeBackupStoragePoolDao.update(deltaPrimaryRef.getId(), deltaPrimaryRef);
-        }
 
         VolumeVO volumeVO = volumeDao.findById(volumeObjectTO.getId());
         volumeVO.setPath(newVolumePath);
@@ -1988,11 +2058,12 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
 
     private void processBackupSuccess(boolean runningVm, List<VolumeObjectTO> volumeTOs, HashMap<String, NativeBackupStoragePoolVO> volumeUuidToDeltaPrimaryRef,
             HashMap<String, NativeBackupDataStoreVO> volumeUuidToDeltaSecondaryRef, TakeKnibBackupAnswer answer, List<NativeBackupStoragePoolVO> parentBackupDeltasOnPrimary,
-            List<VMSnapshotVO> succeedingVmSnapshots, BackupVO backupVO, boolean fullBackup, VirtualMachine userVm, Long hostId) {
+            List<VMSnapshotVO> succeedingVmSnapshots, BackupVO backupVO, boolean fullBackup, VirtualMachine userVm, Long hostId, boolean endChain, boolean isolated) {
         long physicalBackupSize = 0;
         logger.debug("Processing backup [{}] success.", backupVO.getUuid());
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
-            physicalBackupSize = updateDeltaReferencesAndCalculateBackupPhysicalSize(volumeObjectTO, volumeUuidToDeltaPrimaryRef, volumeUuidToDeltaSecondaryRef, answer, physicalBackupSize);
+            physicalBackupSize = updateDeltaReferencesAndCalculateBackupPhysicalSize(volumeObjectTO, volumeUuidToDeltaPrimaryRef, volumeUuidToDeltaSecondaryRef, answer,
+                    physicalBackupSize, endChain, isolated, backupVO);
         }
 
         expungeOldDeltasAndUpdateVmSnapshotIfNeeded(parentBackupDeltasOnPrimary, succeedingVmSnapshots.isEmpty() ? null : succeedingVmSnapshots.get(0));
@@ -2017,6 +2088,7 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         } else {
             logger.info("Backup [{}] of VM [{}] ended in error. We are not sure if the VM is consistent; thus, we will set it as BackupError.", backupVO.getUuid(), vm.getUuid());
             transitVmStateWithoutThrow(vm, VirtualMachine.Event.OperationFailedToError, hostId);
+            userVmDetailsDao.addDetail(vm.getId(), ApiConstants.LAST_KNOWN_STATE, runningVm ? VirtualMachine.State.Running.name() : VirtualMachine.State.Stopped.name(), false);
             backupVO.setStatus(Backup.Status.Error);
         }
 
@@ -2433,6 +2505,25 @@ public class KnibBackupProvider extends AdapterBase implements NativeBackupProvi
         backupDao.update(backupVO.getId(), backupVO);
         alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_BACKUP_VALIDATION_FAILED, backupVO.getZoneId(), null, String.format("Backup [%s] is not valid",
                 backupVO.getName()), msg);
+    }
+
+    private void configureKnibTosForCleanup(UserVmVO userVmVO, List<NativeBackupStoragePoolVO> deltasOnPrimary, List<NativeBackupDataStoreVO> deltasOnSecondary, boolean runningVM,
+            List<NativeBackupStoragePoolVO> parentDeltasOnPrimary, List<KnibTO> knibTOs) {
+        for (VolumeObjectTO volumeObjectTO : vmSnapshotHelper.getVolumeTOList(userVmVO.getId())) {
+            NativeBackupStoragePoolVO deltaOnPrimary = deltasOnPrimary.stream()
+                            .filter(delta -> delta.getVolumeId() == volumeObjectTO.getVolumeId()).findFirst().orElseThrow();
+            volumeObjectTO.setPath(deltaOnPrimary.getBackupDeltaPath());
+
+            NativeBackupDataStoreVO deltaOnSecondary =
+                    deltasOnSecondary.stream().filter(delta -> delta.getVolumeId() == volumeObjectTO.getVolumeId()).findFirst().orElseThrow();
+            KnibTO knibTO = new KnibTO(volumeObjectTO, deltaOnPrimary.getBackupDeltaParentPath(), deltaOnSecondary.getBackupPath());
+
+            parentDeltasOnPrimary.stream()
+                    .filter(delta -> delta.getVolumeId() == volumeObjectTO.getVolumeId()).findFirst()
+                    .ifPresent(parentDelta -> knibTO.setParentDeltaPathOnPrimary(parentDelta.getBackupDeltaParentPath()));
+
+            knibTOs.add(knibTO);
+        }
     }
 
     private void configureValidationSteps(ValidateKnibVmCommand cmd, BackupVO backup) {

@@ -6534,7 +6534,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return guestCpuArch;
     }
 
-    public Map<String, Pair<Long, String>> createDiskOnlyVmSnapshotForRunningVm(List<VolumeObjectTO> volumeObjectTos, String vmName, String snapshotName, boolean quiesceVm) throws BackupException {
+    public Map<String, Long> createDiskOnlyVmSnapshotForRunningVm(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName, String snapshotName,
+            boolean quiesceVm) throws BackupException {
         logger.info("Taking disk-only VM snapshot of running VM [{}].", vmName);
 
         Domain dm = null;
@@ -6549,7 +6550,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 throw new BackupException(String.format("Creation of disk-only VM snapshot failed as we could not find the VM [%s].", vmName), true);
             }
 
-            Pair<String, Map<String, Pair<Long, String>>> snapshotXmlAndVolumeToNewPathMap = createSnapshotXmlAndNewVolumePathMap(volumeObjectTos, disks, snapshotName);
+            Pair<String, Map<String, Long>> snapshotXmlAndVolumeToNewPathMap = createSnapshotXmlAndNewVolumePathMap(volumeTosAndNewPaths, disks, snapshotName);
 
             int flagsToUseForRunningVmSnapshotCreation = getFlagsToUseForRunningVmSnapshotCreation(quiesceVm);
             String snapshotXml = snapshotXmlAndVolumeToNewPathMap.first();
@@ -6580,16 +6581,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    public Map<String, Pair<Long, String>> createDiskOnlyVMSnapshotOfStoppedVm(List<VolumeObjectTO> volumeObjectTos, String vmName) {
+    public Map<String, Long> createDiskOnlyVMSnapshotOfStoppedVm(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName) {
         logger.info("Creating volume deltas for stopped VM [{}].", vmName);
 
-        Map<String, Pair<Long, String>> mapVolumeToSnapshotSizeAndNewVolumePath = new HashMap<>();
+        Map<String, Long> mapVolumeToSnapshotSize = new HashMap<>();
         try {
-            for (VolumeObjectTO volumeObjectTO : volumeObjectTos) {
+            for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
+                VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
                 PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
                 KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
 
-                String snapshotPath = UUID.randomUUID().toString();
+                String snapshotPath = volumeObjectTOAndNewPath.second();
                 String snapshotFullPath = kvmStoragePool.getLocalPathFor(snapshotPath);
                 QemuImgFile newDelta = new QemuImgFile(snapshotFullPath, QemuImg.PhysicalDiskFormat.QCOW2);
 
@@ -6601,28 +6603,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 logger.debug("Creating new delta [{}] for volume [{}] as part of the delta creation process for VM [{}].", newDelta, volumeObjectTO.getUuid(), vmName);
                 qemuImg.create(newDelta, currentDelta);
 
-                mapVolumeToSnapshotSizeAndNewVolumePath.put(volumeObjectTO.getUuid(), new Pair<>(getFileSize(currentDeltaFullPath), snapshotPath));
+                mapVolumeToSnapshotSize.put(volumeObjectTO.getUuid(), getFileSize(currentDeltaFullPath));
             }
         } catch (LibvirtException | QemuImgException e) {
             logger.error("Exception while creating volume delta for VM [{}]. Deleting leftover deltas.", vmName, e);
-            for (VolumeObjectTO volumeObjectTO : volumeObjectTos) {
-                Pair<Long, String> volSizeAndNewPath = mapVolumeToSnapshotSizeAndNewVolumePath.get(volumeObjectTO.getUuid());
-                PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
-                KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
-
-                if (volSizeAndNewPath == null) {
+            for (Pair<VolumeObjectTO, String> volumeObjectTOAndNewPath : volumeTosAndNewPaths) {
+                VolumeObjectTO volumeObjectTO = volumeObjectTOAndNewPath.first();
+                Long volSize = mapVolumeToSnapshotSize.get(volumeObjectTO.getUuid());
+                if (volSize == null) {
                     continue;
                 }
+                PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) volumeObjectTO.getDataStore();
+                KVMStoragePool kvmStoragePool = getStoragePoolMgr().getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
                 try {
-                    Files.deleteIfExists(Path.of(kvmStoragePool.getLocalPathFor(volSizeAndNewPath.second())));
+                    Files.deleteIfExists(Path.of(kvmStoragePool.getLocalPathFor(volumeObjectTOAndNewPath.second())));
                 } catch (IOException ex) {
-                    logger.warn("Tried to delete leftover delta at [{}]. Failed.", volSizeAndNewPath.second(), ex);
+                    logger.warn("Tried to delete leftover delta at [{}]. Failed.", volumeObjectTOAndNewPath.second(), ex);
                 }
             }
             throw new BackupException(String.format("An exception was caught during the delta creation for VM [%s]. The leftover deltas have been deleted.", vmName), true);
         }
 
-        return mapVolumeToSnapshotSizeAndNewVolumePath;
+        return mapVolumeToSnapshotSize;
     }
 
     public void mergeDeltaForStoppedVm(DeltaMergeTreeTO deltaMergeTreeTO) throws QemuImgException, IOException, LibvirtException {
@@ -6702,18 +6704,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return flags;
     }
 
-    public Pair<String, Map<String, Pair<Long, String>>> createSnapshotXmlAndNewVolumePathMap(List<VolumeObjectTO> volumeObjectTOS, List<LibvirtVMDef.DiskDef> disks, String snapshotName) {
+    public Pair<String, Map<String, Long>> createSnapshotXmlAndNewVolumePathMap(List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, List<LibvirtVMDef.DiskDef> disks, String snapshotName) {
         StringBuilder stringBuilder = new StringBuilder();
-        Map<String, Pair<Long, String>> volumeObjectToNewPathMap = new HashMap<>();
+        Map<String, Long> volumeObjectToNewPathMap = new HashMap<>();
 
-        for (VolumeObjectTO volumeObjectTO : volumeObjectTOS) {
-            LibvirtVMDef.DiskDef diskdef = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTO);
-            String newPath = UUID.randomUUID().toString();
+        for (Pair<VolumeObjectTO, String> volumeObjectTOAndPath : volumeTosAndNewPaths) {
+            LibvirtVMDef.DiskDef diskdef = getDiskWithPathOfVolumeObjectTO(disks, volumeObjectTOAndPath.first());
+            String newPath = volumeObjectTOAndPath.second();
             stringBuilder.append(String.format(TAG_DISK_SNAPSHOT, diskdef.getDiskLabel(), getSnapshotTemporaryPath(diskdef.getDiskPath(), newPath)));
 
             long snapSize = getFileSize(diskdef.getDiskPath());
 
-            volumeObjectToNewPathMap.put(volumeObjectTO.getUuid(), new Pair<>(snapSize, newPath));
+            volumeObjectToNewPathMap.put(volumeObjectTOAndPath.first().getUuid(), snapSize);
         }
 
         String snapshotXml = String.format(SNAPSHOT_XML, snapshotName, stringBuilder);

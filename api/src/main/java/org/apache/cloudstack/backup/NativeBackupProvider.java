@@ -134,4 +134,8 @@ public interface NativeBackupProvider extends BackupProvider {
      * */
     default void prepareVmForSnapshotRevert(VMSnapshot vmSnapshot, VirtualMachine virtualMachine) {
     }
+
+    default boolean finishBackupChain(VirtualMachine virtualMachine) {
+        return false;
+    }
 }

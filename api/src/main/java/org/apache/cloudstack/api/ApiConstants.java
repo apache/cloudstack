@@ -1415,6 +1415,7 @@ public class ApiConstants {
 
     public static final String SCHEDULED = "scheduled";
     public static final String SCHEDULED_DATE = "scheduleddate";
+    public static final String LAST_KNOWN_STATE = "last_known_state";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

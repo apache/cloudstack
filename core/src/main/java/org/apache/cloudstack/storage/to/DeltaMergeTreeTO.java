@@ -46,6 +46,10 @@ public class DeltaMergeTreeTO {
         return parent;
     }
 
+    public void setParent(DataTO parent) {
+        this.parent = parent;
+    }
+
     public DataTO getChild() {
         return child;
     }

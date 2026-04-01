@@ -16,31 +16,29 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.backup;
 
-import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.backup.NativeBackupService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "downloadValidationScreenshot", description = "Download validation screenshot of given backup.",
-        responseObject = ExtractResponse.class, since = "4.23.0.0", requestHasSensitiveInfo = false,
+@APICommand(name = "finishBackupChain", description = "Finish backup chain of VM.",
+        responseObject = SuccessResponse.class, since = "4.23.0.0", requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
-public class DownloadValidationScreenshotCmd extends BaseAsyncCmd {
-
+public class FinishBackupChainCmd extends BaseCmd {
     @Inject
     private NativeBackupService nativeBackupService;
 
@@ -49,16 +47,16 @@ public class DownloadValidationScreenshotCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @ACL
-    @Parameter(name = ApiConstants.BACKUP_ID, type = CommandType.UUID, entityType = BackupResponse.class, required = true,
-            description = "Id of the backup.")
-    private Long backupId;
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = VirtualMachineResponse.class, required = true,
+            description = "Id of the VM to finish the chain.")
+    private Long vmId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getBackupId() {
-        return backupId;
+    public Long getVmId() {
+        return vmId;
     }
 
     /////////////////////////////////////////////////////
@@ -66,19 +64,11 @@ public class DownloadValidationScreenshotCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getEventType() {
-        return EventTypes.EVENT_SCREENSHOT_DOWNLOAD;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "Downloading validation screenshot of backup " + getBackupId();
-    }
-
-    @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
-        ExtractResponse response = nativeBackupService.downloadScreenshot(getBackupId());
+        boolean result = nativeBackupService.finishBackupChain(getVmId());
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(result);
         response.setResponseName(getCommandName());
         response.setObjectName(getCommandName());
         this.setResponseObject(response);
@@ -86,9 +76,9 @@ public class DownloadValidationScreenshotCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Backup backup = _entityMgr.findById(Backup.class, getBackupId());
-        if (backup != null) {
-            return backup.getAccountId();
+        VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, getVmId());
+        if (vm != null) {
+            return vm.getAccountId();
         }
 
         return Account.ACCOUNT_ID_SYSTEM;

@@ -16,23 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.cloud.agent.api.storage;
+package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections4.CollectionUtils;
 
-import java.util.Map;
+import java.util.List;
 
-public class CreateDiskOnlyVmSnapshotAnswer extends Answer {
+public class CleanupKnibBackupErrorAnswer extends Answer {
+    List<VolumeObjectTO> volumeObjectTos;
 
-    protected Map<String, Long> mapVolumeToSnapshotSize;
-
-    public CreateDiskOnlyVmSnapshotAnswer(Command command, boolean success, String details, Map<String, Long> mapVolumeToSnapshotSize) {
-        super(command, success, details);
-        this.mapVolumeToSnapshotSize = mapVolumeToSnapshotSize;
+    public CleanupKnibBackupErrorAnswer(Command cmd, List<VolumeObjectTO> volumeObjectTos) {
+        super(cmd, CollectionUtils.isNotEmpty(volumeObjectTos), null);
+        this.volumeObjectTos = volumeObjectTos;
     }
 
-    public Map<String, Long> getMapVolumeToSnapshotSize() {
-        return mapVolumeToSnapshotSize;
+    public List<VolumeObjectTO> getVolumeObjectTos() {
+        return volumeObjectTos;
     }
 }

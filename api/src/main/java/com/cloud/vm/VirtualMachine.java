@@ -234,6 +234,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
         BackupRequested,
         BackupSucceededStopped,
         BackupSucceededRunning,
+        FinalizedBackupChain,
 
         // added for new VMSync logic
         FollowAgentPowerOnReport,

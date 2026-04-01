@@ -288,6 +288,16 @@ public class NativeBackupServiceImpl extends ComponentLifecycleBase implements N
     }
 
     @Override
+    public boolean finishBackupChain(long vmId) {
+        VirtualMachine vm = virtualMachineManager.findById(vmId);
+        NativeBackupProvider nativeBackupProvider = getNativeBackupProviderForZone(vm.getDataCenterId());
+        if (nativeBackupProvider == null) {
+            return false;
+        }
+        return nativeBackupProvider.finishBackupChain(vm);
+    }
+
+    @Override
     public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
         return jobHandlerProxy.handleVmWorkJob(work);
     }
