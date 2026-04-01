@@ -35,7 +35,7 @@ public class GetUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.USER_API_KEY, type = CommandType.STRING, required = true, description = "API key of the user")
+    @Parameter(name = ApiConstants.USER_API_KEY, type = CommandType.STRING, required = true, description = "API key of the user", validations = {ApiArgValidator.NotNullOrEmpty})
     private String apiKey;
 
     /////////////////////////////////////////////////////
