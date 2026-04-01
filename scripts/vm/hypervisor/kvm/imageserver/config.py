@@ -32,7 +32,7 @@ def parse_idle_timeout_seconds(obj: dict) -> int:
         raise ValueError("idle_timeout_seconds must be an integer")
     v = int(v)
     if v < 1:
-        v = 86400 * 7
+        v = 86400
     return v
 
 

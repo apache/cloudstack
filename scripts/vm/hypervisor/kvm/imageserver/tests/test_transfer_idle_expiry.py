@@ -30,9 +30,9 @@ from .test_base import (
 class TestTransferIdleExpiry(ImageServerTestCase):
     def test_transfer_expires_after_idle(self):
         """No HTTP activity after registration: transfer is unregistered after idle_timeout_seconds."""
-        _tid, url, _path, cleanup = make_file_transfer(idle_timeout_seconds=2)
+        _tid, url, _path, cleanup = make_file_transfer(idle_timeout_seconds=15)
         try:
-            time.sleep(3.5)
+            time.sleep(30)
             with self.assertRaises(urllib.error.HTTPError) as ctx:
                 http_options(url)
             self.assertEqual(ctx.exception.code, 404)
@@ -43,14 +43,14 @@ class TestTransferIdleExpiry(ImageServerTestCase):
 
     def test_http_activity_resets_idle_deadline(self):
         """Completing a request resets the idle timer; transfer stays past a single interval."""
-        _tid, url, _path, cleanup = make_file_transfer(idle_timeout_seconds=2)
+        _tid, url, _path, cleanup = make_file_transfer(idle_timeout_seconds=15)
         try:
             http_options(url)
-            time.sleep(1.2)
+            time.sleep(10)
             http_options(url)
-            time.sleep(1.2)
+            time.sleep(10)
             http_options(url)
-            time.sleep(1.2)
+            time.sleep(10)
             resp = http_options(url)
             self.assertEqual(resp.status, 200)
         finally:

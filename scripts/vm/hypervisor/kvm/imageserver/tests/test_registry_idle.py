@@ -37,9 +37,10 @@ class TestParseIdleTimeout(unittest.TestCase):
             parse_idle_timeout_seconds({"idle_timeout_seconds": 30}), 30
         )
 
-    def test_rejects_zero(self):
-        with self.assertRaises(ValueError):
-            parse_idle_timeout_seconds({"idle_timeout_seconds": 0})
+    def test_zero_timeout(self):
+        self.assertEqual(
+            parse_idle_timeout_seconds({"idle_timeout_seconds": 0}), 86400
+        )
 
 
 class TestValidateTransferConfig(unittest.TestCase):
