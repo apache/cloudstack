@@ -171,7 +171,6 @@ public class LibvirtStartBackupCommandWrapper extends CommandWrapper<StartBackup
             }
             String diskName = entry.getValue();
             String export = diskPathUuidMap.get(entry.getKey());
-            // todo: use UUID here as well?
             String scratchFile = "/var/tmp/scratch-" + export + ".qcow2";
             xml.append("    <disk name=\"").append(diskName).append("\" type=\"file\" exportname=\"").append(export);
             if (StringUtils.isNotBlank(fromCheckpointId)) {

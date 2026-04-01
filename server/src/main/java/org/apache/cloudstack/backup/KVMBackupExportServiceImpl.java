@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -62,10 +63,12 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.AccountService;
@@ -106,6 +109,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Inject
+    private StoragePoolHostDao storagePoolHostDao;
 
     @Inject
     AccountService accountService;
@@ -358,15 +364,24 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         }
     }
 
-    private HostVO getFirstHostFromStoragePool(StoragePoolVO storagePoolVO) {
-        List<HostVO> hosts = null;
-        if (storagePoolVO.getScope().equals(ScopeType.CLUSTER)) {
-            hosts = hostDao.findByClusterId(storagePoolVO.getClusterId());
-
-        } else if (storagePoolVO.getScope().equals(ScopeType.ZONE)) {
-            hosts = hostDao.findByDataCenterId(storagePoolVO.getDataCenterId());
+    private HostVO getRandomHostFromStoragePool(StoragePoolVO storagePool) {
+        List<HostVO> hosts;
+        switch (storagePool.getScope()) {
+            case CLUSTER:
+                hosts = hostDao.findByClusterId(storagePool.getClusterId());
+                Collections.shuffle(hosts);
+                return hosts.get(0);
+            case ZONE:
+                hosts = hostDao.findByDataCenterId(storagePool.getDataCenterId());
+                Collections.shuffle(hosts);
+                return hosts.get(0);
+            case HOST:
+                List<StoragePoolHostVO> storagePoolHostVOs = storagePoolHostDao.listByPoolId(storagePool.getId());
+                Collections.shuffle(storagePoolHostVOs);
+                return hostDao.findById(storagePoolHostVOs.get(0).getHostId());
+            default:
+                throw new CloudRuntimeException("Unsupported storage pool scope: " + storagePool.getScope());
         }
-        return hosts.get(0);
     }
 
     private void startNBDServer(String transferId, String direction, Long hostId, String exportName, String volumePath, String checkpointId) {
@@ -396,12 +411,24 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         }
     }
 
+    private String getVolumePathPrefix(StoragePoolVO storagePool) {
+        if (ScopeType.HOST.equals(storagePool.getScope())) {
+                return storagePool.getPath();
+        }
+        switch (storagePool.getPoolType()) {
+            case NetworkFilesystem:
+                return String.format("/mnt/%s", storagePool.getUuid());
+            case SharedMountPoint:
+                return storagePool.getPath();
+            default:
+                throw new CloudRuntimeException("Unsupported storage pool type for file based image transfer: " + storagePool.getPoolType());
+        }
+    }
+
     private String getVolumePathForFileBasedBackend(Volume volume) {
-        Long poolId = volume.getPoolId();
-        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
-        // todo: This only works with file based storage (not ceph, linbit)
-        String volumePath = String.format("/mnt/%s/%s", storagePoolVO.getUuid(), volume.getPath());
-        return volumePath;
+        StoragePoolVO storagePool = primaryDataStoreDao.findById(volume.getPoolId());
+        String volumePathPrefix = getVolumePathPrefix(storagePool);
+        return volumePathPrefix + "/" + volume.getPath();
     }
 
     private ImageTransferVO createUploadImageTransfer(VolumeVO volume, ImageTransfer.Backend backend) {
@@ -409,8 +436,12 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         String transferId = UUID.randomUUID().toString();
 
         Long poolId = volume.getPoolId();
-        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
-        Host host = getFirstHostFromStoragePool(storagePoolVO);
+        StoragePoolVO storagePool = poolId == null ? null : primaryDataStoreDao.findById(poolId);
+        if (storagePool == null) {
+            throw new CloudRuntimeException("Storage pool cannot be determined for volume: " + volume.getUuid());
+        }
+
+        Host host = getRandomHostFromStoragePool(storagePool);
         String volumePath = getVolumePathForFileBasedBackend(volume);
 
         ImageTransferVO imageTransfer;
