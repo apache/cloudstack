@@ -107,7 +107,7 @@ encrypt_backup() {
     if qemu-img convert -O qcow2 \
         --object "secret,id=sec0,file=$ENCRYPT_PASSFILE" \
         -o "encrypt.format=luks,encrypt.key-secret=sec0" \
-        "$img" "$tmp_img" 2>&1 | tee -a "$logFile"; then
+        "$img" "$tmp_img" >> "$logFile" 2>&1; then
       mv "$tmp_img" "$img"
       log -ne "Encrypted: $img"
     else
@@ -199,7 +199,8 @@ backup_running_vm() {
         break ;;
       Failed)
         echo "Virsh backup job failed"
-        cleanup ;;
+        cleanup
+        return 1 ;;
     esac
     sleep 5
   done
@@ -212,7 +213,7 @@ backup_running_vm() {
     for img in "$dest"/*.qcow2; do
       [[ -f "$img" ]] || continue
       local tmp_img="${img}.tmp"
-      if qemu-img convert -c -O qcow2 "$img" "$tmp_img" 2>&1 | tee -a "$logFile"; then
+      if qemu-img convert -c -O qcow2 "$img" "$tmp_img" >> "$logFile" 2>&1; then
         mv "$tmp_img" "$img"
       else
         log -ne "Warning: compression failed for $img, keeping uncompressed"
@@ -313,7 +314,7 @@ mount_operation() {
   if [ ${NAS_TYPE} == "cifs" ]; then
     MOUNT_OPTS="${MOUNT_OPTS},nobrl"
   fi
-  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) 2>&1 | tee -a "$logFile"
+  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) >> "$logFile" 2>&1
   if [ $? -eq 0 ]; then
       log -ne "Successfully mounted ${NAS_TYPE} store"
   else
