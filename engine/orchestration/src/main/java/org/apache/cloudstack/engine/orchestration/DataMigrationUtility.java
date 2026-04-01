@@ -33,8 +33,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.NativeBackupJoinVO;
-import org.apache.cloudstack.backup.dao.NativeBackupJoinDao;
+import org.apache.cloudstack.backup.InternalBackupJoinVO;
+import org.apache.cloudstack.backup.dao.InternalBackupJoinDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -96,13 +96,13 @@ public class DataMigrationUtility {
     SnapshotDao snapshotDao;
 
     @Inject
-    NativeBackupJoinDao nativeBackupJoinDao;
+    InternalBackupJoinDao internalBackupJoinDao;
     /**
      *  This function verifies if the given image store contains data objects that are not in any of the following states:
      *  "Ready" "Allocated", "Destroying", "Destroyed", "Failed". If this is the case, and if the migration policy is complete,
      *  the migration is terminated.
      */
-    public boolean filesReadyToMigrate(Long srcDataStoreId, List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots, List<VolumeDataStoreVO> volumes, List<NativeBackupJoinVO> backups) {
+    public boolean filesReadyToMigrate(Long srcDataStoreId, List<TemplateDataStoreVO> templates, List<SnapshotDataStoreVO> snapshots, List<VolumeDataStoreVO> volumes, List<InternalBackupJoinVO> backups) {
         State[] validStates = {State.Ready, State.Allocated, State.Destroying, State.Destroyed, State.Failed};
         boolean isReady = true;
         for (TemplateDataStoreVO template : templates) {
@@ -121,14 +121,14 @@ public class DataMigrationUtility {
         return isReady;
     }
 
-    private boolean checkIfBackupsMigrationIsPossible(List<NativeBackupJoinVO> backups) {
+    private boolean checkIfBackupsMigrationIsPossible(List<InternalBackupJoinVO> backups) {
         List<Backup.Status> invalidBackupStates = Arrays.asList(Backup.Status.BackingUp, Backup.Status.Restoring);
         List<Backup.CompressionStatus> invalidBackupCompressionStatus = Arrays.asList(Backup.CompressionStatus.Compressing, Backup.CompressionStatus.FinalizingCompression);
 
         List<List<BackupObject>> backupChains;
         Set<Long> backupIdsAlreadyInChain = new HashSet<>();
 
-        for (NativeBackupJoinVO backup : backups) {
+        for (InternalBackupJoinVO backup : backups) {
             if (backup.getStatus() == Backup.Status.BackedUp && !backupIdsAlreadyInChain.contains(backup.getId())) {
                 backupChains = createBackupChain(backup);
                 backupChains.forEach(list -> backupIdsAlreadyInChain.add(list.stream().map(BackupObject::getId).findFirst().get()));
@@ -156,7 +156,7 @@ public class DataMigrationUtility {
         List<TemplateDataStoreVO> templates = templateDataStoreDao.listByStoreId(srcDataStoreId);
         List<SnapshotDataStoreVO> snapshots = snapshotDataStoreDao.listByStoreId(srcDataStoreId, DataStoreRole.Image);
         List<VolumeDataStoreVO> volumes = volumeDataStoreDao.listByStoreId(srcDataStoreId);
-        List<NativeBackupJoinVO> backups = nativeBackupJoinDao.listByImageStoreId(srcDataStoreId);
+        List<InternalBackupJoinVO> backups = internalBackupJoinDao.listByImageStoreId(srcDataStoreId);
 
         return filesReadyToMigrate(srcDataStoreId, templates, snapshots, volumes, backups);
     }
@@ -231,17 +231,17 @@ public class DataMigrationUtility {
     }
 
     protected List<DataObject> getAllReadyBackupsAndChains(DataStore srcDataStore, Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupChains) {
-        List<NativeBackupJoinVO> backups = nativeBackupJoinDao.listByImageStoreId(srcDataStore.getId());
+        List<InternalBackupJoinVO> backups = internalBackupJoinDao.listByImageStoreId(srcDataStore.getId());
         return getAllReadyBackupsAndChains(backupChains, backups);
     }
 
-    private List<DataObject> getAllReadyBackupsAndChains(Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupsChains, List<NativeBackupJoinVO> backups) {
-        Set<Long> backupIdsToMigrate = backups.stream().map(NativeBackupJoinVO::getId).collect(Collectors.toSet());
+    private List<DataObject> getAllReadyBackupsAndChains(Map<DataObject, Pair<List<List<BackupObject>>, Long>> backupsChains, List<InternalBackupJoinVO> backups) {
+        Set<Long> backupIdsToMigrate = backups.stream().map(InternalBackupJoinVO::getId).collect(Collectors.toSet());
         List<List<BackupObject>> backupChains;
         Set<Long> backupIdsAlreadyInChain = new HashSet<>();
         List<BackupObject> files = new LinkedList<>();
 
-        for (NativeBackupJoinVO backup : backups) {
+        for (InternalBackupJoinVO backup : backups) {
             long backupId = backup.getId();
 
             if (backup.getStatus() == Backup.Status.BackedUp && !backupIdsAlreadyInChain.contains(backupId)) {
@@ -258,12 +258,12 @@ public class DataMigrationUtility {
         return (List<DataObject>) (List<?>) files;
     }
 
-    private List<List<BackupObject>> createBackupChain(NativeBackupJoinVO backup) {
+    private List<List<BackupObject>> createBackupChain(InternalBackupJoinVO backup) {
         List<List<BackupObject>> chain = new LinkedList<>();
         BackupObject backupObject = BackupObject.getBackupObject(backup);
 
         chain.addAll(backupObject.getParents(backup.getParentId()));
-        chain.add(nativeBackupJoinDao.listById(backup.getId()).stream().map(BackupObject::getBackupObject).collect(Collectors.toList()));
+        chain.add(internalBackupJoinDao.listById(backup.getId()).stream().map(BackupObject::getBackupObject).collect(Collectors.toList()));
         chain.addAll(backupObject.getChildren());
 
         return chain;

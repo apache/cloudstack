@@ -71,7 +71,7 @@ public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
     private Boolean preserveIp;
 
     @Parameter(name = ApiConstants.QUICK_RESTORE, type = CommandType.BOOLEAN, entityType = BackupResponse.class, description = "Whether to use the quick restore process or not. " +
-            "Currently this parameter is only supported by the KNIB provider.", since = "4.23.0")
+            "Currently this parameter is only supported by the KBOSS provider.", since = "4.23.0")
     private Boolean quickRestore;
 
     /////////////////////////////////////////////////////

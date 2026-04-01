@@ -62,11 +62,11 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
     private Long backupId;
 
     @Parameter(name = ApiConstants.QUICK_RESTORE, type = CommandType.BOOLEAN, entityType = BackupResponse.class, description = "Whether to use the quick restore process or not. " +
-            "Currently this parameter is only supported by the KNIB provider.", since = "4.23.0")
+            "Currently this parameter is only supported by the KBOSS provider.", since = "4.23.0")
     private Boolean quickRestore;
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "If quickrestore is true, which host to start the VM on;" +
-            " otherwise, ignored. Currently this parameter is only supported by the KNIB provider.", since = "4.23.0")
+            " otherwise, ignored. Currently this parameter is only supported by the KBOSS provider.", since = "4.23.0")
     private Long hostId;
 
     /////////////////////////////////////////////////////

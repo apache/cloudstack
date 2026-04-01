@@ -40,13 +40,13 @@
             <a-input v-model:value="form.description"/>
           </a-form-item>
         </div>
-        <a-form-item v-if="provider === 'nas' || provider === 'knib'" name="quiescevm" ref="quiescevm">
+        <a-form-item v-if="provider === 'nas' || provider === 'kboss'" name="quiescevm" ref="quiescevm">
           <a-switch v-model:checked="form.quiescevm" />
           <template #label>
             <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
           </template>
         </a-form-item>
-        <a-form-item v-if="provider === 'knib'" name="isolated" ref="isolated">
+        <a-form-item v-if="provider === 'kboss'" name="isolated" ref="isolated">
           <a-switch v-model:checked="form.isolated" />
           <template #label>
             <tooltip-label :title="$t('label.isolated')" :tooltip="apiParams.isolated.description"/>
@@ -94,7 +94,7 @@ export default {
   },
   computed: {
     canSetNameAndDescription () {
-      return ['nas', 'dummy', 'knib'].includes(this.provider)
+      return ['nas', 'dummy', 'kboss'].includes(this.provider)
     }
   },
   methods: {

@@ -30,8 +30,8 @@
     </bean>
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
-        <property name="registry" ref="nativeBackupProvidersRegistry" />
-        <property name="typeClass" value="org.apache.cloudstack.backup.NativeBackupProvider" />
+        <property name="registry" ref="internalBackupProvidersRegistry" />
+        <property name="typeClass" value="org.apache.cloudstack.backup.InternalBackupProvider" />
     </bean>
 
 </beans>

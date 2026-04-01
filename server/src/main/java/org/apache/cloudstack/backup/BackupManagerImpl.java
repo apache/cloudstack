@@ -258,9 +258,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private static Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
     private List<BackupProvider> backupProviders;
 
-    public static final String KNIB_BACKUP_PROVIDER = "knib";
+    public static final String KBOSS_BACKUP_PROVIDER = "kboss";
 
-    private static List<String> quiesceSupported = List.of("nas", KNIB_BACKUP_PROVIDER);
+    private static List<String> quiesceSupported = List.of("nas", KBOSS_BACKUP_PROVIDER);
 
     public AsyncJobDispatcher getAsyncJobDispatcher() {
         return asyncJobDispatcher;
@@ -365,8 +365,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         final BackupProvider provider = getBackupProvider(cmd.getZoneId());
-        if (!KNIB_BACKUP_PROVIDER.equals(provider.getName())) {
-            throw new InvalidParameterValueException("Only KNIB supports this API currently.");
+        if (!KBOSS_BACKUP_PROVIDER.equals(provider.getName())) {
+            throw new InvalidParameterValueException("Only KBOSS supports this API currently.");
         }
 
         if (!provider.isValidProviderOffering(cmd.getZoneId(), null)) {
@@ -818,12 +818,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         final int maxBackups = validateAndGetDefaultBackupRetentionIfRequired(cmd.getMaxBackups(), offering, vm);
 
-        if (isolated && !KNIB_BACKUP_PROVIDER.equals(offering.getProvider())) {
-            throw new InvalidParameterValueException("Isolated backups are only supported by KNIB backup provider.");
+        if (isolated && !KBOSS_BACKUP_PROVIDER.equals(offering.getProvider())) {
+            throw new InvalidParameterValueException("Isolated backups are only supported by KBOSS backup provider.");
         }
 
-        if (!"nas".equals(offering.getProvider()) && !KNIB_BACKUP_PROVIDER.equals(offering.getProvider()) && cmd.getQuiesceVM() != null) {
-            throw new InvalidParameterValueException("Quiesce VM option is supported only for NAS and KNIB backup providers.");
+        if (!"nas".equals(offering.getProvider()) && !KBOSS_BACKUP_PROVIDER.equals(offering.getProvider()) && cmd.getQuiesceVM() != null) {
+            throw new InvalidParameterValueException("Quiesce VM option is supported only for NAS and KBOSS backup providers.");
         }
 
         final String timezoneId = timeZone.getID();
@@ -1026,7 +1026,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         if (!quiesceSupported.contains(offering.getProvider()) && cmd.getQuiesceVM() != null) {
-            throw new InvalidParameterValueException("Quiesce VM option is supported only for NAS or KNIB backup providers");
+            throw new InvalidParameterValueException("Quiesce VM option is supported only for NAS or KBOSS backup providers");
         }
 
         Long backupScheduleId = getBackupScheduleId(job);
@@ -1331,10 +1331,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     /**
      * Updates the VM and volume states.
      * If using quick restore, the states should already be set (the VM should be running).
-     * Only KNIB supports this parameter for now; will do nothing if the backup provider is KNIB and quickRestore is true.
+     * Only KBOSS supports this parameter for now; will do nothing if the backup provider is KBOSS and quickRestore is true.
      * */
     private void updateStates(VMInstanceVO vm, BackupProvider backupProvider, boolean quickRestore) {
-        if (KNIB_BACKUP_PROVIDER.equals(backupProvider.getName()) && quickRestore) {
+        if (KBOSS_BACKUP_PROVIDER.equals(backupProvider.getName()) && quickRestore) {
             return;
         }
         updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
@@ -1343,7 +1343,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     protected void validateBackupVolumes(BackupVO backup, VMInstanceVO vm, BackupOffering offering) {
         BackupProvider backupProvider = getBackupProvider(offering.getProvider());
-        if (KNIB_BACKUP_PROVIDER.equals(backupProvider.getName())) {
+        if (KBOSS_BACKUP_PROVIDER.equals(backupProvider.getName())) {
             return;
         }
         // This is done to handle historic backups if any with Veeam / Networker plugins
@@ -1639,8 +1639,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Create instance from backup is not supported by the " + offering.getProvider() + " provider.");
         }
 
-        if (quickRestore && !backupProvider.getName().equals(KNIB_BACKUP_PROVIDER)) {
-            throw new CloudRuntimeException("Quick restore is only supported by KNIB.");
+        if (quickRestore && !backupProvider.getName().equals(KBOSS_BACKUP_PROVIDER)) {
+            throw new CloudRuntimeException("Quick restore is only supported by KBOSS.");
         }
 
         String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "name");
@@ -1733,7 +1733,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Failed to find VM backup offering");
         }
 
-        if (!StringUtils.equals(KNIB_BACKUP_PROVIDER, offering.getProvider()) && !VirtualMachine.PowerState.PowerOff.equals(vm.getPowerState())) {
+        if (!StringUtils.equals(KBOSS_BACKUP_PROVIDER, offering.getProvider()) && !VirtualMachine.PowerState.PowerOff.equals(vm.getPowerState())) {
             throw new CloudRuntimeException(String.format("VM [%s] needs to be powered off to restore the volume [%s].", vm.getUuid(), backedUpVolumeUuid));
         }
 
@@ -1743,8 +1743,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if ("nas".equals(offering.getProvider()) && backedUpVolume != null) {
             restoreInfo = getRestoreVolumeHostAndDatastoreForNas(vm, backedUpVolume);
-        } else if (KNIB_BACKUP_PROVIDER.equals(offering.getProvider())){
-            restoreInfo = getRestoreVolumeHostAndDatastoreForKnib(vm, backedUpVolume, isQuickRestore, hostId);
+        } else if (KBOSS_BACKUP_PROVIDER.equals(offering.getProvider())){
+            restoreInfo = getRestoreVolumeHostAndDatastoreForKboss(vm, backedUpVolume, isQuickRestore, hostId);
         } else {
             restoreInfo = getRestoreVolumeHostAndDatastore(vm);
         }
@@ -1793,7 +1793,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     if (e instanceof BackupProviderException) {
                         throw e;
                     }
-                    if (KNIB_BACKUP_PROVIDER.equals(backupProvider.getName())) {
+                    if (KBOSS_BACKUP_PROVIDER.equals(backupProvider.getName())) {
                         return result;
                     }
                 }
@@ -1861,7 +1861,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return new Pair<>(hostVO, storagePoolVO);
     }
 
-    private Pair<HostVO, StoragePoolVO> getRestoreVolumeHostAndDatastoreForKnib(VMInstanceVO vm, VolumeVO backedVolume, boolean quickRestore, Long hostId) {
+    private Pair<HostVO, StoragePoolVO> getRestoreVolumeHostAndDatastoreForKboss(VMInstanceVO vm, VolumeVO backedVolume, boolean quickRestore, Long hostId) {
         StoragePoolVO storagePool = primaryDataStoreDao.findById(backedVolume.getPoolId());
         if (vm.getHostId() != null) {
             hostId = vm.getHostId();

@@ -614,7 +614,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-backup-kvm-native-incremental-backup</artifactId>
+            <artifactId>cloud-plugin-backup-kvm-backup-on-secondary-storage</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

@@ -112,7 +112,7 @@ import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupScheduleVO;
 import org.apache.cloudstack.backup.BackupVO;
-import org.apache.cloudstack.backup.NativeBackupService;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
@@ -601,7 +601,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private BackupManager backupManager;
     @Inject
-    private NativeBackupService nativeBackupService;
+    private InternalBackupService internalBackupService;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
@@ -5475,7 +5475,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if (vm.getHypervisorType() == HypervisorType.KVM && VALIDATION_VM.equals(vm.getUserVmType())) {
             StartCommand startCommand = cmds.getCommand(StartCommand.class);
-            startCommand.setSecondaryStorages(new ArrayList<>(nativeBackupService.getSecondaryStorageUrls(vm)));
+            startCommand.setSecondaryStorages(new ArrayList<>(internalBackupService.getSecondaryStorageUrls(vm)));
         }
 
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vm.getId());
@@ -9000,7 +9000,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         newVol.getDiskOfferingId(), newVol.getTemplateId(), newVol.getSize(), Volume.class.getName(), newVol.getUuid(), vmId, newVol.isDisplay());
 
                 // Detach, destroy and create the usage event for the old root volume.
-                nativeBackupService.prepareVolumeForDetach(root, vm);
+                internalBackupService.prepareVolumeForDetach(root, vm);
                 _volsDao.detachVolume(root.getId());
                 destroyVolumeInContext(vm, Volume.State.Allocated.equals(root.getState()) || expunge, root);
 

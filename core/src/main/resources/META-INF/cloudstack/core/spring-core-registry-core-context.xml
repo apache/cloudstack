@@ -339,7 +339,7 @@
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
 
-    <bean id="nativeBackupProvidersRegistry"
+    <bean id="internalBackupProvidersRegistry"
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
 

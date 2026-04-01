@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.NativeBackupService;
+import org.apache.cloudstack.backup.InternalBackupService;
 
 import javax.inject.Inject;
 
@@ -42,7 +42,7 @@ import javax.inject.Inject;
 public class DownloadValidationScreenshotCmd extends BaseAsyncCmd {
 
     @Inject
-    private NativeBackupService nativeBackupService;
+    private InternalBackupService internalBackupService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -78,7 +78,7 @@ public class DownloadValidationScreenshotCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
-        ExtractResponse response = nativeBackupService.downloadScreenshot(getBackupId());
+        ExtractResponse response = internalBackupService.downloadScreenshot(getBackupId());
         response.setResponseName(getCommandName());
         response.setObjectName(getCommandName());
         this.setResponseObject(response);

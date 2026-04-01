@@ -364,7 +364,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         if (vm == null) {
             throw new CloudRuntimeException("Cannot find VM: " + vmInternalName);
         }
-        if (backupProvider.getName().equals(BackupManagerImpl.KNIB_BACKUP_PROVIDER)) {
+        if (backupProvider.getName().equals(BackupManagerImpl.KBOSS_BACKUP_PROVIDER)) {
             return vm;
         }
         try {
@@ -401,7 +401,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         VMInstanceVO targetVM = _instanceDao.findVMByInstanceNameIncludingRemoved(vm.getName());
         List<VolumeVO> vmVolumes = _volumeDao.findByInstance(targetVM.getId());
         VolumeVO restoredVolume = _volumeDao.findByUuid(location);
-        if (backupProvider.getName().equals(BackupManagerImpl.KNIB_BACKUP_PROVIDER)) {
+        if (backupProvider.getName().equals(BackupManagerImpl.KBOSS_BACKUP_PROVIDER)) {
             return true;
         }
         if (restoredVolume != null) {

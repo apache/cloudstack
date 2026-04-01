@@ -42,7 +42,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class BackupCompressionServiceJobController extends NativeBackupServiceJobController implements Configurable {
+public class BackupCompressionServiceJobController extends InternalBackupServiceJobController implements Configurable {
 
     private static final String LOCK = "compression_lock";
     protected ConfigKey<Integer> backupCompressionMaxConcurrentOperationsPerHost = new ConfigKey<>("Advanced", Integer.class,
@@ -66,7 +66,7 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
             ConfigKey.Scope.Account);
 
     @Inject
-    private NativeBackupService nativeBackupService;
+    private InternalBackupService internalBackupService;
 
     private ExecutorService executor;
 
@@ -92,7 +92,7 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
     protected void searchAndDispatchJobs() {
         try {
             List<DataCenterVO> zones = dataCenterDao.listEnabledZones();
-            if (!nativeBackupServiceJobDao.lockInLockTable(LOCK, 300)) {
+            if (!internalBackupServiceJobDao.lockInLockTable(LOCK, 300)) {
                 logger.warn("Unable to get lock for compression jobs.");
                 return;
             }
@@ -109,19 +109,19 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
                     logger.debug("Backup framework is not enabled for zone [{}], will not run the backup compression task for this zone.", zone.getUuid());
                     continue;
                 }
-                List<NativeBackupServiceJobVO> jobsToStart = nativeBackupServiceJobDao.listWaitingJobsAndScheduledToBeforeNow(zone.getId(),
-                        NativeBackupServiceJobType.StartCompression, NativeBackupServiceJobType.FinalizeCompression);
+                List<InternalBackupServiceJobVO> jobsToStart = internalBackupServiceJobDao.listWaitingJobsAndScheduledToBeforeNow(zone.getId(),
+                        InternalBackupServiceJobType.StartCompression, InternalBackupServiceJobType.FinalizeCompression);
                 jobsToStart = filterJobsOfDomainsAndAccountsWithDisabledCompressionTask(jobsToStart);
                 if (jobsToStart.isEmpty()) {
                     continue;
                 }
                 logger.debug("Found [{}] compression jobs to submit.", jobsToStart.size());
-                Pair<HashMap<HostVO, Long>, Integer> hostToNumberOfExecutingJobsAndTotalExecutingJobs = getHostToNumberOfExecutingJobsAndTotalExecutingJobs(zone, NativeBackupServiceJobType.StartCompression);
+                Pair<HashMap<HostVO, Long>, Integer> hostToNumberOfExecutingJobsAndTotalExecutingJobs = getHostToNumberOfExecutingJobsAndTotalExecutingJobs(zone, InternalBackupServiceJobType.StartCompression);
                 List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList = filterHostsWithTooManyJobs(hostToNumberOfExecutingJobsAndTotalExecutingJobs.first(),
                         backupCompressionMaxConcurrentOperationsPerHost);
                 HashSet<Long> busyInstances = submitFinalizeJobsForExecution(jobsToStart, hostAndNumberOfJobsPairList, zone.getId());
-                busyInstances.addAll(nativeBackupServiceJobDao.listExecutingJobsByZoneIdAndJobType(zone.getId(), NativeBackupServiceJobType.BackupValidation).stream().
-                        map(NativeBackupServiceJobVO::getInstanceId).collect(Collectors.toSet()));
+                busyInstances.addAll(internalBackupServiceJobDao.listExecutingJobsByZoneIdAndJobType(zone.getId(), InternalBackupServiceJobType.BackupValidation).stream().
+                        map(InternalBackupServiceJobVO::getInstanceId).collect(Collectors.toSet()));
 
                 jobsToStart = thinJobsToStartList(zone, jobsToStart, hostToNumberOfExecutingJobsAndTotalExecutingJobs.second(), backupCompressionMaxConcurrentOperations);
                 submitQueuedJobsForExecution(jobsToStart, hostAndNumberOfJobsPairList, busyInstances, backupCompressionMaxConcurrentOperationsPerHost, zone.getId());
@@ -131,15 +131,15 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
         } catch (Exception e) {
             logger.error("Caught exception [{}] while trying to search and dispatch backup compression jobs.", e.getMessage(), e);
         } finally {
-            nativeBackupServiceJobDao.unlockFromLockTable(LOCK);
+            internalBackupServiceJobDao.unlockFromLockTable(LOCK);
         }
     }
 
     @Override
-    protected List<NativeBackupServiceJobVO> getLostJobs(ClusterVO clusterVO, Calendar date, List<HostVO> hostVOS) {
-        date.add(Calendar.SECOND, (int)Math.round(NativeBackupProvider.backupCompressionTimeout.valueIn(clusterVO.getId()) * -RESCHEDULE_TO_TIMEOUT_RATIO));
-        List<NativeBackupServiceJobVO> result = nativeBackupServiceJobDao.listExecutingJobsByHostsAndStartTimeBeforeAndTypeIn(hostVOS.stream().map(HostVO::getId).toArray(),
-                date.getTime(), NativeBackupServiceJobType.StartCompression, NativeBackupServiceJobType.FinalizeCompression);
+    protected List<InternalBackupServiceJobVO> getLostJobs(ClusterVO clusterVO, Calendar date, List<HostVO> hostVOS) {
+        date.add(Calendar.SECOND, (int)Math.round(InternalBackupProvider.backupCompressionTimeout.valueIn(clusterVO.getId()) * -RESCHEDULE_TO_TIMEOUT_RATIO));
+        List<InternalBackupServiceJobVO> result = internalBackupServiceJobDao.listExecutingJobsByHostsAndStartTimeBeforeAndTypeIn(hostVOS.stream().map(HostVO::getId).toArray(),
+                date.getTime(), InternalBackupServiceJobType.StartCompression, InternalBackupServiceJobType.FinalizeCompression);
         logger.info("Got [{}] lost backup compression jobs.", result.size());
         if (result.isEmpty()) {
             return result;
@@ -149,18 +149,18 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
     }
 
     @Override
-    protected void submitQueuedJob(NativeBackupServiceJobVO job, long zoneId, String logId) {
+    protected void submitQueuedJob(InternalBackupServiceJobVO job, long zoneId, String logId) {
         executor.submit(() -> startBackupCompression(job, zoneId, logId));
     }
 
     /**
      * Submit FinalizeCompression jobs, this should be called before submitStartJobsForExecution.
      * */
-    private HashSet<Long> submitFinalizeJobsForExecution(List<NativeBackupServiceJobVO> jobsToExecute, List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList, long zoneId) {
-        List<NativeBackupServiceJobVO> submittedJobs = new ArrayList<>();
+    private HashSet<Long> submitFinalizeJobsForExecution(List<InternalBackupServiceJobVO> jobsToExecute, List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList, long zoneId) {
+        List<InternalBackupServiceJobVO> submittedJobs = new ArrayList<>();
         HashSet<Long> setOfInstancesWithExecutingCompressionJobs = new HashSet<>();
-        for (NativeBackupServiceJobVO job : jobsToExecute) {
-            if (job.getType() != NativeBackupServiceJobType.FinalizeCompression) {
+        for (InternalBackupServiceJobVO job : jobsToExecute) {
+            if (job.getType() != InternalBackupServiceJobType.FinalizeCompression) {
                 continue;
             }
             submittedJobs.add(job);
@@ -170,7 +170,7 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
             Pair<HostVO, Long> hostAndNumberOfJobs = hostAndNumberOfJobsPairList.get((int) (Math.random()*hostAndNumberOfJobsPairList.size()));
             job.setHostId(hostAndNumberOfJobs.first().getId());
             job.setStartTime(DateUtil.now());
-            nativeBackupServiceJobDao.update(job);
+            internalBackupServiceJobDao.update(job);
 
             setOfInstancesWithExecutingCompressionJobs.add(job.getInstanceId());
             executor.submit(() -> finalizeBackupCompression(job, zoneId, logId));
@@ -179,12 +179,12 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
         return setOfInstancesWithExecutingCompressionJobs;
     }
 
-    private void startBackupCompression(NativeBackupServiceJobVO job, long zoneId, String logId) {
+    private void startBackupCompression(InternalBackupServiceJobVO job, long zoneId, String logId) {
         boolean result = false;
         try {
             ThreadContext.push(BACKUP_JOB + job.getId());
             ThreadContext.put(LOGCONTEXTID, logId);
-            result = nativeBackupService.startBackupCompression(job.getBackupId(), job.getHostId(), zoneId);
+            result = internalBackupService.startBackupCompression(job.getBackupId(), job.getHostId(), zoneId);
         } catch (Exception e) {
             logger.error("Caught exception [{}] while trying to compress backup [{}].", e.getMessage(), job.getBackupId(), e);
         } finally {
@@ -193,12 +193,12 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
         }
     }
 
-    private void finalizeBackupCompression(NativeBackupServiceJobVO job, long zoneId, String logId) {
+    private void finalizeBackupCompression(InternalBackupServiceJobVO job, long zoneId, String logId) {
         boolean result = false;
         try {
             ThreadContext.push(BACKUP_JOB + job.getId());
             ThreadContext.put(LOGCONTEXTID, logId);
-            result = nativeBackupService.finalizeBackupCompression(job.getBackupId(), job.getHostId(), zoneId);
+            result = internalBackupService.finalizeBackupCompression(job.getBackupId(), job.getHostId(), zoneId);
         } catch (Exception e) {
             logger.error("Caught exception [{}] while trying to finalize backup compression [{}].", e.getMessage(), job.getBackupId(), e);
         } finally {
@@ -207,9 +207,9 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
         }
     }
 
-    private List<NativeBackupServiceJobVO> filterJobsOfDomainsAndAccountsWithDisabledCompressionTask(List<NativeBackupServiceJobVO> jobsToFilter) {
-        ArrayList<NativeBackupServiceJobVO> filteredJobs = new ArrayList<>();
-        for (NativeBackupServiceJobVO job : jobsToFilter) {
+    private List<InternalBackupServiceJobVO> filterJobsOfDomainsAndAccountsWithDisabledCompressionTask(List<InternalBackupServiceJobVO> jobsToFilter) {
+        ArrayList<InternalBackupServiceJobVO> filteredJobs = new ArrayList<>();
+        for (InternalBackupServiceJobVO job : jobsToFilter) {
             if (backupCompressionTaskEnabled.valueIn(job.getAccountId())) {
                 filteredJobs.add(job);
             }
@@ -218,13 +218,13 @@ public class BackupCompressionServiceJobController extends NativeBackupServiceJo
     }
 
     @Override
-    protected int getMaxAttempts(NativeBackupServiceJobVO jobVo) {
+    protected int getMaxAttempts(InternalBackupServiceJobVO jobVo) {
         HostVO hostVO = hostDao.findById(jobVo.getHostId());
         return backupCompressionMaxJobRetries.valueIn(hostVO.getClusterId());
     }
 
     @Override
-    protected int getRetryInterval(NativeBackupServiceJobVO jobVo) {
+    protected int getRetryInterval(InternalBackupServiceJobVO jobVo) {
         HostVO hostVO = hostDao.findById(jobVo.getHostId());
         return backupCompressionRetryInterval.valueIn(hostVO.getClusterId());
     }

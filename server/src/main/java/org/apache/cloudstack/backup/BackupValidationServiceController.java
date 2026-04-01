@@ -39,7 +39,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class BackupValidationServiceController extends NativeBackupServiceJobController implements Configurable {
+public class BackupValidationServiceController extends InternalBackupServiceJobController implements Configurable {
 
     private static final String LOCK = "validation_lock";
 
@@ -83,7 +83,7 @@ public class BackupValidationServiceController extends NativeBackupServiceJobCon
     private ScheduledExecutorService scheduledExecutor;
 
     @Inject
-    private NativeBackupService nativeBackupService;
+    private InternalBackupService internalBackupService;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -100,7 +100,7 @@ public class BackupValidationServiceController extends NativeBackupServiceJobCon
     protected void searchAndDispatchJobs() {
         try {
             List<DataCenterVO> zones = dataCenterDao.listEnabledZones();
-            if (!nativeBackupServiceJobDao.lockInLockTable(LOCK, 300)) {
+            if (!internalBackupServiceJobDao.lockInLockTable(LOCK, 300)) {
                 logger.warn("Unable to get lock for validation jobs.");
                 return;
             }
@@ -117,18 +117,18 @@ public class BackupValidationServiceController extends NativeBackupServiceJobCon
                     logger.debug("Backup framework is not enabled for zone [{}], will not run the backup validation task for this zone.", zone.getUuid());
                     continue;
                 }
-                List<NativeBackupServiceJobVO> jobsToStart = nativeBackupServiceJobDao.listWaitingJobsAndScheduledToBeforeNow(zone.getId(), NativeBackupServiceJobType.BackupValidation);
+                List<InternalBackupServiceJobVO> jobsToStart = internalBackupServiceJobDao.listWaitingJobsAndScheduledToBeforeNow(zone.getId(), InternalBackupServiceJobType.BackupValidation);
                 jobsToStart = filterJobsOfDomainsAndAccountsWithDisabledValidationTask(jobsToStart);
                 if (jobsToStart.isEmpty()) {
                     continue;
                 }
                 logger.debug("Found [{}] validation jobs to submit.", jobsToStart.size());
-                Pair<HashMap<HostVO, Long>, Integer> hostToNumberOfExecutingJobsAndTotalExecutingJobs = getHostToNumberOfExecutingJobsAndTotalExecutingJobs(zone, NativeBackupServiceJobType.BackupValidation);
+                Pair<HashMap<HostVO, Long>, Integer> hostToNumberOfExecutingJobsAndTotalExecutingJobs = getHostToNumberOfExecutingJobsAndTotalExecutingJobs(zone, InternalBackupServiceJobType.BackupValidation);
                 jobsToStart = thinJobsToStartList(zone, jobsToStart, hostToNumberOfExecutingJobsAndTotalExecutingJobs.second(), backupValidationMaxConcurrentOperations);
 
                 List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList = filterHostsWithTooManyJobs(hostToNumberOfExecutingJobsAndTotalExecutingJobs.first(), backupValidationMaxConcurrentOperationsPerHost);
-                Set<Long> busyInstances = nativeBackupServiceJobDao.listExecutingJobsByZoneIdAndJobType(zone.getId(), NativeBackupServiceJobType.StartCompression,
-                        NativeBackupServiceJobType.FinalizeCompression).stream().map(NativeBackupServiceJobVO::getInstanceId).collect(Collectors.toSet());
+                Set<Long> busyInstances = internalBackupServiceJobDao.listExecutingJobsByZoneIdAndJobType(zone.getId(), InternalBackupServiceJobType.StartCompression,
+                        InternalBackupServiceJobType.FinalizeCompression).stream().map(InternalBackupServiceJobVO::getInstanceId).collect(Collectors.toSet());
 
                 submitQueuedJobsForExecution(jobsToStart, hostAndNumberOfJobsPairList, busyInstances, backupValidationMaxConcurrentOperationsPerHost, zone.getId());
             }
@@ -137,23 +137,23 @@ public class BackupValidationServiceController extends NativeBackupServiceJobCon
         } catch (Exception e) {
             logger.error("Caught exception [{}] while trying to search and dispatch backup validation jobs.", e.getMessage(), e);
         } finally {
-            nativeBackupServiceJobDao.unlockFromLockTable(LOCK);
+            internalBackupServiceJobDao.unlockFromLockTable(LOCK);
         }
     }
 
 
 
     @Override
-    protected void submitQueuedJob(NativeBackupServiceJobVO job, long zoneId, String logId) {
+    protected void submitQueuedJob(InternalBackupServiceJobVO job, long zoneId, String logId) {
         executor.submit(() -> startBackupValidation(job, zoneId, logId));
     }
 
 
     @Override
-    protected List<NativeBackupServiceJobVO> getLostJobs(ClusterVO clusterVO, Calendar date, List<HostVO> hostVOS) {
-        date.add(Calendar.SECOND, (int)Math.round(NativeBackupProvider.backupValidationTimeout.valueIn(clusterVO.getId()) * -RESCHEDULE_TO_TIMEOUT_RATIO));
-        List<NativeBackupServiceJobVO> result = nativeBackupServiceJobDao.listExecutingJobsByHostsAndStartTimeBeforeAndTypeIn(hostVOS.stream().map(HostVO::getId).toArray(),
-                date.getTime(), NativeBackupServiceJobType.BackupValidation);
+    protected List<InternalBackupServiceJobVO> getLostJobs(ClusterVO clusterVO, Calendar date, List<HostVO> hostVOS) {
+        date.add(Calendar.SECOND, (int)Math.round(InternalBackupProvider.backupValidationTimeout.valueIn(clusterVO.getId()) * -RESCHEDULE_TO_TIMEOUT_RATIO));
+        List<InternalBackupServiceJobVO> result = internalBackupServiceJobDao.listExecutingJobsByHostsAndStartTimeBeforeAndTypeIn(hostVOS.stream().map(HostVO::getId).toArray(),
+                date.getTime(), InternalBackupServiceJobType.BackupValidation);
         logger.info("Got [{}] lost backup validation jobs.", result.size());
         if (result.isEmpty()) {
             return result;
@@ -162,12 +162,12 @@ public class BackupValidationServiceController extends NativeBackupServiceJobCon
         return result;
     }
 
-    private void startBackupValidation(NativeBackupServiceJobVO job, long zoneId, String logId) {
+    private void startBackupValidation(InternalBackupServiceJobVO job, long zoneId, String logId) {
         boolean result = false;
         try {
             ThreadContext.push(BACKUP_JOB + job.getId());
             ThreadContext.put(LOGCONTEXTID, logId);
-            result = nativeBackupService.validateBackup(job.getBackupId(), job.getHostId(), zoneId);
+            result = internalBackupService.validateBackup(job.getBackupId(), job.getHostId(), zoneId);
             if (result) {
                 scheduleNextValidation(job);
             }
@@ -179,9 +179,9 @@ public class BackupValidationServiceController extends NativeBackupServiceJobCon
         }
     }
 
-    private List<NativeBackupServiceJobVO> filterJobsOfDomainsAndAccountsWithDisabledValidationTask(List<NativeBackupServiceJobVO> jobsToFilter) {
-        ArrayList<NativeBackupServiceJobVO> filteredJobs = new ArrayList<>();
-        for (NativeBackupServiceJobVO job : jobsToFilter) {
+    private List<InternalBackupServiceJobVO> filterJobsOfDomainsAndAccountsWithDisabledValidationTask(List<InternalBackupServiceJobVO> jobsToFilter) {
+        ArrayList<InternalBackupServiceJobVO> filteredJobs = new ArrayList<>();
+        for (InternalBackupServiceJobVO job : jobsToFilter) {
             if (backupValidationTaskEnabled.valueIn(job.getAccountId())) {
                 filteredJobs.add(job);
             }
@@ -189,11 +189,11 @@ public class BackupValidationServiceController extends NativeBackupServiceJobCon
         return filteredJobs;
     }
 
-    private void scheduleNextValidation(NativeBackupServiceJobVO job) {
+    private void scheduleNextValidation(InternalBackupServiceJobVO job) {
         Calendar nextValidation = Calendar.getInstance();
         nextValidation.add(Calendar.HOUR, backupValidationInterval.valueIn(job.getAccountId()));
-        nativeBackupServiceJobDao.persist(new NativeBackupServiceJobVO(job.getBackupId(), job.getZoneId(), job.getInstanceId(), job.getAccountId(),
-                NativeBackupServiceJobType.BackupValidation, nextValidation.getTime()));
+        internalBackupServiceJobDao.persist(new InternalBackupServiceJobVO(job.getBackupId(), job.getZoneId(), job.getInstanceId(), job.getAccountId(),
+                InternalBackupServiceJobType.BackupValidation, nextValidation.getTime()));
     }
 
     @Override
@@ -202,12 +202,12 @@ public class BackupValidationServiceController extends NativeBackupServiceJobCon
     }
 
     @Override
-    protected int getMaxAttempts(NativeBackupServiceJobVO jobVo) {
+    protected int getMaxAttempts(InternalBackupServiceJobVO jobVo) {
         return backupValidationMaxJobRetries.valueIn(jobVo.getAccountId());
     }
 
     @Override
-    protected int getRetryInterval(NativeBackupServiceJobVO jobVo) {
+    protected int getRetryInterval(InternalBackupServiceJobVO jobVo) {
         return backupValidationRetryInterval.valueIn(jobVo.getAccountId());
     }
 

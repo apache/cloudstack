@@ -131,7 +131,7 @@ public interface VmDetailConstants {
     String CLOUDSTACK_VM_DETAILS = "cloudstack.vm.details";
     String CLOUDSTACK_VLAN = "cloudstack.vlan";
 
-    // KNIB specific
+    // KBOSS specific
     String LINKED_VOLUMES_SECONDARY_STORAGE_UUIDS = "linkedVolumesSecondaryStorageUuids";
     String VALIDATION_COMMAND = "backupValidationCommand";
     String VALIDATION_COMMAND_ARGUMENTS = "backupValidationCommandArguments";

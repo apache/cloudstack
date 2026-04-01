@@ -50,7 +50,7 @@ import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
-import org.apache.cloudstack.backup.NativeBackupService;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -282,7 +282,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     private DataStoreProviderManager dataStoreProviderMgr;
 
     @Inject
-    private NativeBackupService nativeBackupService;
+    private InternalBackupService internalBackupService;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -1462,7 +1462,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     _snapshotDao.updateVolumeIds(vol.getId(), result.getVolume().getId());
                     _snapshotDataStoreDao.updateVolumeIds(vol.getId(), result.getVolume().getId());
                 }
-                nativeBackupService.updateVolumeId(vol.getId(), result.getVolume().getId());
+                internalBackupService.updateVolumeId(vol.getId(), result.getVolume().getId());
             }
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
@@ -1519,7 +1519,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 throw new CloudRuntimeException(String.format("Failed to find the destination storage pool [%s] to migrate the volume [%s] to.", storagePoolToString, volumeToString));
             }
 
-            nativeBackupService.prepareVolumeForMigration(volume);
+            internalBackupService.prepareVolumeForMigration(volume);
 
             volumeMap.put(volFactory.getVolume(volume.getId()), (DataStore)destPool);
         }

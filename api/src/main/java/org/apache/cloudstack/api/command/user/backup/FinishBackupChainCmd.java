@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
-import org.apache.cloudstack.backup.NativeBackupService;
+import org.apache.cloudstack.backup.InternalBackupService;
 
 import javax.inject.Inject;
 
@@ -40,7 +40,7 @@ import javax.inject.Inject;
         responseHasSensitiveInfo = false)
 public class FinishBackupChainCmd extends BaseCmd {
     @Inject
-    private NativeBackupService nativeBackupService;
+    private InternalBackupService internalBackupService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,7 +66,7 @@ public class FinishBackupChainCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
             NetworkRuleConflictException {
-        boolean result = nativeBackupService.finishBackupChain(getVmId());
+        boolean result = internalBackupService.finishBackupChain(getVmId());
         SuccessResponse response = new SuccessResponse();
         response.setSuccess(result);
         response.setResponseName(getCommandName());

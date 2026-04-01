@@ -59,7 +59,7 @@ import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupManagerImpl;
-import org.apache.cloudstack.backup.NativeBackupService;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadHelper;
@@ -373,7 +373,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
     @Inject
-    private NativeBackupService nativeBackupService;
+    private InternalBackupService internalBackupService;
 
     @Inject
     private BackupManager backupManager;
@@ -3106,7 +3106,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         boolean hasBackup = validateIfVmHasBackups(vm, false);
         if (hasBackup) {
-            nativeBackupService.prepareVolumeForDetach(volume, vm);
+            internalBackupService.prepareVolumeForDetach(volume, vm);
         }
 
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -4108,9 +4108,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         VirtualMachine attachedVm = volume.getAttachedVM();
         if (attachedVm != null && HypervisorType.KVM.equals(attachedVm.getHypervisorType()) && SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(volume)) &&
-                backupManager.getBackupProvider(attachedVm.getDataCenterId()).getName().equals(BackupManagerImpl.KNIB_BACKUP_PROVIDER) &&
+                backupManager.getBackupProvider(attachedVm.getDataCenterId()).getName().equals(BackupManagerImpl.KBOSS_BACKUP_PROVIDER) &&
                 CollectionUtils.isNotEmpty(backupDao.listByVmId(attachedVm.getDataCenterId(), attachedVm.getId()))) {
-            throw new CloudRuntimeException(String.format("VM [%s] has KNIB backups, cannot take incremental snapshots of it.", attachedVm.getUuid()));
+            throw new CloudRuntimeException(String.format("VM [%s] has KBOSS backups, cannot take incremental snapshots of it.", attachedVm.getUuid()));
         }
 
         return snapshotMgr.allocSnapshot(volumeId, policyId, snapshotName, locationType, false, zoneIds);

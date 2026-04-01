@@ -26,8 +26,8 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.component.ComponentContext;
 import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.NativeBackupJoinVO;
-import org.apache.cloudstack.backup.dao.NativeBackupJoinDao;
+import org.apache.cloudstack.backup.InternalBackupJoinVO;
+import org.apache.cloudstack.backup.dao.InternalBackupJoinDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -54,7 +54,7 @@ public class BackupObject implements DataObject {
     private Backup.CompressionStatus compressionStatus;
 
     @Inject
-    NativeBackupJoinDao nativeBackupJoinDao;
+    InternalBackupJoinDao internalBackupJoinDao;
     @Inject
     DataStoreManager storeManager;
 
@@ -62,31 +62,31 @@ public class BackupObject implements DataObject {
 
     }
 
-    public static BackupObject getBackupObject(NativeBackupJoinVO nativeBackupJoinVO) {
+    public static BackupObject getBackupObject(InternalBackupJoinVO internalBackupJoinVO) {
         BackupObject backupObject = ComponentContext.inject(BackupObject.class);
-        backupObject.configure(nativeBackupJoinVO);
+        backupObject.configure(internalBackupJoinVO);
         return backupObject;
     }
 
-    private void configure(NativeBackupJoinVO nativeBackupJoin) {
-        this.id = nativeBackupJoin.getId();
-        this.uuid = nativeBackupJoin.getUuid();
-        this.zoneId = nativeBackupJoin.getZoneId();
-        this.size = nativeBackupJoin.getProtectedSize();
-        this.physicalSize = nativeBackupJoin.getSize();
-        this.imageStorePath = nativeBackupJoin.getImageStorePath();
-        this.status = nativeBackupJoin.getStatus();
-        this.compressionStatus = nativeBackupJoin.getCompressionStatus();
-        this.dataStore = storeManager.getDataStore(nativeBackupJoin.getImageStoreId(), DataStoreRole.Image);
+    private void configure(InternalBackupJoinVO internalBackupJoin) {
+        this.id = internalBackupJoin.getId();
+        this.uuid = internalBackupJoin.getUuid();
+        this.zoneId = internalBackupJoin.getZoneId();
+        this.size = internalBackupJoin.getProtectedSize();
+        this.physicalSize = internalBackupJoin.getSize();
+        this.imageStorePath = internalBackupJoin.getImageStorePath();
+        this.status = internalBackupJoin.getStatus();
+        this.compressionStatus = internalBackupJoin.getCompressionStatus();
+        this.dataStore = storeManager.getDataStore(internalBackupJoin.getImageStoreId(), DataStoreRole.Image);
     }
 
     public List<List<BackupObject>> getChildren() {
         List<List<BackupObject>> children = new ArrayList<>();
 
-        List<NativeBackupJoinVO> backups = nativeBackupJoinDao.listByParentId(id);
+        List<InternalBackupJoinVO> backups = internalBackupJoinDao.listByParentId(id);
         while (CollectionUtils.isNotEmpty(backups)) {
             children.add(backups.stream().map(BackupObject::getBackupObject).collect(Collectors.toList()));
-            backups = nativeBackupJoinDao.listByParentId(backups.get(0).getId());
+            backups = internalBackupJoinDao.listByParentId(backups.get(0).getId());
         }
 
         return children;
@@ -95,10 +95,10 @@ public class BackupObject implements DataObject {
     public List<List<BackupObject>> getParents(long parentId) {
         LinkedList<List<BackupObject>> parents = new LinkedList<>();
 
-        List<NativeBackupJoinVO> backups = nativeBackupJoinDao.listById(parentId);
+        List<InternalBackupJoinVO> backups = internalBackupJoinDao.listById(parentId);
         while (CollectionUtils.isNotEmpty(backups)) {
             parents.addFirst(backups.stream().map(BackupObject::getBackupObject).collect(Collectors.toList()));
-            backups = nativeBackupJoinDao.listById(backups.get(0).getParentId());
+            backups = internalBackupJoinDao.listById(backups.get(0).getParentId());
         }
 
         return parents;

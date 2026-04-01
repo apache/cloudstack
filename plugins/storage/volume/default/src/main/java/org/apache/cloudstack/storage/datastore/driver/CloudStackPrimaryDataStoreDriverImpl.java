@@ -28,7 +28,7 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.storage.VolumeVO;
-import org.apache.cloudstack.backup.NativeBackupService;
+import org.apache.cloudstack.backup.InternalBackupService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -134,7 +134,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     private VolumeOrchestrationService volumeOrchestrationService;
 
     @Inject
-    private NativeBackupService nativeBackupService;
+    private InternalBackupService internalBackupService;
 
     @Override
     public DataTO getTO(DataObject data) {
@@ -250,7 +250,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         try {
             EndPoint ep;
             if (data.getType() == DataObjectType.VOLUME) {
-                nativeBackupService.configureChainInfo(dataTO, cmd);
+                internalBackupService.configureChainInfo(dataTO, cmd);
                 ep = epSelector.select(data, StorageAction.DELETEVOLUME);
             } else if (data.getType() == DataObjectType.SNAPSHOT) {
                 ep = epSelector.select(data, StorageAction.DELETESNAPSHOT);
@@ -427,7 +427,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         SnapshotObjectTO snapshotObjectTO = (SnapshotObjectTO)snapshot.getTO();
 
         RevertSnapshotCommand cmd = new RevertSnapshotCommand(snapshotObjectTO, dataOnPrimaryStorage);
-        nativeBackupService.configureChainInfo(snapshotObjectTO.getVolume(), cmd);
+        internalBackupService.configureChainInfo(snapshotObjectTO.getVolume(), cmd);
 
         CommandResult result = new CommandResult();
         try {

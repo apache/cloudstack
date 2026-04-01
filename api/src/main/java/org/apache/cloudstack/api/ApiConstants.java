@@ -1374,7 +1374,7 @@ public class ApiConstants {
 
     public static final String PARAMETER_DESCRIPTION_ISOLATED_BACKUPS = "Whether the backup will be isolated, defaults to false. " +
             "Isolated backups are always created as full backups in independent chains. Therefore, they will never depend on any existing backup chain " +
-            "and no backup chain will depend on them. Currently only supported for the KNIB provider.";
+            "and no backup chain will depend on them. Currently only supported for the KBOSS provider.";
 
     public static final String CSS = "css";
 

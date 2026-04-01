@@ -115,9 +115,9 @@ CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Resource Admin', 'deleteUserKey
 -- Add conserve mode for VPC offerings
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','conserve_mode', 'tinyint(1) unsigned NULL DEFAULT 0 COMMENT ''True if the VPC offering is IP conserve mode enabled, allowing public IP services to be used across multiple VPC tiers'' ');
 
--- KNIB
+-- KBOSS
 
-CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_pool_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`internal_backup_pool_ref` (
     `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
     `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
     `storage_pool_id` bigint unsigned NOT NULL COMMENT 'The storage ID. Foreign key that points to the storage_pool table.',
@@ -125,23 +125,23 @@ CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_pool_ref` (
     `backup_delta_path` varchar(255) COMMENT 'Path of the created delta.',
     `backup_parent_path` varchar(255) COMMENT 'Path of the created delta parent.',
     PRIMARY KEY (`id`),
-    CONSTRAINT `fk_native_backup_pool_ref__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
-    CONSTRAINT `fk_native_backup_pool_ref__storage_pool_id` FOREIGN KEY (`storage_pool_id`) REFERENCES `storage_pool`(`id`),
-    CONSTRAINT `fk_native_backup_pool_ref__volume_id` FOREIGN KEY (`volume_id`) REFERENCES `volumes`(`id`)
+    CONSTRAINT `fk_internal_backup_pool_ref__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
+    CONSTRAINT `fk_internal_backup_pool_ref__storage_pool_id` FOREIGN KEY (`storage_pool_id`) REFERENCES `storage_pool`(`id`),
+    CONSTRAINT `fk_internal_backup_pool_ref__volume_id` FOREIGN KEY (`volume_id`) REFERENCES `volumes`(`id`)
     );
 
-CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_store_ref` (
+CREATE TABLE IF NOT EXISTS `cloud`.`internal_backup_store_ref` (
      `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
      `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
      `volume_id` bigint unsigned NOT NULL COMMENT 'The volume ID. Foreign key that points to the volumes table.',
      `device_id` bigint unsigned COMMENT 'device ID of the volume',
      `path` varchar(255) COMMENT 'Path of the backup.',
     PRIMARY KEY (`id`),
-    CONSTRAINT `fk_native_backup_store_ref__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
-    CONSTRAINT `fk_native_backup_store_ref__volume_id` FOREIGN KEY (`volume_id`) REFERENCES `volumes`(`id`)
+    CONSTRAINT `fk_internal_backup_store_ref__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
+    CONSTRAINT `fk_internal_backup_store_ref__volume_id` FOREIGN KEY (`volume_id`) REFERENCES `volumes`(`id`)
     );
 
-CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_service_job` (
+CREATE TABLE IF NOT EXISTS `cloud`.`internal_backup_service_job` (
     `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
     `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
     `instance_id` bigint unsigned NOT NULL COMMENT 'The instance ID. Foreign key that points to the vm_instance table.',

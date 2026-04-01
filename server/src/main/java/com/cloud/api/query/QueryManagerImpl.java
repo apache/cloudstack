@@ -157,11 +157,11 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.NativeBackupServiceJobType;
-import org.apache.cloudstack.backup.NativeBackupServiceJobVO;
+import org.apache.cloudstack.backup.InternalBackupServiceJobType;
+import org.apache.cloudstack.backup.InternalBackupServiceJobVO;
 import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.BackupVO;
-import org.apache.cloudstack.backup.dao.NativeBackupServiceJobDao;
+import org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.context.CallContext;
@@ -665,7 +665,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     RoleDao roleDao;
 
     @Inject
-    private NativeBackupServiceJobDao nativeBackupServiceJobDao;
+    private InternalBackupServiceJobDao internalBackupServiceJobDao;
 
     @Inject
     private BackupDao backupDao;
@@ -6348,10 +6348,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<BackupServiceJobResponse> listBackupServiceJobs(ListBackupServiceJobsCmd cmd) {
         ListResponse<BackupServiceJobResponse> responses = new ListResponse<>();
-        Pair<List<NativeBackupServiceJobVO>, Integer> result = listBackupServiceJobsInternal(cmd);
+        Pair<List<InternalBackupServiceJobVO>, Integer> result = listBackupServiceJobsInternal(cmd);
         List<BackupServiceJobResponse> compressionJobResponses = new ArrayList<>();
 
-        for (NativeBackupServiceJobVO jobVO : result.first()) {
+        for (InternalBackupServiceJobVO jobVO : result.first()) {
             BackupVO backup = backupDao.findByIdIncludingRemoved(jobVO.getBackupId());
             DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(jobVO.getZoneId());
 
@@ -6368,8 +6368,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return responses;
     }
 
-    private Pair<List<NativeBackupServiceJobVO>, Integer> listBackupServiceJobsInternal(ListBackupServiceJobsCmd cmd) {
-        SearchBuilder<NativeBackupServiceJobVO> sb = nativeBackupServiceJobDao.createSearchBuilder();
+    private Pair<List<InternalBackupServiceJobVO>, Integer> listBackupServiceJobsInternal(ListBackupServiceJobsCmd cmd) {
+        SearchBuilder<InternalBackupServiceJobVO> sb = internalBackupServiceJobDao.createSearchBuilder();
 
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("backup_id", sb.entity().getBackupId(), Op.EQ);
@@ -6384,19 +6384,19 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.and("scheduled", sb.entity().getStartTime(), Op.NULL);
         }
 
-        SearchCriteria<NativeBackupServiceJobVO> sc = sb.create();
+        SearchCriteria<InternalBackupServiceJobVO> sc = sb.create();
 
         sc.setParametersIfNotNull("id", cmd.getId());
         sc.setParametersIfNotNull("backup_id", cmd.getBackupId());
         sc.setParametersIfNotNull("host_id", cmd.getHostId());
         sc.setParametersIfNotNull("zone_id", cmd.getZoneId());
         if (cmd.getType() != null) {
-            sc.setParameters("type", NativeBackupServiceJobType.valueOf(cmd.getType()));
+            sc.setParameters("type", InternalBackupServiceJobType.valueOf(cmd.getType()));
         }
 
-        Filter filter = new Filter(NativeBackupServiceJobVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter filter = new Filter(InternalBackupServiceJobVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        return nativeBackupServiceJobDao.searchAndCount(sc, filter, removed);
+        return internalBackupServiceJobDao.searchAndCount(sc, filter, removed);
     }
 
     @Override
