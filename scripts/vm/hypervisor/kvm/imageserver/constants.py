@@ -36,6 +36,10 @@ CONTROL_SOCKET_BACKLOG = 32
 CONTROL_SOCKET_PERMISSIONS = 0o660
 CONTROL_RECV_BUFFER = 4096
 
+# Transfer idle timeout (seconds). A transfer is expired when no in-flight HTTP
+# requests have completed for this duration.
+DEFAULT_IDLE_TIMEOUT_SECONDS = 600
+
 # Maximum size of a JSON body in a PATCH request (zero / flush ops)
 MAX_PATCH_JSON_SIZE = 64 * 1024  # 64 KiB
 

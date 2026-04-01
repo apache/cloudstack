@@ -43,6 +43,12 @@ public interface KVMBackupExportService extends Configurable, PluggableService {
             "10",
             "The image transfer progress polling interval in seconds.", true, ConfigKey.Scope.Global);
 
+    ConfigKey<Integer> ImageTransferIdleTimeoutSeconds = new ConfigKey<>("Advanced", Integer.class,
+            "image.transfer.idle.timeout.seconds",
+            "600",
+            "Seconds since last completed HTTP request to an image transfer before the image server unregisters it (idle timeout).",
+            true, ConfigKey.Scope.Zone);
+
     ConfigKey<Boolean> ExposeKVMBackupExportServiceApis = new ConfigKey<>("Advanced", Boolean.class,
             "expose.kvm.backup.export.service.apis",
             "false",

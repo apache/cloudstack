@@ -374,18 +374,23 @@ def make_tmp_image(data=None, image_size=IMAGE_SIZE) -> str:
     return path
 
 
-def make_file_transfer(data=None, image_size=IMAGE_SIZE):
+def make_file_transfer(data=None, image_size=IMAGE_SIZE, idle_timeout_seconds=None):
     """
     Create a temp file + register a file-backend transfer.
     Returns (transfer_id, url, file_path, cleanup_callable).
+
+    If *idle_timeout_seconds* is set, it is sent in the transfer config (for idle expiry tests).
     """
     srv = get_image_server()
     path = make_tmp_image(data=data, image_size=image_size)
     transfer_id = f"file-{uuid.uuid4().hex[:8]}"
+    cfg = {"backend": "file", "file": path}
+    if idle_timeout_seconds is not None:
+        cfg["idle_timeout_seconds"] = idle_timeout_seconds
     resp = srv["send"]({
         "action": "register",
         "transfer_id": transfer_id,
-        "config": {"backend": "file", "file": path},
+        "config": cfg,
     })
     assert resp["status"] == "ok", f"register failed: {resp}"
     url = f"{srv['base_url']}/images/{transfer_id}"

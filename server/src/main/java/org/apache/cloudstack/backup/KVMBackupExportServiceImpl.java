@@ -327,12 +327,18 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             socket = transferId;
         }
 
+        HostVO backupHost = hostDao.findById(backup.getHostId());
+        if (backupHost == null) {
+            throw new CloudRuntimeException("Host not found for backup: " + backupId);
+        }
+        int idleTimeoutSec = ImageTransferIdleTimeoutSeconds.valueIn(backupHost.getDataCenterId());
         CreateImageTransferCommand transferCmd = new CreateImageTransferCommand(
                 transferId,
                 direction,
                 volume.getUuid(),
                 socket,
-                backup.getFromCheckpointId());
+                backup.getFromCheckpointId(),
+                idleTimeoutSec);
 
         try {
             CreateImageTransferAnswer answer;
@@ -443,6 +449,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
         Host host = getRandomHostFromStoragePool(storagePool);
         String volumePath = getVolumePathForFileBasedBackend(volume);
+        int idleTimeoutSec = ImageTransferIdleTimeoutSeconds.valueIn(host.getDataCenterId());
 
         ImageTransferVO imageTransfer;
         CreateImageTransferCommand transferCmd;
@@ -462,7 +469,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     transferId,
                     direction,
                     transferId,
-                    volumePath);
+                    volumePath,
+                    idleTimeoutSec);
 
         } else {
             startNBDServer(transferId, direction, host.getId(), volume.getUuid(), volumePath, null);
@@ -483,7 +491,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     direction,
                     volume.getUuid(),
                     transferId,
-                    null);
+                    null,
+                    idleTimeoutSec);
         }
         CreateImageTransferAnswer transferAnswer;
         try {
@@ -899,7 +908,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
-                ImageTransferPollingInterval
+                ImageTransferPollingInterval,
+                ImageTransferIdleTimeoutSeconds
         };
     }
 }

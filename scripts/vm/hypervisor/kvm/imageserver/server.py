@@ -22,6 +22,7 @@ import os
 import socket
 import ssl
 import threading
+import time
 from http.server import HTTPServer
 from socketserver import ThreadingMixIn
 from typing import Type
@@ -33,7 +34,7 @@ except ImportError:
         pass
 
 from .concurrency import ConcurrencyManager
-from .config import TransferRegistry
+from .config import TransferRegistry, validate_transfer_config
 from .constants import (
     CONTROL_RECV_BUFFER,
     CONTROL_SOCKET,
@@ -65,41 +66,6 @@ def make_handler(
     return ConfiguredHandler
 
 
-def _validate_config(obj: dict) -> dict:
-    """
-    Validate and normalize a transfer config dict received over the control
-    socket.  Returns the cleaned config or raises ValueError.
-    """
-    backend = obj.get("backend")
-    if backend is None:
-        backend = "nbd"
-    if not isinstance(backend, str):
-        raise ValueError("invalid backend type")
-    backend = backend.lower()
-    if backend not in ("nbd", "file"):
-        raise ValueError(f"unsupported backend: {backend}")
-
-    if backend == "file":
-        file_path = obj.get("file")
-        if not isinstance(file_path, str) or not file_path.strip():
-            raise ValueError("missing/invalid file path for file backend")
-        return {"backend": "file", "file": file_path.strip()}
-
-    socket_path = obj.get("socket")
-    export = obj.get("export")
-    export_bitmap = obj.get("export_bitmap")
-    if not isinstance(socket_path, str) or not socket_path.strip():
-        raise ValueError("missing/invalid socket path for nbd backend")
-    if export is not None and (not isinstance(export, str) or not export):
-        raise ValueError("invalid export name")
-    return {
-        "backend": "nbd",
-        "socket": socket_path.strip(),
-        "export": export,
-        "export_bitmap": export_bitmap,
-    }
-
-
 def _handle_control_conn(conn: socket.socket, registry: TransferRegistry) -> None:
     """Handle a single control-socket connection (one JSON request/response)."""
     try:
@@ -122,7 +88,7 @@ def _handle_control_conn(conn: socket.socket, registry: TransferRegistry) -> Non
                 resp = {"status": "error", "message": "missing transfer_id or config"}
             else:
                 try:
-                    config = _validate_config(raw_config)
+                    config = validate_transfer_config(raw_config)
                 except ValueError as e:
                     resp = {"status": "error", "message": str(e)}
                 else:
@@ -151,6 +117,15 @@ def _handle_control_conn(conn: socket.socket, registry: TransferRegistry) -> Non
             pass
     finally:
         conn.close()
+
+
+def _idle_sweep_loop(registry: TransferRegistry, interval_s: float = 10.0) -> None:
+    while True:
+        time.sleep(interval_s)
+        try:
+            registry.sweep_expired_transfers()
+        except Exception:
+            logging.exception("idle sweep error")
 
 
 def _control_listener(registry: TransferRegistry, sock_path: str) -> None:
@@ -220,6 +195,13 @@ def main() -> None:
         daemon=True,
     )
     ctrl_thread.start()
+
+    sweep_thread = threading.Thread(
+        target=_idle_sweep_loop,
+        args=(registry,),
+        daemon=True,
+    )
+    sweep_thread.start()
 
     addr = (args.listen, args.port)
     httpd = ThreadingHTTPServer(addr, handler_cls)

@@ -213,57 +213,58 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.NOT_FOUND, "unknown image_id")
             return
 
-        backend = create_backend(cfg)
-        try:
-            if not backend.supports_extents:
-                allowed_methods = "GET, PUT, POST, OPTIONS"
-                features = ["flush"]
+        with self._registry.request_lifecycle(image_id):
+            backend = create_backend(cfg)
+            try:
+                if not backend.supports_extents:
+                    allowed_methods = "GET, PUT, POST, OPTIONS"
+                    features = ["flush"]
+                    response = {
+                        "unix_socket": None,
+                        "features": features,
+                        "max_readers": MAX_PARALLEL_READS,
+                        "max_writers": MAX_PARALLEL_WRITES,
+                    }
+                    self._send_json(HTTPStatus.OK, response, allowed_methods=allowed_methods)
+                    return
+
+                read_only = True
+                can_flush = False
+                can_zero = False
+                try:
+                    caps = backend.get_capabilities()
+                    read_only = caps["read_only"]
+                    can_flush = caps["can_flush"]
+                    can_zero = caps["can_zero"]
+                except Exception as e:
+                    logging.warning("OPTIONS: could not query backend capabilities: %r", e)
+                    read_only = bool(cfg.get("read_only"))
+                    if not read_only:
+                        can_flush = True
+                        can_zero = True
+
+                if read_only:
+                    allowed_methods = "GET, OPTIONS"
+                    features = ["extents"]
+                    max_writers = 0
+                else:
+                    allowed_methods = "GET, PUT, PATCH, OPTIONS"
+                    features = ["extents"]
+                    if can_zero:
+                        features.append("zero")
+                    if can_flush:
+                        features.append("flush")
+                    max_writers = MAX_PARALLEL_WRITES
+
                 response = {
                     "unix_socket": None,
                     "features": features,
                     "max_readers": MAX_PARALLEL_READS,
-                    "max_writers": MAX_PARALLEL_WRITES,
+                    "max_writers": max_writers,
                 }
                 self._send_json(HTTPStatus.OK, response, allowed_methods=allowed_methods)
-                return
-
-            read_only = True
-            can_flush = False
-            can_zero = False
-            try:
-                caps = backend.get_capabilities()
-                read_only = caps["read_only"]
-                can_flush = caps["can_flush"]
-                can_zero = caps["can_zero"]
-            except Exception as e:
-                logging.warning("OPTIONS: could not query backend capabilities: %r", e)
-                read_only = bool(cfg.get("read_only"))
-                if not read_only:
-                    can_flush = True
-                    can_zero = True
-
-            if read_only:
-                allowed_methods = "GET, OPTIONS"
-                features = ["extents"]
-                max_writers = 0
-            else:
-                allowed_methods = "GET, PUT, PATCH, OPTIONS"
-                features = ["extents"]
-                if can_zero:
-                    features.append("zero")
-                if can_flush:
-                    features.append("flush")
-                max_writers = MAX_PARALLEL_WRITES
-
-            response = {
-                "unix_socket": None,
-                "features": features,
-                "max_readers": MAX_PARALLEL_READS,
-                "max_writers": max_writers,
-            }
-            self._send_json(HTTPStatus.OK, response, allowed_methods=allowed_methods)
-        finally:
-            backend.close()
+            finally:
+                backend.close()
 
     def do_GET(self) -> None:
         image_id, tail = self._parse_route()
@@ -277,25 +278,27 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if tail == "extents":
-            backend = create_backend(cfg)
-            try:
-                if not backend.supports_extents:
-                    self._send_error_json(
-                        HTTPStatus.BAD_REQUEST, "extents not supported for file backend"
-                    )
-                    return
-            finally:
-                backend.close()
-            query = self._parse_query()
-            context = (query.get("context") or [None])[0]
-            self._handle_get_extents(image_id, cfg, context=context)
+            with self._registry.request_lifecycle(image_id):
+                backend = create_backend(cfg)
+                try:
+                    if not backend.supports_extents:
+                        self._send_error_json(
+                            HTTPStatus.BAD_REQUEST, "extents not supported for file backend"
+                        )
+                        return
+                finally:
+                    backend.close()
+                query = self._parse_query()
+                context = (query.get("context") or [None])[0]
+                self._handle_get_extents(image_id, cfg, context=context)
             return
         if tail is not None:
             self._send_error_json(HTTPStatus.NOT_FOUND, "not found")
             return
 
         range_header = self.headers.get("Range")
-        self._handle_get_image(image_id, cfg, range_header)
+        with self._registry.request_lifecycle(image_id):
+            self._handle_get_image(image_id, cfg, range_header)
 
     def do_PUT(self) -> None:
         image_id, tail = self._parse_route()
@@ -308,46 +311,47 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.NOT_FOUND, "unknown image_id")
             return
 
-        if self.headers.get("Range") is not None:
-            self._send_error_json(
-                HTTPStatus.BAD_REQUEST,
-                "Range header not supported for PUT; use Content-Range or PATCH",
-            )
-            return
+        with self._registry.request_lifecycle(image_id):
+            if self.headers.get("Range") is not None:
+                self._send_error_json(
+                    HTTPStatus.BAD_REQUEST,
+                    "Range header not supported for PUT; use Content-Range or PATCH",
+                )
+                return
 
-        content_length_hdr = self.headers.get("Content-Length")
-        if content_length_hdr is None:
-            self._send_error_json(HTTPStatus.BAD_REQUEST, "Content-Length required")
-            return
-        try:
-            content_length = int(content_length_hdr)
-        except ValueError:
-            self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
-            return
-        if content_length < 0:
-            self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
-            return
-
-        query = self._parse_query()
-        flush_param = (query.get("flush") or ["n"])[0].lower()
-        flush = flush_param in ("y", "yes", "true", "1")
-
-        content_range_hdr = self.headers.get("Content-Range")
-        if content_range_hdr is not None:
-            backend = create_backend(cfg)
+            content_length_hdr = self.headers.get("Content-Length")
+            if content_length_hdr is None:
+                self._send_error_json(HTTPStatus.BAD_REQUEST, "Content-Length required")
+                return
             try:
-                if not backend.supports_range_write:
-                    self._send_error_json(
-                        HTTPStatus.BAD_REQUEST,
-                        "Content-Range PUT not supported for file backend; use full PUT",
-                    )
-                    return
-            finally:
-                backend.close()
-            self._handle_put_range(image_id, cfg, content_range_hdr, content_length, flush)
-            return
+                content_length = int(content_length_hdr)
+            except ValueError:
+                self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
+                return
+            if content_length < 0:
+                self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
+                return
 
-        self._handle_put_image(image_id, cfg, content_length, flush)
+            query = self._parse_query()
+            flush_param = (query.get("flush") or ["n"])[0].lower()
+            flush = flush_param in ("y", "yes", "true", "1")
+
+            content_range_hdr = self.headers.get("Content-Range")
+            if content_range_hdr is not None:
+                backend = create_backend(cfg)
+                try:
+                    if not backend.supports_range_write:
+                        self._send_error_json(
+                            HTTPStatus.BAD_REQUEST,
+                            "Content-Range PUT not supported for file backend; use full PUT",
+                        )
+                        return
+                finally:
+                    backend.close()
+                self._handle_put_range(image_id, cfg, content_range_hdr, content_length, flush)
+                return
+
+            self._handle_put_image(image_id, cfg, content_length, flush)
 
     def do_POST(self) -> None:
         image_id, tail = self._parse_route()
@@ -361,7 +365,8 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if tail == "flush":
-            self._handle_post_flush(image_id, cfg)
+            with self._registry.request_lifecycle(image_id):
+                self._handle_post_flush(image_id, cfg)
             return
         self._send_error_json(HTTPStatus.NOT_FOUND, "not found")
 
@@ -376,21 +381,44 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.NOT_FOUND, "unknown image_id")
             return
 
-        backend = create_backend(cfg)
-        try:
-            if not backend.supports_range_write:
+        with self._registry.request_lifecycle(image_id):
+            backend = create_backend(cfg)
+            try:
+                if not backend.supports_range_write:
+                    self._send_error_json(
+                        HTTPStatus.BAD_REQUEST,
+                        "range writes and PATCH not supported for file backend; use PUT for full upload",
+                    )
+                    return
+            finally:
+                backend.close()
+
+            content_type = self.headers.get("Content-Type", "").split(";")[0].strip().lower()
+            range_header = self.headers.get("Range")
+
+            if range_header is not None and content_type != "application/json":
+                content_length_hdr = self.headers.get("Content-Length")
+                if content_length_hdr is None:
+                    self._send_error_json(HTTPStatus.BAD_REQUEST, "Content-Length required")
+                    return
+                try:
+                    content_length = int(content_length_hdr)
+                except ValueError:
+                    self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
+                    return
+                if content_length <= 0:
+                    self._send_error_json(HTTPStatus.BAD_REQUEST, "Content-Length must be positive")
+                    return
+                self._handle_patch_range(image_id, cfg, range_header, content_length)
+                return
+
+            if content_type != "application/json":
                 self._send_error_json(
-                    HTTPStatus.BAD_REQUEST,
-                    "range writes and PATCH not supported for file backend; use PUT for full upload",
+                    HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "PATCH requires Content-Type: application/json (for zero/flush) or Range with binary body",
                 )
                 return
-        finally:
-            backend.close()
 
-        content_type = self.headers.get("Content-Type", "").split(";")[0].strip().lower()
-        range_header = self.headers.get("Range")
-
-        if range_header is not None and content_type != "application/json":
             content_length_hdr = self.headers.get("Content-Length")
             if content_length_hdr is None:
                 self._send_error_json(HTTPStatus.BAD_REQUEST, "Content-Length required")
@@ -400,82 +428,60 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError:
                 self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
                 return
-            if content_length <= 0:
-                self._send_error_json(HTTPStatus.BAD_REQUEST, "Content-Length must be positive")
+            if content_length <= 0 or content_length > MAX_PATCH_JSON_SIZE:
+                self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
                 return
-            self._handle_patch_range(image_id, cfg, range_header, content_length)
-            return
 
-        if content_type != "application/json":
-            self._send_error_json(
-                HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
-                "PATCH requires Content-Type: application/json (for zero/flush) or Range with binary body",
-            )
-            return
+            body = self.rfile.read(content_length)
+            if len(body) != content_length:
+                self._send_error_json(HTTPStatus.BAD_REQUEST, "request body truncated")
+                return
 
-        content_length_hdr = self.headers.get("Content-Length")
-        if content_length_hdr is None:
-            self._send_error_json(HTTPStatus.BAD_REQUEST, "Content-Length required")
-            return
-        try:
-            content_length = int(content_length_hdr)
-        except ValueError:
-            self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
-            return
-        if content_length <= 0 or content_length > MAX_PATCH_JSON_SIZE:
-            self._send_error_json(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
-            return
-
-        body = self.rfile.read(content_length)
-        if len(body) != content_length:
-            self._send_error_json(HTTPStatus.BAD_REQUEST, "request body truncated")
-            return
-
-        try:
-            payload = json.loads(body.decode("utf-8"))
-        except (json.JSONDecodeError, UnicodeDecodeError) as e:
-            self._send_error_json(HTTPStatus.BAD_REQUEST, f"invalid JSON: {e}")
-            return
-
-        if not isinstance(payload, dict):
-            self._send_error_json(HTTPStatus.BAD_REQUEST, "body must be a JSON object")
-            return
-
-        op = payload.get("op")
-        if op == "flush":
-            self._handle_post_flush(image_id, cfg)
-            return
-        if op != "zero":
-            self._send_error_json(
-                HTTPStatus.BAD_REQUEST,
-                "unsupported op; only \"zero\" and \"flush\" are supported",
-            )
-            return
-
-        try:
-            size = int(payload.get("size"))
-        except (TypeError, ValueError):
-            self._send_error_json(HTTPStatus.BAD_REQUEST, "missing or invalid \"size\"")
-            return
-        if size <= 0:
-            self._send_error_json(HTTPStatus.BAD_REQUEST, "\"size\" must be positive")
-            return
-
-        offset = payload.get("offset")
-        if offset is None:
-            offset = 0
-        else:
             try:
-                offset = int(offset)
-            except (TypeError, ValueError):
-                self._send_error_json(HTTPStatus.BAD_REQUEST, "invalid \"offset\"")
-                return
-            if offset < 0:
-                self._send_error_json(HTTPStatus.BAD_REQUEST, "\"offset\" must be non-negative")
+                payload = json.loads(body.decode("utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                self._send_error_json(HTTPStatus.BAD_REQUEST, f"invalid JSON: {e}")
                 return
 
-        flush = bool(payload.get("flush", False))
-        self._handle_patch_zero(image_id, cfg, offset=offset, size=size, flush=flush)
+            if not isinstance(payload, dict):
+                self._send_error_json(HTTPStatus.BAD_REQUEST, "body must be a JSON object")
+                return
+
+            op = payload.get("op")
+            if op == "flush":
+                self._handle_post_flush(image_id, cfg)
+                return
+            if op != "zero":
+                self._send_error_json(
+                    HTTPStatus.BAD_REQUEST,
+                    "unsupported op; only \"zero\" and \"flush\" are supported",
+                )
+                return
+
+            try:
+                size = int(payload.get("size"))
+            except (TypeError, ValueError):
+                self._send_error_json(HTTPStatus.BAD_REQUEST, "missing or invalid \"size\"")
+                return
+            if size <= 0:
+                self._send_error_json(HTTPStatus.BAD_REQUEST, "\"size\" must be positive")
+                return
+
+            offset = payload.get("offset")
+            if offset is None:
+                offset = 0
+            else:
+                try:
+                    offset = int(offset)
+                except (TypeError, ValueError):
+                    self._send_error_json(HTTPStatus.BAD_REQUEST, "invalid \"offset\"")
+                    return
+                if offset < 0:
+                    self._send_error_json(HTTPStatus.BAD_REQUEST, "\"offset\" must be non-negative")
+                    return
+
+            flush = bool(payload.get("flush", False))
+            self._handle_patch_zero(image_id, cfg, offset=offset, size=size, flush=flush)
 
     # ------------------------------------------------------------------
     # Operation handlers

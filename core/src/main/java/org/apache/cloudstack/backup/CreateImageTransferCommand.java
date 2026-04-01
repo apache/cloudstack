@@ -27,25 +27,27 @@ public class CreateImageTransferCommand extends Command {
     private String checkpointId;
     private String file;
     private ImageTransfer.Backend backend;
+    private int idleTimeoutSeconds;
 
     public CreateImageTransferCommand() {
     }
 
-    private CreateImageTransferCommand(String transferId, String direction, String socket) {
+    private CreateImageTransferCommand(String transferId, String direction, String socket, int idleTimeoutSeconds) {
         this.transferId = transferId;
         this.direction = direction;
         this.socket = socket;
+        this.idleTimeoutSeconds = idleTimeoutSeconds;
     }
 
-    public CreateImageTransferCommand(String transferId, String direction, String exportName, String socket, String checkpointId) {
-        this(transferId, direction, socket);
+    public CreateImageTransferCommand(String transferId, String direction, String exportName, String socket, String checkpointId, int idleTimeoutSeconds) {
+        this(transferId, direction, socket, idleTimeoutSeconds);
         this.backend = ImageTransfer.Backend.nbd;
         this.exportName = exportName;
         this.checkpointId = checkpointId;
     }
 
-    public CreateImageTransferCommand(String transferId, String direction, String socket, String file) {
-        this(transferId, direction, socket);
+    public CreateImageTransferCommand(String transferId, String direction, String socket, String file, int idleTimeoutSeconds) {
+        this(transferId, direction, socket, idleTimeoutSeconds);
         if (direction == ImageTransfer.Direction.download.toString()) {
             throw new IllegalArgumentException("File backend is only supported for upload");
         }
@@ -84,5 +86,9 @@ public class CreateImageTransferCommand extends Command {
 
     public String getCheckpointId() {
         return checkpointId;
+    }
+
+    public int getIdleTimeoutSeconds() {
+        return idleTimeoutSeconds;
     }
 }
