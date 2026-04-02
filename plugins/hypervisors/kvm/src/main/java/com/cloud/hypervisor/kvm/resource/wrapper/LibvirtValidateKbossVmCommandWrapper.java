@@ -30,6 +30,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.json.JsonSanitizer;
 import org.apache.cloudstack.backup.ValidateKbossVmAnswer;
 import org.apache.cloudstack.backup.ValidateKbossVmCommand;
 import org.libvirt.Domain;
@@ -164,9 +165,10 @@ public class LibvirtValidateKbossVmCommandWrapper extends CommandWrapper<Validat
         }
         logger.debug("Running validation script [{}] with arguments [{}] on dummy validation VM [{}].", script, arguments, vm.getName());
         String guestCommand = String.format(GUEST_EXEC_COMMAND, script, arguments);
+        String sanitizedGuestCommand = JsonSanitizer.sanitize(guestCommand);
         String execResult;
         try {
-            execResult = vm.qemuAgentCommand(guestCommand, command.getScriptTimeout(), 0);
+            execResult = vm.qemuAgentCommand(sanitizedGuestCommand, command.getScriptTimeout(), 0);
         } catch (LibvirtException ex) {
             return ex.getMessage();
         }
