@@ -26,6 +26,7 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.backup.CleanupKbossBackupErrorAnswer;
 import org.apache.cloudstack.backup.CleanupKbossBackupErrorCommand;
 import org.apache.cloudstack.storage.to.BackupDeltaTO;
@@ -57,23 +58,24 @@ public class LibvirtCleanupKbossVmBackupCommandWrapper extends CommandWrapper<Cl
         cleanupBackupDeltasOnSecondary(command, storagePoolManager, kbossTOS);
 
         if (command.isRunningVM()) {
-            return new CleanupKbossBackupErrorAnswer(command, cleanupRunningVm(command, serverResource));
+            Pair<List<VolumeObjectTO>, Boolean> volumeTosAndIsVmRunning = cleanupRunningVm(command, serverResource);
+            return new CleanupKbossBackupErrorAnswer(command, volumeTosAndIsVmRunning.first(), volumeTosAndIsVmRunning.second());
         }
 
-        return new CleanupKbossBackupErrorAnswer(command, mergeDeltasForStoppedVmIfNeeded(command, serverResource));
+        return new CleanupKbossBackupErrorAnswer(command, mergeDeltasForStoppedVmIfNeeded(command, serverResource), false);
     }
 
-    private List<VolumeObjectTO> cleanupRunningVm(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource) {
+    private Pair<List<VolumeObjectTO>, Boolean> cleanupRunningVm(CleanupKbossBackupErrorCommand command, LibvirtComputingResource serverResource) {
         Domain dm = null;
         try {
             dm = serverResource.getDomain(serverResource.getLibvirtUtilitiesHelper().getConnection(), command.getVmName());
-            return mergeDeltasForRunningVmIfNeeded(command, serverResource, dm);
+            return new Pair<>(mergeDeltasForRunningVmIfNeeded(command, serverResource, dm), true);
         } catch (LibvirtException e) {
             if (e.getError().getCode() == Error.ErrorNumber.VIR_ERR_NO_DOMAIN && IsVmReallyStopped(command, serverResource)) {
-                return mergeDeltasForStoppedVmIfNeeded(command, serverResource);
+                return new Pair<>(mergeDeltasForStoppedVmIfNeeded(command, serverResource), false);
             }
             logger.error("Error while trying to get VM [{}]. Aborting the process.", command.getVmName(), e);
-            return List.of();
+            return new Pair<>(List.of(), false);
         } finally {
             if (dm != null) {
                 try {

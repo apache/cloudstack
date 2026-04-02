@@ -27,13 +27,19 @@ import java.util.List;
 
 public class CleanupKbossBackupErrorAnswer extends Answer {
     List<VolumeObjectTO> volumeObjectTos;
+    boolean vmRunning;
 
-    public CleanupKbossBackupErrorAnswer(Command cmd, List<VolumeObjectTO> volumeObjectTos) {
+    public CleanupKbossBackupErrorAnswer(Command cmd, List<VolumeObjectTO> volumeObjectTos, boolean vmRunning) {
         super(cmd, CollectionUtils.isNotEmpty(volumeObjectTos), null);
         this.volumeObjectTos = volumeObjectTos;
+        this.vmRunning = vmRunning;
     }
 
     public List<VolumeObjectTO> getVolumeObjectTos() {
         return volumeObjectTos;
+    }
+
+    public boolean isVmRunning() {
+        return vmRunning;
     }
 }

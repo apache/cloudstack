@@ -378,7 +378,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         Long hostId = vmSnapshotHelper.pickRunningHost(vmId);
         HostVO hostVO = hostDao.findById(hostId);
 
-        if (hostVO.getStatus() == Status.Down || hostVO.getStatus() == Status.Disconnected) {
+        if (hostVO.getStatus() != Status.Up || hostVO.getResourceState() != ResourceState.Enabled) {
             backupVO.setStatus(Backup.Status.Failed);
             backupDao.update(backupVO.getId(), backupVO);
 
@@ -927,6 +927,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             }
         }
 
+        runningVM = cleanAnswer.isVmRunning();
         userVmVO.setState(runningVM ? VirtualMachine.State.Running : VirtualMachine.State.Stopped);
         userVmDao.update(userVmVO.getId(), userVmVO);
         userVmDetailsDao.removeDetail(userVmVO.getId(), ApiConstants.LAST_KNOWN_STATE);
