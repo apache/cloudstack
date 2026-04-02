@@ -27,15 +27,16 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Enumeration;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
@@ -51,6 +52,10 @@ public class PkiResourceRouteHandler extends ManagerBase implements RouteHandler
     private static final String FORMAT_KEY = "format";
     private static final String FORMAT_VALUE = "X509-PEM-CA";
     private static final Charset OUTPUT_CHARSET = StandardCharsets.ISO_8859_1;
+    private static final boolean USE_CA_CERTS = true;
+
+    @Inject
+    CAManager caManager;
 
     @Override
     public boolean canHandle(String method, String path) {
@@ -84,21 +89,11 @@ public class PkiResourceRouteHandler extends ManagerBase implements RouteHandler
                 return;
             }
 
-            final String keystorePath = ServerPropertiesUtil.getKeystoreFile();
-            final String keystorePassword = ServerPropertiesUtil.getKeystorePassword();
-
-            Path path = Path.of(keystorePath);
-            if (keystorePath.isBlank() || !Files.exists(path)) {
-                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "CloudStack HTTPS keystore not found");
+            byte[] pemBytes = USE_CA_CERTS ? returnCACertificate() : returnMSCertificate();
+            if (pemBytes == null || pemBytes.length == 0) {
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "No certificate data available");
                 return;
             }
-
-            final X509Certificate caCert =
-                    extractCaFromKeystore(path, keystorePassword);
-
-            // DER encoding → browser downloads as .cer (oVirt behavior)
-            final byte[] pemBytes =
-                    toPem(caCert).getBytes(OUTPUT_CHARSET);
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setHeader("Cache-Control", "no-store");
             resp.setContentType("application/x-x509-ca-cert; charset=" + OUTPUT_CHARSET.name());
@@ -114,6 +109,33 @@ public class PkiResourceRouteHandler extends ManagerBase implements RouteHandler
             logger.error(msg, e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
         }
+    }
+
+    private byte[] returnCACertificate() throws IOException {
+        String tlsCaCert = caManager.getCaCertificate(null);
+        return tlsCaCert.getBytes(OUTPUT_CHARSET);
+    }
+
+    // ToDo: To be removed
+    private static byte[] returnMSCertificate() throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
+        final String keystorePath = ServerPropertiesUtil.getKeystoreFile();
+        final String keystorePassword = ServerPropertiesUtil.getKeystorePassword();
+
+        Path path = Path.of(keystorePath);
+        if (keystorePath.isBlank() || !Files.exists(path)) {
+            return null;
+        }
+
+        final X509Certificate caCert =
+                extractCaFromKeystore(path, keystorePassword);
+
+        // DER encoding → browser downloads as .cer (oVirt behavior)
+        String base64 = Base64.getMimeEncoder(64, new byte[]{'\n'})
+                .encodeToString(caCert.getEncoded());
+        String cert = "-----BEGIN CERTIFICATE-----\n"
+                + base64
+                + "\n-----END CERTIFICATE-----\n";
+        return cert.getBytes(OUTPUT_CHARSET);
     }
 
     private static X509Certificate extractCaFromKeystore(Path ksPath, String ksPassword)
@@ -161,13 +183,5 @@ public class PkiResourceRouteHandler extends ManagerBase implements RouteHandler
         }
 
         return (X509Certificate) cert;
-    }
-
-    private static String toPem(X509Certificate cert) throws CertificateEncodingException {
-        String base64 = Base64.getMimeEncoder(64, new byte[]{'\n'})
-                .encodeToString(cert.getEncoded());
-        return "-----BEGIN CERTIFICATE-----\n"
-                + base64
-                + "\n-----END CERTIFICATE-----\n";
     }
 }
