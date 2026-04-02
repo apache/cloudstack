@@ -624,19 +624,19 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         DomainVO domainHandle = _domainDao.findById(domainId);
         logger.debug("Cleaning up domain {}", domainHandle);
         {
-            domainHandle.setState(Domain.State.Inactive);
-            _domainDao.update(domainId, domainHandle);
-
             SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
             sc.addAnd("parent", SearchCriteria.Op.EQ, domainId);
             List<DomainVO> domains = _domainDao.search(sc, null);
 
-            List<Long> domainIds = domains.stream().map(Domain::getId).collect(Collectors.toList());
-            validateNoDeleteProtectedVmsForDomainIds(domainHandle, domainIds);
-
             SearchCriteria<DomainVO> sc1 = _domainDao.createSearchCriteria();
             sc1.addAnd("path", SearchCriteria.Op.LIKE, "%" + "replace(" + domainHandle.getPath() + ", '%', '[%]')" + "%");
             List<DomainVO> domainsToBeInactivated = _domainDao.search(sc1, null);
+
+            // Validate that no Instance in this domain or its subdomains has delete protection
+            validateNoDeleteProtectedVmsForDomain(domainHandle, domainsToBeInactivated);
+
+            domainHandle.setState(Domain.State.Inactive);
+            _domainDao.update(domainId, domainHandle);
 
             // update all subdomains to inactive so no accounts/users can be created
             for (DomainVO domain : domainsToBeInactivated) {
@@ -729,8 +729,11 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         return success && deleteDomainSuccess;
     }
 
-    private void validateNoDeleteProtectedVmsForDomainIds(Domain domainHandle, List<Long> domainIds) {
-        List<VMInstanceVO> deleteProtectedVms = vmInstanceDao.listDeleteProtectedVmsByDomainIds(domainIds);
+    private void validateNoDeleteProtectedVmsForDomain(Domain domainHandle, List<DomainVO> subDomains) {
+        List<Long> allDomainIds = subDomains.stream().map(Domain::getId).collect(Collectors.toList());
+        allDomainIds.add(domainHandle.getId());
+
+        List<VMInstanceVO> deleteProtectedVms = vmInstanceDao.listDeleteProtectedVmsByDomainIds(allDomainIds);
         if (deleteProtectedVms.isEmpty()) {
             return;
         }
