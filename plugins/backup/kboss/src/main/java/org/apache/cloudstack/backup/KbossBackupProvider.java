@@ -61,6 +61,7 @@ import com.cloud.utils.exception.BackupException;
 import com.cloud.utils.exception.BackupProviderException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceDetailVO;
@@ -1407,6 +1408,8 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         UserVmVO validationVm;
         try {
             validationVm = (UserVmVO) userVmManager.allocateVMForValidation(backupId, Hypervisor.HypervisorType.KVM);
+            NicVO nic = nicDao.findDefaultNicForVM(validationVm.getId());
+            virtualMachineManager.updateVmNic(validationVm, nic, false);
             validationVm.setDataCenterId(backupVO.getZoneId());
         } catch (InsufficientCapacityException | ResourceAllocationException | ResourceUnavailableException e) {
             String msg = String.format("Unable to allocate dummy VM to validate %s due to %s.", backupVO.getUuid(), e.getMessage());
