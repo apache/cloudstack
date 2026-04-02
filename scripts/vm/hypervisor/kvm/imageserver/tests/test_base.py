@@ -333,7 +333,7 @@ class QemuNbdServer:
                 "--socket", self.socket_path,
                 "--format", self.image_format,
                 "--persistent",
-                "--shared=8",
+                "--shared=0",
                 "--cache=none",
                 self.image_path,
             ],
