@@ -68,6 +68,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.dao.VMInstanceDao;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -123,6 +124,8 @@ public class DomainManagerImplTest {
     Account adminAccount;
     @Mock
     GlobalLock lock;
+    @Mock
+    VMInstanceDao vmInstanceDao;
 
     List<AccountVO> domainAccountsForCleanup;
     List<Long> domainNetworkIds;
@@ -309,7 +312,7 @@ public class DomainManagerImplTest {
         Mockito.when(_resourceCountDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
         Mockito.when(_resourceLimitDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
         Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.any())).thenReturn(true);
-
+        Mockito.when(vmInstanceDao.listDeleteProtectedVmsByDomainIds(Mockito.any())).thenReturn(Collections.emptyList());
         try {
             Assert.assertTrue(domainManager.deleteDomain(20l, true));
         } finally {
