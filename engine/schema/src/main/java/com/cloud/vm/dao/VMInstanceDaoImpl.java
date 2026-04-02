@@ -1324,7 +1324,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     @Override
     public List<VMInstanceVO> listDeleteProtectedVmsByDomainIds(List<Long> domainIds)  {
         SearchCriteria<VMInstanceVO> sc = DeleteProtectedVmSearchByDomainIds.create();
-        sc.setParameters(ApiConstants.DOMAIN_IDS, domainIds);
+        sc.setParameters(ApiConstants.DOMAIN_IDS, domainIds.toArray());
         sc.setParameters(ApiConstants.DELETE_PROTECTION, true);
         return listBy(sc);
     }
