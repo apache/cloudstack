@@ -670,7 +670,7 @@ public class ServerAdapter extends ManagerBase {
         }
     }
 
-    protected ServiceOffering getServiceOfferingFromRequest(com.cloud.dc.DataCenter zone, Account account,
+    protected ServiceOfferingVO getServiceOfferingFromRequest(com.cloud.dc.DataCenter zone, Account account,
                     String uuid, int cpu, int memory) {
         if (StringUtils.isBlank(uuid)) {
             return null;
@@ -712,7 +712,7 @@ public class ServerAdapter extends ManagerBase {
 
     protected ServiceOffering getServiceOfferingIdForVmCreation(com.cloud.dc.DataCenter zone, Account account,
                         String serviceOfferingUuid, int cpu, int memory) {
-        ServiceOffering offering = getServiceOfferingFromRequest(zone, account, serviceOfferingUuid, cpu, memory);
+        ServiceOfferingVO offering = getServiceOfferingFromRequest(zone, account, serviceOfferingUuid, cpu, memory);
         if (offering != null) {
             return offering;
         }
@@ -726,7 +726,12 @@ public class ServerAdapter extends ManagerBase {
             return null;
         }
         String uuid = offerings.getResponses().get(0).getId();
-        return serviceOfferingDao.findByUuid(uuid);
+        offering = serviceOfferingDao.findByUuid(uuid);
+        if (offering.isCustomized()) {
+            offering.setCpu(cpu);
+            offering.setRamSize(memory);
+        }
+        return offering;
     }
 
     protected VMTemplateVO getTemplateForInstanceCreation(String templateUuid) {
@@ -803,7 +808,7 @@ public class ServerAdapter extends ManagerBase {
         Map<String, String> instanceDetails = getDetailsForInstanceCreation(userdata, serviceOffering, details);
         if (MapUtils.isNotEmpty(instanceDetails)) {
             Map<Integer, Map<String, String>> map = new HashMap<>();
-            map.put(0, details);
+            map.put(0, instanceDetails);
             cmd.setDetails(map);
         }
         cmd.setBlankInstance(true);
