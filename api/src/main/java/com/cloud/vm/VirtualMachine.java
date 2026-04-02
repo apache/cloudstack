@@ -127,6 +127,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
             s_fsm.addTransition(new Transition<State, Event>(State.Stopping, VirtualMachine.Event.StopRequested, State.Stopping, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Stopping, VirtualMachine.Event.AgentReportShutdowned, State.Stopped, Arrays.asList(new Impact[]{Impact.USAGE})));
             s_fsm.addTransition(new Transition<State, Event>(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging,null));
+            // Note: In addition to the Stopped -> Error transition for failed VM creation,
+            // a VM can also transition from Expunging to Error on OperationFailedToError.
+            s_fsm.addTransition(new Transition<State, Event>(State.Expunging, VirtualMachine.Event.OperationFailedToError, State.Error, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging,null));
             s_fsm.addTransition(new Transition<State, Event>(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging, null));
             s_fsm.addTransition(new Transition<State, Event>(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging, null));

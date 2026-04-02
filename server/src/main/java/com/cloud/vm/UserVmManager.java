@@ -204,5 +204,10 @@ public interface UserVmManager extends UserVmService {
 
     Boolean getDestroyRootVolumeOnVmDestruction(Long domainId);
 
+    /**
+     * @return true if the VM is part of a CKS cluster, false otherwise.
+     */
+    boolean isVMPartOfAnyCKSCluster(VMInstanceVO vm);
+
     UserVm allocateVMForValidation(long backupId, HypervisorType hypervisor) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException;
 }

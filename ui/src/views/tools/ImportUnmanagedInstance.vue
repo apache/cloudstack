@@ -232,6 +232,29 @@
                 </template>
                 <a-switch v-model:checked="form.forcemstoimportvmfiles" @change="val => { switches.forceMsToImportVmFiles = val }" />
               </a-form-item>
+              <a-form-item name="osid" ref="osid" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.guest.os')" :tooltip="$t('label.select.guest.os.type')"/>
+                </template>
+                <a-spin v-if="loadingGuestOsMappings" />
+                <template v-else>
+                  <a-select
+                    v-if="resource.guestOsMappings && resource.guestOsMappings.length > 0"
+                    v-model:value="form.osid"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }">
+                    <a-select-option v-for="mapping in resource.guestOsMappings" :key="mapping.ostypeid" :label="mapping.osdisplayname">
+                      <span>
+                        {{ mapping.osdisplayname }}
+                      </span>
+                    </a-select-option>
+                  </a-select>
+                  <a-span v-else>{{ $t('label.no.matching.guest.os.vmware.import') }}</a-span>
+                </template>
+              </a-form-item>
               <a-form-item name="serviceofferingid" ref="serviceofferingid">
                 <template #label>
                   <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
@@ -490,6 +513,10 @@ export default {
     selectedVmwareVcenter: {
       type: Array,
       required: false
+    },
+    loadingGuestOsMappings: {
+      type: Boolean,
+      required: false
     }
   },
   data () {
@@ -739,6 +766,11 @@ export default {
         this.$refs.displayname.focus()
         this.selectMatchingComputeOffering()
       }
+    },
+    'resource.guestOsMappings' (mappings) {
+      if (mappings && mappings.length > 0) {
+        this.form.osid = mappings[0].ostypeid
+      }
     }
   },
   methods: {
@@ -751,7 +783,8 @@ export default {
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
         forceconverttopool: this.switches.forceConvertToPool,
         domainid: null,
-        account: null
+        account: null,
+        osid: null
       })
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],
@@ -1207,7 +1240,7 @@ export default {
             params.forceconverttopool = values.forceconverttopool
           }
         }
-        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles']
+        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles', 'osid']
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }

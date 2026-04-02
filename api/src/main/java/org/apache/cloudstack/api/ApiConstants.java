@@ -20,6 +20,7 @@ public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
     public static final String ACCOUNT_NAME = "accountname";
+    public static final String ACCOUNT_STATE_TO_SHOW = "accountstatetoshow";
     public static final String ACCOUNT_TYPE = "accounttype";
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
