@@ -2097,7 +2097,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return true;
         }
 
-        validateNoDeleteProtectedVms(account);
+        validateNoDeleteProtectedVmsForAccount(account);
         checkIfAccountManagesProjects(accountId);
         verifyCallerPrivilegeForUserOrAccountOperations(account);
 
@@ -2139,7 +2139,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return true;
     }
 
-    private void validateNoDeleteProtectedVms(Account account) {
+    private void validateNoDeleteProtectedVmsForAccount(Account account) {
         long accountId = account.getId();
         List<VMInstanceVO> deleteProtectedVms = _vmDao.listDeleteProtectedVmsByAccountId(accountId);
         if (deleteProtectedVms.isEmpty()) {
@@ -2148,8 +2148,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (logger.isDebugEnabled()) {
             List<String> vmUuids = deleteProtectedVms.stream().map(VMInstanceVO::getUuid).collect(Collectors.toList());
-            logger.debug("Cannot delete Account {} (id={}), delete protection enabled for Instances: {}",
-                    account.getAccountName(), accountId, vmUuids);
+            logger.debug("Cannot delete Account {}, delete protection enabled for Instances: {}", account, vmUuids);
         }
 
         throw new InvalidParameterValueException(

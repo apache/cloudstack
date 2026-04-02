@@ -194,4 +194,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listByIdsIncludingRemoved(List<Long> ids);
 
     List<VMInstanceVO> listDeleteProtectedVmsByAccountId(long accountId);
+
+    List<VMInstanceVO> listDeleteProtectedVmsByDomainIds(List<Long> domainIds);
 }
