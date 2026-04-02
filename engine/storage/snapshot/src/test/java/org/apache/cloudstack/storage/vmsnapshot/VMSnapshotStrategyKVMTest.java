@@ -24,7 +24,9 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -153,7 +155,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
     @Test
     public void testCreateDiskSnapshotBasedOnStrategy() throws Exception {
         VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
-        List<SnapshotInfo> forRollback = new ArrayList<>();
+        Map<Long, SnapshotInfo> volumeToSnapshotInfoMapForRollback = new HashMap<>();
         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
         SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
         SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
@@ -177,7 +179,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         VMSnapshotDetailsVO vmDetails = new VMSnapshotDetailsVO(vmSnapshot.getId(), volUuid, String.valueOf(snapshot.getId()), false);
         when(vmSnapshotDetailsDao.persist(any())).thenReturn(vmDetails);
 
-        info =  vmStrategy.createDiskSnapshot(vmSnapshot, forRollback, vol);
+        info =  vmStrategy.createDiskSnapshot(vmSnapshot, volumeToSnapshotInfoMapForRollback, vol);
         assertNotNull(info);
     }
 
