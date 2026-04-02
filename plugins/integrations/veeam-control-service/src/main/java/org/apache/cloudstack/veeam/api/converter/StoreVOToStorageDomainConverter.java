@@ -218,9 +218,9 @@ public class StoreVOToStorageDomainConverter {
             Object t = pool.getPoolType(); // often StoragePoolType enum
             if (t != null) {
                 String s = t.toString().toLowerCase();
-                if (s.contains("networkfilesystem") || s.contains("nfs")) return "nfs";
+                if (s.contains("networkfilesystem") || s.contains("nfs") || s.contains("sharedmountpoint")) return "nfs";
                 if (s.contains("iscsi")) return "iscsi";
-                if (s.contains("filesystem")) return "posixfs";
+                if (s.contains("filesystem")) return "localfs";
                 if (s.contains("rbd") || s.contains("ceph")) return "cinder"; // not perfect; pick stable
             }
         } catch (Exception ignored) { }
