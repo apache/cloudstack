@@ -49,6 +49,7 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -410,4 +411,13 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         return filteredPools;
     }
 
+    @Override
+    public List<StoragePoolJoinVO> listByZoneAndProvider(long zoneId, Filter filter) {
+        SearchBuilder<StoragePoolJoinVO> sb = createSearchBuilder();
+        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<StoragePoolJoinVO> sc = sb.create();
+        sc.setParameters("zoneId", zoneId);
+        return listBy(sc, filter);
+    }
 }

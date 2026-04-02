@@ -155,6 +155,14 @@ public class DeployVMCmd extends BaseDeployVMCmd {
         this.displayVm = displayVm;
     }
 
+    public void setUserDataId(Long userDataId) {
+        this.userdataId = userDataId;
+    }
+
+    public void setAffinityGroupIds(List<Long> ids) {
+        this.affinityGroupIdList = ids;
+    }
+
     public void setDetails(Map details) {
         this.details = details;
     }

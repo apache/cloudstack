@@ -20,6 +20,7 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -51,5 +52,5 @@ public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
     List<UserVmJoinVO> listLeaseInstancesExpiringInDays(int days);
 
-    List<UserVmJoinVO> listByHypervisorType(Hypervisor.HypervisorType hypervisorType);
+    List<UserVmJoinVO> listByHypervisorType(Hypervisor.HypervisorType hypervisorType, Filter filter);
 }

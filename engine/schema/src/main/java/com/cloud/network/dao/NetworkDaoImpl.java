@@ -632,20 +632,25 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
-    public List<NetworkVO> listByZoneAndTrafficType(final long zoneId, final TrafficType trafficType) {
+    public List<NetworkVO> listByZoneAndTrafficType(final long zoneId, final TrafficType trafficType, Filter filter) {
         final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("datacenter", zoneId);
         sc.setParameters("trafficType", trafficType);
 
-        return listBy(sc, null);
+        return listBy(sc, filter);
     }
 
     @Override
-    public List<NetworkVO> listByTrafficType(final TrafficType trafficType) {
+    public List<NetworkVO> listByZoneAndTrafficType(final long zoneId, final TrafficType trafficType) {
+        return listByZoneAndTrafficType(zoneId, trafficType, null);
+    }
+
+    @Override
+    public List<NetworkVO> listByTrafficType(final TrafficType trafficType, Filter filter) {
         final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("trafficType", trafficType);
 
-        return listBy(sc, null);
+        return listBy(sc, filter);
     }
 
     @Override

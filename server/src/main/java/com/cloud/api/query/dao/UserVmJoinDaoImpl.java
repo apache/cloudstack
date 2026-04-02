@@ -84,6 +84,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -498,7 +499,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
 
         if (userVm.getUserDataId() != null) {
-            userVmResponse.setUserDataId(userVm.getUserDataUUid());
+            userVmResponse.setUserDataId(userVm.getUserDataUuid());
             userVmResponse.setUserDataName(userVm.getUserDataName());
             userVmResponse.setUserDataDetails(userVm.getUserDataDetails());
             userVmResponse.setUserDataPolicy(userVm.getUserDataPolicy());
@@ -835,12 +836,12 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     @Override
-    public List<UserVmJoinVO> listByHypervisorType(Hypervisor.HypervisorType hypervisorType) {
+    public List<UserVmJoinVO> listByHypervisorType(Hypervisor.HypervisorType hypervisorType, Filter filter) {
         SearchBuilder<UserVmJoinVO> sb = createSearchBuilder();
         sb.and("hypervisorType", sb.entity().getHypervisorType(), Op.EQ);
         sb.done();
         SearchCriteria<UserVmJoinVO> sc = sb.create();
         sc.setParameters("hypervisorType", hypervisorType);
-        return listBy(sc);
+        return listBy(sc, filter);
     }
 }

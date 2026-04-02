@@ -129,8 +129,9 @@ public final class UserVmJoinVOToVmConverter {
         os.setBoot(boot);
         dst.setOs(os);
         Vm.Bios bios = Vm.Bios.getDefault();
+        Map<String, String> details = null;
         if (detailsResolver != null) {
-            Map<String, String> details = detailsResolver.apply(src.getId());
+            details = detailsResolver.apply(src.getId());
             Vm.Bios.updateBios(bios, MapUtils.getString(details, ApiConstants.BootType.UEFI.toString()));
         }
         dst.setBios(bios);
@@ -166,6 +167,11 @@ public final class UserVmJoinVOToVmConverter {
         if (allContent) {
             dst.setInitialization(getOvfInitialization(dst, src));
         }
+
+        dst.setAccountId(src.getAccountUuid());
+        dst.setAffinityGroupId(src.getAffinityGroupUuid());
+        dst.setUserDataId(src.getUserDataUuid());
+        dst.setDetails(details);
 
         return dst;
     }

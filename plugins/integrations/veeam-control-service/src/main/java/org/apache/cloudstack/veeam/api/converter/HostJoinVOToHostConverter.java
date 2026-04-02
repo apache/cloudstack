@@ -73,7 +73,7 @@ public class HostJoinVOToHostConverter {
 
         // --- Memory ---
         h.setMemory(String.valueOf(vo.getTotalMemory()));
-        h.setMaxSchedulingMemory(String.valueOf(vo.getTotalMemory() - vo.getMemUsedCapacity())); // ToDo: check
+        h.setMaxSchedulingMemory(String.valueOf(vo.getTotalMemory() - vo.getMemUsedCapacity()));
 
         // --- OS / versions (optional placeholders) ---
         // If you want, you can set conservative defaults to match oVirt shape.

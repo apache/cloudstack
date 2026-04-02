@@ -28,6 +28,7 @@ import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 
@@ -161,12 +162,17 @@ public class MockNetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implemen
     }
 
     @Override
+    public List<NetworkVO> listByZoneAndTrafficType(final long zoneId, final TrafficType trafficType, Filter filter) {
+        return null;
+    }
+
+    @Override
     public List<NetworkVO> listByZoneAndTrafficType(final long zoneId, final TrafficType trafficType) {
         return null;
     }
 
     @Override
-    public List<NetworkVO> listByTrafficType(final TrafficType trafficType) {
+    public List<NetworkVO> listByTrafficType(final TrafficType trafficType, Filter filter) {
         return null;
     }
 

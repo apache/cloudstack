@@ -18,6 +18,7 @@
 package org.apache.cloudstack.veeam.api.dto;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 
@@ -79,6 +80,9 @@ public final class Vm extends BaseDto {
 
     // CloudStack-specific fields
     private String accountId;
+    private String affinityGroupId;
+    private String userDataId;
+    private Map<String, String> details;
 
     public String getName() {
         return name;
@@ -295,6 +299,33 @@ public final class Vm extends BaseDto {
 
     public void setAccountId(String accountId) {
         this.accountId = accountId;
+    }
+
+    @JsonIgnore
+    public String getAffinityGroupId() {
+        return affinityGroupId;
+    }
+
+    public void setAffinityGroupId(String affinityGroupId) {
+        this.affinityGroupId = affinityGroupId;
+    }
+
+    @JsonIgnore
+    public String getUserDataId() {
+        return userDataId;
+    }
+
+    public void setUserDataId(String userDataId) {
+        this.userDataId = userDataId;
+    }
+
+    @JsonIgnore
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

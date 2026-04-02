@@ -29,6 +29,7 @@ import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Tag;
+import org.apache.cloudstack.veeam.api.request.ListQuery;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -85,7 +86,8 @@ public class TagsRouteHandler  extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                              Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<Tag> result = serverAdapter.listAllTags();
+        ListQuery query = ListQuery.fromRequest(req);
+        final List<Tag> result = serverAdapter.listAllTags(query.getOffset(), query.getLimit());
         NamedList<Tag> response = NamedList.of("tag", result);
         io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }

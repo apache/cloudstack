@@ -84,7 +84,7 @@ public class JobsRouteHandler  extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                              Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<Job> result = serverAdapter.listAllJobs();
+        final List<Job> result = serverAdapter.listPendingJobs();
         NamedList<Job> response = NamedList.of("job", result);
         io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }

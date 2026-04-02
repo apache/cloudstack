@@ -76,16 +76,12 @@ public class ApiService extends ManagerBase implements RouteHandler {
         add(links, basePath + "/clusters?search={query}", "clusters/search");
         add(links, basePath + "/datacenters", "datacenters");
         add(links, basePath + "/datacenters?search={query}", "datacenters/search");
-        add(links, basePath + "/events", "events");
-        add(links, basePath + "/events;from={event_id}?search={query}", "events/search");
         add(links, basePath + "/hosts", "hosts");
         add(links, basePath + "/hosts?search={query}", "hosts/search");
         add(links, basePath + "/networks", "networks");
         add(links, basePath + "/networks?search={query}", "networks/search");
         add(links, basePath + "/storagedomains", "storagedomains");
         add(links, basePath + "/storagedomains?search={query}", "storagedomains/search");
-        add(links, basePath + "/templates", "templates");
-        add(links, basePath + "/templates?search={query}", "templates/search");
         add(links, basePath + "/vms", "vms");
         add(links, basePath + "/vms?search={query}", "vms/search");
         add(links, basePath + "/disks", "disks");

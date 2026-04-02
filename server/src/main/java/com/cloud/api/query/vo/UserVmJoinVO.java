@@ -429,7 +429,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private int jobStatus;
 
     @Column(name = "affinity_group_id")
-    private long affinityGroupId;
+    private Long affinityGroupId;
 
     @Column(name = "affinity_group_uuid")
     private String affinityGroupUuid;
@@ -1012,7 +1012,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return ip6Cidr;
     }
 
-    public long getAffinityGroupId() {
+    public Long getAffinityGroupId() {
         return affinityGroupId;
     }
 
@@ -1057,7 +1057,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return userDataId;
     }
 
-    public String getUserDataUUid() {
+    public String getUserDataUuid() {
         return userDataUuid;
     }
 

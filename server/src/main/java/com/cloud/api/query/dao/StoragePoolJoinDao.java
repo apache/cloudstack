@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.storage.StoragePool;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -43,5 +44,7 @@ public interface StoragePoolJoinDao extends GenericDao<StoragePoolJoinVO, Long> 
     List<StoragePoolJoinVO> searchByIds(Long... spIds);
 
     List<StoragePoolVO> findStoragePoolByScopeAndRuleTags(Long datacenterId, Long podId, Long clusterId, ScopeType scopeType, List<String> tags);
+
+    List<StoragePoolJoinVO> listByZoneAndProvider(long zoneId, Filter filter);
 
 }

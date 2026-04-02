@@ -21,8 +21,10 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -36,6 +38,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
@@ -195,6 +198,22 @@ public class OvfXmlUtil {
                 sb.append("</Entry>");
             }
             sb.append("</DataDiskOfferingIdMap>");
+            if (MapUtils.isNotEmpty(vm.getDetails())) {
+                sb.append("<Details>");
+                for (Map.Entry<String, String> entry : vm.getDetails().entrySet()) {
+                    sb.append("<Detail>");
+                    sb.append("<Key>").append(escapeText(entry.getKey())).append("</Key>");
+                    sb.append("<Value>").append(escapeText(entry.getValue())).append("</Value>");
+                    sb.append("</Detail>");
+                }
+                sb.append("</Details>");
+            }
+            if (vo.getUserDataId() != null) {
+                sb.append("<UserDataId>").append(escapeText(vo.getUserDataUuid())).append("</UserDataId>");
+            }
+            if (vo.getAffinityGroupId() != null) {
+                sb.append("<AffinityGroupId>").append(escapeText(vo.getAffinityGroupUuid())).append("</AffinityGroupId>");
+            }
             sb.append("</CloudStack>");
             sb.append("</Section>");
         }
@@ -518,14 +537,35 @@ public class OvfXmlUtil {
         if (StringUtils.isNotBlank(serviceOfferingId)) {
             vm.setCpuProfile(Ref.of("", serviceOfferingId));
         }
-    }
-
-    private static String xpathString(XPath xpath, Document doc, String expression) {
+        String affinityGroupId = xpathString(xpath, metadataSection, ".//*[local-name()='AffinityGroupId']/text()");
+        if (StringUtils.isNotBlank(affinityGroupId)) {
+            vm.setAffinityGroupId(affinityGroupId);
+        }
+        String userDataId = xpathString(xpath, metadataSection, ".//*[local-name()='UserDataId']/text()");
+        if (StringUtils.isNotBlank(userDataId)) {
+            vm.setUserDataId(userDataId);
+        }
+        final Map<String, String> details = new HashMap<>();
         try {
-            String value = (String) xpath.evaluate(expression, doc, XPathConstants.STRING);
-            return StringUtils.isBlank(value) ? null : value.trim();
-        } catch (XPathExpressionException e) {
-            return null;
+            NodeList detailNodes = (NodeList) xpath.evaluate(
+                    ".//*[local-name()='Details']/*[local-name()='Detail']",
+                    metadataSection,
+                    XPathConstants.NODESET
+            );
+
+            for (int i = 0; i < detailNodes.getLength(); i++) {
+                Node detailNode = detailNodes.item(i);
+                String key = xpathString(xpath, detailNode, "./*[local-name()='Key']/text()");
+                if (StringUtils.isBlank(key)) {
+                    continue;
+                }
+                String value = xpathString(xpath, detailNode, "./*[local-name()='Value']/text()");
+                details.put(key, defaultString(value));
+            }
+        } catch (XPathExpressionException ignored) {
+        }
+        if (!details.isEmpty()) {
+            vm.setDetails(details);
         }
     }
 

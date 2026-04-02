@@ -31,11 +31,13 @@ import org.apache.cloudstack.veeam.api.dto.DataCenter;
 import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Network;
 import org.apache.cloudstack.veeam.api.dto.StorageDomain;
+import org.apache.cloudstack.veeam.api.request.ListQuery;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.component.ManagerBase;
 
 public class DataCentersRouteHandler extends ManagerBase implements RouteHandler {
@@ -81,11 +83,11 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
             } else if (idAndSubPath.size() == 2) {
                 String subPath = idAndSubPath.get(1);
                 if ("storagedomains".equals(subPath)) {
-                    handleGetStorageDomainsByDcId(id, resp, outFormat, io);
+                    handleGetStorageDomainsByDcId(id, req, resp, outFormat, io);
                     return;
                 }
                 if ("networks".equals(subPath)) {
-                    handleGetNetworksByDcId(id, resp, outFormat, io);
+                    handleGetNetworksByDcId(id, req, resp, outFormat, io);
                     return;
                 }
             }
@@ -96,7 +98,8 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<DataCenter> result = serverAdapter.listAllDataCenters();
+        ListQuery query = ListQuery.fromRequest(req);
+        final List<DataCenter> result = serverAdapter.listAllDataCenters(query.getOffset(), query.getLimit());
         NamedList<DataCenter> response = NamedList.of("data_center", result);
         io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }
@@ -111,25 +114,35 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
         }
     }
 
-    protected void handleGetStorageDomainsByDcId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
-              final VeeamControlServlet io) throws IOException {
+    protected void handleGetStorageDomainsByDcId(final String id, final HttpServletRequest req,
+             final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
+            throws IOException {
         try {
-            List<StorageDomain> storageDomains = serverAdapter.listStorageDomainsByDcId(id);
+            ListQuery query = ListQuery.fromRequest(req);
+            List<StorageDomain> storageDomains = serverAdapter.listStorageDomainsByDcId(id, query.getPage(),
+                    query.getMax());
             NamedList<StorageDomain> response = NamedList.of("storage_domain", storageDomains);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (PermissionDeniedException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
-    protected void handleGetNetworksByDcId(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,
-              final VeeamControlServlet io) throws IOException {
+    protected void handleGetNetworksByDcId(final String id, final HttpServletRequest req,
+           final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
+            throws IOException {
         try {
-            List<Network> networks = serverAdapter.listNetworksByDcId(id);
+            ListQuery query = ListQuery.fromRequest(req);
+            List<Network> networks = serverAdapter.listNetworksByDcId(id, query.getPage(),
+                    query.getMax());
             NamedList<Network> response = NamedList.of("network", networks);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (PermissionDeniedException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 }

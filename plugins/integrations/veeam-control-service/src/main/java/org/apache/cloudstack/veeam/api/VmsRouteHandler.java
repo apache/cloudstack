@@ -38,10 +38,7 @@ import org.apache.cloudstack.veeam.api.dto.ResourceAction;
 import org.apache.cloudstack.veeam.api.dto.Snapshot;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.cloudstack.veeam.api.dto.VmAction;
-import org.apache.cloudstack.veeam.api.request.VmListQuery;
-import org.apache.cloudstack.veeam.api.request.VmSearchExpr;
-import org.apache.cloudstack.veeam.api.request.VmSearchFilters;
-import org.apache.cloudstack.veeam.api.request.VmSearchParser;
+import org.apache.cloudstack.veeam.api.request.ListQuery;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -54,23 +51,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api/vms";
-    private static final int DEFAULT_MAX = 50;
-    private static final int HARD_CAP_MAX = 1000;
-    private static final int DEFAULT_PAGE = 1;
 
     @Inject
     ServerAdapter serverAdapter;
-
-    private VmSearchParser searchParser;
-
-    @Override
-    public boolean start() {
-
-        this.searchParser = new VmSearchParser(Set.of(
-                "id", "name", "status", "cluster", "host", "template"
-        ));
-        return true;
-    }
 
     @Override
     public int priority() {
@@ -248,57 +231,10 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final VmListQuery q = fromRequest(req);
-
-        // Validate max/page early (optional strictness)
-        if (q.getMax() != null && q.getMax() <= 0) {
-            io.notFound(resp, "Invalid 'max' (must be > 0)", outFormat);
-            return;
-        }
-        if (q.getPage() != null && q.getPage() <= 0) {
-            io.notFound(resp, "Invalid 'page' (must be > 0)", outFormat);
-            return;
-        }
-
-        final int limit = q.resolvedMax(DEFAULT_MAX, HARD_CAP_MAX);
-        final int offset = q.offset(DEFAULT_MAX, HARD_CAP_MAX, DEFAULT_PAGE);
-
-        final VmSearchExpr expr;
-        try {
-            expr = searchParser.parse(q.getSearch());
-        } catch (VmSearchParser.VmSearchParseException e) {
-            io.notFound(resp, "Invalid search: " + e.getMessage(), outFormat);
-            return;
-        }
-
-        final VmSearchFilters filters;
-        try {
-            filters = VmSearchFilters.fromAndOnly(expr); // AND-only v1
-        } catch (VmSearchParser.VmSearchParseException e) {
-            io.notFound(resp, "Unsupported search: " + e.getMessage(), outFormat);
-            return;
-        }
-
-        final List<Vm> result = serverAdapter.listAllInstances();
+        ListQuery query = ListQuery.fromRequest(req);
+        final List<Vm> result = serverAdapter.listAllInstances(query.getOffset(), query.getLimit());
         NamedList<Vm> response = NamedList.of("vm", result);
         io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
-    }
-
-    protected static VmListQuery fromRequest(final HttpServletRequest req) {
-        final VmListQuery q = new VmListQuery();
-        q.setSearch(req.getParameter("search"));
-        q.setMax(parseIntOrNull(req.getParameter("max")));
-        q.setPage(parseIntOrNull(req.getParameter("page")));
-        return q;
-    }
-
-    protected static Integer parseIntOrNull(final String s) {
-        if (s == null || s.trim().isEmpty()) return null;
-        try {
-            return Integer.parseInt(s.trim());
-        } catch (NumberFormatException e) {
-            return Integer.valueOf(-1); // will be rejected by validation above
-        }
     }
 
     protected void handlePost(final HttpServletRequest req, final HttpServletResponse resp,

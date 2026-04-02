@@ -29,6 +29,7 @@ import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.Disk;
 import org.apache.cloudstack.veeam.api.dto.NamedList;
+import org.apache.cloudstack.veeam.api.request.ListQuery;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -120,7 +121,8 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<Disk> result = serverAdapter.listAllDisks();
+        ListQuery query = ListQuery.fromRequest(req);
+        final List<Disk> result = serverAdapter.listAllDisks(query.getOffset(), query.getLimit());
         NamedList<Disk> response = NamedList.of("disk", result);
         io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
     }

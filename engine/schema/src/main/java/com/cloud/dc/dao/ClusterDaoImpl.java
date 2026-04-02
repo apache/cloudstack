@@ -38,6 +38,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -415,9 +416,9 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<ClusterVO> listByHypervisorType(HypervisorType hypervisorType) {
+    public List<ClusterVO> listByHypervisorType(HypervisorType hypervisorType, Filter filter) {
         SearchCriteria<ClusterVO> sc = ZoneHyTypeSearch.create();
         sc.setParameters("hypervisorType", hypervisorType.toString());
-        return listBy(sc);
+        return listBy(sc, filter);
     }
 }

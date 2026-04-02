@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -122,9 +123,9 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
     }
 
     @Override
-    public List<ResourceTagVO> listByResourceType(ResourceObjectType resourceType) {
+    public List<ResourceTagVO> listByResourceType(ResourceObjectType resourceType, Filter filter) {
         SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
         sc.setParameters("resourceType", resourceType);
-        return listBy(sc);
+        return listBy(sc, filter);
     }
 }

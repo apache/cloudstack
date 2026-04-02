@@ -23,6 +23,7 @@ import java.util.Set;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 
@@ -61,5 +62,5 @@ public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long> {
 
     List<? extends ResourceTag> listByResourceUuid(String resourceUuid);
 
-    List<ResourceTagVO> listByResourceType(ResourceObjectType resourceType);
+    List<ResourceTagVO> listByResourceType(ResourceObjectType resourceType, Filter filter);
 }

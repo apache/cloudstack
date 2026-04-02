@@ -42,6 +42,7 @@ import org.apache.cloudstack.api.response.CheckpointResponse;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -67,6 +68,8 @@ import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -103,6 +106,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Inject
     private PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Inject
+    AccountService accountService;
 
     private Timer imageTransferTimer;
 
@@ -493,8 +499,10 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Override
     public ImageTransfer createImageTransfer(long volumeId, Long backupId, ImageTransfer.Direction direction, ImageTransfer.Format format) {
+        User callingUser = CallContext.current().getCallingUser();
         ImageTransfer imageTransfer;
         VolumeVO volume = volumeDao.findById(volumeId);
+        accountService.checkAccess(callingUser, volume);
 
         if (volume == null) {
             throw new CloudRuntimeException("Volume not found with the specified Id");

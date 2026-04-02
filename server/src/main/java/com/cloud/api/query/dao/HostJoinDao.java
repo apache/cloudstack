@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface HostJoinDao extends GenericDao<HostJoinVO, Long> {
@@ -42,6 +43,6 @@ public interface HostJoinDao extends GenericDao<HostJoinVO, Long> {
 
     List<HostJoinVO> findByClusterId(Long clusterId, Host.Type type);
 
-    List<HostJoinVO> listRoutingHostsByHypervisor(Hypervisor.HypervisorType hypervisorType);
+    List<HostJoinVO> listRoutingHostsByHypervisor(Hypervisor.HypervisorType hypervisorType, Filter filter);
 
 }
