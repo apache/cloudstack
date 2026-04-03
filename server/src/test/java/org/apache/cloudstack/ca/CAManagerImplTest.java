@@ -290,6 +290,7 @@ public class CAManagerImplTest {
 
             Assert.assertTrue(result);
             Mockito.verify(caManager, Mockito.times(1)).provisionCertificateViaSsh(Mockito.any(Connection.class), Mockito.eq("192.168.1.1"), Mockito.eq("host1"), Mockito.eq("root"));
+            sshCmdHelperMock.verify(() -> SSHCmdHelper.sshExecuteCmd(Mockito.any(Connection.class), Mockito.eq("sudo service libvirtd restart")), Mockito.times(1));
             sshCmdHelperMock.verify(() -> SSHCmdHelper.sshExecuteCmd(Mockito.any(Connection.class), Mockito.eq("sudo service cloudstack-agent restart")), Mockito.times(1));
         }
     }

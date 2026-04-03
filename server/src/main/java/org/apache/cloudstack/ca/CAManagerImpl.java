@@ -323,7 +323,9 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
             provisionCertificateViaSsh(sshConnection, hostIp, host.getName(), caProvider);
 
+            SSHCmdHelper.sshExecuteCmd(sshConnection, "sudo service libvirtd restart");
             SSHCmdHelper.sshExecuteCmd(sshConnection, "sudo service cloudstack-agent restart");
+
             return true;
         } catch (Exception e) {
             logger.error("Error during forced SSH provisioning for KVM host " + host.getUuid(), e);
