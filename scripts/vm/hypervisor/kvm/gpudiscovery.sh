@@ -848,7 +848,7 @@ for LINE in "${LINES[@]}"; do
 	fi
 
 	# Only process GPU classes (3D controller)
-	if [[ ! "$PCI_CLASS" =~ (3D\ controller|Processing\ accelerators) ]]; then
+	if [[ ! "$PCI_CLASS" =~ (3D\ controller|Processing\ accelerators|Display\ controller) ]]; then
 		continue
 	fi
 
