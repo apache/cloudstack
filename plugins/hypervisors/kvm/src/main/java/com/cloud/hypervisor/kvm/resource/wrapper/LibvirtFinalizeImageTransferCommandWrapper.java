@@ -39,8 +39,8 @@ public class LibvirtFinalizeImageTransferCommandWrapper extends CommandWrapper<F
         resetScript.execute();
     }
 
-    private boolean stopImageServer(int imageServerPort) {
-        String unitName = "cloudstack-image-server";
+    private boolean stopImageServer(int imageServerPort, LibvirtComputingResource resource) {
+        String unitName = resource.IMAGE_SERVER_SYSTEMD_UNIT_NAME;
 
         Script checkScript = new Script("/bin/bash", logger);
         checkScript.add("-c");
@@ -88,12 +88,12 @@ public class LibvirtFinalizeImageTransferCommandWrapper extends CommandWrapper<F
         int activeTransfers = ImageServerControlSocket.unregisterTransfer(transferId);
         if (activeTransfers < 0) {
             logger.warn("Could not reach image server to unregister transfer {}; assuming server is down", transferId);
-            stopImageServer(imageServerPort);
+            stopImageServer(imageServerPort, resource);
             return new Answer(cmd, true, "Image transfer finalized (server unreachable, forced stop).");
         }
 
         if (activeTransfers == 0) {
-            stopImageServer(imageServerPort);
+            stopImageServer(imageServerPort, resource);
         }
 
         return new Answer(cmd, true, "Image transfer finalized.");

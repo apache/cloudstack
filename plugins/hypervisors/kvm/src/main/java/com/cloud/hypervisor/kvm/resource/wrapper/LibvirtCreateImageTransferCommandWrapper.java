@@ -40,6 +40,9 @@ import com.cloud.utils.script.Script;
 public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<CreateImageTransferCommand, Answer, LibvirtComputingResource> {
     protected Logger logger = LogManager.getLogger(getClass());
 
+    private static final String IMAGE_SERVER_TLS_CERT_FILE = "/etc/cloudstack/agent/cloud.crt";
+    private static final String IMAGE_SERVER_TLS_KEY_FILE = "/etc/cloudstack/agent/cloud.key";
+
     private void resetService(String unitName) {
         Script resetScript = new Script("/bin/bash", logger);
         resetScript.add("-c");
@@ -51,13 +54,12 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
         return "'" + value.replace("'", "'\\''") + "'";
     }
 
-    private boolean startImageServerIfNotRunning(int imageServerPort, LibvirtComputingResource resource) {
+    private boolean startImageServerIfNotRunning(int imageServerPort, String listenAddress, LibvirtComputingResource resource) {
         final String imageServerPackageDir = resource.getImageServerPath();
         final String imageServerParentDir = new File(imageServerPackageDir).getParent();
         final String imageServerModuleName = new File(imageServerPackageDir).getName();
-        final String listenAddress = "0.0.0.0";
         final boolean tlsEnabled = resource.isImageServerTlsEnabled();
-        String unitName = "cloudstack-image-server";
+        String unitName = resource.IMAGE_SERVER_SYSTEMD_UNIT_NAME;
 
         Script checkScript = new Script("/bin/bash", logger);
         checkScript.add("-c");
@@ -75,8 +77,8 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
 
             if (tlsEnabled) {
                 systemdRunCmd.append(" --tls-enabled");
-                systemdRunCmd.append(" --tls-cert-file ").append(shellQuote(resource.getImageServerTlsCertFile()));
-                systemdRunCmd.append(" --tls-key-file ").append(shellQuote(resource.getImageServerTlsKeyFile()));
+                systemdRunCmd.append(" --tls-cert-file ").append(IMAGE_SERVER_TLS_CERT_FILE);
+                systemdRunCmd.append(" --tls-key-file ").append(IMAGE_SERVER_TLS_KEY_FILE);
             }
 
             Script startScript = new Script("/bin/bash", logger);
@@ -157,7 +159,11 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
         }
 
         final int imageServerPort = LibvirtComputingResource.IMAGE_SERVER_DEFAULT_PORT;
-        if (!startImageServerIfNotRunning(imageServerPort, resource)) {
+        String listenAddress = resource.getImageServerListenAddress();
+        if (StringUtils.isBlank(listenAddress)) {
+            listenAddress = resource.getPrivateIp();
+        }
+        if (!startImageServerIfNotRunning(imageServerPort, listenAddress, resource)) {
             return new CreateImageTransferAnswer(cmd, false, "Failed to start image server.");
         }
 
@@ -166,7 +172,7 @@ public class LibvirtCreateImageTransferCommandWrapper extends CommandWrapper<Cre
         }
 
         final String transferScheme = resource.isImageServerTlsEnabled() ? "https" : "http";
-        final String transferUrl = String.format("%s://%s:%d/images/%s", transferScheme, resource.getPrivateIp(), imageServerPort, transferId);
+        final String transferUrl = String.format("%s://%s:%d/images/%s", transferScheme, listenAddress, imageServerPort, transferId);
         return new CreateImageTransferAnswer(cmd, true, "Image transfer prepared on KVM host.", transferId, transferUrl);
     }
 }

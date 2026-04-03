@@ -126,23 +126,16 @@ public class AgentProperties{
     /**
      * Enables TLS on the KVM image server transfer endpoint.<br>
      * Data type: Boolean.<br>
-     * Default value: <code>false</code>
+     * Default value: <code>true</code>
      */
-    public static final Property<Boolean> IMAGE_SERVER_TLS_ENABLED = new Property<>("image.server.tls.enabled", false);
+    public static final Property<Boolean> IMAGE_SERVER_TLS_ENABLED = new Property<>("image.server.tls.enabled", true);
 
     /**
-     * PEM certificate file used by the KVM image server when TLS is enabled.<br>
+     * The IP address that the KVM image server listens on.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> IMAGE_SERVER_TLS_CERT_FILE = new Property<>("image.server.tls.cert.file", null, String.class);
-
-    /**
-     * PEM private key file used by the KVM image server when TLS is enabled.<br>
-     * Data type: String.<br>
-     * Default value: <code>null</code>
-     */
-    public static final Property<String> IMAGE_SERVER_TLS_KEY_FILE = new Property<>("image.server.tls.key.file", null, String.class);
+    public static final Property<String> IMAGE_SERVER_LISTEN_ADDRESS = new Property<>("image.server.listen.address", null, String.class);
 
     /**
      * Directory where Qemu sockets are placed.<br>

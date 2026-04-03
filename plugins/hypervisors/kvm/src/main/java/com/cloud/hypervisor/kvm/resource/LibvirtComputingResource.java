@@ -383,6 +383,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s  --metadata";
 
     public static final int IMAGE_SERVER_DEFAULT_PORT = 54322;
+    public static final String IMAGE_SERVER_SYSTEMD_UNIT_NAME = "cloudstack-image-server";
 
     protected int qcow2DeltaMergeTimeout;
 
@@ -399,8 +400,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String nasBackupPath;
     private String imageServerPath;
     private boolean imageServerTlsEnabled = false;
-    private String imageServerTlsCertFile;
-    private String imageServerTlsKeyFile;
+    private String imageServerListenAddress;
     private String securityGroupPath;
     private String ovsPvlanDhcpHostPath;
     private String ovsPvlanVmPath;
@@ -823,12 +823,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return imageServerTlsEnabled;
     }
 
-    public String getImageServerTlsCertFile() {
-        return imageServerTlsCertFile;
-    }
-
-    public String getImageServerTlsKeyFile() {
-        return imageServerTlsKeyFile;
+    public String getImageServerListenAddress() {
+        return imageServerListenAddress;
     }
 
     public String getOvsPvlanDhcpHostPath() {
@@ -1050,12 +1046,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cachePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_CACHE_LOCATION);
 
         imageServerTlsEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_TLS_ENABLED);
-        imageServerTlsCertFile = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_TLS_CERT_FILE);
-        imageServerTlsKeyFile = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_TLS_KEY_FILE);
-
-        if (imageServerTlsEnabled && (StringUtils.isBlank(imageServerTlsCertFile) || StringUtils.isBlank(imageServerTlsKeyFile))) {
-            throw new ConfigurationException("image server TLS is enabled but image.server.tls.cert.file or image.server.tls.key.file is missing");
-        }
+        imageServerListenAddress = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.IMAGE_SERVER_LISTEN_ADDRESS);
 
         params.put("domr.scripts.dir", domrScriptsDir);
 
