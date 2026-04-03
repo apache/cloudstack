@@ -682,7 +682,7 @@ jobs:
           SECRET_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Safe
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v6.0.
         with:
           name: safe-
           path: ${{ env.GH_AW_SAFE_OUTPUTS }}
@@ -704,13 +704,13 @@ jobs:
             await main();
       - name: Upload sanitized agent
         if: always() && env.
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v6.0.
         with:
           name: agent-
           path: ${{ env.GH_AW_AGENT_OUTPUT }}
           if-no-files-found:
       - name: Upload engine output
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v6.0.
         with:
           name:
           path: |
@@ -755,7 +755,7 @@ jobs:
       - name: Upload agent
         if: always()
         continue-on-error:
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v6.0.
         with:
           name: agent-
           path: |
@@ -789,7 +789,7 @@ jobs:
           destination: /opt/gh-aw/
       - name: Download agent output
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/safeoutputs/
@@ -886,13 +886,13 @@ jobs:
           destination: /opt/gh-aw/
       - name: Download agent
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/threat-detection/
       - name: Download agent output
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/threat-detection/
@@ -964,7 +964,7 @@ jobs:
             await main();
       - name: Upload threat detection
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v6.0.
         with:
           name: threat-detection.
           path: /tmp/gh-aw/threat-detection/detection.
@@ -998,7 +998,7 @@ jobs:
           destination: /opt/gh-aw/
       - name: Download agent output
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/safeoutputs/
