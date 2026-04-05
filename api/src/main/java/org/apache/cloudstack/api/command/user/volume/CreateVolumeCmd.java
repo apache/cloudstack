@@ -113,7 +113,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
     @Parameter(name = ApiConstants.STORAGE_ID,
             type = CommandType.UUID,
             entityType = StoragePoolResponse.class,
-            description = "Storage pool ID to create the volume in.")
+            description = "Storage pool ID to create the volume in. Exclusive with SnapshotId parameter.")
     private Long storageId;
 
     /////////////////////////////////////////////////////
@@ -161,6 +161,9 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
     }
 
     public Long getStorageId() {
+        if (snapshotId != null && storageId != null) {
+            throw new IllegalArgumentException("StorageId parameter cannot be specified with the SnapshotId parameter.");
+        }
         return storageId;
     }
 
