@@ -1313,7 +1313,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     logger.warn("Agent is unavailable", ex);
                     return null;
                 } catch (final RuntimeException ex) {
-                    s_logger.error(String.format("Failed to execute propagated event %s for host %d", cmd.getEvent().name(), cmd.getHostId()), ex);
+                    logger.error(String.format("Failed to execute propagated event %s for host %d", cmd.getEvent().name(), cmd.getHostId()), ex);
                     final Answer[] answers = new Answer[1];
                     String details = ex.getMessage();
                     if (details == null || details.isEmpty()) {
