@@ -51,8 +51,8 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         final String mountOptions = command.getMountOptions();
         List<PrimaryDataStoreTO> volumePools = command.getVolumePools();
         final List<String> volumePaths = command.getVolumePaths();
-        Long timeout = (long) (command.getTimeout() * 1000);
         KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+        int timeout = command.getWait() > 0 ? command.getWait() * 1000 : libvirtComputingResource.getCmdsTimeout();
 
         List<String> diskPaths = new ArrayList<>();
         if (Objects.nonNull(volumePaths)) {

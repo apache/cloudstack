@@ -85,13 +85,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             true,
             BackupFrameworkEnabled.key());
 
-    ConfigKey<Integer> NASBackupCreateBackupTimeout = new ConfigKey<>("Advanced", Integer.class,
-            "nas.backup.create.backup.timeout",
-            "14400",
-            "Timeout in seconds for the create backup command.",
-            true,
-            BackupFrameworkEnabled.key());
-
     @Inject
     private BackupDao backupDao;
 
@@ -212,7 +205,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
         command.setQuiesce(quiesceVM);
-        command.setTimeout(NASBackupCreateBackupTimeout.value());
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
