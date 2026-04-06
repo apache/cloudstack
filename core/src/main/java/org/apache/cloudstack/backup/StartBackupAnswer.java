@@ -21,7 +21,6 @@ import com.cloud.agent.api.Answer;
 
 public class StartBackupAnswer extends Answer {
     private Long checkpointCreateTime;
-    private Boolean isIncremental;
 
     public StartBackupAnswer() {
     }
@@ -41,13 +40,5 @@ public class StartBackupAnswer extends Answer {
 
     public void setCheckpointCreateTime(Long checkpointCreateTime) {
         this.checkpointCreateTime = checkpointCreateTime;
-    }
-
-    public Boolean getIncremental() {
-        return isIncremental;
-    }
-
-    public void setIncremental(Boolean incremental) {
-        isIncremental = incremental;
     }
 }

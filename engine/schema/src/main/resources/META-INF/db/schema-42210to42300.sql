@@ -124,10 +124,6 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'to_checkpoint_id', 'VARCH
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'checkpoint_create_time', 'BIGINT DEFAULT NULL COMMENT "Checkpoint creation timestamp from libvirt"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'host_id', 'BIGINT UNSIGNED DEFAULT NULL COMMENT "Host where backup is running"');
 
--- Add checkpoint tracking fields to vm_instance table for domain recreation
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'active_checkpoint_id', 'VARCHAR(255) DEFAULT NULL COMMENT "Active checkpoint id tracked for incremental backups"');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'active_checkpoint_create_time', 'BIGINT DEFAULT NULL COMMENT "Active checkpoint creation time"');
-
 -- Create image_transfer table for per-disk image transfers
 CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
     `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',

@@ -22,19 +22,19 @@ import java.time.Instant;
 import org.apache.cloudstack.veeam.api.dto.Checkpoint;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.vm.UserVmVO;
+import com.cloud.utils.NumbersUtil;
 
 public class UserVmVOToCheckpointConverter {
 
-    public static Checkpoint toCheckpoint(final UserVmVO vm) {
-        if (StringUtils.isEmpty(vm.getActiveCheckpointId())) {
+    public static Checkpoint toCheckpoint(String checkpointId, String createTimeStr) {
+        if (StringUtils.isEmpty(checkpointId)) {
             return null;
         }
         Checkpoint checkpoint = new Checkpoint();
-        checkpoint.setId(vm.getActiveCheckpointId());
-        checkpoint.setName(vm.getActiveCheckpointId());
-        Long createTimeSeconds = vm.getActiveCheckpointCreateTime();
-        if (createTimeSeconds != null) {
+        checkpoint.setId(checkpointId);
+        checkpoint.setName(checkpointId);
+        long createTimeSeconds = createTimeStr != null ? NumbersUtil.parseLong(createTimeStr, 0L) : 0L;
+        if (createTimeSeconds > 0) {
             checkpoint.setCreationDate(String.valueOf(Instant.ofEpochSecond(createTimeSeconds).toEpochMilli()));
         } else {
             checkpoint.setCreationDate(String.valueOf(System.currentTimeMillis()));

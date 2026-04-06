@@ -202,12 +202,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "backup_volumes", length = 65535)
     protected String backupVolumes;
 
-    @Column(name = "active_checkpoint_id")
-    protected String activeCheckpointId;
-
-    @Column(name = "active_checkpoint_create_time")
-    protected Long activeCheckpointCreateTime;
-
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
                         long domainId, long accountId, long userId, boolean haEnabled) {
         this.id = id;
@@ -633,21 +627,5 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public void setBackupVolumes(String backupVolumes) {
         this.backupVolumes = backupVolumes;
-    }
-
-    public String getActiveCheckpointId() {
-        return activeCheckpointId;
-    }
-
-    public void setActiveCheckpointId(String activeCheckpointId) {
-        this.activeCheckpointId = activeCheckpointId;
-    }
-
-    public Long getActiveCheckpointCreateTime() {
-        return activeCheckpointCreateTime;
-    }
-
-    public void setActiveCheckpointCreateTime(Long activeCheckpointCreateTime) {
-        this.activeCheckpointCreateTime = activeCheckpointCreateTime;
     }
 }

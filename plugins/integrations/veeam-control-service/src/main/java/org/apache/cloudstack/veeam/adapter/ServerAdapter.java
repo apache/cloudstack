@@ -1686,7 +1686,10 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), null, false, vo);
-        Checkpoint checkpoint = UserVmVOToCheckpointConverter.toCheckpoint(vo);
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vo.getId());
+        Checkpoint checkpoint = UserVmVOToCheckpointConverter.toCheckpoint(
+                details.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID),
+                details.get(VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME));
         if (checkpoint == null) {
             return Collections.emptyList();
         }
@@ -1700,7 +1703,8 @@ public class ServerAdapter extends ManagerBase {
             throw new InvalidParameterValueException("VM with ID " + vmUuid + " not found");
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, vo);
-        if (!Objects.equals(vo.getActiveCheckpointId(), checkpointId)) {
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vo.getId());
+        if (!Objects.equals(details.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID), checkpointId)) {
             logger.warn("Checkpoint ID {} does not match active checkpoint for VM {}", checkpointId, vmUuid);
             return;
         }
