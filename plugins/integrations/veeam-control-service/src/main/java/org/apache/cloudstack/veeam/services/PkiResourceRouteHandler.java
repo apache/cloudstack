@@ -21,23 +21,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.Base64;
-import java.util.Enumeration;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.ca.CAManager;
-import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
 import org.apache.cloudstack.veeam.utils.Negotiation;
@@ -52,7 +41,6 @@ public class PkiResourceRouteHandler extends ManagerBase implements RouteHandler
     private static final String FORMAT_KEY = "format";
     private static final String FORMAT_VALUE = "X509-PEM-CA";
     private static final Charset OUTPUT_CHARSET = StandardCharsets.ISO_8859_1;
-    private static final boolean USE_CA_CERTS = true;
 
     @Inject
     CAManager caManager;
@@ -89,8 +77,8 @@ public class PkiResourceRouteHandler extends ManagerBase implements RouteHandler
                 return;
             }
 
-            byte[] pemBytes = USE_CA_CERTS ? returnCACertificate() : returnMSCertificate();
-            if (pemBytes == null || pemBytes.length == 0) {
+            byte[] pemBytes = returnCACertificate();
+            if (pemBytes.length == 0) {
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "No certificate data available");
                 return;
             }
@@ -104,7 +92,7 @@ public class PkiResourceRouteHandler extends ManagerBase implements RouteHandler
             try (OutputStream os = resp.getOutputStream()) {
                 os.write(pemBytes);
             }
-        } catch (IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
+        } catch (IOException e) {
             String msg = "Failed to retrieve server CA certificate";
             logger.error(msg, e);
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
@@ -114,74 +102,5 @@ public class PkiResourceRouteHandler extends ManagerBase implements RouteHandler
     private byte[] returnCACertificate() throws IOException {
         String tlsCaCert = caManager.getCaCertificate(null);
         return tlsCaCert.getBytes(OUTPUT_CHARSET);
-    }
-
-    // ToDo: To be removed
-    private static byte[] returnMSCertificate() throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
-        final String keystorePath = ServerPropertiesUtil.getKeystoreFile();
-        final String keystorePassword = ServerPropertiesUtil.getKeystorePassword();
-
-        Path path = Path.of(keystorePath);
-        if (keystorePath.isBlank() || !Files.exists(path)) {
-            return null;
-        }
-
-        final X509Certificate caCert =
-                extractCaFromKeystore(path, keystorePassword);
-
-        // DER encoding → browser downloads as .cer (oVirt behavior)
-        String base64 = Base64.getMimeEncoder(64, new byte[]{'\n'})
-                .encodeToString(caCert.getEncoded());
-        String cert = "-----BEGIN CERTIFICATE-----\n"
-                + base64
-                + "\n-----END CERTIFICATE-----\n";
-        return cert.getBytes(OUTPUT_CHARSET);
-    }
-
-    private static X509Certificate extractCaFromKeystore(Path ksPath, String ksPassword)
-            throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
-
-        final String path = ksPath.toString().toLowerCase();
-        final String storeType =
-                (path.endsWith(".p12") || path.endsWith(".pfx"))
-                        ? "PKCS12"
-                        : KeyStore.getDefaultType();
-
-        KeyStore ks = KeyStore.getInstance(storeType);
-        try (var in = Files.newInputStream(ksPath)) {
-            ks.load(in, ksPassword != null ? ksPassword.toCharArray() : new char[0]);
-        }
-
-        // Prefer HTTPS keypair alias (one with a chain)
-        String alias = null;
-        Enumeration<String> aliases = ks.aliases();
-        while (aliases.hasMoreElements()) {
-            String a = aliases.nextElement();
-            Certificate[] chain = ks.getCertificateChain(a);
-            if (chain != null && chain.length > 0) {
-                alias = a;
-                break;
-            }
-        }
-
-        if (alias == null && ks.aliases().hasMoreElements()) {
-            alias = ks.aliases().nextElement();
-        }
-
-        if (alias == null) {
-            throw new IllegalStateException("No certificate aliases in keystore");
-        }
-
-        Certificate[] chain = ks.getCertificateChain(alias);
-        Certificate cert =
-                (chain != null && chain.length > 0)
-                        ? chain[chain.length - 1]   // root-most
-                        : ks.getCertificate(alias);
-
-        if (!(cert instanceof X509Certificate)) {
-            throw new IllegalStateException("Certificate is not X509");
-        }
-
-        return (X509Certificate) cert;
     }
 }
