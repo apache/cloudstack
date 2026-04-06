@@ -1543,6 +1543,14 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         return ipaddr;
     }
 
+    protected IPAddressVO getExistingSourceNatInVPC(Long vpcId) {
+        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, true);
+        if (CollectionUtils.isEmpty(ips)) {
+            return null;
+        }
+        return ips.get(0);
+    }
+
     protected IPAddressVO getExistingSourceNatInNetwork(long ownerId, Long networkId) {
         List<? extends IpAddress> addrs;
         Network guestNetwork = _networksDao.findById(networkId);
@@ -1723,7 +1731,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         boolean sharedSourceNat = offering.isSharedSourceNat();
         boolean isSourceNat = false;
-        if (!sharedSourceNat) {
+        if (network.getVpcId() != null) {
+            // For VPCs: Check if the VPC Source NAT IP address is the same we are associating
+            IPAddressVO vpcSourceNatIpAddress = getExistingSourceNatInVPC(network.getVpcId());
+            isSourceNat = vpcSourceNatIpAddress != null && vpcSourceNatIpAddress.getId() == ipToAssoc.getId();
+        } else if (!sharedSourceNat) {
             if (getExistingSourceNatInNetwork(owner.getId(), network.getId()) == null) {
                 if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null && !ipToAssoc.isPortable()) {
                     isSourceNat = true;
@@ -2647,4 +2659,31 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         });
     }
 
+    @Override
+    public Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId) {
+        boolean vpcConserveMode = isPublicIpOnVpcConserveMode(ip);
+        return getPreferredNetworkIdForRule(ip, vpcConserveMode, networkId);
+    }
+
+    protected Long getPreferredNetworkIdForRule(IpAddress ip, boolean vpcConserveModeEnabled, Long networkId) {
+        if (vpcConserveModeEnabled) {
+            // Since VPC Conserve mode allows rules from multiple VPC tiers, always check the networkId parameter first
+            return networkId != null ? networkId : ip.getAssociatedWithNetworkId();
+        } else {
+            // In case of Guest Networks or VPC Tier Networks VPC Conserve mode disabled prefer the associated networkId
+            return ip.getAssociatedWithNetworkId() != null ? ip.getAssociatedWithNetworkId() : networkId;
+        }
+    }
+
+    protected boolean isPublicIpOnVpcConserveMode(IpAddress ip) {
+        if (ip.getVpcId() == null) {
+            return false;
+        }
+        Vpc vpc =  _vpcMgr.getActiveVpc(ip.getVpcId());
+        if (vpc == null) {
+            return false;
+        }
+        VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+        return vpcOffering != null && vpcOffering.isConserveMode();
+    }
 }
