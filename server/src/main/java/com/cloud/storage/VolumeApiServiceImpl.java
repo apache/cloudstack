@@ -1043,6 +1043,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return true;
     }
 
+    private VolumeVO allocateVolumeOnStorage(Long volumeId, Long storageId) throws ExecutionException, InterruptedException {
+        DataStore destStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
+        VolumeInfo destVolume = volFactory.getVolume(volumeId, destStore);
+        AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(destVolume, destStore);
+        VolumeApiResult createVolumeResult = createVolumeFuture.get();
+        if (createVolumeResult.isFailed()) {
+            throw new CloudRuntimeException("Creation of a dest volume failed: " + createVolumeResult.getResult());
+        }
+        return _volsDao.findById(destVolume.getId());
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", async = true)
@@ -1074,6 +1085,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         throw new CloudRuntimeException(message.toString());
                     }
                 }
+            } else if (cmd.getStorageId() != null) {
+                volume = allocateVolumeOnStorage(cmd.getEntityId(), cmd.getStorageId());
             }
             return volume;
         } catch (Exception e) {

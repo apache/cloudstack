@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -109,6 +110,12 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
                description = "The ID of the Instance; to be used with snapshot Id, Instance to which the volume gets attached after creation")
     private Long virtualMachineId;
 
+    @Parameter(name = ApiConstants.STORAGE_ID,
+            type = CommandType.UUID,
+            entityType = StoragePoolResponse.class,
+            description = "Storage pool ID to create the volume in. Exclusive with SnapshotId parameter.")
+    private Long storageId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -151,6 +158,13 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     private Long getProjectId() {
         return projectId;
+    }
+
+    public Long getStorageId() {
+        if (snapshotId != null && storageId != null) {
+            throw new IllegalArgumentException("StorageId parameter cannot be specified with the SnapshotId parameter.");
+        }
+        return storageId;
     }
 
     public Boolean getDisplayVolume() {
