@@ -51,6 +51,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         final String mountOptions = command.getMountOptions();
         List<PrimaryDataStoreTO> volumePools = command.getVolumePools();
         final List<String> volumePaths = command.getVolumePaths();
+        Long timeout = (long) (command.getTimeout() * 1000);
         KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
 
         List<String> diskPaths = new ArrayList<>();
@@ -81,7 +82,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 "-d", diskPaths.isEmpty() ? "" : String.join(",", diskPaths)
         });
 
-        Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
+        Pair<Integer, String> result = Script.executePipedCommands(commands, timeout);
 
         if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());

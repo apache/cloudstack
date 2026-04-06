@@ -35,6 +35,7 @@ public class TakeBackupCommand extends Command {
     private Boolean quiesce;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String mountOptions;
+    private Integer timeout;
 
     public TakeBackupCommand(String vmName, String backupPath) {
         super();
@@ -104,6 +105,14 @@ public class TakeBackupCommand extends Command {
 
     public void setQuiesce(Boolean quiesce) {
         this.quiesce = quiesce;
+    }
+
+    public Integer getTimeout() {
+        return this.timeout == null ? 0 : this.timeout;
+    }
+
+    public void setTimeout(Integer timeout) {
+        this.timeout = timeout;
     }
 
     @Override
