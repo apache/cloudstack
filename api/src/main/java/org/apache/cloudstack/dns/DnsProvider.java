@@ -26,7 +26,7 @@ import com.cloud.utils.component.Adapter;
 public interface DnsProvider extends Adapter {
 
     interface Topics {
-        String DNS_RECORD_DELETE = "dns.record.delete";
+        String DNS_RECORD_LIFECYCLE = "dns.record.lifecycle";
     }
 
     DnsProviderType getProviderType();
@@ -45,4 +45,5 @@ public interface DnsProvider extends Adapter {
     List<DnsRecord> listRecords(DnsServer server, DnsZone zone) throws DnsProviderException;
     String updateRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException;
     String deleteRecord(DnsServer server, DnsZone zone, DnsRecord record) throws DnsProviderException;
+    boolean dnsRecordExists(DnsServer server, DnsZone zone, String recordName, String recordType) throws DnsProviderException;
 }

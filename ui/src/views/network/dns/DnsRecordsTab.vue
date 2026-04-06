@@ -187,9 +187,7 @@ export default {
       const params = {
         dnszoneid: this.resource.id,
         name: record.name,
-        type: record.type,
-        contents: record.contents.join(','),
-        ttl: record.ttl
+        type: record.type
       }
       console.log('DeleteDnsRecord params', params)
 

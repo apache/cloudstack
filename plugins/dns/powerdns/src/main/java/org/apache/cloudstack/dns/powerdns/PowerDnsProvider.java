@@ -153,6 +153,11 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
         return records;
     }
 
+    public boolean dnsRecordExists(DnsServer server, DnsZone zone, String recordName, String recordType) throws DnsProviderException {
+        return client.dnsRecordExists(server.getUrl(), server.getPort(), server.getApiKey(),
+                server.getExternalServerId(), zone.getName(), recordName, recordType);
+    }
+
     void validateRequiredServerAndZoneFields(DnsServer server, DnsZone zone) {
         validateRequiredServerFields(server);
         if (StringUtils.isBlank(zone.getName())) {

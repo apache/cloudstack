@@ -1354,6 +1354,7 @@ public class ApiConstants {
     public static final String CREDENTIALS = "credentials";
     public static final String DNS_ZONE_ID = "dnszoneid";
     public static final String DNS_ZONE = "dnszone";
+    public static final String DNS_RECORD = "dnsrecord";
     public static final String DNS_SUB_DOMAIN = "dnssubdomain";
     public static final String DNS_SERVER_ID = "dnsserverid";
     public static final String CONTENT = "content";
