@@ -76,6 +76,7 @@ import com.cloud.user.User;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmDetailConstants;
@@ -202,6 +203,15 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             diskPathUuidMap.put(volumePath, vol.getUuid());
         }
         long hostId = backup.getHostId();
+
+        VMInstanceDetailVO lastCheckpointId = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.LAST_CHECKPOINT_ID);
+        if (lastCheckpointId != null) {
+            try {
+                sendDeleteCheckpointCommand(vm, lastCheckpointId.getValue());
+            } catch (CloudRuntimeException e) {
+                logger.warn("Failed to delete last checkpoint {} for VM {}, proceeding with backup start", lastCheckpointId.getValue(), vmId, e);
+            }
+        }
 
         Host host = hostDao.findById(hostId);
         Map<String, String> vmDetails = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
@@ -724,9 +734,39 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         return responses;
     }
 
+    private void sendDeleteCheckpointCommand(VMInstanceVO vm, String checkpointId) {
+        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+
+        Map<String, String> diskPathUuidMap = new HashMap<>();
+        if (vm.getState() == State.Stopped) {
+            List<VolumeVO> volumes = volumeDao.findByInstance(vm.getId());
+            for (Volume vol : volumes) {
+                diskPathUuidMap.put(getVolumePathForFileBasedBackend(vol), vol.getUuid());
+            }
+        }
+
+        DeleteVmCheckpointCommand deleteCmd = new DeleteVmCheckpointCommand(
+                vm.getInstanceName(),
+                checkpointId,
+                diskPathUuidMap,
+                vm.getState() == State.Stopped);
+
+        Answer answer;
+        try {
+            answer = agentManager.send(hostId, deleteCmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Failed to communicate with agent to delete checkpoint for VM {}", vm.getId(), e);
+            throw new CloudRuntimeException("Failed to communicate with agent", e);
+        }
+
+        if (answer == null || !answer.getResult()) {
+            String err = answer != null ? answer.getDetails() : "null answer";
+            throw new CloudRuntimeException("Failed to delete checkpoint: " + err);
+        }
+    }
+
     @Override
     public boolean deleteVmCheckpoint(DeleteVmCheckpointCmd cmd) {
-        // Todo : backend support?
         VMInstanceVO vm = vmInstanceDao.findById(cmd.getVmId());
         if (vm == null) {
             throw new CloudRuntimeException("VM not found: " + cmd.getVmId());
@@ -736,10 +776,36 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     " backup provider. Either set backup.framework.enabled to false or set the Zone level config backup.framework.provider.plugin to \"dummy\".");
         }
 
+        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+            throw new CloudRuntimeException("VM must be running or stopped to delete checkpoint");
+        }
+
         long vmId = cmd.getVmId();
-        vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_ID);
-        vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME);
+        Map<String, String> details = vmInstanceDetailsDao.listDetailsKeyPairs(vmId);
+        String activeCheckpointId = details.get(VmDetailConstants.ACTIVE_CHECKPOINT_ID);
+        if (activeCheckpointId == null || !activeCheckpointId.equals(cmd.getCheckpointId())) {
+            logger.error("Checkpoint ID {} to delete does not match active checkpoint ID for VM {}", cmd.getCheckpointId(), vmId);
+            return true;
+        }
+
+        sendDeleteCheckpointCommand(vm, activeCheckpointId);
+        revertVmCheckpointDetailsAfterActiveDelete(vmId, details);
+
         return true;
+    }
+
+    private void revertVmCheckpointDetailsAfterActiveDelete(long vmId, Map<String, String> detailsBeforeDelete) {
+        String lastId = detailsBeforeDelete.get(VmDetailConstants.LAST_CHECKPOINT_ID);
+        String lastTime = detailsBeforeDelete.get(VmDetailConstants.LAST_CHECKPOINT_CREATE_TIME);
+        if (lastId != null) {
+            vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_ID, lastId, false);
+            vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME, lastTime, false);
+            vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.LAST_CHECKPOINT_ID);
+            vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.LAST_CHECKPOINT_CREATE_TIME);
+        } else {
+            vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_ID);
+            vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.ACTIVE_CHECKPOINT_CREATE_TIME);
+        }
     }
 
     @Override

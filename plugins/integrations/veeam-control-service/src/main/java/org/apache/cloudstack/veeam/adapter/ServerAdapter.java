@@ -1712,6 +1712,7 @@ public class ServerAdapter extends ManagerBase {
             DeleteVmCheckpointCmd cmd = new DeleteVmCheckpointCmd();
             ComponentContext.inject(cmd);
             cmd.setVmId(vo.getId());
+            cmd.setCheckpointId(checkpointId);
             kvmBackupExportService.deleteVmCheckpoint(cmd);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to delete checkpoint: " + e.getMessage(), e);
