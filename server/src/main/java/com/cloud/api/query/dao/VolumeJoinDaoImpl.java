@@ -21,8 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -31,11 +29,15 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -382,14 +384,24 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
     }
 
     @Override
-    public List<VolumeJoinVO> listByHypervisor(Hypervisor.HypervisorType hypervisorType, Filter filter) {
+    public List<VolumeJoinVO> listByHypervisorTypeAndOwners(Hypervisor.HypervisorType hypervisorType,
+                                                            List<Long> accountIds, String domainPath, Filter filter) {
         SearchBuilder<VolumeJoinVO> sb = createSearchBuilder();
         sb.and("vmType", sb.entity().getVmType(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+        sb.or("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+        sb.cp();
         sb.done();
         SearchCriteria<VolumeJoinVO> sc = sb.create();
         sc.setParameters("vmType", VirtualMachine.Type.User);
         sc.setParameters("hypervisorType", hypervisorType);
+        if (CollectionUtils.isNotEmpty(accountIds)) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (StringUtils.isNotBlank(domainPath)) {
+            sc.setParameters("domainPath", domainPath + "%");
+        }
         return search(sc, filter);
     }
 

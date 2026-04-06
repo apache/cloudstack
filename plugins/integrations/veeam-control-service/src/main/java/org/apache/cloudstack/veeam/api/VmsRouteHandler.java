@@ -231,10 +231,14 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        ListQuery query = ListQuery.fromRequest(req);
-        final List<Vm> result = serverAdapter.listAllInstances(query.getOffset(), query.getLimit());
-        NamedList<Vm> response = NamedList.of("vm", result);
-        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        try {
+            ListQuery query = ListQuery.fromRequest(req);
+            final List<Vm> result = serverAdapter.listAllInstances(query.getOffset(), query.getLimit());
+            NamedList<Vm> response = NamedList.of("vm", result);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
     }
 
     protected void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
@@ -308,7 +312,6 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleStopVmById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         boolean async = isRequestAsync(req);
-        String data = RouteHandler.getRequestData(req, logger);
         try {
             VmAction vm = serverAdapter.stopInstance(id, async);
             io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, vm, outFormat);

@@ -476,7 +476,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
         return _projectAccountDao.persist(projectAccountVO);
     }
 
-    public ProjectAccount assignUserToProject(Project project, long userId, long accountId, Role userRole, Long projectRoleId) {
+    public ProjectAccount  assignUserToProject(Project project, long userId, long accountId, Role userRole, Long projectRoleId) {
        return assignAccountToProject(project, accountId, userRole, userId, projectRoleId);
     }
 

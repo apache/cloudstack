@@ -35,6 +35,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -412,12 +413,16 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     }
 
     @Override
-    public List<StoragePoolJoinVO> listByZoneAndProvider(long zoneId, Filter filter) {
+    public List<StoragePoolJoinVO> listByZoneAndType(long zoneId, List<Storage.StoragePoolType> types, Filter filter) {
         SearchBuilder<StoragePoolJoinVO> sb = createSearchBuilder();
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("types", sb.entity().getZoneId(), SearchCriteria.Op.IN);
         sb.done();
         SearchCriteria<StoragePoolJoinVO> sc = sb.create();
         sc.setParameters("zoneId", zoneId);
+        if (CollectionUtils.isNotEmpty(types)) {
+            sc.setParameters("types", types.toArray());
+        }
         return listBy(sc, filter);
     }
 }

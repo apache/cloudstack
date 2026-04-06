@@ -36,6 +36,7 @@ import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class NetworksRouteHandler extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api/networks";
@@ -85,10 +86,14 @@ public class NetworksRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        ListQuery query = ListQuery.fromRequest(req);
-        final List<Network> result = serverAdapter.listAllNetworks(query.getOffset(), query.getLimit());
-        NamedList<Network> response = NamedList.of("network", result);
-        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        try {
+            ListQuery query = ListQuery.fromRequest(req);
+            final List<Network> result = serverAdapter.listAllNetworks(query.getOffset(), query.getLimit());
+            NamedList<Network> response = NamedList.of("network", result);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
     }
 
     protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,

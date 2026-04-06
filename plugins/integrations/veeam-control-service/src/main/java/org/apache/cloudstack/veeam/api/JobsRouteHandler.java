@@ -35,6 +35,7 @@ import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class JobsRouteHandler  extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api/jobs";
@@ -84,9 +85,13 @@ public class JobsRouteHandler  extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                              Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        final List<Job> result = serverAdapter.listPendingJobs();
-        NamedList<Job> response = NamedList.of("job", result);
-        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        try {
+            final List<Job> result = serverAdapter.listPendingJobs();
+            NamedList<Job> response = NamedList.of("job", result);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
     }
 
     protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,

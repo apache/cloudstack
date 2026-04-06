@@ -36,6 +36,7 @@ import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class TagsRouteHandler  extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api/tags";
@@ -86,10 +87,14 @@ public class TagsRouteHandler  extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                              Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        ListQuery query = ListQuery.fromRequest(req);
-        final List<Tag> result = serverAdapter.listAllTags(query.getOffset(), query.getLimit());
-        NamedList<Tag> response = NamedList.of("tag", result);
-        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        try {
+            ListQuery query = ListQuery.fromRequest(req);
+            final List<Tag> result = serverAdapter.listAllTags(query.getOffset(), query.getLimit());
+            NamedList<Tag> response = NamedList.of("tag", result);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
     }
 
     protected void handleGetById(final String id, final HttpServletResponse resp, final Negotiation.OutFormat outFormat,

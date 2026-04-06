@@ -23,8 +23,10 @@ import javax.annotation.PostConstruct;
 
 import org.apache.cloudstack.backup.ImageTransfer;
 import org.apache.cloudstack.backup.ImageTransferVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -101,5 +103,23 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
         sc.setParameters("phase", phase);
         sc.setParameters("direction", direction);
         return listBy(sc);
+    }
+
+    @Override
+    public List<ImageTransferVO> listByOwners(List<Long> accountIds, List<Long> domainIds, Filter filter) {
+        SearchBuilder<ImageTransferVO> sb = createSearchBuilder();
+        sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+        sb.or("domain", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+        sb.cp();
+        sb.done();
+        final SearchCriteria<ImageTransferVO> sc = sb.create();
+        if (CollectionUtils.isNotEmpty(accountIds)) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            sc.setParameters("domain", domainIds);
+        }
+
+        return listBy(sc, filter);
     }
 }

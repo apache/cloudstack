@@ -39,6 +39,7 @@ import org.apache.commons.collections.CollectionUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DataCentersRouteHandler extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api/datacenters";
@@ -111,6 +112,8 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 

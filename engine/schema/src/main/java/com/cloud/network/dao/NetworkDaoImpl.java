@@ -31,6 +31,7 @@ import javax.persistence.TableGenerator;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.Network;
@@ -646,9 +647,22 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
     }
 
     @Override
-    public List<NetworkVO> listByTrafficType(final TrafficType trafficType, Filter filter) {
-        final SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+    public List<NetworkVO> listByTrafficTypeAndOwners(final TrafficType trafficType, List<Long> accountIds,
+                      List<Long> domainIds, Filter filter) {
+        SearchBuilder<NetworkVO> sb = createSearchBuilder();
+        sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
+        sb.and().op("account", sb.entity().getAccountId(), Op.IN);
+        sb.or("domain", sb.entity().getDomainId(), Op.IN);
+        sb.cp();
+        sb.done();
+        final SearchCriteria<NetworkVO> sc = sb.create();
         sc.setParameters("trafficType", trafficType);
+        if (CollectionUtils.isNotEmpty(accountIds)) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            sc.setParameters("domain", domainIds);
+        }
 
         return listBy(sc, filter);
     }

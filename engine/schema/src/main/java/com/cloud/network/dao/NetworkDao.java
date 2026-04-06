@@ -101,7 +101,8 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     List<NetworkVO> listByZoneAndTrafficType(long zoneId, TrafficType trafficType);
 
-    List<NetworkVO> listByTrafficType(TrafficType trafficType, Filter filter);
+    List<NetworkVO> listByTrafficTypeAndOwners(final TrafficType trafficType, List<Long> accountIds,
+                           List<Long> domainIds, Filter filter);
 
     void setCheckForGc(long networkId);
 

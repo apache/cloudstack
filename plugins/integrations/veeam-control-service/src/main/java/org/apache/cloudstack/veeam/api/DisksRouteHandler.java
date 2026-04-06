@@ -121,10 +121,14 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        ListQuery query = ListQuery.fromRequest(req);
-        final List<Disk> result = serverAdapter.listAllDisks(query.getOffset(), query.getLimit());
-        NamedList<Disk> response = NamedList.of("disk", result);
-        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        try {
+            ListQuery query = ListQuery.fromRequest(req);
+            final List<Disk> result = serverAdapter.listAllDisks(query.getOffset(), query.getLimit());
+            NamedList<Disk> response = NamedList.of("disk", result);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
     }
 
     protected void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
@@ -161,15 +165,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handlePutById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                          final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
-        String data = RouteHandler.getRequestData(req, logger);
-        try {
-            // ToDo: do what?
-//            serverAdapter.deleteDisk(id);
-            Disk response = serverAdapter.getDisk(id);
-            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
-        } catch (InvalidParameterValueException e) {
-            io.badRequest(resp, e.getMessage(), outFormat);
-        }
+        throw new InvalidParameterValueException("Put Disk with ID " + id + " not implemented");
     }
 
     protected void handlePostDiskCopy(final String id, final HttpServletRequest req, final HttpServletResponse resp,

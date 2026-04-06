@@ -16,13 +16,14 @@
 // under the License.
 package com.cloud.tags.dao;
 
-import java.util.List;
-import java.util.Set;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.server.ResourceTag;
@@ -123,9 +124,22 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
     }
 
     @Override
-    public List<ResourceTagVO> listByResourceType(ResourceObjectType resourceType, Filter filter) {
-        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+    public List<ResourceTagVO> listByResourceTypeAndOwners(ResourceObjectType resourceType, List<Long> accountIds,
+                       List<Long> domainIds, Filter filter) {
+        SearchBuilder<ResourceTagVO> sb = createSearchBuilder();
+        sb.and("resourceType", sb.entity().getResourceType(), Op.EQ);
+        sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+        sb.or("domain", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+        sb.cp();
+        sb.done();
+        final SearchCriteria<ResourceTagVO> sc = sb.create();;
         sc.setParameters("resourceType", resourceType);
+        if (CollectionUtils.isNotEmpty(accountIds)) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            sc.setParameters("domain", domainIds);
+        }
         return listBy(sc, filter);
     }
 }

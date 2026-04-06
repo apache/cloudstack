@@ -17,14 +17,13 @@
 package com.cloud.api.query.dao;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
-
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -34,9 +33,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.gpu.dao.VgpuProfileDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -62,11 +58,14 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.ControlState;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.IpAddress;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Storage.TemplateType;
@@ -96,7 +95,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
-
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @Component
@@ -836,12 +834,22 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     @Override
-    public List<UserVmJoinVO> listByHypervisorType(Hypervisor.HypervisorType hypervisorType, Filter filter) {
+    public List<UserVmJoinVO> listByHypervisorTypeAndOwners(Hypervisor.HypervisorType hypervisorType,
+                                                            List<Long> accountIds, String domainPath, Filter filter) {
         SearchBuilder<UserVmJoinVO> sb = createSearchBuilder();
         sb.and("hypervisorType", sb.entity().getHypervisorType(), Op.EQ);
+        sb.and().op("account", sb.entity().getAccountId(), Op.IN);
+        sb.or("domainPath", sb.entity().getDomainPath(), Op.LIKE);
+        sb.cp();
         sb.done();
         SearchCriteria<UserVmJoinVO> sc = sb.create();
         sc.setParameters("hypervisorType", hypervisorType);
+        if (CollectionUtils.isNotEmpty(accountIds)) {
+            sc.setParameters("account", accountIds.toArray());
+        }
+        if (StringUtils.isNotBlank(domainPath)) {
+            sc.setParameters("domainPath", domainPath + "%");
+        }
         return listBy(sc, filter);
     }
 }

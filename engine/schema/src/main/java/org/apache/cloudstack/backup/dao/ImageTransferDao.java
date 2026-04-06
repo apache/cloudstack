@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.cloudstack.backup.ImageTransfer;
 import org.apache.cloudstack.backup.ImageTransferVO;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface ImageTransferDao extends GenericDao<ImageTransferVO, Long> {
@@ -30,4 +31,5 @@ public interface ImageTransferDao extends GenericDao<ImageTransferVO, Long> {
     ImageTransferVO findByVolume(Long volumeId);
     ImageTransferVO findUnfinishedByVolume(Long volumeId);
     List<ImageTransferVO> listByPhaseAndDirection(ImageTransfer.Phase phase, ImageTransfer.Direction direction);
+    List<ImageTransferVO> listByOwners(List<Long> accountIds, List<Long> domainIds, Filter filter);
 }

@@ -106,10 +106,14 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
 
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
                           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
-        ListQuery query = ListQuery.fromRequest(req);
-        final List<ImageTransfer> result = serverAdapter.listAllImageTransfers(query.getOffset(), query.getLimit());
-        NamedList<ImageTransfer> response = NamedList.of("image_transfer", result);
-        io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        try {
+            ListQuery query = ListQuery.fromRequest(req);
+            final List<ImageTransfer> result = serverAdapter.listAllImageTransfers(query.getOffset(), query.getLimit());
+            NamedList<ImageTransfer> response = NamedList.of("image_transfer", result);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
     }
 
     protected void handlePost(final HttpServletRequest req, final HttpServletResponse resp,
