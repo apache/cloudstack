@@ -349,6 +349,8 @@ public interface ResponseGenerator {
 
     UserVm findUserVmById(Long vmId);
 
+    UserVm findUserVmByNicId(Long nicId);
+
     Volume findVolumeById(Long volumeId);
 
     Account findAccountByNameDomain(String accountName, Long domainId);

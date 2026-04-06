@@ -279,3 +279,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_database_kek_objects` (
     INDEX `idx_object_class` (`object_class`, `removed`),
     INDEX `idx_created` (`created`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS Database Provider KEK Objects - PKCS#11-like object storage for KEKs';
+
+--- Disable/enable NICs
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics','enabled', 'TINYINT(1) NOT NULL DEFAULT 1 COMMENT ''Indicates whether the NIC is enabled or not'' ');
+
