@@ -64,7 +64,6 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.agent.AgentManager;
@@ -108,10 +107,12 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
+import com.cloud.host.DetailVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.org.Cluster;
@@ -166,6 +167,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected NioServer _connection;
     @Inject
     protected HostDao _hostDao = null;
+    @Inject
+    protected HostDetailsDao _hostDetailsDao = null;
     @Inject
     private ManagementServerHostDao _mshostDao;
     @Inject
@@ -802,28 +805,32 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             ReadyAnswer readyAnswer = (ReadyAnswer)answer;
             Map<String, String> detailsMap = readyAnswer.getDetailsMap();
             if (detailsMap != null) {
+                _hostDao.loadDetails(host);
+                if (host.getDetails() == null) {
+                    host.setDetails(new HashMap<>());
+                }
                 String uefiEnabled = detailsMap.get(Host.HOST_UEFI_ENABLE);
+                String diskOnlyVmSnapshotNvramSupport = detailsMap.get(Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM);
                 String virtv2vVersion = detailsMap.get(Host.HOST_VIRTV2V_VERSION);
                 String ovftoolVersion = detailsMap.get(Host.HOST_OVFTOOL_VERSION);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
-                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion)) {
-                    _hostDao.loadDetails(host);
-                    boolean updateNeeded = false;
-                    if (StringUtils.isNotBlank(uefiEnabled) && !uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
-                        host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);
-                        updateNeeded = true;
-                    }
-                    if (StringUtils.isNotBlank(virtv2vVersion) && !virtv2vVersion.equals(host.getDetails().get(Host.HOST_VIRTV2V_VERSION))) {
-                        host.getDetails().put(Host.HOST_VIRTV2V_VERSION, virtv2vVersion);
-                        updateNeeded = true;
-                    }
-                    if (StringUtils.isNotBlank(ovftoolVersion) && !ovftoolVersion.equals(host.getDetails().get(Host.HOST_OVFTOOL_VERSION))) {
-                        host.getDetails().put(Host.HOST_OVFTOOL_VERSION, ovftoolVersion);
-                        updateNeeded = true;
-                    }
-                    if (updateNeeded) {
-                        _hostDao.saveDetails(host);
-                    }
+                boolean updateNeeded = false;
+                if (syncBooleanHostCapability(host, Host.HOST_UEFI_ENABLE, uefiEnabled)) {
+                    updateNeeded = true;
+                }
+                if (syncBooleanHostCapability(host, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, diskOnlyVmSnapshotNvramSupport)) {
+                    updateNeeded = true;
+                }
+                if (StringUtils.isNotBlank(virtv2vVersion) && !virtv2vVersion.equals(host.getDetails().get(Host.HOST_VIRTV2V_VERSION))) {
+                    host.getDetails().put(Host.HOST_VIRTV2V_VERSION, virtv2vVersion);
+                    updateNeeded = true;
+                }
+                if (StringUtils.isNotBlank(ovftoolVersion) && !ovftoolVersion.equals(host.getDetails().get(Host.HOST_OVFTOOL_VERSION))) {
+                    host.getDetails().put(Host.HOST_OVFTOOL_VERSION, ovftoolVersion);
+                    updateNeeded = true;
+                }
+                if (updateNeeded) {
+                    _hostDao.saveDetails(host);
                 }
             }
         }
@@ -831,6 +838,26 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         agentStatusTransitTo(host, Event.Ready, _nodeId);
         attache.ready();
         return attache;
+    }
+
+    protected boolean syncBooleanHostCapability(HostVO host, String capabilityName, String advertisedValue) {
+        if (StringUtils.isNotBlank(advertisedValue)) {
+            if (!advertisedValue.equals(host.getDetails().get(capabilityName))) {
+                host.getDetails().put(capabilityName, advertisedValue);
+                return true;
+            }
+            return false;
+        }
+
+        if (host.getDetails().containsKey(capabilityName)) {
+            host.getDetails().remove(capabilityName);
+            DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), capabilityName);
+            if (hostDetail != null) {
+                _hostDetailsDao.remove(hostDetail.getId());
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override

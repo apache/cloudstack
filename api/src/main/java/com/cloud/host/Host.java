@@ -55,6 +55,7 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     }
 
     String HOST_UEFI_ENABLE = "host.uefi.enable";
+    String HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM = "host.kvm.diskonlyvmsnapshot.nvram";
     String HOST_VOLUME_ENCRYPTION = "host.volume.encryption";
     String HOST_INSTANCE_CONVERSION = "host.instance.conversion";
     String HOST_OVFTOOL_VERSION = "host.ovftool.version";

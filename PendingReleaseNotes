@@ -39,3 +39,12 @@ example.ver.1 > example.ver.2:
     which can now be attached to Instances. This is to prevent the Secondary
     Storage to grow to enormous sizes as Linux Distributions keep growing in
     size while a stripped down Linux should fit on a 2.88MB floppy.
+
+4.22.0.0 > 4.22.0.1:
+  * Disk-only instance snapshots for KVM UEFI VMs now include a sidecar copy of
+    the active NVRAM state so revert operations restore both disk and firmware
+    boot state consistently.
+
+  * UEFI disk-only instance snapshots taken before this change do not contain an
+    NVRAM sidecar and cannot be safely reverted. Take a new snapshot after
+    upgrading before relying on revert for UEFI VMs.
