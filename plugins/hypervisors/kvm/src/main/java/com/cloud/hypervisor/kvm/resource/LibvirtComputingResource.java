@@ -124,6 +124,7 @@ import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
+import org.libvirt.SchedLongParameter;
 import org.libvirt.SchedParameter;
 import org.libvirt.SchedUlongParameter;
 import org.libvirt.Secret;
@@ -454,6 +455,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final int MINIMUM_LIBVIRT_VERSION_FOR_INCREMENTAL_SNAPSHOT = 7006000;
 
     private static final int MINIMUM_QEMU_VERSION_FOR_INCREMENTAL_SNAPSHOT = 6001000;
+
+    public static final long MAX_CPU_QUOTA = 17592186044415L;
 
     protected HypervisorType hypervisorType;
     protected String hypervisorURI;
@@ -881,6 +884,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected enum HealthCheckResult {
         SUCCESS, FAILURE, IGNORE
+    }
+
+    public enum CpuSchedulerParameter {
+        CPU_SHARES("cpu_shares"), PERIOD("vcpu_period"), QUOTA("vcpu_quota");
+
+        private String name;
+
+        CpuSchedulerParameter(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return getName();
+        }
     }
 
     protected BridgeType bridgeType;
@@ -2965,23 +2987,61 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected void setQuotaAndPeriod(VirtualMachineTO vmTO, CpuTuneDef ctd) {
         if (vmTO.isLimitCpuUse() && vmTO.getCpuQuotaPercentage() != null) {
             Double cpuQuotaPercentage = vmTO.getCpuQuotaPercentage();
-            int period = CpuTuneDef.DEFAULT_PERIOD;
-            int quota = (int) (period * cpuQuotaPercentage);
-            if (quota < CpuTuneDef.MIN_QUOTA) {
-                LOGGER.info("Calculated quota (" + quota + ") below the minimum (" + CpuTuneDef.MIN_QUOTA + ") for VM domain " + vmTO.getUuid() + ", setting it to minimum " +
-                        "and calculating period instead of using the default");
-                quota = CpuTuneDef.MIN_QUOTA;
-                period = (int) ((double) quota / cpuQuotaPercentage);
-                if (period > CpuTuneDef.MAX_PERIOD) {
-                    LOGGER.info("Calculated period (" + period + ") exceeds the maximum (" + CpuTuneDef.MAX_PERIOD +
-                            "), setting it to the maximum");
-                    period = CpuTuneDef.MAX_PERIOD;
-                }
-            }
-            ctd.setQuota(quota);
-            ctd.setPeriod(period);
-            LOGGER.info("Setting quota=" + quota + ", period=" + period + " to VM domain " + vmTO.getUuid());
+            Pair<Integer, Long> periodAndQuota = getPeriodAndQuota(cpuQuotaPercentage);
+            ctd.setPeriod(periodAndQuota.first());
+            ctd.setQuota(periodAndQuota.second());
+            LOGGER.info("Setting quota = [{}] and period = [{}] to VM domain [{}].", periodAndQuota.second(), periodAndQuota.first(), vmTO.getUuid());
         }
+    }
+
+    /**
+     * Calculates the CPU period and quota based on the quota percentage defined by the Management Server
+     * @param cpuQuotaPercentage CPU quota percentage defined by the Management Server
+     * @return The period and quota to be defined for the VM's domain
+     */
+    protected Pair<Integer, Long> getPeriodAndQuota(double cpuQuotaPercentage) {
+        int period = CpuTuneDef.DEFAULT_PERIOD;
+        long quota = (long) (period * cpuQuotaPercentage);
+        if (quota < CpuTuneDef.MIN_QUOTA) {
+            LOGGER.info("Calculated quota ({}) below the minimum ({}), setting it to minimum and calculating period instead of using the default", quota, CpuTuneDef.MIN_QUOTA);
+            quota = CpuTuneDef.MIN_QUOTA;
+            period = (int) ((double) quota / cpuQuotaPercentage);
+            if (period > CpuTuneDef.MAX_PERIOD) {
+                LOGGER.info("Calculated period ({}) exceeds the maximum ({}), setting it to the maximum", period, CpuTuneDef.MAX_PERIOD);
+                period = CpuTuneDef.MAX_PERIOD;
+            }
+        }
+
+        LOGGER.info("Calculated period = [{}] and quota = [{}] given the [{}] quota percentage.", period, quota, cpuQuotaPercentage);
+        return new Pair<>(period, quota);
+    }
+
+    /**
+     * Dynamically updates the domain's "vcpu_quota" and "period" fields of the CPU tune definition.
+     * This is required because the values of the fields must change according to the new CPU speed of the VM.
+     * When the CPU limitation is removed from the domain, the "vcpu_quota" field is set to 17,592,186,044,415.
+     * @param domain VM's domain.
+     * @param vmTO VM's transfer object, which contains the required fields to update the "vcpu_quota" and "period" fields.
+     * @param limitCpuUseChange Indicates whether the CPU limitation for the VM has changed.
+     * @throws org.libvirt.LibvirtException
+     **/
+    public void updateCpuQuotaAndPeriod(Domain domain, VirtualMachineTO vmTO, boolean limitCpuUseChange) throws LibvirtException {
+        if (hypervisorLibvirtVersion < MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE || (!limitCpuUseChange && !vmTO.isLimitCpuUse())) {
+            logger.info("Not updating the [{}] and [{}] for the [{}] domain, because [{}].",
+                    CpuSchedulerParameter.QUOTA, CpuSchedulerParameter.PERIOD, domain.getName(), hypervisorLibvirtVersion < MIN_LIBVIRT_VERSION_FOR_GUEST_CPU_TUNE ?
+                            "the current Libvirt version does not support CPU tune" : "it was not requested to remove, change or apply CPU limitation for the instance.");
+            return;
+        }
+
+        if (limitCpuUseChange && !vmTO.isLimitCpuUse()) {
+            logger.info("Updating the [{}] of the [{}] domain to [{}], because CPU limitation has been removed.", CpuSchedulerParameter.QUOTA, domain.getName(), LibvirtComputingResource.MAX_CPU_QUOTA);
+            LibvirtComputingResource.setQuota(domain, LibvirtComputingResource.MAX_CPU_QUOTA);
+            return;
+        }
+
+        Pair<Integer, Long> periodAndQuota = getPeriodAndQuota(vmTO.getCpuQuotaPercentage());
+        LibvirtComputingResource.setPeriod(domain, periodAndQuota.first());
+        LibvirtComputingResource.setQuota(domain, periodAndQuota.second());
     }
 
     protected void enlightenWindowsVm(VirtualMachineTO vmTO, FeaturesDef features) {
@@ -3445,10 +3505,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         grd.setMemBalloning(!noMemBalloon);
 
-        Long maxRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam());
-
-        grd.setMemorySize(maxRam);
-        grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, maxRam));
+        long requestedRam = ByteScaleUtils.bytesToKibibytes(vmTO.getRequestedRam());
+        long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
+        grd.setCurrentMem(getCurrentMemAccordingToMemBallooning(vmTO, requestedRam, minRam));
+        grd.setMaxMemory(ByteScaleUtils.bytesToKibibytes(vmTO.getMaxRam()));
 
         int vcpus = vmTO.getCpus();
         Integer maxVcpus = vmTO.getVcpuMaxLimit();
@@ -3459,18 +3519,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return grd;
     }
 
-    protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long maxRam) {
-        long retVal = maxRam;
+    protected long getCurrentMemAccordingToMemBallooning(VirtualMachineTO vmTO, long requestedRam, long minRam) {
         if (noMemBalloon) {
-            LOGGER.warn(String.format("Setting VM's [%s] current memory as max memory [%s] due to memory ballooning is disabled. If you are using a custom service offering, verify if memory ballooning really should be disabled.", vmTO.toString(), maxRam));
-        } else if (vmTO != null && vmTO.getType() != VirtualMachine.Type.User) {
-            LOGGER.warn(String.format("Setting System VM's [%s] current memory as max memory [%s].", vmTO.toString(), maxRam));
-        } else {
-            long minRam = ByteScaleUtils.bytesToKibibytes(vmTO.getMinRam());
-            LOGGER.debug(String.format("Setting VM's [%s] current memory as min memory [%s] due to memory ballooning is enabled.", vmTO.toString(), minRam));
-            retVal = minRam;
+            LOGGER.warn("Setting VM's [{}] current memory as requested memory [{}] due to memory ballooning is disabled.", vmTO.toString(), requestedRam);
+            return requestedRam;
         }
-        return retVal;
+
+        if (vmTO != null && vmTO.getType() != VirtualMachine.Type.User) {
+            LOGGER.warn("Setting System VM's [{}] current memory as requested memory [{}].", vmTO.toString(), requestedRam);
+            return requestedRam;
+        }
+
+        LOGGER.debug("Setting VM's [{}] current memory as min memory [{}] due to memory ballooning is enabled.", vmTO.toString(), minRam);
+        return minRam;
     }
 
     /**
@@ -6255,27 +6316,57 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      **/
     public static Integer getCpuShares(Domain dm) throws LibvirtException {
         for (SchedParameter c : dm.getSchedulerParameters()) {
-            if (c.field.equals("cpu_shares")) {
+            if (c.field.equals(CpuSchedulerParameter.CPU_SHARES.getName())) {
                 return Integer.parseInt(c.getValueAsString());
             }
         }
-        LOGGER.warn(String.format("Could not get cpu_shares of domain: [%s]. Returning default value of 0. ", dm.getName()));
+        LOGGER.warn("Could not get [{}] of domain: [{}]. Returning default value of 0. ", CpuSchedulerParameter.CPU_SHARES.getName(), dm.getName());
         return 0;
     }
 
     /**
-     * Sets the cpu_shares (priority) of the running VM <br/>
+     * Updates the cpu_shares (priority) of the running VM.
      * @param dm domain of the VM.
      * @param cpuShares new priority of the running VM.
-     * @throws org.libvirt.LibvirtException
      **/
     public static void setCpuShares(Domain dm, Integer cpuShares) throws LibvirtException {
+        LOGGER.info("Dynamically updating the [{}] of the [{}] VM to [{}].", CpuSchedulerParameter.CPU_SHARES.getName(), dm.getName(), cpuShares);
         SchedUlongParameter[] params = new SchedUlongParameter[1];
         params[0] = new SchedUlongParameter();
-        params[0].field = "cpu_shares";
+        params[0].field = CpuSchedulerParameter.CPU_SHARES.getName();
         params[0].value = cpuShares;
 
         dm.setSchedulerParameters(params);
+    }
+
+    /**
+     * Updates the period of the running VM.
+     * @param domain domain of the VM.
+     * @param period new period of the running VM.
+     **/
+    public static void setPeriod(Domain domain, int period) throws LibvirtException {
+        LOGGER.info("Dynamically updating the [{}] of the [{}] VM to [{}].", CpuSchedulerParameter.PERIOD.getName(), domain.getName(), period);
+        SchedUlongParameter[] params = new SchedUlongParameter[1];
+        params[0] = new SchedUlongParameter();
+        params[0].field = CpuSchedulerParameter.PERIOD.getName();
+        params[0].value = period;
+
+        domain.setSchedulerParameters(params);
+    }
+
+    /**
+     * Updates the quota of the running VM.
+     * @param domain domain of the VM.
+     * @param quota new quota of the running VM.
+     **/
+    public static void setQuota(Domain domain, long quota) throws LibvirtException {
+        LOGGER.info("Dynamically updating the [{}] of the [{}] VM to [{}].", CpuSchedulerParameter.QUOTA.getName(), domain.getName(), quota);
+        SchedLongParameter[] params = new SchedLongParameter[1];
+        params[0] = new SchedLongParameter();
+        params[0].field = CpuSchedulerParameter.QUOTA.getName();
+        params[0].value = quota;
+
+        domain.setSchedulerParameters(params);
     }
 
     /**
