@@ -22,6 +22,8 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
@@ -45,6 +47,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     private final SearchBuilder<AsyncJobVO> expiringUnfinishedAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> expiringCompletedAsyncJobSearch;
     private final SearchBuilder<AsyncJobVO> failureMsidAsyncJobSearch;
+    private final SearchBuilder<AsyncJobVO> byIdResourceIdResourceTypeSearch;
     private final GenericSearchBuilder<AsyncJobVO, Long> asyncJobTypeSearch;
     private final GenericSearchBuilder<AsyncJobVO, Long> pendingNonPseudoAsyncJobsSearch;
 
@@ -95,6 +98,12 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         failureMsidAsyncJobSearch.and("job_cmd", failureMsidAsyncJobSearch.entity().getCmd(), Op.IN);
         failureMsidAsyncJobSearch.done();
 
+        byIdResourceIdResourceTypeSearch = createSearchBuilder();
+        byIdResourceIdResourceTypeSearch.and("id", byIdResourceIdResourceTypeSearch.entity().getId(), SearchCriteria.Op.EQ);
+        byIdResourceIdResourceTypeSearch.and("instanceId", byIdResourceIdResourceTypeSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        byIdResourceIdResourceTypeSearch.and("instanceType", byIdResourceIdResourceTypeSearch.entity().getInstanceType(), SearchCriteria.Op.EQ);
+        byIdResourceIdResourceTypeSearch.done();
+
         asyncJobTypeSearch = createSearchBuilder(Long.class);
         asyncJobTypeSearch.select(null, SearchCriteria.Func.COUNT, asyncJobTypeSearch.entity().getId());
         asyncJobTypeSearch.and("job_info", asyncJobTypeSearch.entity().getCmdInfo(),Op.LIKE);
@@ -138,6 +147,30 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         sc.setParameters("status", JobInfo.Status.IN_PROGRESS);
 
         return listBy(sc);
+    }
+
+    @Override
+    public AsyncJobVO findJob(Long id, Long resourceId, String resourceType) {
+        SearchCriteria<AsyncJobVO> sc = byIdResourceIdResourceTypeSearch.create();
+
+        if (id == null && resourceId == null && StringUtils.isNotBlank(resourceType)) {
+            logger.debug("findJob called with all null parameters");
+            return null;
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+        if (resourceId != null && StringUtils.isNotBlank(resourceType)) {
+            sc.setParameters("instanceType", resourceType);
+            sc.setParameters("instanceId", resourceId);
+        }
+        Filter filter = new Filter(AsyncJobVO.class, "created", false, 0L, 1L);
+        List<AsyncJobVO> result = searchIncludingRemoved(sc, filter, Boolean.FALSE, false);
+        if (CollectionUtils.isNotEmpty(result)) {
+            return result.get(0);
+        }
+        return null;
     }
 
     @Override
