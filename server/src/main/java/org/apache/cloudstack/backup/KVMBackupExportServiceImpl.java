@@ -942,7 +942,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                 RuntimeException ex = new CloudRuntimeException(String.format("Backup %d reached terminal failure state: %s", backupId, backup.getStatus()));
                 return new Pair<>(JobInfo.Status.FAILED, asyncJobManager.marshallResultObject(ex));
             }
-
+            logger.debug("{} is not in a terminal state, current state: {}, waiting {}ms to check again",
+                    backup, backup.getStatus(), BACKUP_FINALIZE_WAIT_CHECK_INTERVAL);
             try {
                 Thread.sleep(BACKUP_FINALIZE_WAIT_CHECK_INTERVAL);
             } catch (InterruptedException e) {
