@@ -25,13 +25,14 @@ import com.cloud.utils.component.Adapter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * APICheckers is designed to verify the ownership of resources and to control the access to APIs.
  */
 public interface APIChecker extends Adapter {
-    Logger s_logger = Logger.getLogger(APIChecker.class.getName());
+    Logger LOGGER = LogManager.getLogger(APIChecker.class);
     // Interface for checking access for a role using apiname
     // If true, apiChecker has checked the operation
     // If false, apiChecker is unable to handle the operation or not implemented
@@ -59,7 +60,7 @@ public interface APIChecker extends Adapter {
                 // Propagate as unchecked so callers are aware of the failure.
                 throw new RuntimeException("Failed to check access for API [" + apiName + "] due to request limits", e);
             } catch (PermissionDeniedException e) {
-                s_logger.trace("Account [" + account + "] is not allowed to access API [" + apiName + "]");
+                LOGGER.trace("Account [" + account + "] is not allowed to access API [" + apiName + "]");
             }
         }
         return allowedApis;
