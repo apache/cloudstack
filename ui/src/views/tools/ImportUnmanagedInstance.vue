@@ -190,12 +190,13 @@
               </a-form-item>
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
+                  :key="`convertstorageoption-${form.usevddk ? 'vddk' : 'default'}-${switches.forceConvertToPool ? 'pool' : 'tmp'}`"
                   layout="vertical"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
                   :checkBoxLabel="switches.forceConvertToPool ? $t('message.select.destination.storage.instance.conversion') : $t('message.select.temporary.storage.instance.conversion')"
-                  :defaultCheckBoxValue="false"
+                  :defaultCheckBoxValue="form.usevddk"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
                 />
@@ -1132,10 +1133,10 @@ export default {
       } else {
         this.form.forceconverttopool = false
         this.switches.forceConvertToPool = false
+        this.selectedStorageOptionForConversion = null
+        this.selectedStoragePoolForConversion = null
+        this.showStoragePoolsForConversion = false
       }
-      this.selectedStorageOptionForConversion = null
-      this.selectedStoragePoolForConversion = null
-      this.showStoragePoolsForConversion = false
       this.resetStorageOptionsForConversion()
     },
     updateSelectedRootDisk () {
