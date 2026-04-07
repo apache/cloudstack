@@ -394,7 +394,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                         .thenAnswer(invocation -> {
                             String command = invocation.getArgument(0);
                             if (command.contains("mount")) {
-                                return 0; // File exists
+                                return 0; // mount success
                             } else if (command.contains("rsync")) {
                                 return 1; // Rsync failure
                             }
@@ -453,7 +453,7 @@ public class LibvirtRestoreBackupCommandWrapperTest {
                         .thenAnswer(invocation -> {
                             String command = invocation.getArgument(0);
                             if (command.contains("mount")) {
-                                return 0; // File exists
+                                return 0; // Mount success
                             } else if (command.contains("rsync")) {
                                 return 0; // Rsync success
                             }
@@ -551,6 +551,8 @@ public class LibvirtRestoreBackupCommandWrapperTest {
             filesMock.when(() -> Files.createTempDirectory(anyString())).thenReturn(tempPath);
 
             try (MockedStatic<Script> scriptMock = mockStatic(Script.class)) {
+                scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString()))
+                        .thenReturn(0); // All commands success
                 scriptMock.when(() -> Script.runSimpleBashScriptForExitValue(anyString(), anyInt(), any(Boolean.class)))
                         .thenReturn(0); // All commands success
 
