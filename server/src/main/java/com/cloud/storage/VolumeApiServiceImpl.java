@@ -1043,7 +1043,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return true;
     }
 
-    private VolumeVO allocateVolumeOnStorage(Long volumeId, Long storageId) throws ExecutionException, InterruptedException {
+    private VolumeVO createVolumeOnStoragePool(Long volumeId, Long storageId) throws ExecutionException, InterruptedException {
+        VolumeVO volume = _volsDao.findById(volumeId);
+        StoragePool destPool = (StoragePool) dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
+        if (destPool == null) {
+            throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storageId);
+        } else if (destPool.isInMaintenance()) {
+            throw new InvalidParameterValueException(String.format("Cannot create volume %s on storage pool %s as the storage pool is in maintenance mode.",
+                    volume.getUuid(), destPool.getName()));
+        }
+
+        if (destPool.getDataCenterId() != volume.getDataCenterId()) {
+            throw new InvalidParameterValueException(String.format("Cannot create volume %s in zone %s on storage pool %s in zone %s.",
+                    volume.getUuid(), volume.getDataCenterId(), destPool.getUuid(), destPool.getDataCenterId()));
+        }
+
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        if (!doesStoragePoolSupportDiskOffering(destPool, diskOffering)) {
+            throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with the storage pool", diskOffering.getUuid()));
+        }
+
         DataStore destStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
         VolumeInfo destVolume = volFactory.getVolume(volumeId, destStore);
         AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(destVolume, destStore);
@@ -1086,7 +1105,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     }
                 }
             } else if (cmd.getStorageId() != null) {
-                volume = allocateVolumeOnStorage(cmd.getEntityId(), cmd.getStorageId());
+                volume = createVolumeOnStoragePool(cmd.getEntityId(), cmd.getStorageId());
             }
             return volume;
         } catch (Exception e) {
