@@ -2142,7 +2142,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private void validateNoDeleteProtectedVmsForAccount(Account account) {
         long accountId = account.getId();
         List<VMInstanceVO> deleteProtectedVms = _vmDao.listDeleteProtectedVmsByAccountId(accountId);
-        if (deleteProtectedVms.isEmpty()) {
+        if (CollectionUtils.isEmpty(deleteProtectedVms)) {
             return;
         }
 

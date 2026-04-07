@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -1318,14 +1319,16 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = DeleteProtectedVmSearchByAccount.create();
         sc.setParameters(ApiConstants.ACCOUNT_ID, accountId);
         sc.setParameters(ApiConstants.DELETE_PROTECTION, true);
-        return listBy(sc);
+        Filter filter = new Filter(VMInstanceVO.class, null, false, 0L, 10L);
+        return listBy(sc, filter);
     }
 
     @Override
-    public List<VMInstanceVO> listDeleteProtectedVmsByDomainIds(List<Long> domainIds)  {
+    public List<VMInstanceVO> listDeleteProtectedVmsByDomainIds(Set<Long> domainIds)  {
         SearchCriteria<VMInstanceVO> sc = DeleteProtectedVmSearchByDomainIds.create();
         sc.setParameters(ApiConstants.DOMAIN_IDS, domainIds.toArray());
         sc.setParameters(ApiConstants.DELETE_PROTECTION, true);
-        return listBy(sc);
+        Filter filter = new Filter(VMInstanceVO.class, null, false, 0L, 10L);
+        return listBy(sc, filter);
     }
 }

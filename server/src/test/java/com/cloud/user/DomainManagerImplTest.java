@@ -216,6 +216,7 @@ public class DomainManagerImplTest {
     @Test
     public void testDeleteDomainNoCleanup() {
         Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.any())).thenReturn(true);
+        Mockito.doReturn(Collections.emptySet()).when(domainManager).getDomainChildrenIds(Mockito.any());
         domainManager.deleteDomain(DOMAIN_ID, testDomainCleanup);
         Mockito.verify(domainManager).deleteDomain(domain, testDomainCleanup);
         Mockito.verify(domainManager).removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
@@ -281,6 +282,7 @@ public class DomainManagerImplTest {
         Mockito.when(_dedicatedDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DedicatedResourceVO>());
         Mockito.when(domainDaoMock.remove(Mockito.anyLong())).thenReturn(true);
         Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.any())).thenReturn(true);
+        Mockito.doReturn(Collections.emptySet()).when(domainManager).getDomainChildrenIds(Mockito.any());
 
         try {
             Assert.assertTrue(domainManager.deleteDomain(20l, false));

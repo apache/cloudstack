@@ -366,6 +366,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         }
 
         _accountMgr.checkAccess(caller, domain);
+        // Check across the domain hierarchy (current + children) for any delete-protected instances
+        validateNoDeleteProtectedVmsForDomain(domain);
 
         return deleteDomain(domain, cleanup);
     }
@@ -624,6 +626,9 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         DomainVO domainHandle = _domainDao.findById(domainId);
         logger.debug("Cleaning up domain {}", domainHandle);
         {
+            domainHandle.setState(Domain.State.Inactive);
+            _domainDao.update(domainId, domainHandle);
+
             SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
             sc.addAnd("parent", SearchCriteria.Op.EQ, domainId);
             List<DomainVO> domains = _domainDao.search(sc, null);
@@ -631,12 +636,6 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             SearchCriteria<DomainVO> sc1 = _domainDao.createSearchCriteria();
             sc1.addAnd("path", SearchCriteria.Op.LIKE, "%" + "replace(" + domainHandle.getPath() + ", '%', '[%]')" + "%");
             List<DomainVO> domainsToBeInactivated = _domainDao.search(sc1, null);
-
-            // Validate that no Instance in this domain or its subdomains has delete protection
-            validateNoDeleteProtectedVmsForDomain(domainHandle, domainsToBeInactivated);
-
-            domainHandle.setState(Domain.State.Inactive);
-            _domainDao.update(domainId, domainHandle);
 
             // update all subdomains to inactive so no accounts/users can be created
             for (DomainVO domain : domainsToBeInactivated) {
@@ -729,23 +728,20 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         return success && deleteDomainSuccess;
     }
 
-    private void validateNoDeleteProtectedVmsForDomain(Domain domainHandle, List<DomainVO> subDomains) {
-        List<Long> allDomainIds = subDomains.stream().map(Domain::getId).collect(Collectors.toList());
-        allDomainIds.add(domainHandle.getId());
-
+    private void validateNoDeleteProtectedVmsForDomain(Domain parentDomain) {
+        Set<Long> allDomainIds = getDomainChildrenIds(parentDomain.getPath());
         List<VMInstanceVO> deleteProtectedVms = vmInstanceDao.listDeleteProtectedVmsByDomainIds(allDomainIds);
-        if (deleteProtectedVms.isEmpty()) {
+        if (CollectionUtils.isEmpty(deleteProtectedVms)) {
             return;
         }
-
         if (logger.isDebugEnabled()) {
             List<String> vmUuids = deleteProtectedVms.stream().map(VMInstanceVO::getUuid).collect(Collectors.toList());
-            logger.debug("Cannot delete Domain {}, it has delete protection enabled for Instances: {}", domainHandle, vmUuids);
+            logger.debug("Cannot delete Domain {}, it has delete protection enabled for Instances: {}", parentDomain, vmUuids);
         }
 
         throw new InvalidParameterValueException(
                 String.format("Cannot delete Domain '%s'. One or more Instances have delete protection enabled.",
-                        domainHandle.getName()));
+                        parentDomain.getName()));
     }
 
     @Override
