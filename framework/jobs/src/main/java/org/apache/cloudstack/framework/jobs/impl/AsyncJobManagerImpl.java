@@ -1408,7 +1408,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                 }
             });
         } catch (RejectedExecutionException e) {
-            s_logger.warn("Failed to publish async job event, event bus publisher is shut down", e);
+            logger.warn("Failed to publish async job event, event bus publisher is shut down", e);
         }
     }
 
