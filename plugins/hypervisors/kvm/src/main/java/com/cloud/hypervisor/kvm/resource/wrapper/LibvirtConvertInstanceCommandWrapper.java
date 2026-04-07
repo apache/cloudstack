@@ -57,9 +57,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
     private static final List<Hypervisor.HypervisorType> supportedInstanceConvertSourceHypervisors =
             List.of(Hypervisor.HypervisorType.VMware);
     private static final Pattern SHA1_FINGERPRINT_PATTERN = Pattern.compile("(?i)(?:SHA1\\s+)?Fingerprint\\s*=\\s*([0-9A-F:]+)");
-    private static final Pattern VERSION_PREFIX_PATTERN = Pattern.compile("^(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?.*");
-    private static final String LEGACY_PASSWORD_FILE_OPTION = "--password-file";
-    private static final String PASSWORD_INTERACTIVE_FILE_OPTION = "-ip";
 
     @Override
     public Answer execute(ConvertInstanceCommand cmd, LibvirtComputingResource serverResource) {
@@ -115,10 +112,10 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 String libguestfsBackend = StringUtils.defaultIfBlank(resolveVddkSetting(cmd.getLibguestfsBackend(), serverResource.getLibguestfsBackend()), "direct");
                 String vddkTransports = resolveVddkSetting(cmd.getVddkTransports(), serverResource.getVddkTransports());
                 String configuredVddkThumbprint = resolveVddkSetting(cmd.getVddkThumbprint(), serverResource.getVddkThumbprint());
-                String virtV2vVersion = serverResource.getHostVirtV2vVersion();
+                String passwordOption = serverResource.getDetectedPasswordFileOption();
                 result = performInstanceConversionVddk(sourceInstance, originalVMName, temporaryConvertPath,
                         vddkLibDir, libguestfsBackend, vddkTransports, configuredVddkThumbprint,
-                        timeout, verboseModeEnabled, extraParams, virtV2vVersion);
+                        timeout, verboseModeEnabled, extraParams, temporaryConvertUuid, passwordOption);
             } else {
                 logger.info("({}) Using OVF-based conversion (export + local convert)", originalVMName);
                 String sourceOVFDirPath;
@@ -312,7 +309,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                                                     String libguestfsBackend, String vddkTransports,
                                                     String configuredVddkThumbprint,
                                                     long timeout, boolean verboseModeEnabled, String extraParams,
-                                                    String virtV2vVersion) {
+                                                    String temporaryConvertUuid, String passwordOption) {
 
         String vcenterPassword = vmwareInstance.getVcenterPassword();
         if (StringUtils.isBlank(vcenterPassword)) {
@@ -340,7 +337,12 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         cmd.append("virt-v2v ");
         cmd.append("--root first ");
         cmd.append("-ic '").append(vpxUrl).append("' ");
-        cmd.append(getPasswordInputOptionForVersion(virtV2vVersion)).append(" ").append(passwordFilePath).append(" ");
+        if (StringUtils.isBlank(passwordOption)) {
+            logger.error("({}) Could not determine supported password file option for virt-v2v", originalVMName);
+            return false;
+        }
+
+        cmd.append(passwordOption).append(" ").append(passwordFilePath).append(" ");
         cmd.append("-it vddk ");
         cmd.append("-io vddk-libdir=").append(vddkLibDir).append(" ");
         String vddkThumbprint = StringUtils.trimToNull(configuredVddkThumbprint);
@@ -359,6 +361,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         cmd.append("-o local ");
         cmd.append("-os ").append(temporaryConvertFolder).append(" ");
         cmd.append("-of qcow2 ");
+        cmd.append("-on ").append(temporaryConvertUuid).append(" ");
 
         if (verboseModeEnabled) {
             cmd.append("-v ");
@@ -393,43 +396,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return exitValue == 0;
     }
 
-    protected String getPasswordInputOptionForVersion(String virtV2vVersion) {
-        // virt-v2v 2.8.1 replaced --password-file with -ip.
-        if (isVersionAtLeast(virtV2vVersion, 2, 8, 1)) {
-            return PASSWORD_INTERACTIVE_FILE_OPTION;
-        }
-        return LEGACY_PASSWORD_FILE_OPTION;
-    }
-
-    private boolean isVersionAtLeast(String version, int major, int minor, int patch) {
-        int[] parsedVersion = parseVersionPrefix(version);
-        if (parsedVersion == null) {
-            return false;
-        }
-        if (parsedVersion[0] != major) {
-            return parsedVersion[0] > major;
-        }
-        if (parsedVersion[1] != minor) {
-            return parsedVersion[1] > minor;
-        }
-        return parsedVersion[2] >= patch;
-    }
-
-    private int[] parseVersionPrefix(String version) {
-        String normalized = StringUtils.trimToNull(version);
-        if (normalized == null) {
-            return null;
-        }
-        Matcher matcher = VERSION_PREFIX_PATTERN.matcher(normalized);
-        if (!matcher.matches()) {
-            return null;
-        }
-        return new int[] {
-                Integer.parseInt(matcher.group(1)),
-                StringUtils.isNotBlank(matcher.group(2)) ? Integer.parseInt(matcher.group(2)) : 0,
-                StringUtils.isNotBlank(matcher.group(3)) ? Integer.parseInt(matcher.group(3)) : 0
-        };
-    }
 
     protected String getVcenterThumbprint(String vcenterHost, long timeout, String originalVMName) {
         if (StringUtils.isBlank(vcenterHost)) {

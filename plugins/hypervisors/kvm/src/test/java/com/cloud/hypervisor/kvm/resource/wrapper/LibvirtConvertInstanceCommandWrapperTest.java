@@ -214,13 +214,14 @@ public class LibvirtConvertInstanceCommandWrapperTest {
             filesMock.when(() -> Files.deleteIfExists(passwordFilePath)).thenReturn(true);
 
             boolean result = convertInstanceCommandWrapper.performInstanceConversionVddk(
-                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "libvirt", null, null, 1000L, false, null, "1.42.0");
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "libvirt", null, null, 1000L, false, null, "tmp-uuid", "-ip");
 
             Assert.assertTrue(result);
             Script scriptMock = ignored.constructed().get(0);
             Mockito.verify(scriptMock).add("-c");
             Mockito.verify(scriptMock).add(Mockito.contains("export LIBGUESTFS_BACKEND=libvirt &&"));
-            Mockito.verify(scriptMock).add(Mockito.contains("--password-file /root/v2v.pass.cloud.vcenter.local "));
+            Mockito.verify(scriptMock).add(Mockito.contains("-ip /root/v2v.pass.cloud.vcenter.local "));
+            Mockito.verify(scriptMock).add(Mockito.contains(" -on tmp-uuid "));
             Mockito.verify(scriptMock).add(Mockito.contains("-io vddk-thumbprint=28:19:A6:1C:90:ED:46:D7:1C:86:BC:F6:13:52:F0:B9:19:81:0D:81 "));
         }
     }
@@ -247,7 +248,7 @@ public class LibvirtConvertInstanceCommandWrapperTest {
             filesMock.when(() -> Files.deleteIfExists(passwordFilePath)).thenReturn(true);
 
             boolean result = convertInstanceCommandWrapper.performInstanceConversionVddk(
-                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", "nbd:nbdssl", null, 1000L, false, null, "1.42.0");
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", "nbd:nbdssl", null, 1000L, false, null, "tmp-uuid", "-ip");
 
             Assert.assertTrue(result);
             Script scriptMock = ignored.constructed().get(0);
@@ -273,7 +274,7 @@ public class LibvirtConvertInstanceCommandWrapperTest {
             filesMock.when(() -> Files.deleteIfExists(passwordFilePath)).thenReturn(true);
 
             boolean result = convertInstanceCommandWrapper.performInstanceConversionVddk(
-                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", null, null, 1000L, false, null, "1.42.0");
+                    remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", null, null, 1000L, false, null, "tmp-uuid", "-ip");
 
             Assert.assertFalse(result);
         }
@@ -300,7 +301,7 @@ public class LibvirtConvertInstanceCommandWrapperTest {
 
             boolean result = convertInstanceCommandWrapper.performInstanceConversionVddk(
                     remoteInstanceTO, vmName, "/tmp/convert", "/opt/vddk", "direct", null,
-                    "AA:BB:CC:DD:EE", 1000L, false, null, "1.42.0");
+                    "AA:BB:CC:DD:EE", 1000L, false, null, "tmp-uuid", "-ip");
 
             Assert.assertTrue(result);
             Script scriptMock = ignored.constructed().get(0);
@@ -308,19 +309,5 @@ public class LibvirtConvertInstanceCommandWrapperTest {
             Mockito.verify(convertInstanceCommandWrapper, Mockito.never())
                     .getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
         }
-    }
-
-    @Test
-    public void testGetPasswordInputOptionForVersionUsesLegacyOptionForOlderVersions() {
-        Assert.assertEquals("--password-file", convertInstanceCommandWrapper.getPasswordInputOptionForVersion("1.42.0rhel=8"));
-        Assert.assertEquals("--password-file", convertInstanceCommandWrapper.getPasswordInputOptionForVersion("2.8.0"));
-        Assert.assertEquals("--password-file", convertInstanceCommandWrapper.getPasswordInputOptionForVersion(""));
-    }
-
-    @Test
-    public void testGetPasswordInputOptionForVersionUsesIpOptionForNewerVersions() {
-        Assert.assertEquals("-ip", convertInstanceCommandWrapper.getPasswordInputOptionForVersion("2.8.1"));
-        Assert.assertEquals("-ip", convertInstanceCommandWrapper.getPasswordInputOptionForVersion("2.9.0"));
-        Assert.assertEquals("-ip", convertInstanceCommandWrapper.getPasswordInputOptionForVersion("3.0"));
     }
 }

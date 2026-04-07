@@ -892,6 +892,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String cachePath;
     private String vddkTransports = null;
     private String vddkThumbprint = null;
+    private String detectedPasswordFileOption = null;
     protected String javaTempDir = System.getProperty("java.io.tmpdir");
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
@@ -1179,6 +1180,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_TRANSPORTS));
         vddkThumbprint = StringUtils.trimToNull(
                 AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_THUMBPRINT));
+
+        detectedPasswordFileOption = detectPasswordFileOption();
+        if (StringUtils.isNotBlank(detectedPasswordFileOption)) {
+            LOGGER.info("Detected virt-v2v password option: {}", detectedPasswordFileOption);
+        } else {
+            LOGGER.warn("Could not detect virt-v2v password option, VDDK conversions may fail");
+        }
 
         pool = (String)params.get("pool");
         if (pool == null) {
@@ -5973,6 +5981,40 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean hostSupportsOvfExport() {
         int exitValue = Script.runSimpleBashScriptForExitValue(OVF_EXPORT_SUPPORTED_CHECK_CMD);
         return exitValue == 0;
+    }
+
+    /**
+     * Detect which password option virt-v2v supports by examining its --help output
+     * @return "-ip" if supported (virt-v2v >= 2.8.1), "--password-file" if older version, or null if detection fails
+     */
+    protected String detectPasswordFileOption() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("virt-v2v", "--help");
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            process.waitFor();
+
+            if (output.contains("-ip <filename>")) {
+                return "-ip";
+            } else if (output.contains("--password-file")) {
+                return "--password-file";
+            } else {
+                LOGGER.error("virt-v2v does not support -ip or --password-file");
+                return null;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to detect virt-v2v password option: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get the detected password file option for virt-v2v
+     * @return the password option ("-ip" or "--password-file") or null if not detected
+     */
+    public String getDetectedPasswordFileOption() {
+        return detectedPasswordFileOption;
     }
 
     public String getHostVirtV2vVersion() {
