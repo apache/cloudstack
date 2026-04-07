@@ -88,6 +88,7 @@
                 <entry key="VirtualMachineManagerImpl" value-ref="clusteredVirtualMachineManagerImpl" />
                 <entry key="VolumeApiServiceImpl" value-ref="volumeApiServiceImpl" />
                 <entry key="VMSnapshotManagerImpl" value-ref="vMSnapshotManagerImpl" />
+                <entry key="KVMBackupExportServiceImpl" value-ref="kvmBackupExportService" />
             </map>
         </property>
     </bean>

@@ -17,6 +17,9 @@
 
 package org.apache.cloudstack.backup;
 
+import static org.apache.cloudstack.backup.BackupManager.BackupFrameworkEnabled;
+import static org.apache.cloudstack.backup.BackupManager.BackupProviderPlugin;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,6 +48,10 @@ import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.ImageTransferDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -71,23 +78,31 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.VmWork;
+import com.cloud.vm.VmWorkConstants;
+import com.cloud.vm.VmWorkJobHandler;
+import com.cloud.vm.VmWorkJobHandlerProxy;
+import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
-import static org.apache.cloudstack.backup.BackupManager.BackupFrameworkEnabled;
-import static org.apache.cloudstack.backup.BackupManager.BackupProviderPlugin;
-
 @Component
-public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackupExportService {
+public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackupExportService, VmWorkJobHandler {
+    public static final String VM_WORK_JOB_HANDLER = KVMBackupExportServiceImpl.class.getSimpleName();
+    private static final long BACKUP_FINALIZE_WAIT_CHECK_INTERVAL = 15 * 1000L;
 
     @Inject
     private VMInstanceDao vmInstanceDao;
@@ -122,7 +137,12 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     @Inject
     AccountService accountService;
 
+    @Inject
+    AsyncJobManager asyncJobManager;
+
     private Timer imageTransferTimer;
+
+    VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
     private boolean isKVMBackupExportServiceSupported(Long zoneId) {
         return !BackupFrameworkEnabled.value() || StringUtils.equals("dummy", BackupProviderPlugin.valueIn(zoneId));
@@ -189,6 +209,28 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         backupDao.remove(backup.getId());
     }
 
+    protected void queueBackupFinalizeWaitWorkJob(final VMInstanceVO vm, final BackupVO backup) {
+        final CallContext context = CallContext.current();
+        final Account callingAccount = context.getCallingAccount();
+        final long callingUserId = context.getCallingUserId();
+
+        VmWorkJobVO workJob = new VmWorkJobVO(context.getContextId());
+        workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+        workJob.setCmd(VmWorkWaitForBackupFinalize.class.getName());
+        workJob.setAccountId(callingAccount.getId());
+        workJob.setUserId(callingUserId);
+        workJob.setStep(VmWorkJobVO.Step.Starting);
+        workJob.setVmType(VirtualMachine.Type.User);
+        workJob.setVmInstanceId(vm.getId());
+        workJob.setRelated(AsyncJobExecutionContext.getOriginJobId());
+
+        VmWorkWaitForBackupFinalize workInfo = new VmWorkWaitForBackupFinalize(
+                callingUserId, callingAccount.getId(), vm.getId(), VM_WORK_JOB_HANDLER, backup.getId());
+        workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+        asyncJobManager.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+    }
+
     @Override
     public Backup startBackup(StartBackupCmd cmd) {
         BackupVO backup = backupDao.findById(cmd.getEntityId());
@@ -246,6 +288,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         // Update backup with checkpoint creation time
         backup.setCheckpointCreateTime(answer.getCheckpointCreateTime());
         updateBackupState(backup, Backup.Status.ReadyForTransfer);
+        queueBackupFinalizeWaitWorkJob(vm, backup);
         return backup;
     }
 
@@ -872,6 +915,43 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         }
         return true;
     }
+
+    @ReflectionUse
+    public Pair<JobInfo.Status, String> orchestrateWaitForBackupFinalize(VmWorkWaitForBackupFinalize work) {
+        return waitForBackupTerminalState(work.getBackupId());
+    }
+
+    @Override
+    public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
+        return jobHandlerProxy.handleVmWorkJob(work);
+    }
+
+    protected Pair<JobInfo.Status, String> waitForBackupTerminalState(final long backupId) {
+        while (true) {
+            final BackupVO backup = backupDao.findByIdIncludingRemoved(backupId);
+            if (backup == null) {
+                RuntimeException ex = new CloudRuntimeException(String.format("Backup %d not found while waiting for finalize", backupId));
+                return new Pair<>(JobInfo.Status.FAILED, asyncJobManager.marshallResultObject(ex));
+            }
+
+            if (backup.getStatus() == Backup.Status.BackedUp) {
+                return new Pair<>(JobInfo.Status.SUCCEEDED, asyncJobManager.marshallResultObject(backup.getId()));
+            }
+
+            if (backup.getStatus() == Backup.Status.Failed || backup.getStatus() == Backup.Status.Error) {
+                RuntimeException ex = new CloudRuntimeException(String.format("Backup %d reached terminal failure state: %s", backupId, backup.getStatus()));
+                return new Pair<>(JobInfo.Status.FAILED, asyncJobManager.marshallResultObject(ex));
+            }
+
+            try {
+                Thread.sleep(BACKUP_FINALIZE_WAIT_CHECK_INTERVAL);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                    RuntimeException ex = new CloudRuntimeException(String.format("Interrupted while waiting for backup %d finalize", backupId), e);
+                    return new Pair<>(JobInfo.Status.FAILED, asyncJobManager.marshallResultObject(ex));
+                }
+            }
+        }
 
     private void pollImageTransferProgress() {
         try {
