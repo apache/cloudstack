@@ -4970,9 +4970,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 Account template_acc = accountMgr.getAccount(template.getAccountId());
                 DomainVO domain = _domainDao.findById(template_acc.getDomainId());
                 accountMgr.checkAccess(caller, domain);
-            } else if (!template.isPublicTemplate() && caller.getType() != Account.Type.ADMIN) { // if template is not public, perform permission check here
-                accountMgr.checkAccess(caller, null, true, template);
-            } else if (template.isPublicTemplate()) {
+            } else if (template.isPublicTemplate() || caller.getType() != Account.Type.ADMIN) {
+                // if template is not public or non-admin caller, perform permission check here
                 accountMgr.checkAccess(caller, null, false, template);
             }
 
