@@ -872,7 +872,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         response.setId(imageTransferVO.getUuid());
         Long backupId = imageTransferVO.getBackupId();
         if (backupId != null) {
-            // ToDo: Orphan image transfer record if backup is deleted before transfer finalization, need to clean up
             Backup backup = backupDao.findByIdIncludingRemoved(backupId);
             response.setBackupId(backup.getUuid());
         }
