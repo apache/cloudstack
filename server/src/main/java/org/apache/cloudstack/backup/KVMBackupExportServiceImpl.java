@@ -175,6 +175,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
         backup.setToCheckpointId(toCheckpointId);
         backup.setFromCheckpointId(fromCheckpointId);
+        backup.setType("FULL");
 
         Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
         backup.setHostId(hostId);
@@ -989,7 +990,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
                 ImageTransferPollingInterval,
-                ImageTransferIdleTimeoutSeconds
+                ImageTransferIdleTimeoutSeconds,
+                ExposeKVMBackupExportServiceApis
         };
     }
 }

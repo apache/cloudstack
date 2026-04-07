@@ -52,7 +52,7 @@ public interface KVMBackupExportService extends Configurable, PluggableService {
     ConfigKey<Boolean> ExposeKVMBackupExportServiceApis = new ConfigKey<>("Advanced", Boolean.class,
             "expose.kvm.backup.export.service.apis",
             "false",
-            "Enable to expose APIs for testing the KVM Backup Export Service.", false, ConfigKey.Scope.Global);
+            "Enable to expose APIs for testing the KVM Backup Export Service.", true, ConfigKey.Scope.Global);
     /**
      * Creates a backup session for a VM
      */
