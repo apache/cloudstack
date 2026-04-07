@@ -426,7 +426,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmName(vmNameAndState.first());
         String restoreVolumePath = String.format("%s%s%s", getVolumePathPrefix(pool), volumeUUID, getVolumePathSuffix(pool));
         restoreCommand.setRestoreVolumePaths(Collections.singletonList(restoreVolumePath));
-        restoreCommand.setRestoreVolumeSizes(Collections.singletonList(volume.getSize()));
+        restoreCommand.setRestoreVolumeSizes(Collections.singletonList(backedUpVolumeSize));
         DataStore dataStore = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         restoreCommand.setRestoreVolumePools(Collections.singletonList(dataStore != null ? (PrimaryDataStoreTO)dataStore.getTO() : null));
         restoreCommand.setDiskType(backupVolumeInfo.getType().name().toLowerCase(Locale.ROOT));

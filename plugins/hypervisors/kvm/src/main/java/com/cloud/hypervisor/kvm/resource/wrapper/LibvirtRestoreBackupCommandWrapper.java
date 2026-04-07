@@ -300,7 +300,7 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
                 logger.debug("Restoring volume: {}", disk.toString());
             }
         } catch (LibvirtException ex) {
-            throw new CloudRuntimeException("Failed to create qemu-img command to restore RBD volume with backup", ex);
+            throw new CloudRuntimeException(String.format("Failed to create qemu-img command to restore %s volume with backup", volumePool.getPoolType()), ex);
         }
 
         QemuImgFile srcBackupFile = null;

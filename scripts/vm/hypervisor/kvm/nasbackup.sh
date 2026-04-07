@@ -93,19 +93,19 @@ get_ceph_uuid_from_path() {
   local fullpath="$1"
   # disk for rbd => rbd:<pool>/<uuid>:mon_host=<monitor_host>...
   # sample: rbd:cloudstack/53d5c355-d726-4d3e-9422-046a503a0b12:mon_host=10.0.1.2...
-  beforeUuid="${fullpath#*/}" # Remove up to first slash after rbd:
-  volUuid="${beforeUuid%%:*}" # Remove everything after colon to get the uuid
-  echo $volUuid
+  local beforeUuid="${fullpath#*/}" # Remove up to first slash after rbd:
+  local volUuid="${beforeUuid%%:*}" # Remove everything after colon to get the uuid
+  echo ""$volUuid""
 }
 
 get_linstor_uuid_from_path() {
   local fullpath="$1"
   # disk for linstor => /dev/drbd/by-res/cs-<uuid>/0
   # sample: /dev/drbd/by-res/cs-53d5c355-d726-4d3e-9422-046a503a0b12/0
-  beforeUuid="${fullpath#/dev/drbd/by-res/}"
-  volUuid="${beforeUuid%%/*}"
+  local beforeUuid="${fullpath#/dev/drbd/by-res/}"
+  local volUuid="${beforeUuid%%/*}"
   volUuid="${volUuid#cs-}"
-  echo $volUuid
+  echo "$volUuid"
 }
 
 backup_running_vm() {
@@ -178,7 +178,7 @@ backup_running_vm() {
       continue
     fi
     volUuid=$(get_linstor_uuid_from_path "$fullpath")
-    if ! qemu-img convert -O qcow2 "$dest/$name.$volUuid.qcow2" "$dest/$name.$volUuid.qcow2.tmp" >"$logFile" 2> >(cat >&2); then
+    if ! qemu-img convert -O qcow2 "$dest/$name.$volUuid.qcow2" "$dest/$name.$volUuid.qcow2.tmp" >> "$logFile" 2> >(cat >&2); then
       echo "qemu-img convert failed for $dest/$name.$volUuid.qcow2"
       cleanup
       exit 1
