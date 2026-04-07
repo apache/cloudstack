@@ -384,6 +384,7 @@ public class PrimeraAdapter implements ProviderAdapter {
             // Online copy configuration: immediate clone with deduplication and compression
             parms.setOnline(true);
             parms.setDestCPG(cpg);
+            parms.setSnapCPG(snapCpg);
             parms.setTpvv(false);
             parms.setReduce(true);
             logger.debug("PrimeraAdapter: Configuring online copy - destination CPG: '{}', deduplication enabled, thin provisioning disabled", cpg);
