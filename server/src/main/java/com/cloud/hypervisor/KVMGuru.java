@@ -20,7 +20,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.host.HostVO;
@@ -44,6 +44,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -54,9 +55,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 
 public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
@@ -130,30 +129,47 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
      * @param vmProfile vm profile
      */
     protected void setVmQuotaPercentage(VirtualMachineTO to, VirtualMachineProfile vmProfile) {
-        if (to.isLimitCpuUse()) {
-            VirtualMachine vm = vmProfile.getVirtualMachine();
-            HostVO host = hostDao.findById(vm.getHostId());
-            if (host == null) {
-                logger.warn("Host is not available. Skipping setting CPU quota percentage for VM: {}", vm);
-                return;
+        if (!to.isLimitCpuUse()) {
+            return;
+        }
+
+        VirtualMachine vm = vmProfile.getVirtualMachine();
+        HostVO host = hostDao.findById(vm.getHostId());
+        if (host == null) {
+            logger.warn("Host is not available. Skipping setting CPU quota percentage for VM: [{}].", vm);
+            return;
+        }
+
+        logger.debug("Limiting CPU usage for VM: [{}] on host: [{}].", vm, host);
+        double maxSpeed = getVmSpeed(to);
+        double hostMaxSpeed = getHostCPUSpeed(host);
+        Double cpuQuotaPercentage = getCpuQuotaPercentage(maxSpeed, hostMaxSpeed);
+        if (cpuQuotaPercentage != null) {
+            to.setCpuQuotaPercentage(cpuQuotaPercentage);
+        }
+    }
+
+    /**
+     * Calculates the VM quota percentage based on the VM and host CPU speeds.
+     * @param vmSpeeed Speed of the VM.
+     * @param hostSpeed Speed of the host.
+     * @return The VM quota percentage.
+     */
+    public Double getCpuQuotaPercentage(double vmSpeeed, double hostSpeed) {
+        logger.debug("Calculating CPU quota percentage for VM with speed [{}] on host with speed [{}].", vmSpeeed, hostSpeed);
+        try {
+            BigDecimal percent = new BigDecimal(vmSpeeed / hostSpeed);
+            percent = percent.setScale(2, RoundingMode.HALF_DOWN);
+            if (percent.compareTo(new BigDecimal(1)) > 0) {
+                logger.debug("VM CPU speed exceeded host CPU speed and, therefore, limiting VM CPU quota to the host maximum.");
+                percent = new BigDecimal(1);
             }
-            logger.debug("Limiting CPU usage for VM: {} on host: {}", vm, host);
-            double hostMaxSpeed = getHostCPUSpeed(host);
-            double maxSpeed = getVmSpeed(to);
-            try {
-                BigDecimal percent = new BigDecimal(maxSpeed / hostMaxSpeed);
-                percent = percent.setScale(2, RoundingMode.HALF_DOWN);
-                if (percent.compareTo(new BigDecimal(1)) == 1) {
-                    logger.debug("VM {} CPU MHz exceeded host {} CPU MHz, limiting VM CPU to the host maximum", vm, host);
-                    percent = new BigDecimal(1);
-                }
-                to.setCpuQuotaPercentage(percent.doubleValue());
-                logger.debug("Host: {} max CPU speed = {} MHz, VM: {} max CPU speed = {} MHz. " +
-                        "Setting CPU quota percentage as: {}",
-                        host, hostMaxSpeed, vm, maxSpeed, percent.doubleValue());
-            } catch (NumberFormatException e) {
-                logger.error("Error calculating VM: {} quota percentage, it will not be set. Error: {}", vm, e.getMessage(), e);
-            }
+            double quotaPercentage = percent.doubleValue();
+            logger.info("Calculated CPU quota percentage for VM with speed [{}] on host with speed [{}] is [{}].", vmSpeeed, hostSpeed, quotaPercentage);
+            return quotaPercentage;
+        } catch (NumberFormatException e) {
+            logger.info("Could not calculate CPU quota percentage for VM with speed [{}] on host with speed [{}]. Therefore, CPU limitation will not be set for the domain.", vmSpeeed, hostSpeed);
+            return null;
         }
     }
 
@@ -214,28 +230,31 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Pair<Long, Integer> max = getHostMaxMemoryAndCpuCores(hostVo, virtualMachine, vmDescription);
 
         Long maxHostMemory = max.first();
-        Integer maxHostCpuCore = max.second();
+        Integer maxHostCpuCores = max.second();
 
         long minMemory = virtualMachineTo.getMinRam();
         Long maxMemory = virtualMachineTo.getMaxRam();
-        int minCpuCores = virtualMachineTo.getCpus();
-        Integer maxCpuCores = minCpuCores;
+        long requestedMemory = maxMemory;
 
-        ServiceOfferingVO serviceOfferingVO = serviceOfferingDao.findById(virtualMachineProfile.getId(), virtualMachineProfile.getServiceOfferingId());
-        if (isVmDynamicScalable(serviceOfferingVO, virtualMachineTo, virtualMachine)) {
+        int minCpuCores = virtualMachineTo.getCpus();
+        int maxCpuCores = minCpuCores;
+
+        if (isVmDynamicScalable(virtualMachineTo, virtualMachine)) {
+            ServiceOfferingVO serviceOfferingVO = serviceOfferingDao.findById(virtualMachineProfile.getId(), virtualMachineProfile.getServiceOfferingId());
             serviceOfferingDao.loadDetails(serviceOfferingVO);
 
-            maxMemory = getVmMaxMemory(serviceOfferingVO, vmDescription, maxHostMemory);
-            maxCpuCores = getVmMaxCpuCores(serviceOfferingVO, vmDescription, maxHostCpuCore);
+            Long clusterId = hostVo != null ? hostVo.getClusterId() : null;
+            maxMemory = getVmMaxMemory(serviceOfferingVO, vmDescription, maxHostMemory, clusterId);
+            maxCpuCores = getVmMaxCpuCores(serviceOfferingVO, vmDescription, maxHostCpuCores, clusterId);
         }
 
-        virtualMachineTo.setRam(minMemory, maxMemory);
+        virtualMachineTo.setRam(minMemory, maxMemory, requestedMemory);
         virtualMachineTo.setCpus(minCpuCores);
         virtualMachineTo.setVcpuMaxLimit(maxCpuCores);
     }
 
-    protected boolean isVmDynamicScalable(ServiceOfferingVO serviceOfferingVO, VirtualMachineTO virtualMachineTo, VirtualMachine virtualMachine) {
-        return serviceOfferingVO.isDynamic() && virtualMachineTo.isEnableDynamicallyScaleVm() && UserVmManager.EnableDynamicallyScaleVm.valueIn(virtualMachine.getDataCenterId());
+    protected boolean isVmDynamicScalable(VirtualMachineTO virtualMachineTo, VirtualMachine virtualMachine) {
+        return virtualMachineTo.isEnableDynamicallyScaleVm() && UserVmManager.EnableDynamicallyScaleVm.valueIn(virtualMachine.getDataCenterId());
     }
 
     protected Pair<Long, Integer> getHostMaxMemoryAndCpuCores(HostVO host, VirtualMachine virtualMachine, String vmDescription){
@@ -263,53 +282,34 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         return new Pair<>(maxHostMemory, maxHostCpuCore);
     }
 
-    protected Long getVmMaxMemory(ServiceOfferingVO serviceOfferingVO, String vmDescription, Long maxHostMemory) {
-        String serviceOfferingDescription = serviceOfferingVO.toString();
-
+    protected Long getVmMaxMemory(ServiceOfferingVO serviceOfferingVO, String vmDescription, Long maxHostMemory, Long clusterId) {
         Long maxMemory;
-        Integer customOfferingMaxMemory = NumberUtils.createInteger(serviceOfferingVO.getDetail(ApiConstants.MAX_MEMORY));
-        Integer maxMemoryConfig = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.value();
-        if (customOfferingMaxMemory != null) {
-            logger.debug(String.format("Using 'Custom unconstrained' %s max memory value [%sMb] as %s memory.", serviceOfferingDescription, customOfferingMaxMemory, vmDescription));
-            maxMemory = ByteScaleUtils.mebibytesToBytes(customOfferingMaxMemory);
+        ConfigKey<Integer> maxMemoryConfig = CapacityManager.KvmMemoryDynamicScalingCapacity;
+        Integer maxMemoryConfigValue = maxMemoryConfig.valueIn(clusterId);
+        logger.info("[{}] is a dynamically scalable service offering. Using config [{}] value [{}] in cluster [ID: {}] as max [{}] memory.",
+                serviceOfferingVO.toString(), maxMemoryConfig.key(), maxMemoryConfigValue, clusterId, vmDescription);
+        if (maxMemoryConfigValue > 0) {
+            maxMemory = ByteScaleUtils.mebibytesToBytes(maxMemoryConfigValue);
         } else {
-            String maxMemoryConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.key();
-
-            logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s memory.",
-                    serviceOfferingDescription, maxMemoryConfigKey, maxMemoryConfig, vmDescription));
-
-            if (maxMemoryConfig > 0) {
-                maxMemory = ByteScaleUtils.mebibytesToBytes(maxMemoryConfig);
-            } else {
-                logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max memory [%s] as VM max memory in the hypervisor.", maxMemoryConfigKey, vmDescription, maxHostMemory));
-                maxMemory = maxHostMemory;
-            }
+            logger.info("Config [{}] in cluster [ID: {}] has value less or equal '0'. Using [{}] host or last host max memory [{}] as VM max memory in the hypervisor.",
+                    maxMemoryConfig.key(), clusterId, vmDescription, maxHostMemory);
+            maxMemory = maxHostMemory;
         }
         return maxMemory;
     }
 
-    protected Integer getVmMaxCpuCores(ServiceOfferingVO serviceOfferingVO, String vmDescription, Integer maxHostCpuCore) {
-        String serviceOfferingDescription = serviceOfferingVO.toString();
-
+    protected Integer getVmMaxCpuCores(ServiceOfferingVO serviceOfferingVO, String vmDescription, Integer maxHostCpuCores, Long clusterId) {
         Integer maxCpuCores;
-        Integer customOfferingMaxCpuCores = NumberUtils.createInteger(serviceOfferingVO.getDetail(ApiConstants.MAX_CPU_NUMBER));
-        Integer maxCpuCoresConfig = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES.value();
-
-        if (customOfferingMaxCpuCores != null) {
-            logger.debug(String.format("Using 'Custom unconstrained' %s max cpu cores [%s] as %s cpu cores.", serviceOfferingDescription, customOfferingMaxCpuCores, vmDescription));
-            maxCpuCores = customOfferingMaxCpuCores;
+        ConfigKey<Integer> maxCpuCoresConfig = CapacityManager.KvmCpuDynamicScalingCapacity;
+        Integer maxCpuCoresConfigValue = maxCpuCoresConfig.valueIn(clusterId);
+        logger.info("[{}] is a dynamically scalable service offering. Using config [{}] value [{}] in cluster [ID: {}] as max [{}] CPU cores.",
+                serviceOfferingVO.toString(), maxCpuCoresConfig.key(), maxCpuCoresConfigValue, clusterId, vmDescription);
+        if (maxCpuCoresConfigValue > 0) {
+            maxCpuCores = maxCpuCoresConfigValue;
         } else {
-            String maxCpuCoreConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES.key();
-
-            logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s cpu cores.",
-                    serviceOfferingDescription, maxCpuCoreConfigKey, maxCpuCoresConfig, vmDescription));
-
-            if (maxCpuCoresConfig > 0) {
-                maxCpuCores = maxCpuCoresConfig;
-            } else {
-                logger.info(String.format("Config [%s] has value less or equal '0'. Using %s host or last host max cpu cores [%s] as VM cpu cores in the hypervisor.", maxCpuCoreConfigKey, vmDescription, maxHostCpuCore));
-                maxCpuCores = maxHostCpuCore;
-            }
+            logger.info("Config [{}] in cluster [ID: {}] has value less or equal '0'. Using [{}] host or last host max CPU cores [{}] as VM CPU cores in the hypervisor.",
+                    maxCpuCoresConfig.key(), clusterId, vmDescription, maxHostCpuCores);
+            maxCpuCores = maxHostCpuCores;
         }
         return maxCpuCores;
     }
