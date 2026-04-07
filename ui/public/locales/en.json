@@ -2375,6 +2375,7 @@
 "label.user.data.policy.tooltip": "User Data linked to the Template can be overridden by User Data provided during Instance deploy. Select the override policy as required.",
 "label.user.data": "User Data",
 "label.user.data.library": "User Data Library",
+"label.use.vddk": "Use VDDK",
 "label.ssh.port": "SSH port",
 "label.sshkeypair": "New SSH key pair",
 "label.sshkeypairs": "SSH key pairs",

@@ -152,7 +152,13 @@
                   </a-row>
                 </a-radio-group>
               </a-form-item>
-              <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter">
+              <a-form-item name="usevddk" ref="usevddk" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.use.vddk')" :tooltip="apiParams.usevddk ? apiParams.usevddk.description : ''"/>
+                </template>
+                <a-switch v-model:checked="form.usevddk" @change="onUseVddkChange" />
+              </a-form-item>
+              <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter && !form.usevddk">
                 <template #label>
                   <tooltip-label :title="$t('label.force.convert.to.pool')" :tooltip="apiParams.forceconverttopool.description"/>
                 </template>
@@ -189,13 +195,13 @@
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
                   :checkBoxLabel="switches.forceConvertToPool ? $t('message.select.destination.storage.instance.conversion') : $t('message.select.temporary.storage.instance.conversion')"
-                  :defaultCheckBoxValue="true"
+                  :defaultCheckBoxValue="false"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
                 />
               </a-form-item>
               <a-form-item
-                v-if="selectedVmwareVcenter && showStoragePoolsForConversion"
+                v-if="showStoragePoolsForConversion"
                 name="convertstoragepool"
                 ref="convertstoragepool"
                 :label="$t('label.storagepool')"
@@ -226,14 +232,7 @@
                   :placeholder="$t('label.extra')"
                 />
               </a-form-item>
-              <a-form-item name="usevddk" ref="usevddk" v-if="selectedVmwareVcenter">
-                <template #label>
-                  <tooltip-label title="Use VDDK" :tooltip="apiParams.usevddk ? apiParams.usevddk.description : ''"/>
-                </template>
-                <a-switch v-model:checked="form.usevddk" @change="onUseVddkChange" />
-              </a-form-item>
-              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter && !form.usevddk">
-                <template #label>
+              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter && !form.usevddk">                <template #label>
                   <tooltip-label :title="$t('label.force.ms.to.import.vm.files')" :tooltip="apiParams.forcemstoimportvmfiles.description"/>
                 </template>
                 <a-switch v-model:checked="form.forcemstoimportvmfiles" @change="val => { switches.forceMsToImportVmFiles = val }" />
@@ -558,11 +557,7 @@ export default {
       memoryKey: 'memory',
       minIopsKey: 'minIops',
       maxIopsKey: 'maxIops',
-      switches: {
-        forceConvertToPool: true,
-        forceMsToImportVmFiles: false,
-        useVddk: false
-      },
+      switches: {},
       loading: false,
       kvmHostsForConversion: [],
       kvmHostsForImporting: [],
@@ -570,14 +565,17 @@ export default {
       selectedKvmHostForImporting: null,
       storageOptionsForConversion: [
         {
+          id: 'secondary',
+          name: 'Secondary Storage'
+        }, {
           id: 'primary',
           name: 'Primary Storage'
         }
       ],
       storagePoolsForConversion: [],
-      selectedStorageOptionForConversion: 'primary',
+      selectedStorageOptionForConversion: null,
       selectedStoragePoolForConversion: null,
-      showStoragePoolsForConversion: true,
+      showStoragePoolsForConversion: false,
       selectedRootDiskColumns: [
         {
           key: 'name',
@@ -785,11 +783,11 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         rootdiskid: 0,
+        usevddk: false,
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
         forceconverttopool: this.switches.forceConvertToPool,
-        usevddk: this.switches.useVddk,
         domainid: null,
         account: null,
         osid: null
@@ -813,10 +811,6 @@ export default {
       })
       this.fetchKvmHostsForConversion()
       this.fetchKvmHostsForImporting()
-      if (this.cluster.hypervisortype === 'KVM' && this.selectedVmwareVcenter) {
-        this.resetStorageOptionsForConversion()
-        this.fetchStoragePoolsForConversion()
-      }
       if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
@@ -1107,7 +1101,6 @@ export default {
         this.fetchStoragePoolsForConversion()
         this.showStoragePoolsForConversion = value !== 'secondary'
       } else {
-        this.selectedStorageOptionForConversion = null
         this.showStoragePoolsForConversion = false
         this.selectedStoragePoolForConversion = null
       }
@@ -1121,8 +1114,6 @@ export default {
         id: 'primary',
         name: 'Primary Storage'
       })
-      this.selectedStorageOptionForConversion = 'primary'
-      this.showStoragePoolsForConversion = true
     },
     onSelectRootDisk (val) {
       this.selectedRootDiskIndex = val
@@ -1131,14 +1122,21 @@ export default {
     onForceConvertToPoolChange (val) {
       this.switches.forceConvertToPool = val
       this.resetStorageOptionsForConversion()
-      this.fetchStoragePoolsForConversion()
     },
     onUseVddkChange (val) {
-      this.switches.useVddk = val
       if (val) {
-        this.switches.forceMsToImportVmFiles = false
+        this.form.forceconverttopool = true
         this.form.forcemstoimportvmfiles = false
+        this.switches.forceConvertToPool = true
+        this.switches.forceMsToImportVmFiles = false
+      } else {
+        this.form.forceconverttopool = false
+        this.switches.forceConvertToPool = false
       }
+      this.selectedStorageOptionForConversion = null
+      this.selectedStoragePoolForConversion = null
+      this.showStoragePoolsForConversion = false
+      this.resetStorageOptionsForConversion()
     },
     updateSelectedRootDisk () {
       var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
@@ -1258,13 +1256,18 @@ export default {
           if (this.vmwareToKvmExtraParams) {
             params.extraparams = this.vmwareToKvmExtraParams
           }
-          params.usevddk = !!values.usevddk
-          params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
-          if (values.forceconverttopool) {
+          if (values.usevddk) {
+            params.usevddk = true
+            params.forceconverttopool = true
+            params.forcemstoimportvmfiles = false
+          } else {
+            params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
+          }
+          if (!values.usevddk && values.forceconverttopool) {
             params.forceconverttopool = values.forceconverttopool
           }
         }
-        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles', 'osid']
+        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'osid']
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }
@@ -1377,18 +1380,11 @@ export default {
       }
       this.templateType = this.defaultTemplateType()
       this.updateComputeOffering(undefined)
-      this.switches = {
-        forceConvertToPool: true,
-        forceMsToImportVmFiles: false,
-        useVddk: false
-      }
-      this.form.forcemstoimportvmfiles = this.switches.forceMsToImportVmFiles
-      this.form.forceconverttopool = this.switches.forceConvertToPool
-      this.form.usevddk = this.switches.useVddk
-      if (this.cluster.hypervisortype === 'KVM' && this.selectedVmwareVcenter) {
-        this.resetStorageOptionsForConversion()
-        this.fetchStoragePoolsForConversion()
-      }
+      this.switches = {}
+      this.form.usevddk = false
+      this.form.forceconverttopool = false
+      this.form.forcemstoimportvmfiles = false
+      this.resetStorageOptionsForConversion()
     },
     closeAction () {
       this.$emit('close-action')
