@@ -1612,14 +1612,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.when(checker.isEnabled()).thenReturn(true);
 
         Account caller = Mockito.mock(Account.class);
-        Mockito.when(caller.getAccountName()).thenReturn("caller");
-        Mockito.when(caller.getUuid()).thenReturn("caller-uuid");
-        Mockito.when(caller.getRoleId()).thenReturn(4L);
-
         Account requested = Mockito.mock(Account.class);
-        Mockito.when(requested.getAccountName()).thenReturn("requested");
-        Mockito.when(requested.getUuid()).thenReturn("requested-uuid");
-        Mockito.when(requested.getRoleId()).thenReturn(4L);
 
         accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
         setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>(apis));
@@ -1636,14 +1629,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.when(checker.isEnabled()).thenReturn(true);
 
         Account caller = Mockito.mock(Account.class);
-        Mockito.when(caller.getAccountName()).thenReturn("caller");
-        Mockito.when(caller.getUuid()).thenReturn("caller-uuid");
-        Mockito.when(caller.getRoleId()).thenReturn(4L);
-
         Account requested = Mockito.mock(Account.class);
-        Mockito.when(requested.getAccountName()).thenReturn("requested");
-        Mockito.when(requested.getUuid()).thenReturn("requested-uuid");
-        Mockito.when(requested.getRoleId()).thenReturn(5L);
 
         Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(requested), Mockito.anyList())).thenReturn(requestedApis);
         Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(caller), Mockito.anyList())).thenReturn(allApis);
@@ -1664,15 +1650,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.when(checker.isEnabled()).thenReturn(true);
 
         Account caller = Mockito.mock(Account.class);
-        Mockito.when(caller.getAccountName()).thenReturn("caller");
-        Mockito.when(caller.getUuid()).thenReturn("caller-uuid");
-        Mockito.when(caller.getRoleId()).thenReturn(4L);
-        Mockito.when(caller.getDomainId()).thenReturn(1L);
-
         Account requested = Mockito.mock(Account.class);
-        Mockito.when(requested.getAccountName()).thenReturn("requested");
-        Mockito.when(requested.getUuid()).thenReturn("requested-uuid");
-        Mockito.when(requested.getRoleId()).thenReturn(5L);
 
         Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(requested), Mockito.anyList())).thenReturn(requestedApis);
         Mockito.when(checker.getApisAllowedToAccount(Mockito.eq(caller), Mockito.anyList())).thenReturn(callerApis);
@@ -1690,14 +1668,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.when(checker.getApisAllowedToAccount(Mockito.any(Account.class), Mockito.anyList())).thenReturn(Collections.emptyList());
 
         Account caller = Mockito.mock(Account.class);
-        Mockito.when(caller.getAccountName()).thenReturn("caller");
-        Mockito.when(caller.getUuid()).thenReturn("caller-uuid");
-        Mockito.when(caller.getRoleId()).thenReturn(4L);
-
         Account requested = Mockito.mock(Account.class);
-        Mockito.when(requested.getAccountName()).thenReturn("requested");
-        Mockito.when(requested.getUuid()).thenReturn("requested-uuid");
-        Mockito.when(requested.getRoleId()).thenReturn(5L);
 
         accountManagerImpl.setApiAccessCheckers(Arrays.asList(checker));
         setPrivateField(accountManagerImpl, "apiNameList", new ArrayList<>());
@@ -1717,14 +1688,7 @@ public class AccountManagerImplTest extends AccountManagentImplTestBase {
         Mockito.when(checker2.isEnabled()).thenReturn(true);
 
         Account caller = Mockito.mock(Account.class);
-        Mockito.when(caller.getAccountName()).thenReturn("caller");
-        Mockito.when(caller.getUuid()).thenReturn("caller-uuid");
-        Mockito.when(caller.getRoleId()).thenReturn(4L);
-
         Account requested = Mockito.mock(Account.class);
-        Mockito.when(requested.getAccountName()).thenReturn("requested");
-        Mockito.when(requested.getUuid()).thenReturn("requested-uuid");
-        Mockito.when(requested.getRoleId()).thenReturn(5L);
 
         // requested: checker1 filters to [api1, api2], checker2 further filters to [api1]
         Mockito.when(checker1.getApisAllowedToAccount(Mockito.eq(requested), Mockito.eq(allApis))).thenReturn(afterChecker1);
