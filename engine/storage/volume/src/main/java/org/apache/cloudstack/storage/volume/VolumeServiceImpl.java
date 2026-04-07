@@ -2990,9 +2990,18 @@ public class VolumeServiceImpl implements VolumeService {
             return null;
         }
 
-        Long lockHostId = clvmLockManager.getClvmLockHostId(volume.getId(), volume.getUuid());
+        StoragePoolVO pool = storagePoolDao.findById(volume.getPoolId());
+
+        Long lockHostId = clvmLockManager.getClvmLockHostId(
+                volume.getId(),
+                volume.getUuid(),
+                volume.getPath(),
+                pool,
+                true
+        );
+
         if (lockHostId != null) {
-            logger.debug("Found explicit lock host {} for volume {}", lockHostId, volume.getUuid());
+            logger.debug("Found actual lock host {} for volume {}", lockHostId, volume.getUuid());
             return lockHostId;
         }
 
@@ -3006,7 +3015,6 @@ public class VolumeServiceImpl implements VolumeService {
             }
         }
 
-        StoragePoolVO pool = storagePoolDao.findById(volume.getPoolId());
         if (pool != null && pool.getClusterId() != null) {
             List<HostVO> hosts = _hostDao.findByClusterId(pool.getClusterId());
             if (hosts != null && !hosts.isEmpty()) {

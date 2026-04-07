@@ -43,7 +43,10 @@ public class ClvmLockTransferCommand extends Command {
         ACTIVATE_EXCLUSIVE("-aey", "activate exclusively"),
 
         /** Activate the volume in shared mode on this host (-asy) */
-        ACTIVATE_SHARED("-asy", "activate in shared mode");
+        ACTIVATE_SHARED("-asy", "activate in shared mode"),
+
+        /** Query the current lock state (lvs -o lv_attr,lv_host) */
+        QUERY_LOCK_STATE("query", "query lock state");
 
         private final String lvchangeFlag;
         private final String description;

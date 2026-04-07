@@ -342,7 +342,13 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             StoragePool destPool = (StoragePool) volObj.getDataStore();
             if (destPool != null && ClvmLockManager.isClvmPoolType(destPool.getPoolType())) {
                 Long hostId = ep.getId();
-                Long existingHostId = clvmLockManager.getClvmLockHostId(volumeInfo.getId(), volumeInfo.getUuid());
+                Long existingHostId = clvmLockManager.getClvmLockHostId(
+                        volumeInfo.getId(),
+                        volumeInfo.getUuid(),
+                        volumeInfo.getPath(),
+                        destPool,
+                        true
+                );
                 if (existingHostId == null) {
                     clvmLockManager.setClvmLockHostId(volumeInfo.getId(), hostId);
                     logger.debug("Set lock host ID {} for CLVM volume {} being created from snapshot", hostId, volumeInfo.getId());

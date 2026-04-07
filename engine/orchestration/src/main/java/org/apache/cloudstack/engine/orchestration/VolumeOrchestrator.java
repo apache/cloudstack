@@ -861,9 +861,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
             if (pool != null && ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
-                Long lockHostId = clvmLockManager.getClvmLockHostId(volume.getId(), volume.getUuid());
+                Long lockHostId = clvmLockManager.getClvmLockHostId(
+                        volume.getId(),
+                        volume.getUuid(),
+                        volume.getPath(),
+                        pool,
+                        true
+                );
                 if (lockHostId != null) {
-                    logger.debug("Found CLVM lock host {} from existing volume {} of VM {}",
+                    logger.debug("Found actual CLVM lock host {} from volume {} of VM {} via LVM query",
                             lockHostId, volume.getUuid(), vmId);
                     return lockHostId;
                 }
@@ -888,7 +894,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 continue;
             }
 
-            Long currentLockHost = clvmLockManager.getClvmLockHostId(volume.getId(), volume.getUuid());
+            Long currentLockHost = clvmLockManager.getClvmLockHostId(
+                    volume.getId(),
+                    volume.getUuid(),
+                    volume.getPath(),
+                    pool,
+                    true
+            );
 
             if (currentLockHost == null) {
                 clvmLockManager.setClvmLockHostId(volume.getId(), destHostId);

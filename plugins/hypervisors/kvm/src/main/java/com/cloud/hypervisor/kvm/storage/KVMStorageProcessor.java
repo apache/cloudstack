@@ -138,6 +138,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DeviceType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiscardType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.DiskProtocol;
+import com.cloud.storage.ClvmLockManager;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.ScopeType;
@@ -619,7 +620,9 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             String path = details != null ? details.get(DiskTO.IQN) : null;
 
-            storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details);
+            if (!ClvmLockManager.isClvmPoolType(primaryStore.getPoolType())) {
+                storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details);
+            }
 
             final String volumeName = UUID.randomUUID().toString();
 
@@ -648,7 +651,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             final KVMPhysicalDisk newDisk = storagePoolMgr.copyPhysicalDisk(volume, path != null ? path : volumeName, primaryPool, cmd.getWaitInMillSeconds());
             resource.createOrUpdateLogFileForCommand(cmd, Command.State.COMPLETED);
 
-            storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
+            if (!ClvmLockManager.isClvmPoolType(primaryStore.getPoolType())) {
+                storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
+            }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
 

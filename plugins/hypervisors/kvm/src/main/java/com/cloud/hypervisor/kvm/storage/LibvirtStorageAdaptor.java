@@ -2260,9 +2260,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     } else {
                         destFile = new QemuImgFile(destPath, destFormat);
                         try {
-                            boolean isQCOW2 = PhysicalDiskFormat.QCOW2.equals(sourceFormat);
+                            boolean keepBitmaps = PhysicalDiskFormat.QCOW2.equals(sourceFormat);
+                            if (destPool.getType() == StoragePoolType.CLVM) {
+                                keepBitmaps = false;
+                            }
                             qemu.convert(srcFile, destFile, null, null, new QemuImageOptions(srcFile.getFormat(), srcFile.getFileName(), null),
-                                    null, false, isQCOW2);
+                                    null, false, keepBitmaps);
                             Map<String, String> destInfo = qemu.info(destFile);
                             Long virtualSize = Long.parseLong(destInfo.get(QemuImg.VIRTUAL_SIZE));
                             newDisk.setVirtualSize(virtualSize);

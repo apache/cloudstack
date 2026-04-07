@@ -17,7 +17,10 @@
 package org.apache.cloudstack.storage.endpoint;
 
 
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.ClvmLockManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VolumeDetailVO;
@@ -30,18 +33,23 @@ import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mockStatic;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultEndPointSelectorTest {
@@ -73,6 +81,14 @@ public class DefaultEndPointSelectorTest {
     @Mock
     private EndPoint endPointMock;
 
+    @Mock
+    ClvmLockManager clvmLockManager;
+
+    @Mock
+    HostDao hostDao;
+
+    static MockedStatic<RemoteHostEndPoint> remoteHostEndPointMock;
+
     @InjectMocks
     private DefaultEndPointSelector defaultEndPointSelectorSpy = Mockito.spy(new DefaultEndPointSelector());
 
@@ -81,6 +97,16 @@ public class DefaultEndPointSelectorTest {
     private static final Long DEST_HOST_ID = 20L;
     private static final Long STORE_ID = 100L;
     private static final String VOLUME_UUID = "test-volume-uuid";
+
+    @BeforeClass
+    public static void init() {
+        remoteHostEndPointMock = mockStatic(RemoteHostEndPoint.class);
+    }
+
+    @AfterClass
+    public static void close() {
+        remoteHostEndPointMock.close();
+    }
 
     @Before
     public void setup() {
@@ -331,8 +357,7 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM);
-        Mockito.when(_volDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(volumeDetailVOMock);
-        Mockito.when(volumeDetailVOMock.getValue()).thenReturn(String.valueOf(HOST_ID));
+        Mockito.doReturn(HOST_ID).when(defaultEndPointSelectorSpy).getClvmLockHostId(volumeInfoMock);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(HOST_ID);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock, StorageAction.DELETEVOLUME, false);
@@ -350,8 +375,7 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM_NG);
-        Mockito.when(_volDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(volumeDetailVOMock);
-        Mockito.when(volumeDetailVOMock.getValue()).thenReturn(String.valueOf(HOST_ID));
+        Mockito.doReturn(HOST_ID).when(defaultEndPointSelectorSpy).getClvmLockHostId(volumeInfoMock);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(HOST_ID);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock, StorageAction.DELETEVOLUME, false);
@@ -369,7 +393,6 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfoMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM);
-        Mockito.when(_volDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(null);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).select(volumeInfoMock, false);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock, StorageAction.DELETEVOLUME, false);
@@ -403,8 +426,7 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM);
-        Mockito.when(_volDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(volumeDetailVOMock);
-        Mockito.when(volumeDetailVOMock.getValue()).thenReturn(String.valueOf(HOST_ID));
+        Mockito.doReturn(HOST_ID).when(defaultEndPointSelectorSpy).getClvmLockHostId(volumeInfoMock);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(HOST_ID);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock);
@@ -421,8 +443,7 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM_NG);
-        Mockito.when(_volDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(volumeDetailVOMock);
-        Mockito.when(volumeDetailVOMock.getValue()).thenReturn(String.valueOf(HOST_ID));
+        Mockito.doReturn(HOST_ID).when(defaultEndPointSelectorSpy).getClvmLockHostId(volumeInfoMock);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).getEndPointFromHostId(HOST_ID);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock);
@@ -439,8 +460,10 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM);
-        Mockito.when(_volDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(null);
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).select(datastoreMock);
+        RemoteHostEndPoint ep = Mockito.mock(RemoteHostEndPoint.class);
+        Host lockHost = Mockito.mock(Host.class);
+        remoteHostEndPointMock.when(() -> RemoteHostEndPoint.getHypervisorHostEndPoint(lockHost)).thenReturn(ep);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock);
 
@@ -456,8 +479,6 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM);
-        Mockito.when(_volDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(volumeDetailVOMock);
-        Mockito.when(volumeDetailVOMock.getValue()).thenReturn("invalid-host-id");
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).select(datastoreMock);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock);
@@ -474,8 +495,6 @@ public class DefaultEndPointSelectorTest {
         Mockito.when(volumeInfoMock.getDataStore()).thenReturn(datastoreMock);
         Mockito.when(_storagePoolDao.findById(STORE_ID)).thenReturn(storagePoolVOMock);
         Mockito.when(storagePoolVOMock.getPoolType()).thenReturn(StoragePoolType.CLVM);
-        Mockito.when(_volDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(volumeDetailVOMock);
-        Mockito.when(volumeDetailVOMock.getValue()).thenReturn("");
         Mockito.doReturn(endPointMock).when(defaultEndPointSelectorSpy).select(datastoreMock);
 
         EndPoint result = defaultEndPointSelectorSpy.select(volumeInfoMock);

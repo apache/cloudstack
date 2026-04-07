@@ -22,10 +22,12 @@ import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import org.apache.cloudstack.storage.command.ClvmLockTransferCommand;
+import org.apache.cloudstack.storage.command.ClvmLockTransferAnswer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.script.Script;
+import com.cloud.utils.script.OutputInterpreter;
 
 @ResourceWrapper(handles = ClvmLockTransferCommand.class)
 public class LibvirtClvmLockTransferCommandWrapper
@@ -43,6 +45,11 @@ public class LibvirtClvmLockTransferCommandWrapper
                 operation, lvPath, volumeUuid);
 
         try {
+
+            if (operation == ClvmLockTransferCommand.Operation.QUERY_LOCK_STATE) {
+                return handleQueryLockState(cmd, lvPath, volumeUuid);
+            }
+
             String lvchangeOpt;
             String operationDesc;
             switch (operation) {
@@ -59,7 +66,7 @@ public class LibvirtClvmLockTransferCommandWrapper
                     operationDesc = "activated in shared mode";
                     break;
                 default:
-                    return new Answer(cmd, false, "Unknown operation: " + operation);
+                    return new ClvmLockTransferAnswer(cmd, false, "Unknown operation: " + operation);
             }
 
             Script script = new Script("/usr/sbin/lvchange", 30000, logger);
@@ -71,20 +78,78 @@ public class LibvirtClvmLockTransferCommandWrapper
             if (result != null) {
                 logger.error("CLVM lock transfer failed for volume {}: {}",
                         volumeUuid, result);
-                return new Answer(cmd, false,
+                return new ClvmLockTransferAnswer(cmd, false,
                     String.format("lvchange %s %s failed: %s", lvchangeOpt, lvPath, result));
             }
 
             logger.info("Successfully executed CLVM lock transfer: {} {} for volume {}",
                     lvchangeOpt, lvPath, volumeUuid);
 
-            return new Answer(cmd, true,
+            return new ClvmLockTransferAnswer(cmd, true,
                 String.format("Successfully %s CLVM volume %s", operationDesc, volumeUuid));
 
         } catch (Exception e) {
             logger.error("Exception during CLVM lock transfer for volume {}: {}",
                     volumeUuid, e.getMessage(), e);
-            return new Answer(cmd, false, "Exception: " + e.getMessage());
+            return new ClvmLockTransferAnswer(cmd, false, "Exception: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Query which host currently holds the CLVM lock for a volume.
+     * Executes: lvs -o lv_attr,lv_host --noheadings <lvPath>
+     *
+     * This queries the actual CLVM lock state (source of truth).
+     * The lv_host attribute shows which host currently has the volume activated.
+     *
+     * @return ClvmLockTransferAnswer with lock holder hostname
+     */
+    private Answer handleQueryLockState(ClvmLockTransferCommand cmd, String lvPath, String volumeUuid) {
+        try {
+            Script script = new Script("/usr/sbin/lvs", 10000, logger);
+            script.add("-o");
+            script.add("lv_attr,lv_host");
+            script.add("--noheadings");
+            script.add(lvPath);
+
+            OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+            String result = script.execute(parser);
+
+            if (result != null) {
+                logger.error("Failed to query lock state for volume {}: {}", volumeUuid, result);
+                return new ClvmLockTransferAnswer(cmd, false,
+                    String.format("lvs command failed: %s", result));
+            }
+
+            // Parse output: "  -wi-a-e--- host5.example.com"
+            String output = parser.getLine();
+            if (output == null || output.trim().isEmpty()) {
+                return new ClvmLockTransferAnswer(cmd, false, "No output from lvs command");
+            }
+
+            String[] parts = output.trim().split("\\s+");
+            if (parts.length < 1) {
+                return new ClvmLockTransferAnswer(cmd, false, "Invalid lvs output format");
+            }
+
+            String lvAttr = parts[0];
+            String hostname = parts.length > 1 ? parts[1] : null;
+
+            boolean isActive = lvAttr.length() > 4 && lvAttr.charAt(4) == 'a';
+            boolean isExclusive = lvAttr.length() > 5 && lvAttr.charAt(5) == 'e';
+
+            logger.info("Queried lock state for volume {}: attr={}, hostname={}, active={}, exclusive={}",
+                    volumeUuid, lvAttr, hostname, isActive, isExclusive);
+
+            return new ClvmLockTransferAnswer(cmd, true,
+                    String.format("Lock state: active=%s, exclusive=%s, host=%s",
+                            isActive, isExclusive, hostname != null ? hostname : "none"),
+                    hostname, isActive, isExclusive, lvAttr);
+
+        } catch (Exception e) {
+            logger.error("Exception during lock state query for volume {}: {}",
+                    volumeUuid, e.getMessage(), e);
+            return new ClvmLockTransferAnswer(cmd, false, "Exception: " + e.getMessage());
         }
     }
 }

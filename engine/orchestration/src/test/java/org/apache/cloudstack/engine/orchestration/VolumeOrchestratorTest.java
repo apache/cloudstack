@@ -671,8 +671,10 @@ public class VolumeOrchestratorTest {
         Mockito.when(vmInstance.getInstanceName()).thenReturn(MOCK_VM_NAME);
 
         ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString())).thenReturn(currentHostId);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(102L), Mockito.anyString())).thenReturn(currentHostId);
+        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
+                Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(currentHostId);
+        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(102L), Mockito.anyString(),
+                Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(currentHostId);
         Mockito.when(clvmLockManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
             Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
 
@@ -741,7 +743,8 @@ public class VolumeOrchestratorTest {
         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
 
         ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), ArgumentMatchers.nullable(String.class))).thenReturn(destHostId);
+        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), ArgumentMatchers.nullable(String.class),
+                ArgumentMatchers.nullable(String.class), Mockito.any(), Mockito.eq(true))).thenReturn(destHostId);
 
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(clvmPool);
 
@@ -773,7 +776,8 @@ public class VolumeOrchestratorTest {
 
         method.invoke(volumeOrchestrator, new ArrayList<VolumeVO>(), destHostId, vmInstance);
 
-        Mockito.verify(clvmLockManager, Mockito.never()).getClvmLockHostId(Mockito.anyLong(), Mockito.anyString());
+        Mockito.verify(clvmLockManager, Mockito.never()).getClvmLockHostId(Mockito.anyLong(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
     }
 
     @Test
@@ -813,7 +817,8 @@ public class VolumeOrchestratorTest {
         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
 
         ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), ArgumentMatchers.nullable(String.class))).thenReturn(null);
+        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), ArgumentMatchers.nullable(String.class),
+                ArgumentMatchers.nullable(String.class), Mockito.any(), Mockito.eq(true))).thenReturn(null);
 
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(clvmPool);
 
@@ -858,7 +863,8 @@ public class VolumeOrchestratorTest {
         Mockito.when(vmInstance.getInstanceName()).thenReturn(MOCK_VM_NAME);
 
         ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString())).thenReturn(currentHostId);
+        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
+                Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(currentHostId);
         Mockito.when(clvmLockManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
             Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
 
@@ -898,7 +904,8 @@ public class VolumeOrchestratorTest {
         Mockito.when(vmInstance.getInstanceName()).thenReturn(MOCK_VM_NAME);
 
         ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString())).thenReturn(currentHostId);
+        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
+                Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(currentHostId);
         Mockito.when(clvmLockManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
             Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(false);
 

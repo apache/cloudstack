@@ -318,8 +318,10 @@ public class AncientDataMotionStrategyTest {
         Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
         Mockito.when(volumeInfo.getId()).thenReturn(volumeId);
         Mockito.when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+        Mockito.when(volumeInfo.getPath()).thenReturn("test-volume-path");
         Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
-        Mockito.when(clvmLockManager.getClvmLockHostId(volumeId, volumeUuid)).thenReturn(null);
+        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true))).thenReturn(null);
 
         method.invoke(strategy, endPoint, volumeInfo);
 
@@ -351,8 +353,10 @@ public class AncientDataMotionStrategyTest {
         Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
         Mockito.when(volumeInfo.getId()).thenReturn(volumeId);
         Mockito.when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+        Mockito.when(volumeInfo.getPath()).thenReturn("test-clvm-ng-volume-path");
         Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
-        Mockito.when(clvmLockManager.getClvmLockHostId(volumeId, volumeUuid)).thenReturn(null);
+        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true))).thenReturn(null);
 
         try {
             method.invoke(strategy, endPoint, volumeInfo);
@@ -388,7 +392,8 @@ public class AncientDataMotionStrategyTest {
         method.invoke(strategy, endPoint, volumeInfo);
 
         Mockito.verify(clvmLockManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
-        Mockito.verify(clvmLockManager, never()).getClvmLockHostId(any(Long.class), any(String.class));
+        Mockito.verify(clvmLockManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+                any(String.class), any(StoragePool.class), Mockito.anyBoolean());
     }
 
     @Test
@@ -417,13 +422,16 @@ public class AncientDataMotionStrategyTest {
         Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
         Mockito.when(volumeInfo.getId()).thenReturn(volumeId);
         Mockito.when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+        Mockito.when(volumeInfo.getPath()).thenReturn("existing-lock-volume-path");
         Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
-        Mockito.when(clvmLockManager.getClvmLockHostId(volumeId, volumeUuid)).thenReturn(existingHostId);
+        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true))).thenReturn(existingHostId);
 
         method.invoke(strategy, endPoint, volumeInfo);
 
         Mockito.verify(clvmLockManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
-        Mockito.verify(clvmLockManager).getClvmLockHostId(volumeId, volumeUuid);
+        Mockito.verify(clvmLockManager).getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true));
     }
 
     @Test
@@ -446,7 +454,8 @@ public class AncientDataMotionStrategyTest {
         method.invoke(strategy, null, volumeInfo);
 
         Mockito.verify(clvmLockManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
-        Mockito.verify(clvmLockManager, never()).getClvmLockHostId(any(Long.class), any(String.class));
+        Mockito.verify(clvmLockManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+                any(String.class), any(StoragePool.class), Mockito.anyBoolean());
     }
 
     @Test
@@ -471,7 +480,8 @@ public class AncientDataMotionStrategyTest {
         method.invoke(strategy, endPoint, snapshotInfo);
 
         Mockito.verify(clvmLockManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
-        Mockito.verify(clvmLockManager, never()).getClvmLockHostId(any(Long.class), any(String.class));
+        Mockito.verify(clvmLockManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+                any(String.class), any(StoragePool.class), Mockito.anyBoolean());
     }
 
     @Test
@@ -496,6 +506,7 @@ public class AncientDataMotionStrategyTest {
         method.invoke(strategy, endPoint, volumeInfo);
 
         Mockito.verify(clvmLockManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
-        Mockito.verify(clvmLockManager, never()).getClvmLockHostId(any(Long.class), any(String.class));
+        Mockito.verify(clvmLockManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+                any(String.class), any(StoragePool.class), Mockito.anyBoolean());
     }
 }
