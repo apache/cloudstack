@@ -171,6 +171,25 @@ backup_running_vm() {
     sleep 5
   done
 
+  # Use qemu-img convert to sparsify linstor backups which get bloated due to virsh backup-begin.
+  name="root"
+  while read -r disk fullpath; do
+    if [[ "$fullpath" != /dev/drbd/by-res/* ]]; then
+      continue
+    fi
+    volUuid=$(get_linstor_uuid_from_path "$fullpath")
+    if ! qemu-img convert -O qcow2 "$dest/$name.$volUuid.qcow2" "$dest/$name.$volUuid.qcow2.tmp" >"$logFile" 2> >(cat >&2); then
+      echo "qemu-img convert failed for $dest/$name.$volUuid.qcow2"
+      cleanup
+      exit 1
+    fi
+
+    mv "$dest/$name.$volUuid.qcow2.tmp" "$dest/$name.$volUuid.qcow2"
+    name="datadisk"
+  done < <(
+    virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{print $3, $4}'
+  )
+
   rm -f $dest/backup.xml
   sync
 
