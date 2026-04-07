@@ -128,17 +128,21 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
                        List<Long> domainIds, Filter filter) {
         SearchBuilder<ResourceTagVO> sb = createSearchBuilder();
         sb.and("resourceType", sb.entity().getResourceType(), Op.EQ);
-        sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.or("domain", sb.entity().getDomainId(), SearchCriteria.Op.IN);
-        sb.cp();
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainIdsNotEmpty = CollectionUtils.isNotEmpty(domainIds);
+        if (accountIdsNotEmpty || domainIdsNotEmpty) {
+            sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+            sb.or("domain", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+            sb.cp();
+        }
         sb.done();
         final SearchCriteria<ResourceTagVO> sc = sb.create();;
         sc.setParameters("resourceType", resourceType);
-        if (CollectionUtils.isNotEmpty(accountIds)) {
+        if (accountIdsNotEmpty) {
             sc.setParameters("account", accountIds.toArray());
         }
-        if (CollectionUtils.isNotEmpty(domainIds)) {
-            sc.setParameters("domain", domainIds);
+        if (domainIdsNotEmpty) {
+            sc.setParameters("domain", domainIds.toArray());
         }
         return listBy(sc, filter);
     }

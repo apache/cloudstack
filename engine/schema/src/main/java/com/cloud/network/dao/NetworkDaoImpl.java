@@ -651,19 +651,22 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
                       List<Long> domainIds, Filter filter) {
         SearchBuilder<NetworkVO> sb = createSearchBuilder();
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
-        sb.and().op("account", sb.entity().getAccountId(), Op.IN);
-        sb.or("domain", sb.entity().getDomainId(), Op.IN);
-        sb.cp();
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainIdsNotEmpty = CollectionUtils.isNotEmpty(domainIds);
+        if (accountIdsNotEmpty || domainIdsNotEmpty) {
+            sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+            sb.or("domain", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+            sb.cp();
+        }
         sb.done();
         final SearchCriteria<NetworkVO> sc = sb.create();
         sc.setParameters("trafficType", trafficType);
-        if (CollectionUtils.isNotEmpty(accountIds)) {
+        if (accountIdsNotEmpty) {
             sc.setParameters("account", accountIds.toArray());
         }
-        if (CollectionUtils.isNotEmpty(domainIds)) {
-            sc.setParameters("domain", domainIds);
+        if (domainIdsNotEmpty) {
+            sc.setParameters("domain", domainIds.toArray());
         }
-
         return listBy(sc, filter);
     }
 

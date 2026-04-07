@@ -108,16 +108,20 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
     @Override
     public List<ImageTransferVO> listByOwners(List<Long> accountIds, List<Long> domainIds, Filter filter) {
         SearchBuilder<ImageTransferVO> sb = createSearchBuilder();
-        sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.or("domain", sb.entity().getDomainId(), SearchCriteria.Op.IN);
-        sb.cp();
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainIdsNotEmpty = CollectionUtils.isNotEmpty(domainIds);
+        if (accountIdsNotEmpty || domainIdsNotEmpty) {
+            sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+            sb.or("domain", sb.entity().getDomainId(), SearchCriteria.Op.IN);
+            sb.cp();
+        }
         sb.done();
         final SearchCriteria<ImageTransferVO> sc = sb.create();
-        if (CollectionUtils.isNotEmpty(accountIds)) {
+        if (accountIdsNotEmpty) {
             sc.setParameters("account", accountIds.toArray());
         }
-        if (CollectionUtils.isNotEmpty(domainIds)) {
-            sc.setParameters("domain", domainIds);
+        if (domainIdsNotEmpty) {
+            sc.setParameters("domain", domainIds.toArray());
         }
 
         return listBy(sc, filter);

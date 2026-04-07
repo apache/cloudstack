@@ -385,21 +385,25 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
     @Override
     public List<VolumeJoinVO> listByHypervisorTypeAndOwners(Hypervisor.HypervisorType hypervisorType,
-                                                            List<Long> accountIds, String domainPath, Filter filter) {
+                    List<Long> accountIds, String domainPath, Filter filter) {
         SearchBuilder<VolumeJoinVO> sb = createSearchBuilder();
         sb.and("vmType", sb.entity().getVmType(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
-        sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.or("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
-        sb.cp();
+        boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
+        boolean domainPathNotBlank = StringUtils.isNotBlank(domainPath);
+        if (accountIdsNotEmpty || domainPathNotBlank) {
+            sb.and().op("account", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+            sb.or("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
+            sb.cp();
+        }
         sb.done();
         SearchCriteria<VolumeJoinVO> sc = sb.create();
         sc.setParameters("vmType", VirtualMachine.Type.User);
         sc.setParameters("hypervisorType", hypervisorType);
-        if (CollectionUtils.isNotEmpty(accountIds)) {
+        if (accountIdsNotEmpty) {
             sc.setParameters("account", accountIds.toArray());
         }
-        if (StringUtils.isNotBlank(domainPath)) {
+        if (domainPathNotBlank) {
             sc.setParameters("domainPath", domainPath + "%");
         }
         return search(sc, filter);
