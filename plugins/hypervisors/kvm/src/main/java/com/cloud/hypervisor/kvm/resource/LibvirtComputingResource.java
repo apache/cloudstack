@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
 import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
@@ -4240,6 +4241,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setHostTags(getHostTags());
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
+        cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
         if (instanceConversionSupported) {
             cmd.getHostDetails().put(HOST_VIRTV2V_VERSION, getHostVirtV2vVersion());
         }
@@ -5953,6 +5955,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             exitValue = Script.runSimpleBashScriptForExitValue(UBUNTU_NBDKIT_PKG_CHECK_CMD);
         }
         return exitValue == 0;
+    }
+
+    public boolean hostSupportsVddk() {
+        return hostSupportsInstanceConversion() && StringUtils.isNotBlank(vddkLibDir) && new File(vddkLibDir).isDirectory();
     }
 
     public boolean hostSupportsWindowsGuestConversion() {

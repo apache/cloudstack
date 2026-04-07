@@ -50,6 +50,7 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
         if (libvirtComputingResource.hostSupportsInstanceConversion()) {
             hostDetails.put(Host.HOST_VIRTV2V_VERSION, libvirtComputingResource.getHostVirtV2vVersion());
         }
+        hostDetails.put(Host.HOST_VDDK_SUPPORT, Boolean.toString(libvirtComputingResource.hostSupportsVddk()));
 
         if (libvirtComputingResource.hostSupportsOvfExport()) {
             hostDetails.put(Host.HOST_OVFTOOL_VERSION, libvirtComputingResource.getHostOvfToolVersion());

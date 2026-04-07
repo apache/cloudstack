@@ -805,8 +805,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 String uefiEnabled = detailsMap.get(Host.HOST_UEFI_ENABLE);
                 String virtv2vVersion = detailsMap.get(Host.HOST_VIRTV2V_VERSION);
                 String ovftoolVersion = detailsMap.get(Host.HOST_OVFTOOL_VERSION);
+                String vddkSupport = detailsMap.get(Host.HOST_VDDK_SUPPORT);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
-                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion)) {
+                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion, vddkSupport)) {
                     _hostDao.loadDetails(host);
                     boolean updateNeeded = false;
                     if (StringUtils.isNotBlank(uefiEnabled) && !uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
@@ -819,6 +820,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     }
                     if (StringUtils.isNotBlank(ovftoolVersion) && !ovftoolVersion.equals(host.getDetails().get(Host.HOST_OVFTOOL_VERSION))) {
                         host.getDetails().put(Host.HOST_OVFTOOL_VERSION, ovftoolVersion);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vddkSupport) && !vddkSupport.equals(host.getDetails().get(Host.HOST_VDDK_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VDDK_SUPPORT, vddkSupport);
                         updateNeeded = true;
                     }
                     if (updateNeeded) {
