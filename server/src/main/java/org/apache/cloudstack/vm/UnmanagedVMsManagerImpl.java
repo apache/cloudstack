@@ -1668,6 +1668,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
 
         checkConversionStoragePool(convertStoragePoolId, forceConvertToPool);
+        validateSelectedConversionStoragePoolForVddk(useVddk, convertStoragePoolId, serviceOffering, dataDiskOfferingMap);
 
         checkExtraParamsAllowed(extraParams);
 
@@ -1793,6 +1794,41 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (forceConvertToPool && !forceConvertToPoolAllowedTypes.contains(selectedStoragePool.getPoolType())) {
                 logFailureAndThrowException(String.format("The selected storage pool %s does not support direct conversion " +
                         "as its type %s", selectedStoragePool.getName(), selectedStoragePool.getPoolType().name()));
+            }
+        }
+    }
+
+    protected void validateSelectedConversionStoragePoolForVddk(boolean useVddk, Long convertStoragePoolId,
+                                                                ServiceOfferingVO serviceOffering, Map<String, Long> dataDiskOfferingMap) {
+        if (!useVddk || convertStoragePoolId == null) {
+            return;
+        }
+
+        StoragePoolVO selectedStoragePool = primaryDataStoreDao.findById(convertStoragePoolId);
+        if (selectedStoragePool == null) {
+            return;
+        }
+
+        if (serviceOffering.getDiskOfferingId() != null) {
+            DiskOfferingVO rootDiskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
+            if (rootDiskOffering == null) {
+                throw new InvalidParameterValueException(String.format("Cannot find disk offering with ID %s that belongs to the service offering %s",
+                        serviceOffering.getDiskOfferingId(), serviceOffering.getName()));
+            }
+            if (!volumeApiService.doesStoragePoolSupportDiskOffering(selectedStoragePool, rootDiskOffering)) {
+                throw new InvalidParameterValueException("Using VDDK, multiple storage pools cannot be used if a storage pool is selected for conversion");
+            }
+        }
+
+        if (MapUtils.isNotEmpty(dataDiskOfferingMap)) {
+            for (Long diskOfferingId : dataDiskOfferingMap.values()) {
+                DiskOfferingVO diskOffering = diskOfferingDao.findById(diskOfferingId);
+                if (diskOffering == null) {
+                    throw new InvalidParameterValueException(String.format("Cannot find disk offering with ID %s", diskOfferingId));
+                }
+                if (!volumeApiService.doesStoragePoolSupportDiskOffering(selectedStoragePool, diskOffering)) {
+                    throw new InvalidParameterValueException("Using VDDK, multiple storage pools cannot be used if a storage pool is selected for conversion");
+                }
             }
         }
     }

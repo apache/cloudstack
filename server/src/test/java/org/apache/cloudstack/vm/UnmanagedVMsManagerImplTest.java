@@ -1030,6 +1030,44 @@ public class UnmanagedVMsManagerImplTest {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.USE_VDDK_DETAILS_OVERRIDES, false, false);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateSelectedConversionStoragePoolForVddkFailsWhenPoolDoesNotSupportDiskOfferings() {
+        long poolId = 11L;
+        StoragePoolVO selectedPool = mock(StoragePoolVO.class);
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+        DiskOfferingVO dataDiskOffering = mock(DiskOfferingVO.class);
+
+        when(serviceOffering.getDiskOfferingId()).thenReturn(21L);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(selectedPool);
+        when(diskOfferingDao.findById(21L)).thenReturn(rootDiskOffering);
+        when(diskOfferingDao.findById(22L)).thenReturn(dataDiskOffering);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, rootDiskOffering)).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, dataDiskOffering)).thenReturn(false);
+
+        unmanagedVMsManager.validateSelectedConversionStoragePoolForVddk(true, poolId,
+                serviceOffering, Map.of("1000-2", 22L));
+    }
+
+    @Test
+    public void testValidateSelectedConversionStoragePoolForVddkPassesWhenPoolSupportsAllDiskOfferings() {
+        long poolId = 12L;
+        StoragePoolVO selectedPool = mock(StoragePoolVO.class);
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+        DiskOfferingVO dataDiskOffering = mock(DiskOfferingVO.class);
+
+        when(serviceOffering.getDiskOfferingId()).thenReturn(31L);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(selectedPool);
+        when(diskOfferingDao.findById(31L)).thenReturn(rootDiskOffering);
+        when(diskOfferingDao.findById(32L)).thenReturn(dataDiskOffering);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, rootDiskOffering)).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, dataDiskOffering)).thenReturn(true);
+
+        unmanagedVMsManager.validateSelectedConversionStoragePoolForVddk(true, poolId,
+                serviceOffering, Map.of("1000-2", 32L));
+    }
+
     private ClusterVO getClusterForTests() {
         ClusterVO cluster = mock(ClusterVO.class);
         when(cluster.getId()).thenReturn(1L);
