@@ -1403,8 +1403,13 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             _eventBusPublisher.submit(new ManagedContextRunnable() {
                 @Override
                 protected void runInContext() {
-                    _messageBus.publish(null, AsyncJob.Topics.JOB_EVENT_PUBLISH, PublishScope.LOCAL,
-                        new Pair<AsyncJob, String>(job, jobEvent));
+                    try {
+                        _messageBus.publish(null, AsyncJob.Topics.JOB_EVENT_PUBLISH, PublishScope.LOCAL,
+                                new Pair<>(job, jobEvent));
+                    } catch (Throwable t) {
+                        logger.warn("Failed to publish async job event on message bus. jobId={}, jobEvent={}",
+                                job != null ? job.getId() : null, jobEvent, t);
+                    }
                 }
             });
         } catch (RejectedExecutionException e) {
