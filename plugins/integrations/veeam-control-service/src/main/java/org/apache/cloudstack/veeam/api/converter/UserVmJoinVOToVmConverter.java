@@ -31,12 +31,12 @@ import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.BaseDto;
 import org.apache.cloudstack.veeam.api.dto.Cpu;
 import org.apache.cloudstack.veeam.api.dto.DiskAttachment;
-import org.apache.cloudstack.veeam.api.dto.EmptyElement;
 import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Nic;
 import org.apache.cloudstack.veeam.api.dto.Os;
 import org.apache.cloudstack.veeam.api.dto.OvfXmlUtil;
 import org.apache.cloudstack.veeam.api.dto.Ref;
+import org.apache.cloudstack.veeam.api.dto.Tag;
 import org.apache.cloudstack.veeam.api.dto.Topology;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 import org.apache.commons.collections.MapUtils;
@@ -58,6 +58,7 @@ public final class UserVmJoinVOToVmConverter {
      */
     public static Vm toVm(final UserVmJoinVO src, final Function<Long, HostJoinVO> hostResolver,
               final Function<Long, Map<String, String>> detailsResolver,
+              final Function<Long, List<Tag>> tagsResolver,
               final Function<Long, List<DiskAttachment>> disksResolver,
               final Function<UserVmJoinVO, List<Nic>> nicsResolver,
               final boolean allContent) {
@@ -160,7 +161,10 @@ public final class UserVmJoinVOToVmConverter {
                 BaseDto.getActionLink("reporteddevices", dst.getHref()),
                 BaseDto.getActionLink("snapshots", dst.getHref())
         ));
-        dst.setTags(new EmptyElement());
+        if (tagsResolver != null) {
+            List<Tag> tags = tagsResolver.apply(src.getId());
+            dst.setTags(NamedList.of("tag", tags));
+        }
         dst.setCpuProfile(Ref.of(
                 basePath + ApiService.BASE_ROUTE + "/cpuprofiles/" + src.getServiceOfferingUuid(),
                 src.getServiceOfferingUuid()));
@@ -189,7 +193,7 @@ public final class UserVmJoinVOToVmConverter {
     public static List<Vm> toVmList(final List<UserVmJoinVO> srcList, final Function<Long, HostJoinVO> hostResolver,
                     final Function<Long, Map<String, String>> detailsResolver) {
         return srcList.stream()
-                .map(v -> toVm(v, hostResolver, detailsResolver, null, null, false))
+                .map(v -> toVm(v, hostResolver, detailsResolver, null, null, null, false))
                 .collect(Collectors.toList());
     }
 

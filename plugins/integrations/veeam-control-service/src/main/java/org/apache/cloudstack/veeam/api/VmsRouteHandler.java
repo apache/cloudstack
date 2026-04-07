@@ -256,6 +256,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleGetById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         String followStr = req.getParameter("follow");
+        boolean includeTags = false;
         boolean includeDisks = false;
         boolean includeNics = false;
         if (StringUtils.isNotBlank(followStr)) {
@@ -263,12 +264,13 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
                    .map(String::trim)
                    .filter(s -> !s.isEmpty())
                    .collect(java.util.stream.Collectors.toSet());
+            includeTags = followParts.contains("tags");
             includeDisks = followParts.contains("disk_attachments.disk");
             includeNics = followParts.contains("nics.reporteddevices");
         }
         boolean allContent = Boolean.parseBoolean(req.getParameter("all_content"));
         try {
-            Vm response = serverAdapter.getInstance(id, includeDisks, includeNics, allContent);
+            Vm response = serverAdapter.getInstance(id, includeTags, includeDisks, includeNics, allContent);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);

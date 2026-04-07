@@ -357,10 +357,8 @@ public class ServerAdapter extends ManagerBase {
 
     protected static Map<String, Tag> getDummyTags() {
         Map<String, Tag> tags = new HashMap<>();
-        Tag tag1 = getDummyTagByName("Automatic");
-        tags.put(tag1.getId(), tag1);
-        Tag tag2 = getDummyTagByName("Manual");
-        tags.put(tag2.getId(), tag2);
+        Tag rootTag = ResourceTagVOToTagConverter.getRootTag();
+        tags.put(rootTag.getId(), rootTag);
         return tags;
     }
 
@@ -696,7 +694,7 @@ public class ServerAdapter extends ManagerBase {
             vm = userVmManager.finalizeCreateVirtualMachine(vm.getId());
             UserVmJoinVO vo = userVmJoinDao.findById(vm.getId());
             return UserVmJoinVOToVmConverter.toVm(vo, this::getHostById, this::getDetailsByInstanceId,
-                    this::listDiskAttachmentsByInstanceId, this::listNicsByInstance, false);
+                    this::listTagsByInstanceId, this::listDiskAttachmentsByInstanceId, this::listNicsByInstance, false);
         } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException | CloudRuntimeException e) {
             throw new CloudRuntimeException("Failed to create VM: " + e.getMessage(), e);
         }
@@ -983,13 +981,15 @@ public class ServerAdapter extends ManagerBase {
     }
 
     @ApiAccess(command = ListVMsCmd.class)
-    public Vm getInstance(String uuid, boolean includeDisks, boolean includeNics, boolean allContent) {
+    public Vm getInstance(String uuid, boolean includeTags, boolean includeDisks, boolean includeNics,
+              boolean allContent) {
         UserVmJoinVO vo = userVmJoinDao.findByUuid(uuid);
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
         }
         return UserVmJoinVOToVmConverter.toVm(vo, this::getHostById,
                 this::getDetailsByInstanceId,
+                includeTags ? this::listTagsByInstanceId : null,
                 includeDisks ? this::listDiskAttachmentsByInstanceId : null,
                 includeNics ? this::listNicsByInstance : null,
                 allContent);
@@ -1064,7 +1064,7 @@ public class ServerAdapter extends ManagerBase {
     @ApiAccess(command = UpdateVMCmd.class)
     public Vm updateInstance(String uuid, Vm request) {
         logger.warn("Received request to update VM with ID {}. No action, returning existing VM data.", uuid);
-        return getInstance(uuid, false, false, false);
+        return getInstance(uuid, false, false, false, false);
     }
 
     @ApiAccess(command = DestroyVMCmd.class)
@@ -1199,6 +1199,21 @@ public class ServerAdapter extends ManagerBase {
 
     public Disk reduceDisk(String uuid) {
         throw new InvalidParameterValueException("Reduce Disk with ID " + uuid + " not implemented");
+    }
+
+    @ApiAccess(command = ListTagsCmd.class)
+    protected List<Tag> listTagsByInstanceId(final long instanceId) {
+        List<? extends ResourceTag> vmResourceTags = resourceTagDao.listBy(instanceId,
+                ResourceTag.ResourceObjectType.UserVm);
+        List<ResourceTagVO> tags = new ArrayList<>();
+        for (ResourceTag t : vmResourceTags) {
+            if (t instanceof ResourceTagVO) {
+                tags.add((ResourceTagVO)t);
+                continue;
+            }
+            tags.add(resourceTagDao.findById(t.getId()));
+        }
+        return ResourceTagVOToTagConverter.toTags(tags);
     }
 
     @ApiAccess(command = ListVolumesCmd.class)

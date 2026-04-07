@@ -58,8 +58,8 @@ public final class Vm extends BaseDto {
     private String origin;  // "ovirt"
     private NamedList<Link> actions;      // actions.link[]
     @JacksonXmlElementWrapper(useWrapping = false)
-    private List<Link> link;      // related resources
-    private EmptyElement tags; // empty <tags/>
+    private List<Link> link;
+    private NamedList<Tag> tags;
     private NamedList<DiskAttachment> diskAttachments;
     private NamedList<Nic> nics;
     private Initialization initialization;
@@ -252,11 +252,11 @@ public final class Vm extends BaseDto {
         this.link = link;
     }
 
-    public EmptyElement getTags() {
+    public NamedList<Tag> getTags() {
         return tags;
     }
 
-    public void setTags(EmptyElement tags) {
+    public void setTags(NamedList<Tag> tags) {
         this.tags = tags;
     }
 
