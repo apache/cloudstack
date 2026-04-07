@@ -36,6 +36,9 @@ UPDATE `cloud`.`configuration` SET description = 'True if the management server 
 
 UPDATE `cloud`.`vm_template` SET guest_os_id = 99 WHERE name = 'kvm-default-vm-import-dummy-template';
 
+-- Update existing vm_template records with NULL type to "USER"
+UPDATE `cloud`.`vm_template` SET `type` = 'USER' WHERE `type` IS NULL;
+
 -- Update `user.password.reset.mail.template` configuration value to match new logic
 UPDATE `cloud`.`configuration`
 SET value = 'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\n{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team'

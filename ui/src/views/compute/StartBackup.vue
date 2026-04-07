@@ -125,7 +125,7 @@ export default {
         postAPI('createBackup', data).then(response => {
           this.$pollJob({
             jobId: response.createbackupresponse.jobid,
-            title: this.$t('label.create.bucket'),
+            title: this.$t('label.create.backup'),
             description: values.name,
             errorMessage: this.$t('message.create.backup.failed'),
             loadingMessage: `${this.$t('label.create.backup')}: ${this.resource.name || this.resource.id}`,

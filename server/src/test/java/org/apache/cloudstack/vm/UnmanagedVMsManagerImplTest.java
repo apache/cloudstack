@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -39,6 +40,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.cloud.offering.DiskOffering;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.vm.ImportVMTaskVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseGenerator;
@@ -241,6 +245,8 @@ public class UnmanagedVMsManagerImplTest {
     private StoragePoolHostDao storagePoolHostDao;
     @Mock
     private ImportVmTasksManager importVmTasksManager;
+    @Mock
+    private SnapshotDao snapshotDao;
 
     @Mock
     private VMInstanceVO virtualMachine;
@@ -565,6 +571,53 @@ public class UnmanagedVMsManagerImplTest {
         UserVmVO userVmVO = mock(UserVmVO.class);
         when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
         Mockito.doNothing().when(unmanagedVMsManager).performUnmanageVMInstancePrechecks(any());
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void testUnmanageVMInstanceWithVolumeSnapshotsFail() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(virtualMachine.getId()).thenReturn(virtualMachineId);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        VolumeVO volumeVO = mock(VolumeVO.class);
+        long volumeId = 20L;
+        when(volumeVO.getId()).thenReturn(volumeId);
+        SnapshotVO snapshotVO = mock(SnapshotVO.class);
+        when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
+        when(snapshotDao.listByVolumeId(volumeId)).thenReturn(Collections.singletonList(snapshotVO));
+        when(volumeDao.findByInstance(virtualMachineId)).thenReturn(Collections.singletonList(volumeVO));
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void testUnmanageVMInstanceWithAssociatedIsoFail() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(virtualMachine.getId()).thenReturn(virtualMachineId);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmVO.getIsoId()).thenReturn(null);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        when(userVmVO.getIsoId()).thenReturn(1L);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void testUnmanageVMInstanceBelongingToCksClusterFail() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(virtualMachine.getId()).thenReturn(virtualMachineId);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmVO.getIsoId()).thenReturn(null);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        when(userVmManager.isVMPartOfAnyCKSCluster(virtualMachine)).thenReturn(true);
         unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
     }
 
