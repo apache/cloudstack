@@ -165,11 +165,13 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handlePutById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                          final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        String data = RouteHandler.getRequestData(req, logger);
         throw new InvalidParameterValueException("Put Disk with ID " + id + " not implemented");
     }
 
     protected void handlePostDiskCopy(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                                   final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        String data = RouteHandler.getRequestData(req, logger);
         try {
             Disk response = serverAdapter.copyDisk(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
@@ -180,6 +182,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handlePostDiskReduce(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                                   final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
+        String data = RouteHandler.getRequestData(req, logger);
         try {
             Disk response = serverAdapter.reduceDisk(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
