@@ -66,6 +66,7 @@ public class AgentShell implements IAgentShell, Daemon {
     private String _zone;
     private String _pod;
     private String _host;
+    private List<String> _avoidHosts;
     private String _privateIp;
     private int _port;
     private int _proxyPort;
@@ -76,7 +77,6 @@ public class AgentShell implements IAgentShell, Daemon {
     private volatile boolean _exit = false;
     private int _pingRetries;
     private final List<Agent> _agents = new ArrayList<Agent>();
-    private String hostToConnect;
     private String connectedHost;
     private Long preferredHostCheckInterval;
     private boolean connectionTransfer = false;
@@ -121,7 +121,7 @@ public class AgentShell implements IAgentShell, Daemon {
         if (_hostCounter >= hosts.length) {
             _hostCounter = 0;
         }
-        hostToConnect = hosts[_hostCounter % hosts.length];
+        String hostToConnect = hosts[_hostCounter % hosts.length];
         _hostCounter++;
         return hostToConnect;
     }
@@ -143,10 +143,9 @@ public class AgentShell implements IAgentShell, Daemon {
     }
 
     @Override
-    public void updateConnectedHost() {
-        connectedHost = hostToConnect;
+    public void updateConnectedHost(String connectedHost) {
+        this.connectedHost = connectedHost;
     }
-
 
     @Override
     public void resetHostCounter() {
@@ -164,6 +163,16 @@ public class AgentShell implements IAgentShell, Daemon {
             _host = host.split(hostLbAlgorithmSeparator)[0];
             resetHostCounter();
         }
+    }
+
+    @Override
+    public void setAvoidHosts(List<String> avoidHosts) {
+        _avoidHosts = avoidHosts;
+    }
+
+    @Override
+    public List<String> getAvoidHosts() {
+        return _avoidHosts;
     }
 
     @Override

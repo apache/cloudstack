@@ -37,4 +37,6 @@
 
     <bean id="vmImportService" class="org.apache.cloudstack.vm.UnmanagedVMsManagerImpl" />
 
+    <bean id="importVmTasksManager" class="org.apache.cloudstack.vm.ImportVmTasksManagerImpl" />
+
 </beans>

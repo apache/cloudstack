@@ -20,21 +20,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.user.UserData;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgGroupsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
+import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.DeleteGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.GetHypervisorGuestOsNamesCmd;
 import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
+import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
@@ -59,18 +62,23 @@ import org.apache.cloudstack.api.command.user.ssh.CreateSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.DeleteSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.ssh.ListSSHKeyPairsCmd;
 import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterCniConfigurationCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.GetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.UpdateVMGroupCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.alert.Alert;
 import com.cloud.capacity.Capacity;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -85,11 +93,13 @@ import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.SSHKeyPair;
+import com.cloud.user.UserData;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * Hopefully this is temporary.
@@ -97,6 +107,14 @@ import com.cloud.vm.VirtualMachine.Type;
  */
 public interface ManagementService {
     static final String Name = "management-server";
+
+    ConfigKey<Boolean> JsInterpretationEnabled = new ConfigKey<>("Hidden"
+            , Boolean.class
+            , "js.interpretation.enabled"
+            , "false"
+            , "Enable/Disable all JavaScript interpretation related functionalities to create or update Javascript rules."
+            , false
+            , ConfigKey.Scope.Global);
 
     /**
      * returns the a map of the names/values in the configuration table
@@ -167,6 +185,12 @@ public interface ManagementService {
      * @return list of GuestOSCategories
      */
     Pair<List<? extends GuestOsCategory>, Integer> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd);
+
+    GuestOsCategory addGuestOsCategory(AddGuestOsCategoryCmd cmd);
+
+    GuestOsCategory updateGuestOsCategory(UpdateGuestOsCategoryCmd cmd);
+
+    boolean deleteGuestOsCategory(DeleteGuestOsCategoryCmd cmd);
 
     /**
      * Obtains a list of all guest OS mappings
@@ -360,17 +384,23 @@ public interface ManagementService {
      *            The api command class.
      * @return The list of userdatas found.
      */
-    Pair<List<? extends UserData>, Integer> listUserDatas(ListUserDataCmd cmd);
+    Pair<List<? extends UserData>, Integer> listUserDatas(ListUserDataCmd cmd, boolean forCks);
+
+    /**
+     * Registers a cni configuration.
+     *
+     * @param cmd    The api command class.
+     * @return A VO with the registered user data.
+     */
+    UserData registerCniConfiguration(RegisterCniConfigurationCmd cmd);
 
     /**
      * Registers a userdata.
      *
-     * @param cmd
-     *            The api command class.
+     * @param cmd    The api command class.
      * @return A VO with the registered userdata.
      */
     UserData registerUserData(RegisterUserDataCmd cmd);
-
     /**
      * Deletes a userdata.
      *
@@ -380,6 +410,14 @@ public interface ManagementService {
      */
     boolean deleteUserData(DeleteUserDataCmd cmd);
 
+    /**
+     * Deletes user data.
+     *
+     * @param cmd
+     *            The api command class.
+     * @return True on success. False otherwise.
+     */
+    boolean deleteCniConfiguration(DeleteCniConfigurationCmd cmd);
     /**
      * Search registered key pairs for the logged in user.
      *
@@ -444,6 +482,19 @@ public interface ManagementService {
     Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(VirtualMachine vm, Long startIndex, Long pageSize, String keyword, List<VirtualMachine> vmList);
 
     /**
+     * Apply affinity group constraints and other exclusion rules for VM migration.
+     * This is a helper method that can be used independently for per-iteration affinity checks in DRS.
+     *
+     * @param vm The virtual machine to migrate
+     * @param vmProfile The VM profile
+     * @param plan The deployment plan
+     * @param vmList List of VMs with current/simulated placements for affinity processing
+     * @return ExcludeList containing hosts to avoid
+     */
+    ExcludeList applyAffinityConstraints(VirtualMachine vm, VirtualMachineProfile vmProfile,
+            DeploymentPlan plan, List<VirtualMachine> vmList);
+
+    /**
      * List storage pools for live migrating of a volume. The API returns list of all pools in the cluster to which the
      * volume can be migrated. Current pool is not included in the list. In case of vSphere datastore cluster storage pools,
      * this method removes the child storage pools and adds the corresponding parent datastore cluster for API response listing
@@ -480,5 +531,9 @@ public interface ManagementService {
     void cleanupVMReservations();
 
     Pair<Boolean, String> patchSystemVM(PatchSystemVMCmd cmd);
+
+    boolean removeManagementServer(RemoveManagementServerCmd cmd);
+
+    void checkJsInterpretationAllowedIfNeededForParameterValue(String paramName, boolean paramValue);
 
 }

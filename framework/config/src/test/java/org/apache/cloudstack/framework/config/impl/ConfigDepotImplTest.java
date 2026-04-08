@@ -89,6 +89,12 @@ public class ConfigDepotImplTest {
         runTestGetConfigStringValue("test", "value");
     }
 
+    @Test
+    public void testGetConfigStringValue_nameWithCharacters() {
+        runTestGetConfigStringValue("test.1-1", "value");
+        runTestGetConfigStringValue("test_1#2", "value");
+    }
+
     private void runTestGetConfigStringValueExpiry(long wait, int configDBRetrieval) {
         String key = "test1";
         String value = "expiry";
@@ -101,7 +107,6 @@ public class ConfigDepotImplTest {
         String result = configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null);
         Assert.assertEquals(value, result);
         Mockito.verify(_configDao, Mockito.times(configDBRetrieval)).findById(key);
-
     }
 
     @Test

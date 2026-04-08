@@ -30,6 +30,7 @@ public class Storage {
         OVA(true, true, true, "ova"),
         VHDX(true, true, true, "vhdx"),
         BAREMETAL(false, false, false, "BAREMETAL"),
+        EXTERNAL(false, false, false, "EXTERNAL"),
         VMDK(true, true, false, "vmdk"),
         VDI(true, true, false, "vdi"),
         TAR(false, false, false, "tar"),
@@ -127,7 +128,7 @@ public class Storage {
     public static enum TemplateType {
         ROUTING, // Router template
         SYSTEM, /* routing, system vm template */
-        BUILTIN, /* buildin template */
+        BUILTIN, /* builtin template */
         PERHOST, /* every host has this template, don't need to install it in secondary storage */
         USER, /* User supplied template/iso */
         VNF,    /* VNFs (virtual network functions) template */

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.router;
 
+import com.cloud.exception.InsufficientAddressCapacityException;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.network.Network;
@@ -24,7 +25,7 @@ import com.cloud.vm.NicProfile;
 
 public interface NicProfileHelper {
 
-    public abstract NicProfile createPrivateNicProfileForGateway(final VpcGateway privateGateway, final VirtualRouter router);
+    public abstract NicProfile createPrivateNicProfileForGateway(final VpcGateway privateGateway, final VirtualRouter router) throws InsufficientAddressCapacityException;
 
     public abstract NicProfile createGuestNicProfileForVpcRouter(final RouterDeploymentDefinition vpcRouterDeploymentDefinition,
             Network guestNetwork);

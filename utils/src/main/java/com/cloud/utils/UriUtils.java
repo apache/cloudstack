@@ -67,12 +67,14 @@ import org.w3c.dom.NodeList;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.HttpClientCloudStackUserAgent;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public class UriUtils {
 
     protected static Logger LOGGER = LogManager.getLogger(UriUtils.class);
+    public static final String USER_AGENT = "User-Agent";
 
     public static String formNfsUri(String host, String path) {
         try {
@@ -227,6 +229,7 @@ public class UriUtils {
                 URI uri = new URI(url);
                 httpConn = (HttpURLConnection)uri.toURL().openConnection();
                 httpConn.setRequestMethod(method);
+                httpConn.setRequestProperty(USER_AGENT, HttpClientCloudStackUserAgent.CLOUDSTACK_USER_AGENT);
                 httpConn.setConnectTimeout(2000);
                 httpConn.setReadTimeout(5000);
                 httpConn.setInstanceFollowRedirects(Boolean.TRUE.equals(followRedirect));
@@ -431,7 +434,7 @@ public class UriUtils {
         return urls;
     }
 
-    public static final Set<String> COMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz");
+    public static final Set<String> COMPRESSION_FORMATS = ImmutableSet.of("zip", "bz2", "gz", "xz");
 
     public static final Set<String> buildExtensionSet(boolean metalink, String... baseExtensions) {
         final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
@@ -500,8 +503,12 @@ public class UriUtils {
             if ((user != null) && (password != null)) {
                 httpclient.getParams().setAuthenticationPreemptive(true);
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
-                httpclient.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                LOGGER.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+                httpclient.getState().setCredentials(
+                        new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+                LOGGER.info("Added username={} along with password for host {}:{}"
+                    , user
+                    , hostAndPort.first()
+                    , hostAndPort.second());
             }
             // Execute the method.
             GetMethod method = new GetMethod(url);

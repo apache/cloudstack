@@ -21,12 +21,13 @@ import java.util.Map;
 
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
-import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
-import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
@@ -35,7 +36,16 @@ import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeyRulesCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupOffering;
 
 public interface AccountService {
 
@@ -58,7 +68,8 @@ public interface AccountService {
 
     User getSystemUser();
 
-    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
+    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone,
+                    String accountName, Long domainId, String userUUID, boolean isPasswordChangeRequired);
 
     User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID,
                     User.Source source);
@@ -87,13 +98,15 @@ public interface AccountService {
 
     boolean isDomainAdmin(Long accountId);
 
+    boolean isResourceDomainAdmin(Long accountId);
+
     boolean isNormalUser(long accountId);
 
     User getActiveUserByRegistrationToken(String registrationToken);
 
     void markUserRegistered(long userId);
 
-    public String[] createApiKeyAndSecretKey(RegisterCmd cmd);
+    ApiKeyPair createApiKeyAndSecretKey(RegisterUserKeysCmd cmd);
 
     public String[] createApiKeyAndSecretKey(final long userId);
 
@@ -113,13 +126,19 @@ public interface AccountService {
 
     void checkAccess(Account account, VpcOffering vof, DataCenter zone) throws PermissionDeniedException;
 
+    void checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException;
+
     void checkAccess(User user, ControlledEntity entity);
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) throws PermissionDeniedException;
 
     void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource);
 
-    Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+    void validateCallingUserHasAccessToDesiredUser(Long userId);
+
+    Long finalizeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
+
+    Long finalizeAccountId(Long accountId, String accountName, Long domainId, Long projectId);
 
     /**
      * returns the user account object for a given user id
@@ -128,9 +147,15 @@ public interface AccountService {
      */
     UserAccount getUserAccountById(Long userId);
 
-    public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd);
+    Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd);
 
-    public Pair<Boolean, Map<String, String>> getKeys(Long userId);
+    ListResponse<ApiKeyPairResponse> listKeys(ListUserKeysCmd cmd);
+
+    List<ApiKeyPairPermission> listKeyRules(ListUserKeyRulesCmd cmd);
+
+    void deleteApiKey(DeleteUserKeysCmd cmd);
+
+    void deleteApiKey(ApiKeyPair id);
 
     /**
      * Lists user two-factor authentication provider plugins
@@ -145,4 +170,13 @@ public interface AccountService {
      */
     UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(final Long domainId);
 
+    ApiKeyPair getLatestUserKeyPair(Long userId);
+
+    ApiKeyPair getKeyPairById(Long id);
+
+    ApiKeyPair getKeyPairByApiKey(String apiKey);
+
+    String getAccessingApiKey(BaseCmd cmd);
+
+    List<RolePermissionEntity> getAllKeypairPermissions(String apiKey);
 }

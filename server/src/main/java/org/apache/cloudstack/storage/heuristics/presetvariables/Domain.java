@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.heuristics.presetvariables;
 
-public class Domain extends GenericHeuristicPresetVariable{
+public class Domain extends GenericHeuristicPresetVariable {
     private String id;
 
     public String getId() {
@@ -25,6 +25,5 @@ public class Domain extends GenericHeuristicPresetVariable{
 
     public void setId(String id) {
         this.id = id;
-        fieldNamesToIncludeInToString.add("id");
     }
 }

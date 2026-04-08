@@ -51,6 +51,7 @@ SELECT
     `host_pod_ref`.`name` AS `pod_name`,
     `storage_pool_tags`.`tag` AS `tag`,
     `storage_pool_tags`.`is_tag_a_rule` AS `is_tag_a_rule`,
+    `storage_pool_and_access_group_map`.`storage_access_group` AS `storage_access_group`,
     `op_host_capacity`.`used_capacity` AS `disk_used_capacity`,
     `op_host_capacity`.`reserved_capacity` AS `disk_reserved_capacity`,
     `async_job`.`id` AS `job_id`,
@@ -58,13 +59,16 @@ SELECT
     `async_job`.`job_status` AS `job_status`,
     `async_job`.`account_id` AS `job_account_id`
 FROM
-    ((((((`cloud`.`storage_pool`
-        LEFT JOIN `cloud`.`cluster` ON ((`storage_pool`.`cluster_id` = `cluster`.`id`)))
-        LEFT JOIN `cloud`.`data_center` ON ((`storage_pool`.`data_center_id` = `data_center`.`id`)))
-        LEFT JOIN `cloud`.`host_pod_ref` ON ((`storage_pool`.`pod_id` = `host_pod_ref`.`id`)))
-        LEFT JOIN `cloud`.`storage_pool_tags` ON (((`storage_pool_tags`.`pool_id` = `storage_pool`.`id`))))
-        LEFT JOIN `cloud`.`op_host_capacity` ON (((`storage_pool`.`id` = `op_host_capacity`.`host_id`)
-        AND (`op_host_capacity`.`capacity_type` IN (3 , 9)))))
-        LEFT JOIN `cloud`.`async_job` ON (((`async_job`.`instance_id` = `storage_pool`.`id`)
-        AND (`async_job`.`instance_type` = 'StoragePool')
-        AND (`async_job`.`job_status` = 0))));
+    `cloud`.`storage_pool`
+    LEFT JOIN `cloud`.`cluster` ON `storage_pool`.`cluster_id` = `cluster`.`id`
+    LEFT JOIN `cloud`.`data_center` ON `storage_pool`.`data_center_id` = `data_center`.`id`
+    LEFT JOIN `cloud`.`host_pod_ref` ON `storage_pool`.`pod_id` = `host_pod_ref`.`id`
+    LEFT JOIN `cloud`.`storage_pool_tags` ON `storage_pool_tags`.`pool_id` = `storage_pool`.`id`
+    LEFT JOIN `cloud`.`storage_pool_and_access_group_map` ON `storage_pool_and_access_group_map`.`pool_id` = `storage_pool`.`id`
+    LEFT JOIN `cloud`.`op_host_capacity`
+        ON `storage_pool`.`id` = `op_host_capacity`.`host_id`
+        AND `op_host_capacity`.`capacity_type` IN (3, 9)
+    LEFT JOIN `cloud`.`async_job`
+        ON `async_job`.`instance_id` = `storage_pool`.`id`
+        AND `async_job`.`instance_type` = 'StoragePool'
+        AND `async_job`.`job_status` = 0;

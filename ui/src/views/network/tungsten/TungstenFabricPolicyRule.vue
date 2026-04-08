@@ -214,7 +214,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -360,7 +360,7 @@ export default {
 
       this.dataSource = []
       this.fetchLoading = true
-      api('listTungstenFabricPolicyRule', params).then(json => {
+      getAPI('listTungstenFabricPolicyRule', params).then(json => {
         this.dataSource = json?.listtungstenfabricpolicyruleresponse?.rule || []
         this.itemCount = json?.listtungstenfabricpolicyruleresponse?.count || 0
       }).catch(error => {
@@ -392,7 +392,7 @@ export default {
         params.destendport = values.destendport
 
         this.actionLoading = true
-        api('addTungstenFabricPolicyRule', params).then(json => {
+        postAPI('addTungstenFabricPolicyRule', params).then(json => {
           this.$pollJob({
             jobId: json.addtungstenfabricpolicyruleresponse.jobid,
             title: this.$t('label.add.rule'),
@@ -429,7 +429,7 @@ export default {
       params.ruleuuid = record.uuid
 
       this.deleteLoading = true
-      api('removeTungstenFabricPolicyRule', params).then(json => {
+      postAPI('removeTungstenFabricPolicyRule', params).then(json => {
         this.$pollJob({
           jobId: json.removetungstenfabricpolicyruleresponse.jobid,
           title: this.$t('label.delete.rule'),

@@ -32,7 +32,6 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.ApiConstants;
@@ -114,7 +113,7 @@ public class KVMGuruTest {
 
     @Before
     public void setup() throws UnsupportedEncodingException {
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
         Mockito.when(vm.getHostId()).thenReturn(hostId);
         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
@@ -141,10 +140,11 @@ public class KVMGuruTest {
         Mockito.verify(vmTO).setCpuQuotaPercentage(Mockito.anyDouble());
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test
     public void testSetVmQuotaPercentageNullHost() {
         Mockito.when(hostDao.findById(hostId)).thenReturn(null);
         guru.setVmQuotaPercentage(vmTO, vmProfile);
+        Mockito.verify(vmTO, Mockito.never()).setCpuQuotaPercentage(Mockito.anyDouble());
     }
 
     @Test
@@ -156,7 +156,7 @@ public class KVMGuruTest {
 
     @Test
     public void testSetVmQuotaPercentageNotCPULimit() {
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(false);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(false);
         guru.setVmQuotaPercentage(vmTO, vmProfile);
         Mockito.verify(vmProfile, Mockito.never()).getVirtualMachine();
         Mockito.verify(vmTO, Mockito.never()).setCpuQuotaPercentage(Mockito.anyDouble());

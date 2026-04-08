@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.activationrule.presetvariables.Configuration;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
@@ -63,6 +62,7 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
@@ -429,7 +429,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         }
 
         injectPresetVariablesIntoJsInterpreter(jsInterpreter, presetVariables);
-        jsInterpreter.injectVariable("lastTariffs", lastAppliedTariffsList.toString());
+        jsInterpreter.injectVariable("lastTariffs", lastAppliedTariffsList);
 
         String scriptResult = jsInterpreter.executeScript(activationRule).toString();
 
@@ -459,12 +459,12 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     protected void injectPresetVariablesIntoJsInterpreter(JsInterpreter jsInterpreter, PresetVariables presetVariables) {
         jsInterpreter.discardCurrentVariables();
 
-        jsInterpreter.injectVariable("account", presetVariables.getAccount().toString());
-        jsInterpreter.injectVariable("domain", presetVariables.getDomain().toString());
+        jsInterpreter.injectVariable("account", presetVariables.getAccount());
+        jsInterpreter.injectVariable("domain", presetVariables.getDomain());
 
         GenericPresetVariable project = presetVariables.getProject();
         if (project != null) {
-            jsInterpreter.injectVariable("project", project.toString());
+            jsInterpreter.injectVariable("project", project);
 
         }
 
@@ -473,9 +473,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             jsInterpreter.injectVariable("configuration", configuration.toString());
         }
 
-        jsInterpreter.injectStringVariable("resourceType", presetVariables.getResourceType());
-        jsInterpreter.injectVariable("value", presetVariables.getValue().toString());
-        jsInterpreter.injectVariable("zone", presetVariables.getZone().toString());
+        jsInterpreter.injectVariable("resourceType", presetVariables.getResourceType());
+        jsInterpreter.injectVariable("value", presetVariables.getValue());
+        jsInterpreter.injectVariable("zone", presetVariables.getZone());
     }
 
     /**

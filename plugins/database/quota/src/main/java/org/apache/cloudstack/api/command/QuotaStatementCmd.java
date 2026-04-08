@@ -34,7 +34,8 @@ import org.apache.cloudstack.api.response.QuotaStatementResponse;
 
 import org.apache.commons.lang3.ObjectUtils;
 
-@APICommand(name = "quotaStatement", responseObject = QuotaStatementItemResponse.class, description = "Create a Quota statement for the provided Account, Project, or Domain.", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "quotaStatement", responseObject = QuotaStatementItemResponse.class, description = "Create a Quota statement for the provided Account, Project, or Domain.",
+        since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, httpMethod = "GET")
 public class QuotaStatementCmd extends BaseCmd {
 
     @ACL

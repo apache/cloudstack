@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent;
 
-import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -38,7 +37,7 @@ import com.cloud.resource.ServerResource;
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
  */
 public interface AgentManager {
-    static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
+    ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
             true);
     ConfigKey<Boolean> EnableKVMAutoEnableDisable = new ConfigKey<>(Boolean.class,
                     "enable.kvm.host.auto.enable.disable",
@@ -55,7 +54,11 @@ public interface AgentManager {
             "This timeout overrides the wait global config. This holds a comma separated key value pairs containing timeout (in seconds) for specific commands. " +
                     "For example: DhcpEntryCommand=600, SavePasswordCommand=300, VmDataCommand=300", false);
 
-    public enum TapAgentsAction {
+    ConfigKey<Integer> KVMHostDiscoverySshPort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
+            "kvm.host.discovery.ssh.port", String.valueOf(Host.DEFAULT_SSH_PORT), "SSH port used for KVM host discovery and any other operations on host (using SSH)." +
+                " Please note that this is applicable when port is not defined through host url while adding the KVM host.", true, ConfigKey.Scope.Cluster);
+
+    enum TapAgentsAction {
         Add, Del, Contains,
     }
 
@@ -172,9 +175,7 @@ public interface AgentManager {
 
     void propagateChangeToAgents(Map<String, String> params);
 
-    boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs);
+    boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance);
 
-    List<String> getLastAgents();
-
-    void setLastAgents(List<String> lastAgents);
+    int getHostSshPort(HostVO host);
 }

@@ -38,7 +38,7 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "The ID of the Userdata")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Userdata name to look for")
@@ -61,7 +61,7 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends UserData>, Integer> resultList = _mgr.listUserDatas(this);
+        Pair<List<? extends UserData>, Integer> resultList = _mgr.listUserDatas(this, false);
         List<UserDataResponse> responses = new ArrayList<>();
         for (UserData result : resultList.first()) {
             UserDataResponse r = _responseGenerator.createUserDataResponse(result);

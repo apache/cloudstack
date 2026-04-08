@@ -19,6 +19,8 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
+import com.cloud.network.Network;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.commons.lang3.StringUtils;
 
@@ -29,7 +31,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.net.NetUtils;
 
+import javax.inject.Inject;
+
 public class VpcOfferingJoinDaoImpl extends GenericDaoBase<VpcOfferingJoinVO, Long> implements VpcOfferingJoinDao {
+
+    @Inject
+    private VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
 
     private SearchBuilder<VpcOfferingJoinVO> sofIdSearch;
 
@@ -70,13 +77,14 @@ public class VpcOfferingJoinDaoImpl extends GenericDaoBase<VpcOfferingJoinVO, Lo
         if (offering.isSpecifyAsNumber() != null) {
             offeringResponse.setSpecifyAsNumber(offering.isSpecifyAsNumber());
         }
+        offeringResponse.setConserveMode(offering.isConserveMode());
         if (offering instanceof VpcOfferingJoinVO) {
             VpcOfferingJoinVO offeringJoinVO = (VpcOfferingJoinVO) offering;
             offeringResponse.setDomainId(offeringJoinVO.getDomainUuid());
             offeringResponse.setDomain(offeringJoinVO.getDomainPath());
             offeringResponse.setZoneId(offeringJoinVO.getZoneUuid());
             offeringResponse.setZone(offeringJoinVO.getZoneName());
-            offeringResponse.setForNsx(offeringJoinVO.isForNsx());
+            offeringResponse.setForNsx(vpcOfferingServiceMapDao.isProviderForVpcOffering(Network.Provider.Nsx, offeringJoinVO.getId()));
             if (offeringJoinVO.getNetworkMode() != null) {
                 offeringResponse.setNetworkMode(offeringJoinVO.getNetworkMode().name());
             }

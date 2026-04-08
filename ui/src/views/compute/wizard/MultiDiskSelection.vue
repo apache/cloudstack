@@ -72,7 +72,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 
 export default {
@@ -179,7 +179,7 @@ export default {
     fetchDiskOfferings () {
       this.diskOfferings = []
       this.loading = true
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         zoneid: this.zoneId,
         listall: true
       }).then(response => {

@@ -24,7 +24,7 @@ import org.apache.cloudstack.backup.BackupOfferingVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface BackupOfferingDao extends GenericDao<BackupOfferingVO, Long> {
-    BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy);
+    BackupOfferingResponse newBackupOfferingResponse(BackupOffering policy, Boolean crossZoneInstanceCreation);
     BackupOffering findByExternalId(String externalId, Long zoneId);
     BackupOffering findByName(String name, Long zoneId);
 }

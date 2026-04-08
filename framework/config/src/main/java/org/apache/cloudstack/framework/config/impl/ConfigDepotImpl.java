@@ -85,7 +85,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     List<ScopedConfigStorage> _scopedStorages;
     Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
     Set<String> newConfigs = Collections.synchronizedSet(new HashSet<>());
-    LazyCache<String, String> configCache;
+    LazyCache<Ternary<String, ConfigKey.Scope, Long>, String> configCache;
 
     private HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
@@ -275,15 +275,10 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         return _configDao;
     }
 
-    protected String getConfigStringValueInternal(String cacheKey) {
-        String[] parts = cacheKey.split("-");
-        String key = parts[0];
-        ConfigKey.Scope scope = ConfigKey.Scope.Global;
-        Long scopeId = null;
-        try {
-            scope = ConfigKey.Scope.valueOf(parts[1]);
-            scopeId = Long.valueOf(parts[2]);
-        } catch (IllegalArgumentException ignored) {}
+    protected String getConfigStringValueInternal(Ternary<String, ConfigKey.Scope, Long> cacheKey) {
+        String key = cacheKey.first();
+        ConfigKey.Scope scope = cacheKey.second();
+        Long scopeId = cacheKey.third();
         if (!ConfigKey.Scope.Global.equals(scope) && scopeId != null) {
             ScopedConfigStorage scopedConfigStorage = getScopedStorage(scope);
             if (scopedConfigStorage == null) {
@@ -298,8 +293,8 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         return null;
     }
 
-    private String getConfigCacheKey(String key, ConfigKey.Scope scope, Long scopeId) {
-        return String.format("%s-%s-%d", key, scope, (scopeId == null ? 0 : scopeId));
+    protected Ternary<String, ConfigKey.Scope, Long> getConfigCacheKey(String key, ConfigKey.Scope scope, Long scopeId) {
+        return new Ternary<>(key, scope, scopeId);
     }
 
     @Override

@@ -67,6 +67,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
         List<String> destinationStoragePools = cmd.getDestinationStoragePools();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
         final String temporaryConvertUuid = cmd.getTemporaryConvertUuid();
+        final boolean forceConvertToPool = cmd.isForceConvertToPool();
 
         final KVMStoragePoolManager storagePoolMgr = serverResource.getStoragePoolMgr();
         KVMStoragePool temporaryStoragePool = getTemporaryStoragePool(conversionTemporaryLocation, storagePoolMgr);
@@ -80,13 +81,18 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
                     getTemporaryDisksWithPrefixFromTemporaryPool(temporaryStoragePool, temporaryConvertPath, temporaryConvertUuid) :
                     getTemporaryDisksFromParsedXml(temporaryStoragePool, xmlParser, convertedBasePath);
 
-            List<KVMPhysicalDisk> destinationDisks = moveTemporaryDisksToDestination(temporaryDisks,
-                    destinationStoragePools, storagePoolMgr);
-
-            cleanupDisksAndDomainFromTemporaryLocation(temporaryDisks, temporaryStoragePool, temporaryConvertUuid);
+            List<KVMPhysicalDisk> disks = null;
+            if (forceConvertToPool) {
+                // Force flag to use the conversion path, no need to move disks
+                disks = temporaryDisks;
+            } else {
+                disks = moveTemporaryDisksToDestination(temporaryDisks,
+                        destinationStoragePools, storagePoolMgr);
+                cleanupDisksAndDomainFromTemporaryLocation(temporaryDisks, temporaryStoragePool, temporaryConvertUuid);
+            }
 
             UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid,
-                    destinationDisks, xmlParser);
+                    disks, xmlParser);
             return new ImportConvertedInstanceAnswer(cmd, convertedInstanceTO);
         } catch (Exception e) {
             String error = String.format("Error converting instance %s from %s, due to: %s",

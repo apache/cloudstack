@@ -30,6 +30,8 @@ public interface StoragePoolHostDao extends GenericDao<StoragePoolHostVO, Long> 
 
     public StoragePoolHostVO findByPoolHost(long poolId, long hostId);
 
+    List<StoragePoolHostVO> findByLocalPath(String path);
+
     List<StoragePoolHostVO> listByHostStatus(long poolId, Status hostStatus);
 
     List<Long> findHostsConnectedToPools(List<Long> poolIds);

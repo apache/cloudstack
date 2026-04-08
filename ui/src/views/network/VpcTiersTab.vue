@@ -193,8 +193,14 @@
               optionFilterProp="label"
               :filterOption="(input, option) => {
                 return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id" :label="item.displaytext || item.name || item.description">
+              }"
+               >
+              <a-select-option
+                v-for="item in networkOfferings"
+                :key="item.id"
+                :value="item.id"
+                :label="item.displaytext || item.name || item.description"
+                :title="item.displaytext || item.name || item.description">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
@@ -242,18 +248,18 @@
           </a-form-item>
           <a-form-item ref="gateway" name="gateway" :colon="false">
             <template #label>
-              <tooltip-label :title="$t('label.gateway')" :tooltip="$t('label.create.tier.gateway.description')"/>
+              <tooltip-label :title="$t('label.gateway')" :tooltip="gatewayPlaceholder"/>
             </template>
             <a-input
-              :placeholder="$t('label.create.tier.gateway.description')"
+              :placeholder="gatewayPlaceholder"
               v-model:value="form.gateway"></a-input>
           </a-form-item>
           <a-form-item ref="netmask" name="netmask" :colon="false">
             <template #label>
-              <tooltip-label :title="$t('label.netmask')" :tooltip="$t('label.create.tier.netmask.description')"/>
+              <tooltip-label :title="$t('label.netmask')" :tooltip="netmaskPlaceholder"/>
             </template>
             <a-input
-              :placeholder="$t('label.create.tier.netmask.description')"
+              :placeholder="netmaskPlaceholder"
               v-model:value="form.netmask"></a-input>
           </a-form-item>
           <a-form-item ref="externalId" name="externalId" :colon="false">
@@ -359,10 +365,11 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI, getAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { getNetmaskFromCidr } from '@/utils/network'
 
 export default {
   name: 'VpcTiersTab',
@@ -400,6 +407,8 @@ export default {
       selectedNetworkOffering: {},
       privateMtuMax: 1500,
       errorPrivateMtu: '',
+      gatewayPlaceholder: '',
+      netmaskPlaceholder: '',
       algorithms: {
         Source: 'source',
         'Round-robin': 'roundrobin',
@@ -457,6 +466,7 @@ export default {
       publicLBExists: false,
       setMTU: false,
       isNsxEnabled: false,
+      zoneExtNetProvider: null,
       isOfferingNatMode: false,
       isOfferingRoutedMode: false,
       displayCollapsible: [],
@@ -488,7 +498,7 @@ export default {
       this.asNumberLoading = true
       params.zoneid = this.resource.zoneid
       params.isallocated = false
-      api('listASNumbers', params).then(json => {
+      getAPI('listASNumbers', params).then(json => {
         this.asNumbersZone = json.listasnumbersresponse.asnumber
         this.asNumberLoading = false
       })
@@ -527,18 +537,19 @@ export default {
       this.publicLBNetworkExists()
     },
     fetchMtuForZone () {
-      api('listZones', {
+      getAPI('listZones', {
         id: this.resource.zoneid
       }).then(json => {
         this.setMTU = json?.listzonesresponse?.zone?.[0]?.allowuserspecifyvrmtu || false
         this.privateMtuMax = json?.listzonesresponse?.zone?.[0]?.routerprivateinterfacemaxmtu || 1500
         this.isNsxEnabled = json?.listzonesresponse?.zone?.[0]?.isnsxenabled || false
+        this.zoneExtNetProvider = json?.listzonesresponse?.zone?.[0]?.provider || null
       })
     },
     fetchNetworkAclList () {
       this.fetchLoading = true
       this.modalLoading = true
-      api('listNetworkACLLists', { vpcid: this.resource.id }).then(json => {
+      getAPI('listNetworkACLLists', { vpcid: this.resource.id }).then(json => {
         this.networkAclList = json.listnetworkacllistsresponse.networkacllist || []
         this.handleNetworkAclChange(null)
       }).catch(error => {
@@ -550,7 +561,7 @@ export default {
     },
     getNetworkOffering (networkId) {
       return new Promise((resolve, reject) => {
-        api('listNetworkOfferings', {
+        getAPI('listNetworkOfferings', {
           id: networkId
         }).then(json => {
           var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
@@ -561,7 +572,7 @@ export default {
       })
     },
     updateDisplayCollapsible (offeringId, network) {
-      api('listNetworkOfferings', {
+      getAPI('listNetworkOfferings', {
         id: offeringId
       }).then(json => {
         var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
@@ -572,7 +583,7 @@ export default {
     },
     getVpcNetworkOffering () {
       return new Promise((resolve, reject) => {
-        api('listVPCOfferings', {
+        getAPI('listVPCOfferings', {
           id: this.resource.vpcofferingid
         }).then(json => {
           const vpcOffering = json?.listvpcofferingsresponse?.vpcoffering[0]
@@ -585,7 +596,7 @@ export default {
       })
     },
     publicLBNetworkExists () {
-      api('listNetworks', {
+      getAPI('listNetworks', {
         vpcid: this.resource.id,
         supportedservices: 'LB'
       }).then(async json => {
@@ -612,10 +623,10 @@ export default {
         guestiptype: 'Isolated',
         state: 'Enabled'
       }
-      if (!this.isNsxEnabled && !this.isOfferingRoutedMode) {
+      if ((!this.isNsxEnabled || !['netris', 'nsx'].includes(this.zoneExtNetProvider.toLowerCase())) && !this.isOfferingRoutedMode) {
         params.supportedServices = 'SourceNat'
       }
-      api('listNetworkOfferings', params).then(json => {
+      getAPI('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
         var filteredOfferings = []
         const vpcLbServiceIndex = this.resource.service.map(svc => { return svc.name }).indexOf('Lb')
@@ -625,9 +636,9 @@ export default {
           if (this.publicLBExists && (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1)) {
             filteredOfferings.push(offering)
           } else if (!this.publicLBExists && vpcLbServiceIndex > -1) {
-            const vpcLbServiceProvider = vpcLbServiceIndex === -1 ? undefined : this.resource.service[vpcLbServiceIndex].provider[0].name
+            const vpcLbServiceProviders = vpcLbServiceIndex === -1 ? undefined : this.resource.service[vpcLbServiceIndex].provider.map(provider => provider.name)
             const offeringLbServiceProvider = idx === -1 ? undefined : offering.service[idx].provider[0].name
-            if (vpcLbServiceProvider && (!offeringLbServiceProvider || (offeringLbServiceProvider && vpcLbServiceProvider === offeringLbServiceProvider))) {
+            if (vpcLbServiceProviders && (!offeringLbServiceProvider || (offeringLbServiceProvider && vpcLbServiceProviders.includes(offeringLbServiceProvider)))) {
               filteredOfferings.push(offering)
             }
           } else {
@@ -635,7 +646,7 @@ export default {
           }
         }
         this.networkOfferings = filteredOfferings
-        if (this.isNsxEnabled) {
+        if (this.isNsxEnabled || (this.zoneExtNetProvider && ['netris', 'nsx'].includes(this.zoneExtNetProvider.toLowerCase()))) {
           this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
         }
         if (this.resource.asnumberid) {
@@ -652,7 +663,7 @@ export default {
     },
     fetchLoadBalancers (id) {
       this.fetchLoading = true
-      api('listLoadBalancers', {
+      getAPI('listLoadBalancers', {
         networkid: id,
         page: this.page,
         pagesize: this.pageSize,
@@ -666,7 +677,7 @@ export default {
     },
     fetchVMs (id) {
       this.fetchLoading = true
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         listAll: true,
         vpcid: this.resource.id,
         networkid: id,
@@ -696,6 +707,13 @@ export default {
       this.initForm()
       this.fetchNetworkAclList()
       this.fetchNetworkOfferings()
+      const cidr = this.resource.cidr
+      const netmask = getNetmaskFromCidr(cidr)
+      if (netmask) {
+        this.gatewayPlaceholder = this.$t('label.create.tier.gateway.description', { value: cidr })
+        this.netmaskPlaceholder = this.$t('label.create.tier.netmask.description', { value: netmask })
+      }
+
       this.showCreateNetworkModal = true
       this.rules = {
         name: [{ required: true, message: this.$t('label.required') }],
@@ -754,7 +772,7 @@ export default {
           params.asnumber = values.asnumber
         }
 
-        api('createNetwork', params).then(() => {
+        postAPI('createNetwork', params).then(() => {
           this.$notification.success({
             message: this.$t('message.success.add.vpc.network')
           })
@@ -780,7 +798,7 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
 
-        api('createLoadBalancer', {
+        postAPI('createLoadBalancer', {
           name: values.name,
           sourceipaddress: values.sourceIP,
           sourceport: values.sourcePort,

@@ -62,7 +62,8 @@
 	<bean id="storagePoolDetailsDaoImpl" class="com.cloud.storage.dao.StoragePoolDetailsDaoImpl" />
 	<bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
 	<bean id="storagePoolTagsDaoImpl" class="com.cloud.storage.dao.StoragePoolTagsDaoImpl" />
-	<bean id="userVmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
+	<bean id="storagePoolAndAccessGroupMapDaoImpl" class="com.cloud.storage.dao.StoragePoolAndAccessGroupMapDaoImpl" />
+	<bean id="vmInstanceDetailsDaoImpl" class="com.cloud.vm.dao.VMInstanceDetailsDaoImpl" />
 	<bean id="vGPUTypesDaoImpl" class="com.cloud.gpu.dao.VGPUTypesDaoImpl" />
 	<bean id="vMInstanceDaoImpl" class="com.cloud.vm.dao.VMInstanceDaoImpl" />
 	<bean id="vMSnapshotDaoImpl" class="com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl" />
@@ -70,6 +71,7 @@
 	<bean id="NetworkDaoImpl" class="org.apache.cloudstack.quota.dao.NetworkDaoImpl" />
 	<bean id="VpcDaoImpl" class="org.apache.cloudstack.quota.dao.VpcDaoImpl" />
 	<bean id="volumeDaoImpl" class="com.cloud.storage.dao.VolumeDaoImpl" />
-  <bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
+  	<bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
     <bean id="backupOfferingDaoImpl" class="org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl" />
+    <bean id="backupOfferingDetailsDaoImpl" class="org.apache.cloudstack.backup.dao.BackupOfferingDetailsDaoImpl" />
 </beans>

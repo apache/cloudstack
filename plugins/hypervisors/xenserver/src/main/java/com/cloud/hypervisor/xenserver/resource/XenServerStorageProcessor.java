@@ -23,6 +23,7 @@ import static com.cloud.utils.ReflectUtil.flattenProperties;
 import static com.google.common.collect.Lists.newArrayList;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +36,7 @@ import java.util.UUID;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -76,6 +77,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.resource.StorageProcessor;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.S3.ClientOptions;
 import com.google.common.annotations.VisibleForTesting;
@@ -219,8 +221,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
-        logger.info("'CheckDataStoreStoragePolicyComplainceCommand' not applicable used for XenServerStorageProcessor");
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplianceCommand cmd) {
+        logger.info("'CheckDataStoreStoragePolicyComplianceCommand' not applicable used for XenServerStorageProcessor");
         return new Answer(cmd,false,"Not applicable used for XenServerStorageProcessor");
     }
 
@@ -242,8 +244,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
             isoURL = iso.getName();
         } else {
             if (!(store instanceof NfsTO)) {
-                logger.debug("Can't attach a iso which is not created on nfs: ");
-                return new AttachAnswer("Can't attach a iso which is not created on nfs: ");
+                logger.debug("Can't attach an ISO which is not created on NFS: ");
+                return new AttachAnswer("Can't attach an ISO which is not created on NFS: ");
             }
             final NfsTO nfsStore = (NfsTO) store;
             isoURL = nfsStore.getUrl() + nfsStore.getPathSeparator() + data.getPath();
@@ -287,10 +289,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
             return new AttachAnswer(disk);
 
         } catch (final XenAPIException e) {
-            logger.warn("Failed to attach iso" + ": " + e.toString(), e);
+            logger.warn("Failed to attach ISO" + ": " + e.toString(), e);
             return new AttachAnswer(e.toString());
         } catch (final Exception e) {
-            logger.warn("Failed to attach iso" + ": " + e.toString(), e);
+            logger.warn("Failed to attach ISO" + ": " + e.toString(), e);
             return new AttachAnswer(e.toString());
         }
     }
@@ -810,7 +812,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             final SR poolSr = hypervisorResource.getStorageRepository(conn,
                     CitrixHelper.getSRNameLabel(primaryStore.getUuid(), primaryStore.getPoolType(), primaryStore.getPath()));
             VDI.Record vdir = new VDI.Record();
-            vdir.nameLabel = volume.getName();
+            vdir.nameLabel = getEncodedVolumeName(volume.getName());
             vdir.SR = poolSr;
             vdir.type = Types.VdiType.USER;
 
@@ -831,6 +833,26 @@ public class XenServerStorageProcessor implements StorageProcessor {
         }
     }
 
+    private String getEncodedVolumeName(String volumeName) throws UnsupportedEncodingException {
+        byte[] utf8Bytes = volumeName.getBytes("UTF-8");
+        // Decode UTF-8 into a Java String (UTF-16)
+        String decoded = new String(utf8Bytes, "UTF-8");
+        // Print each code unit as a Unicode escape
+        StringBuilder unicodeEscaped = new StringBuilder();
+        for (int i = 0; i < decoded.length(); i++) {
+            char ch = decoded.charAt(i);
+            if (ch <= 127 && Character.isLetterOrDigit(ch)) {
+                // Keep ASCII alphanumerics as-is
+                unicodeEscaped.append(ch);
+            } else {
+                // Escape non-ASCII characters
+                unicodeEscaped.append(String.format("\\u%04X", (int) ch));
+            }
+        }
+
+        return unicodeEscaped.toString();
+    }
+
     @Override
     public Answer cloneVolumeFromBaseTemplate(final CopyCommand cmd) {
         final Connection conn = hypervisorResource.getConnection();
@@ -845,10 +867,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
             vdi = tmpltvdi.createClone(conn, new HashMap<String, String>());
             Long virtualSize  = vdi.getVirtualSize(conn);
             if (volume.getSize() > virtualSize) {
-                logger.debug("Overriding provided template's size with new size " + toHumanReadableSize(volume.getSize()) + " for volume: " + volume.getName());
+                logger.debug("Overriding provided Template's size with new size " + toHumanReadableSize(volume.getSize()) + " for volume: " + volume.getName());
                 vdi.resize(conn, volume.getSize());
             } else {
-                logger.debug("Using templates disk size of " + toHumanReadableSize(virtualSize) + " for volume: " + volume.getName() + " since size passed was " + toHumanReadableSize(volume.getSize()));
+                logger.debug("Using Templates disk size of " + toHumanReadableSize(virtualSize) + " for volume: " + volume.getName() + " since size passed was " + toHumanReadableSize(volume.getSize()));
             }
             vdi.setNameLabel(conn, volume.getName());
 
@@ -1234,7 +1256,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             final String folder = destPath;
             String finalPath = null;
 
-            final String localMountPoint = BaseMountPointOnHost + File.separator + UUID.nameUUIDFromBytes(secondaryStorageUrl.getBytes()).toString();
+            final String localMountPoint = BaseMountPointOnHost + File.separator + UuidUtils.nameUUIDFromBytes(secondaryStorageUrl.getBytes()).toString();
             if (fullbackup) {
                 // the first snapshot is always a full snapshot
 

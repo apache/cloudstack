@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
+import java.util.Date;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -27,4 +29,7 @@ public interface GuestOsCategory extends Identity, InternalIdentity {
 
     void setName(String name);
 
+    boolean isFeatured();
+
+    Date getCreated();
 }

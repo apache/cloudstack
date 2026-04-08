@@ -165,6 +165,9 @@ public class HostVO implements Host {
     @Column(name = "uuid")
     private String uuid;
 
+    @Column(name = "storage_access_groups")
+    String storageAccessGroups;
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call host dao to load it.
@@ -355,6 +358,15 @@ public class HostVO implements Host {
 
     public Boolean getIsTagARule() {
         return isTagARule;
+    }
+
+    @Override
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 
     public  HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {

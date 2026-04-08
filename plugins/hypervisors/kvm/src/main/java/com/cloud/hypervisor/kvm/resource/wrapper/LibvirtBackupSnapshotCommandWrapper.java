@@ -174,7 +174,7 @@ public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<Ba
                 if (snap != null) {
                     snap.delete(0);
                 } else {
-                    throw new CloudRuntimeException("Unable to find vm snapshot with name -" + snapshotName);
+                    throw new CloudRuntimeException("Unable to find Instance Snapshot with name -" + snapshotName);
                 }
 
                 /*

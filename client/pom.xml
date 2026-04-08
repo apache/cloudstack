@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.21.0.0-SNAPSHOT</version>
+        <version>4.23.0.0-SNAPSHOT</version>
     </parent>
     <dependencies>
         <dependency>
@@ -323,16 +323,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-ovm</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-ovm3</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-hypervisor-kvm</artifactId>
             <version>${project.version}</version>
             <exclusions>
@@ -345,6 +335,11 @@
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-hypervisor-external</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -644,6 +639,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-object-cloudian</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-plugin-storage-object-simulator</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -666,16 +666,22 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>ru.concerteza.buildnumber</groupId>
-                <artifactId>maven-jgit-buildnumber-plugin</artifactId>
-                <version>1.2.6</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>git-buildnumber</id>
                         <goals>
-                            <goal>extract-buildnumber</goal>
+                            <goal>create</goal>
                         </goals>
                         <phase>prepare-package</phase>
+                        <configuration>
+                            <doCheck>false</doCheck>
+                            <doUpdate>false</doUpdate>
+                            <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+                            <revisionOnScmFailure>unknown</revisionOnScmFailure>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -688,11 +694,11 @@
                             <mainClass>org.apache.cloudstack.ServerDaemon</mainClass>
                         </manifest>
                         <manifestEntries>
-                            <X-Git-Branch>${git.branch}</X-Git-Branch>
-                            <X-Git-Tag>${git.tag}</X-Git-Tag>
-                            <X-Git-Revision>${git.revision}</X-Git-Revision>
-                            <Implementation-Revision>${git.revision}</Implementation-Revision>
-                            <Implementation-Branch>${git.branch}</Implementation-Branch>
+                            <X-Git-Branch>${scmBranch}</X-Git-Branch>
+                            <X-Git-Tag>${project.version}</X-Git-Tag>
+                            <X-Git-Revision>${buildNumber}</X-Git-Revision>
+                            <Implementation-Revision>${buildNumber}</Implementation-Revision>
+                            <Implementation-Branch>${scmBranch}</Implementation-Branch>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -1095,6 +1101,11 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-network-nsx</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-netris</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

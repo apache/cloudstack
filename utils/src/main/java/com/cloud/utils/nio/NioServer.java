@@ -25,7 +25,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.cloudstack.framework.ca.CAService;
 
@@ -34,15 +34,15 @@ public class NioServer extends NioConnection {
     protected InetSocketAddress localAddress;
     private ServerSocketChannel serverSocket;
 
-    protected WeakHashMap<InetSocketAddress, Link> links;
+    protected ConcurrentHashMap<InetSocketAddress, Link> links;
 
     public NioServer(final String name, final int port, final int workers, final HandlerFactory factory,
              final CAService caService, final Integer sslHandShakeTimeout) {
-        super(name, port, workers,factory);
+        super(name, port, workers, factory);
         setCAService(caService);
         setSslHandshakeTimeout(sslHandShakeTimeout);
         localAddress = null;
-        links = new WeakHashMap<>(1024);
+        links = new ConcurrentHashMap<>(1024);
     }
 
     public int getPort() {

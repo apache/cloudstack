@@ -34,6 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.HandleCksIsoCommand;
 import org.apache.cloudstack.agent.routing.ManageServiceCommand;
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -145,6 +146,10 @@ public class VirtualRoutingResource {
                 return execute((UpdateNetworkCommand) cmd);
             }
 
+            if (cmd instanceof HandleCksIsoCommand) {
+                return execute((HandleCksIsoCommand) cmd);
+            }
+
             if (cmd instanceof ManageServiceCommand) {
                 return execute((ManageServiceCommand) cmd);
             }
@@ -174,6 +179,13 @@ public class VirtualRoutingResource {
                 }
             }
         }
+    }
+
+    protected Answer execute(final HandleCksIsoCommand cmd) {
+        String routerIp = getRouterSshControlIp(cmd);
+        logger.info("Attempting to mount CKS ISO on Virtual Router");
+        ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.CKS_ISO_MOUNT_SERVE, String.valueOf(cmd.isMountCksIso()));
+        return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(final SetupKeyStoreCommand cmd) {
@@ -255,13 +267,13 @@ public class VirtualRoutingResource {
                     if (result.getDetails().contains(String.format("Interface with IP %s not found", ipAddressTO.getPublicIp()))) {
                         logger.warn(String.format("Skipping IP: %s as it isn't configured on router interface", ipAddressTO.getPublicIp()));
                     } else if (ipAddressTO.getDetails().get(ApiConstants.REDUNDANT_STATE).equals(VirtualRouter.RedundantState.PRIMARY.name())) {
-                        logger.warn(String.format("Failed to update interface mtu to %s on interface with ip: %s",
+                        logger.warn(String.format("Failed to update interface MTU to %s on interface with IP: %s",
                                 ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
                         finalResult = false;
                     }
                     continue;
                 }
-                logger.info(String.format("Successfully updated mtu to %s on interface with ip: %s",
+                logger.info(String.format("Successfully updated MTU to %s on interface with IP: %s",
                         ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
                 finalResult &= true;
             } catch (Exception e) {

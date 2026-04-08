@@ -184,16 +184,16 @@
           :disabled="valueLoading" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfigurationValue(configrecord)"
+          @onClick="$resetConfigurationValueConfirm(configrecord, resetConfigurationValue)"
           v-if="editableValueKey === null"
           icon="reload-outlined"
-          :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading)" />
+          :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading || configrecord.value === configrecord.defaultvalue)" />
       </span>
     </a-list-item>
   </a-list>
 </template>
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -217,20 +217,53 @@ export default {
     actions: {
       type: Array,
       default: () => []
+    },
+    resource: {
+      type: Object,
+      required: false
     }
   },
   data () {
     return {
       valueLoading: this.loading,
+      scopeKey: '',
       actualValue: null,
       editableValue: null,
       editableValueKey: null
     }
   },
   created () {
+    switch (this.$route.meta.name) {
+      case 'account':
+        this.scopeKey = 'accountid'
+        break
+      case 'domain':
+        this.scopeKey = 'domainid'
+        break
+      case 'zone':
+        this.scopeKey = 'zoneid'
+        break
+      case 'cluster':
+        this.scopeKey = 'clusterid'
+        break
+      case 'storagepool':
+        this.scopeKey = 'storageid'
+        break
+      case 'imagestore':
+        this.scopeKey = 'imagestoreuuid'
+        break
+      default:
+        this.scopeKey = ''
+    }
     this.setConfigData()
   },
   watch: {
+    configrecord: {
+      handler () {
+        this.setConfigData()
+      },
+      deep: true
+    }
   },
   methods: {
     setConfigData () {
@@ -240,6 +273,7 @@ export default {
       this.editableValueKey = null
     },
     updateConfigurationValue (configrecord) {
+      let configRecordEntry = this.configrecord
       this.valueLoading = true
       this.editableValueKey = null
       var newValue = this.editableValue
@@ -253,24 +287,21 @@ export default {
         newValue = newValue.join(' ')
       }
       const params = {
+        [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name,
         value: newValue
       }
-      api('updateConfiguration', params).then(json => {
-        this.editableValue = this.getEditableValue(json.updateconfigurationresponse.configuration)
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
+      }
+      postAPI('updateConfiguration', params).then(json => {
+        configRecordEntry = json.updateconfigurationresponse.configuration
+        this.editableValue = this.getEditableValue(configRecordEntry)
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
         this.$messageConfigSuccess(`${this.$t('message.setting.updated')} ${configrecord.name}`, configrecord)
-        if (json.updateconfigurationresponse &&
-          json.updateconfigurationresponse.configuration &&
-          !json.updateconfigurationresponse.configuration.isdynamic &&
-          ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          this.$notification.warning({
-            message: this.$t('label.status'),
-            description: this.$t('message.restart.mgmt.server')
-          })
-        }
+        this.$notifyConfigurationValueChange(json?.updateconfigurationresponse?.configuration || null)
       }).catch(error => {
         this.editableValue = this.actualValue
         console.error(error)
@@ -281,16 +312,23 @@ export default {
         })
       }).finally(() => {
         this.valueLoading = false
-        this.$emit('refresh')
+        this.$emit('refresh', configrecord.name, configRecordEntry)
       })
     },
     resetConfigurationValue (configrecord) {
+      let configRecordEntry = this.configrecord
       this.valueLoading = true
       this.editableValueKey = null
-      api('resetConfiguration', {
+      const params = {
+        [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name
-      }).then(json => {
-        this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
+      }
+      if (this.scopeKey === 'domainid' && !params[this.scopeKey]) {
+        params[this.scopeKey] = this.resource?.id
+      }
+      postAPI('resetConfiguration', params).then(json => {
+        configRecordEntry = json.resetconfigurationresponse.configuration
+        this.editableValue = this.getEditableValue(configRecordEntry)
         this.actualValue = this.editableValue
         var newValue = this.editableValue
         if (configrecord.type === 'Range') {
@@ -299,15 +337,7 @@ export default {
         this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
         this.$messageConfigSuccess(`${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`, configrecord)
-        if (json.resetconfigurationresponse &&
-          json.resetconfigurationresponse.configuration &&
-          !json.resetconfigurationresponse.configuration.isdynamic &&
-          ['Admin'].includes(this.$store.getters.userInfo.roletype)) {
-          this.$notification.warning({
-            message: this.$t('label.status'),
-            description: this.$t('message.restart.mgmt.server')
-          })
-        }
+        this.$notifyConfigurationValueChange(json?.resetconfigurationresponse?.configuration || null)
       }).catch(error => {
         this.editableValue = this.actualValue
         console.error(error)
@@ -318,7 +348,7 @@ export default {
         })
       }).finally(() => {
         this.valueLoading = false
-        this.$emit('refresh')
+        this.$emit('refresh', configrecord.name, configRecordEntry)
       })
     },
     getEditableValue (configrecord) {

@@ -26,6 +26,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.host.Host;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -50,7 +52,6 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -85,6 +86,8 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle extends BasePrimaryDataSto
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject private StoragePoolHostDao storagePoolHostDao;
     @Inject private TemplateManager tmpltMgr;
+    @Inject
+    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     // invoked to add primary storage that is based on the SolidFire plug-in
     @Override
@@ -382,19 +385,12 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle extends BasePrimaryDataSto
     public boolean attachCluster(DataStore store, ClusterScope scope) {
         PrimaryDataStoreInfo primaryDataStoreInfo = (PrimaryDataStoreInfo)store;
 
-        // check if there is at least one host up in this cluster
-        List<HostVO> allHosts = resourceMgr.listAllUpHosts(Host.Type.Routing, primaryDataStoreInfo.getClusterId(),
-                primaryDataStoreInfo.getPodId(), primaryDataStoreInfo.getDataCenterId());
-
-        if (allHosts.isEmpty()) {
-            primaryDataStoreDao.expunge(primaryDataStoreInfo.getId());
-
-            throw new CloudRuntimeException(String.format("No host up to associate a storage pool with in cluster %s", clusterDao.findById(primaryDataStoreInfo.getClusterId())));
-        }
+        List<HostVO> hostsToConnect = resourceMgr.getEligibleUpHostsInClusterForStorageConnection(primaryDataStoreInfo);
 
         boolean success = false;
+        logger.debug(String.format("Attaching the pool to each of the hosts %s in the cluster: %s", hostsToConnect,  clusterDao.findById(primaryDataStoreInfo.getClusterId())));
 
-        for (HostVO host : allHosts) {
+        for (HostVO host : hostsToConnect) {
             success = createStoragePool(host, primaryDataStoreInfo);
 
             if (success) {
@@ -408,7 +404,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle extends BasePrimaryDataSto
 
         List<HostVO> poolHosts = new ArrayList<>();
 
-        for (HostVO host : allHosts) {
+        for (HostVO host : hostsToConnect) {
             try {
                 storageMgr.connectHostToSharedPool(host, primaryDataStoreInfo.getId());
 

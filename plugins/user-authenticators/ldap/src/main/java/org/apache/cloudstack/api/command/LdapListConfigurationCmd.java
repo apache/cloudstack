@@ -44,17 +44,22 @@ public class LdapListConfigurationCmd extends BaseListCmd {
     @Inject
     private LdapManager _ldapManager;
 
-    @Parameter(name = ApiConstants. HOST_NAME, type = CommandType.STRING, required = false, description = "Hostname")
+    @Parameter(name = ApiConstants. HOST_NAME, type = CommandType.STRING, description = "Hostname")
     private String hostname;
 
-    @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, required = false, description = "Port")
+    @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, description = "Port")
     private int port;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "Linked Domain")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "If set to true, "
-    + " and no domainid specified, list all LDAP configurations irrespective of the linked domain", since = "4.13.2")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LdapConfigurationResponse.class, description = "list ldap configuration by ID; when passed, all other parameters are ignored")
+    private Long id;
+
+    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN,
+            description = "If set to true, and no `domainid` specified, list all LDAP configurations irrespective of the linked domain",
+            since = "4.13.2")
     private Boolean listAll;
 
     public LdapListConfigurationCmd() {
@@ -67,7 +72,7 @@ public class LdapListConfigurationCmd extends BaseListCmd {
     }
 
     private List<LdapConfigurationResponse> createLdapConfigurationResponses(final List<? extends LdapConfigurationVO> configurations) {
-        final List<LdapConfigurationResponse> responses = new ArrayList<LdapConfigurationResponse>();
+        final List<LdapConfigurationResponse> responses = new ArrayList<>();
         for (final LdapConfigurationVO resource : configurations) {
             final LdapConfigurationResponse configurationResponse = _ldapManager.createLdapConfigurationResponse(resource);
             configurationResponse.setObjectName("LdapConfiguration");
@@ -80,7 +85,7 @@ public class LdapListConfigurationCmd extends BaseListCmd {
     public void execute() {
         final Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager.listConfigurations(this);
         final List<LdapConfigurationResponse> responses = createLdapConfigurationResponses(result.first());
-        final ListResponse<LdapConfigurationResponse> response = new ListResponse<LdapConfigurationResponse>();
+        final ListResponse<LdapConfigurationResponse> response = new ListResponse<>();
         response.setResponses(responses, result.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
@@ -118,6 +123,10 @@ public class LdapListConfigurationCmd extends BaseListCmd {
 
     public void setDomainId(final Long domainId) {
         this.domainId = domainId;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public boolean listAll() {

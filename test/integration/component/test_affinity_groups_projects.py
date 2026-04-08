@@ -99,9 +99,12 @@ class TestCreateAffinityGroup(cloudstackTestCase):
        cls.api_client = cls.testClient.getApiClient()
        cls.services = Services().services
 
+       cls._cleanup = []
+
        #Get Zone, Domain and templates
        cls.rootdomain = get_domain(cls.api_client)
        cls.domain = Domain.create(cls.api_client, cls.services["domain"])
+       cls._cleanup.append(cls.domain)
 
        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
        cls.template = get_template(
@@ -177,21 +180,11 @@ class TestCreateAffinityGroup(cloudstackTestCase):
        self.cleanup = []
 
     def tearDown(self):
-       try:
-#            #Clean up, terminate the created instance, volumes and snapshots
-          cleanup_resources(self.apiclient, self.cleanup)
-       except Exception as e:
-          raise Exception("Warning: Exception during cleanup : %s" % e)
-       return
+        super(TestCreateAffinityGroup, self).tearDownClass()
 
     @classmethod
     def tearDownClass(cls):
-       try:
-          #Clean up, terminate the created templates
-          cls.domain.delete(cls.api_client, cleanup=True)
-          cleanup_resources(cls.api_client, cls._cleanup)
-       except Exception as e:
-          raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestCreateAffinityGroup, cls).tearDownClass()
 
     def create_aff_grp(self, api_client=None, aff_grp=None, aff_grp_name=None, projectid=None):
 

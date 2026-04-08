@@ -32,7 +32,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.NCSARequestLog;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
@@ -72,11 +71,6 @@ public class ServerDaemon implements Daemon {
     private static final String BIND_INTERFACE = "bind.interface";
     private static final String CONTEXT_PATH = "context.path";
     private static final String SESSION_TIMEOUT = "session.timeout";
-    private static final String HTTP_ENABLE = "http.enable";
-    private static final String HTTP_PORT = "http.port";
-    private static final String HTTPS_ENABLE = "https.enable";
-    private static final String HTTPS_PORT = "https.port";
-    private static final String KEYSTORE_FILE = "https.keystore";
     private static final String KEYSTORE_PASSWORD = "https.keystore.password";
     private static final String WEBAPP_DIR = "webapp.dir";
     private static final String ACCESS_LOG = "access.log";
@@ -84,6 +78,8 @@ public class ServerDaemon implements Daemon {
     private static final int DEFAULT_REQUEST_CONTENT_SIZE = 1048576;
     private static final String REQUEST_MAX_FORM_KEYS_KEY = "request.max.form.keys";
     private static final int DEFAULT_REQUEST_MAX_FORM_KEYS = 5000;
+    private static final String THREADS_MIN = "threads.min";
+    private static final String THREADS_MAX = "threads.max";
 
     ////////////////////////////////////////////////////////
     /////////////// Server Configuration ///////////////////
@@ -104,6 +100,8 @@ public class ServerDaemon implements Daemon {
     private String keystoreFile;
     private String keystorePassword;
     private String webAppLocation;
+    private int minThreads;
+    private int maxThreads;
 
     //////////////////////////////////////////////////
     /////////////// Public methods ///////////////////
@@ -134,17 +132,19 @@ public class ServerDaemon implements Daemon {
             }
             setBindInterface(properties.getProperty(BIND_INTERFACE, null));
             setContextPath(properties.getProperty(CONTEXT_PATH, "/client"));
-            setHttpEnable(Boolean.valueOf(properties.getProperty(HTTP_ENABLE, "true")));
-            setHttpPort(Integer.valueOf(properties.getProperty(HTTP_PORT, "8080")));
-            setHttpsEnable(Boolean.valueOf(properties.getProperty(HTTPS_ENABLE, "false")));
-            setHttpsPort(Integer.valueOf(properties.getProperty(HTTPS_PORT, "8443")));
-            setKeystoreFile(properties.getProperty(KEYSTORE_FILE));
+            setHttpEnable(Boolean.valueOf(properties.getProperty(ServerProperties.HTTP_ENABLE, "true")));
+            setHttpPort(Integer.valueOf(properties.getProperty(ServerProperties.HTTP_PORT, "8080")));
+            setHttpsEnable(Boolean.valueOf(properties.getProperty(ServerProperties.HTTPS_ENABLE, "false")));
+            setHttpsPort(Integer.valueOf(properties.getProperty(ServerProperties.HTTPS_PORT, "8443")));
+            setKeystoreFile(properties.getProperty(ServerProperties.KEYSTORE_FILE));
             setKeystorePassword(properties.getProperty(KEYSTORE_PASSWORD));
             setWebAppLocation(properties.getProperty(WEBAPP_DIR));
             setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
             setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "30")));
             setMaxFormContentSize(Integer.valueOf(properties.getProperty(REQUEST_CONTENT_SIZE_KEY, String.valueOf(DEFAULT_REQUEST_CONTENT_SIZE))));
             setMaxFormKeys(Integer.valueOf(properties.getProperty(REQUEST_MAX_FORM_KEYS_KEY, String.valueOf(DEFAULT_REQUEST_MAX_FORM_KEYS))));
+            setMinThreads(Integer.valueOf(properties.getProperty(THREADS_MIN, "10")));
+            setMaxThreads(Integer.valueOf(properties.getProperty(THREADS_MAX, "500")));
         } catch (final IOException e) {
             logger.warn("Failed to read configuration from server.properties file", e);
         } finally {
@@ -162,8 +162,8 @@ public class ServerDaemon implements Daemon {
     public void start() throws Exception {
         // Thread pool
         final QueuedThreadPool threadPool = new QueuedThreadPool();
-        threadPool.setMinThreads(10);
-        threadPool.setMaxThreads(500);
+        threadPool.setMinThreads(minThreads);
+        threadPool.setMaxThreads(maxThreads);
 
         // Jetty Server
         server = new Server(threadPool);
@@ -299,7 +299,7 @@ public class ServerDaemon implements Daemon {
     }
 
     private RequestLog createRequestLog() {
-        final NCSARequestLog log = new NCSARequestLog();
+        final ACSRequestLog log = new ACSRequestLog();
         final File logPath = new File(accessLogFile);
         final File parentFile = logPath.getParentFile();
         if (parentFile != null) {
@@ -375,5 +375,13 @@ public class ServerDaemon implements Daemon {
 
     public void setMaxFormKeys(int maxFormKeys) {
         this.maxFormKeys = maxFormKeys;
+    }
+
+    public void setMinThreads(int minThreads) {
+        this.minThreads = minThreads;
+    }
+
+    public void setMaxThreads(int maxThreads) {
+        this.maxThreads = maxThreads;
     }
 }

@@ -25,20 +25,30 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
+import org.apache.cloudstack.acl.RolePermissionEntity;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeyRulesCmd;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
-import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
-import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.api.query.vo.ControlledViewEntity;
@@ -118,7 +128,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public String[] createApiKeyAndSecretKey(RegisterCmd arg0) {
+    public ApiKeyPair createApiKeyAndSecretKey(RegisterUserKeysCmd arg0) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -130,7 +140,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public User createUser(String arg0, String arg1, String arg2, String arg3, String arg4, String arg5, String arg6, Long arg7, String arg8) {
+    public User createUser(String arg0, String arg1, String arg2, String arg3, String arg4, String arg5, String arg6, Long arg7, String arg8, boolean arg9) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -232,6 +242,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public boolean isDomainAdmin(Long accountId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean isResourceDomainAdmin(Long accountId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -394,7 +410,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public Pair<User, Account> findUserByApiKey(String arg0) {
+    public Ternary<User, Account, ApiKeyPair> findUserByApiKey(String arg0) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -460,7 +476,17 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
+    public void validateCallingUserHasAccessToDesiredUser(Long userId) {
+    }
+
+    @Override
+    public Long finalizeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Long finalizeAccountId(Long accountId, String accountName, Long domainId, Long projectId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -486,13 +512,31 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
+    public void checkAccess(Account account, BackupOffering bof) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd){
         return null;
     }
 
     @Override
-    public Pair<Boolean, Map<String, String>> getKeys(Long userId) {
+    public ListResponse<ApiKeyPairResponse> listKeys(ListUserKeysCmd cmd) {
         return null;
+    }
+
+    @Override
+    public List<ApiKeyPairPermission> listKeyRules(ListUserKeyRulesCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public void deleteApiKey(DeleteUserKeysCmd cmd) {
+    }
+
+    @Override
+    public void deleteApiKey(ApiKeyPair id) {
     }
 
     @Override
@@ -503,6 +547,31 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(Long domainId) {
         return null;
+    }
+
+    @Override
+    public ApiKeyPair getLatestUserKeyPair(Long userId) {
+        return null;
+    }
+
+    @Override
+    public ApiKeyPair getKeyPairById(Long id) {
+        return null;
+    }
+
+    @Override
+    public ApiKeyPair getKeyPairByApiKey(String apiKey) {
+        return null;
+    }
+
+    @Override
+    public String getAccessingApiKey(BaseCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public List<RolePermissionEntity> getAllKeypairPermissions(String apiKey) {
+        return List.of();
     }
 
     @Override
@@ -526,11 +595,23 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
+    public void checkApiAccess(Account account, String command, String apiKey) throws PermissionDeniedException {
     }
 
     @Override
     public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
         return null;
+    }
+
+    @Override
+    public void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount) {
+    }
+
+    @Override
+    public void verifyCallerPrivilegeForUserOrAccountOperations(User user) {
+    }
+
+    @Override
+    public void checkCallerRoleTypeAllowedForUserOrAccountOperations(Account userAccount, User user) {
     }
 }

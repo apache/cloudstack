@@ -284,6 +284,11 @@ public class CheckOnHostCommandTest {
         public CPU.CPUArch getArch() {
             return CPU.CPUArch.amd64;
         }
+
+        @Override
+        public String getStorageAccessGroups() {
+            return null;
+        }
     };
 
     CheckOnHostCommand cohc = new CheckOnHostCommand(host);

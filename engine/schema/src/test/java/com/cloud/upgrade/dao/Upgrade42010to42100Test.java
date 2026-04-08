@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.junit.Test;
@@ -64,6 +66,12 @@ public class Upgrade42010to42100Test {
                         "         ELSE 0" +
                         "     END WHERE scope IS NOT NULL;";
                 when(txn.prepareAutoCloseStatement(sql)).thenReturn(pstmt);
+
+                PreparedStatement preparedStatement = Mockito.mock(PreparedStatement.class);
+                ResultSet resultSet = Mockito.mock(ResultSet.class);
+                Mockito.when(resultSet.next()).thenReturn(false);
+                Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
+                Mockito.when(conn.prepareStatement(anyString())).thenReturn(preparedStatement);
                 upgrade.performDataMigration(conn);
 
                 Mockito.verify(pstmt, Mockito.times(1)).executeUpdate();

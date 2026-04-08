@@ -148,20 +148,17 @@
         <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
         <a-form layout="vertical" style="margin-top: 10px">
           <a-form-item :label="$t('label.ipaddress')">
-            <a-select
+            <infinite-scroll-select
               v-focus="true"
-              style="width: 100%;"
               v-model:value="acquireIp"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option
-                v-for="ip in listPublicIpAddress"
-                :key="ip.ipaddress"
-                :label="ip.ipaddress + '(' + ip.state + ')'">{{ ip.ipaddress }} ({{ ip.state }})</a-select-option>
-            </a-select>
+              api="listPublicIpAddresses"
+              :apiParams="listApiParamsForAssociate"
+              resourceType="publicipaddress"
+              optionValueKey="ipaddress"
+              :optionLabelFn="ip => ip.ipaddress + ' (' + ip.state + ')'"
+              defaultIcon="environment-outlined"
+              :autoSelectFirstOption="true"
+              @change-option-value="(ip) => acquireIp = ip" />
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
@@ -207,18 +204,20 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
 import eventBus from '@/config/eventBus'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect'
 
 export default {
   name: 'IpAddressesTab',
   components: {
     Status,
     TooltipButton,
-    BulkActionView
+    BulkActionView,
+    InfiniteScrollSelect
   },
   props: {
     resource: {
@@ -281,11 +280,12 @@ export default {
       showAcquireIp: false,
       acquireLoading: false,
       acquireIp: null,
-      listPublicIpAddress: [],
-      changeSourceNat: false
+      changeSourceNat: false,
+      zoneExtNetProvider: ''
     }
   },
-  created () {
+  async created () {
+    await this.fetchZones()
     this.fetchData()
   },
   watch: {
@@ -300,6 +300,26 @@ export default {
     }
   },
   inject: ['parentFetchData'],
+  computed: {
+    listApiParams () {
+      const params = {
+        zoneid: this.resource.zoneid,
+        domainid: this.resource.domainid,
+        account: this.resource.account,
+        forvirtualnetwork: true,
+        allocatedonly: false
+      }
+      if (['nsx', 'netris'].includes(this.zoneExtNetProvider?.toLowerCase())) {
+        params.forprovider = true
+      }
+      return params
+    },
+    listApiParamsForAssociate () {
+      const params = this.listApiParams
+      params.state = 'Free,Reserved'
+      return params
+    }
+  },
   methods: {
     fetchData () {
       const params = {
@@ -321,24 +341,30 @@ export default {
       } else {
         params.associatednetworkid = this.resource.id
       }
+      if (['nsx', 'netris'].includes(this.zoneExtNetProvider?.toLowerCase())) {
+        params.forprovider = true
+      }
       this.fetchLoading = true
-      api('listPublicIpAddresses', params).then(json => {
+      getAPI('listPublicIpAddresses', params).then(json => {
         this.totalIps = json.listpublicipaddressesresponse.count || 0
         this.ips = json.listpublicipaddressesresponse.publicipaddress || []
       }).finally(() => {
         this.fetchLoading = false
       })
     },
-    fetchListPublicIpAddress () {
+    fetchZones () {
       return new Promise((resolve, reject) => {
-        const params = {
-          zoneid: this.resource.zoneid,
-          domainid: this.resource.domainid,
-          account: this.resource.account,
-          forvirtualnetwork: true,
-          allocatedonly: false
-        }
-        api('listPublicIpAddresses', params).then(json => {
+        getAPI('listZones', {
+          id: this.resource.zoneid
+        }).then(json => {
+          this.zoneExtNetProvider = json?.listzonesresponse?.zone?.[0]?.provider || null
+          resolve(this.zoneExtNetProvider)
+        }).catch(reject)
+      })
+    },
+    fetchListPublicIpAddress (state) {
+      return new Promise((resolve, reject) => {
+        getAPI('listPublicIpAddresses', this.listApiParams).then(json => {
           const listPublicIps = json.listpublicipaddressesresponse.publicipaddress || []
           resolve(listPublicIps)
         }).catch(reject)
@@ -368,7 +394,7 @@ export default {
       params.sourcenatipaddress = this.sourceNatIp.ipaddress
       params.id = this.resource.id
       this.settingsourcenat = true
-      api('updateNetwork', params).then(response => {
+      postAPI('updateNetwork', params).then(response => {
         this.fetchData()
       }).catch(error => {
         this.$notification.error({
@@ -386,7 +412,7 @@ export default {
       params.sourcenatipaddress = this.sourceNatIp.ipaddress
       params.id = this.resource.id
       this.settingsourcenat = true
-      api('updateVPC', params).then(response => {
+      postAPI('updateVPC', params).then(response => {
         this.fetchData()
       }).catch(error => {
         this.$notification.error({
@@ -436,7 +462,7 @@ export default {
       params.ipaddress = this.acquireIp
       this.acquireLoading = true
 
-      api('associateIpAddress', params).then(response => {
+      postAPI('associateIpAddress', params).then(response => {
         this.$pollJob({
           jobId: response.associateipaddressresponse.jobid,
           successMessage: `${this.$t('message.success.acquire.ip')} ${this.$t('label.for')} ${this.resource.name}`,
@@ -490,7 +516,7 @@ export default {
     },
     releaseIpAddress (ip) {
       this.fetchLoading = true
-      api('disassociateIpAddress', {
+      postAPI('disassociateIpAddress', {
         id: ip.id
       }).then(response => {
         const jobId = response.disassociateipaddressresponse.jobid
@@ -536,30 +562,6 @@ export default {
     },
     async onShowAcquireIp () {
       this.showAcquireIp = true
-      this.acquireLoading = true
-      this.listPublicIpAddress = []
-
-      try {
-        const listPublicIpAddress = await this.fetchListPublicIpAddress()
-        listPublicIpAddress.forEach(item => {
-          if (item.state === 'Free' || item.state === 'Reserved') {
-            this.listPublicIpAddress.push({
-              ipaddress: item.ipaddress,
-              state: item.state
-            })
-          }
-        })
-        this.listPublicIpAddress.sort(function (a, b) {
-          if (a.ipaddress < b.ipaddress) { return -1 }
-          if (a.ipaddress > b.ipaddress) { return 1 }
-          return 0
-        })
-        this.acquireIp = this.listPublicIpAddress && this.listPublicIpAddress.length > 0 ? this.listPublicIpAddress[0].ipaddress : null
-        this.acquireLoading = false
-      } catch (e) {
-        this.acquireLoading = false
-        this.$notifyError(e)
-      }
     },
     onCloseModal () {
       this.showAcquireIp = false

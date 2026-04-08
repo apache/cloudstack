@@ -64,4 +64,12 @@ public class BackupRepositoryDaoImpl extends GenericDaoBase<BackupRepositoryVO, 
         }
         return findByUuid(offering.getExternalId());
     }
+
+    @Override
+    public boolean updateCapacity(BackupRepository backupRepository, Long capacityBytes, Long usedBytes) {
+            BackupRepositoryVO repository = findById(backupRepository.getId());
+            repository.setCapacityBytes(capacityBytes);
+            repository.setUsedBytes(usedBytes);
+            return update(repository.getId(), repository);
+    }
 }

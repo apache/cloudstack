@@ -71,7 +71,7 @@ public class UpdateVlanIpRangeCmdTest extends TestCase {
         try {
             updateVlanIpRangeCmd.execute();
         } catch (ServerApiException ex) {
-            assertEquals("Failed to Update vlan ip range", ex.getMessage());
+            assertEquals("Failed to Update VLAN IP range", ex.getMessage());
         }
 
     }

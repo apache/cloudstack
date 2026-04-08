@@ -31,7 +31,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 
 export default {
@@ -76,7 +76,7 @@ export default {
   methods: {
     fetchData () {
       this.hostAgents = []
-      api('listHosts', {
+      getAPI('listHosts', {
         listall: true,
         managementserverid: this.resource.id
       }).then(json => {

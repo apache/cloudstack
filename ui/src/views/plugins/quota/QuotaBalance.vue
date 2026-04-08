@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import moment from 'moment'
 
 export default {
@@ -144,7 +144,7 @@ export default {
         params.domainid = this.resource.domainid
         params.account = this.account
 
-        api('quotaBalance', params).then(json => {
+        getAPI('quotaBalance', params).then(json => {
           const quotaBalance = json.quotabalanceresponse.balance || {}
           resolve(quotaBalance)
         }).catch(error => {
@@ -160,7 +160,7 @@ export default {
         params.startdate = moment(this.resource.startdate).format(this.pattern)
         params.enddate = moment(resource.startdate).format(this.pattern)
 
-        api('quotaBalance', params).then(json => {
+        getAPI('quotaBalance', params).then(json => {
           const quotaBalance = json.quotabalanceresponse.balance || {}
           resolve(quotaBalance)
         }).catch(error => {

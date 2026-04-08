@@ -31,48 +31,53 @@ import java.util.List;
 @EntityReference(value = ManagementServerHost.class)
 public class ManagementServerResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the management server")
+    @Param(description = "The ID of the management server")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the management server")
+    @Param(description = "The name of the management server")
     private String name;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the management server")
+    @Param(description = "The state of the management server")
     private State state;
 
     @SerializedName(ApiConstants.VERSION)
-    @Param(description = "the version of the management server")
+    @Param(description = "The version of the management server")
     private String version;
 
     @SerializedName(ApiConstants.JAVA_DISTRIBUTION)
-    @Param(description = "the java distribution name running the management server process")
+    @Param(description = "The java distribution name running the management server process")
     private String javaDistribution;
 
     @SerializedName(ApiConstants.JAVA_VERSION)
-    @Param(description = "the version of the java distribution running the management server process")
+    @Param(description = "The version of the java distribution running the management server process")
     private String javaVersion;
 
     @SerializedName(ApiConstants.OS_DISTRIBUTION)
-    @Param(description = "the name of the OS distribution running on the management server")
+    @Param(description = "The name of the OS distribution running on the management server")
     private String osDistribution;
 
     @SerializedName(ApiConstants.LAST_SERVER_START)
-    @Param(description = "the last time this Management Server was started")
+    @Param(description = "The last time this Management Server was started")
     private Date lastServerStart;
 
     @SerializedName(ApiConstants.LAST_SERVER_STOP)
-    @Param(description = "the last time this Management Server was stopped")
+    @Param(description = "The last time this Management Server was stopped")
     private Date lastServerStop;
 
     @SerializedName(ApiConstants.LAST_BOOT)
-    @Param(description = "the last time the host on which this Management Server runs was booted")
+    @Param(description = "The last time the host on which this Management Server runs was booted")
     private Date lastBoot;
 
     @SerializedName(ApiConstants.KERNEL_VERSION)
-    @Param(description = "the running OS kernel version for this Management Server")
+    @Param(description = "The running OS kernel version for this Management Server")
     private String kernelVersion;
+
+    @Deprecated
+    @SerializedName(ApiConstants.SERVICE_IP)
+    @Param(description = "The IP Address for this Management Server. This is deprecated, please use 'ipaddress' instead.")
+    private String serviceIp;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "the IP Address for this Management Server")
@@ -81,6 +86,14 @@ public class ManagementServerResponse extends BaseResponse {
     @SerializedName(ApiConstants.PEERS)
     @Param(description = "the Management Server Peers")
     private List<PeerManagementServerNodeResponse> peers;
+
+    @SerializedName(ApiConstants.LAST_AGENTS)
+    @Param(description = "the last agents this Management Server is responsible for, before shutdown or preparing for maintenance", since = "4.21.0.0")
+    private List<String> lastAgents;
+
+    @SerializedName(ApiConstants.AGENTS)
+    @Param(description = "the agents this Management Server is responsible for", since = "4.21.0.0")
+    private List<String> agents;
 
     @SerializedName(ApiConstants.AGENTS_COUNT)
     @Param(description = "the number of host agents this Management Server is responsible for", since = "4.21.0.0")
@@ -130,8 +143,20 @@ public class ManagementServerResponse extends BaseResponse {
         return lastBoot;
     }
 
+    public String getServiceIp() {
+        return serviceIp;
+    }
+
     public String getIpAddress() {
         return ipAddress;
+    }
+
+    public List<String> getLastAgents() {
+        return lastAgents;
+    }
+
+    public List<String> getAgents() {
+        return agents;
     }
 
     public Long getAgentsCount() {
@@ -186,8 +211,20 @@ public class ManagementServerResponse extends BaseResponse {
         this.kernelVersion = kernelVersion;
     }
 
+    public void setServiceIp(String serviceIp) {
+        this.serviceIp = serviceIp;
+    }
+
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public void setLastAgents(List<String> lastAgents) {
+        this.lastAgents = lastAgents;
+    }
+
+    public void setAgents(List<String> agents) {
+        this.agents = agents;
     }
 
     public void setAgentsCount(Long agentsCount) {

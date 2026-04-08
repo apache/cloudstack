@@ -44,6 +44,10 @@ public interface StorageAdaptor {
 
     public boolean deleteStoragePool(String uuid);
 
+    public default boolean deleteStoragePool(String uuid, Map<String, String> details) {
+        return true;
+    }
+
     public default KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
                                                       PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
         return createPhysicalDisk(name, pool, format, provisioningType, size, passphrase);
@@ -127,22 +131,21 @@ public interface StorageAdaptor {
 
     /**
      * Prepares the storage client.
-     * @param type type of the storage pool
      * @param uuid uuid of the storage pool
      * @param details any details of the storage pool that are required for client preparation
      * @return status, client details, & message in case failed
      */
-    default Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
+    default Ternary<Boolean, Map<String, String>, String> prepareStorageClient(String uuid, Map<String, String> details) {
         return new Ternary<>(true, new HashMap<>(), "");
     }
 
     /**
      * Unprepares the storage client.
-     * @param type type of the storage pool
      * @param uuid uuid of the storage pool
+     * @param details any details of the storage pool that are required for client unpreparation
      * @return status, & message in case failed
      */
-    default Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid) {
+    default Pair<Boolean, String> unprepareStorageClient(String uuid, Map<String, String> details) {
         return new Pair<>(true, "");
     }
 }

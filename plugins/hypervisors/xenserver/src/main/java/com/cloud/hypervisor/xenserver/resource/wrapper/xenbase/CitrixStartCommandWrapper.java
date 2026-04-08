@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
@@ -73,7 +74,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 for (final VM v : vms) {
                     final VM.Record vRec = v.getRecord(conn);
                     if (vRec.powerState == VmPowerState.HALTED) {
-                        v.destroy(conn);
+                        citrixResourceBase.destroyVm(v, conn, true);
                     } else if (vRec.powerState == VmPowerState.RUNNING) {
                         final String host = vRec.residentOn.getUuid(conn);
                         final String msg = "VM " + vmName + " is runing on host " + host;
@@ -96,7 +97,23 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 citrixResourceBase.createVGPU(conn, command, vm, gpuDevice);
             }
 
-            if (vmSpec.getType() != VirtualMachine.Type.User) {
+            try {
+                if (citrixResourceBase.isVTPMSupported(conn, host)) {
+                    citrixResourceBase.configureVTPM(conn, vm, vmSpec);
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to configure vTPM for VM " + vmName + ", continuing without vTPM", e);
+            }
+
+            Host.Record record = host.getRecord(conn);
+            String xenBrand = record.softwareVersion.get("product_brand");
+            String xenVersion = record.softwareVersion.get("product_version");
+            boolean requiresGuestTools = true;
+            if (xenBrand.equals("XenServer") && isVersionGreaterThanOrEqual(xenVersion, "8.2.0")) {
+                requiresGuestTools = false;
+            }
+
+            if (vmSpec.getType() != VirtualMachine.Type.User && requiresGuestTools) {
                 citrixResourceBase.createPatchVbd(conn, vmName, vm);
             }
 
@@ -170,9 +187,9 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                                     "vmID", Long.toString(vmSpec.getId()), "secIps", secIpsStr);
 
                             if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                                logger.warn("Failed to program default network rules for " + vmName + " on nic with ip:" + nic.getIp() + " mac:" + nic.getMac());
+                                logger.warn("Failed to program default Network rules for " + vmName + " on NIC with IP: " + nic.getIp() + " mac:" + nic.getMac());
                             } else {
-                                logger.info("Programmed default network rules for " + vmName + " on nic with ip:" + nic.getIp() + " mac:" + nic.getMac());
+                                logger.info("Programmed default Network rules for " + vmName + " on NIC with IP: " + nic.getIp() + " mac:" + nic.getMac());
                             }
                         }
                     }
@@ -239,7 +256,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
         List<DiskTO> disks = new ArrayList<DiskTO>(vmSpec.getDisks().length);
         int index = 0;
         for (final DiskTO disk : vmSpec.getDisks()) {
-            if (Volume.Type.ISO.equals(disk.getType())) {
+            if (Volume.Type.ISO.equals(disk.getType()) && Objects.nonNull(disk.getPath())) {
                 disks.add(0, disk);
             } else {
                 disks.add(index, disk);
@@ -262,5 +279,20 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 isoCount++;
             }
         }
+    }
+
+    public static boolean isVersionGreaterThanOrEqual(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+
+        int length = Math.max(parts1.length, parts2.length);
+        for (int i = 0; i < length; i++) {
+            int num1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int num2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+
+            if (num1 > num2) return true;
+            if (num1 < num2) return false;
+        }
+        return true; // versions are equal
     }
 }

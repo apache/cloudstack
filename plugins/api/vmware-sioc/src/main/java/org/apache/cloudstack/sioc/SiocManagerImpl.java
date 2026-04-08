@@ -123,7 +123,7 @@ public class SiocManagerImpl implements SiocManager {
 
             int limitIopsTotal = 0;
 
-            List<VolumeVO> volumes = volumeDao.findByPoolId(storagePoolId, null);
+            List<VolumeVO> volumes = volumeDao.findNonDestroyedVolumesByPoolId(storagePoolId, null);
 
             if (volumes != null && volumes.size() > 0) {
                 Set<Long> instanceIds = new HashSet<>();

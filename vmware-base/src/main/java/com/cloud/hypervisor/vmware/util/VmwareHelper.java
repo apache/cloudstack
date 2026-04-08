@@ -41,6 +41,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.vmware.mo.ClusterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreFile;
 import com.cloud.hypervisor.vmware.mo.DistributedVirtualSwitchMO;
@@ -59,6 +60,8 @@ import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.VMwareDVSPortSetting;
 import com.vmware.vim25.VirtualDeviceFileBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
+import com.vmware.vim25.VirtualMachineBootOptions;
+import com.vmware.vim25.VirtualMachineConfigInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachineToolsStatus;
@@ -750,7 +753,7 @@ public class VmwareHelper {
 
         recommendedController = guestOsDescriptor.getRecommendedDiskController();
 
-        // By-pass auto detected PVSCSI controller to use LsiLogic Parallel instead
+        // Bypass auto detected PVSCSI controller to use LsiLogic Parallel instead
         if (DiskControllerType.getType(recommendedController) == DiskControllerType.pvscsi) {
             recommendedController = DiskControllerType.lsilogic.toString();
         }
@@ -811,6 +814,17 @@ public class VmwareHelper {
                 instance.setCpuSpeed(configSummary.getCpuReservation());
                 instance.setMemory(configSummary.getMemorySizeMB());
             }
+            VirtualMachineConfigInfo configInfo = vmMo.getConfigInfo();
+            if (configInfo != null) {
+                String firmware = configInfo.getFirmware();
+                instance.setBootType(firmware.equalsIgnoreCase("efi") ? "UEFI" : "BIOS");
+                VirtualMachineBootOptions bootOptions = configInfo.getBootOptions();
+                String bootMode = "LEGACY";
+                if (bootOptions != null && Boolean.TRUE.equals(bootOptions.isEfiSecureBootEnabled())) {
+                    bootMode = "SECURE";
+                }
+                instance.setBootMode(bootMode);
+            }
 
             try {
                 ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), hyperHost.getHyperHostCluster());
@@ -820,6 +834,8 @@ public class VmwareHelper {
             }
 
             instance.setHostName(hyperHost.getHyperHostName());
+            instance.setHypervisorType(Hypervisor.HypervisorType.VMware.name());
+            instance.setHostHypervisorVersion(getVmwareHostVersion(hyperHost));
 
             if (StringUtils.isEmpty(instance.getOperatingSystemId()) && configSummary != null) {
                 instance.setOperatingSystemId(configSummary.getGuestId());
@@ -851,6 +867,17 @@ public class VmwareHelper {
             LOGGER.error("Unable to retrieve unmanaged instance info, due to: " + e.getMessage());
         }
         return instance;
+    }
+
+    protected static String getVmwareHostVersion(VmwareHypervisorHost hyperHost) {
+        if (hyperHost instanceof HostMO) {
+            try {
+                return ((HostMO) hyperHost).getProductVersion();
+            } catch (Exception e) {
+                LOGGER.warn("Unable to get unmanaged instance host version, due to: " + e.getMessage(), e);
+            }
+        }
+        return null;
     }
 
     protected static List<UnmanagedInstanceTO.Disk> getUnmanageInstanceDisks(VirtualMachineMO vmMo) {

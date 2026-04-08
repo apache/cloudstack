@@ -72,13 +72,6 @@ public class ImportVsphereStoragePoliciesCmd extends BaseCmd {
 
         List<? extends VsphereStoragePolicy> storagePolicies = _vmwareDatacenterService.importVsphereStoragePolicies(this);
         final ListResponse<VsphereStoragePoliciesResponse> responseList = new ListResponse<>();
-        final List<VsphereStoragePoliciesResponse> storagePoliciesResponseList = getVsphereStoragePoliciesResponses(storagePolicies, dataCenter);
-        responseList.setResponses(storagePoliciesResponseList);
-        responseList.setResponseName(getCommandName());
-        setResponseObject(responseList);
-    }
-
-    private static List<VsphereStoragePoliciesResponse> getVsphereStoragePoliciesResponses(List<? extends VsphereStoragePolicy> storagePolicies, DataCenter dataCenter) {
         final List<VsphereStoragePoliciesResponse> storagePoliciesResponseList = new ArrayList<>();
         for (VsphereStoragePolicy storagePolicy : storagePolicies) {
             final VsphereStoragePoliciesResponse storagePoliciesResponse = new VsphereStoragePoliciesResponse();
@@ -91,7 +84,9 @@ public class ImportVsphereStoragePoliciesCmd extends BaseCmd {
 
             storagePoliciesResponseList.add(storagePoliciesResponse);
         }
-        return storagePoliciesResponseList;
+        responseList.setResponses(storagePoliciesResponseList);
+        responseList.setResponseName(getCommandName());
+        setResponseObject(responseList);
     }
 
     @Override

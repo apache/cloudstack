@@ -92,10 +92,10 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.constants.VmDetails;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -174,7 +174,7 @@ public class PresetVariableHelper {
     VMSnapshotDao vmSnapshotDao;
 
     @Inject
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Inject
     BackupOfferingDao backupOfferingDao;
@@ -254,7 +254,7 @@ public class PresetVariableHelper {
         Role role = new Role();
         role.setId(roleVo.getUuid());
         role.setName(roleVo.getName());
-        role.setType(roleVo.getRoleType());
+        role.setType(roleVo.getRoleType().toString());
 
         return role;
     }
@@ -465,7 +465,7 @@ public class PresetVariableHelper {
         computingResources.setCpuSpeed(serviceOfferingVo.getSpeed());
 
         if (serviceOfferingVo.isDynamic()) {
-            List<UserVmDetailVO> details = userVmDetailsDao.listDetails(vmVo.getId());
+            List<VMInstanceDetailVO> details = vmInstanceDetailsDao.listDetails(vmVo.getId());
 
             computingResources.setMemory(getDetailByName(details, VmDetails.MEMORY.getName(), computingResources.getMemory()));
             computingResources.setCpuNumber(getDetailByName(details, VmDetails.CPU_NUMBER.getName(), computingResources.getCpuNumber()));
@@ -485,14 +485,14 @@ public class PresetVariableHelper {
         }
     }
 
-    protected Integer getDetailByName(List<UserVmDetailVO> details, String name, Integer defaultValue) {
-        List<UserVmDetailVO> detailFiltered = details.stream().filter(det -> name.equals(det.getName())).collect(Collectors.toList());
+    protected Integer getDetailByName(List<VMInstanceDetailVO> details, String name, Integer defaultValue) {
+        List<VMInstanceDetailVO> detailFiltered = details.stream().filter(det -> name.equals(det.getName())).collect(Collectors.toList());
 
         if (CollectionUtils.isEmpty(detailFiltered)) {
             return defaultValue;
         }
 
-        UserVmDetailVO detail = detailFiltered.get(0);
+        VMInstanceDetailVO detail = detailFiltered.get(0);
 
         if (detail.getValue() != null) {
             return Integer.valueOf(detail.getValue());
@@ -538,8 +538,8 @@ public class PresetVariableHelper {
         value.setDiskOffering(getPresetVariableValueDiskOffering(volumeVo.getDiskOfferingId()));
         value.setId(volumeVo.getUuid());
         value.setName(volumeVo.getName());
-        value.setProvisioningType(volumeVo.getProvisioningType());
-        value.setVolumeType(volumeVo.getVolumeType());
+        value.setVolumeType(volumeVo.getVolumeType().toString());
+        value.setProvisioningType(volumeVo.getProvisioningType().toString());
 
         Long poolId = volumeVo.getPoolId();
         if (poolId == null) {
@@ -594,7 +594,7 @@ public class PresetVariableHelper {
         storage = new Storage();
         storage.setId(storagePoolVo.getUuid());
         storage.setName(storagePoolVo.getName());
-        storage.setScope(storagePoolVo.getScope());
+        storage.setScope(storagePoolVo.getScope().toString());
         List<StoragePoolTagVO> storagePoolTagVOList = storagePoolTagsDao.findStoragePoolTags(storageId);
         List<String> storageTags = new ArrayList<>();
         boolean isTagARule = false;
@@ -663,7 +663,7 @@ public class PresetVariableHelper {
         value.setId(snapshotVo.getUuid());
         value.setName(snapshotVo.getName());
         value.setSize(ByteScaleUtils.bytesToMebibytes(snapshotVo.getSize()));
-        value.setSnapshotType(Snapshot.Type.values()[snapshotVo.getSnapshotType()]);
+        value.setSnapshotType(Snapshot.Type.values()[snapshotVo.getSnapshotType()].toString());
         value.setStorage(getPresetVariableValueStorage(getSnapshotDataStoreId(snapshotId, usageRecord.getZoneId()), usageType));
         value.setTags(getPresetVariableValueResourceTags(snapshotId, ResourceObjectType.Snapshot));
         Hypervisor.HypervisorType hypervisorType = snapshotVo.getHypervisorType();
@@ -732,7 +732,7 @@ public class PresetVariableHelper {
         value.setId(vmSnapshotVo.getUuid());
         value.setName(vmSnapshotVo.getName());
         value.setTags(getPresetVariableValueResourceTags(vmSnapshotId, ResourceObjectType.VMSnapshot));
-        value.setVmSnapshotType(vmSnapshotVo.getType());
+        value.setVmSnapshotType(vmSnapshotVo.getType().toString());
 
         VMInstanceVO vmVo = vmInstanceDao.findByIdIncludingRemoved(vmSnapshotVo.getVmId());
         if (vmVo != null && vmVo.getHypervisorType() != null) {

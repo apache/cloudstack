@@ -46,16 +46,19 @@ public abstract class UploadParamsBase implements UploadParams {
     private boolean isDynamicallyScalable;
     private boolean isRoutingType;
     private boolean deployAsIs;
+    private boolean forCks;
     private CPU.CPUArch arch;
+    private String templateType;
 
     UploadParamsBase(long userId, String name, String displayText, CPU.CPUArch arch,
-                               Integer bits, boolean passwordEnabled, boolean requiresHVM,
-                               boolean isPublic, boolean featured,
-                               boolean isExtractable, String format, Long guestOSId,
-                               Long zoneId, Hypervisor.HypervisorType hypervisorType, String checksum,
-                               String templateTag, long templateOwnerId,
-                               Map details, boolean sshkeyEnabled,
-                               boolean isDynamicallyScalable, boolean isRoutingType, boolean deployAsIs) {
+                     Integer bits, boolean passwordEnabled, boolean requiresHVM,
+                     boolean isPublic, boolean featured,
+                     boolean isExtractable, String format, Long guestOSId,
+                     Long zoneId, Hypervisor.HypervisorType hypervisorType, String checksum,
+                     String templateTag, long templateOwnerId,
+                     Map details, boolean sshkeyEnabled,
+                     boolean isDynamicallyScalable, boolean isRoutingType, boolean deployAsIs,
+                     boolean forCks, String templateType) {
         this.userId = userId;
         this.name = name;
         this.displayText = displayText;
@@ -78,6 +81,8 @@ public abstract class UploadParamsBase implements UploadParams {
         this.isDynamicallyScalable = isDynamicallyScalable;
         this.isRoutingType = isRoutingType;
         this.deployAsIs = deployAsIs;
+        this.forCks = forCks;
+        this.templateType = templateType;
     }
 
     UploadParamsBase(long userId, String name, String displayText, boolean isPublic, boolean isFeatured,
@@ -232,6 +237,10 @@ public abstract class UploadParamsBase implements UploadParams {
         this.bootable = bootable;
     }
 
+    void setForCks(boolean forCks) {
+        this.forCks = forCks;
+    }
+
     void setBits(Integer bits) {
         this.bits = bits;
     }
@@ -255,5 +264,15 @@ public abstract class UploadParamsBase implements UploadParams {
 
     public void setArch(CPU.CPUArch arch) {
         this.arch = arch;
+    }
+
+    @Override
+    public boolean isForCks() {
+        return forCks;
+    }
+
+    @Override
+    public String getTemplateType() {
+        return templateType;
     }
 }

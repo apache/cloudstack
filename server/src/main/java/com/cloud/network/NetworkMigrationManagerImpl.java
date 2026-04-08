@@ -301,7 +301,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
 
             copyOfVpc = _vpcService.createVpc(vpc.getZoneId(), vpcOfferingId, vpc.getAccountId(), vpc.getName(),
                     vpc.getDisplayText(), vpc.getCidr(), vpc.getNetworkDomain(), vpc.getIp4Dns1(), vpc.getIp4Dns2(),
-                    vpc.getIp6Dns1(), vpc.getIp6Dns2(), vpc.isDisplay(), vpc.getPublicMtu(), null, null, null);
+                    vpc.getIp6Dns1(), vpc.getIp6Dns2(), vpc.isDisplay(), vpc.getPublicMtu(), null, null, null, vpc.useRouterIpAsResolver());
 
             copyOfVpcId = copyOfVpc.getId();
             //on resume of migration the uuid will be swapped already. So the copy will have the value of the original vpcid.

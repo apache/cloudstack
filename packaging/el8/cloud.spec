@@ -17,7 +17,7 @@
 
 %define __os_install_post %{nil}
 %global debug_package %{nil}
-%global __requires_exclude libc\\.so\\..*
+%global __requires_exclude libc\\.so\\..*|libc\\.so\\.6\\(GLIBC_.*\\)
 %define _binaries_in_noarch_packages_terminate_build   0
 
 # DISABLE the post-percentinstall java repacking and line number stripping
@@ -39,7 +39,7 @@ Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
 BuildArch: noarch
 
-BuildRequires: (java-11-openjdk-devel or java-17-openjdk-devel)
+BuildRequires: (java-11-openjdk-devel or java-17-openjdk-devel or java-21-openjdk-devel)
 #BuildRequires: ws-commons-util
 BuildRequires: jpackage-utils
 BuildRequires: gcc
@@ -55,7 +55,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: java-17-openjdk
+Requires: (java-17-openjdk or java-21-openjdk)
 Requires: (tzdata-java or timezone-java)
 Requires: python3
 Requires: bash
@@ -66,17 +66,17 @@ Requires: tar
 Requires: bzip2
 Requires: gzip
 Requires: unzip
-Requires: /sbin/mount.nfs
+Requires: (/sbin/mount.nfs or /usr/sbin/mount.nfs)
 Requires: (openssh-clients or openssh)
 Requires: (nfs-utils or nfs-client)
 Requires: iproute
 Requires: wget
-Requires: (mysql or mariadb)
+Requires: (mysql or mariadb or mysql8.4)
 Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
-Requires: (genisoimage or mkisofs)
+Requires: (genisoimage or mkisofs or xorrisofs)
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
 Requires: (iptables-services or iptables)
@@ -96,13 +96,13 @@ Requires: python3
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
-%global __requires_exclude ^(libuuid\\.so\\.1|/usr/bin/python)$
+%global __requires_exclude libc\\.so\\..*|libc\\.so\\.6\\(GLIBC_.*\\)|^(libuuid\\.so\\.1|/usr/bin/python)$
 
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: (openssh-clients or openssh)
-Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (java-17-openjdk or java-21-openjdk)
+Requires: (tzdata-java or timezone-java)
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: libvirt-daemon-driver-storage-rbd
@@ -114,6 +114,9 @@ Requires: iproute
 Requires: ipset
 Requires: perl
 Requires: rsync
+Requires: cifs-utils
+Requires: edk2-ovmf
+Requires: swtpm
 Requires: (python3-libvirt or python3-libvirt-python)
 Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm
@@ -141,8 +144,8 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java-17-openjdk
-Requires: tzdata-java
+Requires: (java-17-openjdk or java-21-openjdk)
+Requires: (tzdata-java or timezone-java)
 Group: System Environment/Libraries
 %description usage
 The CloudStack usage calculation service
@@ -247,6 +250,7 @@ cp -r plugins/network-elements/cisco-vnmc/src/main/scripts/network/cisco/* ${RPM
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
+mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/systemd/system/%{name}-management.service.d
@@ -267,12 +271,11 @@ install -D client/target/utilities/bin/cloud-setup-baremetal ${RPM_BUILD_ROOT}%{
 install -D client/target/utilities/bin/cloud-sysvmadm ${RPM_BUILD_ROOT}%{_bindir}/%{name}-sysvmadm
 install -D client/target/utilities/bin/cloud-update-xenserver-licenses ${RPM_BUILD_ROOT}%{_bindir}/%{name}-update-xenserver-licenses
 # Bundle cmk in cloudstack-management
-CMK_REL=$(wget -O - "https://api.github.com/repos/apache/cloudstack-cloudmonkey/releases" 2>/dev/null | jq -r '.[0].tag_name')
-wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/$CMK_REL/cmk.linux.x86-64 -O ${RPM_BUILD_ROOT}%{_bindir}/cmk
+wget https://github.com/apache/cloudstack-cloudmonkey/releases/latest/download/cmk.linux.x86-64 -O ${RPM_BUILD_ROOT}%{_bindir}/cmk
 chmod +x ${RPM_BUILD_ROOT}%{_bindir}/cmk
 
 cp -r client/target/utilities/scripts/db/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
-
+cp -r plugins/integrations/kubernetes-service/src/main/resources/conf/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf
 cp -r client/target/cloud-client-ui-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/
 cp -r client/target/classes/META-INF/webapp ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/webapp
 cp ui/dist/config.json ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management/
@@ -307,10 +310,20 @@ touch ${RPM_BUILD_ROOT}%{_localstatedir}/run/%{name}-management.pid
 #install -D server/target/conf/cloudstack-catalina.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-catalina
 install -D server/target/conf/cloudstack-management.logrotate ${RPM_BUILD_ROOT}%{_sysconfdir}/logrotate.d/%{name}-management
 
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/etcd-node.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/etcd-node.yml
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/k8s-control-node.yml
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node-add.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/k8s-control-node-add.yml
+install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-node.yml ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/cks/conf/k8s-node.yml
+
 # SystemVM template
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
 cp -r engine/schema/dist/systemvm-templates/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/md5sum.txt
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/templates/systemvm/sha512sum.txt
+
+# Sample Extensions
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
+cp -r extensions/* ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/extensions
+ln -sf %{_sysconfdir}/%{name}/extensions ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/extensions
 
 # UI
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/ui
@@ -344,6 +357,7 @@ install -D packaging/systemd/cloudstack-agent.service ${RPM_BUILD_ROOT}%{_unitdi
 install -D packaging/systemd/cloudstack-rolling-maintenance@.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-rolling-maintenance@.service
 install -D packaging/systemd/cloudstack-agent.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-agent
 install -D agent/target/transformed/agent.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/agent.properties
+install -D agent/target/transformed/uefi.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/uefi.properties
 install -D agent/target/transformed/environment.properties ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/environment.properties
 install -D agent/target/transformed/log4j-cloud.xml ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/agent/log4j-cloud.xml
 install -D agent/target/transformed/cloud-setup-agent ${RPM_BUILD_ROOT}%{_bindir}/%{name}-setup-agent
@@ -469,6 +483,8 @@ if [ -f %{_sysconfdir}/sysconfig/%{name}-management ] ; then
 fi
 
 chown -R cloud:cloud /var/log/cloudstack/management
+chown -R cloud:cloud /usr/share/cloudstack-management/templates
+find /usr/share/cloudstack-management/templates -type d -exec chmod 0770 {} \;
 
 systemctl daemon-reload
 
@@ -509,12 +525,20 @@ mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /usr/bin/systemctl enable cloudstack-rolling-maintenance@p > /dev/null 2>&1 || true
 /usr/bin/systemctl enable --now rngd > /dev/null 2>&1 || true
 
-# if saved configs from upgrade exist, copy them over
+# if saved agent.properties from upgrade exist, copy them over
 if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     mv %{_sysconfdir}/%{name}/agent/agent.properties  %{_sysconfdir}/%{name}/agent/agent.properties.rpmnew
     cp -p %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/%{name}/agent
     # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
+fi
+
+# if saved uefi.properties from upgrade exist, copy them over
+if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/uefi.properties" ]; then
+    mv %{_sysconfdir}/%{name}/agent/uefi.properties  %{_sysconfdir}/%{name}/agent/uefi.properties.rpmnew
+    cp -p %{_sysconfdir}/cloud.rpmsave/agent/uefi.properties %{_sysconfdir}/%{name}/agent
+    # make sure we only do this on the first install of this RPM, don't want to overwrite on a reinstall
+    mv %{_sysconfdir}/cloud.rpmsave/agent/uefi.properties %{_sysconfdir}/cloud.rpmsave/agent/uefi.properties.rpmsave
 fi
 
 systemctl daemon-reload
@@ -598,6 +622,7 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_datadir}/%{name}-management/lib/*.jar
 %{_datadir}/%{name}-management/logs
 %{_datadir}/%{name}-management/templates
+%{_datadir}/%{name}-management/extensions
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
 %attr(0755,root,root) %{_bindir}/%{name}-set-guest-password
@@ -605,16 +630,22 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/%{name}-sysvmadm
 %attr(0755,root,root) %{_bindir}/%{name}-setup-encryption
 %attr(0755,root,root) %{_bindir}/cmk
+%{_datadir}/%{name}-management/cks/conf/*.yml
 %{_datadir}/%{name}-management/setup/*.sql
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
 %{_datadir}/%{name}-management/webapp/*
+%dir %attr(0770, cloud, cloud) %{_datadir}/%{name}-management/templates
+%dir %attr(0770, cloud, cloud) %{_datadir}/%{name}-management/templates/systemvm
+%attr(0644, cloud, cloud) %{_datadir}/%{name}-management/templates/systemvm/*
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
 %{_defaultdocdir}/%{name}-management-%{version}/LICENSE
 %{_defaultdocdir}/%{name}-management-%{version}/NOTICE
 %{_datadir}/%{name}-management/setup/wheel/*.whl
+%dir %attr(0755,cloud,cloud) %{_sysconfdir}/%{name}/extensions
+%attr(0755,cloud,cloud) %{_sysconfdir}/%{name}/extensions/*
 
 %files agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent

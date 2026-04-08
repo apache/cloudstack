@@ -94,15 +94,17 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
             return suitableHosts;
         }
         String offeringHostTag = offering.getHostTag();
+
         VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
         String templateTag = template.getTemplateTag();
         String hostTag = null;
-        if (ObjectUtils.anyNull(offeringHostTag, templateTag)) {
-            hostTag = offeringHostTag;
-            hostTag = hostTag == null ? templateTag : String.format("%s, %s", hostTag, templateTag);
-            logger.debug(String.format("Looking for hosts in dc [%s], pod [%s], cluster [%s] and complying with host tag(s): [%s]", dcId, podId, clusterId, hostTag));
+        if (ObjectUtils.anyNotNull(offeringHostTag, templateTag)) {
+            hostTag = ObjectUtils.allNotNull(offeringHostTag, templateTag) ?
+                    String.format("%s, %s", offeringHostTag, templateTag) :
+                    ObjectUtils.firstNonNull(offeringHostTag, templateTag);
+            logger.debug("Looking for hosts in dc [{}], pod [{}], cluster [{}] and complying with host tag(s): [{}]", dcId, podId, clusterId, hostTag);
         } else {
-            logger.debug("Looking for hosts in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
+            logger.debug("Looking for hosts in dc: {} pod: {} cluster: {}", dcId , podId, clusterId);
         }
         if (hosts != null) {
             // retain all computing hosts, regardless of whether they support routing...it's random after all

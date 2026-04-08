@@ -58,7 +58,7 @@ public class SAMLUtilsTest extends TestCase {
         String idpUrl = "http://idp.domain.example";
         String spId = "cloudstack";
         String authnId = SAMLUtils.generateSecureRandomId();
-        AuthnRequest req = SAMLUtils.buildAuthnRequestObject(authnId, spId, idpUrl, consumerUrl);
+        AuthnRequest req = SAMLUtils.buildAuthnRequestObject(authnId, spId, idpUrl, consumerUrl, true);
         assertEquals(req.getAssertionConsumerServiceURL(), consumerUrl);
         assertEquals(req.getDestination(), idpUrl);
         assertEquals(req.getIssuer().getValue(), spId);
@@ -86,7 +86,7 @@ public class SAMLUtilsTest extends TestCase {
         idpMetadata.setSsoUrl(idpUrl);
         idpMetadata.setEntityId(idpId);
 
-        URI redirectUrl = new URI(SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
+        URI redirectUrl = new URI(SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value(), true));
         assertThat(redirectUrl).hasScheme(urlScheme).hasHost(idpDomain).hasParameter("SAMLRequest");
         assertEquals(urlScheme, redirectUrl.getScheme());
         assertEquals(idpDomain, redirectUrl.getHost());
@@ -115,7 +115,7 @@ public class SAMLUtilsTest extends TestCase {
         idpMetadata.setSsoUrl(idpUrl);
         idpMetadata.setEntityId(idpId);
 
-        URI redirectUrl = new URI(SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
+        URI redirectUrl = new URI(SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value(), true));
         assertThat(redirectUrl).hasScheme(urlScheme).hasHost(idpDomain).hasParameter("idpid").hasParameter("SAMLRequest");
         assertEquals(urlScheme, redirectUrl.getScheme());
         assertEquals(idpDomain, redirectUrl.getHost());

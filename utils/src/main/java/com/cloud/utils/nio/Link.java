@@ -380,7 +380,7 @@ public class Link {
         if (caService != null) {
             return caService.createSSLEngine(sslContext, clientAddress);
         }
-        LOGGER.error("CA service is not configured, by-passing CA manager to create SSL engine");
+        LOGGER.error("CA service is not configured, bypassing CA manager to create SSL engine");
         char[] passphrase = KeyStoreUtils.DEFAULT_KS_PASSPHRASE;
         final KeyStore ks = loadKeyStore(NioConnection.class.getResourceAsStream("/cloud.keystore"), passphrase);
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -617,8 +617,8 @@ public class Link {
             final long timeTaken = System.currentTimeMillis() - startTimeMills;
 
             if (timeTaken > timeoutMillis) {
-                LOGGER.warn("SSL Handshake has taken more than {}ms to connect to: {}" +
-                        " while status: {}. Please investigate this connection.", socketChannel.getRemoteAddress(),
+                LOGGER.warn("SSL Handshake has taken more than {} ms to connect to: {}" +
+                        " while status: {}. Please investigate this connection.", timeoutMillis, socketChannel.getRemoteAddress(),
                         handshakeStatus);
                 return false;
             }

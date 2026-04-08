@@ -70,7 +70,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import StoragePoolSelectView from '@/components/view/StoragePoolSelectView'
 
@@ -111,7 +111,7 @@ export default {
   methods: {
     fetchStoragePools () {
       if (this.resource.virtualmachineid) {
-        api('findStoragePoolsForMigration', {
+        getAPI('findStoragePoolsForMigration', {
           id: this.resource.id
         }).then(response => {
           this.storagePools = response.findstoragepoolsformigrationresponse.storagepool || []
@@ -124,7 +124,7 @@ export default {
           this.closeModal()
         })
       } else {
-        api('listStoragePools', {
+        getAPI('listStoragePools', {
           zoneid: this.resource.zoneid
         }).then(response => {
           this.storagePools = response.liststoragepoolsresponse.storagepool || []
@@ -142,7 +142,7 @@ export default {
     fetchDiskOfferings () {
       this.diskOfferingLoading = true
       if (this.resource.virtualmachineid) {
-        api('listDiskOfferings', {
+        getAPI('listDiskOfferings', {
           storageid: this.selectedStoragePool.id,
           listall: true
         }).then(response => {
@@ -191,7 +191,7 @@ export default {
       if (this.replaceDiskOffering) {
         params.newdiskofferingid = this.selectedDiskOffering
       }
-      api('migrateVolume', params).then(response => {
+      postAPI('migrateVolume', params).then(response => {
         this.$pollJob({
           title: this.$t('label.migrate.volume'),
           description: this.resource.id,

@@ -95,8 +95,9 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.BgpPeerVO;
@@ -166,12 +167,14 @@ public class VirtualRouterElementTest {
     @Mock private UserVmDao _userVmDao;
     @Mock private VlanDao _vlanDao;
     @Mock private VMInstanceDao _vmDao;
-    @Mock private UserVmDetailsDao _vmDetailsDao;
+    @Mock private VMInstanceDetailsDao _vmDetailsDao;
     @Mock private VolumeDao _volumeDao;
     @Mock private RemoteAccessVpnDao _vpnDao;
     @Mock private VpnUserDao _vpnUsersDao;
     @Mock private VirtualRouterProviderDao _vrProviderDao;
+    @Mock private LoadBalancerDao loadBalancerDao;
     @Mock private LoadBalancerDao _lbDao;
+    @Mock private NetworkDao networkDao;
     @Mock private NetworkDao _networksDao;
     @Mock private OvsProviderDao _ovsProviderDao;
 
@@ -180,6 +183,7 @@ public class VirtualRouterElementTest {
 
     @Mock private AccountManager _accountMgr;
     @Mock private ConfigurationManager _configMgr;
+    @Mock private NetworkModel networkModel;
     @Mock private NetworkModel _networkMdl;
     @Mock private NetworkOrchestrationService _networkMgr;
     @Mock private ResourceManager _resourceMgr;

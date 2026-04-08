@@ -33,8 +33,20 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.element.NetrisProviderVO;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcOfferingServiceMapVO;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -189,6 +201,7 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.commons.lang3.ObjectUtils;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
 
@@ -266,6 +279,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
+    VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
+    @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     PhysicalNetworkServiceProviderDao _pNSPDao;
@@ -313,9 +328,19 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     private AnnotationDao annotationDao;
     @Inject
     MessageBus messageBus;
+    @Inject
+    NsxProviderDao nsxProviderDao;
+    @Inject
+    NetrisProviderDao netrisProviderDao;
+    @Inject
+    VlanDetailsDao vlanDetailsDao;
 
     @Inject
     PublicIpQuarantineDao publicIpQuarantineDao;
+    @Inject
+    RemoteAccessVpnDao remoteAccessVpnDao;
+    @Inject
+    Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
 
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
@@ -733,6 +758,21 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 throw new CloudRuntimeException("Unable to acquire lock on public IP.");
             }
 
+            if (ipToBeDisassociated.isForRouter()) {
+                if (remoteAccessVpnDao.findByPublicIpAddress(ipToBeDisassociated.getId()) != null) {
+                    InvalidParameterValueException ex = new InvalidParameterValueException("Can't release IP address as the IP address is used by a Remote Access VPN");
+                    ex.addProxyObject(ipToBeDisassociated.getUuid(), "ipId");
+                    throw ex;
+
+                }
+                if (site2SiteVpnGatewayDao.findByPublicIpAddress(ipToBeDisassociated.getId()) != null) {
+                    InvalidParameterValueException ex = new InvalidParameterValueException("Can't release IP address as the IP address is used by a VPC gateway");
+                    ex.addProxyObject(ipToBeDisassociated.getUuid(), "ipId");
+                    throw ex;
+
+                }
+            }
+
             PublicIpQuarantine publicIpQuarantine = null;
             // Cleanup all ip address resources - PF/LB/Static nat rules
             if (!cleanupIpResources(ipAddress, userId, caller)) {
@@ -773,6 +813,28 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 logger.debug("Released a public ip {}", ip);
             } else if (publicIpQuarantine != null) {
                 removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
+            }
+            Network network = _networksDao.findById(ipToBeDisassociated.getAssociatedWithNetworkId());
+            Vpc vpc = _vpcDao.findById(ip.getVpcId());
+            if (ObjectUtils.allNull(network, vpc)) {
+                return success;
+            }
+            List<String> providers;
+            if (Objects.nonNull(network)) {
+                NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+                providers = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(offering.getId(), Service.NetworkACL);
+            } else {
+                VpcOffering offering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+                List<VpcOfferingServiceMapVO> servicesMap = vpcOfferingServiceMapDao.listProvidersForServiceForVpcOffering(offering.getId(), Service.NetworkACL);
+                providers = servicesMap.stream().map(VpcOfferingServiceMapVO::getProvider).collect(Collectors.toList());
+            }
+
+            if (!providers.isEmpty()) {
+                String provider = providers.get(0);
+                NetworkElement element = _networkModel.getElementImplementingProvider(provider);
+                if (element != null) {
+                    element.releaseIp(ipToBeDisassociated);
+                }
             }
         } finally {
             _ipAddressDao.releaseFromLockTable(addrId);
@@ -1038,36 +1100,48 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public void markPublicIpAsAllocated(final IPAddressVO addr) {
         synchronized (allocatedLock) {
-            Transaction.execute(new TransactionCallbackNoReturn() {
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     Account owner = _accountMgr.getAccount(addr.getAllocatedToAccountId());
-                    if (_ipAddressDao.lockRow(addr.getId(), true) != null) {
-                        final IPAddressVO userIp = _ipAddressDao.findById(addr.getId());
-                        if (userIp.getState() == IpAddress.State.Allocating || addr.getState() == IpAddress.State.Free || addr.getState() == IpAddress.State.Reserved) {
-                            boolean shouldUpdateIpResourceCount = checkIfIpResourceCountShouldBeUpdated(addr);
-                            addr.setState(IpAddress.State.Allocated);
-                            if (_ipAddressDao.update(addr.getId(), addr)) {
-                                // Save usage event
-                                if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-                                    VlanVO vlan = _vlanDao.findById(addr.getVlanId());
-                                    String guestType = vlan.getVlanType().toString();
-                                    if (!isIpDedicated(addr)) {
-                                        final boolean usageHidden = isUsageHidden(addr);
-                                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(),
-                                                addr.getAddress().toString(), addr.isSourceNat(), guestType, addr.getSystem(), usageHidden,
-                                                addr.getClass().getName(), addr.getUuid());
-                                    }
-                                    if (shouldUpdateIpResourceCount) {
-                                        _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
-                                    }
-                                }
-                            } else {
-                                logger.error("Failed to mark public IP as allocated: {}", addr);
+                    final IPAddressVO userIp = _ipAddressDao.lockRow(addr.getId(), true);
+                    if (userIp == null) {
+                        logger.error(String.format("Failed to acquire row lock to mark public IP as allocated with ID [%s] and address [%s]", addr.getId(), addr.getAddress()));
+                        return;
+                    }
+
+                    List<IpAddress.State> expectedIpAddressStates = List.of(IpAddress.State.Allocating, IpAddress.State.Free, IpAddress.State.Reserved);
+                    if (!expectedIpAddressStates.contains(userIp.getState())) {
+                        logger.debug(String.format("Not marking public IP with ID [%s] and address [%s] as allocated, since it is in the [%s] state.", addr.getId(), addr.getAddress(), userIp.getState()));
+                        return;
+                    }
+
+                    boolean shouldUpdateIpResourceCount = checkIfIpResourceCountShouldBeUpdated(addr);
+                    addr.setState(IpAddress.State.Allocated);
+                    boolean updatedIpAddress = _ipAddressDao.update(addr.getId(), addr);
+                    if (!updatedIpAddress) {
+                        logger.error(String.format("Failed to mark public IP as allocated with ID [%s] and address [%s]", addr.getId(), addr.getAddress()));
+                        return;
+                    }
+
+                    if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+                        if (shouldUpdateIpResourceCount) {
+                            try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1L, reservationDao, _resourceLimitMgr)) {
+                                _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
+                            } catch (Exception e) {
+                                _ipAddressDao.unassignIpAddress(addr.getId());
+                                throw new CloudRuntimeException(e);
                             }
                         }
-                    } else {
-                        logger.error("Failed to acquire row lock to mark public IP as allocated: {}", addr);
+
+                        VlanVO vlan = _vlanDao.findById(addr.getVlanId());
+                        String guestType = vlan.getVlanType().toString();
+                        if (!isIpDedicated(addr)) {
+                            final boolean usageHidden = isUsageHidden(addr);
+                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(),
+                                    addr.getAddress().toString(), addr.isSourceNat(), guestType, addr.getSystem(), usageHidden,
+                                    addr.getClass().getName(), addr.getUuid());
+                        }
                     }
                 }
             });
@@ -1303,6 +1377,30 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
     }
 
+    /**
+     * When the zone is linked to external provider NSX or Netris: check if the IP to be associated is from the suitable pool
+     * Otherwise, no checks are performed
+     */
+    private void checkPublicIpOnExternalProviderZone(DataCenter zone, String ip) {
+        long zoneId = zone.getId();
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+        if (ObjectUtils.allNull(netrisProvider, nsxProvider)) {
+            return;
+        }
+        IPAddressVO ipAddress = _ipAddressDao.findByIpAndDcId(zoneId, ip);
+        if (ipAddress != null) {
+            String detailKey = nsxProvider != null ? ApiConstants.NSX_DETAIL_KEY : ApiConstants.NETRIS_DETAIL_KEY;
+            VlanDetailsVO vlanDetailVO = vlanDetailsDao.findDetail(ipAddress.getVlanId(), detailKey);
+            if (vlanDetailVO == null || vlanDetailVO.getValue().equalsIgnoreCase("false")) {
+                String msg = String.format("Cannot acquire IP %s on the zone %s as the IP is not from the reserved pool " +
+                        "for the external provider", ip, zone.getName());
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+    }
+
     @DB
     @Override
     public IpAddress allocateIp(final Account ipOwner, final boolean isSystem, Account caller, User callerUser, final DataCenter zone, final Boolean displayIp, final String ipaddress)
@@ -1310,6 +1408,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         final VlanType vlanType = VlanType.VirtualNetwork;
         final boolean assign = false;
+
+        checkPublicIpOnExternalProviderZone(zone, ipaddress);
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             // zone is of type DataCenter. See DataCenterVO.java.
@@ -1354,7 +1454,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         throw ex;
 
                     }
-                    CallContext.current().setEventDetails("Ip Id: " + ip.getId());
+                    CallContext.current().setEventDetails("IP address ID: " + ip.getUuid());
                     Ip ipAddress = ip.getAddress();
 
                     logger.debug("Got {} to assign for account {} in zone {}", ipAddress, ipOwner, zone);
@@ -1441,6 +1541,14 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         return ipaddr;
+    }
+
+    protected IPAddressVO getExistingSourceNatInVPC(Long vpcId) {
+        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, true);
+        if (CollectionUtils.isEmpty(ips)) {
+            return null;
+        }
+        return ips.get(0);
     }
 
     protected IPAddressVO getExistingSourceNatInNetwork(long ownerId, Long networkId) {
@@ -1553,27 +1661,31 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         boolean isSourceNat = isSourceNatAvailableForNetwork(owner, ipToAssoc, network);
 
-        logger.debug("Associating ip " + ipToAssoc + " to network " + network);
+        logger.debug(String.format("Associating IP [%s] to network [%s].", ipToAssoc, network));
 
         boolean success = false;
         IPAddressVO ip = null;
-        try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1l, reservationDao, _resourceLimitMgr)) {
-            ip = _ipAddressDao.findById(ipId);
-            //update ip address with networkId
-            ip.setAssociatedWithNetworkId(networkId);
-            ip.setSourceNat(isSourceNat);
-            _ipAddressDao.update(ipId, ip);
+        try {
+            Pair<IPAddressVO, Boolean> updatedIpAddress = Transaction.execute((TransactionCallbackWithException<Pair<IPAddressVO, Boolean>, Exception>) status -> {
+                IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
+                ipAddress.setAssociatedWithNetworkId(networkId);
+                ipAddress.setSourceNat(isSourceNat);
+                _ipAddressDao.update(ipId, ipAddress);
+                return new Pair<>(_ipAddressDao.findById(ipId), applyIpAssociations(network, false));
+            });
 
-            success = applyIpAssociations(network, false);
+            ip = updatedIpAddress.first();
+            success = updatedIpAddress.second();
             if (success) {
-                logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
+                logger.debug(String.format("Successfully associated IP address [%s] to network [%s]", ip.getAddress().addr(), network));
             } else {
-                logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
+                logger.warn(String.format("Failed to associate IP address [%s] to network [%s]", ip.getAddress().addr(), network));
             }
-            return _ipAddressDao.findById(ipId);
+            return ip;
         } catch (Exception e) {
-            logger.error(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
-            throw new CloudRuntimeException(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
+            String errorMessage = String.format("Failed to associate IP address [%s] to network [%s]", ipToAssoc, network);
+            logger.error(errorMessage, e);
+            throw new CloudRuntimeException(errorMessage, e);
         } finally {
             if (!success && releaseOnFailure) {
                 if (ip != null) {
@@ -1619,7 +1731,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         boolean sharedSourceNat = offering.isSharedSourceNat();
         boolean isSourceNat = false;
-        if (!sharedSourceNat) {
+        if (network.getVpcId() != null) {
+            // For VPCs: Check if the VPC Source NAT IP address is the same we are associating
+            IPAddressVO vpcSourceNatIpAddress = getExistingSourceNatInVPC(network.getVpcId());
+            isSourceNat = vpcSourceNatIpAddress != null && vpcSourceNatIpAddress.getId() == ipToAssoc.getId();
+        } else if (!sharedSourceNat) {
             if (getExistingSourceNatInNetwork(owner.getId(), network.getId()) == null) {
                 if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null && !ipToAssoc.isPortable()) {
                     isSourceNat = true;
@@ -2305,7 +2421,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
                         nic.setFormat(AddressFormat.Ip4);
                         nic.setReservationId(String.valueOf(ip.getVlanTag()));
-                        if(nic.getMacAddress() == null) {
+                        if (nic.getMacAddress() == null) {
                             nic.setMacAddress(ip.getMacAddress());
                         }
                     }
@@ -2356,7 +2472,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                         nic.setBroadcastUri(network.getBroadcastUri());
                         nic.setFormat(AddressFormat.Ip4);
-                        if(nic.getMacAddress() == null) {
+                        if (nic.getMacAddress() == null || !_networkModel.isMACUnique(nic.getMacAddress(), network.getId())) {
                             nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
                         }
                     }
@@ -2543,4 +2659,31 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         });
     }
 
+    @Override
+    public Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId) {
+        boolean vpcConserveMode = isPublicIpOnVpcConserveMode(ip);
+        return getPreferredNetworkIdForRule(ip, vpcConserveMode, networkId);
+    }
+
+    protected Long getPreferredNetworkIdForRule(IpAddress ip, boolean vpcConserveModeEnabled, Long networkId) {
+        if (vpcConserveModeEnabled) {
+            // Since VPC Conserve mode allows rules from multiple VPC tiers, always check the networkId parameter first
+            return networkId != null ? networkId : ip.getAssociatedWithNetworkId();
+        } else {
+            // In case of Guest Networks or VPC Tier Networks VPC Conserve mode disabled prefer the associated networkId
+            return ip.getAssociatedWithNetworkId() != null ? ip.getAssociatedWithNetworkId() : networkId;
+        }
+    }
+
+    protected boolean isPublicIpOnVpcConserveMode(IpAddress ip) {
+        if (ip.getVpcId() == null) {
+            return false;
+        }
+        Vpc vpc =  _vpcMgr.getActiveVpc(ip.getVpcId());
+        if (vpc == null) {
+            return false;
+        }
+        VpcOffering vpcOffering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+        return vpcOffering != null && vpcOffering.isConserveMode();
+    }
 }

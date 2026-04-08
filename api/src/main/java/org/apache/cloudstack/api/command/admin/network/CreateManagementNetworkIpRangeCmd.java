@@ -34,6 +34,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.utils.StringUtils;
 
 @APICommand(name = "createManagementNetworkIpRange",
         description = "Creates a Management network IP range.",
@@ -118,7 +119,7 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
     }
 
     public String getVlan() {
-        if (vlan == null || vlan.isEmpty()) {
+        if (StringUtils.isBlank(vlan)) {
             vlan = "untagged";
         }
         return vlan;
@@ -131,7 +132,7 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Creating management ip range from " + getStartIp() + " to " + getEndIp() + " and gateway=" + getGateWay() + ", netmask=" + getNetmask() + " of pod=" + getPodId();
+        return "Creating management IP range from " + getStartIp() + " to " + getEndIp() + ", with gateway: " + getGateWay() + ", netmask:" + getNetmask() + " on pod:" + getPodId();
     }
 
     @Override

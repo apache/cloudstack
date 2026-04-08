@@ -66,7 +66,7 @@ public final class XenServer56FP1FenceCommandWrapper extends CommandWrapper<Fenc
                 }
                 logger.info("Fence command for VM " + command.getVmName());
                 vm.powerStateReset(conn);
-                vm.destroy(conn);
+                xenServer56.destroyVm(vm, conn);
                 for (final VDI vdi : vdis) {
                     final Map<String, String> smConfig = vdi.getSmConfig(conn);
                     for (final String key : smConfig.keySet()) {

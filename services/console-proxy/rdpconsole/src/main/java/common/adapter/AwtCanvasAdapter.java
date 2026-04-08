@@ -70,7 +70,6 @@ public class AwtCanvasAdapter extends BaseElement {
 
         default:
             throw new RuntimeException("Order is not implemented: " + buf + ".");
-            // break;
         }
 
         buf.unref();
@@ -93,8 +92,6 @@ public class AwtCanvasAdapter extends BaseElement {
         Graphics2D g = (Graphics2D)image.getGraphics();
 
         for (BitmapRectangle rectangle : order.rectangles) {
-            // *DEBUG*/System.out.println("["+this+"] DEBUG: Rectangle: " +
-            // rectangle.toString());
 
             int x = rectangle.x;
             int y = rectangle.y;
@@ -148,9 +145,6 @@ public class AwtCanvasAdapter extends BaseElement {
      * Example.
      */
     public static void main(String args[]) {
-        // System.setProperty("streamer.Link.debug", "true");
-        // System.setProperty("streamer.Element.debug", "true");
-        // System.setProperty("streamer.Pipeline.debug", "true");
         ByteBuffer packet = new ByteBuffer(new byte[] {0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x00, 0x10, 0x00, 0x01, 0x00, 0x10, 0x00,
                 0x01, 0x04, 0x0a, 0x00, 0x0c, (byte)0x84, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 

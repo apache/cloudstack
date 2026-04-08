@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -99,6 +100,8 @@ public interface StorageService {
 
     StoragePool disablePrimaryStoragePool(Long id);
 
+    boolean configureStorageAccess(ConfigureStorageAccessCmd cmd);
+
     StoragePool getStoragePool(long id);
 
     boolean deleteImageStore(DeleteImageStoreCmd cmd);
@@ -131,7 +134,7 @@ public interface StorageService {
 
     void removeSecondaryStorageHeuristic(RemoveSecondaryStorageSelectorCmd cmd);
 
-    ObjectStore discoverObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    ObjectStore discoverObjectStore(String name, String url, Long size, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
     boolean deleteObjectStore(DeleteObjectStoragePoolCmd cmd);
 

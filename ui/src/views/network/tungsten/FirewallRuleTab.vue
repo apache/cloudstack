@@ -318,7 +318,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -441,7 +441,7 @@ export default {
       this.fetchLoading = true
       this.dataSource = []
       this.totalCount = 0
-      api('listTungstenFabricFirewallRule', {
+      getAPI('listTungstenFabricFirewallRule', {
         zoneid: this.zoneId,
         firewallpolicyuuid: this.resource.uuid,
         page: this.page,
@@ -467,7 +467,7 @@ export default {
     fetchServiceGroup () {
       this.serviceGroup.loading = true
       this.serviceGroup.opts = []
-      api('listTungstenFabricServiceGroup', { zoneid: this.zoneId }).then(json => {
+      getAPI('listTungstenFabricServiceGroup', { zoneid: this.zoneId }).then(json => {
         this.serviceGroup.opts = json?.listtungstenfabricservicegroupresponse?.servicegroup || []
       }).finally(() => {
         this.serviceGroup.loading = false
@@ -476,7 +476,7 @@ export default {
     fetchTag () {
       this.srcTag.loading = true
       this.srcTag.opts = []
-      api('listTungstenFabricTag', { zoneid: this.zoneId }).then(json => {
+      getAPI('listTungstenFabricTag', { zoneid: this.zoneId }).then(json => {
         this.srcTag.opts = json?.listtungstenfabrictagresponse?.tag || []
       }).finally(() => {
         this.srcTag.loading = false
@@ -485,7 +485,7 @@ export default {
     fetchAddressGroup () {
       this.srcAddress.loading = true
       this.srcAddress.opts = []
-      api('listTungstenFabricAddressGroup', { zoneid: this.zoneId }).then(json => {
+      getAPI('listTungstenFabricAddressGroup', { zoneid: this.zoneId }).then(json => {
         this.srcAddress.opts = json?.listtungstenfabricaddressgroupresponse?.addressgroup || []
       }).finally(() => {
         this.srcAddress.loading = false
@@ -494,7 +494,7 @@ export default {
     fetchNetworks () {
       this.networks.loading = true
       this.networks.opts = []
-      api('listTungstenFabricNetwork', { zoneid: this.zoneId, listAll: true }).then(json => {
+      getAPI('listTungstenFabricNetwork', { zoneid: this.zoneId, listAll: true }).then(json => {
         this.networks.opts = json?.listtungstenfabricnetworkresponse?.network || []
       }).finally(() => {
         this.networks.loading = false
@@ -503,7 +503,7 @@ export default {
     fetchTagType () {
       this.tagType.loading = true
       this.tagType.opts = []
-      api('listTungstenFabricTagType', { zoneid: this.zoneId }).then(json => {
+      getAPI('listTungstenFabricTagType', { zoneid: this.zoneId }).then(json => {
         this.tagType.opts = json?.listtungstenfabrictagtyperesponse?.tagtype || []
       }).finally(() => {
         this.tagType.loading = false
@@ -538,7 +538,7 @@ export default {
         }
         params.tagtypeuuid = values.tagtypeuuid
 
-        api('createTungstenFabricFirewallRule', params).then(json => {
+        postAPI('createTungstenFabricFirewallRule', params).then(json => {
           this.$pollJob({
             jobId: json.createtungstenfabricfirewallruleresponse.jobid,
             title: this.$t('label.add.firewallrule'),
@@ -581,7 +581,7 @@ export default {
       params.zoneid = this.zoneId
       params.firewallruleuuid = uuid
 
-      api('deleteTungstenFabricFirewallRule', params).then(json => {
+      postAPI('deleteTungstenFabricFirewallRule', params).then(json => {
         this.$pollJob({
           jobId: json.deletetungstenfabricfirewallruleresponse.jobid,
           title: this.$t('label.delete.tungsten.firewall.policy'),

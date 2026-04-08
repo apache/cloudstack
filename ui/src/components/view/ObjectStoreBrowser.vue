@@ -468,7 +468,8 @@ export default {
       return false
     },
     uploadFiles () {
-      if (!this.uploadDirectory.endsWith('/')) {
+      this.uploadDirectory = this.uploadDirectory.trim()
+      if (this.uploadDirectory.length !== 0 && !this.uploadDirectory.endsWith('/')) {
         this.uploadDirectory = this.uploadDirectory + '/'
       }
       var promises = []
@@ -488,7 +489,12 @@ export default {
     asyncUploadFile (file, objectName) {
       return new Promise((resolve, reject) => {
         file.arrayBuffer().then((buffer) => {
-          this.client.putObject(this.resource.name, objectName, Buffer.from(buffer), file.size, this.uploadMetaData, err => {
+          const metadata = {
+            ...this.uploadMetaData,
+            'Content-Type': file.type || 'binary/octet-stream'
+          }
+
+          this.client.putObject(this.resource.name, objectName, Buffer.from(buffer), file.size, metadata, err => {
             if (err) {
               return reject(this.$notification.error({
                 message: this.$t('message.upload.failed'),

@@ -152,6 +152,12 @@
                   </a-row>
                 </a-radio-group>
               </a-form-item>
+              <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.force.convert.to.pool')" :tooltip="apiParams.forceconverttopool.description"/>
+                </template>
+                <a-switch v-model:checked="form.forceconverttopool" @change="onForceConvertToPoolChange" />
+              </a-form-item>
               <a-form-item name="converthostid" ref="converthostid">
                 <check-box-select-pair
                   layout="vertical"
@@ -179,17 +185,21 @@
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
                   layout="vertical"
-                  style="margin-bottom: 5px"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
-                  :checkBoxLabel="$t('message.select.temporary.storage.instance.conversion')"
+                  :checkBoxLabel="switches.forceConvertToPool ? $t('message.select.destination.storage.instance.conversion') : $t('message.select.temporary.storage.instance.conversion')"
                   :defaultCheckBoxValue="false"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
                 />
               </a-form-item>
-              <a-form-item v-if="showStoragePoolsForConversion" name="convertstoragepool" ref="convertstoragepool" :label="$t('label.storagepool')">
+              <a-form-item
+                v-if="showStoragePoolsForConversion"
+                name="convertstoragepool"
+                ref="convertstoragepool"
+                :label="$t('label.storagepool')"
+              >
                 <a-select
                   v-model:value="form.convertstoragepoolid"
                   defaultActiveFirstOption
@@ -204,11 +214,46 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
+              <a-form-item name="extraparams" ref="extraparams">
+                <a-checkbox
+                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter && vmwareToKvmExtraParamsAllowed"
+                  v-model:checked="vmwareToKvmExtraParamsSelected">
+                  {{ $t('message.select.extra.parameters.for.instance.conversion') }}
+                </a-checkbox>
+                <a-input
+                  v-if="vmwareToKvmExtraParamsSelected"
+                  v-model:value="vmwareToKvmExtraParams"
+                  :placeholder="$t('label.extra')"
+                />
+              </a-form-item>
               <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter">
                 <template #label>
                   <tooltip-label :title="$t('label.force.ms.to.import.vm.files')" :tooltip="apiParams.forcemstoimportvmfiles.description"/>
                 </template>
                 <a-switch v-model:checked="form.forcemstoimportvmfiles" @change="val => { switches.forceMsToImportVmFiles = val }" />
+              </a-form-item>
+              <a-form-item name="osid" ref="osid" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.guest.os')" :tooltip="$t('label.select.guest.os.type')"/>
+                </template>
+                <a-spin v-if="loadingGuestOsMappings" />
+                <template v-else>
+                  <a-select
+                    v-if="resource.guestOsMappings && resource.guestOsMappings.length > 0"
+                    v-model:value="form.osid"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }">
+                    <a-select-option v-for="mapping in resource.guestOsMappings" :key="mapping.ostypeid" :label="mapping.osdisplayname">
+                      <span>
+                        {{ mapping.osdisplayname }}
+                      </span>
+                    </a-select-option>
+                  </a-select>
+                  <a-span v-else>{{ $t('label.no.matching.guest.os.vmware.import') }}</a-span>
+                </template>
               </a-form-item>
               <a-form-item name="serviceofferingid" ref="serviceofferingid">
                 <template #label>
@@ -387,7 +432,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import InfoCard from '@/components/view/InfoCard'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -468,6 +513,10 @@ export default {
     selectedVmwareVcenter: {
       type: Array,
       required: false
+    },
+    loadingGuestOsMappings: {
+      type: Boolean,
+      required: false
     }
   },
   data () {
@@ -529,7 +578,10 @@ export default {
           title: this.$t('label.rootdisk')
         }
       ],
-      selectedRootDiskSources: []
+      selectedRootDiskSources: [],
+      vmwareToKvmExtraParamsAllowed: false,
+      vmwareToKvmExtraParamsSelected: false,
+      vmwareToKvmExtraParams: ''
     }
   },
   beforeCreate () {
@@ -584,6 +636,7 @@ export default {
           isLoad: true,
           options: {
             templatefilter: 'all',
+            isready: true,
             hypervisor: this.cluster.hypervisortype,
             showicon: true
           },
@@ -713,6 +766,11 @@ export default {
         this.$refs.displayname.focus()
         this.selectMatchingComputeOffering()
       }
+    },
+    'resource.guestOsMappings' (mappings) {
+      if (mappings && mappings.length > 0) {
+        this.form.osid = mappings[0].ostypeid
+      }
     }
   },
   methods: {
@@ -723,8 +781,10 @@ export default {
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
         forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
+        forceconverttopool: this.switches.forceConvertToPool,
         domainid: null,
-        account: null
+        account: null,
+        osid: null
       })
       this.rules = reactive({
         displayname: [{ required: true, message: this.$t('message.error.input.value') }],
@@ -748,6 +808,20 @@ export default {
       if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
+      this.fetchVmwareToKVMExtraConfigsSetting()
+    },
+    fetchVmwareToKVMExtraConfigsSetting () {
+      const params = {
+        name: 'convert.vmware.instance.to.kvm.extra.params.allowed'
+      }
+      getAPI('listConfigurations', params).then(json => {
+        if (json.listconfigurationsresponse.configuration !== null) {
+          const config = json.listconfigurationsresponse.configuration[0]
+          if (config && config.name === params.name) {
+            this.vmwareToKvmExtraParamsAllowed = config.value === 'true'
+          }
+        }
+      })
     },
     getMeta (obj, metaKeys) {
       var meta = []
@@ -804,7 +878,7 @@ export default {
       if (!('listall' in options)) {
         options.listall = true
       }
-      api(param.list, options).then((response) => {
+      getAPI(param.list, options).then((response) => {
         param.loading = false
         _.map(response, (responseItem, responseKey) => {
           if (Object.keys(responseItem).length === 0) {
@@ -836,7 +910,7 @@ export default {
       this.totalComputeOfferings = 0
       this.computeOfferings = []
       this.offeringsMap = []
-      api('listServiceOfferings', {
+      getAPI('listServiceOfferings', {
         keyword: options.keyword,
         page: options.page,
         pageSize: options.pageSize,
@@ -929,7 +1003,7 @@ export default {
       }
     },
     fetchKvmHostsForConversion () {
-      api('listHosts', {
+      getAPI('listHosts', {
         zoneid: this.zoneid,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
@@ -944,11 +1018,17 @@ export default {
           } else {
             host.name = host.name + ' (' + this.$t('label.not.supported') + ')'
           }
+          if (host.details['host.virtv2v.version']) {
+            host.name = host.name + ' (virt-v2v=' + host.details['host.virtv2v.version'] + ')'
+          }
+          if (host.details['host.ovftool.version']) {
+            host.name = host.name + ' (ovftool=' + host.details['host.ovftool.version'] + ')'
+          }
         })
       })
     },
     fetchKvmHostsForImporting () {
-      api('listHosts', {
+      getAPI('listHosts', {
         clusterid: this.cluster.id,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
@@ -970,12 +1050,12 @@ export default {
             params.scope = 'ZONE'
           }
         }
-        api('listStoragePools', params).then(json => {
+        getAPI('listStoragePools', params).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
         })
       } else if (this.selectedStorageOptionForConversion === 'local') {
         const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
-        api('listStoragePools', {
+        getAPI('listStoragePools', {
           scope: 'HOST',
           ipaddress: kvmHost.ipaddress,
           status: 'Up'
@@ -1020,19 +1100,22 @@ export default {
       }
     },
     resetStorageOptionsForConversion () {
-      this.storageOptionsForConversion = [
-        {
-          id: 'secondary',
-          name: 'Secondary Storage'
-        }, {
-          id: 'primary',
-          name: 'Primary Storage'
-        }
-      ]
+      this.storageOptionsForConversion = this.switches.forceConvertToPool ? [] : [{
+        id: 'secondary',
+        name: 'Secondary Storage'
+      }]
+      this.storageOptionsForConversion.push({
+        id: 'primary',
+        name: 'Primary Storage'
+      })
     },
     onSelectRootDisk (val) {
       this.selectedRootDiskIndex = val
       this.updateSelectedRootDisk()
+    },
+    onForceConvertToPoolChange (val) {
+      this.switches.forceConvertToPool = val
+      this.resetStorageOptionsForConversion()
     },
     updateSelectedRootDisk () {
       var rootDisk = this.resource.disk[this.selectedRootDiskIndex]
@@ -1149,9 +1232,15 @@ export default {
           if (this.selectedStoragePoolForConversion) {
             params.convertinstancepoolid = this.selectedStoragePoolForConversion
           }
+          if (this.vmwareToKvmExtraParams) {
+            params.extraparams = this.vmwareToKvmExtraParams
+          }
           params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
+          if (values.forceconverttopool) {
+            params.forceconverttopool = values.forceconverttopool
+          }
         }
-        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles']
+        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles', 'osid']
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }
@@ -1213,7 +1302,7 @@ export default {
         this.updateLoading(true)
         const name = params.name
         return new Promise((resolve, reject) => {
-          api(importapi, params).then(response => {
+          postAPI(importapi, params).then(response => {
             var jobId
             if (this.isDiskImport || this.isExternalImport || this.selectedVmwareVcenter) {
               jobId = response.importvmresponse.jobid

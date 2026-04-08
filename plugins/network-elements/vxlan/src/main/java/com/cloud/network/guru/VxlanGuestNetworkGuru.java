@@ -76,6 +76,9 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
             network.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(vxlan));
         }
         network.setBroadcastDomainType(BroadcastDomainType.Vxlan);
+
+        getOrCreateIpv4SubnetForGuestNetwork(offering, network, userSpecified, owner);
+
         return updateNetworkDesignForIPv6IfNeeded(network, userSpecified);
     }
 
@@ -99,7 +102,7 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
     protected void allocateVnetComplete(Network network, NetworkVO implemented, long dcId, long physicalNetworkId, String reservationId, String vnet) {
         //TODO(VXLAN): Add new event type for vxlan?
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN,
-            "Assigned Zone vNet: " + vnet + " Network Id: " + network.getId(), network.getId(), ApiCommandResourceType.Network.toString(), 0);
+            "Assigned Zone vNet: " + vnet + " Network ID: " + network.getUuid(), network.getId(), ApiCommandResourceType.Network.toString(), 0);
     }
 
     @Override

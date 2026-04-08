@@ -16,18 +16,17 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import java.util.List;
-import java.util.Set;
-
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.response.UserVmResponse;
-
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.UserVmResponse;
+
+import java.util.List;
+import java.util.Set;
 
 public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
@@ -46,4 +45,8 @@ public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
     List<UserVmJoinVO> listByAccountServiceOfferingTemplateAndNotInState(long accountId,
              List<VirtualMachine.State> states, List<Long> offeringIds, List<Long> templateIds);
+
+    List<UserVmJoinVO> listEligibleInstancesWithExpiredLease();
+
+    List<UserVmJoinVO> listLeaseInstancesExpiringInDays(int days);
 }

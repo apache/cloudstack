@@ -40,8 +40,8 @@ write_files:
       sysctl net.ipv4.conf.default.arp_ignore=0
       sysctl net.ipv4.conf.all.arp_announce=0
       sysctl net.ipv4.conf.all.arp_ignore=0
-      sysctl net.ipv4.conf.eth0.arp_announce=0
-      sysctl net.ipv4.conf.eth0.arp_ignore=0
+      sysctl net.ipv4.conf.eth0.arp_announce=0 || sysctl net.ipv4.conf.ens35.arp_announce=0 || true
+      sysctl net.ipv4.conf.eth0.arp_ignore=0 || sysctl net.ipv4.conf.ens35.arp_ignore=0 || true
       sed -i "s/net.ipv4.conf.default.arp_announce =.*$/net.ipv4.conf.default.arp_announce = 0/" /etc/sysctl.conf
       sed -i "s/net.ipv4.conf.default.arp_ignore =.*$/net.ipv4.conf.default.arp_ignore = 0/" /etc/sysctl.conf
       sed -i "s/net.ipv4.conf.all.arp_announce =.*$/net.ipv4.conf.all.arp_announce = 0/" /etc/sysctl.conf
@@ -53,8 +53,14 @@ write_files:
       ATTEMPT_ONLINE_INSTALL=false
       setup_complete=false
 
-      OFFLINE_INSTALL_ATTEMPT_SLEEP=30
-      MAX_OFFLINE_INSTALL_ATTEMPTS=40
+      OFFLINE_INSTALL_ATTEMPT_SLEEP={{ k8s.install.wait.time }}
+      MAX_OFFLINE_INSTALL_ATTEMPTS={{ k8s.install.reattempts.count }}
+      if [[ -z $OFFLINE_INSTALL_ATTEMPT_SLEEP || $OFFLINE_INSTALL_ATTEMPT_SLEEP -eq 0 ]]; then
+        OFFLINE_INSTALL_ATTEMPT_SLEEP=30
+      fi
+      if [[ -z $MAX_OFFLINE_INSTALL_ATTEMPTS || $MAX_OFFLINE_INSTALL_ATTEMPTS -eq 0 ]]; then
+        MAX_OFFLINE_INSTALL_ATTEMPTS=40
+      fi
       offline_attempts=1
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
       EJECT_ISO_FROM_OS={{ k8s.eject.iso }}
@@ -87,6 +93,21 @@ write_files:
               fi
             fi
           done <<< "$output"
+        else
+          ### Download from VR ###
+          ROUTER_IP="{{ k8s.vr.iso.mounted.ip }}"
+          if [ "$ROUTER_IP" != "" ]; then
+            echo "Downloading CKS binaries from the VR $ROUTER_IP"
+            if [ ! -d "${ISO_MOUNT_DIR}" ]; then
+              mkdir "${ISO_MOUNT_DIR}"
+            fi
+            ### Download from ROUTER_IP/cks-iso into ISO_MOUNT_DIR
+            AUX_DOWNLOAD_DIR=/aux-dwnld
+            mkdir -p $AUX_DOWNLOAD_DIR
+            wget -r -R "index.html*" $ROUTER_IP/cks-iso -P $AUX_DOWNLOAD_DIR || echo 'Cannot download some files from virtual router'
+            mv $AUX_DOWNLOAD_DIR/$ROUTER_IP/cks-iso/* $ISO_MOUNT_DIR
+            rm -rf $AUX_DOWNLOAD_DIR
+          fi
         fi
         if [ -d "$BINARIES_DIR" ]; then
           break
