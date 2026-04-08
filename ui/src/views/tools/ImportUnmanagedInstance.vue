@@ -1031,6 +1031,16 @@ export default {
           if (host.details['host.ovftool.version']) {
             host.name = host.name + ' (ovftool=' + host.details['host.ovftool.version'] + ')'
           }
+          if (this.form.usevddk) {
+            if (host.details['host.vddk.support'] === 'true' || host.details['host.vddk.support'] === true) {
+              host.name = host.name + ' (VDDK=' + this.$t('label.supported') + ')'
+            } else {
+              host.name = host.name + ' (VDDK=' + this.$t('label.not.supported') + ')'
+            }
+            if (host.details['host.vddk.version']) {
+              host.name = host.name + ' (vddk=' + host.details['host.vddk.version'] + ')'
+            }
+          }
         })
       })
     },
@@ -1130,12 +1140,16 @@ export default {
         this.form.forcemstoimportvmfiles = false
         this.switches.forceConvertToPool = true
         this.switches.forceMsToImportVmFiles = false
+        // Refresh host list to show VDDK support details
+        this.fetchKvmHostsForConversion()
       } else {
         this.form.forceconverttopool = false
         this.switches.forceConvertToPool = false
         this.selectedStorageOptionForConversion = null
         this.selectedStoragePoolForConversion = null
         this.showStoragePoolsForConversion = false
+        // Refresh host list to remove VDDK support details
+        this.fetchKvmHostsForConversion()
       }
       this.resetStorageOptionsForConversion()
     },
