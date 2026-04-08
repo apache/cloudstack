@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
-import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 
 import java.util.Date;
 import java.util.List;

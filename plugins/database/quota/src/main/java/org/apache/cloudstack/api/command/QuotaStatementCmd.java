@@ -67,7 +67,7 @@ public class QuotaStatementCmd extends BaseCmd {
 
     @ACL
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
-            description = "ID of the Project for which the Quota statement will be generated. Can not be specified with accountid.", , since = "4.23.0")
+            description = "ID of the Project for which the Quota statement will be generated. Can not be specified with accountid.", since = "4.23.0")
     private Long projectId;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCES, type = CommandType.BOOLEAN, description = "List the resources of each Quota type in the period.", since = "4.23.0")
@@ -152,5 +152,4 @@ public class QuotaStatementCmd extends BaseCmd {
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
-
 }

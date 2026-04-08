@@ -219,26 +219,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
     @Override
     public List<QuotaUsageJoinVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate) {
-        // if accountId is not specified, use accountName and domainId
-        if ((accountId == null) && (accountName != null) && (domainId != null)) {
-            Account userAccount = null;
-            Account caller = CallContext.current().getCallingAccount();
-            if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-                Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
-                List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter);
-                if (!accounts.isEmpty()) {
-                    userAccount = accounts.get(0);
-                }
-                if (userAccount != null) {
-                    accountId = userAccount.getId();
-                } else {
-                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                }
-            } else {
-                throw new PermissionDeniedException("Invalid Domain Id or Account");
-            }
-        }
-
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
