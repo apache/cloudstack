@@ -209,7 +209,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem,
                     Storage.StoragePoolType.SharedMountPoint);
     private static final String DETAIL_LIBGUESTFS_BACKEND = "libguestfs.backend";
-    private static final String DETAIL_VDDK_LIB_DIR = "vddk.lib.dir";
+    private static final String DETAIL_VDDK_LIB_DIR = Host.HOST_VDDK_LIB_DIR;
     private static final String DETAIL_VDDK_TRANSPORTS = "vddk.transports";
     private static final String DETAIL_VDDK_THUMBPRINT = "vddk.thumbprint";
 

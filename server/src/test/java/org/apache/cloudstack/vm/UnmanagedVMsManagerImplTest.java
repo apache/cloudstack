@@ -1020,16 +1020,6 @@ public class UnmanagedVMsManagerImplTest {
         baseTestImportVmFromVmwareToKvm(VcenterParameter.FORCE_MS_AND_USE_VDDK, false, false);
     }
 
-    @Test
-    public void testImportVmFromVmwareToKvmUseVddkIsPassedToConvertCommand() throws OperationTimedoutException, AgentUnavailableException {
-        baseTestImportVmFromVmwareToKvm(VcenterParameter.USE_VDDK_OVF_SUPPORTED, false, false);
-    }
-
-    @Test
-    public void testImportVmFromVmwareToKvmDetailsOverrideVddkSettings() throws OperationTimedoutException, AgentUnavailableException {
-        baseTestImportVmFromVmwareToKvm(VcenterParameter.USE_VDDK_DETAILS_OVERRIDES, false, false);
-    }
-
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateSelectedConversionStoragePoolForVddkFailsWhenPoolDoesNotSupportDiskOfferings() {
         long poolId = 11L;

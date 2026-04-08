@@ -18,7 +18,9 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
 import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_VERSION;
 import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
@@ -364,6 +366,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "rpm -qa | grep -i virtio-win";
     public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
     public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
+    public static final String VDDK_AUTODETECT_PATH_CMD = "find / -type d -name 'vmware-vix-disklib-distrib' 2>/dev/null | head -n 1";
 
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MIN = 2;
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MAX = 262144;
@@ -892,6 +895,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String cachePath;
     private String vddkTransports = null;
     private String vddkThumbprint = null;
+    private String vddkVersion = null;
     private String detectedPasswordFileOption = null;
     protected String javaTempDir = System.getProperty("java.io.tmpdir");
 
@@ -971,6 +975,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getVddkThumbprint() {
         return vddkThumbprint;
+    }
+
+    public String getVddkVersion() {
+        return vddkVersion;
     }
 
     /**
@@ -1173,7 +1181,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         setConvertInstanceEnv(convertEnvTmpDir, convertEnvVirtv2vTmpDir);
 
-        vddkLibDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_LIB_DIR);
+        vddkLibDir = StringUtils.trimToNull(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_LIB_DIR));
+        if (StringUtils.isNotBlank(vddkLibDir) && !isVddkLibDirValid(vddkLibDir)) {
+            LOGGER.warn("Configured VDDK library dir [{}] is invalid (missing lib64/libvixDiskLib.so), attempting auto-detection", vddkLibDir);
+            vddkLibDir = null;
+        }
+        if (StringUtils.isBlank(vddkLibDir)) {
+            vddkLibDir = detectVddkLibDir();
+        }
+        if (StringUtils.isNotBlank(vddkLibDir)) {
+            LOGGER.info("Detected VDDK library dir: {}", vddkLibDir);
+        } else {
+            LOGGER.warn("Could not detect a valid VDDK library dir; VDDK conversion will be unavailable");
+        }
+
+        vddkVersion = detectVddkVersion();
+        if (StringUtils.isNotBlank(vddkVersion)) {
+            LOGGER.info("Detected nbdkit VDDK plugin version: {}", vddkVersion);
+        }
+
         libguestfsBackend = StringUtils.defaultIfBlank(
                 AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBGUESTFS_BACKEND), "direct");
         vddkTransports = StringUtils.trimToNull(
@@ -4250,6 +4276,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
         cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
+        if (StringUtils.isNotBlank(vddkLibDir)) {
+            cmd.getHostDetails().put(HOST_VDDK_LIB_DIR, vddkLibDir);
+        }
+        if (StringUtils.isNotBlank(vddkVersion)) {
+            cmd.getHostDetails().put(HOST_VDDK_VERSION, vddkVersion);
+        }
         if (instanceConversionSupported) {
             cmd.getHostDetails().put(HOST_VIRTV2V_VERSION, getHostVirtV2vVersion());
         }
@@ -5966,7 +5998,52 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean hostSupportsVddk() {
-        return hostSupportsInstanceConversion() && StringUtils.isNotBlank(vddkLibDir) && new File(vddkLibDir).isDirectory();
+        return hostSupportsInstanceConversion() && isVddkLibDirValid(vddkLibDir) && StringUtils.isNotBlank(vddkVersion);
+    }
+
+    protected boolean isVddkLibDirValid(String path) {
+        if (StringUtils.isBlank(path)) {
+            return false;
+        }
+        File libDir = new File(path, "lib64");
+        if (!libDir.isDirectory()) {
+            return false;
+        }
+        File[] libs = libDir.listFiles((dir, name) -> name.startsWith("libvixDiskLib.so"));
+        return libs != null && libs.length > 0;
+    }
+
+    protected String detectVddkLibDir() {
+        String detectedPath = StringUtils.trimToNull(Script.runSimpleBashScript(VDDK_AUTODETECT_PATH_CMD));
+        if (StringUtils.isNotBlank(detectedPath) && isVddkLibDirValid(detectedPath)) {
+            return detectedPath;
+        }
+        return null;
+    }
+
+    protected String detectVddkVersion() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("nbdkit", "vddk", "--version");
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            process.waitFor();
+
+            if (StringUtils.isBlank(output)) {
+                return null;
+            }
+
+            for (String line : output.split("\\R")) {
+                String trimmed = StringUtils.trimToEmpty(line);
+                if (trimmed.startsWith("vddk ")) {
+                    return StringUtils.trimToNull(trimmed.substring("vddk ".length()));
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            LOGGER.error("Failed to detect vddk version: {}", e.getMessage());
+            return null;
+        }
     }
 
     public boolean hostSupportsWindowsGuestConversion() {
