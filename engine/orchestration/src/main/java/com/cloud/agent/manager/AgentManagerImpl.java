@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -55,7 +56,6 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.agent.AgentManager;
@@ -1977,7 +1977,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
                 GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections,
-                RemoteAgentNewConnectionsMonitorInterval };
+                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort };
     }
 
     protected class SetHostParamsListener implements Listener {
@@ -2091,6 +2091,25 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             Map<Long, List<Long>> hostsPerZone = getHostsPerZone();
             sendCommandToAgents(hostsPerZone, params);
         }
+    }
+
+    @Override
+    public int getHostSshPort(HostVO host) {
+        if (host == null) {
+            return KVMHostDiscoverySshPort.value();
+        }
+
+        if (host.getHypervisorType() != HypervisorType.KVM) {
+            return Host.DEFAULT_SSH_PORT;
+        }
+
+        _hostDao.loadDetails(host);
+        String hostPort = host.getDetail(Host.HOST_SSH_PORT);
+        if (StringUtils.isBlank(hostPort)) {
+            return KVMHostDiscoverySshPort.valueIn(host.getClusterId());
+        }
+
+        return Integer.parseInt(hostPort);
     }
 
     private GlobalLock getHostJoinLock(Long hostId) {

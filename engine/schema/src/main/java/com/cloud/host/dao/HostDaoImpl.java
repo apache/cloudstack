@@ -1348,7 +1348,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("cluster", clusterId);
-        List<HostVO> list = listBy(sc, new Filter(1));
+        List<HostVO> list = listBy(sc, new Filter(1, true));
         return list.isEmpty() ? null : list.get(0);
     }
 

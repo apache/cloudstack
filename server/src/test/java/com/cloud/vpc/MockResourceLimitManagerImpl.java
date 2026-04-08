@@ -24,6 +24,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource.ResourceType;
@@ -238,6 +239,11 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
+    public void checkResourceLimitWithTag(Account account, Long domainId, boolean considerSystemAccount, ResourceType type, String tag, long... count) throws ResourceAllocationException {
+
+    }
+
+    @Override
     public List<String> getResourceLimitHostTags() {
         return null;
     }
@@ -268,19 +274,24 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
-    public void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering) throws ResourceAllocationException {
+    public void checkVolumeResourceLimit(Account owner, Boolean display, Long size, DiskOffering diskOffering, List<Reserver> reservations) throws ResourceAllocationException {
 
     }
 
     @Override
+    public List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering) {
+        return null;
+    }
+
+    @Override
     public void checkVolumeResourceLimitForDiskOfferingChange(Account owner, Boolean display, Long currentSize, Long newSize,
-            DiskOffering currentOffering, DiskOffering newOffering) throws ResourceAllocationException {
+            DiskOffering currentOffering, DiskOffering newOffering, List<Reserver> reservations) throws ResourceAllocationException {
 
     }
 
     @Override
     public void checkPrimaryStorageResourceLimit(Account owner, Boolean display, Long size,
-            DiskOffering diskOffering) {
+            DiskOffering diskOffering, List<Reserver> reservations) {
 
     }
 
@@ -324,7 +335,7 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
-    public void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template) throws ResourceAllocationException {
+    public void checkVmResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Reserver> reservations) throws ResourceAllocationException {
 
     }
 
@@ -341,19 +352,14 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     @Override
     public void checkVmResourceLimitsForServiceOfferingChange(Account owner, Boolean display, Long currentCpu, Long newCpu,
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
-            VirtualMachineTemplate template) throws ResourceAllocationException {
+            VirtualMachineTemplate template, List<Reserver> reservations) throws ResourceAllocationException {
 
     }
 
     @Override
     public void checkVmResourceLimitsForTemplateChange(Account owner, Boolean display, ServiceOffering offering,
             VirtualMachineTemplate currentTemplate,
-            VirtualMachineTemplate newTemplate) throws ResourceAllocationException {
-
-    }
-
-    @Override
-    public void checkVmCpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long cpu) throws ResourceAllocationException {
+            VirtualMachineTemplate newTemplate, List<Reserver> reservations) throws ResourceAllocationException {
 
     }
 
@@ -368,11 +374,6 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
-    public void checkVmMemoryResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) throws ResourceAllocationException {
-
-    }
-
-    @Override
     public void incrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) {
 
     }
@@ -380,5 +381,10 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     @Override
     public void decrementVmMemoryResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long memory) {
 
+    }
+
+    @Override
+    public long recalculateDomainResourceCount(long domainId, ResourceType type, String tag) {
+        return 0;
     }
 }

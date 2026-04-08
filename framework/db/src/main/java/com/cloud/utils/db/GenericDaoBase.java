@@ -347,7 +347,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @Override
     @DB()
     public T lockOneRandomRow(final SearchCriteria<T> sc, final boolean exclusive) {
-        final Filter filter = new Filter(1);
+        final Filter filter = new Filter(1, true);
         final List<T> beans = search(sc, filter, exclusive, true);
         return beans.isEmpty() ? null : beans.get(0);
     }
@@ -927,7 +927,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected T findOneIncludingRemovedBy(final SearchCriteria<T> sc) {
-        Filter filter = new Filter(1);
+        Filter filter = new Filter(1, true);
         List<T> results = searchIncludingRemoved(sc, filter, null, false);
         assert results.size() <= 1 : "Didn't the limiting worked?";
         return results.size() == 0 ? null : results.get(0);
@@ -1324,7 +1324,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         Filter filter = null;
         final long batchSizeFinal = ObjectUtils.defaultIfNull(batchSize, 0L);
         if (batchSizeFinal > 0) {
-            filter = new Filter(null, batchSizeFinal);
+            filter = new Filter(batchSizeFinal);
         }
         int expunged = 0;
         int currentExpunged = 0;

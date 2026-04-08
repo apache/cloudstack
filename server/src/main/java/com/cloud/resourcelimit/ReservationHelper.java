@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,26 +15,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package com.cloud.upgrade.dao;
+package com.cloud.resourcelimit;
 
-import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.cloudstack.resourcelimit.Reserver;
 
-import java.sql.Connection;
+import java.util.List;
 
-public interface DbUpgradeSystemVmTemplate {
+public class ReservationHelper {
 
-    default void updateSystemVmTemplates(Connection conn) {
-        Logger logger = LogManager.getLogger(getClass());
-        logger.debug("Updating System Vm template IDs");
-        try {
-            SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
-            systemVmTemplateRegistration.updateSystemVmTemplates(conn);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+    public static void closeAll(List<Reserver> reservations) throws CloudRuntimeException {
+        for (Reserver reservation : reservations) {
+            reservation.close();
         }
     }
+
 }

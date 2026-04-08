@@ -50,6 +50,7 @@ import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.Vlan;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.google.common.collect.Sets;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
@@ -1246,25 +1247,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         vpc.setPublicMtu(publicMtu);
         vpc.setDisplay(Boolean.TRUE.equals(displayVpc));
 
-        if (vpc.getCidr() == null && cidrSize != null) {
-            // Allocate a CIDR for VPC
-            Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForVpc(vpc, cidrSize);
-            if (subnet != null) {
-                vpc.setCidr(subnet.getSubnet());
-            } else {
-                throw new CloudRuntimeException("Failed to allocate a CIDR with requested size for VPC.");
+        try (CheckedReservation vpcReservation = new CheckedReservation(owner, ResourceType.vpc, null, null, 1L, reservationDao, _resourceLimitMgr)) {
+            if (vpc.getCidr() == null && cidrSize != null) {
+                // Allocate a CIDR for VPC
+                Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForVpc(vpc, cidrSize);
+                if (subnet != null) {
+                    vpc.setCidr(subnet.getSubnet());
+                } else {
+                    throw new CloudRuntimeException("Failed to allocate a CIDR with requested size for VPC.");
+                }
             }
-        }
 
-        Vpc newVpc = createVpc(displayVpc, vpc);
-        // assign Ipv4 subnet to Routed VPC
-        if (routedIpv4Manager.isRoutedVpc(vpc)) {
-            routedIpv4Manager.assignIpv4SubnetToVpc(newVpc);
+            Vpc newVpc = createVpc(displayVpc, vpc);
+            // assign Ipv4 subnet to Routed VPC
+            if (routedIpv4Manager.isRoutedVpc(vpc)) {
+                routedIpv4Manager.assignIpv4SubnetToVpc(newVpc);
+            }
+            if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
+                routedIpv4Manager.persistBgpPeersForVpc(newVpc.getId(), bgpPeerIds);
+            }
+            return newVpc;
         }
-        if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
-            routedIpv4Manager.persistBgpPeersForVpc(newVpc.getId(), bgpPeerIds);
-        }
-        return newVpc;
     }
 
     private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize, long zoneId) {

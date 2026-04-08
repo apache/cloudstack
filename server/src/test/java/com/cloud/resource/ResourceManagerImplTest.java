@@ -360,12 +360,14 @@ public class ResourceManagerImplTest {
 
     @Test
     public void testConnectAndRestartAgentOnHost() {
+        when(agentManager.getHostSshPort(any())).thenReturn(22);
         resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword, hostPrivateKey);
     }
 
     @Test
     public void testHandleAgentSSHEnabledNotConnectedAgent() {
         when(host.getStatus()).thenReturn(Status.Disconnected);
+        when(agentManager.getHostSshPort(any())).thenReturn(22);
         resourceManager.handleAgentIfNotConnected(host, false);
         verify(resourceManager).getHostCredentials(eq(host));
         verify(resourceManager).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));

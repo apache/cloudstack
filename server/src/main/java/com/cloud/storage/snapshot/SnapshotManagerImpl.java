@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.SecurityChecker;
 import com.cloud.api.ApiDBUtils;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -67,6 +68,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.resourcedetail.SnapshotPolicyDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.SnapshotPolicyDetailsDao;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
@@ -240,6 +242,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Inject
     private AnnotationDao annotationDao;
 
+    @Inject
+    private ReservationDao reservationDao;
     @Inject
     protected SnapshotHelper snapshotHelper;
     @Inject
@@ -1705,20 +1709,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Type snapshotType = getSnapshotType(policyId);
         Account owner = _accountMgr.getAccount(volume.getAccountId());
 
-        ResourceType storeResourceType = getStoreResourceType(volume.getDataCenterId(), locationType);
-        try {
-            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
-            _resourceLimitMgr.checkResourceLimit(owner, storeResourceType, volume.getSize());
-        } catch (ResourceAllocationException e) {
-            if (snapshotType != Type.MANUAL) {
-                String msg = String.format("Snapshot resource limit exceeded for account %s. Failed to create recurring snapshots", owner);
-                logger.warn(msg);
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, "Snapshot resource limit exceeded for account id : " + owner.getId()
-                        + ". Failed to create recurring snapshots; please use updateResourceLimit to increase the limit");
-            }
-            throw e;
-        }
-
         // Determine the name for this snapshot
         // Snapshot Name: VMInstancename + volumeName + timeString
         String timeString = DateUtil.getDateDisplayString(DateUtil.GMT_TIMEZONE, new Date(), DateUtil.YYYYMMDD_FORMAT);
@@ -1750,17 +1740,33 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             hypervisorType = volume.getHypervisorType();
         }
 
-        SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
-                (short)snapshotType.ordinal(), snapshotType.name(), volume.getSize(), volume.getMinIops(), volume.getMaxIops(), hypervisorType, locationType);
-
-        SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
-        if (snapshot == null) {
-            throw new CloudRuntimeException(String.format("Failed to create snapshot for volume: %s", volume));
+        ResourceType storeResourceType = ResourceType.secondary_storage;
+        if (!isBackupSnapshotToSecondaryForZone(volume.getDataCenterId()) ||
+                Snapshot.LocationType.PRIMARY.equals(locationType)) {
+            storeResourceType = ResourceType.primary_storage;
         }
-        CallContext.current().putContextParameter(Snapshot.class, snapshot.getUuid());
-        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
-        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), storeResourceType, volume.getSize());
-        return snapshot;
+
+        try (CheckedReservation volumeSnapshotReservation = new CheckedReservation(owner, ResourceType.snapshot, null, null, 1L, reservationDao, _resourceLimitMgr);
+             CheckedReservation storageReservation = new CheckedReservation(owner, storeResourceType, null, null, volume.getSize(), reservationDao, _resourceLimitMgr)) {
+            SnapshotVO snapshotVO = new SnapshotVO(volume.getDataCenterId(), volume.getAccountId(), volume.getDomainId(), volume.getId(), volume.getDiskOfferingId(), snapshotName,
+                    (short)snapshotType.ordinal(), snapshotType.name(), volume.getSize(), volume.getMinIops(), volume.getMaxIops(), hypervisorType, locationType);
+
+            SnapshotVO snapshot = _snapshotDao.persist(snapshotVO);
+            if (snapshot == null) {
+                throw new CloudRuntimeException(String.format("Failed to create snapshot for volume: %s", volume));
+            }
+            CallContext.current().putContextParameter(Snapshot.class, snapshot.getUuid());
+            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
+            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), storeResourceType, volume.getSize());
+            return snapshot;
+        } catch (ResourceAllocationException e) {
+            if (snapshotType != Type.MANUAL) {
+                String msg = String.format("Snapshot resource limit exceeded for account id : %s. Failed to create recurring snapshots", owner.getId());
+                logger.warn(msg);
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, msg + ". Please, use updateResourceLimit to increase the limit");
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -1801,50 +1807,54 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @DB
     private boolean copySnapshotToZone(SnapshotDataStoreVO snapshotDataStoreVO, DataStore srcSecStore,
-           DataCenterVO dstZone, DataStore dstSecStore, Account account)
+                                       DataCenterVO dstZone, DataStore dstSecStore, Account account, boolean shouldCheckResourceLimits)
             throws ResourceAllocationException {
         final long snapshotId = snapshotDataStoreVO.getSnapshotId();
         final long dstZoneId = dstZone.getId();
         if (checkAndProcessSnapshotAlreadyExistInStore(snapshotId, dstSecStore)) {
             return true;
         }
-        _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
-        // snapshotId may refer to ID of a removed parent snapshot
-        SnapshotInfo snapshotOnSecondary = snapshotFactory.getSnapshot(snapshotId, srcSecStore);
-        String copyUrl = null;
-        try {
-            AsyncCallFuture<CreateCmdResult> future = snapshotSrv.queryCopySnapshot(snapshotOnSecondary);
-            CreateCmdResult result = future.get();
-            if (!result.isFailed()) {
-                copyUrl = result.getPath();
+        // Resource limit checks are not performed here at the moment, but they were added in case this method is used
+        // in the future to copy a standalone snapshot
+        long requiredSecondaryStorageSpace = shouldCheckResourceLimits ? snapshotDataStoreVO.getSize() : 0L;
+        try (CheckedReservation secondaryStorageReservation = new CheckedReservation(account, ResourceType.secondary_storage, null, null, null, requiredSecondaryStorageSpace, null, reservationDao, _resourceLimitMgr)) {
+            SnapshotInfo snapshotOnSecondary = snapshotFactory.getSnapshot(snapshotId, srcSecStore);
+            String copyUrl = null;
+            try {
+                AsyncCallFuture<CreateCmdResult> future = snapshotSrv.queryCopySnapshot(snapshotOnSecondary);
+                CreateCmdResult result = future.get();
+                if (!result.isFailed()) {
+                    copyUrl = result.getPath();
+                }
+            } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
+                logger.error("Failed to prepare URL for copy for snapshot ID: {} on store: {}", snapshotId, srcSecStore, ex);
             }
-        } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
-            logger.error("Failed to prepare URL for copy for snapshot ID: {} on store: {}", snapshotId, srcSecStore, ex);
-        }
-        if (StringUtils.isEmpty(copyUrl)) {
-            logger.error("Unable to prepare URL for copy for snapshot ID: {} on store: {}", snapshotId, srcSecStore);
-            return false;
-        }
-        logger.debug(String.format("Copying snapshot ID: %d to destination zones using download URL: %s", snapshotId, copyUrl));
-        try {
-            AsyncCallFuture<SnapshotResult> future = snapshotSrv.copySnapshot(snapshotOnSecondary, copyUrl, dstSecStore);
-            SnapshotResult result = future.get();
-            if (result.isFailed()) {
-                logger.debug("Copy snapshot ID: {} failed for image store {}: {}", snapshotId, dstSecStore, result.getResult());
+            if (StringUtils.isEmpty(copyUrl)) {
+                logger.error("Unable to prepare URL for copy for snapshot ID: {} on store: {}", snapshotId, srcSecStore);
                 return false;
             }
-            snapshotZoneDao.addSnapshotToZone(snapshotId, dstZoneId);
-            _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
-            if (account.getId() != Account.ACCOUNT_ID_SYSTEM) {
-                SnapshotVO snapshotVO = _snapshotDao.findByIdIncludingRemoved(snapshotId);
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, account.getId(), dstZoneId, snapshotId, null, null, null, snapshotVO.getSize(),
-                        snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
+            logger.debug(String.format("Copying snapshot ID: %d to destination zones using download URL: %s", snapshotId, copyUrl));
+            try {
+                AsyncCallFuture<SnapshotResult> future = snapshotSrv.copySnapshot(snapshotOnSecondary, copyUrl, dstSecStore);
+                SnapshotResult result = future.get();
+                if (result.isFailed()) {
+                    logger.debug("Copy snapshot ID: {} failed for image store {}: {}", snapshotId, dstSecStore, result.getResult());
+                    return false;
+                }
+                snapshotZoneDao.addSnapshotToZone(snapshotId, dstZoneId);
+                _resourceLimitMgr.incrementResourceCount(account.getId(), ResourceType.secondary_storage, snapshotDataStoreVO.getSize());
+                if (account.getId() != Account.ACCOUNT_ID_SYSTEM) {
+                    SnapshotVO snapshotVO = _snapshotDao.findByIdIncludingRemoved(snapshotId);
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_COPY, account.getId(), dstZoneId, snapshotId, null, null, null, snapshotVO.getSize(),
+                            snapshotVO.getSize(), snapshotVO.getClass().getName(), snapshotVO.getUuid());
+                }
+
+                return true;
+            } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
+                logger.debug("Failed to copy snapshot ID: {} to image store: {}", snapshotId, dstSecStore);
             }
-            return true;
-        } catch (InterruptedException | ExecutionException | ResourceUnavailableException ex) {
-            logger.debug("Failed to copy snapshot ID: {} to image store: {}", snapshotId, dstSecStore);
+            return false;
         }
-        return false;
     }
 
     @DB
@@ -1875,13 +1885,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (CollectionUtils.isEmpty(snapshotChain)) {
             return true;
         }
-        try {
-            _resourceLimitMgr.checkResourceLimit(account, ResourceType.secondary_storage, size);
-        } catch (ResourceAllocationException e) {
-            logger.error(String.format("Unable to allocate secondary storage resources for snapshot chain for %s with size: %d", snapshotVO, size), e);
-            return false;
-        }
-        Collections.reverse(snapshotChain);
         if (dstSecStore == null) {
             // find all eligible image stores for the destination zone
             List<DataStore> dstSecStores = dataStoreMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(destZoneId));
@@ -1893,15 +1896,21 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 throw new StorageUnavailableException("Destination zone is not ready, no image store with free capacity", DataCenter.class, destZoneId);
             }
         }
-        logger.debug("Copying snapshot chain for snapshot ID: {} on secondary store: {} of zone ID: {}", snapshotVO, dstSecStore, destZone);
-        for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotChain) {
-            if (!copySnapshotToZone(snapshotDataStoreVO, srcSecStore, destZone, dstSecStore, account)) {
-                logger.error("Failed to copy snapshot: {} to zone: {} due to failure to copy snapshot ID: {} from snapshot chain",
-                        snapshotVO, destZone, snapshotDataStoreVO.getSnapshotId());
-                return false;
+        try  (CheckedReservation secondaryStorageReservation = new CheckedReservation(account, ResourceType.secondary_storage, null, null, null, size, null, reservationDao, _resourceLimitMgr)) {
+            logger.debug("Copying snapshot chain for snapshot ID: {} on secondary store: {} of zone ID: {}", snapshotVO, dstSecStore, destZone);
+            Collections.reverse(snapshotChain);
+            for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotChain) {
+                if (!copySnapshotToZone(snapshotDataStoreVO, srcSecStore, destZone, dstSecStore, account, false)) {
+                    logger.error("Failed to copy snapshot: {} to zone: {} due to failure to copy snapshot ID: {} from snapshot chain",
+                            snapshotVO, destZone, snapshotDataStoreVO.getSnapshotId());
+                    return false;
+                }
             }
+            return true;
+        } catch (ResourceAllocationException e) {
+            logger.error(String.format("Unable to allocate secondary storage resources for snapshot chain for %s with size: %d", snapshotVO, size), e);
+            return false;
         }
-        return true;
     }
 
     @DB

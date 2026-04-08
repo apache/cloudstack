@@ -31,9 +31,9 @@ public class RestoreBackupCommand extends Command  {
     private String backupRepoType;
     private String backupRepoAddress;
     private List<String> volumePaths;
+    private List<String> backupFiles;
     private String diskType;
     private Boolean vmExists;
-    private String restoreVolumeUUID;
     private VirtualMachine.State vmState;
 
     protected RestoreBackupCommand() {
@@ -80,6 +80,14 @@ public class RestoreBackupCommand extends Command  {
         this.volumePaths = volumePaths;
     }
 
+    public List<String> getBackupFiles() {
+        return backupFiles;
+    }
+
+    public void setBackupFiles(List<String> backupFiles) {
+        this.backupFiles = backupFiles;
+    }
+
     public Boolean isVmExists() {
         return vmExists;
     }
@@ -102,14 +110,6 @@ public class RestoreBackupCommand extends Command  {
 
     public void setMountOptions(String mountOptions) {
         this.mountOptions = mountOptions;
-    }
-
-    public String getRestoreVolumeUUID() {
-        return restoreVolumeUUID;
-    }
-
-    public void setRestoreVolumeUUID(String restoreVolumeUUID) {
-        this.restoreVolumeUUID = restoreVolumeUUID;
     }
 
     public VirtualMachine.State getVmState() {
