@@ -2097,9 +2097,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return true;
         }
 
-        validateNoDeleteProtectedVmsForAccount(account);
         checkIfAccountManagesProjects(accountId);
         verifyCallerPrivilegeForUserOrAccountOperations(account);
+        validateNoDeleteProtectedVmsForAccount(account);
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
