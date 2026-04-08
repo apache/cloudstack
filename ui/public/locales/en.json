@@ -1217,6 +1217,8 @@
 "label.host.alerts": "Hosts in alert state",
 "label.host.name": "Host name",
 "label.host.ovftool.version": "OVFTool Version",
+"label.host.vddk.support": "VDDK Support",
+"label.host.vddk.version": "VDDK Version",
 "label.host.tag": "Host tag",
 "label.host.virtv2v.version": "Virt-v2v Version",
 "label.hostcontrolstate": "Compute Resource Status",
