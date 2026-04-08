@@ -176,7 +176,7 @@
                   @handle-checkselectpair-change="updateSelectedKvmHostForConversion"
                 />
               </a-form-item>
-              <a-form-item name="importhostid" ref="importhostid">
+              <a-form-item name="importhostid" ref="importhostid" v-if="!form.usevddk">
                 <check-box-select-pair
                   layout="vertical"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
@@ -587,7 +587,8 @@ export default {
       selectedRootDiskSources: [],
       vmwareToKvmExtraParamsAllowed: false,
       vmwareToKvmExtraParamsSelected: false,
-      vmwareToKvmExtraParams: ''
+      vmwareToKvmExtraParams: '',
+      userModifiedVddkSetting: false
     }
   },
   beforeCreate () {
@@ -1018,6 +1019,8 @@ export default {
       }).then(json => {
         this.kvmHostsForConversion = json.listhostsresponse.host || []
         this.kvmHostsForConversion = this.kvmHostsForConversion.filter(host => ['Enabled', 'Disabled'].includes(host.resourcestate))
+        // Check if any host has VDDK support
+        let hasVddkSupport = false
         this.kvmHostsForConversion.map(host => {
           host.name = host.name + ' [Pod=' + host.podname + '] [Cluster=' + host.clustername + ']'
           if (host.instanceconversionsupported !== null && host.instanceconversionsupported !== undefined && host.instanceconversionsupported) {
@@ -1031,6 +1034,11 @@ export default {
           if (host.details['host.ovftool.version']) {
             host.name = host.name + ' (ovftool=' + host.details['host.ovftool.version'] + ')'
           }
+          // Check for VDDK support
+          if (host.details['host.vddk.support'] === 'true' || host.details['host.vddk.support'] === true) {
+            hasVddkSupport = true
+          }
+
           if (this.form.usevddk) {
             if (host.details['host.vddk.support'] === 'true' || host.details['host.vddk.support'] === true) {
               host.name = host.name + ' (VDDK=' + this.$t('label.supported') + ')'
@@ -1042,6 +1050,13 @@ export default {
             }
           }
         })
+
+        // Enable usevddk by default if at least one host has VDDK support
+        // Only auto-enable if user hasn't manually modified the setting
+        if (hasVddkSupport && !this.form.usevddk && !this.userModifiedVddkSetting) {
+          this.form.usevddk = true
+          this.onUseVddkChange(true, false)
+        }
       })
     },
     fetchKvmHostsForImporting () {
@@ -1134,12 +1149,17 @@ export default {
       this.switches.forceConvertToPool = val
       this.resetStorageOptionsForConversion()
     },
-    onUseVddkChange (val) {
+    onUseVddkChange (val, isUserChange = true) {
+      if (isUserChange) {
+        this.userModifiedVddkSetting = true
+      }
       if (val) {
         this.form.forceconverttopool = true
         this.form.forcemstoimportvmfiles = false
         this.switches.forceConvertToPool = true
         this.switches.forceMsToImportVmFiles = false
+        // Reset import host selection when VDDK is enabled
+        this.selectedKvmHostForImporting = null
         // Refresh host list to show VDDK support details
         this.fetchKvmHostsForConversion()
       } else {
@@ -1399,6 +1419,7 @@ export default {
       this.form.usevddk = false
       this.form.forceconverttopool = false
       this.form.forcemstoimportvmfiles = false
+      this.userModifiedVddkSetting = false
       this.resetStorageOptionsForConversion()
     },
     closeAction () {
