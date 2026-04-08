@@ -27,12 +27,12 @@ import com.cloud.serializer.Param;
 
 public class QuotaStatementItemResourceResponse extends BaseResponse {
 
-    @SerializedName("quotaconsumed")
+    @SerializedName(ApiConstants.QUOTA_CONSUMED)
     @Param(description = "Quota consumed.")
     private BigDecimal quotaUsed;
 
     @SerializedName(ApiConstants.RESOURCE_ID)
-    @Param(description = "Resources's id.")
+    @Param(description = "Resources's ID.")
     private String resourceId;
 
     @SerializedName(ApiConstants.DISPLAY_NAME)
@@ -40,7 +40,7 @@ public class QuotaStatementItemResourceResponse extends BaseResponse {
     private String displayName;
 
     @SerializedName(ApiConstants.REMOVED)
-    @Param(description = "Indicates if the resource is removed or active.")
+    @Param(description = "Indicates whether the resource is removed or active.")
     private boolean removed;
 
     public void setQuotaUsed(BigDecimal quotaUsed) {

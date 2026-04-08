@@ -371,40 +371,67 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
-    public QuotaStatementResponse createQuotaStatementResponse(final List<QuotaUsageJoinVO> quotaUsages, QuotaStatementCmd cmd) {
-        if (CollectionUtils.isEmpty(quotaUsages)) {
-            throw new InvalidParameterValueException(String.format("There is no usage data for parameters [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd,
-                    "accountName", "accountId", "domainId", "startDate", "endDate", "type", "showDetails")));
-        }
+    public QuotaStatementResponse createQuotaStatementResponse(QuotaStatementCmd cmd) {
+        Long accountId = getAccountIdForQuotaStatement(cmd);
+        long domainId = getDomainIdForQuotaStatement(cmd);
+        List<QuotaUsageJoinVO> quotaUsages = _quotaService.getQuotaUsage(accountId, null, domainId, cmd.getUsageType(), cmd.getStartDate(), cmd.getEndDate());
+
         logger.debug("Creating quota statement from [{}] usage records for parameters [{}].", quotaUsages.size(),
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "accountName", "accountId", "domainId", "startDate", "endDate", "type", "showDetails"));
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "accountName", "accountId", "projectId", "domainId", "startDate", "endDate", "usageType", "showResources"));
+
+        if (CollectionUtils.isEmpty(quotaUsages)) {
+            throw new InvalidParameterValueException("There is no usage data for the provided parameters.");
+        }
 
         createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(quotaUsages, cmd.getUsageType());
 
-        Map<Integer, List<QuotaUsageJoinVO>> recordsPerUsageTypes = quotaUsages
-                .stream()
+        Map<Integer, List<QuotaUsageJoinVO>> recordsPerUsageTypes = quotaUsages.stream()
                 .sorted(Comparator.comparingInt(QuotaUsageJoinVO::getUsageType))
                 .collect(Collectors.groupingBy(QuotaUsageJoinVO::getUsageType));
 
         List<QuotaStatementItemResponse> items = new ArrayList<>();
-
         recordsPerUsageTypes.forEach((key, value) -> items.add(createStatementItem(key, value, cmd.isShowResources())));
 
         QuotaStatementResponse statement = new QuotaStatementResponse();
-
         statement.setLineItem(items);
         statement.setTotalQuota(items.stream().map(QuotaStatementItemResponse::getQuotaUsed).reduce(BigDecimal.ZERO, BigDecimal::add));
         statement.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         statement.setObjectName("statement");
 
-        AccountVO account = _accountDao.findAccountByNameAndDomainIncludingRemoved(cmd.getAccountName(), cmd.getDomainId());
-        DomainVO domain = domainDao.findByIdIncludingRemoved(cmd.getDomainId());
-
-        statement.setAccountId(account.getUuid());
-        statement.setAccountName(account.getAccountName());
+        if (accountId != null) {
+            Account account = _accountDao.findAccountIncludingRemoved(cmd.getAccountName(), cmd.getDomainId());
+            statement.setAccountId(account.getUuid());
+            statement.setAccountName(account.getAccountName());
+        }
+        DomainVO domain = domainDao.findByIdIncludingRemoved(domainId);
         statement.setDomainId(domain.getUuid());
 
         return statement;
+    }
+
+    protected Long getAccountIdForQuotaStatement(QuotaStatementCmd cmd) { // TODO: tests pra esse e pro debaixo
+        long accountId = cmd.getEntityOwnerId();
+        if (accountId != -1) {
+            return accountId;
+        }
+
+        if (Account.Type.NORMAL.equals(CallContext.current().getCallingAccount().getType())) {
+            logger.debug("Limiting the Quota statement for the calling Cccount, as they are a User Account.");
+            return CallContext.current().getCallingAccountId();
+        }
+
+        logger.debug("Allowing admin/domain admin to generate the Quota statement for the provided Domain.");
+        return null;
+    }
+
+    protected long getDomainIdForQuotaStatement(QuotaStatementCmd cmd) {
+        long domainId = cmd.getDomainId();
+        if (domainId != -1) {
+            return domainId;
+        }
+
+        logger.debug("Limiting the Quota statement for the calling Account's Domain.");
+        return CallContext.current().getCallingAccount().getDomainId();
     }
 
     protected void createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(List<QuotaUsageJoinVO> quotaUsages, Integer usageType) {
@@ -426,7 +453,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     protected QuotaStatementItemResponse createStatementItem(int usageType, List<QuotaUsageJoinVO> usageRecords, boolean showResources) {
         QuotaUsageJoinVO firstRecord = usageRecords.get(0);
         int type = firstRecord.getUsageType();
-
 
         QuotaTypes quotaType = QuotaTypes.listQuotaTypes().get(type);
 
@@ -472,7 +498,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         }
         statementItem.setResources(itemDetails);
     }
-
 
     protected Long getResourceIdByUsageType(QuotaUsageJoinVO quotaUsageJoinVo, int usageType) {
         switch (usageType) {
@@ -788,11 +813,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         resp.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         resp.setObjectName("balance");
         return resp;
-    }
-
-    @Override
-    public List<QuotaUsageJoinVO> getQuotaUsage(QuotaStatementCmd cmd) {
-        return _quotaService.getQuotaUsage(cmd.getAccountId(), cmd.getAccountName(), cmd.getDomainId(), cmd.getUsageType(), cmd.getStartDate(), cmd.getEndDate());
     }
 
     @Override

@@ -49,8 +49,6 @@ public interface AccountDao extends GenericDao<AccountVO, Long> {
 
     List<AccountVO> listAccounts(String accountName, Long domainId, Filter filter);
 
-    AccountVO findAccountByNameAndDomainIncludingRemoved(String accountName, Long domainId);
-
     List<AccountVO> findCleanupsForDisabledAccounts();
 
     //return account only in enabled state

@@ -932,8 +932,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         try {
             quotaUsage.setStartDate(sdf.parse("2022-01-01"));
             quotaUsage.setEndDate(sdf.parse("2022-01-02"));
-        } catch (ParseException e) {
-            e.printStackTrace();
+        } catch (ParseException ignored) {
         }
         quotaUsages.add(quotaUsage);
 
@@ -945,8 +944,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         try {
             quotaUsage.setStartDate(sdf.parse("2022-01-03"));
             quotaUsage.setEndDate(sdf.parse("2022-01-04"));
-        } catch (ParseException e) {
-            e.printStackTrace();
+        } catch (ParseException ignored) {
         }
         quotaUsages.add(quotaUsage);
 
@@ -958,8 +956,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         try {
             quotaUsage.setStartDate(sdf.parse("2022-01-05"));
             quotaUsage.setEndDate(sdf.parse("2022-01-06"));
-        } catch (ParseException e) {
-            e.printStackTrace();
+        } catch (ParseException ignored) {
         }
         quotaUsages.add(quotaUsage);
 

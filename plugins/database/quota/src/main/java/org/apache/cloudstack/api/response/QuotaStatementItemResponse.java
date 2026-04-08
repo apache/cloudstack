@@ -28,20 +28,20 @@ import com.cloud.serializer.Param;
 
 public class QuotaStatementItemResponse extends BaseResponse {
 
-    @SerializedName("type")
-    @Param(description = "usage type")
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "Usage type.")
     private int usageType;
 
-    @SerializedName("name")
-    @Param(description = "usage type name")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "Name of the Usage type.")
     private String usageName;
 
-    @SerializedName("unit")
-    @Param(description = "usage unit")
+    @SerializedName(ApiConstants.UNIT)
+    @Param(description = "Unit of the Usage type.")
     private String usageUnit;
 
-    @SerializedName("quota")
-    @Param(description = "quota consumed")
+    @SerializedName(ApiConstants.QUOTA)
+    @Param(description = "Quota consumed.")
     private BigDecimal quotaUsed;
 
     @SerializedName(ApiConstants.RESOURCES)

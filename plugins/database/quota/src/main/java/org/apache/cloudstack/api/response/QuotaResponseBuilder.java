@@ -48,7 +48,7 @@ public interface QuotaResponseBuilder {
 
     boolean isUserAllowedToSeeActivationRules(User user);
 
-    QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageJoinVO> quotaUsage, QuotaStatementCmd cmd);
+    QuotaStatementResponse createQuotaStatementResponse(QuotaStatementCmd cmd);
 
     QuotaBalanceResponse createQuotaBalanceResponse(List<QuotaBalanceVO> quotaUsage, Date startDate, Date endDate);
 
@@ -59,8 +59,6 @@ public interface QuotaResponseBuilder {
     Pair<List<QuotaSummaryResponse>, Integer> createQuotaSummaryResponse(String accountName, Long domainId);
 
     QuotaBalanceResponse createQuotaLastBalanceResponse(List<QuotaBalanceVO> quotaBalance, Date startDate);
-
-    List<QuotaUsageJoinVO> getQuotaUsage(QuotaStatementCmd cmd);
 
     List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd);
 

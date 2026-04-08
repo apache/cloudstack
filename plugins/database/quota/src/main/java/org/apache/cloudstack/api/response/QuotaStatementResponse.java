@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import java.math.BigDecimal;
@@ -26,36 +27,36 @@ import java.util.List;
 
 public class QuotaStatementResponse  extends BaseResponse {
 
-    @SerializedName("accountid")
-    @Param(description = "account id")
+    @SerializedName(ApiConstants.ACCOUNT_ID)
+    @Param(description = "ID of the Account.")
     private String accountId;
 
-    @SerializedName("account")
-    @Param(description = "account name")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "Name of the Account.")
     private String accountName;
 
-    @SerializedName("domain")
-    @Param(description = "domain id")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "ID of the Domain.")
     private String domainId;
 
-    @SerializedName("quotausage")
-    @Param(description = "list of quota usage under various types", responseObject = QuotaStatementItemResponse.class)
+    @SerializedName(ApiConstants.QUOTA_USAGE)
+    @Param(description = "List of Quota usage under various types.", responseObject = QuotaStatementItemResponse.class)
     private List<QuotaStatementItemResponse> lineItem;
 
-    @SerializedName("totalquota")
-    @Param(description = "total quota used during this period")
+    @SerializedName(ApiConstants.TOTAL_QUOTA)
+    @Param(description = "Total Quota consumed during this period.")
     private BigDecimal totalQuota;
 
-    @SerializedName("startdate")
-    @Param(description = "start date")
+    @SerializedName(ApiConstants.START_DATE)
+    @Param(description = "Start date of the Quota statement.")
     private Date startDate = null;
 
-    @SerializedName("enddate")
-    @Param(description = "end date")
+    @SerializedName(ApiConstants.END_DATE)
+    @Param(description = "End date of the Quota statement.")
     private Date endDate = null;
 
-    @SerializedName("currency")
-    @Param(description = "currency")
+    @SerializedName(ApiConstants.CURRENCY)
+    @Param(description = "Currency of the Quota statement.")
     private String currency;
 
     public QuotaStatementResponse() {

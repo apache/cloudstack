@@ -18,15 +18,11 @@ package org.apache.cloudstack.api.command;
 
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaStatementResponse;
-import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaStatementCmdTest {
@@ -39,13 +35,10 @@ public class QuotaStatementCmdTest {
         cmd.setAccountName("admin");
         cmd.responseBuilder = responseBuilderMock;
 
-        List<QuotaUsageJoinVO> quotaUsageVOList = new ArrayList<>();
-        Mockito.doReturn(quotaUsageVOList).when(responseBuilderMock).getQuotaUsage(Mockito.any());
-        Mockito.doReturn(new QuotaStatementResponse()).when(responseBuilderMock).createQuotaStatementResponse(Mockito.any(), Mockito.any());
+        Mockito.doReturn(new QuotaStatementResponse()).when(responseBuilderMock).createQuotaStatementResponse(Mockito.any());
 
         cmd.execute();
 
-        Mockito.verify(responseBuilderMock).getQuotaUsage(cmd);
-        Mockito.verify(responseBuilderMock).createQuotaStatementResponse(quotaUsageVOList, cmd);
+        Mockito.verify(responseBuilderMock).createQuotaStatementResponse(cmd);
     }
 }
