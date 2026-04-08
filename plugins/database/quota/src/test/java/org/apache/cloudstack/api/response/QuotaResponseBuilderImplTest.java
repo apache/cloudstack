@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaSummaryCmd;
 import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -1006,5 +1007,110 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         quotaResponseBuilderSpy.setStatementItemResources(item, 0, getQuotaUsagesForTest(), false);
 
         Assert.assertNull(item.getResources());
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestLimitsToCallingAccountForNormalUser() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+
+        Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
+        Mockito.doReturn(Account.Type.NORMAL).when(accountMock).getType();
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
+
+            Assert.assertEquals(Long.valueOf(callerAccountMock.getAccountId()), result);
+        }
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestReturnsEntityOwnerIdWhenProvided() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+
+        Mockito.doReturn(42L).when(cmd).getEntityOwnerId();
+
+        Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
+
+        Assert.assertEquals(Long.valueOf(42L), result);
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestLimitsToCallingAccountWhenCallerIsAdminAndDomainIsNotProvided() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+
+        Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
+        Mockito.doReturn(Account.Type.ADMIN).when(accountMock).getType();
+        Mockito.doReturn(-1L).when(cmd).getEntityOwnerId();
+        Mockito.doReturn(null).when(cmd).getDomainId();
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
+
+            Assert.assertEquals(Long.valueOf(callerAccountMock.getAccountId()), result);
+        }
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestReturnsNullWhenCallerIsAdminAndDomainIsProvided() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+
+        Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
+        Mockito.doReturn(Account.Type.ADMIN).when(accountMock).getType();
+        Mockito.doReturn(-1L).when(cmd).getEntityOwnerId();
+        Mockito.doReturn(10L).when(cmd).getDomainId();
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
+
+            Assert.assertNull(result);
+        }
+    }
+
+    @Test
+    public void getDomainIdForQuotaStatementTestReturnsAccountDomainIdWhenAccountIdIsProvided() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+        AccountVO account = Mockito.mock(AccountVO.class);
+
+        Mockito.doReturn(account).when(accountDaoMock).findByIdIncludingRemoved(55L);
+        Mockito.doReturn(77L).when(account).getDomainId();
+
+        Long result = quotaResponseBuilderSpy.getDomainIdForQuotaStatement(cmd, 55L);
+
+        Assert.assertEquals(Long.valueOf(77L), result);
+    }
+
+    @Test
+    public void getDomainIdForQuotaStatementTestReturnsProvidedDomainIdWhenAccountIdIsNull() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+
+        Mockito.doReturn(99L).when(cmd).getDomainId();
+
+        Long result = quotaResponseBuilderSpy.getDomainIdForQuotaStatement(cmd, null);
+
+        Assert.assertEquals(Long.valueOf(99L), result);
+    }
+
+    @Test
+    public void getDomainIdForQuotaStatementTestFallsBackToCallingAccountDomainIdWhenNeitherAccountNorDomainIsProvided() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+        Account account = Mockito.mock(Account.class);
+
+        Mockito.doReturn(null).when(cmd).getDomainId();
+        Mockito.doReturn(123L).when(account).getDomainId();
+        Mockito.doReturn(account).when(callContextMock).getCallingAccount();
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Long result = quotaResponseBuilderSpy.getDomainIdForQuotaStatement(cmd, null);
+
+            Assert.assertEquals(123L, result.longValue());
+        }
     }
 }

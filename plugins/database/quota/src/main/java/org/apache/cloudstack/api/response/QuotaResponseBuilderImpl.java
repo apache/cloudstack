@@ -425,16 +425,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Override
     public QuotaStatementResponse createQuotaStatementResponse(QuotaStatementCmd cmd) {
         Long accountId = getAccountIdForQuotaStatement(cmd);
-        long domainId = getDomainIdForQuotaStatement(cmd);
+        Long domainId = getDomainIdForQuotaStatement(cmd, accountId);
         List<QuotaUsageJoinVO> quotaUsages = _quotaService.getQuotaUsage(accountId, null, domainId, cmd.getUsageType(), cmd.getStartDate(), cmd.getEndDate());
 
         logger.debug("Creating quota statement from [{}] usage records for parameters [{}].", quotaUsages.size(),
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "accountName", "accountId", "projectId", "domainId", "startDate", "endDate", "usageType", "showResources"));
-
-        if (CollectionUtils.isEmpty(quotaUsages)) {
-            throw new InvalidParameterValueException("There is no usage data for the provided parameters.");
-        }
-
         createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(quotaUsages, cmd.getUsageType());
 
         Map<Integer, List<QuotaUsageJoinVO>> recordsPerUsageTypes = quotaUsages.stream()
@@ -451,24 +446,32 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         statement.setObjectName("statement");
 
         if (accountId != null) {
-            Account account = _accountDao.findAccountIncludingRemoved(cmd.getAccountName(), cmd.getDomainId());
+            Account account = _accountDao.findByIdIncludingRemoved(accountId);
             statement.setAccountId(account.getUuid());
             statement.setAccountName(account.getAccountName());
+            domainId = account.getDomainId();
         }
-        DomainVO domain = domainDao.findByIdIncludingRemoved(domainId);
-        statement.setDomainId(domain.getUuid());
+        if (domainId != null) {
+            DomainVO domain = domainDao.findByIdIncludingRemoved(domainId);
+            statement.setDomainId(domain.getUuid());
+        }
 
         return statement;
     }
 
-    protected Long getAccountIdForQuotaStatement(QuotaStatementCmd cmd) { // TODO: tests pra esse e pro debaixo
+    protected Long getAccountIdForQuotaStatement(QuotaStatementCmd cmd) {
+        if (Account.Type.NORMAL.equals(CallContext.current().getCallingAccount().getType())) {
+            logger.debug("Limiting the Quota statement for the calling Account, as they are a User Account.");
+            return CallContext.current().getCallingAccountId();
+        }
+
         long accountId = cmd.getEntityOwnerId();
         if (accountId != -1) {
             return accountId;
         }
 
-        if (Account.Type.NORMAL.equals(CallContext.current().getCallingAccount().getType())) {
-            logger.debug("Limiting the Quota statement for the calling Cccount, as they are a User Account.");
+        if (cmd.getDomainId() == null) {
+            logger.debug("Limiting the Quota statement for the calling Account, as 'domainid' was not informed.");
             return CallContext.current().getCallingAccountId();
         }
 
@@ -476,9 +479,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         return null;
     }
 
-    protected long getDomainIdForQuotaStatement(QuotaStatementCmd cmd) {
-        long domainId = cmd.getDomainId();
-        if (domainId != -1) {
+    protected Long getDomainIdForQuotaStatement(QuotaStatementCmd cmd, Long accountId) {
+        if (accountId != null) {
+            logger.debug("Quota statement is already limited to Account [{}].", accountId);
+            Account account = _accountDao.findByIdIncludingRemoved(accountId);
+            return account.getDomainId();
+        }
+
+        Long domainId = cmd.getDomainId();
+        if (domainId != null) {
             return domainId;
         }
 
