@@ -1249,7 +1249,7 @@ public class UnmanagedVMsManagerImplTest {
 
         when(hostDao.findById(hostId)).thenReturn(host);
 
-        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId);
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
         Assert.assertEquals(host, returnedHost);
     }
 
@@ -1265,7 +1265,7 @@ public class UnmanagedVMsManagerImplTest {
 
         when(hostDao.findById(hostId)).thenReturn(host);
 
-        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId);
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
         Assert.assertEquals(host, returnedHost);
     }
 
@@ -1277,7 +1277,7 @@ public class UnmanagedVMsManagerImplTest {
         when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
                 cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of(host));
 
-        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null);
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, false);
         Assert.assertEquals(host, returnedHost);
     }
 
@@ -1291,7 +1291,7 @@ public class UnmanagedVMsManagerImplTest {
 
         when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of(host));
 
-        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null);
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, false);
         Assert.assertEquals(host, returnedHost);
     }
 
@@ -1304,7 +1304,7 @@ public class UnmanagedVMsManagerImplTest {
 
         when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of());
 
-        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null);
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1319,7 +1319,7 @@ public class UnmanagedVMsManagerImplTest {
 
         when(hostDao.findById(hostId)).thenReturn(host);
 
-        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId);
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1333,7 +1333,7 @@ public class UnmanagedVMsManagerImplTest {
 
         when(hostDao.findById(hostId)).thenReturn(host);
 
-        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId);
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1346,7 +1346,7 @@ public class UnmanagedVMsManagerImplTest {
 
         when(hostDao.findById(hostId)).thenReturn(host);
 
-        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId);
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1358,7 +1358,7 @@ public class UnmanagedVMsManagerImplTest {
 
         when(hostDao.findById(hostId)).thenReturn(host);
 
-        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId);
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -1368,7 +1368,68 @@ public class UnmanagedVMsManagerImplTest {
 
         when(hostDao.findById(hostId)).thenReturn(null);
 
-        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId);
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
+    }
+
+    @Test
+    public void testSelectKVMHostForConversionInClusterVddkWithExplicitHostHavingVddkLibDir() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getType()).thenReturn(Host.Type.Routing);
+        when(host.getDataCenterId()).thenReturn(1L);
+        when(host.getDetail("vddk.lib.dir")).thenReturn("/opt/vmware-vddk");
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, true);
+        Assert.assertEquals(host, returnedHost);
+        Mockito.verify(hostDao).loadDetails(host);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterVddkWithExplicitHostMissingVddkLibDir() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getType()).thenReturn(Host.Type.Routing);
+        when(host.getDataCenterId()).thenReturn(1L);
+        when(host.getDetail("vddk.lib.dir")).thenReturn(null);
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, true);
+    }
+
+    @Test
+    public void testSelectKVMHostForConversionInClusterVddkAutoSelectsHostWithVddkLibDir() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO hostWithVddk = Mockito.mock(HostVO.class);
+        HostVO hostWithoutVddk = Mockito.mock(HostVO.class);
+        when(hostWithVddk.getDetail("vddk.lib.dir")).thenReturn("/opt/vmware-vddk");
+        when(hostWithoutVddk.getDetail("vddk.lib.dir")).thenReturn(null);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
+                .thenReturn(List.of(hostWithoutVddk, hostWithVddk));
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true);
+        Assert.assertEquals(hostWithVddk, returnedHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterVddkFailsWhenNoHostHasVddkLibDir() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getDetail("vddk.lib.dir")).thenReturn(null);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of(host));
+        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of(host));
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true);
     }
 
     @Test

@@ -1697,8 +1697,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         String ovfTemplateOnConvertLocation = null;
         ImportVmTask importVMTask = null;
         try {
-            HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId);
-            HostVO importHost = selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
+            HostVO convertHost = selectKVMHostForConversionInCluster(destinationCluster, convertInstanceHostId, useVddk);
+            HostVO importHost = (useVddk && importInstanceHostId == null)
+                    ? convertHost
+                    : selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
             CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVMName, false);
             logger.debug("The host {}  is selected to execute the conversion of the " +
                     "instance {} from VMware to KVM ", convertHost, sourceVMName);
@@ -1995,7 +1997,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         throw new CloudRuntimeException(err);
     }
 
-    HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId) {
+    HostVO selectKVMHostForConversionInCluster(Cluster destinationCluster, Long convertInstanceHostId, boolean useVddk) {
         if (convertInstanceHostId != null) {
             HostVO selectedHost = hostDao.findById(convertInstanceHostId);
             String err = null;
@@ -2018,6 +2020,13 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 err = String.format(
                         "Cannot perform the conversion on the host %s as it is not in the same zone as the destination cluster",
                         selectedHost);
+            } else if (useVddk) {
+                hostDao.loadDetails(selectedHost);
+                if (StringUtils.isBlank(selectedHost.getDetail(DETAIL_VDDK_LIB_DIR))) {
+                    err = String.format(
+                            "Cannot use VDDK-based conversion on host %s as the '%s' property is not configured on the host",
+                            selectedHost, DETAIL_VDDK_LIB_DIR);
+                }
             }
             if (err != null) {
                 logger.error(err);
@@ -2029,19 +2038,39 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         // Auto select host with conversion capability
         List<HostVO> hosts = hostDao.listByClusterHypervisorTypeAndHostCapability(destinationCluster.getId(), destinationCluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION);
         if (CollectionUtils.isNotEmpty(hosts)) {
-            return hosts.get(new Random().nextInt(hosts.size()));
+            if (useVddk) {
+                hosts = filterHostsWithVddkLibDir(hosts);
+            }
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                return hosts.get(new Random().nextInt(hosts.size()));
+            }
         }
 
         // Try without host capability check
         hosts = hostDao.listByClusterAndHypervisorType(destinationCluster.getId(), destinationCluster.getHypervisorType());
         if (CollectionUtils.isNotEmpty(hosts)) {
-            return hosts.get(new Random().nextInt(hosts.size()));
+            if (useVddk) {
+                hosts = filterHostsWithVddkLibDir(hosts);
+            }
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                return hosts.get(new Random().nextInt(hosts.size()));
+            }
         }
 
-        String err = String.format("Could not find any suitable %s host in cluster %s to perform the instance conversion",
-                destinationCluster.getHypervisorType(), destinationCluster);
+        String err = useVddk
+                ? String.format("Could not find any suitable %s host in cluster %s with '%s' configured to perform the VDDK-based instance conversion",
+                        destinationCluster.getHypervisorType(), destinationCluster, DETAIL_VDDK_LIB_DIR)
+                : String.format("Could not find any suitable %s host in cluster %s to perform the instance conversion",
+                        destinationCluster.getHypervisorType(), destinationCluster);
         logger.error(err);
         throw new CloudRuntimeException(err);
+    }
+
+    private List<HostVO> filterHostsWithVddkLibDir(List<HostVO> hosts) {
+        return hosts.stream().filter(h -> {
+            hostDao.loadDetails(h);
+            return StringUtils.isNotBlank(h.getDetail(DETAIL_VDDK_LIB_DIR));
+        }).collect(Collectors.toList());
     }
 
     private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM, boolean checkWindowsGuestConversionSupport) {
