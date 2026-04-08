@@ -156,13 +156,15 @@ public class LibvirtGpuDefTest extends TestCase {
     }
 
     @Test
-    public void testGpuDef_withFullPciAddressWideDomain() {
+    public void testGpuDef_withNvidiaStyleEightDigitDomain() {
+        // nvidia-smi reports PCI addresses with an 8-digit domain (e.g. "00000001:af:00.1").
+        // generatePciXml must normalize it to the canonical 4-digit form "0x0001".
         LibvirtGpuDef gpuDef = new LibvirtGpuDef();
         VgpuTypesInfo pciGpuInfo = new VgpuTypesInfo(
                 GpuDevice.DeviceType.PCI,
                 "passthrough",
                 "passthrough",
-                "10000:af:00.1",
+                "00000001:af:00.1",
                 "10de",
                 "NVIDIA Corporation",
                 "1b38",
@@ -172,7 +174,7 @@ public class LibvirtGpuDefTest extends TestCase {
 
         String gpuXml = gpuDef.toString();
 
-        assertTrue(gpuXml.contains("<address domain='0x10000' bus='0xaf' slot='0x00' function='0x1'/>"));
+        assertTrue(gpuXml.contains("<address domain='0x0001' bus='0xaf' slot='0x00' function='0x1'/>"));
     }
 
     @Test
