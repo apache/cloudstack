@@ -113,7 +113,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 String vddkTransports = resolveVddkSetting(cmd.getVddkTransports(), serverResource.getVddkTransports());
                 String configuredVddkThumbprint = resolveVddkSetting(cmd.getVddkThumbprint(), serverResource.getVddkThumbprint());
                 String passwordOption = serverResource.getDetectedPasswordFileOption();
-                result = performInstanceConversionVddk(sourceInstance, originalVMName, temporaryConvertPath,
+                result = performInstanceConversionUsingVddk(sourceInstance, originalVMName, temporaryConvertPath,
                         vddkLibDir, libguestfsBackend, vddkTransports, configuredVddkThumbprint,
                         timeout, verboseModeEnabled, extraParams, temporaryConvertUuid, passwordOption);
             } else {
@@ -157,9 +157,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 logger.error("({}) {}", originalVMName, err);
                 return new Answer(cmd, false, err);
             }
-
             return new ConvertInstanceAnswer(cmd, temporaryConvertUuid);
-
         } catch (Exception e) {
             String error = String.format("Error converting instance %s from %s, due to: %s", sourceInstanceName, sourceHypervisorType, e.getMessage());
             logger.error("({}) {}", originalVMName, error, e);
@@ -304,12 +302,12 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         return StringUtils.defaultIfBlank(StringUtils.trimToNull(commandValue), StringUtils.trimToNull(agentValue));
     }
 
-    protected boolean performInstanceConversionVddk(RemoteInstanceTO vmwareInstance, String originalVMName,
-                                                    String temporaryConvertFolder, String vddkLibDir,
-                                                    String libguestfsBackend, String vddkTransports,
-                                                    String configuredVddkThumbprint,
-                                                    long timeout, boolean verboseModeEnabled, String extraParams,
-                                                    String temporaryConvertUuid, String passwordOption) {
+    protected boolean performInstanceConversionUsingVddk(RemoteInstanceTO vmwareInstance, String originalVMName,
+                                                         String temporaryConvertFolder, String vddkLibDir,
+                                                         String libguestfsBackend, String vddkTransports,
+                                                         String configuredVddkThumbprint,
+                                                         long timeout, boolean verboseModeEnabled, String extraParams,
+                                                         String temporaryConvertUuid, String passwordOption) {
 
         String vcenterPassword = vmwareInstance.getVcenterPassword();
         if (StringUtils.isBlank(vcenterPassword)) {
@@ -317,8 +315,9 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             return false;
         }
 
-        String passwordFilePath = String.format("/root/v2v.pass.cloud.%s",
-                StringUtils.defaultIfBlank(vmwareInstance.getVcenterHost(), "unknown"));
+        String passwordFilePath = String.format("/root/v2v.pass.cloud.%s.%s",
+                StringUtils.defaultIfBlank(vmwareInstance.getVcenterHost(), "unknown"),
+                UUID.randomUUID());
         try {
             Files.writeString(Path.of(passwordFilePath), vcenterPassword);
             logger.debug("({}) Written vCenter password to {}", originalVMName, passwordFilePath);
@@ -395,7 +394,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         return exitValue == 0;
     }
-
 
     protected String getVcenterThumbprint(String vcenterHost, long timeout, String originalVMName) {
         if (StringUtils.isBlank(vcenterHost)) {

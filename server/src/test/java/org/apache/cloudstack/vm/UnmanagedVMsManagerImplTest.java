@@ -1370,7 +1370,7 @@ public class UnmanagedVMsManagerImplTest {
         when(host.getStatus()).thenReturn(Status.Up);
         when(host.getType()).thenReturn(Host.Type.Routing);
         when(host.getDataCenterId()).thenReturn(1L);
-        when(host.getDetail("vddk.lib.dir")).thenReturn("/opt/vmware-vddk");
+        when(host.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
         when(hostDao.findById(hostId)).thenReturn(host);
 
         HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, true);
@@ -1387,19 +1387,18 @@ public class UnmanagedVMsManagerImplTest {
         when(host.getStatus()).thenReturn(Status.Up);
         when(host.getType()).thenReturn(Host.Type.Routing);
         when(host.getDataCenterId()).thenReturn(1L);
-        when(host.getDetail("vddk.lib.dir")).thenReturn(null);
         when(hostDao.findById(hostId)).thenReturn(host);
 
         unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, true);
     }
 
     @Test
-    public void testSelectKVMHostForConversionInClusterVddkAutoSelectsHostWithVddkLibDir() {
+    public void testSelectKVMHostForConversionInClusterVddkAutoSelectsHostWithVddkSupport() {
         ClusterVO cluster = getClusterForTests();
         HostVO hostWithVddk = Mockito.mock(HostVO.class);
         HostVO hostWithoutVddk = Mockito.mock(HostVO.class);
-        when(hostWithVddk.getDetail("vddk.lib.dir")).thenReturn("/opt/vmware-vddk");
-        when(hostWithoutVddk.getDetail("vddk.lib.dir")).thenReturn(null);
+        when(hostWithVddk.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithoutVddk.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn(null);
 
         when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
                 cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
@@ -1410,10 +1409,10 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testSelectKVMHostForConversionInClusterVddkFailsWhenNoHostHasVddkLibDir() {
+    public void testSelectKVMHostForConversionInClusterVddkFailsWhenNoHostHasVddkSupport() {
         ClusterVO cluster = getClusterForTests();
         HostVO host = Mockito.mock(HostVO.class);
-        when(host.getDetail("vddk.lib.dir")).thenReturn(null);
+        when(host.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn(null);
 
         when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
                 cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of(host));
