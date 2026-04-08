@@ -357,14 +357,19 @@ public class NASBackupProviderTest {
 
     private void overrideConfigValue(final ConfigKey configKey, final Object value) {
         try {
+            // Use reflection to invoke protected valueOf()
+            java.lang.reflect.Method valueOfMethod = ConfigKey.class.getDeclaredMethod("valueOf", String.class);
+            valueOfMethod.setAccessible(true);
+            Object typedValue = value != null ? valueOfMethod.invoke(configKey, String.valueOf(value)) : null;
+
             // Set _value for value() calls
             Field f = ConfigKey.class.getDeclaredField("_value");
             f.setAccessible(true);
-            f.set(configKey, value != null ? configKey.valueOf((String) value) : null);
+            f.set(configKey, typedValue);
 
             // Also set _defaultValue via Spring's ReflectionTestUtils (handles final fields)
             ReflectionTestUtils.setField(configKey, "_defaultValue", String.valueOf(value));
-        } catch (IllegalAccessException | NoSuchFieldException e) {
+        } catch (Exception e) {
             Assert.fail(e.getMessage());
         }
     }

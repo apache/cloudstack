@@ -314,8 +314,7 @@ mount_operation() {
   if [ ${NAS_TYPE} == "cifs" ]; then
     MOUNT_OPTS="${MOUNT_OPTS},nobrl"
   fi
-  mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) >> "$logFile" 2>&1
-  if [ $? -eq 0 ]; then
+  if mount -t ${NAS_TYPE} ${NAS_ADDRESS} ${mount_point} $([[ ! -z "${MOUNT_OPTS}" ]] && echo -o ${MOUNT_OPTS}) >> "$logFile" 2>&1; then
       log -ne "Successfully mounted ${NAS_TYPE} store"
   else
       echo "Failed to mount ${NAS_TYPE} store"
