@@ -41,10 +41,10 @@ public class ListAsyncJobsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "The id of the management server", since="4.19")
     private Long managementServerId;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, validations = {ApiArgValidator.UuidString}, type = CommandType.STRING, description = "the ID of the resource associated with the event", since="4.22.1")
+    @Parameter(name = ApiConstants.RESOURCE_ID, validations = {ApiArgValidator.UuidString}, type = CommandType.STRING, description = "the ID of the resource associated with the job", since="4.22.1")
     private String resourceId;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "the type of the resource associated with the event", since="4.22.1")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "the type of the resource associated with the job", since="4.22.1")
     private String resourceType;
 
     /////////////////////////////////////////////////////

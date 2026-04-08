@@ -37,10 +37,10 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     @Parameter(name = ApiConstants.JOB_ID, type = CommandType.UUID, entityType = AsyncJobResponse.class, description = "The ID of the asynchronous job")
     private Long id;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, validations = {ApiArgValidator.UuidString}, type = CommandType.STRING, description = "the ID of the resource associated with the event", since="4.22.1")
+    @Parameter(name = ApiConstants.RESOURCE_ID, validations = {ApiArgValidator.UuidString}, type = CommandType.STRING, description = "the ID of the resource associated with the job", since="4.22.1")
     private String resourceId;
 
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "the type of the resource associated with the event", since="4.22.1")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "the type of the resource associated with the job", since="4.22.1")
     private String resourceType;
 
     /////////////////////////////////////////////////////

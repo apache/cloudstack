@@ -2315,7 +2315,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
 
         Long resourceId = getResourceId(resourceType, cmd.getResourceId());
         Long jobId = cmd.getId();
-        if(jobId == null && resourceId == null) {
+        if (jobId == null && resourceId == null) {
             throw new InvalidParameterValueException("Expected parameter job id or parameters resource type and resource id");
         }
 

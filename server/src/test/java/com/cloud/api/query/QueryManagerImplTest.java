@@ -267,7 +267,7 @@ public class QueryManagerImplTest {
     public void searchForEventsFailResourceIdInvalid() {
         ListEventsCmd cmd  = setupMockListEventsCmd();
         Mockito.when(cmd.getResourceId()).thenReturn("random");
-        Mockito.when(cmd.getResourceType()).thenReturn(ApiCommandResourceType.VirtualMachine.toString());
+        Mockito.lenient().when(cmd.getResourceType()).thenReturn(ApiCommandResourceType.VirtualMachine.toString());
         queryManager.searchForEvents(cmd);
     }
 
