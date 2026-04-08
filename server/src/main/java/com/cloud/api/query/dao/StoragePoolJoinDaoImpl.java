@@ -416,7 +416,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     public List<StoragePoolJoinVO> listByZoneAndType(long zoneId, List<Storage.StoragePoolType> types, Filter filter) {
         SearchBuilder<StoragePoolJoinVO> sb = createSearchBuilder();
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
-        sb.and("types", sb.entity().getZoneId(), SearchCriteria.Op.IN);
+        sb.and("types", sb.entity().getPoolType(), SearchCriteria.Op.IN);
         sb.done();
         SearchCriteria<StoragePoolJoinVO> sc = sb.create();
         sc.setParameters("zoneId", zoneId);
