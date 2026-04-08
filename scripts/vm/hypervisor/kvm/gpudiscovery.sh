@@ -704,7 +704,7 @@ for VM in "${VMS[@]}"; do
 	# -- PCI hostdevs: use xmlstarlet to extract the full domain:bus:slot.func
 	# for all PCI host devices. libvirt's <address> element may omit the domain
 	# attribute, in which case we default to 0.
-	while read -r dom bus slot func; do
+	while IFS=: read -r dom bus slot func; do
 		[[ -n "$bus" && -n "$slot" && -n "$func" ]] || continue
 		[[ -n "$dom" ]] || dom="0"
 		# Format to match lspci -D output (e.g., 0000:01:00.0) by padding with zeros
@@ -715,9 +715,9 @@ for VM in "${VMS[@]}"; do
 		BDF="${dom_fmt}:${bus_fmt}:${slot_fmt}.${func_fmt}"
 		pci_to_vm["$BDF"]="$VM"
 	done < <(echo "$xml" | xmlstarlet sel -T -t -m "//hostdev[@type='pci']/source/address" \
-		-v "substring-after(@domain, '0x')" -o " " \
-		-v "substring-after(@bus, '0x')" -o " " \
-		-v "substring-after(@slot, '0x')" -o " " \
+		-v "substring-after(@domain, '0x')" -o ":" \
+		-v "substring-after(@bus, '0x')" -o ":" \
+		-v "substring-after(@slot, '0x')" -o ":" \
 		-v "substring-after(@function, '0x')" -n 2>/dev/null || true)
 
 	# -- MDEV hostdevs: use xmlstarlet to extract UUIDs --
@@ -989,6 +989,8 @@ for LINE in "${LINES[@]}"; do
 	if [[ ${#vlist[@]} -eq 0 && ${#flist[@]} -eq 0 ]]; then
 		FP_ENABLED=1
 	fi
+
+	# Sets global DOMAIN/BUS/SLOT/FUNC for JSON output below
 	parse_pci_address "$PCI_ADDR"
 
 	# Emit JSON
