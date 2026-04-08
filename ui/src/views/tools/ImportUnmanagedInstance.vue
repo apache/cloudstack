@@ -1296,6 +1296,7 @@ export default {
             params.forceconverttopool = true
             params.forcemstoimportvmfiles = false
           } else {
+            params.usevddk = false
             params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
           }
           if (!values.usevddk && values.forceconverttopool) {

@@ -264,7 +264,7 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     }
 
     public boolean getUseVddk() {
-        return BooleanUtils.toBooleanDefaultIfNull(useVddk, false);
+        return BooleanUtils.toBooleanDefaultIfNull(useVddk, true);
     }
 
     public String getTmpPath() {
