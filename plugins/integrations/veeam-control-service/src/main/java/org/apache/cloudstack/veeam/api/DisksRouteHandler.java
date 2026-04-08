@@ -150,6 +150,8 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -158,7 +160,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
         try {
             serverAdapter.deleteDisk(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, "Deleted disk ID: " + id, outFormat);
-        } catch (InvalidParameterValueException e) {
+        } catch (CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
@@ -166,7 +168,13 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
     protected void handlePutById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                          final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
         String data = RouteHandler.getRequestData(req, logger);
-        throw new InvalidParameterValueException("Put Disk with ID " + id + " not implemented");
+        try {
+            Disk request = io.getMapper().jsonMapper().readValue(data, Disk.class);
+            Disk response = serverAdapter.updateDisk(id, request);
+            io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
+        } catch (JsonProcessingException | CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
+        }
     }
 
     protected void handlePostDiskCopy(final String id, final HttpServletRequest req, final HttpServletResponse resp,
@@ -175,7 +183,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
         try {
             Disk response = serverAdapter.copyDisk(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
-        } catch (InvalidParameterValueException e) {
+        } catch (CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
@@ -186,7 +194,7 @@ public class DisksRouteHandler extends ManagerBase implements RouteHandler {
         try {
             Disk response = serverAdapter.reduceDisk(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
-        } catch (InvalidParameterValueException e) {
+        } catch (CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);
         }
     }

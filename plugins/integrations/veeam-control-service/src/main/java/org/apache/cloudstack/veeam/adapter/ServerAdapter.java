@@ -82,6 +82,7 @@ import org.apache.cloudstack.api.command.user.volume.DestroyVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
@@ -1174,33 +1175,6 @@ public class ServerAdapter extends ManagerBase {
         }
     }
 
-    @ApiAccess(command = ListVolumesCmd.class)
-    public List<Disk> listAllDisks(Long offset, Long limit) {
-        Filter filter = new Filter(VolumeJoinVO.class, "id", true, offset, limit);
-        Pair<List<Long>, String> ownerDetails = getResourceOwnerFilters();
-        List<VolumeJoinVO> kvmVolumes = volumeJoinDao.listByHypervisorTypeAndOwners(Hypervisor.HypervisorType.KVM,
-                ownerDetails.first(), ownerDetails.second(), filter);
-        return VolumeJoinVOToDiskConverter.toDiskList(kvmVolumes, this::getVolumePhysicalSize);
-    }
-
-    @ApiAccess(command = ListVolumesCmd.class)
-    public Disk getDisk(String uuid) {
-        VolumeVO vo = volumeDao.findByUuid(uuid);
-        if (vo == null) {
-            throw new InvalidParameterValueException("Disk with ID " + uuid + " not found");
-        }
-        accountService.checkAccess(CallContext.current().getCallingAccount(), null, false, vo);
-        return VolumeJoinVOToDiskConverter.toDisk(volumeJoinDao.findByUuid(uuid), this::getVolumePhysicalSize);
-    }
-
-    public Disk copyDisk(String uuid) {
-        throw new InvalidParameterValueException("Copy Disk with ID " + uuid + " not implemented");
-    }
-
-    public Disk reduceDisk(String uuid) {
-        throw new InvalidParameterValueException("Reduce Disk with ID " + uuid + " not implemented");
-    }
-
     @ApiAccess(command = ListTagsCmd.class)
     protected List<Tag> listTagsByInstanceId(final long instanceId) {
         List<? extends ResourceTag> vmResourceTags = resourceTagDao.listBy(instanceId,
@@ -1230,6 +1204,25 @@ public class ServerAdapter extends ManagerBase {
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), null, false, vo);
         return listDiskAttachmentsByInstanceId(vo.getId());
+    }
+
+    @ApiAccess(command = ListVolumesCmd.class)
+    public List<Disk> listAllDisks(Long offset, Long limit) {
+        Filter filter = new Filter(VolumeJoinVO.class, "id", true, offset, limit);
+        Pair<List<Long>, String> ownerDetails = getResourceOwnerFilters();
+        List<VolumeJoinVO> kvmVolumes = volumeJoinDao.listByHypervisorTypeAndOwners(Hypervisor.HypervisorType.KVM,
+                ownerDetails.first(), ownerDetails.second(), filter);
+        return VolumeJoinVOToDiskConverter.toDiskList(kvmVolumes, this::getVolumePhysicalSize);
+    }
+
+    @ApiAccess(command = ListVolumesCmd.class)
+    public Disk getDisk(String uuid) {
+        VolumeVO vo = volumeDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("Disk with ID " + uuid + " not found");
+        }
+        accountService.checkAccess(CallContext.current().getCallingAccount(), null, false, vo);
+        return VolumeJoinVOToDiskConverter.toDisk(volumeJoinDao.findByUuid(uuid), this::getVolumePhysicalSize);
     }
 
     protected void assignVolumeToAccount(VolumeVO volumeVO, long accountId) {
@@ -1296,15 +1289,6 @@ public class ServerAdapter extends ManagerBase {
         return VolumeJoinVOToDiskConverter.toDiskAttachment(attachedVolumeVO, this::getVolumePhysicalSize);
     }
 
-    @ApiAccess(command = DestroyVolumeCmd.class)
-    public void deleteDisk(String uuid) {
-        VolumeVO vo = volumeDao.findByUuid(uuid);
-        if (vo == null) {
-            throw new InvalidParameterValueException("Disk with ID " + uuid + " not found");
-        }
-        volumeApiService.deleteVolume(vo.getId(), accountService.getSystemAccount());
-    }
-
     @ApiAccess(command = CreateVolumeCmd.class)
     public Disk createDisk(Disk request) {
         if (request == null) {
@@ -1344,6 +1328,35 @@ public class ServerAdapter extends ManagerBase {
             throw new CloudRuntimeException("Failed to find custom offering for disk" + zone.getName());
         }
         return createDisk(caller, pool, name, diskOfferingId, provisionedSizeInGb, initialSize);
+    }
+
+    @ApiAccess(command = DestroyVolumeCmd.class)
+    public void deleteDisk(String uuid) {
+        VolumeVO vo = volumeDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("Disk with ID " + uuid + " not found");
+        }
+        volumeApiService.deleteVolume(vo.getId(), accountService.getSystemAccount());
+    }
+
+    @ApiAccess(command = UpdateVolumeCmd.class)
+    public Disk updateDisk(String uuid, Disk request) {
+        VolumeVO vo = volumeDao.findByUuid(uuid);
+        if (vo == null) {
+            throw new InvalidParameterValueException("Disk with ID " + uuid + " not found");
+        }
+        logger.warn("Update disk is not implemented, returning disk ID: {} as it is", uuid);
+        return getDisk(uuid);
+    }
+
+    @ApiAccess(command = UpdateVolumeCmd.class)
+    public Disk copyDisk(String uuid) {
+        throw new InvalidParameterValueException("Copy Disk with ID " + uuid + " not implemented");
+    }
+
+    @ApiAccess(command = UpdateVolumeCmd.class)
+    public Disk reduceDisk(String uuid) {
+        throw new InvalidParameterValueException("Reduce Disk with ID " + uuid + " not implemented");
     }
 
     @ApiAccess(command = ListNicsCmd.class)

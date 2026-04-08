@@ -274,6 +274,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -284,8 +286,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             Vm request = io.getMapper().jsonMapper().readValue(data, Vm.class);
             Vm response = serverAdapter.updateInstance(id, request);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
-        } catch (InvalidParameterValueException e) {
-            io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -296,7 +298,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             VmAction vm = serverAdapter.deleteInstance(id, async);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, vm, outFormat);
         } catch (CloudRuntimeException e) {
-            io.notFound(resp, e.getMessage(), outFormat);
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -307,7 +309,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             VmAction vm = serverAdapter.startInstance(id, async);
             io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, vm, outFormat);
         } catch (CloudRuntimeException e) {
-            io.notFound(resp, e.getMessage(), outFormat);
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -318,7 +320,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             VmAction vm = serverAdapter.stopInstance(id, async);
             io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, vm, outFormat);
         } catch (CloudRuntimeException e) {
-            io.notFound(resp, e.getMessage(), outFormat);
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -329,7 +331,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             VmAction vm = serverAdapter.shutdownInstance(id, async);
             io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, vm, outFormat);
         } catch (CloudRuntimeException e) {
-            io.notFound(resp, e.getMessage(), outFormat);
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -341,6 +343,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -365,6 +369,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -389,6 +395,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -412,6 +420,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -452,6 +462,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -475,6 +487,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -487,6 +501,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 
@@ -509,6 +525,8 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 

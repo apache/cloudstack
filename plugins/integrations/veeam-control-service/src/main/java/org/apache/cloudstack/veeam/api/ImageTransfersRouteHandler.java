@@ -134,6 +134,8 @@ public class ImageTransfersRouteHandler extends ManagerBase implements RouteHand
             ImageTransfer response = serverAdapter.getImageTransfer(id);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
+            io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
             io.badRequest(resp, e.getMessage(), outFormat);
         }
     }

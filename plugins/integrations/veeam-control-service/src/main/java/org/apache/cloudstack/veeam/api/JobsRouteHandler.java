@@ -101,6 +101,8 @@ public class JobsRouteHandler  extends ManagerBase implements RouteHandler {
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);
+        } catch (CloudRuntimeException e) {
+            io.badRequest(resp, e.getMessage(), outFormat);
         }
     }
 }
