@@ -79,7 +79,9 @@ public class LibvirtGpuDef {
         gpuBuilder.append("  <driver name='vfio'/>\n");
         gpuBuilder.append("  <source>\n");
 
-        // Parse the bus address (e.g., 00:02.0) into domain, bus, slot, function
+        // Parse the bus address into domain, bus, slot, function. Two input formats are accepted:
+        //   - "dddd:bb:ss.f"  full PCI address with domain (e.g. 0000:00:02.0)
+        //   - "bb:ss.f"       legacy short BDF; domain defaults to 0000
         String domain = "0x0000";
         String bus = "0x00";
         String slot = "0x00";
@@ -87,9 +89,17 @@ public class LibvirtGpuDef {
 
         if (busAddress != null && !busAddress.isEmpty()) {
             String[] parts = busAddress.split(":");
-            if (parts.length > 1) {
+            String slotFunction = null;
+            if (parts.length == 3) {
+                domain = "0x" + parts[0];
+                bus = "0x" + parts[1];
+                slotFunction = parts[2];
+            } else if (parts.length == 2) {
                 bus = "0x" + parts[0];
-                String[] slotFunctionParts = parts[1].split("\\.");
+                slotFunction = parts[1];
+            }
+            if (slotFunction != null) {
+                String[] slotFunctionParts = slotFunction.split("\\.");
                 if (slotFunctionParts.length > 0) {
                     slot = "0x" + slotFunctionParts[0];
                     if (slotFunctionParts.length > 1) {

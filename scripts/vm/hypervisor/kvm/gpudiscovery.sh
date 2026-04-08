@@ -357,7 +357,33 @@
 
 #   	"vgpu_instances":[],
 #   	"vf_instances":[]
-# 	  }
+# 	  },
+# 	  {
+#       "pci_address": "0001:65:00.0",
+#       "vendor_id": "10de",
+#       "device_id": "20B0",
+#       "vendor": "NVIDIA Corporation",
+#       "device": "A100-SXM4-40GB",
+#       "driver": "nvidia",
+#       "pci_class": "3D controller",
+#       "iommu_group": "20",
+#       "sriov_totalvfs": 0,
+#       "sriov_numvfs": 0,
+#
+#       "full_passthrough": {
+#         "enabled": true,
+#         "libvirt_address": {
+#           "domain": "0x0001",
+#           "bus": "0x65",
+#           "slot": "0x00",
+#           "function": "0x0"
+#         },
+#         "used_by_vm": "ml-train"
+#       },
+#
+#       "vgpu_instances": [],
+#       "vf_instances": []
+#     }
 #   ]
 # }
 #
@@ -416,9 +442,22 @@ parse_nvidia_vgpu_profiles() {
 			store_profile_data
 
 			gpu_address="${BASH_REMATCH[1]}"
-			# Convert from format like 00000000:AF:00.0 to AF:00.0 and normalize to lowercase
-			if [[ $gpu_address =~ [0-9A-Fa-f]+:([0-9A-Fa-f]+:[0-9A-Fa-f]+\.[0-9A-Fa-f]+) ]]; then
-				gpu_address="${BASH_REMATCH[1],,}"
+			# nvidia-smi reports addresses in the form "00000000:AF:00.0"
+			# (8-digit domain). Reformat to the canonical 4-digit
+			# "dddd:bb:ss.f" lowercase form so cache keys line up with the
+			# normalize_pci_address output used at lookup time. Short
+			# addresses ("AF:00.0") are widened by prepending domain 0.
+			if [[ $gpu_address =~ ^([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+)\.([0-9A-Fa-f]+)$ ]]; then
+				gpu_address=$(printf "%04x:%s:%s.%s" \
+					"0x${BASH_REMATCH[1]}" \
+					"${BASH_REMATCH[2],,}" \
+					"${BASH_REMATCH[3],,}" \
+					"${BASH_REMATCH[4],,}")
+			elif [[ $gpu_address =~ ^([0-9A-Fa-f]+):([0-9A-Fa-f]+)\.([0-9A-Fa-f]+)$ ]]; then
+				gpu_address=$(printf "0000:%s:%s.%s" \
+					"${BASH_REMATCH[1],,}" \
+					"${BASH_REMATCH[2],,}" \
+					"${BASH_REMATCH[3],,}")
 			else
 				gpu_address="${gpu_address,,}"
 			fi
@@ -506,10 +545,52 @@ get_nvidia_profile_info() {
 	fi
 }
 
-# Get nodedev name for a PCI address (e.g. "00:02.0" -> "pci_0000_00_02_0")
-get_nodedev_name() {
+# Parse a PCI address and assign the libvirt-formatted DOMAIN/BUS/SLOT/FUNC
+# values into the caller's scope. Accepts both full ("0000:00:02.0") and short
+# ("00:02.0") formats; short addresses are assumed to be in PCI domain 0.
+#
+# IMPORTANT: bash uses dynamic scoping, so callers that don't want these four
+# values to leak into the global scope MUST declare them `local` before
+# invoking this function, e.g.:
+#     local DOMAIN BUS SLOT FUNC
+#     parse_pci_address "$addr"
+parse_pci_address() {
 	local addr="$1"
-	echo "pci_$(echo "$addr" | sed 's/[:.]/\_/g' | sed 's/^/0000_/')"
+	if [[ $addr =~ ^([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+)\.([0-9A-Fa-f]+)$ ]]; then
+		DOMAIN="0x${BASH_REMATCH[1]}"
+		BUS="0x${BASH_REMATCH[2]}"
+		SLOT="0x${BASH_REMATCH[3]}"
+		FUNC="0x${BASH_REMATCH[4]}"
+	elif [[ $addr =~ ^([0-9A-Fa-f]+):([0-9A-Fa-f]+)\.([0-9A-Fa-f]+)$ ]]; then
+		DOMAIN="0x0000"
+		BUS="0x${BASH_REMATCH[1]}"
+		SLOT="0x${BASH_REMATCH[2]}"
+		FUNC="0x${BASH_REMATCH[3]}"
+	else
+		DOMAIN="0x0000"
+		BUS="0x00"
+		SLOT="0x00"
+		FUNC="0x0"
+	fi
+}
+
+# Normalize a PCI address to its full domain-qualified form ("dddd:bb:ss.f").
+# Short addresses are widened by prepending domain "0000".
+normalize_pci_address() {
+	local addr="$1"
+	if [[ $addr =~ ^[0-9A-Fa-f]+:[0-9A-Fa-f]+:[0-9A-Fa-f]+\.[0-9A-Fa-f]+$ ]]; then
+		echo "$addr"
+	else
+		echo "0000:$addr"
+	fi
+}
+
+# Get nodedev name for a PCI address (e.g. "0000:00:02.0" -> "pci_0000_00_02_0").
+# Short addresses are widened to domain 0 first.
+get_nodedev_name() {
+	local addr
+	addr=$(normalize_pci_address "$1")
+	echo "pci_$(echo "$addr" | sed 's/[:.]/\_/g')"
 }
 
 # Get cached nodedev XML for a PCI address
@@ -572,9 +653,12 @@ get_numa_node() {
 	echo "${node:--1}"
 }
 
-# Given a PCI address, return its PCI root (the top‐level bridge ID, e.g. "0000:00:03")
+# Given a PCI address, return its PCI root (the top‐level bridge ID, e.g.
+# "0000:00:03.0"). Both full ("0000:00:02.0") and short ("00:02.0") inputs are
+# accepted; output is always domain-qualified.
 get_pci_root() {
-	local addr="$1"
+	local addr
+	addr=$(normalize_pci_address "$1")
 	local xml
 	xml=$(get_nodedev_xml "$addr")
 
@@ -583,21 +667,23 @@ get_pci_root() {
 		local parent
 		parent=$(echo "$xml" | xmlstarlet sel -t -v "/device/parent" 2>/dev/null || true)
 		if [[ -n "$parent" ]]; then
-			# If parent is a PCI device, recursively find its root
-			if [[ $parent =~ ^pci_0000_([0-9A-Fa-f]{2})_([0-9A-Fa-f]{2})_([0-9A-Fa-f])$ ]]; then
-				local parent_addr="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+			# If parent is a PCI device, recursively find its root.
+			# libvirt nodedev names look like pci_<domain>_<bus>_<slot>_<func>
+			# where <domain> is one or more hex digits (typically 4).
+			if [[ $parent =~ ^pci_([0-9A-Fa-f]+)_([0-9A-Fa-f]{2})_([0-9A-Fa-f]{2})_([0-9A-Fa-f])$ ]]; then
+				local parent_addr="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}:${BASH_REMATCH[3]}.${BASH_REMATCH[4]}"
 				get_pci_root "$parent_addr"
 				return
 			else
-				# Parent is not PCI device, so current device is the root
-				echo "0000:$addr"
+				# Parent is not a PCI device, so current device is the root
+				echo "$addr"
 				return
 			fi
 		fi
 	fi
 
 	# fallback
-	echo "0000:$addr"
+	echo "$addr"
 }
 
 # Build VM → hostdev maps:
@@ -613,16 +699,21 @@ for VM in "${VMS[@]}"; do
 		continue
 	fi
 
-	# -- PCI hostdevs: use xmlstarlet to extract BDF for all PCI host devices --
-	while read -r bus slot func; do
+	# -- PCI hostdevs: use xmlstarlet to extract the full domain:bus:slot.func
+	# for all PCI host devices. libvirt's <address> element may omit the domain
+	# attribute, in which case we default to 0.
+	while read -r dom bus slot func; do
 		[[ -n "$bus" && -n "$slot" && -n "$func" ]] || continue
-		# Format to match lspci output (e.g., 01:00.0) by padding with zeros
+		[[ -n "$dom" ]] || dom="0"
+		# Format to match lspci -D output (e.g., 0000:01:00.0) by padding with zeros
+		dom_fmt=$(printf "%04x" "0x$dom")
 		bus_fmt=$(printf "%02x" "0x$bus")
 		slot_fmt=$(printf "%02x" "0x$slot")
 		func_fmt=$(printf "%x" "0x$func")
-		BDF="$bus_fmt:$slot_fmt.$func_fmt"
+		BDF="${dom_fmt}:${bus_fmt}:${slot_fmt}.${func_fmt}"
 		pci_to_vm["$BDF"]="$VM"
 	done < <(echo "$xml" | xmlstarlet sel -T -t -m "//hostdev[@type='pci']/source/address" \
+		-v "substring-after(@domain, '0x')" -o " " \
 		-v "substring-after(@bus, '0x')" -o " " \
 		-v "substring-after(@slot, '0x')" -o " " \
 		-v "substring-after(@function, '0x')" -n 2>/dev/null || true)
@@ -677,7 +768,8 @@ parse_and_add_gpu_properties() {
 # Appends JSON strings for each found mdev instance to the global 'vlist' array.
 # Arguments:
 #   $1: mdev_base_path (e.g., /sys/bus/pci/devices/.../mdev_supported_types)
-#   $2: bdf (e.g., 01:00.0)
+#   $2: bdf — short "bb:ss.f" (e.g. 01:00.0) or full
+#       "dddd:bb:ss.f" (e.g. 0001:65:00.0) for non-zero PCI domains
 process_mdev_instances() {
 	local mdev_base_path="$1"
 	local bdf="$2"
@@ -705,10 +797,8 @@ process_mdev_instances() {
 				local MDEV_UUID
 				MDEV_UUID=$(basename "$UDIR")
 
-				local DOMAIN="0x0000"
-				local BUS="0x${bdf:0:2}"
-				local SLOT="0x${bdf:3:2}"
-				local FUNC="0x${bdf:6:1}"
+				local DOMAIN BUS SLOT FUNC
+				parse_pci_address "$bdf"
 
 				local raw
 				raw="${mdev_to_vm[$MDEV_UUID]:-}"
@@ -727,6 +817,10 @@ process_mdev_instances() {
 # Parse nvidia-smi vgpu profiles once at the beginning
 parse_nvidia_vgpu_profiles
 
+# `lspci -nnm` keeps the existing output format for devices in PCI domain 0
+# (short "bb:ss.f" form) and includes the domain prefix only for devices on
+# non-zero PCI segments (multi-IIO servers, some ARM systems). The helpers
+# below (parse_pci_address, normalize_pci_address) accept both formats.
 mapfile -t LINES < <(lspci -nnm)
 
 echo '{ "gpus": ['
@@ -743,8 +837,13 @@ for LINE in "${LINES[@]}"; do
 		continue
 	fi
 
+	# sysfs paths always require the full domain-qualified form. PCI_ADDR may
+	# be short ("00:02.0") for domain 0 or full ("0001:65:00.0") otherwise, so
+	# we derive a separate SYSFS_ADDR just for filesystem lookups.
+	SYSFS_ADDR=$(normalize_pci_address "$PCI_ADDR")
+
 	# If this is a VF, skip it. It will be processed under its PF.
-	if [[ -e "/sys/bus/pci/devices/0000:$PCI_ADDR/physfn" ]]; then
+	if [[ -e "/sys/bus/pci/devices/$SYSFS_ADDR/physfn" ]]; then
 		continue
 	fi
 
@@ -761,7 +860,7 @@ for LINE in "${LINES[@]}"; do
 	DEVICE_ID=$(sed -E 's/.*\[([0-9A-Fa-f]{4})\]$/\1/' <<<"$DEVICE_FIELD")
 
 	# Kernel driver
-	DRV_PATH="/sys/bus/pci/devices/0000:$PCI_ADDR/driver"
+	DRV_PATH="/sys/bus/pci/devices/$SYSFS_ADDR/driver"
 	if [[ -L $DRV_PATH ]]; then
 		DRIVER=$(basename "$(readlink "$DRV_PATH")")
 	else
@@ -781,7 +880,7 @@ for LINE in "${LINES[@]}"; do
 	read -r TOTALVFS NUMVFS < <(get_sriov_counts "$PCI_ADDR")
 
 	# Get Physical GPU properties from its own description file, if available
-	PF_DESC_PATH="/sys/bus/pci/devices/0000:$PCI_ADDR/description"
+	PF_DESC_PATH="/sys/bus/pci/devices/$SYSFS_ADDR/description"
 	parse_and_add_gpu_properties "$PF_DESC_PATH"
 	# Save physical function's properties before they are overwritten by vGPU/VF processing
 	PF_MAX_INSTANCES=$MAX_INSTANCES
@@ -791,25 +890,27 @@ for LINE in "${LINES[@]}"; do
 	PF_MAX_RESOLUTION_Y=$MAX_RESOLUTION_Y
 
 	# === full_passthrough usage ===
-	raw="${pci_to_vm[$PCI_ADDR]:-}"
+	# pci_to_vm is keyed by the full domain-qualified form, so normalize the
+	# lspci-style PCI_ADDR (which may be short for domain 0) before lookup.
+	raw="${pci_to_vm[$(normalize_pci_address "$PCI_ADDR")]:-}"
 	FULL_USED_JSON=$(to_json_vm "$raw")
 
 	# === vGPU (MDEV) instances ===
 	VGPU_ARRAY="[]"
 	declare -a vlist=()
 	# Process mdev on the Physical Function
-	MDEV_BASE="/sys/bus/pci/devices/0000:$PCI_ADDR/mdev_supported_types"
+	MDEV_BASE="/sys/bus/pci/devices/$SYSFS_ADDR/mdev_supported_types"
 	process_mdev_instances "$MDEV_BASE" "$PCI_ADDR"
 
 	# === VF instances (SR-IOV / MIG) ===
 	VF_ARRAY="[]"
 	declare -a flist=()
 	if ((TOTALVFS > 0)); then
-		for VF_LINK in /sys/bus/pci/devices/0000:"$PCI_ADDR"/virtfn*; do
+		for VF_LINK in /sys/bus/pci/devices/"$SYSFS_ADDR"/virtfn*; do
 			[[ -L $VF_LINK ]] || continue
 			VF_PATH=$(readlink -f "$VF_LINK")
-			VF_ADDR=${VF_PATH##*/} # e.g. "0000:65:00.2"
-			VF_BDF="${VF_ADDR:5}"  # "65:00.2"
+			# Keep the full domain-qualified address (e.g. "0000:65:00.2")
+			VF_BDF=${VF_PATH##*/}
 
 			# For NVIDIA SR-IOV, check for vGPU (mdev) on the VF itself
 			if [[ "$VENDOR_ID" == "10de" ]]; then
@@ -817,10 +918,7 @@ for LINE in "${LINES[@]}"; do
 				process_mdev_instances "$VF_MDEV_BASE" "$VF_BDF"
 			fi
 
-			DOMAIN="0x0000"
-			BUS="0x${VF_BDF:0:2}"
-			SLOT="0x${VF_BDF:3:2}"
-			FUNC="0x${VF_BDF:6:1}"
+			parse_pci_address "$VF_BDF"
 
 			# Determine vf_profile using nvidia-smi information
 			VF_PROFILE=""
@@ -835,8 +933,10 @@ for LINE in "${LINES[@]}"; do
 				# For NVIDIA GPUs, check current vGPU type
 				current_vgpu_type=$(get_current_vgpu_type "$VF_PATH")
 				if [[ "$current_vgpu_type" != "0" ]]; then
-					# Get profile info from nvidia-smi cache
-					profile_info=$(get_nvidia_profile_info "$PCI_ADDR" "$current_vgpu_type")
+					# nvidia_vgpu_profiles is keyed by the canonical full
+					# "dddd:bb:ss.f" form, so widen PCI_ADDR (which may be
+					# short for domain 0) before the cache lookup.
+					profile_info=$(get_nvidia_profile_info "$(normalize_pci_address "$PCI_ADDR")" "$current_vgpu_type")
 					IFS='|' read -r VF_PROFILE_NAME VF_MAX_INSTANCES VF_VIDEO_RAM VF_MAX_HEADS VF_MAX_RESOLUTION_X VF_MAX_RESOLUTION_Y <<< "$profile_info"
 					VF_PROFILE="$VF_PROFILE_NAME"
 				fi
@@ -853,12 +953,17 @@ for LINE in "${LINES[@]}"; do
 			fi
 			VF_PROFILE_JSON=$(json_escape "$VF_PROFILE")
 
-			# Determine which VM uses this VF_BDF
-			raw="${pci_to_vm[$VF_BDF]:-}"
+			# Determine which VM uses this VF_BDF (normalize for map lookup)
+			raw="${pci_to_vm[$(normalize_pci_address "$VF_BDF")]:-}"
 			USED_JSON=$(to_json_vm "$raw")
 
+			# For backward-compat JSON output, strip the default "0000:" domain
+			# prefix so domain-0 VFs still print as "65:00.2" rather than the
+			# full "0000:65:00.2". Non-zero domains are preserved unchanged.
+			VF_DISPLAY_ADDR="${VF_BDF#0000:}"
+
 			flist+=(
-				"{\"vf_pci_address\":\"$VF_BDF\",\"vf_profile\":$VF_PROFILE_JSON,\"max_instances\":$VF_MAX_INSTANCES,\"video_ram\":$VF_VIDEO_RAM,\"max_heads\":$VF_MAX_HEADS,\"max_resolution_x\":$VF_MAX_RESOLUTION_X,\"max_resolution_y\":$VF_MAX_RESOLUTION_Y,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
+				"{\"vf_pci_address\":\"$VF_DISPLAY_ADDR\",\"vf_profile\":$VF_PROFILE_JSON,\"max_instances\":$VF_MAX_INSTANCES,\"video_ram\":$VF_VIDEO_RAM,\"max_heads\":$VF_MAX_HEADS,\"max_resolution_x\":$VF_MAX_RESOLUTION_X,\"max_resolution_y\":$VF_MAX_RESOLUTION_Y,\"libvirt_address\":{\"domain\":\"$DOMAIN\",\"bus\":\"$BUS\",\"slot\":\"$SLOT\",\"function\":\"$FUNC\"},\"used_by_vm\":$USED_JSON}")
 		done
 		if [ ${#flist[@]} -gt 0 ]; then
 			VF_ARRAY="[$(
@@ -882,10 +987,7 @@ for LINE in "${LINES[@]}"; do
 	if [[ ${#vlist[@]} -eq 0 && ${#flist[@]} -eq 0 ]]; then
 		FP_ENABLED=1
 	fi
-	DOMAIN="0x0000"
-	BUS="0x${PCI_ADDR:0:2}"
-	SLOT="0x${PCI_ADDR:3:2}"
-	FUNC="0x${PCI_ADDR:6:1}"
+	parse_pci_address "$PCI_ADDR"
 
 	# Emit JSON
 	if $first_gpu; then

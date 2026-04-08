@@ -116,6 +116,110 @@ public class LibvirtGpuDefTest extends TestCase {
     }
 
     @Test
+    public void testGpuDef_withFullPciAddressDomainZero() {
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        VgpuTypesInfo pciGpuInfo = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "passthrough",
+                "passthrough",
+                "0000:00:02.0",
+                "10de",
+                "NVIDIA Corporation",
+                "1b38",
+                "Tesla T4"
+        );
+        gpuDef.defGpu(pciGpuInfo);
+
+        String gpuXml = gpuDef.toString();
+
+        assertTrue(gpuXml.contains("<address domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>"));
+    }
+
+    @Test
+    public void testGpuDef_withFullPciAddressNonZeroDomain() {
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        VgpuTypesInfo pciGpuInfo = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "passthrough",
+                "passthrough",
+                "0001:65:00.0",
+                "10de",
+                "NVIDIA Corporation",
+                "1b38",
+                "Tesla T4"
+        );
+        gpuDef.defGpu(pciGpuInfo);
+
+        String gpuXml = gpuDef.toString();
+
+        assertTrue(gpuXml.contains("<address domain='0x0001' bus='0x65' slot='0x00' function='0x0'/>"));
+    }
+
+    @Test
+    public void testGpuDef_withFullPciAddressWideDomain() {
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        VgpuTypesInfo pciGpuInfo = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "passthrough",
+                "passthrough",
+                "10000:af:00.1",
+                "10de",
+                "NVIDIA Corporation",
+                "1b38",
+                "Tesla T4"
+        );
+        gpuDef.defGpu(pciGpuInfo);
+
+        String gpuXml = gpuDef.toString();
+
+        assertTrue(gpuXml.contains("<address domain='0x10000' bus='0xaf' slot='0x00' function='0x1'/>"));
+    }
+
+    @Test
+    public void testGpuDef_withFullPciAddressVfNonZeroDomain() {
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        VgpuTypesInfo vfGpuInfo = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "VF-Profile",
+                "VF-Profile",
+                "0002:81:00.3",
+                "10de",
+                "NVIDIA Corporation",
+                "1eb8",
+                "Tesla T4"
+        );
+        gpuDef.defGpu(vfGpuInfo);
+
+        String gpuXml = gpuDef.toString();
+
+        // Non-passthrough NVIDIA VFs should be unmanaged
+        assertTrue(gpuXml.contains("<hostdev mode='subsystem' type='pci' managed='no' display='off'>"));
+        assertTrue(gpuXml.contains("<address domain='0x0002' bus='0x81' slot='0x00' function='0x3'/>"));
+    }
+
+    @Test
+    public void testGpuDef_withLegacyShortBdfDefaultsDomainToZero() {
+        // Backward compatibility: short BDF with no domain segment must still
+        // produce a valid libvirt address with domain 0x0000.
+        LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+        VgpuTypesInfo pciGpuInfo = new VgpuTypesInfo(
+                GpuDevice.DeviceType.PCI,
+                "passthrough",
+                "passthrough",
+                "af:00.0",
+                "10de",
+                "NVIDIA Corporation",
+                "1b38",
+                "Tesla T4"
+        );
+        gpuDef.defGpu(pciGpuInfo);
+
+        String gpuXml = gpuDef.toString();
+
+        assertTrue(gpuXml.contains("<address domain='0x0000' bus='0xaf' slot='0x00' function='0x0'/>"));
+    }
+
+    @Test
     public void testGpuDef_withNullDeviceType() {
         LibvirtGpuDef gpuDef = new LibvirtGpuDef();
         VgpuTypesInfo nullTypeGpuInfo = new VgpuTypesInfo(
