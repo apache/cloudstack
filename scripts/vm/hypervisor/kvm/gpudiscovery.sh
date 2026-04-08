@@ -448,16 +448,12 @@ parse_nvidia_vgpu_profiles() {
 			# normalize_pci_address output used at lookup time. Short
 			# addresses ("AF:00.0") are widened by prepending domain 0.
 			if [[ $gpu_address =~ ^([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+)\.([0-9A-Fa-f]+)$ ]]; then
-				gpu_address=$(printf "%04x:%s:%s.%s" \
-					"0x${BASH_REMATCH[1]}" \
-					"${BASH_REMATCH[2],,}" \
-					"${BASH_REMATCH[3],,}" \
-					"${BASH_REMATCH[4],,}")
+				gpu_address=$(printf "%04x:%02x:%02x.%x" \
+					"0x${BASH_REMATCH[1]}" "0x${BASH_REMATCH[2]}" \
+					"0x${BASH_REMATCH[3]}" "0x${BASH_REMATCH[4]}")
 			elif [[ $gpu_address =~ ^([0-9A-Fa-f]+):([0-9A-Fa-f]+)\.([0-9A-Fa-f]+)$ ]]; then
-				gpu_address=$(printf "0000:%s:%s.%s" \
-					"${BASH_REMATCH[1],,}" \
-					"${BASH_REMATCH[2],,}" \
-					"${BASH_REMATCH[3],,}")
+				gpu_address=$(printf "0000:%02x:%02x.%x" \
+					"0x${BASH_REMATCH[1]}" "0x${BASH_REMATCH[2]}" "0x${BASH_REMATCH[3]}")
 			else
 				gpu_address="${gpu_address,,}"
 			fi
@@ -557,15 +553,15 @@ get_nvidia_profile_info() {
 parse_pci_address() {
 	local addr="$1"
 	if [[ $addr =~ ^([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+)\.([0-9A-Fa-f]+)$ ]]; then
-		DOMAIN="0x${BASH_REMATCH[1]}"
-		BUS="0x${BASH_REMATCH[2]}"
-		SLOT="0x${BASH_REMATCH[3]}"
-		FUNC="0x${BASH_REMATCH[4]}"
+		DOMAIN=$(printf "0x%04x" "0x${BASH_REMATCH[1]}")
+		BUS=$(printf "0x%02x" "0x${BASH_REMATCH[2]}")
+		SLOT=$(printf "0x%02x" "0x${BASH_REMATCH[3]}")
+		FUNC=$(printf "0x%x" "0x${BASH_REMATCH[4]}")
 	elif [[ $addr =~ ^([0-9A-Fa-f]+):([0-9A-Fa-f]+)\.([0-9A-Fa-f]+)$ ]]; then
 		DOMAIN="0x0000"
-		BUS="0x${BASH_REMATCH[1]}"
-		SLOT="0x${BASH_REMATCH[2]}"
-		FUNC="0x${BASH_REMATCH[3]}"
+		BUS=$(printf "0x%02x" "0x${BASH_REMATCH[1]}")
+		SLOT=$(printf "0x%02x" "0x${BASH_REMATCH[2]}")
+		FUNC=$(printf "0x%x" "0x${BASH_REMATCH[3]}")
 	else
 		DOMAIN="0x0000"
 		BUS="0x00"
@@ -574,14 +570,20 @@ parse_pci_address() {
 	fi
 }
 
-# Normalize a PCI address to its full domain-qualified form ("dddd:bb:ss.f").
-# Short addresses are widened by prepending domain "0000".
+# Normalize a PCI address to its canonical full domain-qualified form
+# ("dddd:bb:ss.f", lowercase, zero-padded). Both "dddd:bb:ss.f" (full) and
+# "bb:ss.f" (short, domain 0) inputs are accepted.
 normalize_pci_address() {
 	local addr="$1"
-	if [[ $addr =~ ^[0-9A-Fa-f]+:[0-9A-Fa-f]+:[0-9A-Fa-f]+\.[0-9A-Fa-f]+$ ]]; then
-		echo "$addr"
+	if [[ $addr =~ ^([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+)\.([0-9A-Fa-f]+)$ ]]; then
+		printf "%04x:%02x:%02x.%x\n" \
+			"0x${BASH_REMATCH[1]}" "0x${BASH_REMATCH[2]}" \
+			"0x${BASH_REMATCH[3]}" "0x${BASH_REMATCH[4]}"
+	elif [[ $addr =~ ^([0-9A-Fa-f]+):([0-9A-Fa-f]+)\.([0-9A-Fa-f]+)$ ]]; then
+		printf "0000:%02x:%02x.%x\n" \
+			"0x${BASH_REMATCH[1]}" "0x${BASH_REMATCH[2]}" "0x${BASH_REMATCH[3]}"
 	else
-		echo "0000:$addr"
+		echo "$addr"
 	fi
 }
 

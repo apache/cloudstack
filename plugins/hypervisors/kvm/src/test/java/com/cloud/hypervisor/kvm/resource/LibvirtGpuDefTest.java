@@ -222,6 +222,39 @@ public class LibvirtGpuDefTest extends TestCase {
     }
 
     @Test
+    public void testGpuDef_withInvalidBusAddressThrows() {
+        String[] invalidAddresses = {
+                "notahex:00.0",          // non-hex bus
+                "gg:00:02.0",            // non-hex domain
+                "00:02:03:04",           // too many colon-separated parts
+                "00",                    // missing slot/function
+                "00:02",                 // missing function (no dot)
+                "00:02.0.1",             // extra dot in ss.f
+        };
+        for (String addr : invalidAddresses) {
+            LibvirtGpuDef gpuDef = new LibvirtGpuDef();
+            VgpuTypesInfo info = new VgpuTypesInfo(
+                    GpuDevice.DeviceType.PCI,
+                    "passthrough",
+                    "passthrough",
+                    addr,
+                    "10de",
+                    "NVIDIA Corporation",
+                    "1b38",
+                    "Tesla T4"
+            );
+            gpuDef.defGpu(info);
+            try {
+                String ignored = gpuDef.toString();
+                fail("Expected IllegalArgumentException for address: " + addr + " but got: " + ignored);
+            } catch (IllegalArgumentException e) {
+                assertTrue("Exception message should contain the bad address",
+                        e.getMessage().contains(addr));
+            }
+        }
+    }
+
+    @Test
     public void testGpuDef_withNullDeviceType() {
         LibvirtGpuDef gpuDef = new LibvirtGpuDef();
         VgpuTypesInfo nullTypeGpuInfo = new VgpuTypesInfo(

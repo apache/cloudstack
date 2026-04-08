@@ -89,8 +89,8 @@ public class LibvirtGpuDef {
 
         if (busAddress != null && !busAddress.isEmpty()) {
             String[] parts = busAddress.split(":");
-            String slotFunction = null;
             try {
+                String slotFunction;
                 if (parts.length == 3) {
                     domainVal = Integer.parseInt(parts[0], 16);
                     busVal = Integer.parseInt(parts[1], 16);
@@ -98,18 +98,18 @@ public class LibvirtGpuDef {
                 } else if (parts.length == 2) {
                     busVal = Integer.parseInt(parts[0], 16);
                     slotFunction = parts[1];
+                } else {
+                    throw new IllegalArgumentException("Invalid PCI bus address format: '" + busAddress + "'");
                 }
-                if (slotFunction != null) {
-                    String[] slotFunctionParts = slotFunction.split("\\.");
-                    if (slotFunctionParts.length > 0) {
-                        slotVal = Integer.parseInt(slotFunctionParts[0], 16);
-                        if (slotFunctionParts.length > 1) {
-                            funcVal = Integer.parseInt(slotFunctionParts[1].trim(), 16);
-                        }
-                    }
+                String[] sf = slotFunction.split("\\.");
+                if (sf.length == 2) {
+                    slotVal = Integer.parseInt(sf[0], 16);
+                    funcVal = Integer.parseInt(sf[1].trim(), 16);
+                } else {
+                    throw new IllegalArgumentException("Invalid PCI bus address format: '" + busAddress + "'");
                 }
             } catch (NumberFormatException e) {
-                // leave all values at 0 (safe defaults)
+                throw new IllegalArgumentException("Invalid PCI bus address format: '" + busAddress + "'", e);
             }
         }
 
@@ -119,7 +119,7 @@ public class LibvirtGpuDef {
         String function = String.format("0x%x", funcVal);
 
         gpuBuilder.append("    <address domain='").append(domain).append("' bus='").append(bus).append("' slot='")
-                .append(slot).append("' function='").append(function.trim()).append("'/>\n");
+                .append(slot).append("' function='").append(function).append("'/>\n");
         gpuBuilder.append("  </source>\n");
         gpuBuilder.append("</hostdev>\n");
     }
