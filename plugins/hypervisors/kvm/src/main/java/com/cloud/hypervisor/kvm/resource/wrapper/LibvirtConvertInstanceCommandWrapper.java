@@ -326,73 +326,76 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             return false;
         }
 
-        String vpxUrl = buildVpxUrl(vmwareInstance, originalVMName);
-
-        StringBuilder cmd = new StringBuilder();
-
-        String effectiveLibguestfsBackend = StringUtils.defaultIfBlank(libguestfsBackend, "direct");
-        cmd.append("export LIBGUESTFS_BACKEND=").append(effectiveLibguestfsBackend).append(" && ");
-
-        cmd.append("virt-v2v ");
-        cmd.append("--root first ");
-        cmd.append("-ic '").append(vpxUrl).append("' ");
-        if (StringUtils.isBlank(passwordOption)) {
-            logger.error("({}) Could not determine supported password file option for virt-v2v", originalVMName);
-            return false;
-        }
-
-        cmd.append(passwordOption).append(" ").append(passwordFilePath).append(" ");
-        cmd.append("-it vddk ");
-        cmd.append("-io vddk-libdir=").append(vddkLibDir).append(" ");
-        String vddkThumbprint = StringUtils.trimToNull(configuredVddkThumbprint);
-        if (StringUtils.isBlank(vddkThumbprint)) {
-            vddkThumbprint = getVcenterThumbprint(vmwareInstance.getVcenterHost(), timeout, originalVMName);
-        }
-        if (StringUtils.isBlank(vddkThumbprint)) {
-            logger.error("({}) Could not determine vCenter thumbprint for {}", originalVMName, vmwareInstance.getVcenterHost());
-            return false;
-        }
-        cmd.append("-io vddk-thumbprint=").append(vddkThumbprint).append(" ");
-        if (StringUtils.isNotBlank(vddkTransports)) {
-            cmd.append("-io vddk-transports=").append(vddkTransports).append(" ");
-        }
-        cmd.append(originalVMName).append(" ");
-        cmd.append("-o local ");
-        cmd.append("-os ").append(temporaryConvertFolder).append(" ");
-        cmd.append("-of qcow2 ");
-        cmd.append("-on ").append(temporaryConvertUuid).append(" ");
-
-        if (verboseModeEnabled) {
-            cmd.append("-v ");
-        }
-
-        if (StringUtils.isNotBlank(extraParams)) {
-            cmd.append(extraParams).append(" ");
-        }
-
-        Script script = new Script("/bin/bash", timeout, logger);
-        script.add("-c");
-        script.add(cmd.toString());
-
-        String logPrefix = String.format("(%s) virt-v2v vddk import", originalVMName);
-        OutputInterpreter.LineByLineOutputLogger outputLogger =
-                new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
-
-        logger.info("({}) Starting virt-v2v VDDK conversion", originalVMName);
-        script.execute(outputLogger);
-
-        int exitValue = script.getExitValue();
-        if (exitValue != 0) {
-            logger.error("({}) virt-v2v failed with exit code {}", originalVMName, exitValue);
-        }
         try {
-            Files.deleteIfExists(Path.of(passwordFilePath));
-            logger.debug("({}) Deleted password file {}", originalVMName, passwordFilePath);
-        } catch (Exception e) {
-            logger.warn("({}) Failed to delete password file {}: {}", originalVMName, passwordFilePath, e.getMessage());
-        }
+            String vpxUrl = buildVpxUrl(vmwareInstance, originalVMName);
 
-        return exitValue == 0;
+            StringBuilder cmd = new StringBuilder();
+
+            String effectiveLibguestfsBackend = StringUtils.defaultIfBlank(libguestfsBackend, "direct");
+            cmd.append("export LIBGUESTFS_BACKEND=").append(effectiveLibguestfsBackend).append(" && ");
+
+            cmd.append("virt-v2v ");
+            cmd.append("--root first ");
+            cmd.append("-ic '").append(vpxUrl).append("' ");
+            if (StringUtils.isBlank(passwordOption)) {
+                logger.error("({}) Could not determine supported password file option for virt-v2v", originalVMName);
+                return false;
+            }
+
+            cmd.append(passwordOption).append(" ").append(passwordFilePath).append(" ");
+            cmd.append("-it vddk ");
+            cmd.append("-io vddk-libdir=").append(vddkLibDir).append(" ");
+            String vddkThumbprint = StringUtils.trimToNull(configuredVddkThumbprint);
+            if (StringUtils.isBlank(vddkThumbprint)) {
+                vddkThumbprint = getVcenterThumbprint(vmwareInstance.getVcenterHost(), timeout, originalVMName);
+            }
+            if (StringUtils.isBlank(vddkThumbprint)) {
+                logger.error("({}) Could not determine vCenter thumbprint for {}", originalVMName, vmwareInstance.getVcenterHost());
+                return false;
+            }
+            cmd.append("-io vddk-thumbprint=").append(vddkThumbprint).append(" ");
+            if (StringUtils.isNotBlank(vddkTransports)) {
+                cmd.append("-io vddk-transports=").append(vddkTransports).append(" ");
+            }
+            cmd.append(originalVMName).append(" ");
+            cmd.append("-o local ");
+            cmd.append("-os ").append(temporaryConvertFolder).append(" ");
+            cmd.append("-of qcow2 ");
+            cmd.append("-on ").append(temporaryConvertUuid).append(" ");
+
+            if (verboseModeEnabled) {
+                cmd.append("-v ");
+            }
+
+            if (StringUtils.isNotBlank(extraParams)) {
+                cmd.append(extraParams).append(" ");
+            }
+
+            Script script = new Script("/bin/bash", timeout, logger);
+            script.add("-c");
+            script.add(cmd.toString());
+
+            String logPrefix = String.format("(%s) virt-v2v vddk import", originalVMName);
+            OutputInterpreter.LineByLineOutputLogger outputLogger =
+                    new OutputInterpreter.LineByLineOutputLogger(logger, logPrefix);
+
+            logger.info("({}) Starting virt-v2v VDDK conversion", originalVMName);
+            script.execute(outputLogger);
+
+            int exitValue = script.getExitValue();
+            if (exitValue != 0) {
+                logger.error("({}) virt-v2v failed with exit code {}", originalVMName, exitValue);
+            }
+
+            return exitValue == 0;
+        } finally {
+            try {
+                Files.deleteIfExists(Path.of(passwordFilePath));
+                logger.debug("({}) Deleted password file {}", originalVMName, passwordFilePath);
+            } catch (Exception e) {
+                logger.warn("({}) Failed to delete password file {}: {}", originalVMName, passwordFilePath, e.getMessage());
+            }
+        }
     }
 
     protected String getVcenterThumbprint(String vcenterHost, long timeout, String originalVMName) {
