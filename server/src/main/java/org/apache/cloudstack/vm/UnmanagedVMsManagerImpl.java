@@ -1701,8 +1701,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     : selectKVMHostForImportingInCluster(destinationCluster, importInstanceHostId);
 
             boolean isOvfExportSupported = false;
+            CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVMName, false, useVddk, details);
             if (!useVddk) {
-                CheckConvertInstanceAnswer conversionSupportAnswer = checkConversionSupportOnHost(convertHost, sourceVMName, false);
                 isOvfExportSupported = conversionSupportAnswer.isOvfExportSupported();
             }
             logger.debug("The host {}  is selected to execute the conversion of the " +
@@ -1726,7 +1726,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
             boolean isWindowsVm = sourceVMwareInstance.getOperatingSystem().toLowerCase().contains("windows");
             if (isWindowsVm) {
-                checkConversionSupportOnHost(convertHost, sourceVMName, true);
+                checkConversionSupportOnHost(convertHost, sourceVMName, true, useVddk, details);
             }
 
             checkNetworkingBeforeConvertingVmwareInstance(zone, owner, displayName, hostName, sourceVMwareInstance, nicNetworkMap, nicIpAddressMap, forced);
@@ -2027,13 +2027,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 err = String.format(
                         "Cannot perform the conversion on the host %s as it is not in the same zone as the destination cluster",
                         selectedHost);
-            } else if (useVddk) {
-                hostDao.loadDetails(selectedHost);
-                if (StringUtils.isBlank(selectedHost.getDetail(Host.HOST_VDDK_SUPPORT))) {
-                    err = String.format(
-                            "Cannot use VDDK-based conversion on host %s as the '%s' is not there on the host",
-                            selectedHost, Host.HOST_VDDK_SUPPORT);
-                }
             }
             if (err != null) {
                 logger.error(err);
@@ -2046,7 +2039,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         List<HostVO> hosts = hostDao.listByClusterHypervisorTypeAndHostCapability(destinationCluster.getId(), destinationCluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION);
         if (CollectionUtils.isNotEmpty(hosts)) {
             if (useVddk) {
-                hosts = filterHostsWithVddkLibDir(hosts);
+                List<HostVO> vddkHosts = filterHostsWithVddkSupport(hosts);
+                if (CollectionUtils.isNotEmpty(vddkHosts)) {
+                    hosts = vddkHosts;
+                }
             }
             if (CollectionUtils.isNotEmpty(hosts)) {
                 return hosts.get(new Random().nextInt(hosts.size()));
@@ -2057,7 +2053,10 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         hosts = hostDao.listByClusterAndHypervisorType(destinationCluster.getId(), destinationCluster.getHypervisorType());
         if (CollectionUtils.isNotEmpty(hosts)) {
             if (useVddk) {
-                hosts = filterHostsWithVddkLibDir(hosts);
+                List<HostVO> vddkHosts = filterHostsWithVddkSupport(hosts);
+                if (CollectionUtils.isNotEmpty(vddkHosts)) {
+                    hosts = vddkHosts;
+                }
             }
             if (CollectionUtils.isNotEmpty(hosts)) {
                 return hosts.get(new Random().nextInt(hosts.size()));
@@ -2073,16 +2072,24 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         throw new CloudRuntimeException(err);
     }
 
-    private List<HostVO> filterHostsWithVddkLibDir(List<HostVO> hosts) {
+    private List<HostVO> filterHostsWithVddkSupport(List<HostVO> hosts) {
         return hosts.stream().filter(h -> {
             hostDao.loadDetails(h);
-            return StringUtils.isNotBlank(h.getDetail(Host.HOST_VDDK_SUPPORT));
+            return Boolean.parseBoolean(h.getDetail(Host.HOST_VDDK_SUPPORT));
         }).collect(Collectors.toList());
     }
 
-    private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM, boolean checkWindowsGuestConversionSupport) {
-        logger.debug(String.format("Checking the %s conversion support on the host %s", checkWindowsGuestConversionSupport? "windows guest" : "", convertHost));
-        CheckConvertInstanceCommand cmd = new CheckConvertInstanceCommand(checkWindowsGuestConversionSupport);
+    private CheckConvertInstanceAnswer checkConversionSupportOnHost(HostVO convertHost, String sourceVM,
+                                                                    boolean checkWindowsGuestConversionSupport,
+                                                                    boolean useVddk, Map<String, String> details) {
+        logger.debug(String.format("Checking the %s%s conversion support on the host %s",
+                useVddk ? "VDDK " : "",
+                checkWindowsGuestConversionSupport ? "windows guest " : "",
+                convertHost));
+        CheckConvertInstanceCommand cmd = new CheckConvertInstanceCommand(checkWindowsGuestConversionSupport, useVddk);
+        if (MapUtils.isNotEmpty(details)) {
+            cmd.setVddkLibDir(StringUtils.trimToNull(details.get(Host.HOST_VDDK_LIB_DIR)));
+        }
         int timeoutSeconds = 60;
         cmd.setWait(timeoutSeconds);
 
