@@ -637,11 +637,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Override
     public boolean cancelImageTransfer(long imageTransferId) {
-        ImageTransferVO imageTransfer = imageTransferDao.findById(imageTransferId);
-        if (imageTransfer == null) {
-            throw new CloudRuntimeException("Image transfer not found: " + imageTransferId);
-        }
-        // ToDo: Implement cancel logic
+        finalizeImageTransfer(imageTransferId);
         return true;
     }
 
@@ -876,7 +872,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             response.setBackupId(backup.getUuid());
         }
         Long volumeId = imageTransferVO.getDiskId();
-        // ToDo: fix volume deletion leaving orphan image transfer record
         Volume volume = volumeDao.findByIdIncludingRemoved(volumeId);
         response.setDiskId(volume.getUuid());
         response.setTransferUrl(imageTransferVO.getTransferUrl());
@@ -977,7 +972,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     for (ImageTransferVO transfer : hostTransfers) {
                         VolumeVO volume = volumeDao.findById(transfer.getDiskId());
                         if (volume == null) {
-                            logger.warn("Volume not found for image transfer: " + transfer.getUuid());
+                            logger.warn("Volume not found for image transfer: {}", transfer.getUuid());
+                            imageTransferDao.remove(transfer.getId()); // ToDo: confirm if this enough?
                             continue;
                         }
                         transferVolumeMap.put(transfer.getId(), volume);
@@ -986,7 +982,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                         transferIds.add(transferId);
 
                         if (volume.getPath() == null) {
-                            logger.warn("Volume path is null for image transfer: " + transfer.getUuid());
+                            logger.warn("Volume path is null for image transfer: {}", transfer.getUuid());
                             continue;
                         }
                         String volumePath = getVolumePathForFileBasedBackend(volume);
@@ -1004,7 +1000,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     if (answer == null || !answer.getResult() || MapUtils.isEmpty(answer.getProgressMap())) {
                         logger.warn("Failed to get progress for transfers on host {}: {}", hostId,
                                 answer != null ? answer.getDetails() : "null answer");
-                        return;
+                        return; // ToDo: return on continue?
                     }
                     for (ImageTransferVO transfer : hostTransfers) {
                         String transferId = transfer.getUuid();
