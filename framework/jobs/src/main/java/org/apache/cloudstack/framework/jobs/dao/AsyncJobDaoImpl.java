@@ -153,7 +153,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     public AsyncJobVO findJob(Long id, Long resourceId, String resourceType) {
         SearchCriteria<AsyncJobVO> sc = byIdResourceIdResourceTypeSearch.create();
 
-        if (id == null && resourceId == null && StringUtils.isNotBlank(resourceType)) {
+        if (id == null && resourceId == null && StringUtils.isBlank(resourceType)) {
             logger.debug("findJob called with all null parameters");
             return null;
         }

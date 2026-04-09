@@ -54,7 +54,7 @@ public interface ResourceIdSupport {
     default Long getResourceId(ApiCommandResourceType resourceType, String resourceUuid) {
         String uuid = getResourceUuid(resourceUuid);
 
-        if (resourceType == null || uuid == null) {
+        if (resourceType == null && uuid == null) {
             return null;
         } else if ((resourceType == null) ^ (uuid == null)) {
             throw new InvalidParameterValueException(String.format("Both %s and %s required",
