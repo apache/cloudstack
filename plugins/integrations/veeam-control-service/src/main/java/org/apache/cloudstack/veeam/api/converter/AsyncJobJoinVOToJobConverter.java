@@ -34,26 +34,6 @@ import com.cloud.api.query.vo.UserVmJoinVO;
 
 public class AsyncJobJoinVOToJobConverter {
 
-    public static Job toJob(String uuid, String state, long startTime) {
-        Job job = new Job();
-        final String basePath = VeeamControlService.ContextPath.value();
-        // Fill in dummy data for now, as the AsyncJobJoinVO does not contain all the necessary information to populate a Job object.
-        job.setId(uuid);
-        job.setHref(basePath + JobsRouteHandler.BASE_ROUTE + "/" + uuid);
-        job.setAutoCleared(Boolean.TRUE.toString());
-        job.setExternal(Boolean.TRUE.toString());
-        job.setLastUpdated(System.currentTimeMillis());
-        job.setStartTime(startTime);
-        job.setStatus(state);
-        if ("complete".equalsIgnoreCase(state) || "finished".equalsIgnoreCase(state)) {
-            job.setEndTime(System.currentTimeMillis());
-        }
-        job.setOwner(Ref.of(basePath + "/api/users/" + uuid, uuid));
-        job.setDescription("Something");
-        job.setLink(Collections.emptyList());
-        return job;
-    }
-
     public static Job toJob(AsyncJobJoinVO vo) {
         Job job = new Job();
         final String basePath = VeeamControlService.ContextPath.value();

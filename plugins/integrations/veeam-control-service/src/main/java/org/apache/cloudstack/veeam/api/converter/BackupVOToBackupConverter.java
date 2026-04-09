@@ -23,9 +23,12 @@ import java.util.stream.Collectors;
 
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.veeam.VeeamControlService;
+import org.apache.cloudstack.veeam.api.ApiRouteHandler;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Backup;
 import org.apache.cloudstack.veeam.api.dto.Disk;
+import org.apache.cloudstack.veeam.api.dto.Host;
+import org.apache.cloudstack.veeam.api.dto.NamedList;
 import org.apache.cloudstack.veeam.api.dto.Vm;
 
 import com.cloud.api.query.vo.HostJoinVO;
@@ -54,6 +57,16 @@ public class BackupVOToBackupConverter {
             if (vmVO != null) {
                 backup.setVm(Vm.of(basePath + VmsRouteHandler.BASE_ROUTE + "/" + vmVO.getUuid(), vmVO.getUuid()));
             }
+        }
+        if (backupVO.getHostId() != null && hostResolver != null) {
+            final HostJoinVO hostVO = hostResolver.apply(backupVO.getHostId());
+            if (hostVO != null) {
+                backup.setHost(Host.of(basePath + ApiRouteHandler.BASE_ROUTE + "/" + hostVO.getUuid(), hostVO.getUuid()));
+            }
+        }
+        if (disksResolver != null) {
+            List<Disk> disks = disksResolver.apply(backupVO);
+            backup.setDisks(NamedList.of("disks", disks));
         }
         return backup;
     }

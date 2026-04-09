@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.veeam.VeeamControlService;
-import org.apache.cloudstack.veeam.api.ApiService;
+import org.apache.cloudstack.veeam.api.ApiRouteHandler;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.BaseDto;
 import org.apache.cloudstack.veeam.api.dto.Cpu;
@@ -54,7 +54,6 @@ public final class UserVmJoinVOToVmConverter {
     /**
      * Convert CloudStack UserVmJoinVO -> oVirt-like Vm DTO.
      *
-     * @param src      UserVmJoinVO
      */
     public static Vm toVm(final UserVmJoinVO src,
                           final Function<Long, HostJoinVO> hostResolver,
@@ -84,7 +83,7 @@ public final class UserVmJoinVOToVmConverter {
             dst.setStartTime(lastUpdated.getTime());
         }
         final Ref template = buildRef(
-                basePath + ApiService.BASE_ROUTE,
+                basePath + ApiRouteHandler.BASE_ROUTE,
                 "templates",
                 src.getTemplateUuid()
         );
@@ -92,20 +91,19 @@ public final class UserVmJoinVOToVmConverter {
         dst.setOriginalTemplate(template);
         if (StringUtils.isNotBlank(src.getHostUuid())) {
             dst.setHost(buildRef(
-                    basePath + ApiService.BASE_ROUTE,
+                    basePath + ApiRouteHandler.BASE_ROUTE,
                     "hosts",
                     src.getHostUuid()));
-
         }
         if (hostResolver != null) {
             HostJoinVO hostVo = hostResolver.apply(src.getHostId() == null ? src.getLastHostId() : src.getHostId());
             if (hostVo != null) {
                 dst.setHost(buildRef(
-                        basePath + ApiService.BASE_ROUTE,
+                        basePath + ApiRouteHandler.BASE_ROUTE,
                         "hosts",
                         hostVo.getUuid()));
                 dst.setCluster(buildRef(
-                        basePath + ApiService.BASE_ROUTE,
+                        basePath + ApiRouteHandler.BASE_ROUTE,
                         "clusters",
                         hostVo.getClusterUuid()));
             }
@@ -123,9 +121,7 @@ public final class UserVmJoinVOToVmConverter {
         cpu.setTopology(new Topology(src.getCpu(), 1, 1));
         dst.setCpu(cpu);
         Os os = new Os();
-        os.setType(src.getGuestOsId() % 2 == 0
-                ? "windows"
-                : "linux");
+        os.setType(src.getGuestOsDisplayName());
         Os.Boot boot = new Os.Boot();
         boot.setDevices(NamedList.of("device", List.of("hd")));
         os.setBoot(boot);
@@ -167,7 +163,7 @@ public final class UserVmJoinVOToVmConverter {
             dst.setTags(NamedList.of("tag", tags));
         }
         dst.setCpuProfile(Ref.of(
-                basePath + ApiService.BASE_ROUTE + "/cpuprofiles/" + src.getServiceOfferingUuid(),
+                basePath + ApiRouteHandler.BASE_ROUTE + "/cpuprofiles/" + src.getServiceOfferingUuid(),
                 src.getServiceOfferingUuid()));
         if (allContent) {
             dst.setInitialization(getOvfInitialization(dst, src));
@@ -204,9 +200,10 @@ public final class UserVmJoinVOToVmConverter {
     }
 
     private static String mapStatus(final VirtualMachine.State state) {
-        // CloudStack-ish states -> oVirt-ish up/down
-        if (Arrays.asList(VirtualMachine.State.Running,
-                VirtualMachine.State.Migrating, VirtualMachine.State.Restoring).contains(state)) {
+        if (Arrays.asList(
+                VirtualMachine.State.Running,
+                VirtualMachine.State.Migrating,
+                VirtualMachine.State.Restoring).contains(state)) {
             return "up";
         }
         return "down";

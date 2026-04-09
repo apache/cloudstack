@@ -222,11 +222,6 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
         io.notFound(resp, null, outFormat);
     }
 
-    protected static boolean isRequestAsync(HttpServletRequest req) {
-        String asyncStr = req.getParameter("async");
-        return Boolean.TRUE.toString().equals(asyncStr);
-    }
-
     protected void handleGet(final HttpServletRequest req, final HttpServletResponse resp,
           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         try {
@@ -287,7 +282,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleDeleteById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
-        boolean async = isRequestAsync(req);
+        boolean async = RouteHandler.isRequestAsync(req);
         try {
             VmAction vm = serverAdapter.deleteInstance(id, async);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, vm, outFormat);
@@ -298,7 +293,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleStartVmById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
-        boolean async = isRequestAsync(req);
+        boolean async = RouteHandler.isRequestAsync(req);
         try {
             VmAction vm = serverAdapter.startInstance(id, async);
             io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, vm, outFormat);
@@ -309,7 +304,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleStopVmById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
-        boolean async = isRequestAsync(req);
+        boolean async = RouteHandler.isRequestAsync(req);
         try {
             VmAction vm = serverAdapter.stopInstance(id, async);
             io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, vm, outFormat);
@@ -320,7 +315,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleShutdownVmById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
                 final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
-        boolean async = isRequestAsync(req);
+        boolean async = RouteHandler.isRequestAsync(req);
         try {
             VmAction vm = serverAdapter.shutdownInstance(id, async);
             io.getWriter().write(resp, HttpServletResponse.SC_ACCEPTED, vm, outFormat);
@@ -422,7 +417,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleDeleteSnapshotById(final String id, final HttpServletRequest req,
                 final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
-        boolean async = isRequestAsync(req);
+        boolean async = RouteHandler.isRequestAsync(req);
         try {
             ResourceAction action = serverAdapter.deleteSnapshot(id, async);
             if (action != null) {
@@ -438,7 +433,7 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
     protected void handleRestoreSnapshotById(final String id, final HttpServletRequest req,
                 final HttpServletResponse resp, final Negotiation.OutFormat outFormat, final VeeamControlServlet io)
             throws IOException {
-        boolean async = isRequestAsync(req);
+        boolean async = RouteHandler.isRequestAsync(req);
         String data = RouteHandler.getRequestData(req, logger);
         try {
             ResourceAction response = serverAdapter.revertInstanceToSnapshot(id, async);

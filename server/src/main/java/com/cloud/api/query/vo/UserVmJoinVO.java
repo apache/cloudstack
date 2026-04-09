@@ -131,6 +131,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "guest_os_uuid")
     private String guestOsUuid;
 
+    @Column(name = "guest_os_display_name")
+    private String guestOsDisplayName;
+
     @Column(name = "hypervisor_type")
     @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
@@ -610,6 +613,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getGuestOsUuid() {
         return guestOsUuid;
+    }
+
+    public String getGuestOsDisplayName() {
+        return guestOsDisplayName;
     }
 
     public HypervisorType getHypervisorType() {

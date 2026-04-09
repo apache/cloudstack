@@ -513,9 +513,6 @@ public final class Vm extends BaseDto {
     }
 
     public static Vm of(String href, String id) {
-        Vm vm = new Vm();
-        vm.setHref(href);
-        vm.setId(id);
-        return vm;
+        return withHrefAndId(new Vm(), href, id);
     }
 }

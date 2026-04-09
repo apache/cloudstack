@@ -38,7 +38,6 @@ public class HostJoinVOToHostConverter {
     /**
      * Convert CloudStack HostJoinVO -> oVirt-like Host.
      *
-     * @param vo HostJoinVO from listHosts (join query)
      */
     public static Host toHost(final HostJoinVO vo) {
         final Host h = new Host();
@@ -49,8 +48,6 @@ public class HostJoinVOToHostConverter {
         final String basePath = VeeamControlService.ContextPath.value();
         h.setHref(basePath + HostsRouteHandler.BASE_ROUTE + "/" + hostUuid);
 
-        // --- name / address ---
-        // Prefer DNS name if set; otherwise fall back to IP
         final String name = vo.getName() != null ? vo.getName() : ("host-" + hostUuid);
         h.setName(name);
 
@@ -75,9 +72,7 @@ public class HostJoinVOToHostConverter {
         h.setMemory(String.valueOf(vo.getTotalMemory()));
         h.setMaxSchedulingMemory(String.valueOf(vo.getTotalMemory() - vo.getMemUsedCapacity()));
 
-        // --- OS / versions (optional placeholders) ---
-        // If you want, you can set conservative defaults to match oVirt shape.
-        h.setType("rhel");
+        h.setType("ovirt_node");
         h.setAutoNumaStatus("unknown");
         h.setKdumpStatus("disabled");
         h.setNumaSupported("false");
@@ -85,8 +80,6 @@ public class HostJoinVOToHostConverter {
         h.setUpdateAvailable("false");
 
 
-        // --- links/actions ---
-        // Start minimal (empty). Add actions only if Veeam tries to follow them.
         h.setActions(null);
         h.setLink(Collections.emptyList());
 
@@ -98,13 +91,13 @@ public class HostJoinVOToHostConverter {
     }
 
     private static String mapStatus(final HostJoinVO vo) {
-        // CloudStack examples:
-        // state: Up/Down/Maintenance/Error/Disconnected
-        // status: Up/Down/Connecting/etc
-        if (vo.isInMaintenanceStates()) return "maintenance";
-        if (Status.Up.equals(vo.getStatus()) && ResourceState.Enabled.equals(vo.getResourceState())) return "up";
-
-        // Default
+        if (vo.isInMaintenanceStates()) {
+            return "maintenance";
+        }
+        if (Status.Up.equals(vo.getStatus()) &&
+                ResourceState.Enabled.equals(vo.getResourceState())) {
+            return "up";
+        }
         return "down";
     }
 }

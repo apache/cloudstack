@@ -238,7 +238,8 @@ public class ServerAdapter extends ManagerBase {
             Storage.StoragePoolType.NetworkFilesystem,
             Storage.StoragePoolType.SharedMountPoint
     );
-    public static final String WORKER_VM_GUEST_CPU_MODE = "host-passthrough";
+    private static final String VM_TA_KEY = "veeam_tag";
+    private static final String WORKER_VM_GUEST_CPU_MODE = "host-passthrough";
 
     @Inject
     RoleService roleService;
@@ -411,22 +412,6 @@ public class ServerAdapter extends ManagerBase {
         }
         return new Pair<>(accountService.getActiveUser(userAccount.getId()),
                 accountService.getActiveAccountById(userAccount.getAccountId()));
-    }
-
-    protected Pair<User, Account> getServiceAccount() {
-        String serviceAccountUuid = VeeamControlService.ServiceAccountId.value();
-        if (StringUtils.isEmpty(serviceAccountUuid)) {
-            throw new CloudRuntimeException("Service account is not configured, unable to proceed");
-        }
-        Account account = accountService.getActiveAccountByUuid(serviceAccountUuid);
-        if (account == null) {
-            throw new CloudRuntimeException("Service account with ID " + serviceAccountUuid + " not found, unable to proceed");
-        }
-        User user = accountService.getOneActiveUserForAccount(account);
-        if (user == null) {
-            throw new CloudRuntimeException("No active user found for service account with ID " + serviceAccountUuid);
-        }
-        return new Pair<>(user, account);
     }
 
     protected void waitForJobCompletion(long jobId) {
@@ -858,6 +843,22 @@ public class ServerAdapter extends ManagerBase {
         return vmInstanceDetailsDao.listDetailsKeyPairs(instanceId, true);
     }
 
+    public Pair<User, Account> getServiceAccount() {
+        String serviceAccountUuid = VeeamControlService.ServiceAccountId.value();
+        if (StringUtils.isEmpty(serviceAccountUuid)) {
+            throw new CloudRuntimeException("Service account is not configured, unable to proceed");
+        }
+        Account account = accountService.getActiveAccountByUuid(serviceAccountUuid);
+        if (account == null) {
+            throw new CloudRuntimeException("Service account with ID " + serviceAccountUuid + " not found, unable to proceed");
+        }
+        User user = accountService.getOneActiveUserForAccount(account);
+        if (user == null) {
+            throw new CloudRuntimeException("No active user found for service account with ID " + serviceAccountUuid);
+        }
+        return new Pair<>(user, account);
+    }
+
     @Override
     public boolean start() {
         getServiceAccount();
@@ -1185,15 +1186,13 @@ public class ServerAdapter extends ManagerBase {
 
     @ApiAccess(command = ListTagsCmd.class)
     protected List<Tag> listTagsByInstanceId(final long instanceId) {
-        List<? extends ResourceTag> vmResourceTags = resourceTagDao.listBy(instanceId,
-                ResourceTag.ResourceObjectType.UserVm);
+        ResourceTag vmResourceTag = resourceTagDao.findByKey(instanceId,
+                ResourceTag.ResourceObjectType.UserVm, VM_TA_KEY);
         List<ResourceTagVO> tags = new ArrayList<>();
-        for (ResourceTag t : vmResourceTags) {
-            if (t instanceof ResourceTagVO) {
-                tags.add((ResourceTagVO)t);
-                continue;
-            }
-            tags.add(resourceTagDao.findById(t.getId()));
+        if (vmResourceTag instanceof ResourceTagVO) {
+            tags.add((ResourceTagVO)vmResourceTag);
+        } else {
+            tags.add(resourceTagDao.findById(vmResourceTag.getId()));
         }
         return ResourceTagVOToTagConverter.toTags(tags);
     }
@@ -1760,8 +1759,8 @@ public class ServerAdapter extends ManagerBase {
         List<Tag> tags = new ArrayList<>(getDummyTags().values());
         Filter filter = new Filter(ResourceTagVO.class, "id", true, offset, limit);
         Pair<List<Long>, List<Long>> ownerDetails = getResourceOwnerFiltersWithDomainIds();
-        List<ResourceTagVO> vmResourceTags = resourceTagDao.listByResourceTypeAndOwners(
-                ResourceTag.ResourceObjectType.UserVm, ownerDetails.first(), ownerDetails.second(), filter);
+        List<ResourceTagVO> vmResourceTags = resourceTagDao.listByResourceTypeKeyAndOwners(
+                ResourceTag.ResourceObjectType.UserVm, VM_TA_KEY, ownerDetails.first(), ownerDetails.second(), filter);
         if (CollectionUtils.isNotEmpty(vmResourceTags)) {
             tags.addAll(ResourceTagVOToTagConverter.toTags(vmResourceTags));
         }
@@ -1775,7 +1774,8 @@ public class ServerAdapter extends ManagerBase {
         }
         Tag tag = getDummyTags().get(uuid);
         if (tag == null) {
-            ResourceTagVO resourceTagVO = resourceTagDao.findByUuid(uuid);
+            ResourceTagVO resourceTagVO = resourceTagDao.findByResourceTypeKeyAndValue(
+                    ResourceTag.ResourceObjectType.UserVm, VM_TA_KEY, uuid);
             accountService.checkAccess(CallContext.current().getCallingAccount(), null, false,
                     resourceTagVO);
             if (resourceTagVO != null) {

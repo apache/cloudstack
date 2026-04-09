@@ -124,10 +124,12 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
     }
 
     @Override
-    public List<ResourceTagVO> listByResourceTypeAndOwners(ResourceObjectType resourceType, List<Long> accountIds,
-                       List<Long> domainIds, Filter filter) {
+    public List<ResourceTagVO> listByResourceTypeKeyAndOwners(ResourceObjectType resourceType, String key,
+                                                              List<Long> accountIds, List<Long> domainIds,
+                                                              Filter filter) {
         SearchBuilder<ResourceTagVO> sb = createSearchBuilder();
         sb.and("resourceType", sb.entity().getResourceType(), Op.EQ);
+        sb.and("key", sb.entity().getKey(), Op.EQ);
         boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
         boolean domainIdsNotEmpty = CollectionUtils.isNotEmpty(domainIds);
         if (accountIdsNotEmpty || domainIdsNotEmpty) {
@@ -136,8 +138,9 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
             sb.cp();
         }
         sb.done();
-        final SearchCriteria<ResourceTagVO> sc = sb.create();;
+        final SearchCriteria<ResourceTagVO> sc = sb.create();
         sc.setParameters("resourceType", resourceType);
+        sc.setParameters("key", key);
         if (accountIdsNotEmpty) {
             sc.setParameters("account", accountIds.toArray());
         }
@@ -145,5 +148,20 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
             sc.setParameters("domain", domainIds.toArray());
         }
         return listBy(sc, filter);
+    }
+
+    @Override
+    public ResourceTagVO findByResourceTypeKeyAndValue(ResourceObjectType resourceType, String key,
+                                                             String value) {
+        SearchBuilder<ResourceTagVO> sb = createSearchBuilder();
+        sb.and("resourceType", sb.entity().getResourceType(), Op.EQ);
+        sb.and("key", sb.entity().getKey(), Op.EQ);
+        sb.and("value", sb.entity().getValue(), Op.EQ);
+        sb.done();
+        final SearchCriteria<ResourceTagVO> sc = sb.create();
+        sc.setParameters("resourceType", resourceType);
+        sc.setParameters("key", key);
+        sc.setParameters("value", value);
+        return findOneBy(sc);
     }
 }

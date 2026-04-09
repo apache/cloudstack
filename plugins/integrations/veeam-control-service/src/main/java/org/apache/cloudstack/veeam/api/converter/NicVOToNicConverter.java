@@ -39,6 +39,8 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.vm.NicVO;
 
 public class NicVOToNicConverter {
+    private static final String DEFAULT_INTERFACE_TYPE = "virtio";
+    private static final String DEFAULT_REPORTED_DEVICE_NAME = "eth0";
 
     public static Nic toNic(final NicVO vo, final String vmUuid, final Function<Long, NetworkVO> networkResolver) {
         final String basePath = VeeamControlService.ContextPath.value();
@@ -56,7 +58,7 @@ public class NicVOToNicConverter {
             nic.setVm(vm);
             nic.setHref(vm.getHref() + "/nics/" + vo.getUuid());
         }
-        nic.setInterfaceType("virtio");
+        nic.setInterfaceType(DEFAULT_INTERFACE_TYPE);
         ReportedDevice device = getReportedDevice(vo, mac, nic.getVm());
         nic.setReportedDevices(NamedList.of("reported_device", List.of(device)));
         if (networkResolver != null) {
@@ -73,7 +75,7 @@ public class NicVOToNicConverter {
         ReportedDevice device = new ReportedDevice();
         device.setType("network");
         device.setId(vo.getUuid());
-        device.setName("eth0");
+        device.setName(DEFAULT_REPORTED_DEVICE_NAME);
         device.setDescription(String.format("%s device", vo.getReserver()));
         device.setMac(mac);
         if (ObjectUtils.anyNotNull(vo.getIPv4Address(), vo.getIPv6Address())) {

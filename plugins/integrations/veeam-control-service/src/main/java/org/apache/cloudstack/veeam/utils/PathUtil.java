@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.cloud.utils.UuidUtils;
 
 public class PathUtil {
+    private static final boolean CONSIDER_ONLY_UUID_AS_ID = false;
 
     public static List<String> extractIdAndSubPath(final String path, final String baseRoute) {
 
@@ -65,7 +66,7 @@ public class PathUtil {
             }
 
             // Validate first segment is a UUID
-            if (validParts.isEmpty() || !UuidUtils.isUuid(validParts.get(0))) {
+            if (validParts.isEmpty() || (CONSIDER_ONLY_UUID_AS_ID && !UuidUtils.isUuid(validParts.get(0)))) {
                 return null;
             }
 

@@ -46,4 +46,10 @@ public class BaseDto {
     public static Link getActionLink(final String action, final String baseHref) {
         return Link.of(action, baseHref + "/" + action);
     }
+
+    protected static <T extends BaseDto> T withHrefAndId(T dto, String href, String id) {
+        dto.setHref(href);
+        dto.setId(id);
+        return dto;
+    }
 }

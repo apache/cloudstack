@@ -101,19 +101,6 @@ public class VeeamControlServlet extends HttpServlet {
                 String name = headerNames.nextElement();
                 details.append(name).append("=").append(req.getHeader(name)).append("; ");
             }
-//            String body = "";
-//            if (!"GET".equalsIgnoreCase(method)) {
-//                StringBuilder bodySb = new StringBuilder();
-//                java.io.BufferedReader reader = req.getReader();
-//                if (reader != null) {
-//                    String line;
-//                    while ((line = reader.readLine()) != null) {
-//                        bodySb.append(line).append('\n');
-//                    }
-//                }
-//                body = bodySb.toString().trim();
-//            }
-//            details.append(", Body: ").append(body);
             LOGGER.debug(details.toString());
         } catch (Exception e) {
             LOGGER.debug("Failed to capture request details", e);
@@ -135,8 +122,8 @@ public class VeeamControlServlet extends HttpServlet {
         }
 
         writer.write(resp, 200, Map.of(
-                "name", "CloudStack Veeam Control Service",
-                "pluginVersion", "0.1"), outFormat);
+                "name", VeeamControlService.PLUGIN_NAME,
+                "pluginVersion", this.getClass().getPackage().getImplementationVersion()), outFormat);
     }
 
     public void methodNotAllowed(final HttpServletResponse resp, final String allow, final Negotiation.OutFormat outFormat) throws IOException {

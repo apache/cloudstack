@@ -30,6 +30,7 @@ import org.apache.cloudstack.veeam.api.dto.Cpu;
 import org.apache.cloudstack.veeam.api.dto.Link;
 import org.apache.cloudstack.veeam.api.dto.Ref;
 import org.apache.cloudstack.veeam.api.dto.Version;
+import org.apache.cloudstack.veeam.api.dto.Vm;
 
 import com.cloud.api.query.vo.DataCenterJoinVO;
 import com.cloud.dc.ClusterVO;
@@ -39,19 +40,14 @@ public class ClusterVOToClusterConverter {
     public static Cluster toCluster(final ClusterVO vo, final Function<Long, DataCenterJoinVO> dataCenterResolver) {
         final Cluster c = new Cluster();
         final String basePath = VeeamControlService.ContextPath.value();
-
-        // NOTE: oVirt uses UUIDs. If your ClusterVO id is numeric, generate a stable UUID:
-        // - Prefer: store a UUID in details table and reuse it
-        // - Fallback: name-based UUID from "cluster:<id>"
         final String clusterId = vo.getUuid();
         c.setId(clusterId);
         c.setHref(basePath + ClustersRouteHandler.BASE_ROUTE + "/" + clusterId);
 
         c.setName(vo.getName());
 
-        // --- sensible defaults (match your sample)
         c.setBallooningEnabled("true");
-        c.setBiosType("q35_ovmf"); // or "q35_secure_boot" if you want to align with VM BIOS you saw
+        c.setBiosType(Vm.Bios.getDefault().getType());
         c.setFipsMode("disabled");
         c.setFirewallType("firewalld");
         c.setGlusterService("false");
@@ -64,19 +60,14 @@ public class ClusterVOToClusterConverter {
         c.setUpgradePercentComplete("0");
         c.setVirtService("true");
         c.setVncEncryption("false");
-        c.setLogMaxMemoryUsedThreshold("95");
-        c.setLogMaxMemoryUsedThresholdType("percentage");
 
         // --- cpu (best-effort defaults)
         final Cpu cpu = new Cpu();
-        cpu.setArchitecture("x86_64");
-        cpu.setType("x86_64"); // replace if you can detect host cpu model
+        cpu.setArchitecture(vo.getArch().getType());
+        cpu.setType(vo.getArch().getType()); // replace if you can detect host cpu model
         c.setCpu(cpu);
 
-        // --- version (ovirt engine version; keep fixed unless you want to expose something else)
-        final Version ver = new Version();
-        ver.setMajor("4");
-        ver.setMinor("8");
+        final Version ver = Version.fromPackageAndCSVersion(false);
         c.setVersion(ver);
 
         // --- ksm / memory policy (defaults)

@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.cloudstack.veeam.VeeamControlService;
-import org.apache.cloudstack.veeam.api.ApiService;
+import org.apache.cloudstack.veeam.api.ApiRouteHandler;
 import org.apache.cloudstack.veeam.api.DataCentersRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.DataCenter;
 import org.apache.cloudstack.veeam.api.dto.Link;
@@ -42,7 +42,7 @@ public class StoreVOToStorageDomainConverter {
 
         StorageDomain sd = new StorageDomain();
         sd.setId(id);
-        final String href = href(basePath, ApiService.BASE_ROUTE + "/storagedomains/" + id);
+        final String href = href(basePath, ApiRouteHandler.BASE_ROUTE + "/storagedomains/" + id);
         sd.setHref(href);
 
         sd.setName(pool.getName());
@@ -96,7 +96,7 @@ public class StoreVOToStorageDomainConverter {
 
         StorageDomain sd = new StorageDomain();
         sd.setId(id);
-        final String href = href(basePath, ApiService.BASE_ROUTE + "/storagedomains/" + id);
+        final String href = href(basePath, ApiRouteHandler.BASE_ROUTE + "/storagedomains/" + id);
         sd.setHref(href);
 
         sd.setName(store.getName());

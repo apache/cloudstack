@@ -28,7 +28,7 @@ import javax.servlet.DispatcherType;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
-import org.apache.cloudstack.veeam.api.ApiService;
+import org.apache.cloudstack.veeam.api.ApiRouteHandler;
 import org.apache.cloudstack.veeam.filter.AllowedClientCidrsFilter;
 import org.apache.cloudstack.veeam.filter.BearerOrBasicAuthFilter;
 import org.apache.commons.lang3.StringUtils;
@@ -125,12 +125,12 @@ public class VeeamControlServer {
         // CIDR filter for all routes
         AllowedClientCidrsFilter cidrFilter = new AllowedClientCidrsFilter(veeamControlService);
         FilterHolder cidrHolder = new FilterHolder(cidrFilter);
-        ctx.addFilter(cidrHolder, ApiService.BASE_ROUTE + "/*", EnumSet.of(DispatcherType.REQUEST));
+        ctx.addFilter(cidrHolder, ApiRouteHandler.BASE_ROUTE + "/*", EnumSet.of(DispatcherType.REQUEST));
 
         // Bearer or Basic Auth for all routes
         BearerOrBasicAuthFilter authFilter = new BearerOrBasicAuthFilter(veeamControlService);
         FilterHolder authHolder = new FilterHolder(authFilter);
-        ctx.addFilter(authHolder, ApiService.BASE_ROUTE + "/*", EnumSet.of(DispatcherType.REQUEST));
+        ctx.addFilter(authHolder, ApiRouteHandler.BASE_ROUTE + "/*", EnumSet.of(DispatcherType.REQUEST));
 
         // Front controller servlet
         ctx.addServlet(new ServletHolder(new VeeamControlServlet(routeHandlers)), "/*");

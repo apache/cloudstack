@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.api.dto.Fault;
-import org.apache.cloudstack.veeam.api.response.FaultResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -78,7 +77,7 @@ public final class ResponseWriter {
         if (fmt == Negotiation.OutFormat.XML) {
             write(resp, status, fault, fmt);
         } else {
-            write(resp, status, new FaultResponse(fault), fmt);
+            write(resp, status, fault, fmt);
         }
     }
 }

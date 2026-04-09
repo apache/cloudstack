@@ -55,7 +55,6 @@ public class NetworkVOToNetworkConverter {
         // Best-effort mapping for vdsm_name
         dto.setVdsmName(dto.getName());
 
-        // zone -> oVirt datacenter ref
         if (dcResolver != null) {
             final DataCenterJoinVO dc = dcResolver.apply(vo.getDataCenterId());
             if (dc != null) {

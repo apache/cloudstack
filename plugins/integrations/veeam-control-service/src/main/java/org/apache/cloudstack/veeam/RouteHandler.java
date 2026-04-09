@@ -19,7 +19,6 @@ package org.apache.cloudstack.veeam;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,7 +29,6 @@ import org.apache.logging.log4j.Logger;
 import com.cloud.utils.component.Adapter;
 
 public interface RouteHandler extends Adapter {
-    static final Pattern PAGE_PATTERN = Pattern.compile("\\bpage\\s+(\\d+)");
     default int priority() { return 0; }
     boolean canHandle(String method, String path) throws IOException;
     void handle(HttpServletRequest req, HttpServletResponse resp, String path, Negotiation.OutFormat outFormat, VeeamControlServlet io)
@@ -60,7 +58,6 @@ public interface RouteHandler extends Adapter {
         if (!"application/json".equals(mime) && !"application/x-www-form-urlencoded".equals(mime)) {
             return null;
         }
-        String result = null;
         try {
             StringBuilder data = new StringBuilder();
             String line;
@@ -73,5 +70,10 @@ public interface RouteHandler extends Adapter {
         } catch (IOException ignored) {
             return null;
         }
+    }
+
+    static boolean isRequestAsync(HttpServletRequest req) {
+        String asyncStr = req.getParameter("async");
+        return Boolean.TRUE.toString().equals(asyncStr);
     }
 }

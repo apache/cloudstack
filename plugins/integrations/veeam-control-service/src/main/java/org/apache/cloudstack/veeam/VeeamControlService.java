@@ -21,10 +21,13 @@ import java.util.List;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.utils.CloudStackVersion;
 
 import com.cloud.utils.component.PluggableService;
 
 public interface VeeamControlService extends PluggableService, Configurable {
+    String PLUGIN_NAME = "CloudStack Veeam Control Service";
+
     ConfigKey<Boolean> Enabled = new ConfigKey<>("Advanced", Boolean.class, "integration.veeam.control.enabled",
             "false", "Enable the Veeam Integration REST API server", false);
     ConfigKey<String> BindAddress = new ConfigKey<>("Advanced", String.class, "integration.veeam.control.bind.address",
@@ -57,4 +60,16 @@ public interface VeeamControlService extends PluggableService, Configurable {
     List<String> getAllowedClientCidrs();
 
     boolean validateCredentials(String username, String password);
+
+    static String getPackageVersion() {
+        return VeeamControlService.class.getPackage().getImplementationVersion();
+    }
+
+    static CloudStackVersion getCSVersion() {
+        try {
+            return CloudStackVersion.parse(getPackageVersion());
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

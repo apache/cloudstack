@@ -23,9 +23,11 @@ public class Backup extends BaseDto {
     private String description;
     private Long creationDate;
     private Vm vm;
+    private Host host;
     private String phase;
     private String fromCheckpointId;
     private String toCheckpointId;
+    private NamedList<Disk> disks;
 
     public String getName() {
         return name;
@@ -59,6 +61,14 @@ public class Backup extends BaseDto {
         this.vm = vm;
     }
 
+    public Host getHost() {
+        return host;
+    }
+
+    public void setHost(Host host) {
+        this.host = host;
+    }
+
     public String getPhase() {
         return phase;
     }
@@ -81,5 +91,13 @@ public class Backup extends BaseDto {
 
     public void setToCheckpointId(String toCheckpointId) {
         this.toCheckpointId = toCheckpointId;
+    }
+
+    public NamedList<Disk> getDisks() {
+        return disks;
+    }
+
+    public void setDisks(NamedList<Disk> disks) {
+        this.disks = disks;
     }
 }

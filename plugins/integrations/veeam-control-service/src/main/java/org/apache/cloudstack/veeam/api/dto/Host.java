@@ -308,4 +308,8 @@ public class Host extends BaseDto {
             this.version = version;
         }
     }
+
+    public static Host of(String href, String id) {
+        return withHrefAndId(new Host(), href, id);
+    }
 }

@@ -45,7 +45,6 @@ public class NetworkVOToVnicProfileConverter {
         vnicProfile.setNetwork(Ref.of(basePath + NetworksRouteHandler.BASE_ROUTE + "/" + networkUuid, networkUuid));
         vnicProfile.setDescription(vo.getDisplayText());
 
-        // zone -> oVirt datacenter ref
         if (dcResolver != null) {
             final DataCenterJoinVO dc = dcResolver.apply(vo.getDataCenterId());
             if (dc != null) {

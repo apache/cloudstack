@@ -48,10 +48,11 @@ public class ResourceTagVOToTagConverter {
     public static Tag toTag(ResourceTagVO vo) {
         String basePath = VeeamControlService.ContextPath.value();
         Tag tag = new Tag();
-        tag.setId(vo.getUuid());
-        tag.setName(String.format("%s-%s", vo.getKey(), vo.getValue()).replaceAll("\\s+", ""));
+        String id = vo.getValue();
+        tag.setId(id);
+        tag.setName(vo.getValue());
         tag.setDescription(String.format("Tag %s with value: %s", vo.getKey(), vo.getValue()));
-        tag.setHref(basePath + TagsRouteHandler.BASE_ROUTE + "/" + vo.getUuid());
+        tag.setHref(basePath + TagsRouteHandler.BASE_ROUTE + "/" + id);
         if (ResourceTag.ResourceObjectType.UserVm.equals(vo.getResourceType())) {
             tag.setVm(Ref.of(basePath + VmsRouteHandler.BASE_ROUTE + "/" + vo.getResourceUuid(),
                     vo.getResourceUuid()));

@@ -21,21 +21,21 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.veeam.RouteHandler;
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.VeeamControlServlet;
+import org.apache.cloudstack.veeam.adapter.ServerAdapter;
 import org.apache.cloudstack.veeam.api.dto.Api;
 import org.apache.cloudstack.veeam.api.dto.ApiSummary;
 import org.apache.cloudstack.veeam.api.dto.EmptyElement;
 import org.apache.cloudstack.veeam.api.dto.Link;
 import org.apache.cloudstack.veeam.api.dto.ProductInfo;
 import org.apache.cloudstack.veeam.api.dto.Ref;
-import org.apache.cloudstack.veeam.api.dto.SpecialObjects;
 import org.apache.cloudstack.veeam.api.dto.SummaryCount;
 import org.apache.cloudstack.veeam.api.dto.Version;
 import org.apache.cloudstack.veeam.utils.Negotiation;
@@ -43,8 +43,11 @@ import org.apache.cloudstack.veeam.utils.Negotiation;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 
-public class ApiService extends ManagerBase implements RouteHandler {
+public class ApiRouteHandler extends ManagerBase implements RouteHandler {
     public static final String BASE_ROUTE = "/api";
+
+    @Inject
+    ServerAdapter serverAdapter;
 
     @Override
     public boolean canHandle(String method, String path) {
@@ -63,11 +66,11 @@ public class ApiService extends ManagerBase implements RouteHandler {
 
     private void handleRootApiRequest(HttpServletRequest req, HttpServletResponse resp, Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         io.getWriter().write(resp, HttpServletResponse.SC_OK,
-                createDummyApi(VeeamControlService.ContextPath.value() + BASE_ROUTE),
+                createApiObject(VeeamControlService.ContextPath.value() + BASE_ROUTE),
                 outFormat);
     }
 
-    private static Api createDummyApi(String basePath) {
+    protected Api createApiObject(String basePath) {
         Api api = new Api();
 
         /* ---------------- Links ---------------- */
@@ -96,29 +99,10 @@ public class ApiService extends ManagerBase implements RouteHandler {
         ProductInfo productInfo = new ProductInfo();
         productInfo.setInstanceId(UuidUtils.nameUUIDFromBytes(
                 VeeamControlService.BindAddress.value().getBytes(StandardCharsets.UTF_8)).toString());
-        productInfo.name = "oVirt Engine";
+        productInfo.name = VeeamControlService.PLUGIN_NAME;
 
-        Version version = new Version();
-        version.setBuild("8");
-        version.setFullVersion("4.5.8-0.master.fake.el9");
-        version.setMajor("4");
-        version.setMinor("5");
-        version.setRevision("0");
-
-        productInfo.version = version;
+        productInfo.version = Version.fromPackageAndCSVersion(true);
         api.setProductInfo(productInfo);
-
-        /* ---------------- Special objects ---------------- */
-        SpecialObjects specialObjects = new SpecialObjects();
-        specialObjects.setBlankTemplate(Ref.of(
-                basePath + "/templates/00000000-0000-0000-0000-000000000000",
-                "00000000-0000-0000-0000-000000000000"
-        ));
-        specialObjects.setRootTag(Ref.of(
-                basePath + "/tags/00000000-0000-0000-0000-000000000000",
-                "00000000-0000-0000-0000-000000000000"
-        ));
-        api.setSpecialObjects(specialObjects);
 
         /* ---------------- Summary ---------------- */
         ApiSummary summary = new ApiSummary();
@@ -132,7 +116,7 @@ public class ApiService extends ManagerBase implements RouteHandler {
         api.setTime(System.currentTimeMillis());
 
         /* ---------------- Users ---------------- */
-        String userId = UUID.randomUUID().toString();
+        String userId = serverAdapter.getServiceAccount().first().getUuid();
         api.setAuthenticatedUser(Ref.of(basePath + "/users/" + userId, userId));
         api.setEffectiveUser(Ref.of(basePath + "/users/" + userId, userId));
 

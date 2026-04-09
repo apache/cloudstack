@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.veeam.VeeamControlService;
-import org.apache.cloudstack.veeam.api.ApiService;
+import org.apache.cloudstack.veeam.api.ApiRouteHandler;
 import org.apache.cloudstack.veeam.api.DisksRouteHandler;
 import org.apache.cloudstack.veeam.api.VmsRouteHandler;
 import org.apache.cloudstack.veeam.api.dto.Disk;
@@ -43,7 +43,7 @@ public class VolumeJoinVOToDiskConverter {
     public static Disk toDisk(final VolumeJoinVO vol, final Function<VolumeJoinVO, Long> physicalSizeResolver) {
         final Disk disk = new Disk();
         final String basePath = VeeamControlService.ContextPath.value();
-        final String apiBasePath = basePath + ApiService.BASE_ROUTE;
+        final String apiBasePath = basePath + ApiRouteHandler.BASE_ROUTE;
         final String diskId = vol.getUuid();
         final String diskHref = basePath + DisksRouteHandler.BASE_ROUTE + "/" + diskId;
 

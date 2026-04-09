@@ -17,6 +17,10 @@
 
 package org.apache.cloudstack.veeam.api.dto;
 
+import org.apache.cloudstack.utils.CloudStackVersion;
+import org.apache.cloudstack.veeam.VeeamControlService;
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -69,5 +73,22 @@ public final class Version {
 
     public void setRevision(String revision) {
         this.revision = revision;
+    }
+
+    public static Version fromPackageAndCSVersion(boolean complete) {
+        Version version = new Version();
+        String packageVersion = VeeamControlService.getPackageVersion();
+        if (StringUtils.isNotBlank(packageVersion) && complete) {
+            version.setFullVersion(packageVersion);
+        }
+        CloudStackVersion csVersion = VeeamControlService.getCSVersion();
+        if (csVersion == null) {
+            return version;
+        }
+        version.setMajor(String.valueOf(csVersion.getMajorRelease()));
+        version.setMinor(String.valueOf(csVersion.getMinorRelease()));
+        version.setBuild(String.valueOf(csVersion.getPatchRelease()));
+        version.setRevision(String.valueOf(csVersion.getSecurityRelease()));
+        return version;
     }
 }

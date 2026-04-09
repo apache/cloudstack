@@ -52,12 +52,10 @@ public class DataCenterJoinVOToDataCenterConverter {
         dc.setQuotaMode("disabled");
         dc.setStorageFormat("v5");
 
-        // ---- Versions (static but valid) ----
-        final Version v48 = new Version();
-        v48.setMajor("4");
-        v48.setMinor("8");
-        dc.setVersion(v48);
-        dc.setSupportedVersions(new SupportedVersions(List.of(v48)));
+        // ---- Versions ----
+        final Version ver = Version.fromPackageAndCSVersion(false);
+        dc.setVersion(ver);
+        dc.setSupportedVersions(new SupportedVersions(List.of(ver)));
 
         // ---- mac_pool (static placeholder) ----
         dc.setMacPool(Ref.of(basePath + "/macpools/default", "default"));
