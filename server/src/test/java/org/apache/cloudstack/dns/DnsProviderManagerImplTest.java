@@ -52,6 +52,7 @@ import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.dns.dao.DnsNicJoinDao;
 import org.apache.cloudstack.dns.dao.DnsServerDao;
 import org.apache.cloudstack.dns.dao.DnsServerJoinDao;
 import org.apache.cloudstack.dns.dao.DnsZoneDao;
@@ -59,7 +60,6 @@ import org.apache.cloudstack.dns.dao.DnsZoneJoinDao;
 import org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDao;
 import org.apache.cloudstack.dns.exception.DnsConflictException;
 import org.apache.cloudstack.dns.exception.DnsNotFoundException;
-import org.apache.cloudstack.dns.exception.DnsProviderException;
 import org.apache.cloudstack.dns.exception.DnsTransportException;
 import org.apache.cloudstack.dns.vo.DnsServerJoinVO;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
@@ -129,6 +129,8 @@ public class DnsProviderManagerImplTest {
     NicDao nicDao;
     @Mock
     NicDetailsDao nicDetailsDao;
+    @Mock
+    DnsNicJoinDao dnsNicJoinDao;
     @Mock
     MessageBus messageBus;
     @Mock
@@ -572,51 +574,6 @@ public class DnsProviderManagerImplTest {
     }
 
     @Test
-    public void testAddDnsRecordForVMNoNetworkMapping() throws DnsProviderException {
-        Network network = mock(Network.class);
-        NicVO nic = mock(NicVO.class);
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        when(dnsZoneNetworkMapDao.findByNetworkId(anyLong())).thenReturn(null);
-        when(network.getId()).thenReturn(NETWORK_ID);
-        manager.addDnsRecordForVM(vm, network, nic);
-        verify(dnsProviderMock, never()).addRecord(any(), any(), any());
-    }
-
-    @Test
-    public void testAddDnsRecordForVMInactiveZone() {
-        Network network = mock(Network.class);
-        NicVO nic = mock(NicVO.class);
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        DnsZoneNetworkMapVO mapping = mock(DnsZoneNetworkMapVO.class);
-        when(network.getId()).thenReturn(NETWORK_ID);
-        when(dnsZoneNetworkMapDao.findByNetworkId(NETWORK_ID)).thenReturn(mapping);
-        when(mapping.getDnsZoneId()).thenReturn(ZONE_ID);
-        DnsZoneVO inactiveZone = Mockito.spy(new DnsZoneVO("ex.com", DnsZone.ZoneType.Public, SERVER_ID, ACCOUNT_ID, DOMAIN_ID, ""));
-        // state defaults to Inactive
-        when(dnsZoneDao.findById(ZONE_ID)).thenReturn(inactiveZone);
-        manager.addDnsRecordForVM(vm, network, nic);
-        verify(dnsServerDao, never()).findById(anyLong());
-    }
-
-    @Test
-    public void testAddDnsRecordForVMServerMissing() {
-        Network network = mock(Network.class);
-        NicVO nic = mock(NicVO.class);
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        DnsZoneNetworkMapVO mapping = mock(DnsZoneNetworkMapVO.class);
-        when(network.getId()).thenReturn(NETWORK_ID);
-        when(dnsZoneNetworkMapDao.findByNetworkId(NETWORK_ID)).thenReturn(mapping);
-        when(mapping.getDnsZoneId()).thenReturn(ZONE_ID);
-        DnsZoneVO activeZone = Mockito.spy(new DnsZoneVO("ex.com", DnsZone.ZoneType.Public, SERVER_ID, ACCOUNT_ID, DOMAIN_ID, ""));
-        activeZone.setState(DnsZone.State.Active);
-        when(dnsZoneDao.findById(ZONE_ID)).thenReturn(activeZone);
-        when(dnsServerDao.findById(SERVER_ID)).thenReturn(null);
-        when(vm.getInstanceName()).thenReturn("vm-1");
-        manager.addDnsRecordForVM(vm, network, nic);
-        verify(nicDetailsDao, never()).addDetail(anyLong(), anyString(), anyString(), eq(true));
-    }
-
-    @Test
     public void testDeleteDnsRecordForVMNoNicDetail() {
         Network network = mock(Network.class);
         NicVO nic = mock(NicVO.class);
@@ -640,32 +597,6 @@ public class DnsProviderManagerImplTest {
         when(detail.getValue()).thenReturn("  ");
         manager.deleteDnsRecordForVM(vm, network, nic);
         verify(dnsZoneNetworkMapDao, never()).findByNetworkId(anyLong());
-    }
-
-    @Test
-    public void testProcessEventForDnsRecordAdd() throws Exception {
-        Network network = mock(Network.class);
-        NicVO nic = mock(NicVO.class);
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-
-        when(dnsZoneNetworkMapDao.findByNetworkId(anyLong())).thenReturn(null);
-        when(network.getId()).thenReturn(NETWORK_ID);
-        manager.processEventForDnsRecord(vm, network, nic, true);
-        // addDnsRecordForVM was called → returns early because no mapping
-        verify(dnsZoneNetworkMapDao, times(1)).findByNetworkId(NETWORK_ID);
-    }
-
-    @Test
-    public void testProcessEventForDnsRecordDelete() {
-        Network network = mock(Network.class);
-        NicVO nic = mock(NicVO.class);
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-
-        when(nic.getId()).thenReturn(50L);
-        when(vm.getInstanceName()).thenReturn("vm-1");
-        when(nicDetailsDao.findDetail(50L, "nicdnsrecord")).thenReturn(null);
-        manager.processEventForDnsRecord(vm, network, nic, false);
-        verify(nicDetailsDao, times(1)).findDetail(50L, "nicdnsrecord");
     }
 
     @Test
@@ -818,31 +749,6 @@ public class DnsProviderManagerImplTest {
     public void testConfigure() throws Exception {
         assertTrue(manager.configure("dnsProviderManagerImpl", Collections.emptyMap()));
         verify(messageBus, times(3)).subscribe(anyString(), any());
-    }
-
-    @Test
-    public void testHandleVmEventAndNicEvent() throws Exception {
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        NicVO nic = mock(NicVO.class);
-        NetworkVO network = mock(NetworkVO.class);
-        when(network.getId()).thenReturn(NETWORK_ID);
-
-        when(vmInstanceDao.findById(10L)).thenReturn(vm);
-        when(nicDao.findByIdIncludingRemoved(50L)).thenReturn(nic);
-        when(nic.getNetworkId()).thenReturn(NETWORK_ID);
-        when(networkDao.findById(NETWORK_ID)).thenReturn(network);
-        when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
-        when(dnsZoneNetworkMapDao.findByNetworkId(NETWORK_ID)).thenReturn(null);
-
-        org.springframework.test.util.ReflectionTestUtils.invokeMethod(manager, "handleNicEvent", 50L, 10L, true);
-        verify(dnsZoneNetworkMapDao, times(1)).findByNetworkId(NETWORK_ID);
-
-        when(vmInstanceDao.findByIdIncludingRemoved(10L)).thenReturn(vm);
-        when(vm.getId()).thenReturn(10L);
-        when(nicDao.listByVmIdIncludingRemoved(10L)).thenReturn(Collections.singletonList(nic));
-
-        org.springframework.test.util.ReflectionTestUtils.invokeMethod(manager, "handleVmEvent", 10L, true);
-        verify(dnsZoneNetworkMapDao, times(2)).findByNetworkId(NETWORK_ID);
     }
 
     @Test
@@ -1011,10 +917,10 @@ public class DnsProviderManagerImplTest {
         event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 12L);
 
         // Expect handleVmEvent to be called, which accesses vmInstanceDao.findByIdIncludingRemoved
-        when(vmInstanceDao.findByIdIncludingRemoved(12L)).thenReturn(null);
+        when(vmInstanceDao.findById(12L)).thenReturn(null);
 
         subscriber.onPublishMessage("sender", "subject", event);
-        verify(vmInstanceDao, times(1)).findByIdIncludingRemoved(12L);
+        verify(vmInstanceDao, times(1)).findById(12L);
     }
 
     @Test
@@ -1024,11 +930,9 @@ public class DnsProviderManagerImplTest {
         event.put(org.apache.cloudstack.api.ApiConstants.OLD_STATE, com.cloud.vm.VirtualMachine.State.Running);
         event.put(org.apache.cloudstack.api.ApiConstants.NEW_STATE, com.cloud.vm.VirtualMachine.State.Stopped);
         event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 15L);
-
-        when(vmInstanceDao.findByIdIncludingRemoved(15L)).thenReturn(null);
-
+        when(dnsNicJoinDao.listIncludingRemovedByVmId(15L)).thenReturn(null);
         subscriber.onPublishMessage("sender", "subject", event);
-        verify(vmInstanceDao, times(1)).findByIdIncludingRemoved(15L);
+        verify(dnsNicJoinDao, times(1)).listIncludingRemovedByVmId(15L);
     }
 
     @Test
@@ -1073,11 +977,9 @@ public class DnsProviderManagerImplTest {
         event.put(org.apache.cloudstack.api.ApiConstants.EVENT_TYPE, com.cloud.event.EventTypes.EVENT_NIC_DELETE);
         event.put(org.apache.cloudstack.api.ApiConstants.NIC_ID, 101L);
         event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 201L);
-
-        when(vmInstanceDao.findById(201L)).thenReturn(null);
-
+        when(dnsNicJoinDao.findByIdIncludingRemoved(101L)).thenReturn(null);
         subscriber.onPublishMessage("sender", "subject", event);
-        verify(vmInstanceDao, times(1)).findById(201L);
+        verify(dnsNicJoinDao, times(1)).findByIdIncludingRemoved(101L);
     }
 
     @Test

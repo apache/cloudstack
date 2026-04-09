@@ -124,7 +124,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics','enabled', 'TINYINT(1) NOT NUL
 -- ======================================================================
 
 -- DNS Server Table (Stores DNS Server Configurations)
-CREATE TABLE `cloud`.`dns_server` (
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_server` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns server',
     `uuid` varchar(40) COMMENT 'uuid of the dns server',
     `name` varchar(255) NOT NULL COMMENT 'display name of the dns server',
@@ -148,7 +148,7 @@ CREATE TABLE `cloud`.`dns_server` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- DNS Zone Table (Stores DNS Zone Metadata)
-CREATE TABLE `cloud`.`dns_zone` (
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_zone` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns zone',
     `uuid` varchar(40) COMMENT 'uuid of the dns zone',
     `name` varchar(255) NOT NULL COMMENT 'dns zone name (e.g. example.com)',
@@ -171,7 +171,7 @@ CREATE TABLE `cloud`.`dns_zone` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- DNS Zone Network Map (One-to-Many Link)
-CREATE TABLE `cloud`.`dns_zone_network_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_zone_network_map` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id of the dns zone to network mapping',
   `uuid` varchar(40),
   `dns_zone_id` bigint(20) unsigned NOT NULL,
