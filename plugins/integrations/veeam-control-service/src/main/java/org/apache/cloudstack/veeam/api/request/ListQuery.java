@@ -17,11 +17,15 @@
 
 package org.apache.cloudstack.veeam.api.request;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -31,6 +35,7 @@ public class ListQuery {
     Long max;
     Long page;
     Map<String, String> search;
+    List<String> follow;
 
     public boolean isAllContent() {
         return allContent;
@@ -48,16 +53,19 @@ public class ListQuery {
         this.max = max;
     }
 
-    public Map<String, String> getSearch() {
-        return search;
-    }
-
     public void setSearch(Map<String, String> search) {
         this.search = search;
     }
 
-    public Long getPage() {
-        return page;
+    public void setFollow(String followStr) {
+        if (StringUtils.isBlank(followStr)) {
+            this.follow = null;
+            return;
+        }
+        this.follow = Arrays.stream(followStr.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
     }
 
     public Long getOffset() {
@@ -69,6 +77,13 @@ public class ListQuery {
 
     public Long getLimit() {
         return max;
+    }
+
+    public boolean followContains(String part) {
+        if (CollectionUtils.isEmpty(follow)) {
+            return false;
+        }
+        return follow.contains(part);
     }
 
     public static ListQuery fromRequest(HttpServletRequest request) {
@@ -89,6 +104,8 @@ public class ListQuery {
                 // Ignore invalid max and keep default null value.
             }
         }
+        String follow = request.getParameter("follow");
+        query.setFollow(follow);
         Map<String, String> searchItems = getSearchMap(request.getParameter("search"));
         if (!searchItems.isEmpty()) {
             try {

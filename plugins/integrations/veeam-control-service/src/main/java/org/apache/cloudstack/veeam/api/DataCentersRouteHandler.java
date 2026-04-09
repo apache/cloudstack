@@ -122,7 +122,7 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
             throws IOException {
         try {
             ListQuery query = ListQuery.fromRequest(req);
-            List<StorageDomain> storageDomains = serverAdapter.listStorageDomainsByDcId(id, query.getPage(),
+            List<StorageDomain> storageDomains = serverAdapter.listStorageDomainsByDcId(id, query.getOffset(),
                     query.getMax());
             NamedList<StorageDomain> response = NamedList.of("storage_domain", storageDomains);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
@@ -138,7 +138,7 @@ public class DataCentersRouteHandler extends ManagerBase implements RouteHandler
             throws IOException {
         try {
             ListQuery query = ListQuery.fromRequest(req);
-            List<Network> networks = serverAdapter.listNetworksByDcId(id, query.getPage(),
+            List<Network> networks = serverAdapter.listNetworksByDcId(id, query.getOffset(),
                     query.getMax());
             NamedList<Network> response = NamedList.of("network", networks);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);

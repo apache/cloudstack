@@ -19,7 +19,6 @@ package org.apache.cloudstack.veeam.api;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -42,7 +41,6 @@ import org.apache.cloudstack.veeam.api.request.ListQuery;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 import org.apache.cloudstack.veeam.utils.PathUtil;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.component.ManagerBase;
@@ -233,7 +231,12 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
           Negotiation.OutFormat outFormat, VeeamControlServlet io) throws IOException {
         try {
             ListQuery query = ListQuery.fromRequest(req);
-            final List<Vm> result = serverAdapter.listAllInstances(query.getOffset(), query.getLimit());
+            final List<Vm> result = serverAdapter.listAllInstances(query.followContains("tags"),
+                    query.followContains("disk_attachments.disk"),
+                    query.followContains("nics.reporteddevices"),
+                    query.isAllContent(),
+                    query.getOffset(),
+                    query.getLimit());
             NamedList<Vm> response = NamedList.of("vm", result);
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (CloudRuntimeException e) {
@@ -255,22 +258,13 @@ public class VmsRouteHandler extends ManagerBase implements RouteHandler {
 
     protected void handleGetById(final String id, final HttpServletRequest req, final HttpServletResponse resp,
              final Negotiation.OutFormat outFormat, final VeeamControlServlet io) throws IOException {
-        String followStr = req.getParameter("follow");
-        boolean includeTags = false;
-        boolean includeDisks = false;
-        boolean includeNics = false;
-        if (StringUtils.isNotBlank(followStr)) {
-            Set<String> followParts = java.util.Arrays.stream(followStr.split(","))
-                   .map(String::trim)
-                   .filter(s -> !s.isEmpty())
-                   .collect(java.util.stream.Collectors.toSet());
-            includeTags = followParts.contains("tags");
-            includeDisks = followParts.contains("disk_attachments.disk");
-            includeNics = followParts.contains("nics.reporteddevices");
-        }
-        boolean allContent = Boolean.parseBoolean(req.getParameter("all_content"));
         try {
-            Vm response = serverAdapter.getInstance(id, includeTags, includeDisks, includeNics, allContent);
+            ListQuery query = ListQuery.fromRequest(req);
+            Vm response = serverAdapter.getInstance(id,
+                    query.followContains("tags"),
+                    query.followContains("disk_attachments.disk"),
+                    query.followContains("nics.reporteddevices"),
+                    query.isAllContent());
             io.getWriter().write(resp, HttpServletResponse.SC_OK, response, outFormat);
         } catch (InvalidParameterValueException e) {
             io.notFound(resp, e.getMessage(), outFormat);

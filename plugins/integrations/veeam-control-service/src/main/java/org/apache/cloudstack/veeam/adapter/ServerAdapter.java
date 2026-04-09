@@ -973,12 +973,19 @@ public class ServerAdapter extends ManagerBase {
     }
 
     @ApiAccess(command = ListVMsCmd.class)
-    public List<Vm> listAllInstances(Long offset, Long limit) {
+    public List<Vm> listAllInstances(boolean includeTags, boolean includeDisks, boolean includeNics,
+                 boolean allContent, Long offset, Long limit) {
         Filter filter = new Filter(UserVmJoinVO.class, "id", true, offset, limit);
         Pair<List<Long>, String> ownerDetails = getResourceOwnerFilters();
         List<UserVmJoinVO> vms = userVmJoinDao.listByHypervisorTypeAndOwners(Hypervisor.HypervisorType.KVM,
                 ownerDetails.first(), ownerDetails.second(), filter);
-        return UserVmJoinVOToVmConverter.toVmList(vms, this::getHostById, this::getDetailsByInstanceId);
+        return UserVmJoinVOToVmConverter.toVmList(vms,
+                this::getHostById,
+                this::getDetailsByInstanceId,
+                includeTags ? this::listTagsByInstanceId : null,
+                includeDisks ? this::listDiskAttachmentsByInstanceId : null,
+                includeNics ? this::listNicsByInstance : null,
+                allContent);
     }
 
     @ApiAccess(command = ListVMsCmd.class)
@@ -988,7 +995,8 @@ public class ServerAdapter extends ManagerBase {
         if (vo == null) {
             throw new InvalidParameterValueException("VM with ID " + uuid + " not found");
         }
-        return UserVmJoinVOToVmConverter.toVm(vo, this::getHostById,
+        return UserVmJoinVOToVmConverter.toVm(vo,
+                this::getHostById,
                 this::getDetailsByInstanceId,
                 includeTags ? this::listTagsByInstanceId : null,
                 includeDisks ? this::listDiskAttachmentsByInstanceId : null,

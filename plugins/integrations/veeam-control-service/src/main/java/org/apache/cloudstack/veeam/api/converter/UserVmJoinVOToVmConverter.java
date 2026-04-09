@@ -56,12 +56,13 @@ public final class UserVmJoinVOToVmConverter {
      *
      * @param src      UserVmJoinVO
      */
-    public static Vm toVm(final UserVmJoinVO src, final Function<Long, HostJoinVO> hostResolver,
-              final Function<Long, Map<String, String>> detailsResolver,
-              final Function<Long, List<Tag>> tagsResolver,
-              final Function<Long, List<DiskAttachment>> disksResolver,
-              final Function<UserVmJoinVO, List<Nic>> nicsResolver,
-              final boolean allContent) {
+    public static Vm toVm(final UserVmJoinVO src,
+                          final Function<Long, HostJoinVO> hostResolver,
+                          final Function<Long, Map<String, String>> detailsResolver,
+                          final Function<Long, List<Tag>> tagsResolver,
+                          final Function<Long, List<DiskAttachment>> disksResolver,
+                          final Function<UserVmJoinVO, List<Nic>> nicsResolver,
+                          final boolean allContent) {
         if (src == null) {
             return null;
         }
@@ -190,10 +191,15 @@ public final class UserVmJoinVOToVmConverter {
         return initialization;
     }
 
-    public static List<Vm> toVmList(final List<UserVmJoinVO> srcList, final Function<Long, HostJoinVO> hostResolver,
-                    final Function<Long, Map<String, String>> detailsResolver) {
+    public static List<Vm> toVmList(final List<UserVmJoinVO> srcList,
+                                    final Function<Long, HostJoinVO> hostResolver,
+                                    final Function<Long, Map<String, String>> detailsResolver,
+                                    final Function<Long, List<Tag>> tagsResolver,
+                                    final Function<Long, List<DiskAttachment>> disksResolver,
+                                    final Function<UserVmJoinVO, List<Nic>> nicsResolver,
+                                    final boolean allContent) {
         return srcList.stream()
-                .map(v -> toVm(v, hostResolver, detailsResolver, null, null, null, false))
+                .map(v -> toVm(v, hostResolver, detailsResolver, tagsResolver, disksResolver, nicsResolver, allContent))
                 .collect(Collectors.toList());
     }
 
