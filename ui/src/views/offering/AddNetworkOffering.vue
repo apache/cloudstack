@@ -113,6 +113,16 @@
         </a-row>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
+            <a-form-item name="specifyipranges" ref="specifyipranges" v-if="guestType === 'isolated'">
+              <template #label>
+                <tooltip-label :title="$t('label.specifyipranges')" :tooltip="apiParams.specifyipranges.description"/>
+              </template>
+              <a-switch v-model:checked="form.specifyipranges" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="12">
+          <a-col :md="12" :lg="12">
             <a-form-item name="forvpc" ref="forvpc" v-if="guestType === 'isolated'">
               <template #label>
                 <tooltip-label :title="$t('label.vpc')" :tooltip="apiParams.forvpc.description"/>
@@ -681,7 +691,8 @@ export default {
         isolation: 'dedicated',
         conservemode: true,
         availability: 'optional',
-        egressdefaultpolicy: 'deny',
+        specifyipranges: false,
+        egressdefaultpolicy: 'allow',
         ispublic: this.isPublic,
         nsxsupportlb: true,
         routingmode: 'static'
@@ -1043,7 +1054,7 @@ export default {
 
         var keys = Object.keys(values)
         const detailsKey = ['promiscuousmode', 'macaddresschanges', 'forgedtransmits', 'maclearning']
-        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'lbType', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess']
+        const ignoredKeys = [...detailsKey, 'state', 'status', 'allocationstate', 'forvpc', 'lbType', 'specifyvlan', 'ispublic', 'domainid', 'zoneid', 'egressdefaultpolicy', 'isolation', 'supportspublicaccess', 'specifyipranges']
         keys.forEach(function (key, keyIndex) {
           if (!ignoredKeys.includes(key) &&
             values[key] != null && values[key] !== undefined &&
@@ -1062,6 +1073,9 @@ export default {
           if (values.specifyvlan === true) {
             params.specifyvlan = true
           }
+
+          params.specifyipranges = values.specifyipranges
+
           if (values.ispersistent) {
             params.ispersistent = true
           } else { // Isolated Network with Non-persistent network
@@ -1078,6 +1092,7 @@ export default {
           }
           // Conserve mode is irrelevant on L2 network offerings as there are no resources to conserve, do not pass it, true by default on server side
           delete params.conservemode
+          delete params.specifyipranges
         }
 
         if (values.forvpc === true) {
