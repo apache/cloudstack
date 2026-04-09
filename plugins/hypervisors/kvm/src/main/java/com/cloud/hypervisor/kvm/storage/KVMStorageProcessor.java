@@ -185,6 +185,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private int incrementalSnapshotTimeout;
 
+    private int incrementalSnapshotRetryRebaseWait;
+
     private static final String CHECKPOINT_XML_TEMP_DIR = "/tmp/cloudstack/checkpointXMLs";
 
     private static final String BACKUP_XML_TEMP_DIR = "/tmp/cloudstack/backupXMLs";
@@ -252,6 +254,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         _cmdsTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CMDS_TIMEOUT) * 1000;
 
         incrementalSnapshotTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_TIMEOUT) * 1000;
+        incrementalSnapshotRetryRebaseWait = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT) * 1000;
         return true;
     }
 
@@ -2102,9 +2105,9 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     private void retryRebase(String snapshotName, int wait, Exception e, QemuImgFile snapshotFile, QemuImgFile parentSnapshotFile) {
-        logger.warn("Libvirt still has not released the lock, will wait 60 seconds and try again later.");
+        logger.warn("Libvirt still has not released the lock, will wait [{}] milliseconds and try again later.", incrementalSnapshotRetryRebaseWait);
         try {
-            Thread.sleep(60*1000);
+            Thread.sleep(incrementalSnapshotRetryRebaseWait);
             QemuImg qemuImg = new QemuImg(wait);
             qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
         } catch (LibvirtException | QemuImgException | InterruptedException ex) {
