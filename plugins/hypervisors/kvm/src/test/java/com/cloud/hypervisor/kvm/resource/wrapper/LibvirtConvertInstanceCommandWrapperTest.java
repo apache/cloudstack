@@ -208,9 +208,9 @@ public class LibvirtConvertInstanceCommandWrapperTest {
                  Mockito.when(mock.execute(Mockito.any())).thenReturn("");
                  Mockito.when(mock.getExitValue()).thenReturn(0);
              })) {
-            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/root/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
                     .thenAnswer(invocation -> invocation.getArgument(0));
-            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/root/v2v.pass.cloud.vcenter.local."))))
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
                     .thenReturn(true);
 
             boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
@@ -220,7 +220,7 @@ public class LibvirtConvertInstanceCommandWrapperTest {
             Script scriptMock = ignored.constructed().get(0);
             Mockito.verify(scriptMock).add("-c");
             Mockito.verify(scriptMock).add(Mockito.contains("export LIBGUESTFS_BACKEND=libvirt &&"));
-            Mockito.verify(scriptMock).add(Mockito.contains("-ip /root/v2v.pass.cloud.vcenter.local."));
+            Mockito.verify(scriptMock).add(Mockito.contains("-ip /tmp/v2v.pass.cloud.vcenter.local."));
             Mockito.verify(scriptMock).add(Mockito.contains(" -on tmp-uuid "));
             Mockito.verify(scriptMock).add(Mockito.contains("-io vddk-thumbprint=28:19:A6:1C:90:ED:46:D7:1C:86:BC:F6:13:52:F0:B9:19:81:0D:81 "));
         }
@@ -243,9 +243,9 @@ public class LibvirtConvertInstanceCommandWrapperTest {
                  Mockito.when(mock.execute(Mockito.any())).thenReturn("");
                  Mockito.when(mock.getExitValue()).thenReturn(0);
              })) {
-            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/root/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
                     .thenAnswer(invocation -> invocation.getArgument(0));
-            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/root/v2v.pass.cloud.vcenter.local."))))
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
                     .thenReturn(true);
 
             boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
@@ -270,9 +270,9 @@ public class LibvirtConvertInstanceCommandWrapperTest {
                 .when(convertInstanceCommandWrapper).getVcenterThumbprint(Mockito.anyString(), Mockito.anyLong(), Mockito.anyString());
 
         try (MockedStatic<Files> filesMock = Mockito.mockStatic(Files.class)) {
-            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/root/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
                     .thenAnswer(invocation -> invocation.getArgument(0));
-            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/root/v2v.pass.cloud.vcenter.local."))))
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
                     .thenReturn(true);
 
             boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
@@ -297,9 +297,9 @@ public class LibvirtConvertInstanceCommandWrapperTest {
                  Mockito.when(mock.execute(Mockito.any())).thenReturn("");
                  Mockito.when(mock.getExitValue()).thenReturn(0);
              })) {
-            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/root/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
+            filesMock.when(() -> Files.writeString(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local.")), Mockito.eq("secret")))
                     .thenAnswer(invocation -> invocation.getArgument(0));
-            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/root/v2v.pass.cloud.vcenter.local."))))
+            filesMock.when(() -> Files.deleteIfExists(Mockito.argThat(path -> path.toString().contains("/tmp/v2v.pass.cloud.vcenter.local."))))
                     .thenReturn(true);
 
             boolean result = convertInstanceCommandWrapper.performInstanceConversionUsingVddk(
