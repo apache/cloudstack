@@ -1743,7 +1743,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                         serviceOffering, dataDiskOfferingMap, temporaryConvertLocation,
                         ovfTemplateOnConvertLocation, forceConvertToPool, extraParams);
             } else {
-                // Uses KVM Host for direct conversion using VDDK, or for OVF export to temporary conversion location through ovftool                 importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, ConvertingInstance);
+                // Uses KVM Host for direct conversion using VDDK, or for OVF export to temporary conversion location through ovftool
+                importVmTasksManager.updateImportVMTaskStep(importVMTask, zone, owner, convertHost, importHost, null, ConvertingInstance);
                 convertedInstance = convertVmwareInstanceToKVMUsingVDDKOrAfterExportingOVFToConvertLocation(
                         sourceVMName, sourceVMwareInstance, convertHost, importHost,
                         convertStoragePools, serviceOffering, dataDiskOfferingMap,

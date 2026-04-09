@@ -105,7 +105,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 String vddkLibDir = resolveVddkSetting(cmd.getVddkLibDir(), serverResource.getVddkLibDir());
                 if (StringUtils.isBlank(vddkLibDir)) {
                     String err = String.format("VDDK lib dir is not configured on the host. " +
-                            "Set '%s' in agent.properties to use VDDK-based conversion.", "vddk.lib.dir");
+                            "Set '%s' in agent.properties or in details parameter of the import api calll to use VDDK-based conversion.", "vddk.lib.dir");
                     logger.error("({}) {}", originalVMName, err);
                     return new Answer(cmd, false, err);
                 }
@@ -315,7 +315,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             return false;
         }
 
-        String passwordFilePath = String.format("/root/v2v.pass.cloud.%s.%s",
+        String passwordFilePath = String.format("/tmp/v2v.pass.cloud.%s.%s",
                 StringUtils.defaultIfBlank(vmwareInstance.getVcenterHost(), "unknown"),
                 UUID.randomUUID());
         try {

@@ -158,7 +158,7 @@
                 </template>
                 <a-switch v-model:checked="form.usevddk" @change="onUseVddkChange" />
               </a-form-item>
-              <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter && !form.usevddk">
+              <a-form-item name="forceconverttopool" ref="forceconverttopool" v-if="selectedVmwareVcenter">
                 <template #label>
                   <tooltip-label :title="$t('label.force.convert.to.pool')" :tooltip="apiParams.forceconverttopool.description"/>
                 </template>
@@ -196,7 +196,7 @@
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
                   :checkBoxLabel="switches.forceConvertToPool ? $t('message.select.destination.storage.instance.conversion') : $t('message.select.temporary.storage.instance.conversion')"
-                  :defaultCheckBoxValue="form.usevddk"
+                  :defaultCheckBoxValue="switches.forceConvertToPool"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
                 />
@@ -233,7 +233,8 @@
                   :placeholder="$t('label.extra')"
                 />
               </a-form-item>
-              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter && !form.usevddk">                <template #label>
+              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter && !form.usevddk">
+                <template #label>
                   <tooltip-label :title="$t('label.force.ms.to.import.vm.files')" :tooltip="apiParams.forcemstoimportvmfiles.description"/>
                 </template>
                 <a-switch v-model:checked="form.forcemstoimportvmfiles" @change="val => { switches.forceMsToImportVmFiles = val }" />
@@ -1147,6 +1148,10 @@ export default {
     },
     onForceConvertToPoolChange (val) {
       this.switches.forceConvertToPool = val
+      this.form.forceconverttopool = val
+      this.selectedStorageOptionForConversion = null
+      this.selectedStoragePoolForConversion = null
+      this.showStoragePoolsForConversion = false
       this.resetStorageOptionsForConversion()
     },
     onUseVddkChange (val, isUserChange = true) {
@@ -1293,13 +1298,12 @@ export default {
           }
           if (values.usevddk) {
             params.usevddk = true
-            params.forceconverttopool = true
             params.forcemstoimportvmfiles = false
           } else {
             params.usevddk = false
             params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
           }
-          if (!values.usevddk && values.forceconverttopool) {
+          if (values.forceconverttopool !== undefined) {
             params.forceconverttopool = values.forceconverttopool
           }
         }
