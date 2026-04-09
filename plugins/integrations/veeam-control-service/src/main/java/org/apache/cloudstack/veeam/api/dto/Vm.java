@@ -348,7 +348,7 @@ public final class Vm extends BaseDto {
 
         @JsonIgnore
         public int getTypeOrdinal() {
-            Type enumType = EnumUtils.fromString(Type.class, type, Type.q35_sea_bios);
+            Type enumType = EnumUtils.getEnum(Type.class, type, Type.q35_sea_bios);
             return enumType.ordinal();
         }
 

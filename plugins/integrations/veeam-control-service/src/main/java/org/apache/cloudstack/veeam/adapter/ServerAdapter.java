@@ -1447,11 +1447,11 @@ public class ServerAdapter extends ManagerBase {
         }
         accountService.checkAccess(CallContext.current().getCallingAccount(), null, false,
                 volumeVO);
-        Direction direction = EnumUtils.fromString(Direction.class, request.getDirection());
+        Direction direction = EnumUtils.getEnum(Direction.class, request.getDirection());
         if (direction == null) {
             throw new InvalidParameterValueException("Invalid or missing direction");
         }
-        Format format = EnumUtils.fromString(Format.class, request.getFormat());
+        Format format = EnumUtils.getEnum(Format.class, request.getFormat());
         Long backupId = null;
         if (request.getBackup() != null && StringUtils.isNotBlank(request.getBackup().getId())) {
             BackupVO backupVO = backupDao.findByUuid(request.getBackup().getId());
