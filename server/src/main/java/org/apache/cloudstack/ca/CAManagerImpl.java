@@ -323,8 +323,9 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
             provisionCertificateViaSsh(sshConnection, hostIp, host.getName(), caProvider);
 
-            SSHCmdHelper.sshExecuteCmd(sshConnection, "sudo systemctl restart libvirtd");
-            SSHCmdHelper.sshExecuteCmd(sshConnection, "sudo systemctl restart cloudstack-agent");
+            String sudoPrefix = "root".equals(username) ? "" : "sudo ";
+            SSHCmdHelper.sshExecuteCmd(sshConnection, sudoPrefix + "systemctl restart libvirtd");
+            SSHCmdHelper.sshExecuteCmd(sshConnection, sudoPrefix + "systemctl restart cloudstack-agent");
 
             return true;
         } catch (Exception e) {
