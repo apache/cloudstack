@@ -80,7 +80,6 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
 import javax.inject.Inject;
@@ -137,7 +136,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
     ServiceOfferingDao serviceOfferingDao;
 
     @Inject
-    UserVmDetailsDao userVmdetailsDao;
+    UserVmDetailsDao userVmDetailsDao;
 
     @Inject
     ManagementServer managementServer;
@@ -480,9 +479,15 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         Map<Long, List<? extends Host>> vmToCompatibleHostsCache = new HashMap<>();
         Map<Long, Map<Host, Boolean>> vmToStorageMotionCache = new HashMap<>();
 
+        List<Long> vmIds = vmList.stream().map(VirtualMachine::getId).collect(Collectors.toList());
+        Set<Long> skipDrsVmIds = userVmDetailsDao.listDetailsForResourceIdsAndKey(vmIds, VmDetailConstants.SKIP_DRS)
+                .stream().filter(d -> "true".equalsIgnoreCase(d.getValue()))
+                .map(UserVmDetailVO::getResourceId)
+                .collect(Collectors.toSet());
+
         for (VirtualMachine vm : vmList) {
             // Skip ineligible VMs
-            if (shouldSkipVMForDRS(vm)) {
+            if (shouldSkipVMForDRS(vm, skipDrsVmIds)) {
                 continue;
             }
 
@@ -609,7 +614,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             ExcludeList excludes = vmToExcludesMap.get(vm.getId());
 
             ServiceOffering serviceOffering = vmIdServiceOfferingMap.get(vm.getId());
-            if (skipDrs(vm, compatibleHosts, serviceOffering)) {
+            if (CollectionUtils.isEmpty(compatibleHosts) || serviceOffering == null) {
                 continue;
             }
 
@@ -635,29 +640,11 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         return bestMigration;
     }
 
-    private boolean shouldSkipVMForDRS(VirtualMachine vm) {
+    private boolean shouldSkipVMForDRS(VirtualMachine vm, Set<Long> skipDrsVmIds) {
         if (vm.getType().isUsedBySystem() || vm.getState() != VirtualMachine.State.Running) {
             return true;
         }
-
-        UserVmDetailVO skipDrsDetail = userVmdetailsDao.findDetail(vm.getId(), VmDetailConstants.SKIP_DRS);
-        if (skipDrsDetail != null && "true".equalsIgnoreCase(skipDrsDetail.getValue())) {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean skipDrs(VirtualMachine vm, List<? extends Host> compatibleHosts, ServiceOffering serviceOffering) {
-        if (shouldSkipVMForDRS(vm)) {
-            return true;
-        }
-        if (CollectionUtils.isEmpty(compatibleHosts)) {
-            return true;
-        }
-        if (serviceOffering == null) {
-            return true;
-        }
-        return false;
+        return skipDrsVmIds.contains(vm.getId());
     }
 
     private Pair<double[], Map<Long, Integer>> getBaseMetricsArrayAndHostIdIndexMap(
