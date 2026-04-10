@@ -29,6 +29,11 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
     @Override
     boolean remove(Long id);
 
+    /**
+     * Returns all management servers (including down and removed).
+     */
+    List<ManagementServerHostVO> findAllIncludingRemoved();
+
     ManagementServerHostVO findByMsid(long msid);
 
     int increaseAlertCount(long id);

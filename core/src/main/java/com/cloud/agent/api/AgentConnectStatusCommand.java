@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,27 +14,45 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-
-package com.cloud.utils.backoff;
-
-import com.cloud.utils.component.Adapter;
-
-import java.util.Map;
+package com.cloud.agent.api;
 
 /**
- * BackoffAlgorithm implements multiple BackoffAlgorithm.
+ * Command to check status of {@link StartupCommand} from the Agent.
+ *
+ * @author mprokopchuk
  */
-public interface BackoffAlgorithm extends Adapter {
+public class AgentConnectStatusCommand extends Command {
 
-    /**
-     */
-    void waitBeforeRetry();
+    private String hostGuid;
+    private String hostName;
+    private Long hostId;
 
-    /**
-     * no longer need to backoff.  reset to beginning.
-     */
-    void reset();
+    public Long getHostId() {
+        return hostId;
+    }
 
-    Map<String, String> getConfiguration();
+    public void setHostId(Long hostId) {
+        this.hostId = hostId;
+    }
+
+    public String getHostGuid() {
+        return hostGuid;
+    }
+
+    public void setHostGuid(String hostGuid) {
+        this.hostGuid = hostGuid;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }
