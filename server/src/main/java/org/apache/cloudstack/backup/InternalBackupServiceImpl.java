@@ -159,7 +159,7 @@ public class InternalBackupServiceImpl extends ComponentLifecycleBase implements
 
     @Override
     public void prepareVolumeForDetach(Volume volume, VirtualMachine virtualMachine) {
-        if (!backupManager.BackupFrameworkEnabled.valueIn(virtualMachine.getDataCenterId())) {
+        if (isBackupFrameworkDisabled(virtualMachine)) {
             return;
         }
 
@@ -176,7 +176,7 @@ public class InternalBackupServiceImpl extends ComponentLifecycleBase implements
             return;
         }
         VirtualMachine virtualMachine = virtualMachineManager.findById(volume.getInstanceId());
-        if (!backupManager.BackupFrameworkEnabled.valueIn(virtualMachine.getDataCenterId())) {
+        if (isBackupFrameworkDisabled(virtualMachine)) {
             return;
         }
         InternalBackupProvider internalBackupProvider = getInternalBackupProviderForZone(volume.getDataCenterId());
@@ -193,7 +193,7 @@ public class InternalBackupServiceImpl extends ComponentLifecycleBase implements
             return;
         }
         VirtualMachine virtualMachine = virtualMachineManager.findById(volumeVO.getInstanceId());
-        if (!backupManager.BackupFrameworkEnabled.valueIn(virtualMachine.getDataCenterId())) {
+        if (isBackupFrameworkDisabled(virtualMachine)) {
             return;
         }
 
@@ -207,7 +207,7 @@ public class InternalBackupServiceImpl extends ComponentLifecycleBase implements
     @Override
     public void prepareVmForSnapshotRevert(VMSnapshot vmSnapshot) {
         VirtualMachine virtualMachine = virtualMachineManager.findById(vmSnapshot.getVmId());
-        if (!backupManager.BackupFrameworkEnabled.valueIn(virtualMachine.getDataCenterId())) {
+        if (isBackupFrameworkDisabled(virtualMachine)) {
             return;
         }
 
@@ -349,5 +349,9 @@ public class InternalBackupServiceImpl extends ComponentLifecycleBase implements
             BackupProvider backupProvider = backupManager.getBackupProvider(zoneId);
             return internalBackupProviderMap.get(backupProvider.getName());
         });
+    }
+
+    protected boolean isBackupFrameworkDisabled(VirtualMachine virtualMachine) {
+        return !BackupManager.BackupFrameworkEnabled.valueIn(virtualMachine.getDataCenterId());
     }
 }
