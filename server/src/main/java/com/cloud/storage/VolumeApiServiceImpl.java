@@ -1045,32 +1045,32 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     private VolumeVO createVolumeOnStoragePool(Long volumeId, Long storageId) throws ExecutionException, InterruptedException {
         VolumeVO volume = _volsDao.findById(volumeId);
-        StoragePool destPool = (StoragePool) dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
-        if (destPool == null) {
-            throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storageId);
-        } else if (destPool.isInMaintenance()) {
-            throw new InvalidParameterValueException(String.format("Cannot create volume %s on storage pool %s as the storage pool is in maintenance mode.",
-                    volume.getUuid(), destPool.getName()));
+        StoragePool storagePool = (StoragePool) dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
+        if (storagePool == null) {
+            throw new InvalidParameterValueException("Failed to find the storage pool: " + storageId);
+        } else if (!storagePool.getStatus().equals(StoragePoolStatus.Up)) {
+            throw new InvalidParameterValueException(String.format("Cannot create volume %s on storage pool %s as the storage pool is not in Up state.",
+                    volume.getUuid(), storagePool.getName()));
         }
 
-        if (destPool.getDataCenterId() != volume.getDataCenterId()) {
+        if (storagePool.getDataCenterId() != volume.getDataCenterId()) {
             throw new InvalidParameterValueException(String.format("Cannot create volume %s in zone %s on storage pool %s in zone %s.",
-                    volume.getUuid(), volume.getDataCenterId(), destPool.getUuid(), destPool.getDataCenterId()));
+                    volume.getUuid(), volume.getDataCenterId(), storagePool.getUuid(), storagePool.getDataCenterId()));
         }
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        if (!doesStoragePoolSupportDiskOffering(destPool, diskOffering)) {
+        if (!doesStoragePoolSupportDiskOffering(storagePool, diskOffering)) {
             throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with the storage pool", diskOffering.getUuid()));
         }
 
-        DataStore destStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
-        VolumeInfo destVolume = volFactory.getVolume(volumeId, destStore);
-        AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(destVolume, destStore);
+        DataStore dataStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
+        VolumeInfo volumeInfo = volFactory.getVolume(volumeId, dataStore);
+        AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(volumeInfo, dataStore);
         VolumeApiResult createVolumeResult = createVolumeFuture.get();
         if (createVolumeResult.isFailed()) {
-            throw new CloudRuntimeException("Creation of a dest volume failed: " + createVolumeResult.getResult());
+            throw new CloudRuntimeException("Volume creation on storage failed: " + createVolumeResult.getResult());
         }
-        return _volsDao.findById(destVolume.getId());
+        return _volsDao.findById(volumeInfo.getId());
     }
 
     @Override
