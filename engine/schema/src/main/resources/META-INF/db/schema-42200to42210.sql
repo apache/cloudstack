@@ -38,3 +38,6 @@ UPDATE `cloud`.`vm_template` SET guest_os_id = 99 WHERE name = 'kvm-default-vm-i
 
 -- Update existing vm_template records with NULL type to "USER"
 UPDATE `cloud`.`vm_template` SET `type` = 'USER' WHERE `type` IS NULL;
+
+-- Drops the unused "backup_interval_type" column of the "cloud.backups" table
+ALTER TABLE `cloud`.`backups` DROP COLUMN `backup_interval_type`;
