@@ -3191,14 +3191,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("executingMsid", msHost.getMsid());
         }
 
-        ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
-        if (resourceType != null) {
-            sc.setParameters("instanceType", resourceType.toString());
-        }
+        if (cmd.getResourceType() != null) {
+            ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
+            sc.addAnd("instanceType", SearchCriteria.Op.EQ, resourceType.toString());
 
-        final String resourceId = getResourceUuid(cmd.getResourceId());
-        if (resourceId != null) {
-            sc.setParameters("instanceUuid", resourceId);
+            final String resourceId = getResourceUuid(cmd.getResourceId());
+            if (resourceId == null) {
+                throw new InvalidParameterValueException("Invalid resource id for the resource type " + resourceType);
+            }
+
+            sc.addAnd("instanceUuid", SearchCriteria.Op.EQ, resourceId);
+        } else if (cmd.getResourceId() != null) {
+            throw new InvalidParameterValueException("Resource type must be specified for the resource id");
         }
 
         return _jobJoinDao.searchAndCount(sc, searchFilter);
