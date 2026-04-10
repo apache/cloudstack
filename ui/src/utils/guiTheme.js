@@ -87,8 +87,10 @@ async function applyDynamicCustomization (response) {
   vueProps.$config.favicon = jsonConfig?.favicon ?? vueProps.$config.favicon
   vueProps.$config.css = response?.css ?? null
 
-  vueProps.$localStorage.set('LOCALE', vueProps.$config.defaultLanguage)
-  loadLanguageAsync(vueProps.$config.defaultLanguage)
+  if (vueProps.$config.defaultLanguage) {
+    vueProps.$localStorage.set('LOCALE', vueProps.$config.defaultLanguage)
+    loadLanguageAsync()
+  }
 
   await applyStaticCustomization(vueProps.$config.favicon, vueProps.$config.css)
 }
