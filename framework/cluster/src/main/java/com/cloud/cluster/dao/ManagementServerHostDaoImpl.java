@@ -65,6 +65,11 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     }
 
     @Override
+    public List<ManagementServerHostVO> findAllIncludingRemoved() {
+        return listIncludingRemovedBy(ActiveSearch.create());
+    }
+
+    @Override
     public ManagementServerHostVO findByMsid(long msid) {
         SearchCriteria<ManagementServerHostVO> sc = MsIdSearch.create();
         sc.setParameters("msid", msid);

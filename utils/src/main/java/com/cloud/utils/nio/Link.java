@@ -31,6 +31,7 @@ import java.nio.channels.SocketChannel;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -63,6 +64,7 @@ public class Link {
     private final InetSocketAddress _addr;
     private final NioConnection _connection;
     private SelectionKey _key;
+    private Integer _localPort;
     private final ConcurrentLinkedQueue<ByteBuffer[]> _writeQueue;
     private ByteBuffer _readBuffer;
     private ByteBuffer _plaintextBuffer;
@@ -76,11 +78,8 @@ public class Link {
         _addr = addr;
         _connection = connection;
         _readBuffer = ByteBuffer.allocate(2048);
-        _attach = null;
-        _key = null;
         _writeQueue = new ConcurrentLinkedQueue<ByteBuffer[]>();
         _readHeader = true;
-        _gotFollowingPacket = false;
     }
 
     public Link(Link link) {
@@ -98,6 +97,26 @@ public class Link {
     public void setKey(SelectionKey key) {
         synchronized (this) {
             _key = key;
+            try {
+                _localPort = Optional.ofNullable(_key)
+                        .map(SelectionKey::channel)
+                        .filter(SocketChannel.class::isInstance)
+                        .map(SocketChannel.class::cast)
+                        .map(channel -> {
+                            try {
+                                return channel.getLocalAddress();
+                            } catch (IOException e) {
+                                return null;
+                            }
+                        })
+                        .filter(InetSocketAddress.class::isInstance)
+                        .map(InetSocketAddress.class::cast)
+                        .map(InetSocketAddress::getPort)
+                        .orElse(null);
+
+            } catch (Exception e) {
+                // do nothing
+            }
         }
     }
 
@@ -316,6 +335,9 @@ public class Link {
         }
         synchronized (this) {
             if (_key == null) {
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("SelectionKey is null for {}", _addr);
+                }
                 throw new ClosedChannelException();
             }
             _connection.change(SelectionKey.OP_WRITE, _key, null);
@@ -354,16 +376,28 @@ public class Link {
         return _addr;
     }
 
+    public Integer getLocalPort() {
+        return _localPort;
+    }
+
     public String getIpAddress() {
         return _addr.getAddress().toString();
     }
 
     public synchronized void terminated() {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.debug("Terminating connection to {}", _addr);
+        }
         _key = null;
+    }
+
+    public boolean isTerminated() {
+        return _key == null;
     }
 
     public synchronized void schedule(Task task) throws ClosedChannelException {
         if (_key == null) {
+            LOGGER.warn("Failed to schedule task as SelectionKey is null for {}", _addr);
             throw new ClosedChannelException();
         }
         _connection.scheduleTask(task);
@@ -504,8 +538,8 @@ public class Link {
             result = sslEngine.unwrap(peerNetData, peerAppData);
             peerNetData.compact();
         } catch (final SSLException sslException) {
-            LOGGER.error(String.format("SSL error caught during unwrap data: %s, for local address=%s, remote address=%s. The client may have invalid ca-certificates.",
-                    sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
+            LOGGER.error("SSL error caught during unwrap data: {}, for local address={}, remote address={}. The client may have invalid ca-certificates.",
+                    sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress(), sslException);
             sslEngine.closeOutbound();
             return new HandshakeHolder(peerAppData, peerNetData, false);
         }
@@ -683,4 +717,16 @@ public class Link {
         }
     }
 
+    public String toString() {
+        StringBuilder str = new StringBuilder();
+        if (LOGGER.isTraceEnabled()) {
+            str.append(System.identityHashCode(this)).append("-");
+        }
+        Integer localPort = getLocalPort();
+        if (localPort != null) {
+            str.append(localPort).append("-> ");
+        }
+        str.append(getSocketAddress());
+        return str.toString();
+    }
 }

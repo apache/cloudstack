@@ -75,7 +75,7 @@ public class ConstantTimeBackoffTest {
     public void configureWithValue() {
         final ConstantTimeBackoff backoff = new ConstantTimeBackoff();
         HashMap<String, Object> params = new HashMap<String, Object>();
-        params.put("seconds", "100");
+        params.put("backoff.seconds", "100");
         backoff.configure("foo", params);
         Assert.assertEquals(100000, backoff.getTimeToWait());
     }
