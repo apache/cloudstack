@@ -216,6 +216,10 @@ class Handler(BaseHTTPRequestHandler):
         with self._registry.request_lifecycle(image_id):
             backend = create_backend(cfg)
             try:
+                max_writers = MAX_PARALLEL_WRITES
+                if not backend.supports_range_write:
+                    max_writers = 1
+
                 if not backend.supports_extents:
                     allowed_methods = "GET, PUT, POST, OPTIONS"
                     features = ["flush"]
@@ -223,7 +227,7 @@ class Handler(BaseHTTPRequestHandler):
                         "unix_socket": None,
                         "features": features,
                         "max_readers": MAX_PARALLEL_READS,
-                        "max_writers": MAX_PARALLEL_WRITES,
+                        "max_writers": max_writers,
                     }
                     self._send_json(HTTPStatus.OK, response, allowed_methods=allowed_methods)
                     return
@@ -254,7 +258,6 @@ class Handler(BaseHTTPRequestHandler):
                         features.append("zero")
                     if can_flush:
                         features.append("flush")
-                    max_writers = MAX_PARALLEL_WRITES
 
                 response = {
                     "unix_socket": None,
