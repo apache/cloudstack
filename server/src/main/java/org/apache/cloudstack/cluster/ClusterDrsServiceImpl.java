@@ -51,11 +51,13 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -133,6 +135,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
     @Inject
     ServiceOfferingDao serviceOfferingDao;
+
+    @Inject
+    UserVmDetailsDao userVmdetailsDao;
 
     @Inject
     ManagementServer managementServer;
@@ -477,10 +482,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
 
         for (VirtualMachine vm : vmList) {
             // Skip ineligible VMs
-            if (vm.getType().isUsedBySystem() ||
-                vm.getState() != VirtualMachine.State.Running ||
-                (MapUtils.isNotEmpty(vm.getDetails()) &&
-                 "true".equalsIgnoreCase(vm.getDetails().get(VmDetailConstants.SKIP_DRS)))) {
+            if (shouldSkipVMForDRS(vm)) {
                 continue;
             }
 
@@ -633,12 +635,20 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         return bestMigration;
     }
 
-    private boolean skipDrs(VirtualMachine vm, List<? extends Host> compatibleHosts, ServiceOffering serviceOffering) {
+    private boolean shouldSkipVMForDRS(VirtualMachine vm) {
         if (vm.getType().isUsedBySystem() || vm.getState() != VirtualMachine.State.Running) {
             return true;
         }
-        if (MapUtils.isNotEmpty(vm.getDetails()) &&
-            "true".equalsIgnoreCase(vm.getDetails().get(VmDetailConstants.SKIP_DRS))) {
+
+        UserVmDetailVO skipDrsDetail = userVmdetailsDao.findDetail(vm.getId(), VmDetailConstants.SKIP_DRS);
+        if (skipDrsDetail != null && skipDrsDetail.getValue().equalsIgnoreCase("true")) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean skipDrs(VirtualMachine vm, List<? extends Host> compatibleHosts, ServiceOffering serviceOffering) {
+        if (shouldSkipVMForDRS(vm)) {
             return true;
         }
         if (CollectionUtils.isEmpty(compatibleHosts)) {
