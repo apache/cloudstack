@@ -45,11 +45,11 @@ import java.util.Map;
 
 public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
 
-    private static final Logger s_logger = LogManager.getLogger(OntapPrimaryDatastoreDriver.class);
+    private static final Logger logger = LogManager.getLogger(OntapPrimaryDatastoreDriver.class);
 
     @Override
     public Map<String, String> getCapabilities() {
-        s_logger.trace("OntapPrimaryDatastoreDriver: getCapabilities: Called");
+        logger.trace("OntapPrimaryDatastoreDriver: getCapabilities: Called");
         Map<String, String> mapCapabilities = new HashMap<>();
         mapCapabilities.put(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString(), Boolean.FALSE.toString());
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), Boolean.FALSE.toString());
@@ -66,16 +66,24 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     public DataStoreTO getStoreTO(DataStore store) { return null; }
 
     @Override
-    public void createAsync(DataStore dataStore, DataObject dataObject, AsyncCompletionCallback<CreateCmdResult> callback) {}
+    public void createAsync(DataStore dataStore, DataObject dataObject, AsyncCompletionCallback<CreateCmdResult> callback) {
+        throw new UnsupportedOperationException("Create operation is not supported for ONTAP primary storage.");
+    }
 
     @Override
-    public void deleteAsync(DataStore store, DataObject data, AsyncCompletionCallback<CommandResult> callback) {}
+    public void deleteAsync(DataStore store, DataObject data, AsyncCompletionCallback<CommandResult> callback) {
+        throw new UnsupportedOperationException("Delete operation is not supported for ONTAP primary storage.");
+    }
 
     @Override
-    public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {}
+    public void copyAsync(DataObject srcData, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
+        throw new UnsupportedOperationException("Copy operation is not supported for ONTAP primary storage.");
+    }
 
     @Override
-    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {}
+    public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
+        throw new UnsupportedOperationException("Copy operation is not supported for ONTAP primary storage.");
+    }
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
@@ -96,7 +104,9 @@ public class OntapPrimaryDatastoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {}
+    public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
+        throw new UnsupportedOperationException("Revoke access operation is not supported for ONTAP primary storage.");
+    }
 
     @Override
     public long getDataObjectSizeIncludingHypervisorSnapshotReserve(DataObject dataObject, StoragePool storagePool) {

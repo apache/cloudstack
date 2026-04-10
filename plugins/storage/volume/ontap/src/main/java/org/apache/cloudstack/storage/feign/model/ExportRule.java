@@ -40,13 +40,13 @@ public class ExportRule {
     private Integer index = null;
 
     public enum ProtocolsEnum {
-        any("any"),
+        ANY("any"),
 
-        nfs("nfs"),
+        NFS("nfs"),
 
-        nfs3("nfs3"),
+        NFS3("nfs3"),
 
-        nfs4("nfs4");
+        NFS4("nfs4");
 
         private String value;
 

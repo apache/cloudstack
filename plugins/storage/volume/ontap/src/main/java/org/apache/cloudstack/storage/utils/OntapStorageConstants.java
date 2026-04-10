@@ -20,7 +20,7 @@
 package org.apache.cloudstack.storage.utils;
 
 
-public class Constants {
+public class OntapStorageConstants {
 
     public static final String ONTAP_PLUGIN_NAME = "ONTAP";
     public static final int NFS3_PORT = 2049;

@@ -52,7 +52,7 @@ public class FeignConfiguration {
     private static final Logger logger = LogManager.getLogger(FeignConfiguration.class);
 
     private final int retryMaxAttempt = 3;
-    private final int retryMaxInterval = 5;
+    private final int retryMaxIntervalInSecs = 5;
     private final String ontapFeignMaxConnection = "80";
     private final String ontapFeignMaxConnectionPerRoute = "20";
     private final ObjectMapper objectMapper;
@@ -110,7 +110,7 @@ public class FeignConfiguration {
     }
 
     public Retryer createRetryer() {
-        return new Retryer.Default(1000L, retryMaxInterval * 1000L, retryMaxAttempt);
+        return new Retryer.Default(1000L, retryMaxIntervalInSecs * 1000L, retryMaxAttempt);
     }
 
     public Encoder createEncoder() {

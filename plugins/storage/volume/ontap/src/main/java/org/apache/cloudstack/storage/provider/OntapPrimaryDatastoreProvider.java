@@ -28,7 +28,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvid
 import org.apache.cloudstack.storage.driver.OntapPrimaryDatastoreDriver;
 import org.apache.cloudstack.storage.lifecycle.OntapPrimaryDatastoreLifecycle;
 import org.apache.cloudstack.storage.listener.OntapHostListener;
-import org.apache.cloudstack.storage.utils.Constants;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -40,13 +40,13 @@ import java.util.Set;
 @Component
 public class OntapPrimaryDatastoreProvider implements PrimaryDataStoreProvider {
 
-    private static final Logger s_logger = LogManager.getLogger(OntapPrimaryDatastoreProvider.class);
+    private static final Logger logger = LogManager.getLogger(OntapPrimaryDatastoreProvider.class);
     private OntapPrimaryDatastoreDriver primaryDatastoreDriver;
     private OntapPrimaryDatastoreLifecycle primaryDatastoreLifecycle;
     private HypervisorHostListener listener;
 
     public OntapPrimaryDatastoreProvider() {
-        s_logger.info("OntapPrimaryDatastoreProvider initialized");
+        logger.info("OntapPrimaryDatastoreProvider initialized");
     }
     @Override
     public DataStoreLifeCycle getDataStoreLifeCycle() {
@@ -65,13 +65,13 @@ public class OntapPrimaryDatastoreProvider implements PrimaryDataStoreProvider {
 
     @Override
     public String getName() {
-        s_logger.trace("OntapPrimaryDatastoreProvider: getName: Called");
-        return Constants.ONTAP_PLUGIN_NAME;
+        logger.trace("OntapPrimaryDatastoreProvider: getName: Called");
+        return OntapStorageConstants.ONTAP_PLUGIN_NAME;
     }
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        s_logger.trace("OntapPrimaryDatastoreProvider: configure: Called");
+        logger.trace("OntapPrimaryDatastoreProvider: configure: Called");
         primaryDatastoreDriver = ComponentContext.inject(OntapPrimaryDatastoreDriver.class);
         primaryDatastoreLifecycle = ComponentContext.inject(OntapPrimaryDatastoreLifecycle.class);
         listener = ComponentContext.inject(OntapHostListener.class);
@@ -80,7 +80,7 @@ public class OntapPrimaryDatastoreProvider implements PrimaryDataStoreProvider {
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        s_logger.trace("OntapPrimaryDatastoreProvider: getTypes: Called");
+        logger.trace("OntapPrimaryDatastoreProvider: getTypes: Called");
         Set<DataStoreProviderType> typeSet = new HashSet<DataStoreProviderType>();
         typeSet.add(DataStoreProviderType.PRIMARY);
         return typeSet;

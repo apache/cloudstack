@@ -31,11 +31,11 @@ import org.apache.logging.log4j.Logger;
 
 
 public class StorageProviderFactory {
-    private static final Logger s_logger = LogManager.getLogger(StorageProviderFactory.class);
+    private static final Logger logger = LogManager.getLogger(StorageProviderFactory.class);
 
     public static StorageStrategy getStrategy(OntapStorage ontapStorage) {
         ProtocolType protocol = ontapStorage.getProtocol();
-        s_logger.info("Initializing StorageProviderFactory with protocol: " + protocol);
+        logger.info("Initializing StorageProviderFactory with protocol: " + protocol);
         switch (protocol) {
             case NFS3:
                 if (!ontapStorage.getIsDisaggregated()) {

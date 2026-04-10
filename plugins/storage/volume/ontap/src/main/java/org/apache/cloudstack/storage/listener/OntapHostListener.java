@@ -51,8 +51,8 @@ public class OntapHostListener implements HypervisorHostListener {
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private HostDao _hostDao;
-    @Inject private StoragePoolHostDao storagePoolHostDao;
-
+    @Inject
+    private StoragePoolHostDao storagePoolHostDao;
 
     @Override
     public boolean hostConnect(long hostId, long poolId)  {

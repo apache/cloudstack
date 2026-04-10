@@ -55,15 +55,15 @@ public class Igroup {
     private String uuid = null;
 
     public enum OsTypeEnum {
-        hyper_v("hyper_v"),
+        HyperV("hyper_v"),
 
-        linux("linux"),
+        Linux("linux"),
 
-        vmware("vmware"),
+        VMware("vmware"),
 
-        windows("windows"),
+        Windows("windows"),
 
-        xen("xen");
+        Xen("xen");
 
         private String value;
 

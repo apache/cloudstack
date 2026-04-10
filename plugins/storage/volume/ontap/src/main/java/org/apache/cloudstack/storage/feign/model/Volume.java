@@ -128,7 +128,6 @@ public class Volume {
 
     public void setSize (Long size) { this.size = size; }
 
-
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
