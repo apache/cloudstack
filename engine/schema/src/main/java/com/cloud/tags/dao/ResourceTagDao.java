@@ -63,8 +63,12 @@ public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long> {
 
     List<? extends ResourceTag> listByResourceUuid(String resourceUuid);
 
-    List<ResourceTagVO> listByResourceTypeKeyAndOwners(ResourceObjectType resourceType, String key,
-                                                       List<Long> accountIds, List<Long> domainIds, Filter filter);
+    List<String> listByResourceTypeKeyPrefixAndOwners(ResourceObjectType resourceType, String key,
+                                                      List<Long> accountIds, List<Long> domainIds,
+                                                      Filter filter);
 
-    ResourceTagVO findByResourceTypeKeyAndValue(ResourceObjectType resourceType, String key, String value);
+    ResourceTagVO findByResourceTypeKeyPrefixAndValue(ResourceObjectType resourceType, String key, String value);
+
+    List<ResourceTagVO> listByResourceTypeIdAndKeyPrefix(ResourceObjectType resourceType, long resourceId, String key);
+
 }

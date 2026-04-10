@@ -31,6 +31,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -124,12 +125,13 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
     }
 
     @Override
-    public List<ResourceTagVO> listByResourceTypeKeyAndOwners(ResourceObjectType resourceType, String key,
-                                                              List<Long> accountIds, List<Long> domainIds,
-                                                              Filter filter) {
-        SearchBuilder<ResourceTagVO> sb = createSearchBuilder();
+    public List<String> listByResourceTypeKeyPrefixAndOwners(ResourceObjectType resourceType, String key,
+                                                             List<Long> accountIds, List<Long> domainIds,
+                                                             Filter filter) {
+        GenericSearchBuilder<ResourceTagVO, String> sb = createSearchBuilder(String.class);
+        sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getValue());
         sb.and("resourceType", sb.entity().getResourceType(), Op.EQ);
-        sb.and("key", sb.entity().getKey(), Op.EQ);
+        sb.and("key", sb.entity().getKey(), Op.LIKE);
         boolean accountIdsNotEmpty = CollectionUtils.isNotEmpty(accountIds);
         boolean domainIdsNotEmpty = CollectionUtils.isNotEmpty(domainIds);
         if (accountIdsNotEmpty || domainIdsNotEmpty) {
@@ -138,30 +140,45 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
             sb.cp();
         }
         sb.done();
-        final SearchCriteria<ResourceTagVO> sc = sb.create();
+        final SearchCriteria<String> sc = sb.create();
         sc.setParameters("resourceType", resourceType);
-        sc.setParameters("key", key);
+        sc.setParameters("key", key + "%");
         if (accountIdsNotEmpty) {
             sc.setParameters("account", accountIds.toArray());
         }
         if (domainIdsNotEmpty) {
             sc.setParameters("domain", domainIds.toArray());
         }
-        return listBy(sc, filter);
+        return customSearch(sc, filter);
     }
 
     @Override
-    public ResourceTagVO findByResourceTypeKeyAndValue(ResourceObjectType resourceType, String key,
+    public ResourceTagVO findByResourceTypeKeyPrefixAndValue(ResourceObjectType resourceType, String key,
                                                              String value) {
         SearchBuilder<ResourceTagVO> sb = createSearchBuilder();
         sb.and("resourceType", sb.entity().getResourceType(), Op.EQ);
-        sb.and("key", sb.entity().getKey(), Op.EQ);
+        sb.and("key", sb.entity().getKey(), Op.LIKE);
         sb.and("value", sb.entity().getValue(), Op.EQ);
         sb.done();
         final SearchCriteria<ResourceTagVO> sc = sb.create();
         sc.setParameters("resourceType", resourceType);
-        sc.setParameters("key", key);
+        sc.setParameters("key", key + "%");
         sc.setParameters("value", value);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<ResourceTagVO> listByResourceTypeIdAndKeyPrefix(ResourceObjectType resourceType, long resourceId,
+                                                                String key) {
+        SearchBuilder<ResourceTagVO> sb = createSearchBuilder();
+        sb.and("resourceType", sb.entity().getResourceType(), Op.EQ);
+        sb.and("resourceId", sb.entity().getResourceId(), Op.EQ);
+        sb.and("key", sb.entity().getKey(), Op.LIKE);
+        sb.done();
+        final SearchCriteria<ResourceTagVO> sc = sb.create();
+        sc.setParameters("resourceType", resourceType);
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("key", key + "%");
+        return listBy(sc);
     }
 }

@@ -61,7 +61,22 @@ public class ResourceTagVOToTagConverter {
         return tag;
     }
 
+    public static Tag toTag(String id) {
+        String basePath = VeeamControlService.ContextPath.value();
+        Tag tag = new Tag();
+        tag.setId(id);
+        tag.setName(id);
+        tag.setDescription(String.format("Tag: %s", id));
+        tag.setHref(basePath + TagsRouteHandler.BASE_ROUTE + "/" + id);
+        tag.setParent(getRootTagRef());
+        return tag;
+    }
+
     public static List<Tag> toTags(List<ResourceTagVO> vos) {
         return vos.stream().map(ResourceTagVOToTagConverter::toTag).collect(Collectors.toList());
+    }
+
+    public static List<Tag> toTagsFromValues(List<String> values) {
+        return values.stream().map(ResourceTagVOToTagConverter::toTag).collect(Collectors.toList());
     }
 }

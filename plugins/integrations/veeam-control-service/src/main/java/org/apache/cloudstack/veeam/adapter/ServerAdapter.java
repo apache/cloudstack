@@ -1186,14 +1186,8 @@ public class ServerAdapter extends ManagerBase {
 
     @ApiAccess(command = ListTagsCmd.class)
     protected List<Tag> listTagsByInstanceId(final long instanceId) {
-        ResourceTag vmResourceTag = resourceTagDao.findByKey(instanceId,
-                ResourceTag.ResourceObjectType.UserVm, VM_TA_KEY);
-        List<ResourceTagVO> tags = new ArrayList<>();
-        if (vmResourceTag instanceof ResourceTagVO) {
-            tags.add((ResourceTagVO)vmResourceTag);
-        } else {
-            tags.add(resourceTagDao.findById(vmResourceTag.getId()));
-        }
+        List<ResourceTagVO> tags = resourceTagDao.listByResourceTypeIdAndKeyPrefix(
+                ResourceTag.ResourceObjectType.UserVm, instanceId, VM_TA_KEY);
         return ResourceTagVOToTagConverter.toTags(tags);
     }
 
@@ -1759,10 +1753,10 @@ public class ServerAdapter extends ManagerBase {
         List<Tag> tags = new ArrayList<>(getDummyTags().values());
         Filter filter = new Filter(ResourceTagVO.class, "id", true, offset, limit);
         Pair<List<Long>, List<Long>> ownerDetails = getResourceOwnerFiltersWithDomainIds();
-        List<ResourceTagVO> vmResourceTags = resourceTagDao.listByResourceTypeKeyAndOwners(
+        List<String> vmResourceTags = resourceTagDao.listByResourceTypeKeyPrefixAndOwners(
                 ResourceTag.ResourceObjectType.UserVm, VM_TA_KEY, ownerDetails.first(), ownerDetails.second(), filter);
         if (CollectionUtils.isNotEmpty(vmResourceTags)) {
-            tags.addAll(ResourceTagVOToTagConverter.toTags(vmResourceTags));
+            tags.addAll(ResourceTagVOToTagConverter.toTagsFromValues(vmResourceTags));
         }
         return tags;
     }
@@ -1774,7 +1768,7 @@ public class ServerAdapter extends ManagerBase {
         }
         Tag tag = getDummyTags().get(uuid);
         if (tag == null) {
-            ResourceTagVO resourceTagVO = resourceTagDao.findByResourceTypeKeyAndValue(
+            ResourceTagVO resourceTagVO = resourceTagDao.findByResourceTypeKeyPrefixAndValue(
                     ResourceTag.ResourceObjectType.UserVm, VM_TA_KEY, uuid);
             accountService.checkAccess(CallContext.current().getCallingAccount(), null, false,
                     resourceTagVO);
