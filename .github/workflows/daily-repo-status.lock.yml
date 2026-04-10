@@ -54,7 +54,7 @@ jobs:
       comment_repo: ""
     steps:
       - name: Setup
-        uses: github/gh-aw/actions/setup@58d1d157fbac0f1204798500faefc4f7461ebe28 # v0.45.
+        uses: github/gh-aw/actions/setup@78323e834d6a0284641b43590d8c097d1d815d22 # v0.45.
         with:
           destination: /opt/gh-aw/
       - name: Check workflow file
@@ -96,7 +96,7 @@ jobs:
       secret_verification_result: ${{ steps.validate-secret.outputs.verification_result }}
     steps:
       - name: Setup
-        uses: github/gh-aw/actions/setup@58d1d157fbac0f1204798500faefc4f7461ebe28 # v0.45.
+        uses: github/gh-aw/actions/setup@78323e834d6a0284641b43590d8c097d1d815d22 # v0.45.
         with:
           destination: /opt/gh-aw/
       - name: Checkout
@@ -682,7 +682,7 @@ jobs:
           SECRET_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Safe
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v6.0.
         with:
           name: safe-
           path: ${{ env.GH_AW_SAFE_OUTPUTS }}
@@ -704,13 +704,13 @@ jobs:
             await main();
       - name: Upload sanitized agent
         if: always() && env.
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v6.0.
         with:
           name: agent-
           path: ${{ env.GH_AW_AGENT_OUTPUT }}
           if-no-files-found:
       - name: Upload engine output
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v6.0.
         with:
           name:
           path: |
@@ -755,7 +755,7 @@ jobs:
       - name: Upload agent
         if: always()
         continue-on-error:
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v6.0.
         with:
           name: agent-
           path: |
@@ -784,12 +784,12 @@ jobs:
       total_count: ${{ steps.missing_tool.outputs.total_count }}
     steps:
       - name: Setup
-        uses: github/gh-aw/actions/setup@58d1d157fbac0f1204798500faefc4f7461ebe28 # v0.45.
+        uses: github/gh-aw/actions/setup@78323e834d6a0284641b43590d8c097d1d815d22 # v0.45.
         with:
           destination: /opt/gh-aw/
       - name: Download agent output
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/safeoutputs/
@@ -881,18 +881,18 @@ jobs:
       success: ${{ steps.parse_results.outputs.success }}
     steps:
       - name: Setup
-        uses: github/gh-aw/actions/setup@58d1d157fbac0f1204798500faefc4f7461ebe28 # v0.45.
+        uses: github/gh-aw/actions/setup@78323e834d6a0284641b43590d8c097d1d815d22 # v0.45.
         with:
           destination: /opt/gh-aw/
       - name: Download agent
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/threat-detection/
       - name: Download agent output
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/threat-detection/
@@ -964,7 +964,7 @@ jobs:
             await main();
       - name: Upload threat detection
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v6.0.
         with:
           name: threat-detection.
           path: /tmp/gh-aw/threat-detection/detection.
@@ -993,12 +993,12 @@ jobs:
       process_safe_outputs_temporary_id_map: ${{ steps.process_safe_outputs.outputs.temporary_id_map }}
     steps:
       - name: Setup
-        uses: github/gh-aw/actions/setup@58d1d157fbac0f1204798500faefc4f7461ebe28 # v0.45.
+        uses: github/gh-aw/actions/setup@78323e834d6a0284641b43590d8c097d1d815d22 # v0.45.
         with:
           destination: /opt/gh-aw/
       - name: Download agent output
         continue-on-error:
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v6.0.
         with:
           name: agent-
           path: /tmp/gh-aw/safeoutputs/
