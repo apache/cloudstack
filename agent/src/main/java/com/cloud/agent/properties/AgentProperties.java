@@ -888,9 +888,30 @@ public class AgentProperties{
     /**
      * Timeout for SSL handshake in seconds
      * Data type: Integer.<br>
-     * Default value: <code>null</code>
+     * Default value: <code>30</code>
      */
     public static final Property<Integer> SSL_HANDSHAKE_TIMEOUT = new Property<>("ssl.handshake.timeout", 30, Integer.class);
+
+    /**
+     * Timeout in seconds for asynchronous command to be sent and response received, see {@code wait} configuration key in Management Server.
+     * Data type: Integer.
+     * Default value: <code>180<code/>
+     */
+    public static final Property<Integer> ASYNC_COMMAND_TIMEOUT_SEC = new Property<>("async.command.timeout.sec", 180, Integer.class);
+
+    /**
+     * Timeout in seconds for asynchronous startup command to be sent and response received, see {@code wait} configuration key in Management Server.
+     * Data type: Integer.
+     * Default value: <code>300<code/>
+     */
+    public static final Property<Integer> ASYNC_STARTUP_COMMAND_TIMEOUT_SEC = new Property<>("async.startup.command.timeout.sec", 300, Integer.class);
+
+    /**
+     * Delay in seconds between host status checks on the agent side.
+     * Data type: Integer.
+     * Default value: <code>15</code>
+     */
+    public static final Property<Integer> AGENT_HOST_STATUS_CHECK_DELAY_SEC = new Property<>("agent.host.status.check.delay.sec", 15, Integer.class);
 
     /**
      * Timeout (in seconds) to wait for the incremental snapshot to complete.

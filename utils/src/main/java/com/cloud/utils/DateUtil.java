@@ -22,12 +22,15 @@ package com.cloud.utils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 import java.time.format.DateTimeFormatter;
@@ -345,5 +348,35 @@ public class DateUtil {
 
     public static int getHoursInCurrentMonth(Date date) {
         return YearMonth.of(date.getYear(), date.getMonth() + 1).lengthOfMonth() * 24;
+    }
+
+    /**
+     * Formats duration in milliseconds to string {@code X min, Y sec, Z ms}.
+     *
+     * @param durationMs duration in milliseconds
+     * @return formatted string
+     */
+    public static String formatMillis(long durationMs) {
+        Duration duration = Duration.ofMillis(durationMs);
+        long minutes = duration.toMinutes();
+        duration = duration.minusMinutes(minutes);
+        long seconds = duration.toSeconds();
+        duration = duration.minusSeconds(seconds);
+        long millis = duration.toMillis();
+
+        List<String> parts = new ArrayList<>();
+        if (minutes > 0) {
+            parts.add(minutes + " min");
+        }
+        if (seconds > 0) {
+            parts.add(seconds + " sec");
+        }
+        if (millis > 0) {
+            parts.add(millis + " ms");
+        }
+        if (parts.isEmpty()) {
+            parts.add("0 ms");
+        }
+        return String.join(", ", parts);
     }
 }
