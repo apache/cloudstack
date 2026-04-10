@@ -24,6 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Specific validator for the "plugins" object within the GUI theme JSON configuration.
+ *
+ * <p>
+ * This component is defined as a bean in the Spring XML configuration and is automatically injected into
+ * the {@link org.apache.cloudstack.gui.theme.json.config.validator.JsonConfigValidator} attribute list.
+ * </p>
+ */
 public class PluginsAttribute extends AttributeBase {
 
     @Override

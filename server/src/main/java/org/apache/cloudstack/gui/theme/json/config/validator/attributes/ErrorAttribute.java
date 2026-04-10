@@ -18,6 +18,14 @@ package org.apache.cloudstack.gui.theme.json.config.validator.attributes;
 
 import java.util.List;
 
+/**
+ * Specific validator for the "error" object within the GUI theme JSON configuration.
+ *
+ * <p>
+ * This component is defined as a bean in the Spring XML configuration and is automatically injected into
+ * the {@link org.apache.cloudstack.gui.theme.json.config.validator.JsonConfigValidator} attribute list.
+ * </p>
+ */
 public class ErrorAttribute extends AttributeBase {
 
     @Override
