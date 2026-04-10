@@ -641,7 +641,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
         }
 
         UserVmDetailVO skipDrsDetail = userVmdetailsDao.findDetail(vm.getId(), VmDetailConstants.SKIP_DRS);
-        if (skipDrsDetail != null && skipDrsDetail.getValue().equalsIgnoreCase("true")) {
+        if (skipDrsDetail != null && "true".equalsIgnoreCase(skipDrsDetail.getValue())) {
             return true;
         }
         return false;
