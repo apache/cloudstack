@@ -39,6 +39,9 @@ UPDATE `cloud`.`vm_template` SET guest_os_id = 99 WHERE name = 'kvm-default-vm-i
 -- Update existing vm_template records with NULL type to "USER"
 UPDATE `cloud`.`vm_template` SET `type` = 'USER' WHERE `type` IS NULL;
 
+-- Drops the unused "backup_interval_type" column of the "cloud.backups" table
+ALTER TABLE `cloud`.`backups` DROP COLUMN `backup_interval_type`;
+
 -- Update `user.password.reset.mail.template` configuration value to match new logic
 UPDATE `cloud`.`configuration`
 SET value = 'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\n{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team'
