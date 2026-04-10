@@ -404,9 +404,14 @@ export default {
           severity: 'warning',
           message: 'message.advisory.vnf.appliance.template.missing',
           condition: async (store) => {
-            return await hasNoItems(store,
-              'listVnfTemplates',
-              { isvnf: true, templatefilter: 'executable', isready: true })
+            return await hasNoItems(
+              store,
+              'listTemplates',
+              { isvnf: false, templatefilter: 'executable', isready: true },
+              null,
+              'listtemplatesresponse',
+              'template'
+            )
           },
           actions: [
             {

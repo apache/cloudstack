@@ -25,7 +25,7 @@ import { getAPI } from '@/api'
  * @param {string} itemsKey - Optional key for items array in response. If not provided, will be deduced from apiName
  * @returns {Promise<boolean>} - Returns true if no items exist (advisory should be shown), false otherwise
  */
-export async function hasNoItems (store, apiName, params = {}, filterFunc = null, itemsKey = null) {
+export async function hasNoItems (store, apiName, params = {}, filterFunc = null, responseKey = null, itemsKey = null) {
   if (!(apiName in store.getters.apis)) {
     return false
   }
@@ -55,22 +55,17 @@ export async function hasNoItems (store, apiName, params = {}, filterFunc = null
     allParams.pageSize = 1
   }
 
-  console.debug(`Checking if API ${apiName} has no items with params`, allParams)
-
   try {
     const json = await getAPI(apiName, allParams)
     // Auto-derive response key: listNetworks -> listnetworksresponse
-    const responseKey = `${apiName.toLowerCase()}response`
-    const items = json?.[responseKey]?.[itemsKey] || []
+    const apiResponseKey = responseKey || `${apiName.toLowerCase()}response`
+    const items = json?.[apiResponseKey]?.[itemsKey] || []
     if (filterFunc) {
-      const a = !items.some(filterFunc)
-      console.debug(`API ${apiName} has ${items.length} items, after filter has items: ${items.filter(filterFunc)[0]}, returning ${a}`)
-      const it = items.filter(filterFunc)
-      console.debug(`Filtered items:`, it)
-      return a
+      return !items.some(filterFunc)
     }
     return items.length === 0
   } catch (error) {
+    console.error(`Failed to fetch items for advisory check via API ${apiName}`, error)
     return false
   }
 }

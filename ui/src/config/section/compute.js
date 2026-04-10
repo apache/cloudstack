@@ -107,9 +107,7 @@ export default {
           severity: 'warning',
           message: 'message.advisory.instance.image.missing',
           condition: async (store) => {
-            return await hasNoItems(store,
-              'listTemplates',
-              { isvnf: false, templatefilter: 'executable', isready: true }) &&
+            return await hasNoItems(store, 'listTemplates', { isvnf: false, templatefilter: 'executable', isready: true }, null, 'listtemplatesresponse', 'template') &&
               await hasNoItems(store, 'listIsos', { isofilter: 'executable', bootable: true, isready: true }) &&
               await hasNoItems(store, 'listVolumes', { state: 'Ready' }) &&
               await hasNoItems(store, 'listSnapshots')
