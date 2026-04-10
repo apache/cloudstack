@@ -5430,7 +5430,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic) {
-        if (!nic.getBroadCastUri().getScheme().equals("pvlan")) {
+        if (nic == null) {
+            logger.warn("Skipping PVLAN setup on host {} because NIC profile is null", hostId);
+            return false;
+        }
+
+        if (nic.getBroadCastUri() == null) {
+            logger.debug("Skipping PVLAN setup on host {} for NIC {} because broadcast URI is null", hostId, nic);
+            return false;
+        }
+
+        String scheme = nic.getBroadCastUri().getScheme();
+        if (!"pvlan".equalsIgnoreCase(scheme)) {
+            logger.debug("Skipping PVLAN setup on host {} for NIC {} because broadcast URI scheme is {}", hostId, nic, scheme);
             return false;
         }
         String op = "add";
@@ -5438,11 +5450,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // "delete" would remove all the rules(if using ovs) related to this vm
             op = "delete";
         }
-        Network network = _networkDao.findById(nic.getNetworkId());
+
         Host host = _hostDao.findById(hostId);
+        if (host == null) {
+            logger.warn("Host with id {} does not exist", hostId);
+            return false;
+        }
+
+        Network network = _networkDao.findById(nic.getNetworkId());
         String networkTag = _networkModel.getNetworkTag(host.getHypervisorType(), network);
         PvlanSetupCommand cmd = PvlanSetupCommand.createVmSetup(op, nic.getBroadCastUri(), networkTag, nic.getMacAddress());
-        Answer answer = null;
+        Answer answer;
         try {
             answer = _agentMgr.send(hostId, cmd);
         } catch (OperationTimedoutException e) {
@@ -9394,7 +9412,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 VmIpFetchThreadPoolMax, VmIpFetchTaskWorkers, AllowDeployVmIfGivenHostFails, EnableAdditionalVmConfig, DisplayVMOVFProperties,
                 KvmAdditionalConfigAllowList, XenServerAdditionalConfigAllowList, VmwareAdditionalConfigAllowList, DestroyRootVolumeOnVmDestruction,
                 EnforceStrictResourceLimitHostTagCheck, StrictHostTags, AllowUserForceStopVm, VmDistinctHostNameScope,
-                VmwareAdditionalDetailsFromOvaEnabled, VmwareAllowedAdditionalDetailsFromOva};
+                VmwareAdditionalDetailsFromOvaEnabled, VmwareAllowedAdditionalDetailsFromOva, AllowDifferentHostTagsOfferingsForVmScale};
     }
 
     @Override

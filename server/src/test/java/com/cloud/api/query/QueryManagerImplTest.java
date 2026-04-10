@@ -18,6 +18,7 @@
 package com.cloud.api.query;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -33,6 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.cloud.host.dao.HostTagsDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ResponseObject;
@@ -155,6 +157,9 @@ public class QueryManagerImplTest {
 
     @Mock
     HostDao hostDao;
+
+    @Mock
+    HostTagsDao hostTagsDao;
 
     @Mock
     ClusterDao clusterDao;
@@ -621,5 +626,40 @@ public class QueryManagerImplTest {
 
         verify(host1).setExtensionId("a");
         verify(host2).setExtensionId("b");
+    }
+
+    @Test
+    public void testAddVmCurrentClusterHostTags() {
+        String tag1 = "tag1";
+        String tag2 = "tag2";
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        HostVO host = mock(HostVO.class);
+        when(vmInstance.getHostId()).thenReturn(null);
+        when(vmInstance.getLastHostId()).thenReturn(1L);
+        when(hostDao.findById(1L)).thenReturn(host);
+        when(host.getClusterId()).thenReturn(1L);
+        when(hostTagsDao.listByClusterId(1L)).thenReturn(Arrays.asList(tag1, tag2));
+
+        List<String> hostTags = new ArrayList<>(Collections.singleton(tag1));
+        queryManagerImplSpy.addVmCurrentClusterHostTags(vmInstance, hostTags);
+        assertEquals(2, hostTags.size());
+        assertTrue(hostTags.contains(tag2));
+    }
+
+    @Test
+    public void testAddVmCurrentClusterHostTagsEmptyHostTagsInCluster() {
+        String tag1 = "tag1";
+        VMInstanceVO vmInstance = mock(VMInstanceVO.class);
+        HostVO host = mock(HostVO.class);
+        when(vmInstance.getHostId()).thenReturn(null);
+        when(vmInstance.getLastHostId()).thenReturn(1L);
+        when(hostDao.findById(1L)).thenReturn(host);
+        when(host.getClusterId()).thenReturn(1L);
+        when(hostTagsDao.listByClusterId(1L)).thenReturn(null);
+
+        List<String> hostTags = new ArrayList<>(Collections.singleton(tag1));
+        queryManagerImplSpy.addVmCurrentClusterHostTags(vmInstance, hostTags);
+        assertEquals(1, hostTags.size());
+        assertTrue(hostTags.contains(tag1));
     }
 }
