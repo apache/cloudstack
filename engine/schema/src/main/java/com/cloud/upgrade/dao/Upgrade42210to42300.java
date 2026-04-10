@@ -80,7 +80,7 @@ public class Upgrade42210to42300 extends DbUpgradeAbstractImpl implements DbUpgr
 
         try (PreparedStatement pstmt = conn.prepareStatement(query)) {
             String decryptedValue = DBEncryptionUtil.decrypt(encryptedValue);
-            logger.info("Updating setting 'js.interpretation.enabled' to decrypted value [{}], and category 'System', component 'JsInterpreter', and is_dynamic '1'.", decryptedValue);
+            logger.info("Updating setting 'js.interpretation.enabled' to decrypted value [{}], category 'System', component 'JsInterpreter', and is_dynamic '1'.", decryptedValue);
             pstmt.setString(1, decryptedValue);
             pstmt.executeUpdate();
         } catch (SQLException e) {
