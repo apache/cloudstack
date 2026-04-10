@@ -24,11 +24,6 @@ import org.apache.cloudstack.dns.exception.DnsProviderException;
 import com.cloud.utils.component.Adapter;
 
 public interface DnsProvider extends Adapter {
-
-    interface Topics {
-        String DNS_RECORD_LIFECYCLE = "dns.record.lifecycle";
-    }
-
     DnsProviderType getProviderType();
 
     // Validates connectivity to the server

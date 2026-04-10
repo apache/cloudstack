@@ -877,6 +877,7 @@ public class EventTypes {
     public static final String EVENT_DNS_ZONE_DELETE = "DNS.ZONE.DELETE";
     public static final String EVENT_DNS_RECORD_CREATE = "DNS.RECORD.CREATE";
     public static final String EVENT_DNS_RECORD_DELETE = "DNS.RECORD.DELETE";
+    public static final String EVENT_DNS_NAME_COLLISION = "DNS.NAME.COLLISION";
 
     static {
 

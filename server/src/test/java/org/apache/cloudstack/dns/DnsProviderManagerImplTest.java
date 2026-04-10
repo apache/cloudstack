@@ -81,7 +81,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.user.Account;
@@ -90,9 +89,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.NicDetailVO;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -574,32 +570,6 @@ public class DnsProviderManagerImplTest {
     }
 
     @Test
-    public void testDeleteDnsRecordForVMNoNicDetail() {
-        Network network = mock(Network.class);
-        NicVO nic = mock(NicVO.class);
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        when(nic.getId()).thenReturn(50L);
-        when(vm.getInstanceName()).thenReturn("vm-1");
-        when(nicDetailsDao.findDetail(50L, "nicdnsrecord")).thenReturn(null);
-        manager.deleteDnsRecordForVM(vm, network, nic);
-        verify(dnsZoneNetworkMapDao, never()).findByNetworkId(anyLong());
-    }
-
-    @Test
-    public void testDeleteDnsRecordForVMNicDetailBlankValue() {
-        Network network = mock(Network.class);
-        NicVO nic = mock(NicVO.class);
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        NicDetailVO detail = mock(NicDetailVO.class);
-        when(nic.getId()).thenReturn(50L);
-        when(vm.getInstanceName()).thenReturn("vm-1");
-        when(nicDetailsDao.findDetail(50L, "nicdnsrecord")).thenReturn(detail);
-        when(detail.getValue()).thenReturn("  ");
-        manager.deleteDnsRecordForVM(vm, network, nic);
-        verify(dnsZoneNetworkMapDao, never()).findByNetworkId(anyLong());
-    }
-
-    @Test
     public void testGetCommandsReturnsNonEmptyList() {
         List<Class<?>> commands = manager.getCommands();
         assertNotNull(commands);
@@ -718,31 +688,6 @@ public class DnsProviderManagerImplTest {
         boolean res = manager.deleteDnsRecord(cmd);
         assertTrue(res);
         verify(dnsProviderMock).deleteRecord(any(), any(), any());
-    }
-
-    @Test
-    public void testDeleteDnsRecordForVMSuccess() throws Exception {
-        Network network = mock(Network.class);
-        NicVO nic = mock(NicVO.class);
-        when(nic.getIPv4Address()).thenReturn("1.2.3.4");
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        NicDetailVO detail = mock(NicDetailVO.class);
-        when(nic.getId()).thenReturn(50L);
-        when(vm.getInstanceName()).thenReturn("vm-1");
-        when(nicDetailsDao.findDetail(50L, "nicdnsrecord")).thenReturn(detail);
-        when(detail.getValue()).thenReturn("vm-1.ex.com");
-
-        DnsZoneNetworkMapVO mapping = mock(DnsZoneNetworkMapVO.class);
-        when(network.getId()).thenReturn(NETWORK_ID);
-        when(dnsZoneNetworkMapDao.findByNetworkId(NETWORK_ID)).thenReturn(mapping);
-        when(mapping.getDnsZoneId()).thenReturn(ZONE_ID);
-        when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
-        when(dnsServerDao.findById(anyLong())).thenReturn(serverVO);
-        when(dnsProviderMock.deleteRecord(any(), any(), any())).thenReturn("vm-1.ex.com");
-
-        manager.deleteDnsRecordForVM(vm, network, nic);
-        verify(dnsProviderMock).deleteRecord(any(), any(), any());
-        verify(nicDetailsDao).removeDetail(50L, "nicdnsrecord");
     }
 
     @Test

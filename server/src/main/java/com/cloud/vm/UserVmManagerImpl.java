@@ -18,10 +18,12 @@ package com.cloud.vm;
 
 import static com.cloud.event.EventTypes.EVENT_NIC_CREATE;
 import static com.cloud.event.EventTypes.EVENT_NIC_DELETE;
+import static com.cloud.event.EventTypes.EVENT_VM_UPDATE;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.Functionality;
 import static com.cloud.storage.Volume.IOPS_LIMIT;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-import static com.cloud.vm.VirtualMachineManager.Topics.VM_LIFECYCLE;
+import static com.cloud.vm.VirtualMachineManager.Topics.VM_ACTION;
+import static com.cloud.vm.VirtualMachineManager.Topics.VM_LIFECYCLE_STATE;
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
 import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
 
@@ -163,6 +165,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.logging.log4j.util.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -1554,7 +1557,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             event.put(ApiConstants.OLD_STATE, oldState != null ? oldState : State.Unknown);
             event.put(ApiConstants.NEW_STATE, newState);
             event.put(ApiConstants.TIME_STAMP, System.currentTimeMillis());
-            messageBus.publish(_name, VM_LIFECYCLE, PublishScope.GLOBAL, event);
+            messageBus.publish(_name, VM_LIFECYCLE_STATE, PublishScope.GLOBAL, event);
         } catch (Exception ex) {
             logger.warn("Failed to publish lifecycle event for Instance: {}",  instance.getUuid(), ex);
         }
@@ -1573,6 +1576,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             messageBus.publish(_name, Nic.Topics.NIC_LIFECYCLE, PublishScope.GLOBAL, event);
         } catch (Exception ex) {
             logger.error("Failed to publish lifecycle event for NIC with ID: {}", nicId, ex);
+        }
+    }
+
+    private void publishVmHostNameUpdateMessageBus(long instanceId, String oldHostName, String hostName) {
+        if (Strings.isBlank(hostName) || oldHostName.equalsIgnoreCase(hostName)) {
+            return;
+        }
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put(ApiConstants.EVENT_ID, UUID.randomUUID().toString());
+            event.put(ApiConstants.INSTANCE_ID, instanceId);
+            event.put(ApiConstants.OLD_HOST_NAME, oldHostName);
+            event.put(ApiConstants.HOST_NAME, hostName);
+            event.put(ApiConstants.EVENT_TYPE, EVENT_VM_UPDATE);
+            event.put(ApiConstants.TIME_STAMP, System.currentTimeMillis());
+            messageBus.publish(_name, VM_ACTION, PublishScope.GLOBAL, event);
+        } catch (Exception ex) {
+            logger.error("Failed to publish Instance action event for ID: {}", instanceId, ex);
         }
     }
 
@@ -2964,7 +2985,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VM_UPDATE, eventDescription = "updating Vm")
+    @ActionEvent(eventType = EVENT_VM_UPDATE, eventDescription = "updating Vm")
     public UserVm updateVirtualMachine(UpdateVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
         validateInputsAndPermissionForUpdateVirtualMachineCommand(cmd);
 
@@ -3340,6 +3361,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (State.Running == vm.getState()) {
+            publishVmHostNameUpdateMessageBus(vm.getId(), vm.getHostName(), hostName);
             updateDns(vm, hostName);
         }
 

@@ -37,12 +37,9 @@ import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
-import com.cloud.vm.Nic;
-import com.cloud.vm.VirtualMachine;
 
 public interface DnsProviderManager extends Manager, PluggableService {
 
@@ -74,8 +71,6 @@ public interface DnsProviderManager extends Manager, PluggableService {
     DnsZoneNetworkMapResponse associateZoneToNetwork(AssociateDnsZoneToNetworkCmd cmd);
 
     boolean disassociateZoneFromNetwork(DisassociateDnsZoneFromNetworkCmd cmd);
-
-    void deleteDnsRecordForVM(VirtualMachine instance, Network network, Nic nic);
 
     void checkDnsServerPermission(Account caller, DnsServer dnsServer);
 
