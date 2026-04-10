@@ -21,6 +21,7 @@ import tungsten from '@/assets/icons/tungsten.svg?inline'
 import { isAdmin } from '@/role'
 import { isZoneCreated } from '@/utils/zone'
 import { hasNoItems } from '@/utils/advisory'
+import { vueProps } from '@/vue-app'
 
 export default {
   name: 'network',
@@ -172,13 +173,16 @@ export default {
             if (isGroupAction || record.vpcid == null) {
               fields.push('cleanup')
             }
+            if (!record.redundantrouter && vueProps.$config.allowMakingRouterRedundant) {
+              fields.push('makeredundant')
+            }
             fields.push('livepatch')
             return fields
           },
           show: (record) => record.type !== 'L2',
           groupAction: true,
           popup: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup } }) }
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup, makeredundant: values.makeredundant } }) }
         },
         {
           api: 'replaceNetworkACLList',
