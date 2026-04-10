@@ -34,9 +34,19 @@ import org.apache.cloudstack.backup.BackupAnswer;
 import org.apache.cloudstack.backup.TakeBackupCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.FileOutputStream;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @ResourceWrapper(handles = TakeBackupCommand.class)
@@ -68,20 +78,67 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             }
         }
 
-        List<String[]> commands = new ArrayList<>();
-        commands.add(new String[]{
-                libvirtComputingResource.getNasBackupPath(),
-                "-o", "backup",
-                "-v", vmName,
-                "-t", backupRepoType,
-                "-s", backupRepoAddress,
-                "-m", Objects.nonNull(mountOptions) ? mountOptions : "",
-                "-p", backupPath,
-                "-q", command.getQuiesce() != null && command.getQuiesce() ? "true" : "false",
-                "-d", diskPaths.isEmpty() ? "" : String.join(",", diskPaths)
-        });
+        List<String> cmdArgs = new ArrayList<>();
+        cmdArgs.add(libvirtComputingResource.getNasBackupPath());
+        cmdArgs.add("-o"); cmdArgs.add("backup");
+        cmdArgs.add("-v"); cmdArgs.add(vmName);
+        cmdArgs.add("-t"); cmdArgs.add(backupRepoType);
+        cmdArgs.add("-s"); cmdArgs.add(backupRepoAddress);
+        cmdArgs.add("-m"); cmdArgs.add(Objects.nonNull(mountOptions) ? mountOptions : "");
+        cmdArgs.add("-p"); cmdArgs.add(backupPath);
+        cmdArgs.add("-q"); cmdArgs.add(command.getQuiesce() != null && command.getQuiesce() ? "true" : "false");
+        cmdArgs.add("-d"); cmdArgs.add(diskPaths.isEmpty() ? "" : String.join(",", diskPaths));
 
-        Pair<Integer, String> result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
+        // Append optional enhancement flags from management server config
+        File passphraseFile = null;
+        Map<String, String> details = command.getDetails();
+        if (details != null) {
+            if ("true".equals(details.get("compression"))) {
+                cmdArgs.add("-c");
+            }
+            if ("true".equals(details.get("encryption"))) {
+                String passphrase = details.get("encryption_passphrase");
+                if (passphrase == null || passphrase.isEmpty()) {
+                    return new BackupAnswer(command, false, "Encryption is enabled but no passphrase was provided");
+                }
+                try {
+                    passphraseFile = File.createTempFile("cs-backup-enc-", ".key");
+                    passphraseFile.deleteOnExit();
+                    Files.setPosixFilePermissions(passphraseFile.toPath(),
+                            EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+                    try (Writer fw = new OutputStreamWriter(new FileOutputStream(passphraseFile), StandardCharsets.UTF_8)) {
+                        fw.write(passphrase);
+                    }
+                    cmdArgs.add("-e"); cmdArgs.add(passphraseFile.getAbsolutePath());
+                } catch (IOException e) {
+                    logger.error("Failed to create encryption passphrase file", e);
+                    if (passphraseFile != null && passphraseFile.exists()) {
+                        passphraseFile.delete();
+                    }
+                    return new BackupAnswer(command, false, "Failed to create encryption passphrase file: " + e.getMessage());
+                }
+            }
+            String bwLimit = details.get("bandwidth_limit");
+            if (bwLimit != null && !"0".equals(bwLimit)) {
+                cmdArgs.add("-b"); cmdArgs.add(bwLimit);
+            }
+            if ("true".equals(details.get("integrity_check"))) {
+                cmdArgs.add("--verify");
+            }
+        }
+
+        List<String[]> commands = new ArrayList<>();
+        commands.add(cmdArgs.toArray(new String[0]));
+
+        Pair<Integer, String> result;
+        try {
+            result = Script.executePipedCommands(commands, libvirtComputingResource.getCmdsTimeout());
+        } finally {
+            // Clean up passphrase file after backup completes
+            if (passphraseFile != null && passphraseFile.exists()) {
+                passphraseFile.delete();
+            }
+        }
 
         if (result.first() != 0) {
             logger.debug("Failed to take VM backup: " + result.second());
