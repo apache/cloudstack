@@ -196,3 +196,17 @@ CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
     CONSTRAINT `fk_image_transfer__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
     INDEX `i_image_transfer__backup_id`(`backup_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- these indexes created from top 20 resource consuming DB queries
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_mshost_removed_state','cloud.mshost', '(removed, state)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_host_id_removed','cloud.host', '(id, removed)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_networks_id_removed','cloud.networks', '(id, removed)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_alert_type_data_center_id_archived_pod_id','cloud.alert', '(type, data_center_id, archived, pod_id)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_configuration_name','cloud.configuration', '(name)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_account_id_removed','cloud.account', '(id, removed)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_async_job_id_removed','cloud.async_job', '(id, removed)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_user_id_api_key_removed','cloud.user', '(id, api_key, removed)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_resource_limit_type_domain_id_tag','cloud.resource_limit', '(type, domain_id, tag)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_vm_instance_id_removed','cloud.vm_instance', '(id, removed)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_vm_host_state_removed','cloud.vm_instance', '(host_id, state, removed)');
+CALL `cloud`.`IDEMPOTENT_ADD_INDEX`('idx_vm_instance_name_removed','cloud.vm_instance', '(instance_name, removed)');

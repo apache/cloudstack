@@ -121,6 +121,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     protected HashMap<String, SocketChannel> _peers;
     protected HashMap<String, SSLEngine> _sslEngines;
     private final Timer _timer = new Timer("ClusteredAgentManager Timer");
+    /**
+     * State flag to ensure Agent load-balancing performed only when Management Server started (once)
+     * or when Management Server goes back from {@link ManagementServerHost.State#Maintenance}
+     * (or {@link ManagementServerHost.State#PreparingForMaintenance}).
+     */
     boolean _agentLbHappened = false;
     private int _mshostCounter = 0;
 
@@ -285,8 +290,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             _agents.put(host.getId(), attache);
         }
         if (old != null) {
-            logger.debug("Remove stale agent attache from current management server");
-            removeAgent(old, Status.Removed);
+            logger.debug("Remove stale agent attache from current management server {}", _nodeId);
+            // just remove agent but do not deinitialize
+            removeAgent(old.getId(), attache);
         }
         return attache;
     }
@@ -350,6 +356,16 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
     }
 
+    /**
+     * Overrides {@link Event#AgentDisconnected} logic and falls back to
+     * {@link AgentManagerImpl#executeUserRequest(long, Event)} for other event types ({@link Event#ShutdownRequested}).
+     *
+     * @param hostId Host Id
+     * @param event  {@link Event}
+     * @return {@link Boolean#TRUE} if request is successful or have been anything done (mostly useless as it does
+     * not reflect resource state change)
+     * @throws AgentUnavailableException
+     */
     @Override
     public boolean executeUserRequest(final long hostId, final Event event) throws AgentUnavailableException {
         if (event == Event.AgentDisconnected) {
@@ -369,6 +385,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                 }
 
+                // preload value before validating attache for forward to avoid race condition in case of configuration retrieval slowness
+                boolean performFullDisconnectOnAgentDisconnectEventBroadcast = PerformFullDisconnectOnAgentDisconnectEventBroadcast.value();
                 // don't process disconnect if the disconnect came for the host via delayed cluster notification,
                 // but the host has already reconnected to the current management server
                 if (!attache.forForward()) {
@@ -378,7 +396,19 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     return true;
                 }
 
-                return super.handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, false, true);
+                // If we received an AgentDisconnected event and we are here,
+                // it means the current server holds a forward attachment for an already disconnected host.
+                // We could either run full disconnect again (if the feature flag is "true"),
+                // or skip that and just deregister attache.
+                if (performFullDisconnectOnAgentDisconnectEventBroadcast) {
+                    logger.debug("Processing {} event for the forward attache of host [id: {}, uuid: {}, name: {}]",
+                            Event.AgentDisconnected, hostId, attache.getUuid(), attache.getName());
+                    return super.handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, false, true);
+                } else {
+                    logger.debug("Processing {} event (deregistering agent only) for the forward attache of host [id: {}, uuid: {}, name: {}]",
+                            Event.AgentDisconnected, hostId, attache.getUuid(), attache.getName());
+                    return super.handleDeregisterAttache(attache, Event.AgentDisconnected);
+                }
             }
 
             return true;
@@ -400,7 +430,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     public void notifyNodesInCluster(final AgentAttache attache) {
-        logger.debug("Notifying other nodes of to disconnect");
+        // this code will send ChangeAgentCommand to all instances in the cluster
+        logger.debug("Notifying other nodes of to disconnect agent {} ({})", attache.getId(), attache.getName());
         final Command[] cmds = new Command[]{new ChangeAgentCommand(attache.getId(), Event.AgentDisconnected)};
         _clusterMgr.broadcast(attache.getId(), _gson.toJson(cmds));
     }
@@ -581,7 +612,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         AgentAttache agent = findAttache(hostId);
         if (agent == null || !agent.forForward()) {
             if (isHostOwnerSwitched(host)) {
-                logger.debug("{} has switched to another management server, need to update agent map with a forwarding agent attache",  host);
+                logger.debug("Host {} has switched (from {}) to another management server ({}), " +
+                        "need to update agent map with a forwarding agent attache", host, _nodeId, host.getManagementServerId());
                 agent = createAttache(host);
             }
         }
@@ -755,15 +787,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     @Override
-    public void removeAgent(final AgentAttache attache, final Status nextState) {
-        if (attache == null) {
-            return;
-        }
-
-        super.removeAgent(attache, nextState);
-    }
-
-    @Override
     public boolean executeRebalanceRequest(final long agentId, final long currentOwnerId, final long futureOwnerId, final Event event) throws AgentUnavailableException, OperationTimedoutException {
         return executeRebalanceRequest(agentId, currentOwnerId, futureOwnerId, event, false);
     }
@@ -873,11 +896,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                             transfer = _hostTransferDao.startAgentTransfering(hostId, node.getMsid(), _nodeId);
                             final Answer[] answer = sendRebalanceCommand(node.getMsid(), hostId, node.getMsid(), _nodeId);
                             if (answer == null) {
-                                logger.warn("Failed to get host {} from management server {}", host, node);
+                                logger.warn("Failed to get host {} from management server {} to {}", host, node, _nodeId);
                                 result = false;
+                            } else {
+                                logger.debug("Succeeded to get host {} from management server {} to {}", host, node, _nodeId);
                             }
                         } catch (final Exception ex) {
-                            logger.warn("Failed to get host {} from management server {}", host, node, ex);
+                            logger.warn("Failed to get host {} from management server {} to {}", host, node, _nodeId, ex);
                             result = false;
                         } finally {
                             if (transfer != null) {
@@ -910,13 +935,15 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         final Command[] cmds = commands.toCommands();
 
         try {
-            logger.debug("Forwarding {} to {}", cmds[0].toString(), peer);
+            logger.debug("Forwarding host {} from {} to {} as part of {} - cmd: {}, peer: {}",
+                    agentId, currentOwnerId, futureOwnerId, event.name(), cmds[0].toString(), peer);
             final String peerName = Long.toString(peer);
             final String cmdStr = _gson.toJson(cmds);
             final String ansStr = _clusterMgr.execute(peerName, agentId, cmdStr, true);
             return _gson.fromJson(ansStr, Answer[].class);
         } catch (final Exception e) {
-            logger.warn("Caught exception while talking to {}",  currentOwnerId, e);
+            logger.warn("Caught exception during forwarding host {} from {} to {} as part of {}",
+                    agentId, currentOwnerId, futureOwnerId, event.name(), e);
             return null;
         }
     }
@@ -1269,7 +1296,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 logger.debug("Intercepting command for agent change: agent {} event: {}", cmd.getAgentId(), cmd.getEvent());
                 boolean result;
                 try {
-                    result = executeAgentUserRequest(cmd.getAgentId(), cmd.getEvent());
+                    result = executeUserRequest(cmd.getAgentId(), cmd.getEvent());
                     logger.debug("Result is {}", result);
 
                 } catch (final AgentUnavailableException e) {
@@ -1520,7 +1547,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
     public void onManagementServerCancelPreparingForMaintenance() {
         logger.debug("Management server cancel preparing for maintenance");
-        super.onManagementServerPreparingForMaintenance();
+        super.onManagementServerCancelPreparingForMaintenance();
 
         // needed for the case when Management Server in Preparing For Maintenance but didn't go to Maintenance state
         // (where this variable will be reset)
@@ -1550,14 +1577,6 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
     }
 
-    public boolean executeAgentUserRequest(final long agentId, final Event event) throws AgentUnavailableException {
-        return executeUserRequest(agentId, event);
-    }
-
-    public boolean rebalanceAgent(final long agentId, final Event event, final long currentOwnerId, final long futureOwnerId) throws AgentUnavailableException, OperationTimedoutException {
-        return executeRebalanceRequest(agentId, currentOwnerId, futureOwnerId, event);
-    }
-
     public boolean rebalanceAgent(final long agentId, final Event event, final long currentOwnerId, final long futureOwnerId, boolean isConnectionTransfer) throws AgentUnavailableException, OperationTimedoutException {
         return executeRebalanceRequest(agentId, currentOwnerId, futureOwnerId, event, isConnectionTransfer);
     }
@@ -1566,6 +1585,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         return EnableLB.value();
     }
 
+    /**
+     * Returns Agent Rebalancing Task.
+     * Runs on timer, but expects to be executed only when Management Server started (once)
+     * or when Management Server goes back from {@link ManagementServerHost.State#Maintenance}
+     * (or {@link ManagementServerHost.State#PreparingForMaintenance}).
+     */
     private Runnable getAgentRebalanceScanTask() {
         return new ManagedContextRunnable() {
             @Override
