@@ -404,7 +404,7 @@ public class Request {
                 try {
                     _cmds = s_gson.fromJson(_content, this instanceof Response ? Answer[].class : Command[].class);
                 } catch (RuntimeException e) {
-                    LOGGER.error("Unable to deserialize from json: " + _content);
+                    LOGGER.error("Unable to deserialize from json: " + _content, e);
                     throw e;
                 }
             }

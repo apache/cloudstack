@@ -193,7 +193,7 @@ public abstract class AgentAttache {
         if (_maintenance) {
             for (final Command cmd : cmds) {
                 if (Arrays.binarySearch(s_commandsAllowedInMaintenanceMode, cmd.getClass().toString()) < 0 && !cmd.isBypassHostMaintenance()) {
-                    throw new AgentUnavailableException("Unable to send " + cmd.getClass().toString() + " because agent " + _name + " is in maintenance mode", _id);
+                    throw new AgentUnavailableException("Unable to send " + cmd.getClass() + " because agent " + _name + " is in maintenance mode", _id);
                 }
             }
         }
@@ -201,7 +201,7 @@ public abstract class AgentAttache {
         if (_status == Status.Connecting) {
             for (final Command cmd : cmds) {
                 if (Arrays.binarySearch(s_commandsNotAllowedInConnectingMode, cmd.getClass().toString()) >= 0) {
-                    throw new AgentUnavailableException("Unable to send " + cmd.getClass().toString() + " because agent " + _name + " is in connecting mode", _id);
+                    throw new AgentUnavailableException("Unable to send " + cmd.getClass() + " because agent " + _name + " is in connecting mode", _id);
                 }
             }
         }
@@ -396,13 +396,13 @@ public abstract class AgentAttache {
                     logger.trace(LOG_SEQ_FORMATTED_STRING, seq, " is current sequence");
                 }
             } catch (AgentUnavailableException e) {
-                logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Unable to send due to " + e.getMessage());
+                logger.info(LOG_SEQ_FORMATTED_STRING, seq, "Unable to send due to " + e.getMessage(), e);
                 cancel(seq);
                 throw e;
             } catch (Exception e) {
                 logger.warn(LOG_SEQ_FORMATTED_STRING, seq, "Unable to send due to " + e.getMessage(), e);
                 cancel(seq);
-                throw new AgentUnavailableException("Problem due to other exception " + e.getMessage(), _id);
+                throw new AgentUnavailableException("Problem due to other exception " + e.getMessage(), _id, e);
             }
         }
     }
