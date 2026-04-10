@@ -153,7 +153,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
     @Test
     public void testCreateDiskSnapshotBasedOnStrategy() throws Exception {
         VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
-        List<SnapshotInfo> snapshotInfoListForRollback = new ArrayList<>();
+        List<SnapshotInfo> snapshotsForRollback = new ArrayList<>();
         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
         SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
         SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
@@ -177,7 +177,7 @@ public class VMSnapshotStrategyKVMTest extends TestCase{
         VMSnapshotDetailsVO vmDetails = new VMSnapshotDetailsVO(vmSnapshot.getId(), volUuid, String.valueOf(snapshot.getId()), false);
         when(vmSnapshotDetailsDao.persist(any())).thenReturn(vmDetails);
 
-        info =  vmStrategy.createDiskSnapshot(vmSnapshot, snapshotInfoListForRollback, vol);
+        info =  vmStrategy.createDiskSnapshot(vmSnapshot, snapshotsForRollback, vol);
         assertNotNull(info);
     }
 

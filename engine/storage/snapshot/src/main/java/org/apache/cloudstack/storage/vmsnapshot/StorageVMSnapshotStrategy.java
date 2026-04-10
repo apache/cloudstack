@@ -111,7 +111,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         FreezeThawVMAnswer freezeAnswer = null;
         FreezeThawVMCommand thawCmd = null;
         FreezeThawVMAnswer thawAnswer = null;
-        List<SnapshotInfo> snapshotInfoListForRollback = new ArrayList<>();
+        List<SnapshotInfo> snapshotsForRollback = new ArrayList<>();
         long startFreeze = 0;
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.CreateRequested);
@@ -165,7 +165,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 logger.info("The virtual machine is frozen");
                 for (VolumeInfo vol : vinfos) {
                     long startSnapshtot = System.nanoTime();
-                    SnapshotInfo snapInfo = createDiskSnapshot(vmSnapshot, snapshotInfoListForRollback, vol);
+                    SnapshotInfo snapInfo = createDiskSnapshot(vmSnapshot, snapshotsForRollback, vol);
 
                     if (snapInfo == null) {
                         thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
@@ -222,7 +222,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 }
             }
             if (!result) {
-                for (SnapshotInfo snapshotInfo : snapshotInfoListForRollback) {
+                for (SnapshotInfo snapshotInfo : snapshotsForRollback) {
                     rollbackDiskSnapshot(snapshotInfo);
                 }
                 try {
@@ -440,7 +440,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         }
     }
 
-    protected SnapshotInfo createDiskSnapshot(VMSnapshot vmSnapshot, List<SnapshotInfo> snapshotInfoListForRollback, VolumeInfo vol) {
+    protected SnapshotInfo createDiskSnapshot(VMSnapshot vmSnapshot, List<SnapshotInfo> snapshotsForRollback, VolumeInfo vol) {
         String snapshotName = vmSnapshot.getId() + "_" + vol.getUuid();
         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(), vol.getId(), vol.getDiskOfferingId(),
                               snapshotName, (short) Snapshot.Type.GROUP.ordinal(),  Snapshot.Type.GROUP.name(),  vol.getSize(), vol.getMinIops(),  vol.getMaxIops(), Hypervisor.HypervisorType.KVM, null);
@@ -454,7 +454,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         vol.addPayload(setPayload(vol, snapshot, quiescevm));
         SnapshotInfo snapshotInfo = snapshotDataFactory.getSnapshot(snapshot.getId(), vol.getDataStore());
         snapshotInfo.addPayload(vol.getpayload());
-        snapshotInfoListForRollback.add(snapshotInfo);
+        snapshotsForRollback.add(snapshotInfo);
         SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshotInfo, SnapshotOperation.TAKE);
         if (snapshotStrategy == null) {
             throw new CloudRuntimeException("Could not find strategy for snapshot uuid:" + snapshotInfo.getUuid());
