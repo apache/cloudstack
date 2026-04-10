@@ -14,3 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+"""
+Run:
+cd to the directory containing the imageserver folder
+python3 -m unittest discover -s imageserver/tests -t . -v
+"""

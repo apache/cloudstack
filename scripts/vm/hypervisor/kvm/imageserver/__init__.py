@@ -28,10 +28,5 @@ Supports two backends (configured per-transfer at registration time):
 - file: read/write a local qcow2/raw file; full PUT only, GET with optional
   ranges, flush.
 
-Usage::
-
-    # As a module
-    python -m imageserver --listen 127.0.0.1 --port 54322
-
-    # Or via the systemd service started by createImageTransfer
+Run as a systemd service by the CreateImageTransfer CloudStack Agent Command
 """

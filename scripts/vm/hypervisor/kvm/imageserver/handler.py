@@ -570,11 +570,7 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_put_image(
         self, image_id: str, cfg: Dict[str, Any], content_length: int, flush: bool
     ) -> None:
-        lock = self._concurrency.get_image_lock(image_id)
-        lock.acquire()
-
         if not self._concurrency.acquire_write(image_id):
-            lock.release()
             self._send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "too many parallel writes")
             return
 
@@ -598,7 +594,6 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
             self._concurrency.release_write(image_id)
-            lock.release()
             dur = now_s() - start
             logging.info(
                 "PUT end image_id=%s bytes=%d duration_s=%.3f", image_id, bytes_written, dur
@@ -612,11 +607,7 @@ class Handler(BaseHTTPRequestHandler):
         content_length: int,
         flush: bool,
     ) -> None:
-        lock = self._concurrency.get_image_lock(image_id)
-        lock.acquire()
-
         if not self._concurrency.acquire_write(image_id):
-            lock.release()
             self._send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "too many parallel writes")
             return
 
@@ -657,7 +648,6 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
             self._concurrency.release_write(image_id)
-            lock.release()
             dur = now_s() - start
             logging.info(
                 "PUT range end image_id=%s bytes=%d duration_s=%.3f flush=%s",
@@ -667,11 +657,6 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_get_extents(
         self, image_id: str, cfg: Dict[str, Any], context: Optional[str] = None
     ) -> None:
-        lock = self._concurrency.get_image_lock(image_id)
-        if not lock.acquire(blocking=False):
-            self._send_error_json(HTTPStatus.CONFLICT, "image busy")
-            return
-
         start = now_s()
         try:
             logging.info("EXTENTS start image_id=%s context=%s", image_id, context)
@@ -709,16 +694,10 @@ class Handler(BaseHTTPRequestHandler):
             logging.error("EXTENTS error image_id=%s err=%r", image_id, e)
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
-            lock.release()
             dur = now_s() - start
             logging.info("EXTENTS end image_id=%s duration_s=%.3f", image_id, dur)
 
     def _handle_post_flush(self, image_id: str, cfg: Dict[str, Any]) -> None:
-        lock = self._concurrency.get_image_lock(image_id)
-        if not lock.acquire(blocking=False):
-            self._send_error_json(HTTPStatus.CONFLICT, "image busy")
-            return
-
         start = now_s()
         try:
             logging.info("FLUSH start image_id=%s", image_id)
@@ -732,7 +711,6 @@ class Handler(BaseHTTPRequestHandler):
             logging.error("FLUSH error image_id=%s err=%r", image_id, e)
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
-            lock.release()
             dur = now_s() - start
             logging.info("FLUSH end image_id=%s duration_s=%.3f", image_id, dur)
 
@@ -744,13 +722,7 @@ class Handler(BaseHTTPRequestHandler):
         size: int,
         flush: bool,
     ) -> None:
-        lock = self._concurrency.get_image_lock(image_id)
-        if not lock.acquire(blocking=False):
-            self._send_error_json(HTTPStatus.CONFLICT, "image busy")
-            return
-
         if not self._concurrency.acquire_write(image_id):
-            lock.release()
             self._send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "too many parallel writes")
             return
 
@@ -775,7 +747,6 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
             self._concurrency.release_write(image_id)
-            lock.release()
             dur = now_s() - start
             logging.info("PATCH zero end image_id=%s duration_s=%.3f", image_id, dur)
 
@@ -786,13 +757,7 @@ class Handler(BaseHTTPRequestHandler):
         range_header: str,
         content_length: int,
     ) -> None:
-        lock = self._concurrency.get_image_lock(image_id)
-        if not lock.acquire(blocking=False):
-            self._send_error_json(HTTPStatus.CONFLICT, "image busy")
-            return
-
         if not self._concurrency.acquire_write(image_id):
-            lock.release()
             self._send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "too many parallel writes")
             return
 
@@ -840,7 +805,6 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
             self._concurrency.release_write(image_id)
-            lock.release()
             dur = now_s() - start
             logging.info(
                 "PATCH range end image_id=%s bytes=%d duration_s=%.3f",

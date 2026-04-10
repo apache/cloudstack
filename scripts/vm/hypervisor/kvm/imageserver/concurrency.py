@@ -38,8 +38,8 @@ class ConcurrencyManager:
     """
 
     def __init__(self, max_reads: int, max_writes: int):
-        self._max_reads = max_reads
-        self._max_writes = max_writes
+        self._max_reads = max_reads + 4
+        self._max_writes = max_writes + 4
         self._images: Dict[str, _ImageState] = {}
         self._guard = threading.Lock()
 
@@ -66,6 +66,3 @@ class ConcurrencyManager:
 
     def release_write(self, image_id: str) -> None:
         self._state_for(image_id).write_sem.release()
-
-    def get_image_lock(self, image_id: str) -> threading.Lock:
-        return self._state_for(image_id).lock
