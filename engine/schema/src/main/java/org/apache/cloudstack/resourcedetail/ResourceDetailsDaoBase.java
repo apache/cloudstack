@@ -16,11 +16,13 @@
 // under the License.
 package org.apache.cloudstack.resourcedetail;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.cloud.utils.StringUtils;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -245,5 +247,21 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
             return DBEncryptionUtil.decrypt(resourceDetail.getValue());
         }
         return resourceDetail.getValue();
+    }
+
+    @Override
+    public List<R> listDetailsForResourceIdsAndKey(List<Long> resourceIds, String key) {
+        if (CollectionUtils.isEmpty(resourceIds) || StringUtils.isBlank(key)) {
+            return Collections.emptyList();
+        }
+        SearchBuilder<R> sb = createSearchBuilder();
+        sb.and("name", sb.entity().getName(), Op.EQ);
+        sb.and("resourceIdIn", sb.entity().getResourceId(), Op.IN);
+        sb.done();
+
+        SearchCriteria<R> sc = sb.create();
+        sc.setParameters("name", key);
+        sc.setParameters("resourceIdIn", resourceIds.toArray());
+        return search(sc, null);
     }
 }
