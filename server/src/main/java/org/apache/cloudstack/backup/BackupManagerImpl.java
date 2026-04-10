@@ -1819,6 +1819,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         validateBackupForZone(backup.getZoneId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm == null ? backup : vm);
+
+        checkForPendingBackupJobs(backup);
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException(String.format("Backup offering with ID [%s] does not exist.", backup.getBackupOfferingId()));
@@ -1837,6 +1839,18 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
         }
         throw new CloudRuntimeException("Failed to delete the backup");
+    }
+
+    private void checkForPendingBackupJobs(final BackupVO backup) {
+        String backupUuid = backup.getUuid();
+        long pendingJobs = asyncJobManager.countPendingJobs(backupUuid,
+                CreateVMFromBackupCmd.class.getName(),
+                CreateVMFromBackupCmdByAdmin.class.getName(),
+                RestoreBackupCmd.class.getName(),
+                RestoreVolumeFromBackupAndAttachToVMCmd.class.getName());
+        if (pendingJobs > 0) {
+            throw new CloudRuntimeException("Cannot delete Backup while a create Instance from Backup or restore Backup operation is in progress, please try again later.");
+        }
     }
 
     /**

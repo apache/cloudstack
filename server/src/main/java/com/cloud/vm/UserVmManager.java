@@ -108,6 +108,9 @@ public interface UserVmManager extends UserVmService {
             "Comma separated list of allowed additional VM settings if VM instance settings are read from OVA.",
             true, ConfigKey.Scope.Zone, null, null, null, null, null, ConfigKey.Kind.CSV, null);
 
+    ConfigKey<Boolean> AllowDifferentHostTagsOfferingsForVmScale = new ConfigKey<>("Advanced", Boolean.class, "allow.different.host.tags.offerings.for.vm.scale", "false",
+            "Enables/Disable allowing to change a VM offering to offerings with different host tags", true);
+
     ConfigKey<Boolean> EnforceResourceLimitOnValidationVm = new ConfigKey<Boolean>(
             "Advanced", Boolean.class, "enforce.resource.limit.on.backup.validation.vm", "false", "If set to true, validation VMs will be accounted in the resource limit of the " +
             "account/domain.",true, ConfigKey.Scope.Account);
