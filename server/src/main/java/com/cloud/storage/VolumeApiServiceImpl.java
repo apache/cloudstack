@@ -1043,6 +1043,36 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return true;
     }
 
+    private VolumeVO createVolumeOnStoragePool(Long volumeId, Long storageId) throws ExecutionException, InterruptedException {
+        VolumeVO volume = _volsDao.findById(volumeId);
+        StoragePool storagePool = (StoragePool) dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
+        if (storagePool == null) {
+            throw new InvalidParameterValueException("Failed to find the storage pool: " + storageId);
+        } else if (!storagePool.getStatus().equals(StoragePoolStatus.Up)) {
+            throw new InvalidParameterValueException(String.format("Cannot create volume %s on storage pool %s as the storage pool is not in Up state.",
+                    volume.getUuid(), storagePool.getName()));
+        }
+
+        if (storagePool.getDataCenterId() != volume.getDataCenterId()) {
+            throw new InvalidParameterValueException(String.format("Cannot create volume %s in zone %s on storage pool %s in zone %s.",
+                    volume.getUuid(), volume.getDataCenterId(), storagePool.getUuid(), storagePool.getDataCenterId()));
+        }
+
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        if (!doesStoragePoolSupportDiskOffering(storagePool, diskOffering)) {
+            throw new InvalidParameterValueException(String.format("Disk offering: %s is not compatible with the storage pool", diskOffering.getUuid()));
+        }
+
+        DataStore dataStore = dataStoreMgr.getDataStore(storageId, DataStoreRole.Primary);
+        VolumeInfo volumeInfo = volFactory.getVolume(volumeId, dataStore);
+        AsyncCallFuture<VolumeApiResult> createVolumeFuture = volService.createVolumeAsync(volumeInfo, dataStore);
+        VolumeApiResult createVolumeResult = createVolumeFuture.get();
+        if (createVolumeResult.isFailed()) {
+            throw new CloudRuntimeException("Volume creation on storage failed: " + createVolumeResult.getResult());
+        }
+        return _volsDao.findById(volumeInfo.getId());
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", async = true)
@@ -1074,6 +1104,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         throw new CloudRuntimeException(message.toString());
                     }
                 }
+            } else if (cmd.getStorageId() != null) {
+                volume = createVolumeOnStoragePool(cmd.getEntityId(), cmd.getStorageId());
             }
             return volume;
         } catch (Exception e) {
