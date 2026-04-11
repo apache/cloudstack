@@ -34,7 +34,7 @@ import org.apache.logging.log4j.LogManager;
 public class ConsoleProxyGCThread extends Thread {
     protected Logger logger = LogManager.getLogger(ConsoleProxyGCThread.class);
 
-    private final static int MAX_SESSION_IDLE_SECONDS = 180;
+    private final static int DEFAULT_MAX_SESSION_IDLE_SECONDS = 180;
 
     private final Map<String, ConsoleProxyClient> connMap;
     private final Set<String> removedSessionsSet;
@@ -43,6 +43,13 @@ public class ConsoleProxyGCThread extends Thread {
     public ConsoleProxyGCThread(Map<String, ConsoleProxyClient> connMap, Set<String> removedSet) {
         this.connMap = connMap;
         this.removedSessionsSet = removedSet;
+    }
+
+    private int getMaxSessionIdleSeconds() {
+        if (ConsoleProxy.sessionTimeoutMillis <= 0) {
+            return DEFAULT_MAX_SESSION_IDLE_SECONDS;
+        }
+        return ConsoleProxy.sessionTimeoutMillis / 1000;
     }
 
     private void cleanupLogging() {
@@ -92,7 +99,7 @@ public class ConsoleProxyGCThread extends Thread {
                 }
 
                 long seconds_unused = (System.currentTimeMillis() - client.getClientLastFrontEndActivityTime()) / 1000;
-                if (seconds_unused < MAX_SESSION_IDLE_SECONDS) {
+                if (seconds_unused < getMaxSessionIdleSeconds()) {
                     continue;
                 }
 

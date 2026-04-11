@@ -125,6 +125,10 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         }
 
         try {
+            session.setIdleTimeout(ConsoleProxy.sessionTimeoutMillis);
+            logger.debug("Set noVNC WebSocket idle timeout to {} ms for session UUID: {}.",
+                    ConsoleProxy.sessionTimeoutMillis, sessionUuid);
+
             ConsoleProxyClientParam param = new ConsoleProxyClientParam();
             param.setClientHostAddress(host);
             param.setClientHostPort(port);
@@ -185,12 +189,21 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
     @OnWebSocketFrame
     public void onFrame(Frame f) throws IOException {
+        if (viewer == null) {
+            logger.warn("Ignoring WebSocket frame because viewer is not initialized yet.");
+            return;
+        }
         logger.trace("Sending client [ID: {}] frame of {} bytes.", viewer.getClientId(), f.getPayloadLength());
         viewer.sendClientFrame(f);
     }
 
     @OnWebSocketError
     public void onError(Throwable cause) {
-        logger.error("Error on WebSocket [client ID: {}, session UUID: {}].", cause, viewer.getClientId(), viewer.getSessionUuid());
+        if (viewer != null) {
+            logger.error("Error on WebSocket [client ID: {}, session UUID: {}].",
+                    viewer.getClientId(), viewer.getSessionUuid(), cause);
+        } else {
+            logger.error("Error on WebSocket before viewer initialization.", cause);
+        }
     }
 }

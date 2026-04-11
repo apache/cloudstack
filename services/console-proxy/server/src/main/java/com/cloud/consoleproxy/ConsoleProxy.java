@@ -80,6 +80,9 @@ public class ConsoleProxy {
     static String factoryClzName;
     static boolean standaloneStart = false;
 
+    // New: session timeout in milliseconds, default 300000 (5 minutes)
+    static int sessionTimeoutMillis = 300000;
+
     static String encryptorPassword = "Dummy";
     static final String[] skipProperties = new String[]{"certificate", "cacertificate", "keystore_password", "privatekey"};
 
@@ -164,6 +167,18 @@ public class ConsoleProxy {
         if (s != null) {
             defaultBufferSize = Integer.parseInt(s);
             LOGGER.info("Setting defaultBufferSize=" + defaultBufferSize);
+        }
+
+        // New: read consoleproxy.session.timeout (milliseconds)
+        s = conf.getProperty("consoleproxy.session.timeout");
+        if (s != null) {
+            try {
+                sessionTimeoutMillis = Integer.parseInt(s);
+                LOGGER.info("Setting consoleproxy.session.timeout=" + sessionTimeoutMillis);
+            } catch (NumberFormatException e) {
+                LOGGER.warn("Invalid value for consoleproxy.session.timeout: " + s +
+                        ", using default " + sessionTimeoutMillis, e);
+            }
         }
     }
 
@@ -379,7 +394,7 @@ public class ConsoleProxy {
             LOGGER.info("HTTP command port is disabled");
         }
 
-        ConsoleProxyGCThread cthread = new ConsoleProxyGCThread(connectionMap, removedSessionsSet);
+        ConsoleProxyGCThread cthread = new ConsoleProxyGCThread(connectionMap, removedSessionsSet /*, sessionTimeoutMillis */);
         cthread.setName("Console Proxy GC Thread");
         cthread.start();
     }
