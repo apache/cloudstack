@@ -172,7 +172,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         if (StringUtils.isNotBlank(publicDomainSuffix)) {
-            publicDomainSuffix = DnsProviderUtil.normalizeDomain(publicDomainSuffix);
+            publicDomainSuffix = DnsProviderUtil.normalizeDomainForDb(publicDomainSuffix);
         }
 
         DnsProviderType type = cmd.getProvider();
@@ -263,7 +263,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         if (cmd.getPublicDomainSuffix() != null) {
-            dnsServer.setPublicDomainSuffix(DnsProviderUtil.normalizeDomain(cmd.getPublicDomainSuffix()));
+            dnsServer.setPublicDomainSuffix(DnsProviderUtil.normalizeDomainForDb(cmd.getPublicDomainSuffix()));
         }
 
         if (cmd.getNameServers() != null) {
@@ -552,7 +552,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             throw new InvalidParameterValueException("DNS zone name cannot be empty");
         }
 
-        String dnsZoneName = DnsProviderUtil.normalizeDomain(cmd.getName());
+        String dnsZoneName = DnsProviderUtil.normalizeDomainForDb(cmd.getName());
         DnsServerVO server = dnsServerDao.findById(cmd.getDnsServerId());
         if (server == null) {
             throw new InvalidParameterValueException(String.format("DNS server not found for the given ID: %s", cmd.getDnsServerId()));

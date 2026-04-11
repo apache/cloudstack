@@ -50,10 +50,10 @@ public class CreateDnsRecordCmd extends BaseAsyncCmd {
             description = "ID of the DNS zone")
     private Long dnsZoneId;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Record name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "DNS record name")
     private String name;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "Record type (A, CNAME)")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "DNS record type (e.g., A, AAAA, CNAME, MX, TXT, etc.)")
     private String type;
 
     @Parameter(name = ApiConstants.CONTENTS, type = CommandType.LIST, collectionType = CommandType.STRING, required = true,

@@ -18,7 +18,7 @@
 package org.apache.cloudstack.dns;
 
 import static org.apache.cloudstack.dns.DnsProviderUtil.appendPublicSuffixToZone;
-import static org.apache.cloudstack.dns.DnsProviderUtil.normalizeDomain;
+import static org.apache.cloudstack.dns.DnsProviderUtil.normalizeDomainForDb;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -89,13 +89,13 @@ public class DnsProviderUtilTest {
             if (Strings.isNotBlank(publicSuffix)) {
                 result = executeAppendSuffixTest(userZoneName, publicSuffix);
             } else {
-                result = appendPublicSuffixToZone(normalizeDomain(userZoneName), publicSuffix);
+                result = appendPublicSuffixToZone(normalizeDomainForDb(userZoneName), publicSuffix);
             }
             assertEquals(expectedResult, result);
         }
     }
 
     String executeAppendSuffixTest(String zoneName, String domainSuffix) {
-        return appendPublicSuffixToZone(normalizeDomain(zoneName), domainSuffix);
+        return appendPublicSuffixToZone(normalizeDomainForDb(zoneName), domainSuffix);
     }
 }

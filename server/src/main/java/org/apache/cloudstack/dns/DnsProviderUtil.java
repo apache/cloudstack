@@ -17,9 +17,13 @@
 
 package org.apache.cloudstack.dns;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+
 import org.apache.commons.validator.routines.DomainValidator;
 
 import com.cloud.utils.StringUtils;
+import com.google.common.net.InetAddresses;
 
 public class DnsProviderUtil {
     static DomainValidator validator = DomainValidator.getInstance(true);
@@ -28,9 +32,9 @@ public class DnsProviderUtil {
         if (StringUtils.isBlank(suffixDomain)) {
             return zoneName;
         }
-        suffixDomain = DnsProviderUtil.normalizeDomain(suffixDomain);
+        suffixDomain = DnsProviderUtil.normalizeDomainForDb(suffixDomain);
         // Already suffixed → return as-is
-        if (zoneName.toLowerCase().endsWith("." + suffixDomain.toLowerCase())) {
+        if (zoneName.toLowerCase().endsWith("." + suffixDomain)) {
             return zoneName;
         }
 
@@ -55,7 +59,8 @@ public class DnsProviderUtil {
         return labels[labels.length - 1];
     }
 
-    public static String normalizeDomain(String domain) {
+    // lowercase, no trailing dot (used for DB storage, comparisons)
+    public static String normalizeDomainForDb(String domain) {
         if (StringUtils.isBlank(domain)) {
             throw new IllegalArgumentException("Domain cannot be empty");
         }
@@ -71,32 +76,144 @@ public class DnsProviderUtil {
         return normalized;
     }
 
+    // DNS wire form: lowercase, validated, WITH trailing dot (used in record values)
     public static String normalizeDnsRecordValue(String value, DnsRecord.RecordType recordType) {
         if (StringUtils.isBlank(value)) {
             throw new IllegalArgumentException("DNS record value cannot be empty");
         }
+        String trimmedValue = value.trim();
         switch (recordType) {
             case A:
+                if (!(InetAddresses.forString(trimmedValue) instanceof Inet4Address)) {
+                    throw new IllegalArgumentException(
+                            String.format("Invalid IP address for %s record: %s", recordType, value));
+                }
+                return trimmedValue;
             case AAAA:
-                // IP addresses: trim only
-                return value.trim();
-
+                if (!(InetAddresses.forString(trimmedValue) instanceof Inet6Address)) {
+                    throw new IllegalArgumentException(
+                            String.format("Invalid IP address for %s record: %s", recordType, value));
+                }
+                return trimmedValue;
             case CNAME:
             case NS:
             case PTR:
+                return normalizeDomainForDnsRecord(trimmedValue);
             case SRV:
-                // Domain names: normalize like zones
-                return normalizeDomain(value);
+                return normalizeSrvRecord(trimmedValue);
             case MX:
-                // PowerDNS MX: contains priority + domain, only trim and lowercase
-                return value.trim().toLowerCase();
-
+                return normalizeMxRecord(trimmedValue);
             case TXT:
                 // Free text: preserve exactly
-                return value;
-
+                return trimmedValue;
             default:
                 throw new IllegalArgumentException("Unsupported DNS record type: " + recordType);
         }
+    }
+
+    static String normalizeDomainForDnsRecord(String domain) {
+        if (StringUtils.isBlank(domain)) {
+            throw new IllegalArgumentException("Domain name cannot be empty");
+        }
+        String normalized = domain.trim().toLowerCase();
+        // Strip trailing dot first (normalize input)
+        if (normalized.endsWith(".")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+
+        // Reject IP addresses
+        if (InetAddresses.isInetAddress(normalized)) {
+            throw new IllegalArgumentException("Domain cannot be an IP address: " + normalized);
+        }
+
+        // Validate total length (max 253 chars, excluding trailing dot)
+        if (normalized.length() > 253) {
+            throw new IllegalArgumentException(
+                    "Domain name exceeds maximum length: " + normalized);
+        }
+
+        // Validate labels
+        String[] labels = normalized.split("\\.", -1);
+        for (String label : labels) {
+            if (label.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Domain contains empty label: " + normalized);
+            }
+            if (label.length() > 63) {
+                throw new IllegalArgumentException(
+                        "Domain label too long: " + label);
+            }
+            if (!label.matches("[a-z0-9]([a-z0-9-]*[a-z0-9])?")) {
+                throw new IllegalArgumentException(
+                        "Invalid domain label: " + label);
+            }
+        }
+        return normalized + ".";
+    }
+
+    private static String normalizeSrvRecord(String value) {
+        String trimmed = value.trim();
+        String[] parts = trimmed.split("\\s+", 4);
+        if (parts.length != 4) {
+            throw new IllegalArgumentException(
+                    "Invalid SRV record value (expected '<priority> <weight> <port> <target>'): " + trimmed);
+        }
+
+        int priority;
+        int weight;
+        int port;
+
+        try {
+            priority = Integer.parseInt(parts[0]);
+            weight = Integer.parseInt(parts[1]);
+            port = Integer.parseInt(parts[2]);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    "SRV priority/weight/port must be numeric: " + trimmed);
+        }
+
+        if (priority < 0 || priority > 65535) {
+            throw new IllegalArgumentException("SRV priority out of range (0–65535): " + parts[0]);
+        }
+
+        if (weight < 0 || weight > 65535) {
+            throw new IllegalArgumentException("SRV weight out of range (0–65535): " + parts[1]);
+        }
+
+        if (port < 1 || port > 65535) {
+            throw new IllegalArgumentException("SRV port out of range (1–65535): " + parts[2]);
+        }
+
+        String target = normalizeDomainForDnsRecord(parts[3]);
+
+        return priority + " " + weight + " " + port + " " + target;
+    }
+
+    private static String normalizeMxRecord(String value) {
+        String trimmed = value.trim();
+        String[] parts = trimmed.split("\\s+", 2);
+
+        if (parts.length != 2) {
+            throw new IllegalArgumentException(
+                    "Invalid MX record value (expected '<priority> <mail-exchanger>'): " + trimmed);
+        }
+
+        int priority;
+
+        try {
+            priority = Integer.parseInt(parts[0]);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    "MX priority must be numeric: " + parts[0]);
+        }
+
+        if (priority < 0 || priority > 65535) {
+            throw new IllegalArgumentException(
+                    "MX priority out of range (0–65535): " + parts[0]);
+        }
+
+        String mailExchanger = normalizeDomainForDnsRecord(parts[1]);
+
+        return priority + " " + mailExchanger;
     }
 }
