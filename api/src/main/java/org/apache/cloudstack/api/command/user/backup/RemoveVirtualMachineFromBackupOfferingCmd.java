@@ -106,6 +106,6 @@ public class RemoveVirtualMachineFromBackupOfferingCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing Instance ID" + vmId + " from backup offering";
+        return "Removing Instance with ID:" + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " from backup offering";
     }
 }

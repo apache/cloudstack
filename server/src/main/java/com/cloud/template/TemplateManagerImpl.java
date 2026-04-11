@@ -221,7 +221,6 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -519,7 +518,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         String extractUrl = extract(caller, templateId, url, zoneId, mode, eventId, false);
-        CallContext.current().setEventDetails(String.format("Download URL: %s, template ID: %s", extractUrl, template.getUuid()));
+        CallContext.current().setEventDetails(String.format("Download URL: %s, Template ID: %s", extractUrl, template.getUuid()));
         return extractUrl;
     }
 
@@ -1200,7 +1199,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (isoId == null) {
             throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
         }
-        CallContext.current().setEventDetails("Vm Id: " + virtualMachine.getUuid() + " ISO Id: " + isoId);
+        CallContext.current().setEventDetails("Vm ID: " + virtualMachine.getUuid() + " ISO ID: " + isoId);
 
         State vmState = virtualMachine.getState();
         if (vmState != State.Running && vmState != State.Stopped) {
@@ -1395,9 +1394,16 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         else {
             vmInstanceVOList = _vmInstanceDao.listNonExpungedByTemplate(templateId);
         }
-        if(!cmd.isForced() && CollectionUtils.isNotEmpty(vmInstanceVOList)) {
-            final String message = String.format("Unable to delete Template: %s because Instance: [%s] are using it.",  template, Joiner.on(",").join(vmInstanceVOList));
-            logger.warn(message);
+        if (!cmd.isForced() && CollectionUtils.isNotEmpty(vmInstanceVOList)) {
+            String message = String.format("Unable to delete template [%s] because there are [%d] VM instances using it.", template, vmInstanceVOList.size());
+            String instancesListMessage = String.format(" Instances list: [%s].", StringUtils.join(vmInstanceVOList, ","));
+
+            logger.warn("{}{}", message, instancesListMessage);
+
+            if (_accountMgr.isRootAdmin(caller.getAccountId())) {
+                message += instancesListMessage;
+            }
+
             throw new InvalidParameterValueException(message);
         }
 
@@ -2256,7 +2262,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   templateTag == null &&
                   forCks == null &&
                   arch == null &&
-                  (! cleanupDetails && details == null) //update details in every case except this one
+                  (!cleanupDetails && details == null) //update details in every case except this one
                   );
         if (!updateNeeded) {
             return template;
@@ -2360,8 +2366,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (cleanupDetails) {
             template.setDetails(null);
             _tmpltDetailsDao.removeDetails(id);
-        }
-        else if (details != null && !details.isEmpty()) {
+        } else if (details != null && !details.isEmpty()) {
             template.setDetails(details);
             _tmpltDao.saveDetails(template);
         }
@@ -2376,6 +2381,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones, HypervisorType hypervisorType) {
+        if (cmd instanceof GetUploadParamsForIsoCmd) {
+            return TemplateType.USER;
+        }
         if (!(cmd instanceof UpdateTemplateCmd) && !(cmd instanceof RegisterTemplateCmd) && !(cmd instanceof GetUploadParamsForTemplateCmd)) {
             return null;
         }
@@ -2408,7 +2416,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             } else if ((cmd instanceof RegisterVnfTemplateCmd || cmd instanceof UpdateVnfTemplateCmd) && !TemplateType.VNF.equals(templateType)) {
                 throw new InvalidParameterValueException("The template type must be VNF for VNF templates, but the actual type is " + templateType);
             }
-        } else if (cmd instanceof RegisterTemplateCmd) {
+        } else if (cmd instanceof RegisterTemplateCmd || cmd instanceof GetUploadParamsForTemplateCmd) {
             boolean isRouting = Boolean.TRUE.equals(isRoutingType);
             templateType = (cmd instanceof RegisterVnfTemplateCmd) ? TemplateType.VNF : (isRouting ? TemplateType.ROUTING : TemplateType.USER);
         }
@@ -2418,6 +2426,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new InvalidParameterValueException(String.format("Users can not register Template with template type %s.", templateType));
             } else if (cmd instanceof UpdateTemplateCmd) {
                 throw new InvalidParameterValueException(String.format("Users can not update Template to template type %s.", templateType));
+            } else if (cmd instanceof GetUploadParamsForTemplateCmd) {
+                throw new InvalidParameterValueException(String.format("Users can not request upload parameters for Template with template type %s.", templateType));
             }
         }
         return templateType;

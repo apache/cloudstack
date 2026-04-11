@@ -22,6 +22,7 @@ import com.cloud.storage.Volume;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.storage.volume.VolumeImportUnmanageService;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,6 +31,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UnmanageVolumeCmdTest {
@@ -41,6 +44,7 @@ public class UnmanageVolumeCmdTest {
     public void testUnmanageVolumeCmd() {
         long accountId = 2L;
         Long volumeId = 3L;
+        UUID volumeUuid = UUID.randomUUID();
         Volume volume = Mockito.mock(Volume.class);
 
         Mockito.when(responseGenerator.findVolumeById(volumeId)).thenReturn(volume);
@@ -51,12 +55,14 @@ public class UnmanageVolumeCmdTest {
         ReflectionTestUtils.setField(cmd,"volumeImportService", volumeImportService);
         ReflectionTestUtils.setField(cmd,"_responseGenerator", responseGenerator);
 
+        CallContext.current().putApiResourceUuid("id", volumeUuid);
+
         Assert.assertEquals(volumeId, cmd.getVolumeId());
         Assert.assertEquals(accountId, cmd.getEntityOwnerId());
         Assert.assertEquals(volumeId, cmd.getApiResourceId());
         Assert.assertEquals(ApiCommandResourceType.Volume, cmd.getApiResourceType());
         Assert.assertEquals(EventTypes.EVENT_VOLUME_UNMANAGE, cmd.getEventType());
-        Assert.assertEquals("Unmanaging Volume with ID " + volumeId, cmd.getEventDescription());
+        Assert.assertEquals("Unmanaging Volume with ID: " + volumeUuid, cmd.getEventDescription());
 
         Mockito.when(volumeImportService.unmanageVolume(volumeId)).thenReturn(true);
         try {

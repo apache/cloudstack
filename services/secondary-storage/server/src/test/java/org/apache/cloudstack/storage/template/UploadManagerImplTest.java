@@ -81,4 +81,5 @@ public class UploadManagerImplTest {
         String validLinkPath = "123e4567-e89b-12d3-a456-426614174000";
         uploadManager.deleteEntitySymlinkRootDirectoryIfNeeded(mock(DeleteEntityDownloadURLCommand.class), validLinkPath);
         fileUtilMock.verify(() -> FileUtil.deleteRecursively(any(Path.class)), times(1));
-    }}
+    }
+}

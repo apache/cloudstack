@@ -78,7 +78,7 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Removing User " + userId + " from project: " + projectId;
+        return "Removing User " + getResourceUuid(ApiConstants.USER_ID) + " from project: " + getResourceUuid(ApiConstants.PROJECT_ID);
     }
 
     @Override
@@ -107,7 +107,7 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Project ID: " + projectId + "; User ID: " + userId);
+        CallContext.current().setEventDetails("Project ID: " + getResourceUuid(ApiConstants.PROJECT_ID) + "; User ID: " + getResourceUuid(ApiConstants.USER_ID));
         boolean result = _projectService.deleteUserFromProject(getProjectId(), getUserId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
