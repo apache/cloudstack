@@ -16,14 +16,17 @@
 // under the License.
 package com.cloud.consoleproxy;
 
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+
 
 /**
  *
@@ -34,29 +37,36 @@ import org.apache.logging.log4j.LogManager;
 public class ConsoleProxyGCThread extends Thread {
     protected Logger logger = LogManager.getLogger(ConsoleProxyGCThread.class);
 
+
     private final static int DEFAULT_MAX_SESSION_IDLE_SECONDS = 180;
+
 
     private final Map<String, ConsoleProxyClient> connMap;
     private final Set<String> removedSessionsSet;
     private long lastLogScan = 0;
+
 
     public ConsoleProxyGCThread(Map<String, ConsoleProxyClient> connMap, Set<String> removedSet) {
         this.connMap = connMap;
         this.removedSessionsSet = removedSet;
     }
 
+
     private int getMaxSessionIdleSeconds() {
         if (ConsoleProxy.sessionTimeoutMillis <= 0) {
             return DEFAULT_MAX_SESSION_IDLE_SECONDS;
         }
-        return ConsoleProxy.sessionTimeoutMillis / 1000;
+        return Math.max(1, ConsoleProxy.sessionTimeoutMillis / 1000);
     }
+
 
     private void cleanupLogging() {
         if (lastLogScan != 0 && System.currentTimeMillis() - lastLogScan < 3600000)
             return;
 
+
         lastLogScan = System.currentTimeMillis();
+
 
         File logDir = new File("./logs");
         File files[] = logDir.listFiles();
@@ -74,15 +84,19 @@ public class ConsoleProxyGCThread extends Thread {
         }
     }
 
+
     @Override
     public void run() {
+
 
         boolean bReportLoad = false;
         long lastReportTick = System.currentTimeMillis();
 
+
         while (true) {
             cleanupLogging();
             bReportLoad = false;
+
 
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("connMap=%s, removedSessions=%s", connMap, removedSessionsSet));
@@ -93,25 +107,30 @@ public class ConsoleProxyGCThread extends Thread {
                 String key;
                 ConsoleProxyClient client;
 
+
                 synchronized (connMap) {
                     key = iterator.next();
                     client = connMap.get(key);
                 }
+
 
                 long seconds_unused = (System.currentTimeMillis() - client.getClientLastFrontEndActivityTime()) / 1000;
                 if (seconds_unused < getMaxSessionIdleSeconds()) {
                     continue;
                 }
 
+
                 synchronized (connMap) {
                     connMap.remove(key);
                     bReportLoad = true;
                 }
 
+
                 // close the server connection
                 logger.info("Dropping " + client + " which has not been used for " + seconds_unused + " seconds");
                 client.closeClient();
             }
+
 
             if (bReportLoad || System.currentTimeMillis() - lastReportTick > 5000) {
                 // report load changes
@@ -124,10 +143,12 @@ public class ConsoleProxyGCThread extends Thread {
                     removedSessionsSet.clear();
                 }
 
+
                 if (logger.isDebugEnabled()) {
                     logger.debug("Report load change : " + loadInfo);
                 }
             }
+
 
             try {
                 Thread.sleep(5000);
