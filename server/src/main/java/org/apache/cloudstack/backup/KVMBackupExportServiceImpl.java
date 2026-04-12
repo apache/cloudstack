@@ -618,9 +618,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     " backup provider. Either set backup.framework.enabled to false or set the Zone level config backup.framework.provider.plugin to \"dummy\".");
         }
 
-        ImageTransferVO existingTransfer = imageTransferDao.findUnfinishedByVolume(volume.getId());
+        ImageTransferVO existingTransfer = imageTransferDao.findByVolume(volume.getId());
         if (existingTransfer != null) {
-            throw new CloudRuntimeException("Image transfer already in progress for volume: " + volume.getUuid());
+            throw new CloudRuntimeException("Image transfer already exists for volume: " + volume.getUuid());
         }
 
         ImageTransfer.Backend backend = getImageTransferBackend(format, direction);
