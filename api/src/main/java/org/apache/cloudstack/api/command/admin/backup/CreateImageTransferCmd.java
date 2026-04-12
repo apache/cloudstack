@@ -87,6 +87,7 @@ public class CreateImageTransferCmd extends BaseCmd implements AdminCmd {
    @Override
     public void execute() {
         ImageTransferResponse response = kvmBackupExportService.createImageTransfer(this);
+        response.setObjectName(ImageTransfer.class.getSimpleName().toLowerCase());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

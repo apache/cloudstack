@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.backup.ImageTransfer;
 import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
@@ -56,6 +57,7 @@ public class FinalizeImageTransferCmd extends BaseCmd implements AdminCmd {
         boolean result = kvmBackupExportService.finalizeImageTransfer(this);
         SuccessResponse response = new SuccessResponse(getCommandName());
         response.setSuccess(result);
+        response.setObjectName(ImageTransfer.class.getSimpleName().toLowerCase());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }

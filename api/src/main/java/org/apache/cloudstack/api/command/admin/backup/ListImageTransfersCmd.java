@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ImageTransferResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.backup.ImageTransfer;
 import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
@@ -68,6 +69,7 @@ public class ListImageTransfersCmd extends BaseListCmd implements AdminCmd {
         List<ImageTransferResponse> responses = kvmBackupExportService.listImageTransfers(this);
         ListResponse<ImageTransferResponse> response = new ListResponse<>();
         response.setResponses(responses);
+        response.setObjectName(ImageTransfer.class.getSimpleName().toLowerCase());
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
