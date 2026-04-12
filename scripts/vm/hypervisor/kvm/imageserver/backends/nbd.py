@@ -45,8 +45,6 @@ class NbdConnection:
         need_block_status: bool = False,
         extra_meta_contexts: Optional[List[str]] = None,
     ):
-        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self._sock.connect(socket_path)
         self._nbd = nbd.NBD()
 
         if export and hasattr(self._nbd, "set_export_name"):
@@ -59,7 +57,7 @@ class NbdConnection:
                 except Exception as e:
                     logging.warning("add_meta_context %r failed: %r", ctx, e)
 
-        self._connect_existing_socket(self._sock)
+        self._nbd.connect_unix(socket_path)
 
     def _connect_existing_socket(self, sock: socket.socket) -> None:
         last_err: Optional[BaseException] = None
@@ -306,15 +304,6 @@ class NbdConnection:
         try:
             if hasattr(self._nbd, "shutdown"):
                 self._nbd.shutdown()
-        except Exception:
-            pass
-        try:
-            if hasattr(self._nbd, "close"):
-                self._nbd.close()
-        except Exception:
-            pass
-        try:
-            self._sock.close()
         except Exception:
             pass
 
