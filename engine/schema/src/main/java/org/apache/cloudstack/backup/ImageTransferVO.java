@@ -45,8 +45,8 @@ public class ImageTransferVO implements ImageTransfer {
     @Column(name = "backup_id")
     private Long backupId;
 
-    @Column(name = "disk_id")
-    private long diskId;
+    @Column(name = "volume_id")
+    private long volumeId;
 
     @Column(name = "host_id")
     private long hostId;
@@ -102,9 +102,9 @@ public class ImageTransferVO implements ImageTransfer {
     public ImageTransferVO() {
     }
 
-    private ImageTransferVO(String uuid, long diskId, long hostId, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
+    private ImageTransferVO(String uuid, long volumeId, long hostId, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
         this.uuid = uuid;
-        this.diskId = diskId;
+        this.volumeId = volumeId;
         this.hostId = hostId;
         this.phase = phase;
         this.direction = direction;
@@ -114,15 +114,15 @@ public class ImageTransferVO implements ImageTransfer {
         this.created = new Date();
     }
 
-    public ImageTransferVO(String uuid, Long backupId, long diskId, long hostId, String socket, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
-        this(uuid, diskId, hostId, phase, direction, accountId, domainId, dataCenterId);
+    public ImageTransferVO(String uuid, Long backupId, long volumeId, long hostId, String socket, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
+        this(uuid, volumeId, hostId, phase, direction, accountId, domainId, dataCenterId);
         this.backupId = backupId;
         this.socket = socket;
         this.backend = Backend.nbd;
     }
 
-    public ImageTransferVO(String uuid, long diskId, long hostId, String file, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
-        this(uuid, diskId, hostId, phase, direction, accountId, domainId, dataCenterId);
+    public ImageTransferVO(String uuid, long volumeId, long hostId, String file, Phase phase, Direction direction, Long accountId, Long domainId, Long dataCenterId) {
+        this(uuid, volumeId, hostId, phase, direction, accountId, domainId, dataCenterId);
         this.file = file;
         this.backend = Backend.file;
     }
@@ -147,12 +147,12 @@ public class ImageTransferVO implements ImageTransfer {
     }
 
     @Override
-    public long getDiskId() {
-        return diskId;
+    public long getVolumeId() {
+        return volumeId;
     }
 
-    public void setDiskId(long diskId) {
-        this.diskId = diskId;
+    public void setVolumeId(long volumeId) {
+        this.volumeId = volumeId;
     }
 
     @Override

@@ -871,7 +871,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             Backup backup = backupDao.findByIdIncludingRemoved(backupId);
             response.setBackupId(backup.getUuid());
         }
-        Long volumeId = imageTransferVO.getDiskId();
+        Long volumeId = imageTransferVO.getVolumeId();
         Volume volume = volumeDao.findByIdIncludingRemoved(volumeId);
         response.setDiskId(volume.getUuid());
         response.setTransferUrl(imageTransferVO.getTransferUrl());
@@ -970,7 +970,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     Map<String, Long> volumeSizes = new HashMap<>();
 
                     for (ImageTransferVO transfer : hostTransfers) {
-                        VolumeVO volume = volumeDao.findById(transfer.getDiskId());
+                        VolumeVO volume = volumeDao.findById(transfer.getVolumeId());
                         if (volume == null) {
                             logger.warn("Volume not found for image transfer: {}", transfer.getUuid());
                             imageTransferDao.remove(transfer.getId()); // ToDo: confirm if this enough?

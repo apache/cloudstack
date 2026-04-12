@@ -54,11 +54,11 @@ public class ImageTransferDaoImpl extends GenericDaoBase<ImageTransferVO, Long> 
         uuidSearch.done();
 
         volumeSearch = createSearchBuilder();
-        volumeSearch.and("volumeId", volumeSearch.entity().getDiskId(), SearchCriteria.Op.EQ);
+        volumeSearch.and("volumeId", volumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         volumeSearch.done();
 
         volumeUnfinishedSearch = createSearchBuilder();
-        volumeUnfinishedSearch.and("volumeId", volumeUnfinishedSearch.entity().getDiskId(), SearchCriteria.Op.EQ);
+        volumeUnfinishedSearch.and("volumeId", volumeUnfinishedSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         volumeUnfinishedSearch.and("phase", volumeUnfinishedSearch.entity().getPhase(), SearchCriteria.Op.NEQ);
         volumeUnfinishedSearch.done();
 

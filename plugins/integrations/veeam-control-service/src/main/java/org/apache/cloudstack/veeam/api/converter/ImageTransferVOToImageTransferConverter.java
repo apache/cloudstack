@@ -64,7 +64,7 @@ public class ImageTransferVOToImageTransferConverter {
             }
         }
         if (volumeResolver != null) {
-            VolumeJoinVO volumeVo = volumeResolver.apply(vo.getDiskId());
+            VolumeJoinVO volumeVo = volumeResolver.apply(vo.getVolumeId());
             if (volumeVo != null) {
                 imageTransfer.setDisk(Ref.of(basePath + DisksRouteHandler.BASE_ROUTE + "/" + volumeVo.getUuid(), volumeVo.getUuid()));
                 imageTransfer.setImage(Ref.of(null, volumeVo.getUuid()));

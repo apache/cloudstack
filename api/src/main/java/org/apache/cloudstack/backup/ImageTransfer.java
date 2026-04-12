@@ -45,7 +45,7 @@ public interface ImageTransfer extends ControlledEntity, InternalIdentity {
 
     Long getBackupId();
 
-    long getDiskId();
+    long getVolumeId();
 
     long getHostId();
 
