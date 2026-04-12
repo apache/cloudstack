@@ -27,9 +27,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -52,7 +53,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.MapUtils;
@@ -83,6 +84,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -140,7 +142,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     @Inject
     AsyncJobManager asyncJobManager;
 
-    private Timer imageTransferTimer;
+    private ScheduledExecutorService imageTransferStatusExecutor;
 
     VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -884,7 +886,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Override
     public boolean start() {
-        final TimerTask imageTransferPollTask = new ManagedContextTimerTask() {
+        imageTransferStatusExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Image-Transfer-Status-Executor"));
+        long pollingInterval = ImageTransferPollingInterval.value();
+        imageTransferStatusExecutor.scheduleAtFixedRate(new ManagedContextRunnable() {
             @Override
             protected void runInContext() {
                 try {
@@ -893,20 +897,13 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     logger.warn("Catch throwable in image transfer poll task ", t);
                 }
             }
-        };
-
-        imageTransferTimer = new Timer("ImageTransferPollTask");
-        long pollingInterval = ImageTransferPollingInterval.value() * 1000L;
-        imageTransferTimer.schedule(imageTransferPollTask, pollingInterval, pollingInterval);
+        }, pollingInterval, pollingInterval, TimeUnit.SECONDS);
         return true;
     }
 
     @Override
     public boolean stop() {
-        if (imageTransferTimer != null) {
-            imageTransferTimer.cancel();
-            imageTransferTimer = null;
-        }
+        imageTransferStatusExecutor.shutdown();
         return true;
     }
 
@@ -973,7 +970,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                         VolumeVO volume = volumeDao.findById(transfer.getVolumeId());
                         if (volume == null) {
                             logger.warn("Volume not found for image transfer: {}", transfer.getUuid());
-                            imageTransferDao.remove(transfer.getId()); // ToDo: confirm if this enough?
+                            imageTransferDao.remove(transfer.getId());
                             continue;
                         }
                         transferVolumeMap.put(transfer.getId(), volume);
@@ -1000,8 +997,9 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
                     if (answer == null || !answer.getResult() || MapUtils.isEmpty(answer.getProgressMap())) {
                         logger.warn("Failed to get progress for transfers on host {}: {}", hostId,
                                 answer != null ? answer.getDetails() : "null answer");
-                        return; // ToDo: return on continue?
+                        continue;
                     }
+
                     for (ImageTransferVO transfer : hostTransfers) {
                         String transferId = transfer.getUuid();
                         Long currentSize = answer.getProgressMap().get(transferId);
