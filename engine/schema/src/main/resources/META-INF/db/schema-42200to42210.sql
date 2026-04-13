@@ -44,8 +44,7 @@ ALTER TABLE `cloud`.`backups` DROP COLUMN `backup_interval_type`;
 
 -- Update `user.password.reset.mail.template` configuration value to match new logic
 UPDATE `cloud`.`configuration`
-SET value = 'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\n{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team'
-WHERE name = 'user.password.reset.mail.template' AND value IN (
-    'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\nhttp://{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team',
-    'Hello {{username}}!\nYou have requested to reset your password. Please click the following link to reset your password:\n{{{domainUrl}}}{{{resetLink}}}\nIf you did not request a password reset,please ignore this email.\n\nRegards,\nThe CloudStack Team'
-);
+SET value = CONCAT_WS('\n', 'Hello {{username}}!', 'You have requested to reset your password. Please click the following link to reset your password:', '{{{resetLink}}}', 'If you did not request a password reset, please ignore this email.', '', 'Regards,', 'The CloudStack Team')
+WHERE name = 'user.password.reset.mail.template'
+  AND value IN (CONCAT_WS('\n', 'Hello {{username}}!', 'You have requested to reset your password. Please click the following link to reset your password:', 'http://{{{resetLink}}}', 'If you did not request a password reset, please ignore this email.', '', 'Regards,', 'The CloudStack Team'), CONCAT_WS('\n', 'Hello {{username}}!', 'You have requested to reset your password. Please click the following link to reset your password:', '{{{domainUrl}}}{{{resetLink}}}', 'If you did not request a password reset, please ignore this email.', '', 'Regards,', 'The CloudStack Team'));
+
