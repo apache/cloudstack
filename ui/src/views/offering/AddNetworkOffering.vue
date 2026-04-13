@@ -692,7 +692,7 @@ export default {
         conservemode: true,
         availability: 'optional',
         specifyipranges: false,
-        egressdefaultpolicy: 'allow',
+        egressdefaultpolicy: 'deny',
         ispublic: this.isPublic,
         nsxsupportlb: true,
         routingmode: 'static'
