@@ -146,6 +146,17 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         if (result != null) {
             if (isNonFatalLogin(result)) {
                 logger.debug("iSCSI login returned benign message for {}@{}:{}: {}", iqn, host, port, result);
+                // Session already exists — a newly mapped LUN won't be visible until
+                // the kernel's next periodic SCSI scan (~30-60s).
+                Script rescanCmd = new Script(true, "iscsiadm", 0, logger);
+                rescanCmd.add("-m", "session");
+                rescanCmd.add("--rescan");
+                String rescanResult = rescanCmd.execute();
+                if (rescanResult != null) {
+                    logger.warn("iSCSI session rescan returned: {}", rescanResult);
+                } else {
+                    logger.debug("iSCSI session rescan completed successfully for {}@{}:{}", iqn, host, port);
+                }
             } else {
                 logger.debug("Failed to log in to iSCSI target " + volumeUuid + ": " + result);
                 System.out.println("Failed to log in to iSCSI target " + volumeUuid);
