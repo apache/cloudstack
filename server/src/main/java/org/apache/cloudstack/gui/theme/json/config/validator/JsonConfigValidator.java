@@ -33,7 +33,7 @@ import java.util.Set;
 public class JsonConfigValidator {
     protected Logger logger = LogManager.getLogger(getClass());
 
-    private static final List<String> ALLOWED_PRIMITIVE_PROPERTIES = List.of("appTitle", "footer", "loginFooter", "logo", "minilogo", "banner", "docBase", "apidocs");
+    private static final List<String> ALLOWED_PRIMITIVE_PROPERTIES = List.of("appTitle", "footer", "loginFooter", "logo", "minilogo", "banner", "docBase", "apidocs", "defaultLanguage");
     private static final List<String> ALLOWED_DYNAMIC_PROPERTIES = List.of("error", "theme", "plugins", "keyboardOptions", "userCard", "docHelpMappings");
 
     @Inject

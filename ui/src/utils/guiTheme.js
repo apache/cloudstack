@@ -17,6 +17,7 @@
 
 import { vueProps } from '@/vue-app'
 import { getAPI } from '@/api'
+import { loadLanguageAsync } from '../locales'
 
 export async function applyCustomGuiTheme (accountid, domainid) {
   await fetch('config.json').then(response => response.json()).then(config => {
@@ -73,6 +74,7 @@ async function applyDynamicCustomization (response) {
   vueProps.$config.apidocs = jsonConfig?.apidocs ?? vueProps.$config.apidocs
   vueProps.$config.docHelpMappings = jsonConfig?.docHelpMappings ?? vueProps.$config.docHelpMappings
   vueProps.$config.keyboardOptions = jsonConfig?.keyboardOptions ?? vueProps.$config.keyboardOptions
+  vueProps.$config.defaultLanguage = vueProps.$localStorage.get('LOCALE') ?? jsonConfig?.defaultLanguage ?? vueProps.$config.defaultLanguage
 
   applyJsonConfigToObject(jsonConfig?.error, vueProps.$config.error)
   applyJsonConfigToObject(jsonConfig?.userCard, vueProps.$config.userCard)
@@ -91,6 +93,11 @@ async function applyDynamicCustomization (response) {
 
   vueProps.$config.favicon = jsonConfig?.favicon ?? vueProps.$config.favicon
   vueProps.$config.css = response?.css ?? null
+
+  if (vueProps.$config.defaultLanguage) {
+    vueProps.$localStorage.set('LOCALE', vueProps.$config.defaultLanguage)
+    loadLanguageAsync()
+  }
 
   await applyStaticCustomization(vueProps.$config.favicon, vueProps.$config.css)
 }

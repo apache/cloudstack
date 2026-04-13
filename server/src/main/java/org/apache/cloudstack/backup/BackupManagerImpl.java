@@ -42,6 +42,7 @@ import com.cloud.utils.DomainHelper;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.command.admin.backup.CloneBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.DeleteBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProviderOfferingsCmd;
@@ -325,13 +326,84 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return savedOffering;
     }
 
-    @Override
     public List<Long> getBackupOfferingDomains(Long offeringId) {
         final BackupOffering backupOffering = backupOfferingDao.findById(offeringId);
         if (backupOffering == null) {
             throw new InvalidParameterValueException("Unable to find backup offering for id: " + offeringId);
         }
         return backupOfferingDetailsDao.findDomainIds(offeringId);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_OFFERING_CLONE, eventDescription = "cloning backup offering")
+    public BackupOffering cloneBackupOffering(final CloneBackupOfferingCmd cmd) {
+        final BackupOfferingVO sourceOffering = backupOfferingDao.findById(cmd.getSourceOfferingId());
+        if (sourceOffering == null) {
+            throw new InvalidParameterValueException("Unable to find backup offering with ID: " + cmd.getSourceOfferingId());
+        }
+
+        validateBackupForZone(sourceOffering.getZoneId());
+
+        if (backupOfferingDao.findByName(cmd.getName(), sourceOffering.getZoneId()) != null) {
+            throw new CloudRuntimeException("A backup offering with the name '" + cmd.getName() + "' already exists in this zone");
+        }
+
+        final String description = cmd.getDescription() != null ? cmd.getDescription() : sourceOffering.getDescription();
+        final String externalId = cmd.getExternalId() != null ? cmd.getExternalId() : sourceOffering.getExternalId();
+        final boolean userDrivenBackups = cmd.getUserDrivenBackups() != null ? cmd.getUserDrivenBackups() : sourceOffering.isUserDrivenBackupAllowed();
+        final Long zoneId = cmd.getZoneId() != null ? cmd.getZoneId() : sourceOffering.getZoneId();
+
+        if (!Objects.equals(sourceOffering.getExternalId(), externalId) || !Objects.equals(sourceOffering.getZoneId(), zoneId)) {
+            final BackupProvider provider = getBackupProvider(zoneId);
+            if (!provider.isValidProviderOffering(zoneId, externalId)) {
+                throw new CloudRuntimeException("Backup offering '" + externalId + "' does not exist on provider " + provider.getName() + " on zone " + zoneId);
+            }
+        }
+
+        final BackupOffering existingOffering = backupOfferingDao.findByExternalId(externalId, zoneId);
+        if (existingOffering != null) {
+            throw new CloudRuntimeException("A backup offering with external ID '" + externalId + "' already exists in this zone");
+        }
+
+        final BackupOfferingVO clonedOffering = new BackupOfferingVO(
+                zoneId,
+                externalId,
+                sourceOffering.getProvider(),
+                cmd.getName(),
+                description,
+                userDrivenBackups
+        );
+
+        final BackupOfferingVO savedOffering = backupOfferingDao.persist(clonedOffering);
+        if (savedOffering == null) {
+            throw new CloudRuntimeException("Unable to clone backup offering from ID: " + cmd.getSourceOfferingId());
+        }
+
+        List<Long> filteredDomainIds = cmd.getDomainIds() == null ? new ArrayList<>() : new ArrayList<>(cmd.getDomainIds());
+        Collections.sort(filteredDomainIds);
+        updateBackupOfferingDomainDetail(savedOffering, filteredDomainIds);
+
+        logger.debug("Successfully cloned backup offering '" + sourceOffering.getName() + "' (ID: " + cmd.getSourceOfferingId() + ") to '" + cmd.getName() + "' (ID: " + savedOffering.getId() + ")");
+        return savedOffering;
+    }
+
+    private void updateBackupOfferingDomainDetail(BackupOfferingVO savedOffering, List<Long> filteredDomainIds) {
+        if (filteredDomainIds.size() > 1) {
+            filteredDomainIds = domainHelper.filterChildSubDomains(filteredDomainIds);
+        }
+
+        if (CollectionUtils.isNotEmpty(filteredDomainIds)) {
+            List<BackupOfferingDetailsVO> detailsVOList = new ArrayList<>();
+            for (Long domainId : filteredDomainIds) {
+                if (domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+                detailsVOList.add(new BackupOfferingDetailsVO(savedOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
+            }
+            if (!detailsVOList.isEmpty()) {
+                backupOfferingDetailsDao.saveDetails(detailsVOList);
+            }
+        }
     }
 
     @Override
@@ -1609,6 +1681,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         validateBackupForZone(backup.getZoneId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm == null ? backup : vm);
+
+        checkForPendingBackupJobs(backup);
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException(String.format("Backup offering with ID [%s] does not exist.", backup.getBackupOfferingId()));
@@ -1627,6 +1701,18 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
         }
         throw new CloudRuntimeException("Failed to delete the backup");
+    }
+
+    private void checkForPendingBackupJobs(final BackupVO backup) {
+        String backupUuid = backup.getUuid();
+        long pendingJobs = asyncJobManager.countPendingJobs(backupUuid,
+                CreateVMFromBackupCmd.class.getName(),
+                CreateVMFromBackupCmdByAdmin.class.getName(),
+                RestoreBackupCmd.class.getName(),
+                RestoreVolumeFromBackupAndAttachToVMCmd.class.getName());
+        if (pendingJobs > 0) {
+            throw new CloudRuntimeException("Cannot delete Backup while a create Instance from Backup or restore Backup operation is in progress, please try again later.");
+        }
     }
 
     /**
@@ -1745,6 +1831,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(ListBackupProvidersCmd.class);
         cmdList.add(ListBackupProviderOfferingsCmd.class);
         cmdList.add(ImportBackupOfferingCmd.class);
+        cmdList.add(CloneBackupOfferingCmd.class);
         cmdList.add(ListBackupOfferingsCmd.class);
         cmdList.add(DeleteBackupOfferingCmd.class);
         cmdList.add(UpdateBackupOfferingCmd.class);

@@ -581,4 +581,27 @@ public class VpcManagerImplTest {
         Assert.assertThrows(InvalidParameterValueException.class, () -> manager.validateVpcPrivateGatewayAclId(vpcId, differentVpcAclId));
     }
 
+    @Test
+    public void testIsNetworkOnVpcEnabledConserveModeIsolatedNetwork() {
+        Network network = mock(Network.class);
+        Mockito.when(network.getVpcId()).thenReturn(null);
+        Assert.assertFalse(manager.isNetworkOnVpcEnabledConserveMode(network));
+    }
+
+    @Test
+    public void testIsNetworkOnVpcEnabledConserveModeVpcNetworkConserveMode() {
+        Network network = mock(Network.class);
+        Vpc vpc = mock(Vpc.class);
+        VpcOfferingVO vpcOffering = mock(VpcOfferingVO.class);
+        long vpcId = 10L;
+        long vpcOfferingId = 11L;
+
+        Mockito.when(network.getVpcId()).thenReturn(vpcId);
+        Mockito.when(vpcDao.getActiveVpcById(Mockito.eq(vpcId))).thenReturn(vpc);
+        Mockito.when(vpc.getVpcOfferingId()).thenReturn(vpcOfferingId);
+        Mockito.when(vpcOfferingDao.findById(Mockito.eq(vpcOfferingId))).thenReturn(vpcOffering);
+        Mockito.when(vpcOffering.isConserveMode()).thenReturn(true);
+        Assert.assertTrue(manager.isNetworkOnVpcEnabledConserveMode(network));
+    }
+
 }

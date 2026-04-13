@@ -17,9 +17,13 @@
 
 package org.apache.cloudstack.jsinterpreter;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -36,8 +40,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class JsInterpreterHelper {
+public class JsInterpreterHelper implements Configurable {
     private final Logger logger = LogManager.getLogger(getClass());
+
+    public static final ConfigKey<Boolean> JS_INTERPRETATION_ENABLED = new ConfigKey<>(ConfigKey.CATEGORY_SYSTEM, Boolean.class, "js.interpretation.enabled",
+            "false", "Enable/disable all JavaScript interpretation related functionalities.",
+            true, ConfigKey.Scope.Global);
 
     private static final String NAME = "name";
     private static final String PROPERTY = "property";
@@ -236,5 +244,22 @@ public class JsInterpreterHelper {
 
     public void setVariables(Set<String> variables) {
         this.variables = variables;
+    }
+
+    public void ensureInterpreterEnabledIfParameterProvided(String paramName, boolean paramProvided) {
+        if (paramProvided && !JS_INTERPRETATION_ENABLED.value()) {
+            throw new InvalidParameterValueException(String.format(
+                    "'%s' cannot be set because JavaScript interpretation is disabled in setting '%s'.", paramName, JS_INTERPRETATION_ENABLED.key()));
+        }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return JsInterpreter.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] { JS_INTERPRETATION_ENABLED };
     }
 }

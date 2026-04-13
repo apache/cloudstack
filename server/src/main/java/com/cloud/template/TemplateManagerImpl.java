@@ -2381,6 +2381,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones, HypervisorType hypervisorType) {
+        if (cmd instanceof GetUploadParamsForIsoCmd) {
+            return TemplateType.USER;
+        }
         if (!(cmd instanceof UpdateTemplateCmd) && !(cmd instanceof RegisterTemplateCmd) && !(cmd instanceof GetUploadParamsForTemplateCmd)) {
             return null;
         }
@@ -2413,7 +2416,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             } else if ((cmd instanceof RegisterVnfTemplateCmd || cmd instanceof UpdateVnfTemplateCmd) && !TemplateType.VNF.equals(templateType)) {
                 throw new InvalidParameterValueException("The template type must be VNF for VNF templates, but the actual type is " + templateType);
             }
-        } else if (cmd instanceof RegisterTemplateCmd) {
+        } else if (cmd instanceof RegisterTemplateCmd || cmd instanceof GetUploadParamsForTemplateCmd) {
             boolean isRouting = Boolean.TRUE.equals(isRoutingType);
             templateType = (cmd instanceof RegisterVnfTemplateCmd) ? TemplateType.VNF : (isRouting ? TemplateType.ROUTING : TemplateType.USER);
         }
@@ -2423,6 +2426,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new InvalidParameterValueException(String.format("Users can not register Template with template type %s.", templateType));
             } else if (cmd instanceof UpdateTemplateCmd) {
                 throw new InvalidParameterValueException(String.format("Users can not update Template to template type %s.", templateType));
+            } else if (cmd instanceof GetUploadParamsForTemplateCmd) {
+                throw new InvalidParameterValueException(String.format("Users can not request upload parameters for Template with template type %s.", templateType));
             }
         }
         return templateType;
