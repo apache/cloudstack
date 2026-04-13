@@ -52,6 +52,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 
+import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -4401,6 +4402,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<String> hostTags = new ArrayList<>();
         if (currentVmOffering != null) {
             hostTags.addAll(com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag()));
+            if (UserVmManager.AllowDifferentHostTagsOfferingsForVmScale.value()) {
+                addVmCurrentClusterHostTags(vmInstance, hostTags);
+            }
         }
 
         if (!hostTags.isEmpty()) {
@@ -4412,7 +4416,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     flag = false;
                     serviceOfferingSearch.op("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
                 } else {
-                    serviceOfferingSearch.and("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
+                    serviceOfferingSearch.or("hostTag" + tag, serviceOfferingSearch.entity().getHostTag(), Op.FIND_IN_SET);
                 }
             }
             serviceOfferingSearch.cp().cp();
@@ -4555,6 +4559,30 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer count = uniquePair.second();
         List<Long> offeringIds = uniquePair.first().stream().map(ServiceOfferingVO::getId).collect(Collectors.toList());
         return new Pair<>(offeringIds, count);
+    }
+
+    protected void addVmCurrentClusterHostTags(VMInstanceVO vmInstance, List<String> hostTags) {
+        if (vmInstance == null) {
+            return;
+        }
+        Long hostId = vmInstance.getHostId() == null ? vmInstance.getLastHostId() : vmInstance.getHostId();
+        if (hostId == null) {
+            return;
+        }
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            logger.warn("Unable to find host with id " + hostId);
+            return;
+        }
+        List<String> clusterTags = _hostTagDao.listByClusterId(host.getClusterId());
+        if (CollectionUtils.isEmpty(clusterTags)) {
+            logger.debug("No host tags defined for hosts in the cluster " + host.getClusterId());
+            return;
+        }
+        Set<String> existingTagsSet = new HashSet<>(hostTags);
+        clusterTags.stream()
+                .filter(tag -> !existingTagsSet.contains(tag))
+                .forEach(hostTags::add);
     }
 
     @Override

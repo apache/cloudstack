@@ -258,11 +258,6 @@ public class DefaultSnapshotStrategyTest {
 
     @Test
     public void testGetSnapshotImageStoreRefNull() {
-        SnapshotDataStoreVO ref1 = Mockito.mock(SnapshotDataStoreVO.class);
-        Mockito.when(ref1.getDataStoreId()).thenReturn(1L);
-        Mockito.when(ref1.getRole()).thenReturn(DataStoreRole.Image);
-        Mockito.when(snapshotDataStoreDao.listReadyBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class))).thenReturn(List.of(ref1));
-        Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(2L);
         Assert.assertNull(defaultSnapshotStrategySpy.getSnapshotImageStoreRef(1L, 1L));
     }
 
@@ -271,7 +266,7 @@ public class DefaultSnapshotStrategyTest {
         SnapshotDataStoreVO ref1 = Mockito.mock(SnapshotDataStoreVO.class);
         Mockito.when(ref1.getDataStoreId()).thenReturn(1L);
         Mockito.when(ref1.getRole()).thenReturn(DataStoreRole.Image);
-        Mockito.when(snapshotDataStoreDao.listReadyBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class))).thenReturn(List.of(ref1));
+        Mockito.when(snapshotDataStoreDao.listBySnapshotIdAndDataStoreRoleAndStateIn(Mockito.anyLong(), Mockito.any(DataStoreRole.class), Mockito.any(), Mockito.any())).thenReturn(List.of(ref1));
         Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(1L);
         Assert.assertNotNull(defaultSnapshotStrategySpy.getSnapshotImageStoreRef(1L, 1L));
     }

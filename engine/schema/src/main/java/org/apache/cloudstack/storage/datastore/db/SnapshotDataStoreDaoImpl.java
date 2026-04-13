@@ -68,6 +68,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     protected SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq;
     private SearchBuilder<SnapshotDataStoreVO> stateSearch;
     private SearchBuilder<SnapshotDataStoreVO> idStateNinSearch;
+    private SearchBuilder<SnapshotDataStoreVO> idEqRoleEqStateInSearch;
     protected SearchBuilder<SnapshotVO> snapshotVOSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotCreatedSearch;
     private SearchBuilder<SnapshotDataStoreVO> dataStoreAndInstallPathSearch;
@@ -151,6 +152,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         idStateNinSearch.and(STATE, idStateNinSearch.entity().getState(), SearchCriteria.Op.NOTIN);
         idStateNinSearch.done();
 
+        idEqRoleEqStateInSearch = createSearchBuilder();
+        idEqRoleEqStateInSearch.and(SNAPSHOT_ID, idEqRoleEqStateInSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
+        idEqRoleEqStateInSearch.and(STORE_ROLE, idEqRoleEqStateInSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        idEqRoleEqStateInSearch.and(STATE, idEqRoleEqStateInSearch.entity().getState(), SearchCriteria.Op.IN);
 
         snapshotVOSearch = snapshotDao.createSearchBuilder();
         snapshotVOSearch.and(VOLUME_ID, snapshotVOSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
@@ -386,6 +391,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
         sc.setParameters(STATE, state);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listBySnapshotIdAndDataStoreRoleAndStateIn(long snapshotId, DataStoreRole role, State... state) {
+        SearchCriteria<SnapshotDataStoreVO> sc = idEqRoleEqStateInSearch.create();
+        sc.setParameters(SNAPSHOT_ID, snapshotId);
+        sc.setParameters(STORE_ROLE, role);
+        sc.setParameters(STATE, (Object[])state);
+        return listBy(sc);
     }
 
     @Override
