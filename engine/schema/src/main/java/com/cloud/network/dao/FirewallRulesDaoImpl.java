@@ -94,6 +94,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         ReleaseSearch.and("ipId", ReleaseSearch.entity().getSourceIpAddressId(), Op.EQ);
         ReleaseSearch.and("purpose", ReleaseSearch.entity().getPurpose(), Op.EQ);
         ReleaseSearch.and("ports", ReleaseSearch.entity().getSourcePortStart(), Op.IN);
+        ReleaseSearch.and("removed", ReleaseSearch.entity().getRemoved(), Op.NULL);
         ReleaseSearch.done();
 
         SystemRuleSearch = createSearchBuilder();
