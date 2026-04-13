@@ -1009,26 +1009,31 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 List<DnsNicJoinVO> nicsForThisFqdn = newUrlEntry.getValue();
 
                 try {
+                    Set<String> oldDnsRecordUrls = new HashSet<>();
+                    Transaction.execute(new TransactionCallbackWithExceptionNoReturn<DnsProviderException>() {
+                        @Override
+                        public void doInTransactionWithoutResult(TransactionStatus status) throws DnsProviderException {
+                            for (DnsNicJoinVO nic : nicsForThisFqdn) {
+                                if (nic.getNicDnsUrl() != null) {
+                                    oldDnsRecordUrls.add(nic.getNicDnsUrl());
+                                    nicDetailsDao.removeDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD);
+                                }
+                            }
+                            for (String oldUrl : oldDnsRecordUrls) {
+                                syncDnsRecordsState(instanceId, oldUrl, targetZoneId);
+                            }
+                        }
+                    });
+
                     Transaction.execute(new TransactionCallbackWithExceptionNoReturn<DnsProviderException>() {
                         @Override
                         public void doInTransactionWithoutResult(TransactionStatus status) throws DnsProviderException {
                             if (isDnsCollision(newDnsRecordUrl, targetZoneId, instanceId)) {
                                 return;
                             }
-
-                            Set<String> oldDnsRecordUrls = new HashSet<>();
                             for (DnsNicJoinVO nic : nicsForThisFqdn) {
-                                if (nic.getNicDnsUrl() != null) {
-                                    oldDnsRecordUrls.add(nic.getNicDnsUrl());
-                                }
                                 nicDetailsDao.addDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD, newDnsRecordUrl, true);
                             }
-
-                            // NICs for the old URL and cleanly send a DELETE API call to PowerDNS!
-                            for (String oldUrl : oldDnsRecordUrls) {
-                                syncDnsRecordsState(instanceId, oldUrl, targetZoneId);
-                            }
-
                             // This sync call finds the newly written intent and sends an ADD/REPLACE call.
                             syncDnsRecordsState(instanceId, newDnsRecordUrl, targetZoneId);
                         }
