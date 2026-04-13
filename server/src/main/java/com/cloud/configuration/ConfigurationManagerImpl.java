@@ -5428,7 +5428,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final VlanVO vlan = commitVlanAndIpRange(zoneId, networkId, physicalNetworkId, podId, startIP, endIP, vlanGateway, vlanNetmask, vlanId, domain, vlanOwner, vlanIp6Gateway, vlanIp6Cidr,
                 ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms, provider);
 
-        if (vlan != null) {
+        if (vlan != null && network.getTrafficType() != TrafficType.Public) {
             if (ipv4) {
                 addCidrAndGatewayForIpv4(networkId, vlanGateway, vlanNetmask);
             } else if (ipv6) {
@@ -6507,11 +6507,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final boolean ipv4 = deletedVlan.getVlanGateway() != null;
             final boolean ipv6 = deletedVlan.getIp6Gateway() != null;
             final long networkId = deletedVlan.getNetworkId();
+            final NetworkVO networkVO = _networkDao.findById(networkId);
 
-            if (ipv4) {
-                removeCidrAndGatewayForIpv4(networkId, deletedVlan);
-            } else if (ipv6) {
-                removeCidrAndGatewayForIpv6(networkId, deletedVlan);
+            if (networkVO != null && networkVO.getTrafficType() != TrafficType.Public) {
+                if (ipv4) {
+                    removeCidrAndGatewayForIpv4(networkId, deletedVlan);
+                } else if (ipv6) {
+                    removeCidrAndGatewayForIpv6(networkId, deletedVlan);
+                }
             }
 
             messageBus.publish(_name, MESSAGE_DELETE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, deletedVlan);
