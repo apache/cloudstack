@@ -16,13 +16,17 @@
 // under the License.
 package com.cloud.network.dao;
 
+import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
@@ -44,6 +48,10 @@ public class LoadBalancerCertMapVO implements InternalIdentity {
 
     @Column(name = "revoke")
     private boolean revoke = false;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed;
 
     public LoadBalancerCertMapVO() {
         this.uuid = UUID.randomUUID().toString();
