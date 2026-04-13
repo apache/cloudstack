@@ -318,8 +318,47 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         return tmp[index].trim();
     }
 
+    /**
+     * Check if there are other LUNs on the same iSCSI target (IQN) that are still
+     * visible as block devices. This is needed because ONTAP uses a single IQN per
+     * SVM — logging out of the target would kill ALL LUNs, not just the one being
+     * disconnected.
+     *
+     * Checks /dev/disk/by-path/ for symlinks matching the same host:port + IQN but
+     * with a different LUN number.
+     */
+    private boolean hasOtherActiveLuns(String host, int port, String iqn, String lun) {
+        String prefix = "ip-" + host + ":" + port + "-iscsi-" + iqn + "-lun-";
+        java.io.File byPathDir = new java.io.File("/dev/disk/by-path");
+        if (!byPathDir.exists() || !byPathDir.isDirectory()) {
+            return false;
+        }
+        java.io.File[] entries = byPathDir.listFiles();
+        if (entries == null) {
+            return false;
+        }
+        for (java.io.File entry : entries) {
+            String name = entry.getName();
+            if (name.startsWith(prefix) && !name.equals(prefix + lun)) {
+                logger.debug("Found other active LUN on same target: " + name);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean disconnectPhysicalDisk(String host, int port, String iqn, String lun) {
-        // use iscsiadm to log out of the iSCSI target and un-discover it
+        // Check if other LUNs on the same IQN target are still in use.
+        // ONTAP (and similar) uses a single IQN per SVM with multiple LUNs.
+        // Doing iscsiadm --logout tears down the ENTIRE target session,
+        // which would destroy access to ALL LUNs — not just the one being disconnected.
+        if (hasOtherActiveLuns(host, port, iqn, lun)) {
+            logger.info("Skipping iSCSI logout for /" + iqn + "/" + lun +
+                    " — other LUNs on the same target are still active");
+            return true;
+        }
+
+        // No other LUNs active on this target — safe to logout and delete the node record.
 
         // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 --logout
         Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
