@@ -47,7 +47,10 @@ import java.util.Map;
 @ResourceWrapper(handles = CheckVolumeCommand.class)
 public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<CheckVolumeCommand, Answer, LibvirtComputingResource> {
 
-    private static final List<Storage.StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED = Arrays.asList(Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.NetworkFilesystem);
+    private static final List<Storage.StoragePoolType> STORAGE_POOL_TYPES_SUPPORTED = Arrays.asList(
+            Storage.StoragePoolType.Filesystem,
+            Storage.StoragePoolType.NetworkFilesystem,
+            Storage.StoragePoolType.SharedMountPoint);
 
     @Override
     public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {

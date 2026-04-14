@@ -34,9 +34,10 @@ import org.apache.cloudstack.api.response.TaggedResourceLimitAndCountResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
@@ -46,6 +47,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -83,6 +85,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -279,6 +282,7 @@ public class ResourceLimitManagerImplTest {
 
     @Test
     public void testCheckVmResourceLimit() {
+        List<Reserver> reservations = new ArrayList<>();
         ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
         Mockito.when(serviceOffering.getHostTag()).thenReturn(hostTags.get(0));
@@ -286,72 +290,12 @@ public class ResourceLimitManagerImplTest {
         Mockito.when(serviceOffering.getRamSize()).thenReturn(256);
         Mockito.when(template.getTemplateTag()).thenReturn(hostTags.get(0));
         Account account = Mockito.mock(Account.class);
-        try {
-            Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any());
-            Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            resourceLimitManager.checkVmResourceLimit(account, true, serviceOffering, template);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            resourceLimitManager.checkVmResourceLimit(account, true, serviceOffering, template, reservations);
             List<String> tags = new ArrayList<>();
             tags.add(null);
             tags.add(hostTags.get(0));
-            for (String tag: tags) {
-                Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.user_vm, tag);
-                Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.cpu, tag, 2L);
-                Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.memory, tag, 256L);
-            }
-        } catch (ResourceAllocationException e) {
-            Assert.fail("Exception encountered: " + e.getMessage());
-        }
-    }
-
-    @Test
-    public void testCheckVmCpuResourceLimit() {
-        ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
-        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        Mockito.when(serviceOffering.getHostTag()).thenReturn(hostTags.get(0));
-        Mockito.when(template.getTemplateTag()).thenReturn(hostTags.get(0));
-        Account account = Mockito.mock(Account.class);
-        long cpu = 2L;
-        try {
-            Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            resourceLimitManager.checkVmCpuResourceLimit(account, true, serviceOffering, template, cpu);
-            Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.cpu, null, cpu);
-            Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.cpu, hostTags.get(0), cpu);
-        } catch (ResourceAllocationException e) {
-            Assert.fail("Exception encountered: " + e.getMessage());
-        }
-    }
-
-    @Test
-    public void testCheckVmMemoryResourceLimit() {
-        ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
-        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        Mockito.when(serviceOffering.getHostTag()).thenReturn(hostTags.get(0));
-        Mockito.when(template.getTemplateTag()).thenReturn(hostTags.get(0));
-        Account account = Mockito.mock(Account.class);
-        long delta = 256L;
-        try {
-            Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            resourceLimitManager.checkVmMemoryResourceLimit(account, true, serviceOffering, template, delta);
-            Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.memory, null, delta);
-            Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.memory, hostTags.get(0), delta);
-        } catch (ResourceAllocationException e) {
-            Assert.fail("Exception encountered: " + e.getMessage());
-        }
-    }
-
-    @Test
-    public void testCheckVmGpuResourceLimit() {
-        ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
-        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
-        Mockito.when(serviceOffering.getHostTag()).thenReturn(hostTags.get(0));
-        Mockito.when(template.getTemplateTag()).thenReturn(hostTags.get(0));
-        Account account = Mockito.mock(Account.class);
-        long gpuCount = 2L;
-        try {
-            Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            resourceLimitManager.checkVmGpuResourceLimit(account, true, serviceOffering, template, gpuCount);
-            Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.gpu, null, gpuCount);
-            Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.gpu, hostTags.get(0), gpuCount);
+            Assert.assertEquals(4, mockCheckedReservation.constructed().size());
         } catch (ResourceAllocationException e) {
             Assert.fail("Exception encountered: " + e.getMessage());
         }
@@ -359,22 +303,15 @@ public class ResourceLimitManagerImplTest {
 
     @Test
     public void testCheckVolumeResourceLimit() {
+        List<Reserver> reservations = new ArrayList<>();
         String checkTag = storageTags.get(0);
         DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
         Mockito.when(diskOffering.getTags()).thenReturn(checkTag);
         Mockito.when(diskOffering.getTagsArray()).thenReturn(new String[]{checkTag});
         Account account = Mockito.mock(Account.class);
-        try {
-            Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any());
-            Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-            resourceLimitManager.checkVolumeResourceLimit(account, true, 100L, diskOffering);
-            List<String> tags = new ArrayList<>();
-            tags.add(null);
-            tags.add(checkTag);
-            for (String tag: tags) {
-                Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.volume, tag);
-                Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, tag, 100L);
-            }
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            resourceLimitManager.checkVolumeResourceLimit(account, true, 100L, diskOffering, reservations);
+            Assert.assertEquals(2, reservations.size());
         } catch (ResourceAllocationException e) {
             Assert.fail("Exception encountered: " + e.getMessage());
         }
@@ -627,10 +564,11 @@ public class ResourceLimitManagerImplTest {
     public void testCheckResourceLimitWithTagNonAdmin() throws ResourceAllocationException {
         AccountVO account = Mockito.mock(AccountVO.class);
         Mockito.when(account.getId()).thenReturn(1L);
+        Mockito.when(account.getDomainId()).thenReturn(1L);
         Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
         Mockito.doReturn(new ArrayList<ResourceLimitVO>()).when(resourceLimitManager).lockAccountAndOwnerDomainRows(Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString());
         Mockito.doNothing().when(resourceLimitManager).checkAccountResourceLimit(account, null, Resource.ResourceType.cpu, hostTags.get(0), 1);
-        Mockito.doNothing().when(resourceLimitManager).checkDomainResourceLimit(account, null, Resource.ResourceType.cpu, hostTags.get(0), 1);
+        Mockito.doNothing().when(resourceLimitManager).checkDomainResourceLimit(1L, Resource.ResourceType.cpu, hostTags.get(0), 1);
         try {
             resourceLimitManager.checkResourceLimitWithTag(account, Resource.ResourceType.cpu, hostTags.get(0), 1);
         } catch (ResourceAllocationException e) {
@@ -646,9 +584,10 @@ public class ResourceLimitManagerImplTest {
         Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(false);
         ProjectVO projectVO = Mockito.mock(ProjectVO.class);
         Mockito.when(projectDao.findByProjectAccountId(Mockito.anyLong())).thenReturn(projectVO);
+        Mockito.when(projectVO.getDomainId()).thenReturn(1L);
         Mockito.doReturn(new ArrayList<ResourceLimitVO>()).when(resourceLimitManager).lockAccountAndOwnerDomainRows(Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString());
         Mockito.doNothing().when(resourceLimitManager).checkAccountResourceLimit(account, projectVO, Resource.ResourceType.cpu, hostTags.get(0), 1);
-        Mockito.doNothing().when(resourceLimitManager).checkDomainResourceLimit(account, projectVO, Resource.ResourceType.cpu, hostTags.get(0), 1);
+        Mockito.doNothing().when(resourceLimitManager).checkDomainResourceLimit(1L, Resource.ResourceType.cpu, hostTags.get(0), 1);
         try {
             resourceLimitManager.checkResourceLimitWithTag(account, Resource.ResourceType.cpu, hostTags.get(0), 1);
         } catch (ResourceAllocationException e) {
@@ -992,13 +931,6 @@ public class ResourceLimitManagerImplTest {
                         Mockito.anyList(), Mockito.eq(tag));
     }
 
-    private void mockCheckResourceLimitWithTag() throws ResourceAllocationException {
-        Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(
-                Mockito.any(Account.class), Mockito.any(Resource.ResourceType.class), Mockito.anyString());
-        Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(
-                Mockito.any(Account.class), Mockito.any(Resource.ResourceType.class), Mockito.anyString(), Mockito.anyLong());
-    }
-
     private void mockIncrementResourceCountWithTag() {
         Mockito.doNothing().when(resourceLimitManager).incrementResourceCountWithTag(
                 Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString());
@@ -1015,6 +947,7 @@ public class ResourceLimitManagerImplTest {
 
     @Test
     public void testCheckVolumeResourceCount() throws ResourceAllocationException {
+        List<Reserver> reservations = new ArrayList<>();
         Account account = Mockito.mock(Account.class);
         String tag = "tag";
         long delta = 10L;
@@ -1028,12 +961,11 @@ public class ResourceLimitManagerImplTest {
 
         Mockito.doReturn(List.of(tag)).when(resourceLimitManager)
                 .getResourceLimitStorageTagsForResourceCountOperation(Mockito.anyBoolean(), Mockito.any(DiskOffering.class));
-        mockCheckResourceLimitWithTag();
-        resourceLimitManager.checkVolumeResourceLimit(account, false, delta, Mockito.mock(DiskOffering.class));
-        Mockito.verify(resourceLimitManager, Mockito.times(1)).checkResourceLimitWithTag(
-                account, Resource.ResourceType.volume, tag);
-        Mockito.verify(resourceLimitManager, Mockito.times(1))
-                .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, tag, 10L);
+
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            resourceLimitManager.checkVolumeResourceLimit(account, false, delta, Mockito.mock(DiskOffering.class), reservations);
+            Assert.assertEquals(2,  reservations.size());
+        }
     }
 
     @Test
