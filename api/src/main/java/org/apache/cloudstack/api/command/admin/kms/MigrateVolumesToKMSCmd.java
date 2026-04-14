@@ -39,14 +39,13 @@ import javax.inject.Inject;
 import java.util.List;
 
 @APICommand(name = "migrateVolumesToKMS",
-            description = "Migrates passphrase-based volumes to KMS (admin only)",
+            description = "Migrates encrypted volumes to KMS",
             responseObject = AsyncJobResponse.class,
             since = "4.23.0",
             authorized = {RoleType.Admin},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
-    private static final String s_name = "migratevolumestokmsresponse";
 
     @Inject
     private KMSManager kmsManager;
@@ -113,11 +112,6 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         KMSKey key = _entityMgr.findById(KMSKey.class, kmsKeyId);
         if (key != null) {
@@ -138,11 +132,11 @@ public class MigrateVolumesToKMSCmd extends BaseAsyncCmd {
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.Zone;
+        return ApiCommandResourceType.KmsKey;
     }
 
     @Override
     public Long getApiResourceId() {
-        return zoneId;
+        return kmsKeyId;
     }
 }

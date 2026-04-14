@@ -310,7 +310,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private String encryptionFormat;
 
     @SerializedName(ApiConstants.KMS_KEY)
-    @Param(description = "KMS key id of the volume", since = "4.23.0")
+    @Param(description = "KMS key name of the volume", since = "4.23.0")
     private String kmsKey;
 
     @SerializedName(ApiConstants.KMS_KEY_ID)

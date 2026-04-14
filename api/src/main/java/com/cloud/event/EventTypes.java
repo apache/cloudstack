@@ -1038,6 +1038,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_KMS_KEY_WRAP, KMSKey.class);
         entityEventDetails.put(EVENT_KMS_KEY_DELETE, KMSKey.class);
         entityEventDetails.put(EVENT_KMS_KEY_ROTATE, KMSKey.class);
+        entityEventDetails.put(EVENT_VOLUME_MIGRATE_TO_KMS, KMSKey.class);
 
         // HSM Profile Events
         entityEventDetails.put(EVENT_HSM_PROFILE_CREATE, HSMProfile.class);

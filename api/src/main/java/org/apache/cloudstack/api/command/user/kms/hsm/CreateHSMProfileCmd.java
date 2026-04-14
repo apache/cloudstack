@@ -25,6 +25,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -45,10 +46,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-@APICommand(name = "addHSMProfile", description = "Adds a new HSM profile", responseObject = HSMProfileResponse.class,
+@APICommand(name = "createHSMProfile", description = "Creates a new HSM profile", responseObject = HSMProfileResponse.class,
             requestHasSensitiveInfo = true, responseHasSensitiveInfo = true, since = "4.23.0",
         authorized = { RoleType.Admin })
-public class AddHSMProfileCmd extends BaseCmd {
+public class CreateHSMProfileCmd extends BaseCmd {
 
     @Inject
     private KMSManager kmsManager;
@@ -77,10 +78,10 @@ public class AddHSMProfileCmd extends BaseCmd {
                description = "the ID of the project to add the HSM profile for")
     private Long projectId;
 
-    @Parameter(name = "system", type = CommandType.BOOLEAN,
-               description = "whether this is a system HSM profile available to all users globally (root admin only). "
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN,
+               description = "whether this is a public HSM profile available to all users globally (root admin only). "
                              + "Default is false")
-    private Boolean system;
+    private Boolean isPublic;
 
     @Parameter(name = ApiConstants.VENDOR_NAME, type = CommandType.STRING, description = "the vendor name of the HSM")
     private String vendorName;
@@ -116,8 +117,8 @@ public class AddHSMProfileCmd extends BaseCmd {
         return projectId;
     }
 
-    public Boolean isSystem() {
-        return system != null && system;
+    public Boolean getIsPublic() {
+        return isPublic != null && isPublic;
     }
 
     public String getVendorName() {
@@ -158,5 +159,10 @@ public class AddHSMProfileCmd extends BaseCmd {
             return accountId;
         }
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.HsmProfile;
     }
 }

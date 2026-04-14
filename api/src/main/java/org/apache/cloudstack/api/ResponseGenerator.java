@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.api.response.ConsoleSessionResponse;
-import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.consoleproxy.ConsoleSession;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
@@ -157,7 +156,6 @@ import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.gui.theme.GuiThemeJoin;
-import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;

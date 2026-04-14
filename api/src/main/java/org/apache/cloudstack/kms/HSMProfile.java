@@ -38,7 +38,7 @@ public interface HSMProfile extends Identity, InternalIdentity, ControlledEntity
 
     boolean isEnabled();
 
-    boolean isSystem();
+    boolean getIsPublic();
 
     Date getCreated();
 

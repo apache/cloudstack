@@ -77,6 +77,7 @@ export default {
           api: 'createKMSKey',
           icon: 'plus-outlined',
           label: 'label.create.kms.key',
+          docHelp: 'adminguide/kms.html#creating-a-kms-key',
           listView: true,
           popup: true,
           dataView: false,
@@ -89,7 +90,6 @@ export default {
         {
           api: 'updateKMSKey',
           icon: 'edit-outlined',
-          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.update.kms.key',
           dataView: true,
           popup: true,
@@ -103,7 +103,7 @@ export default {
         {
           api: 'rotateKMSKey',
           icon: 'sync-outlined',
-          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          docHelp: 'adminguide/kms.html#rotating-a-kms-key',
           label: 'label.rotate.kms.key',
           dataView: true,
           popup: true,
@@ -117,7 +117,7 @@ export default {
         {
           api: 'migrateVolumesToKMS',
           icon: 'swap-outlined',
-          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          docHelp: 'adminguide/kms.html#migrating-existing-volumes-to-kms',
           label: 'label.migrate.volumes.to.kms',
           message: 'message.action.migrate.volumes.to.kms',
           dataView: true,
@@ -141,7 +141,6 @@ export default {
         {
           api: 'deleteKMSKey',
           icon: 'delete-outlined',
-          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.delete.kms.key',
           message: 'message.action.delete.kms.key',
           dataView: true,
@@ -204,8 +203,9 @@ export default {
       },
       actions: [
         {
-          api: 'addHSMProfile',
+          api: 'createHSMProfile',
           icon: 'plus-outlined',
+          docHelp: 'adminguide/kms.html#adding-an-hsm-profile',
           label: 'label.create.hsmprofile',
           listView: true,
           popup: true,
@@ -227,7 +227,6 @@ export default {
         {
           api: 'updateHSMProfile',
           icon: 'edit-outlined',
-          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.update.hsm.profile',
           dataView: true,
           popup: true,
@@ -244,7 +243,6 @@ export default {
         {
           api: 'deleteHSMProfile',
           icon: 'delete-outlined',
-          docHelp: 'adminguide/storage.html#lifecycle-operations',
           label: 'label.delete.hsm.profile',
           message: 'message.action.delete.hsm.profile',
           dataView: true,

@@ -61,8 +61,8 @@ public class HSMProfileVO implements HSMProfile {
     @Column(name = "enabled")
     private boolean enabled;
 
-    @Column(name = "system")
-    private boolean system;
+    @Column(name = "is_public")
+    private boolean isPublic;
 
     @Column(name = "created")
     private Date created;
@@ -73,7 +73,7 @@ public class HSMProfileVO implements HSMProfile {
     public HSMProfileVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
-        this.system = false;
+        this.isPublic = false;
     }
 
     public HSMProfileVO(String name, String protocol, Long accountId, Long domainId, Long zoneId, String vendorName) {
@@ -85,7 +85,7 @@ public class HSMProfileVO implements HSMProfile {
         this.zoneId = zoneId;
         this.vendorName = vendorName;
         this.enabled = true;
-        this.system = false;
+        this.isPublic = false;
         this.created = new Date();
     }
 
@@ -173,11 +173,11 @@ public class HSMProfileVO implements HSMProfile {
     }
 
     @Override
-    public boolean isSystem() {
-        return system;
+    public boolean getIsPublic() {
+        return isPublic;
     }
 
-    public void setSystem(boolean system) {
-        this.system = system;
+    public void setIsPublic(boolean isPublic) {
+        this.isPublic = isPublic;
     }
 }

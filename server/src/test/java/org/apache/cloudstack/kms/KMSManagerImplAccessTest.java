@@ -220,7 +220,7 @@ public class KMSManagerImplAccessTest {
     @Test(expected = PermissionDeniedException.class)
     public void testCheckHSMProfileAccess_DeniesNonRootModifyOfSystemProfile() {
         HSMProfileVO profile = mock(HSMProfileVO.class);
-        when(profile.isSystem()).thenReturn(true);
+        when(profile.getIsPublic()).thenReturn(true);
 
         Account caller = mock(Account.class);
         when(caller.getId()).thenReturn(1L);
@@ -232,7 +232,7 @@ public class KMSManagerImplAccessTest {
     @Test
     public void testCheckHSMProfileAccess_AllowsRootModifyOfSystemProfile() {
         HSMProfileVO profile = mock(HSMProfileVO.class);
-        when(profile.isSystem()).thenReturn(true);
+        when(profile.getIsPublic()).thenReturn(true);
 
         Account caller = mock(Account.class);
         when(caller.getId()).thenReturn(1L);
@@ -244,7 +244,7 @@ public class KMSManagerImplAccessTest {
     @Test
     public void testCheckHSMProfileAccess_AllowsReadAccessToSystemProfileForAllUsers() {
         HSMProfileVO profile = mock(HSMProfileVO.class);
-        when(profile.isSystem()).thenReturn(true);
+        when(profile.getIsPublic()).thenReturn(true);
 
         kmsManager.checkHSMProfileAccess(mock(Account.class), profile, false);
     }
@@ -252,7 +252,7 @@ public class KMSManagerImplAccessTest {
     @Test
     public void testCheckHSMProfileAccess_DelegatesToAclForOwnedProfile() {
         HSMProfileVO profile = mock(HSMProfileVO.class);
-        when(profile.isSystem()).thenReturn(false);
+        when(profile.getIsPublic()).thenReturn(false);
 
         kmsManager.checkHSMProfileAccess(mock(Account.class), profile, true);
     }
@@ -260,7 +260,7 @@ public class KMSManagerImplAccessTest {
     @Test(expected = PermissionDeniedException.class)
     public void testCheckHSMProfileAccess_ThrowsWhenAclDeniesOwnedProfile() {
         HSMProfileVO profile = mock(HSMProfileVO.class);
-        when(profile.isSystem()).thenReturn(false);
+        when(profile.getIsPublic()).thenReturn(false);
 
         Account caller = mock(Account.class);
         doThrow(new PermissionDeniedException("denied"))

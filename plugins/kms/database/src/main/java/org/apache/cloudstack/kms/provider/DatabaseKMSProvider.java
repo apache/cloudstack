@@ -351,7 +351,7 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
         try {
             SearchBuilder<HSMProfileVO> sb = hsmProfileDao.createSearchBuilder();
             sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-            sb.and("system", sb.entity().isSystem(), SearchCriteria.Op.EQ);
+            sb.and("system", sb.entity().getIsPublic(), SearchCriteria.Op.EQ);
             sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
             sb.done();
 
@@ -369,7 +369,7 @@ public class DatabaseKMSProvider extends AdapterBase implements KMSProvider {
             HSMProfileVO profile = new HSMProfileVO(DEFAULT_PROFILE_NAME, PROVIDER_NAME,
                     SYSTEM_ACCOUNT_ID, ROOT_DOMAIN_ID, null, null);
             profile.setEnabled(false);
-            profile.setSystem(true);
+            profile.setIsPublic(true);
             hsmProfileDao.persist(profile);
             logger.info("Seeded default database HSM profile (id={}, uuid={})", profile.getId(), profile.getUuid());
         } catch (Exception e) {

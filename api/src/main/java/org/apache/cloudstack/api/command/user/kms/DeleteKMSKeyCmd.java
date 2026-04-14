@@ -84,6 +84,11 @@ public class DeleteKMSKeyCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
     public String getEventType() {
         return EventTypes.EVENT_KMS_KEY_DELETE;
     }

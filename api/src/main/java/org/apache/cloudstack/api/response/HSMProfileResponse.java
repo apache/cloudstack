@@ -90,9 +90,9 @@ public class HSMProfileResponse extends BaseResponse implements ControlledViewEn
     @Param(description = "whether the HSM profile is enabled")
     private Boolean enabled;
 
-    @SerializedName("system")
+    @SerializedName(ApiConstants.IS_PUBLIC)
     @Param(description = "whether this is a system HSM profile available to all users globally")
-    private Boolean system;
+    private Boolean isPublic;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date the HSM profile was created")
@@ -168,8 +168,8 @@ public class HSMProfileResponse extends BaseResponse implements ControlledViewEn
         this.enabled = enabled;
     }
 
-    public void setSystem(Boolean system) {
-        this.system = system;
+    public void setIsPublic(Boolean isPublic) {
+        this.isPublic = isPublic;
     }
 
     public void setCreated(Date created) {

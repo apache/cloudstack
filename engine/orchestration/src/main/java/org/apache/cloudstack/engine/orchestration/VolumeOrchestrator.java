@@ -1937,61 +1937,62 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return kmsKeyDao.findById(volume.getKmsKeyId());
     }
 
-    private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume) {
-        return setPassphraseForVolumeEncryption(volume, null, null);
-    }
+    private VolumeVO setKmsKeyForVolumeEncryption(VolumeVO volume, KMSKeyVO kmsKey, Long callerAccountId) {
+        // Determine caller account ID if not provided
+        if (callerAccountId == null) {
+            callerAccountId = volume.getAccountId();
+        }
 
+        // Validate permission
+        if (!kmsManager.hasPermission(callerAccountId, kmsKey)) {
+            throw new CloudRuntimeException("No permission to use KMS key: " + kmsKey);
+        }
+
+        try {
+            logger.debug("Generating and wrapping DEK for volume {} using KMS key {}", volume.getName(), kmsKey.getUuid());
+            long startTime = System.currentTimeMillis();
+
+            // Generate and wrap DEK using active KEK version
+            WrappedKey wrappedKey = kmsManager.generateVolumeKeyWithKek(kmsKey, callerAccountId);
+
+            // The wrapped key is already persisted by generateVolumeKeyWithKek, get its ID
+            KMSWrappedKeyVO wrappedKeyVO = kmsWrappedKeyDao.findByUuid(wrappedKey.getUuid());
+            if (wrappedKeyVO == null) {
+                throw new CloudRuntimeException("Failed to find persisted wrapped key: " + wrappedKey.getUuid());
+            }
+
+            // Set the wrapped key ID on the volume
+            volume.setKmsWrappedKeyId(wrappedKeyVO.getId());
+
+            long finishTime = System.currentTimeMillis();
+            logger.debug("Generating and persisting wrapped key took {} ms for volume: {}",
+                    (finishTime - startTime), volume.getName());
+
+            return _volsDao.persist(volume);
+
+        } catch (KMSException e) {
+            throw new CloudRuntimeException("KMS failure while setting up volume encryption: " + e.getMessage(), e);
+        }
+    }
     private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume, KMSKeyVO kmsKey, Long callerAccountId) {
         // If volume already has encryption set up, return it
         if (volume.getKmsWrappedKeyId() != null || volume.getPassphraseId() != null) {
             return volume;
         }
-
         if (kmsKey != null) {
-            // Determine caller account ID if not provided
-            if (callerAccountId == null) {
-                callerAccountId = volume.getAccountId();
-            }
-
-            // Validate permission
-            if (!kmsManager.hasPermission(callerAccountId, kmsKey)) {
-                throw new CloudRuntimeException("No permission to use KMS key: " + kmsKey);
-            }
-
-            try {
-                logger.debug("Generating and wrapping DEK for volume {} using KMS key {}", volume.getName(), kmsKey.getUuid());
-                long startTime = System.currentTimeMillis();
-
-                // Generate and wrap DEK using active KEK version
-                WrappedKey wrappedKey = kmsManager.generateVolumeKeyWithKek(kmsKey, callerAccountId);
-
-                // The wrapped key is already persisted by generateVolumeKeyWithKek, get its ID
-                KMSWrappedKeyVO wrappedKeyVO = kmsWrappedKeyDao.findByUuid(wrappedKey.getUuid());
-                if (wrappedKeyVO == null) {
-                    throw new CloudRuntimeException("Failed to find persisted wrapped key: " + wrappedKey.getUuid());
-                }
-
-                // Set the wrapped key ID on the volume
-                volume.setKmsWrappedKeyId(wrappedKeyVO.getId());
-
-                long finishTime = System.currentTimeMillis();
-                logger.debug("Generating and persisting wrapped key took {} ms for volume: {}",
-                        (finishTime - startTime), volume.getName());
-
-                return _volsDao.persist(volume);
-
-            } catch (KMSException e) {
-                throw new CloudRuntimeException("KMS failure while setting up volume encryption: " + e.getMessage(), e);
-            }
+            return setKmsKeyForVolumeEncryption(volume, kmsKey, callerAccountId);
         }
-
         // Legacy: passphrase-based encryption (fallback when KMS not enabled or KMS key not specified)
-        logger.debug("Creating passphrase for the volume: " + volume.getName());
+        return setPassphraseForVolumeEncryption(volume);
+    }
+
+    private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume) {
+        logger.debug("Creating passphrase for the volume: {}", volume.getName());
         long startTime = System.currentTimeMillis();
         PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
         volume.setPassphraseId(passphrase.getId());
         long finishTime = System.currentTimeMillis();
-        logger.debug("Creating and persisting passphrase took: " + (finishTime - startTime) + " ms for the volume: " + volume.toString());
+        logger.debug("Creating and persisting passphrase took: {} ms for the volume: {}", finishTime - startTime, volume.toString());
         return _volsDao.persist(volume);
     }
 

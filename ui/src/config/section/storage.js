@@ -224,7 +224,7 @@ export default {
         {
           api: 'migrateVolumesToKMS',
           icon: 'lock-outlined',
-          docHelp: 'adminguide/storage.html#lifecycle-operations',
+          docHelp: 'adminguide/kms.html#migrating-existing-volumes-to-kms',
           label: 'label.migrate.volume.to.kms',
           message: 'message.action.migrate.volume.to.kms',
           dataView: true,

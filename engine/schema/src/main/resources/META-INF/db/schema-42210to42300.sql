@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_hsm_profiles` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` VARCHAR(40) NOT NULL,
     `name` VARCHAR(255) NOT NULL,
-    `protocol` VARCHAR(32) NOT NULL COMMENT 'PKCS11, KMIP, AWS_KMS, etc.',
+    `protocol` VARCHAR(32) NOT NULL COMMENT 'Protocol for the HSM Profile',
 
     -- Scoping
     `account_id` BIGINT UNSIGNED COMMENT 'null = admin-provided (available to all accounts)',
@@ -129,9 +129,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_hsm_profiles` (
     `zone_id` BIGINT UNSIGNED COMMENT 'null = global scope',
 
     -- Metadata
-    `vendor_name` VARCHAR(64) COMMENT 'HSM vendor (Thales, AWS, SoftHSM, etc.)',
+    `vendor_name` VARCHAR(64) COMMENT 'HSM vendor',
     `enabled` BOOLEAN NOT NULL DEFAULT TRUE,
-    `system` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'System profile (globally available, root admin only)',
+    `is_public` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Public profile. Available to all accounts',
     `created` DATETIME NOT NULL,
     `removed` DATETIME,
 
@@ -159,7 +159,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_hsm_profile_details` (
 -- KMS Keys (Key Encryption Key Metadata)
 -- Account-scoped KEKs for envelope encryption
 CREATE TABLE IF NOT EXISTS `cloud`.`kms_keys` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Unique ID',
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID - user-facing identifier',
     `name` VARCHAR(255) NOT NULL COMMENT 'User-friendly name',
     `description` VARCHAR(1024) COMMENT 'User description',
@@ -182,13 +182,13 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_keys` (
     CONSTRAINT `fk_kms_keys__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_kms_keys__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_kms_keys__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_kms_keys__hsm_profile_id` FOREIGN KEY (`hsm_profile_id`) REFERENCES `kms_hsm_profiles`(`id`)
+    CONSTRAINT `fk_kms_keys__hsm_profile_id` FOREIGN KEY (`hsm_profile_id`) REFERENCES `kms_hsm_profiles`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KMS Key (KEK) metadata - account-scoped keys for envelope encryption';
 
 -- KMS KEK Versions (multiple KEKs per KMS key for gradual rotation)
 -- Supports multiple KEK versions per logical KMS key during rotation
 CREATE TABLE IF NOT EXISTS `cloud`.`kms_kek_versions` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Unique ID',
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID',
     `kms_key_id` BIGINT UNSIGNED NOT NULL COMMENT 'Reference to kms_keys table',
     `version_number` INT NOT NULL COMMENT 'Version number (1, 2, 3, ...)',
@@ -203,13 +203,13 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_kek_versions` (
     INDEX `idx_kms_key_status` (`kms_key_id`, `status`, `removed`),
     INDEX `idx_kek_label` (`kek_label`),
     CONSTRAINT `fk_kms_kek_versions__kms_key_id` FOREIGN KEY (`kms_key_id`) REFERENCES `kms_keys`(`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_kms_kek_versions__hsm_profile_id` FOREIGN KEY (`hsm_profile_id`) REFERENCES `kms_hsm_profiles`(`id`)
+    CONSTRAINT `fk_kms_kek_versions__hsm_profile_id` FOREIGN KEY (`hsm_profile_id`) REFERENCES `kms_hsm_profiles`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='KEK versions for a KMS key - supports gradual rotation';
 
 -- KMS Wrapped Keys (Data Encryption Keys)
 -- Generic table for wrapped DEKs - references kms_keys for metadata and kek_versions for specific KEK version
 CREATE TABLE IF NOT EXISTS `cloud`.`kms_wrapped_key` (
-    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Unique ID',
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `uuid` VARCHAR(40) NOT NULL COMMENT 'UUID',
     `kms_key_id` BIGINT UNSIGNED COMMENT 'Reference to kms_keys table',
     `kek_version_id` BIGINT UNSIGNED COMMENT 'Reference to kms_kek_versions table',

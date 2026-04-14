@@ -36,7 +36,7 @@ import org.apache.cloudstack.kms.KMSManager;
 import javax.inject.Inject;
 
 @APICommand(name = "rotateKMSKey",
-            description = "Rotates KEK by creating new version and scheduling gradual re-encryption",
+            description = "Rotates KMS key (KEK) by creating new version and scheduling gradual re-encryption",
             responseObject = AsyncJobResponse.class,
             since = "4.23.0",
             authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User},
@@ -123,6 +123,6 @@ public class RotateKMSKeyCmd extends BaseAsyncCmd {
 
     @Override
     public Long getApiResourceId() {
-        return id;
+        return getId();
     }
 }

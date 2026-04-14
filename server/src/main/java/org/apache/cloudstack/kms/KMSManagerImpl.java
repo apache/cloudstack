@@ -46,17 +46,17 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.kms.MigrateVolumesToKMSCmd;
 import org.apache.cloudstack.api.command.user.kms.CreateKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.DeleteKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.ListKMSKeysCmd;
 import org.apache.cloudstack.api.command.user.kms.RotateKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.UpdateKMSKeyCmd;
-import org.apache.cloudstack.api.command.user.kms.hsm.AddHSMProfileCmd;
+import org.apache.cloudstack.api.command.user.kms.hsm.CreateHSMProfileCmd;
 import org.apache.cloudstack.api.command.user.kms.hsm.DeleteHSMProfileCmd;
 import org.apache.cloudstack.api.command.user.kms.hsm.ListHSMProfilesCmd;
 import org.apache.cloudstack.api.command.user.kms.hsm.UpdateHSMProfileCmd;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.response.HSMProfileResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -196,6 +196,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_UNWRAP, eventDescription = "unwrapping key")
     public byte[] unwrapKey(Long wrappedKeyId) throws KMSException {
         KMSWrappedKeyVO wrappedVO = kmsWrappedKeyDao.findById(wrappedKeyId);
         if (wrappedVO == null) {
@@ -212,8 +213,14 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             if (version != null && version.getStatus() != KMSKekVersionVO.Status.Archived) {
                 try {
                     byte[] dek = getUnwrappedKey(wrappedVO, kmsKey, version);
-                    logger.debug("Successfully unwrapped key {} with KEK version {}", wrappedKeyId,
-                            version.getVersionNumber());
+
+                    CallContext.current().setEventResourceId(kmsKey.getId());
+                    CallContext.current().setEventResourceType(ApiCommandResourceType.KmsKey);
+                    CallContext.current().setEventDetails(String.format(
+                            "Unwrapped %s key (wrapped key uuid: %s) using KMS key: %s (uuid: %s) with KEK version %d",
+                            kmsKey.getPurpose().getName(), wrappedVO.getUuid(), kmsKey.getName(), kmsKey.getUuid(), version.getVersionNumber()));
+
+                    logger.debug("Successfully unwrapped key {} with KEK version {}", wrappedKeyId, version.getVersionNumber());
                     return dek;
                 } catch (Exception e) {
                     logger.warn("Failed to unwrap with version {}: {}", version.getVersionNumber(), e.getMessage());
@@ -226,8 +233,15 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         for (KMSKekVersionVO version : versions) {
             try {
                 byte[] dek = getUnwrappedKey(wrappedVO, kmsKey, version);
-                logger.info("Successfully unwrapped key {} with KEK version {} (fallback)", wrappedKeyId,
-                        version.getVersionNumber());
+
+                CallContext.current().setEventResourceId(kmsKey.getId());
+                CallContext.current().setEventResourceType(ApiCommandResourceType.KmsKey);
+                CallContext.current().setEventDetails(String.format(
+                        "Unwrapped %s key (wrapped key uuid: %s) using KMS key: %s (uuid: %s) with KEK version %d (fallback)",
+                        kmsKey.getPurpose().getName(), wrappedVO.getUuid(), kmsKey.getName(), kmsKey.getUuid(), version.getVersionNumber()));
+
+                logger.info("Successfully unwrapped key {} with KEK version {} (fallback)",
+                        wrappedKeyId, version.getVersionNumber());
                 return dek;
             } catch (Exception e) {
                 logger.debug("Failed to unwrap with version {}: {}", version.getVersionNumber(), e.getMessage());
@@ -249,8 +263,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_WRAP,
-                 eventDescription = "generating volume key with specified KEK")
+    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_WRAP, eventDescription = "generating key with specified KEK")
     public WrappedKey generateVolumeKeyWithKek(KMSKey kmsKey, Long callerAccountId) throws KMSException {
         if (kmsKey == null) {
             throw KMSException.kekNotFound("KMS key not found");
@@ -299,8 +312,14 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             throw handleKmsException(e);
         }
 
-        logger.debug("Generated volume key using KMS key {} with KEK version {}, wrapped key UUID: {}",
-                kmsKey, activeVersion.getVersionNumber(), wrappedKey.getUuid());
+        CallContext.current().setEventResourceId(kmsKey.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.KmsKey);
+        CallContext.current().setEventDetails(String.format(
+                "Generated %s key (wrapped key uuid: %s) using KMS key: %s (uuid: %s) with KEK version %d",
+                kmsKey.getPurpose().getName(), wrappedKey.getUuid(), kmsKey.getName(), kmsKey.getUuid(), activeVersion.getVersionNumber()));
+
+        logger.debug("Generated {} key using KMS key {} with KEK version {}, wrapped key UUID: {}",
+                kmsKey.getPurpose().getName(), kmsKey, activeVersion.getVersionNumber(), wrappedKey.getUuid());
         return wrappedKey;
     }
 
@@ -313,6 +332,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_CREATE, eventDescription = "creating user KMS key")
     public KMSKeyResponse createKMSKey(CreateKMSKeyCmd cmd) throws KMSException {
         Account caller = CallContext.current().getCallingAccount();
         Account targetAccount = accountManager.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(),
@@ -340,6 +360,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 keyPurpose,
                 bits,
                 cmd.getHsmProfileId());
+
+        CallContext.current().setEventResourceId(kmsKey.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.KmsKey);
+        CallContext.current().setEventDetails(String.format("Created KMS key: %s (uuid: %s)", kmsKey.getName(), kmsKey.getUuid()));
 
         return createKMSKeyResponse(kmsKey);
     }
@@ -383,7 +407,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         return response;
     }
 
-    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_CREATE, eventDescription = "creating user KMS key")
     KMSKey createUserKMSKey(Long accountId, Long domainId, Long zoneId,
             String name, String description, KeyPurpose purpose,
             Integer keyBits, long hsmProfileId) throws KMSException {
@@ -419,10 +442,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         logger.info("Created KMS key ({}) with initial KEK version {} for account {} in zone {} (profile: {})",
                 kmsKey, initialVersion.getVersionNumber(), accountId, zoneId, finalProfileId);
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), kmsKey.getAccountId(),
-                EventVO.LEVEL_INFO, EventTypes.EVENT_KMS_KEY_CREATE,
-                String.format("Created KMS key: %s", kmsKey.getUuid()),
-                kmsKey.getId(), ApiCommandResourceType.KmsKey.toString(), CallContext.current().getStartEventId());
         return kmsKey;
     }
 
@@ -505,6 +524,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         Account caller = CallContext.current().getCallingAccount();
         KMSKeyVO key = findKMSKeyAndCheckAccess(cmd.getId(), caller);
         KMSKey updatedKey = updateUserKMSKey(key, cmd.getName(), cmd.getDescription(), cmd.getEnabled());
+        CallContext.current().setEventDetails(String.format("Updated KMS key: %s (uuid: %s)", updatedKey.getName(), updatedKey.getUuid()));
         return createKMSKeyResponse(updatedKey);
     }
 
@@ -536,7 +556,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         Account caller = CallContext.current().getCallingAccount();
 
         KMSKeyVO key = findKMSKeyAndCheckAccess(cmd.getId(), caller);
-
+        CallContext.current().setEventResourceId(key.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.KmsKey);
+        CallContext.current().setEventDetails(String.format("Deleted KMS key: %s (uuid: %s)", key.getName(), key.getUuid()));
         deleteUserKMSKey(key);
         return new SuccessResponse();
     }
@@ -566,6 +588,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             } catch (Exception e) {
                 logger.warn("Failed to delete KEK {} (v{}) from provider during KMS key deletion: {}",
                         kekVersion.getKekLabel(), kekVersion.getVersionNumber(), e.getMessage());
+                ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                        key.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_KMS_KEY_DELETE, true,
+                        String.format("Failed to delete KEK %s from provider during KMS key deletion", kekVersion.getKekLabel()),
+                        key.getId(), ApiCommandResourceType.KmsKey.toString(), CallContext.current().getStartEventId());
             }
         }
 
@@ -574,7 +600,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_KMS_KEY_ROTATE, eventDescription = "rotating KMS key", async = true)
     public String rotateKMSKey(RotateKMSKeyCmd cmd) throws KMSException {
         Account caller = CallContext.current().getCallingAccount();
         Integer keyBits = cmd.getKeyBits();
@@ -609,17 +634,12 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 profile);
 
         KMSKekVersionVO newVersion = getActiveKekVersion(kmsKey.getId());
+        CallContext.current().setEventDetails(String.format("Rotated KMS key: %s (uuid: %s) from version %d to %d", kmsKey.getName(), kmsKey.getUuid(), currentActive.getVersionNumber(), newVersion.getVersionNumber()));
 
         logger.info("KMS key rotation initiated: {} -> new KEK version {} (UUID: {}). " +
                     "Background job will gradually rewrap {} wrapped key(s)",
                 kmsKey, newVersion.getVersionNumber(), newVersion.getUuid(),
                 kmsWrappedKeyDao.countByKmsKeyId(kmsKey.getId()));
-
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), kmsKey.getAccountId(),
-                EventVO.LEVEL_INFO, EventTypes.EVENT_KMS_KEY_ROTATE,
-                String.format("KMS key rotation completed for KMS key from version %d to version %d",
-                        currentActive.getVersionNumber(), newVersion.getVersionNumber()),
-                kmsKey.getId(), ApiCommandResourceType.KmsKey.toString(), CallContext.current().getStartEventId());
 
         return newVersion.getUuid();
     }
@@ -686,6 +706,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 } catch (KMSException ex) {
                     logger.error("Failed to delete orphaned KEK {} from provider {} after DB failure: {}",
                             newKekId, provider.getProviderName(), ex.getMessage());
+                    ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                            kmsKey.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_KMS_KEY_ROTATE, true,
+                            String.format("Failed to delete orphaned KEK %s from provider after DB rollback failure", newKekId),
+                            kmsKey.getId(), ApiCommandResourceType.KmsKey.toString(), CallContext.current().getStartEventId());
                 }
                 throw e;
             }
@@ -717,9 +741,6 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_MIGRATE_TO_KMS,
-                 eventDescription = "migrating volumes to KMS",
-                 async = true)
     public int migrateVolumesToKMS(MigrateVolumesToKMSCmd cmd) throws KMSException {
         Account caller = CallContext.current().getCallingAccount();
         Long zoneId = cmd.getZoneId();
@@ -826,6 +847,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         logger.info("Migration operation completed: {} total volumes processed, {} success, {} failures",
                 successCount + failureCount, successCount, failureCount);
 
+        CallContext.current().setEventDetails(String.format("Migrated %d volumes to KMS key: %s (uuid: %s). Success: %d, Failures: %d", successCount + failureCount, kmsKey.getName(), kmsKey.getUuid(), successCount, failureCount));
+
         return successCount;
     }
 
@@ -861,6 +884,11 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             volume.setKmsKeyId(kmsKey.getId());
             volume.setPassphraseId(null);
             volumeDao.update(volume.getId(), volume);
+
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                    kmsKey.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VOLUME_MIGRATE_TO_KMS, true,
+                    String.format("Successfully migrated volume encryption key to KMS key %s (v%d)", kmsKey.getUuid(), activeVersion.getVersionNumber()),
+                    volume.getId(), ApiCommandResourceType.Volume.toString(), CallContext.current().getStartEventId());
             return true;
         } finally {
             if (passphraseBytes != null) {
@@ -903,6 +931,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                             } catch (Exception e) {
                                 logger.warn("Failed to delete KEK {} from provider: {}",
                                         kekVersion.getKekLabel(), e.getMessage());
+                                ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                                        key.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_KMS_KEY_DELETE, true,
+                                        String.format("Failed to delete KEK %s from provider during account KMS cleanup", kekVersion.getKekLabel()),
+                                        key.getId(), ApiCommandResourceType.KmsKey.toString(), CallContext.current().getStartEventId());
                             }
                         }
                     }
@@ -938,7 +970,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_HSM_PROFILE_CREATE, eventDescription = "Adding HSM profile")
-    public HSMProfile addHSMProfile(AddHSMProfileCmd cmd) throws KMSException {
+    public HSMProfile addHSMProfile(CreateHSMProfileCmd cmd) throws KMSException {
         Account caller = CallContext.current().getCallingAccount();
 
         String protocol = cmd.getProtocol();
@@ -956,8 +988,8 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         Map<String, String> details = cmd.getDetails() != null ? cmd.getDetails() : new HashMap<>();
         provider.validateProfileConfig(details);
 
-        boolean isSystem = cmd.isSystem();
-        if (isSystem && !accountManager.isRootAdmin(caller.getId())) {
+        boolean isPublic = cmd.getIsPublic();
+        if (isPublic && !accountManager.isRootAdmin(caller.getId())) {
             throw new PermissionDeniedException("Only root admins can create system HSM profiles");
         }
 
@@ -974,7 +1006,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                 domainId,
                 cmd.getZoneId(),
                 cmd.getVendorName());
-        profile.setSystem(isSystem);
+        profile.setIsPublic(isPublic);
         profile = hsmProfileDao.persist(profile);
 
         if (cmd.getDetails() != null) {
@@ -990,10 +1022,9 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             }
         }
 
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(),
-                EventVO.LEVEL_INFO, EventTypes.EVENT_HSM_PROFILE_CREATE,
-                String.format("created HSM profile with id: %s, name: %s", profile.getUuid(), profile.getName()),
-                profile.getId(), ApiCommandResourceType.HsmProfile.toString(), CallContext.current().getStartEventId());
+        CallContext.current().setEventResourceId(profile.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.HsmProfile);
+        CallContext.current().setEventDetails(String.format("Created HSM profile: %s (uuid: %s)", profile.getName(), profile.getUuid()));
 
         return profile;
     }
@@ -1035,7 +1066,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             // profiles
             // If the profile is owned by the user, they should see full details even if it
             // is a system profile
-            boolean limited = profile.isSystem() && !isRootAdmin && !(cmd.getIsSystem() || cmd.listAll())
+            boolean limited = profile.getIsPublic() && !isRootAdmin && !(cmd.getIsSystem() || cmd.listAll())
                               && profile.getAccountId() != caller.getId();
             responses.add(createHSMProfileResponse(profile, limited));
         }
@@ -1055,7 +1086,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("protocol", sb.entity().getProtocol(), SearchCriteria.Op.EQ);
         sb.and("enabled", sb.entity().isEnabled(), SearchCriteria.Op.EQ);
-        sb.and("system", sb.entity().isSystem(), SearchCriteria.Op.EQ);
+        sb.and("system", sb.entity().getIsPublic(), SearchCriteria.Op.EQ);
         sb.done();
         return sb;
     }
@@ -1148,12 +1179,12 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         getKMSProvider(profile.getProtocol()).invalidateProfileCache(profile.getId());
         hsmProfileDetailsDao.deleteDetails(profile.getId());
+
+        CallContext.current().setEventResourceId(profile.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.HsmProfile);
+        CallContext.current().setEventDetails(String.format("Deleted HSM profile: %s (uuid: %s)", profile.getName(), profile.getUuid()));
+
         if (hsmProfileDao.remove(profile.getId())) {
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(),
-                    EventVO.LEVEL_INFO, EventTypes.EVENT_HSM_PROFILE_DELETE,
-                    String.format("Deleted HSM profile with id: %s, name: %s", profile.getUuid(), profile.getName()),
-                    profile.getId(), ApiCommandResourceType.HsmProfile.toString(),
-                    CallContext.current().getStartEventId());
             return true;
         }
         return false;
@@ -1175,10 +1206,10 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
 
         hsmProfileDao.update(profile.getId(), profile);
 
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), profile.getAccountId(),
-                EventVO.LEVEL_INFO, EventTypes.EVENT_HSM_PROFILE_UPDATE,
-                String.format("Updated HSM profile with id: %s, name: %s", profile.getUuid(), profile.getName()),
-                profile.getId(), ApiCommandResourceType.HsmProfile.toString(), CallContext.current().getStartEventId());
+        CallContext.current().setEventResourceId(profile.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.HsmProfile);
+        CallContext.current().setEventDetails(String.format("Updated HSM profile: %s (uuid: %s)", profile.getName(), profile.getUuid()));
+
         return profile;
     }
 
@@ -1192,7 +1223,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         response.setId(profile.getUuid());
         response.setName(profile.getName());
         response.setVendorName(profile.getVendorName());
-        response.setSystem(profile.isSystem());
+        response.setIsPublic(profile.getIsPublic());
 
         if (profile.getZoneId() != null) {
             DataCenterVO zone = dataCenterDao.findById(profile.getZoneId());
@@ -1245,7 +1276,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
      * For owned profiles: delegates to ACL checkAccess.
      */
     void checkHSMProfileAccess(Account caller, HSMProfileVO profile, boolean requireModifyAccess) {
-        if (profile.isSystem()) {
+        if (profile.getIsPublic()) {
             if (requireModifyAccess && !accountManager.isRootAdmin(caller.getId())) {
                 throw new PermissionDeniedException("Only root admins can modify system HSM profiles");
             }
@@ -1502,10 +1533,19 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
                     provider.deleteKek(oldVersion.getKekLabel());
                     logger.info("Deleted archived KEK {} (v{}) from provider {}",
                             oldVersion.getKekLabel(), oldVersion.getVersionNumber(), provider.getProviderName());
+
+                    ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                            kmsKey.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_KMS_KEY_DELETE, true,
+                            String.format("Deleted archived KEK %s from provider after all wrapped keys were rewrapped", oldVersion.getKekLabel()),
+                            kmsKey.getId(), ApiCommandResourceType.KmsKey.toString(), CallContext.current().getStartEventId());
                 }
             } catch (Exception e) {
                 logger.warn("Failed to delete archived KEK {} (v{}) from provider: {}",
                         oldVersion.getKekLabel(), oldVersion.getVersionNumber(), e.getMessage());
+                ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(),
+                        kmsKey.getAccountId(), EventVO.LEVEL_WARN, EventTypes.EVENT_KMS_KEY_DELETE, true,
+                        String.format("Failed to delete archived KEK %s from provider: %s", oldVersion.getKekLabel(), e.getMessage()),
+                        kmsKey.getId(), ApiCommandResourceType.KmsKey.toString(), CallContext.current().getStartEventId());
             }
 
             return;
@@ -1549,6 +1589,11 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
             wrappedKeyVO.setKekVersionId(newVersion.getId());
             wrappedKeyVO.setWrappedBlob(newWrapped.getWrappedKeyMaterial());
             kmsWrappedKeyDao.update(wrappedKeyVO.getId(), wrappedKeyVO);
+
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), kmsKey.getAccountId(),
+                    EventVO.LEVEL_INFO, EventTypes.EVENT_KMS_KEY_WRAP, true,
+                    String.format("Rewrapped %s key (wrapped key uuid: %s) with new KEK version %d", kmsKey.getPurpose().getName(), wrappedKeyVO.getUuid(), newVersion.getVersionNumber()),
+                    kmsKey.getId(), ApiCommandResourceType.KmsKey.toString(), CallContext.current().getStartEventId());
         } finally {
             if (dek != null) {
                 Arrays.fill(dek, (byte) 0);
@@ -1592,7 +1637,7 @@ public class KMSManagerImpl extends ManagerBase implements KMSManager, Pluggable
         cmdList.add(DeleteKMSKeyCmd.class);
         cmdList.add(RotateKMSKeyCmd.class);
         cmdList.add(MigrateVolumesToKMSCmd.class);
-        cmdList.add(AddHSMProfileCmd.class);
+        cmdList.add(CreateHSMProfileCmd.class);
         cmdList.add(ListHSMProfilesCmd.class);
         cmdList.add(UpdateHSMProfileCmd.class);
         cmdList.add(DeleteHSMProfileCmd.class);

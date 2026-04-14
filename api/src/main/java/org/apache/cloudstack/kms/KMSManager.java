@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.command.user.kms.CreateKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.DeleteKMSKeyCmd;
 import org.apache.cloudstack.api.command.user.kms.ListKMSKeysCmd;
 import org.apache.cloudstack.api.command.user.kms.UpdateKMSKeyCmd;
-import org.apache.cloudstack.api.command.user.kms.hsm.AddHSMProfileCmd;
+import org.apache.cloudstack.api.command.user.kms.hsm.CreateHSMProfileCmd;
 import org.apache.cloudstack.api.command.user.kms.hsm.DeleteHSMProfileCmd;
 import org.apache.cloudstack.api.command.user.kms.hsm.ListHSMProfilesCmd;
 import org.apache.cloudstack.api.command.user.kms.hsm.UpdateHSMProfileCmd;
@@ -231,7 +231,7 @@ public interface KMSManager extends Manager, Configurable {
      * @return the created HSM profile
      * @throws KMSException if addition fails
      */
-    HSMProfile addHSMProfile(AddHSMProfileCmd cmd) throws KMSException;
+    HSMProfile addHSMProfile(CreateHSMProfileCmd cmd) throws KMSException;
 
     /**
      * List HSM profiles
