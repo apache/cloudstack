@@ -360,6 +360,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             cmd.append("-os ").append(temporaryConvertFolder).append(" ");
             cmd.append("-of qcow2 ");
             cmd.append("-on ").append(temporaryConvertUuid).append(" ");
+
+            if (verboseModeEnabled) {
+                cmd.append("-v ");
+            }
+
             if (StringUtils.isNotBlank(extraParams)) {
                 cmd.append(extraParams).append(" ");
             }
