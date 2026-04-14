@@ -1085,6 +1085,11 @@ export default {
         }
         getAPI('listStoragePools', params).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
+          // Keep selected pool state aligned when the value is auto-populated by v-model.
+          if (this.form.convertstoragepoolid) {
+            const poolExists = this.storagePoolsForConversion.some(pool => pool.id === this.form.convertstoragepoolid)
+            this.selectedStoragePoolForConversion = poolExists ? this.form.convertstoragepoolid : null
+          }
         })
       } else if (this.selectedStorageOptionForConversion === 'local') {
         const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
@@ -1094,6 +1099,10 @@ export default {
           status: 'Up'
         }).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
+          if (this.form.convertstoragepoolid) {
+            const poolExists = this.storagePoolsForConversion.some(pool => pool.id === this.form.convertstoragepoolid)
+            this.selectedStoragePoolForConversion = poolExists ? this.form.convertstoragepoolid : null
+          }
         })
       }
     },
@@ -1290,8 +1299,9 @@ export default {
           if (this.selectedKvmHostForImporting) {
             params.importinstancehostid = this.selectedKvmHostForImporting
           }
-          if (this.selectedStoragePoolForConversion) {
-            params.convertinstancepoolid = this.selectedStoragePoolForConversion
+          const selectedPoolForConversion = values.convertstoragepoolid || this.selectedStoragePoolForConversion
+          if (selectedPoolForConversion) {
+            params.convertinstancepoolid = selectedPoolForConversion
           }
           if (this.vmwareToKvmExtraParams) {
             params.extraparams = this.vmwareToKvmExtraParams
