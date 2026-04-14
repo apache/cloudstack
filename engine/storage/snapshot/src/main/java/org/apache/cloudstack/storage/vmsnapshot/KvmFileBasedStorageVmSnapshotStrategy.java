@@ -28,9 +28,13 @@ import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotAnswer;
 import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotCommand;
 import com.cloud.agent.api.storage.SnapshotMergeTreeTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Resource;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
@@ -46,9 +50,11 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.BackupOfferingVO;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -59,10 +65,12 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.snapshot.SnapshotObject;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -76,6 +84,7 @@ import java.util.stream.Collectors;
 public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStrategy {
 
     private static final List<Storage.StoragePoolType> supportedStoragePoolTypes = List.of(Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.SharedMountPoint);
+    private static final String KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM = "kvmFileBasedStorageSnapshotNvram";
 
     @Inject
     protected SnapshotDataStoreDao snapshotDataStoreDao;
@@ -85,6 +94,15 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
     @Inject
     protected BackupOfferingDao backupOfferingDao;
+
+    @Inject
+    protected VMInstanceDetailsDao vmInstanceDetailsDao;
+
+    @Inject
+    protected HostDetailsDao hostDetailsDao;
+
+    @Inject
+    protected AlertManager alertManager;
 
     @Override
     public VMSnapshot takeVMSnapshot(VMSnapshot vmSnapshot) {
@@ -117,6 +135,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
         VMSnapshotVO vmSnapshotBeingDeleted = (VMSnapshotVO) vmSnapshot;
         Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshotBeingDeleted.getVmId());
+        validateHostSupportsNvramSidecarCleanup(vmSnapshotBeingDeleted, hostId, "delete");
         long virtualSize = 0;
         boolean isCurrent = vmSnapshotBeingDeleted.getCurrent();
 
@@ -124,6 +143,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshotBeingDeleted.getVmId());
         List<VMSnapshotVO> snapshotChildren = vmSnapshotDao.listByParentAndStateIn(vmSnapshotBeingDeleted.getId(), VMSnapshot.State.Ready, VMSnapshot.State.Hidden);
+        PrimaryDataStoreTO nvramPrimaryDataStore = getPrimaryDataStoreForNvramCleanup(vmSnapshotBeingDeleted, volumeTOs);
 
         long realSize = getVMSnapshotRealSize(vmSnapshotBeingDeleted);
         int numberOfChildren = snapshotChildren.size();
@@ -157,6 +177,8 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             return true;
         }
 
+        deleteNvramSnapshotIfNeeded(vmSnapshotBeingDeleted, hostId, nvramPrimaryDataStore);
+
         transitStateWithoutThrow(vmSnapshotBeingDeleted, VMSnapshot.Event.OperationSucceeded);
 
         vmSnapshotDetailsDao.removeDetails(vmSnapshotBeingDeleted.getId());
@@ -176,6 +198,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         VMSnapshotVO vmSnapshotBeingReverted = (VMSnapshotVO) vmSnapshot;
         Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshotBeingReverted.getVmId());
+        validateHostSupportsUefiNvramAwareDiskOnlySnapshots(hostId, userVm, "revert");
 
         transitStateWithoutThrow(vmSnapshotBeingReverted, VMSnapshot.Event.RevertRequested);
 
@@ -184,7 +207,9 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
                 .map(snapshot -> (SnapshotObjectTO) snapshotDataFactory.getSnapshot(snapshot.getSnapshotId(), snapshot.getDataStoreId(), DataStoreRole.Primary).getTO())
                 .collect(Collectors.toList());
 
-        RevertDiskOnlyVmSnapshotCommand revertDiskOnlyVMSnapshotCommand = new RevertDiskOnlyVmSnapshotCommand(volumeSnapshotTos, userVm.getName());
+        RevertDiskOnlyVmSnapshotCommand revertDiskOnlyVMSnapshotCommand =
+                new RevertDiskOnlyVmSnapshotCommand(volumeSnapshotTos, userVm.getName(), userVm.getUuid(), isUefiVm(userVm),
+                        getNvramSnapshotPath(vmSnapshotBeingReverted));
         Answer answer = agentMgr.easySend(hostId, revertDiskOnlyVMSnapshotCommand);
 
         if (answer == null || !answer.getResult()) {
@@ -202,6 +227,11 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
             volumeDao.update(volumeVO.getId(), volumeVO);
             publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_REVERT, vmSnapshotBeingReverted, userVm, volumeObjectTo);
+        }
+
+        if (isUefiVm(userVm)) {
+            userVm.setLastHostId(hostId);
+            userVmDao.update(userVm.getId(), userVm);
         }
 
         transitStateWithoutThrow(vmSnapshotBeingReverted, VMSnapshot.Event.OperationSucceeded);
@@ -248,6 +278,8 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             return;
         }
 
+        validateHostSupportsNvramSidecarCleanup(oldParent, hostId, "clean up");
+        PrimaryDataStoreTO nvramPrimaryDataStore = getPrimaryDataStoreForNvramCleanup(oldParent, volumeTOs);
         List<SnapshotVO> snapshotVos;
 
         if (oldParent.getCurrent()) {
@@ -275,6 +307,8 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             snapshotVO.setState(Snapshot.State.Destroyed);
             snapshotDao.update(snapshotVO.getId(), snapshotVO);
         }
+
+        deleteNvramSnapshotIfNeeded(oldParent, hostId, nvramPrimaryDataStore);
 
         vmSnapshotDetailsDao.removeDetails(oldParent.getId());
 
@@ -347,12 +381,13 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
     }
 
     private List<SnapshotVO> deleteSnapshot(VMSnapshotVO vmSnapshotVO, Long hostId) {
+        validateHostSupportsNvramSidecarCleanup(vmSnapshotVO, hostId, "delete");
         List<SnapshotDataStoreVO> volumeSnapshots = getVolumeSnapshotsAssociatedWithVmSnapshot(vmSnapshotVO);
         List<DataTO> volumeSnapshotTOList = volumeSnapshots.stream()
                 .map(snapshotDataStoreVO -> snapshotDataFactory.getSnapshot(snapshotDataStoreVO.getSnapshotId(), snapshotDataStoreVO.getDataStoreId(), DataStoreRole.Primary).getTO())
                 .collect(Collectors.toList());
 
-        DeleteDiskOnlyVmSnapshotCommand deleteSnapshotCommand = new DeleteDiskOnlyVmSnapshotCommand(volumeSnapshotTOList);
+        DeleteDiskOnlyVmSnapshotCommand deleteSnapshotCommand = new DeleteDiskOnlyVmSnapshotCommand(volumeSnapshotTOList, getNvramSnapshotPath(vmSnapshotVO));
         Answer answer = agentMgr.easySend(hostId, deleteSnapshotCommand);
         if (answer == null || !answer.getResult()) {
             logger.error("Failed to delete VM snapshot [{}] due to {}.", vmSnapshotVO.getUuid(), answer != null ? answer.getDetails() : "Communication failure");
@@ -366,6 +401,21 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             snapshotVOList.add(snapshotDao.findById(snapshotDataStoreVO.getSnapshotId()));
         }
         return snapshotVOList;
+    }
+
+    protected void deleteNvramSnapshotIfNeeded(VMSnapshotVO vmSnapshotVO, Long hostId, PrimaryDataStoreTO primaryDataStore) {
+        String nvramSnapshotPath = getNvramSnapshotPath(vmSnapshotVO);
+        if (StringUtils.isBlank(nvramSnapshotPath) || primaryDataStore == null) {
+            return;
+        }
+
+        validateHostSupportsNvramSidecarCleanup(vmSnapshotVO, hostId, "delete");
+        DeleteDiskOnlyVmSnapshotCommand deleteSnapshotCommand = new DeleteDiskOnlyVmSnapshotCommand(List.of(), nvramSnapshotPath, primaryDataStore);
+        Answer answer = agentMgr.easySend(hostId, deleteSnapshotCommand);
+        if (answer == null || !answer.getResult()) {
+            logger.warn("Failed to delete the NVRAM sidecar of VM snapshot [{}] due to {}.", vmSnapshotVO.getUuid(),
+                    answer != null ? answer.getDetails() : "communication failure");
+        }
     }
 
     private List<SnapshotVO> mergeSnapshots(VMSnapshotVO vmSnapshotVO, VMSnapshotVO childSnapshot, UserVmVO userVm, List<VolumeObjectTO> volumeObjectTOS, Long hostId) {
@@ -471,6 +521,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         logger.info("Starting disk-only VM snapshot process for VM [{}].", userVm.getUuid());
 
         Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
+        validateHostSupportsUefiNvramAwareDiskOnlySnapshots(hostId, userVm, "create");
         VMSnapshotVO vmSnapshotVO = (VMSnapshotVO) vmSnapshot;
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
 
@@ -493,14 +544,18 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         VMSnapshotTO target = new VMSnapshotTO(vmSnapshot.getId(), vmSnapshot.getName(), vmSnapshot.getType(), null, vmSnapshot.getDescription(), false, parentSnapshotTo, quiesceVm);
 
-        CreateDiskOnlyVmSnapshotCommand ccmd = new CreateDiskOnlyVmSnapshotCommand(userVm.getInstanceName(), target, volumeTOs, null, userVm.getState());
+        CreateDiskOnlyVmSnapshotCommand ccmd =
+                new CreateDiskOnlyVmSnapshotCommand(userVm.getInstanceName(), userVm.getUuid(), target, volumeTOs, null, userVm.getState(), isUefiVm(userVm));
 
         logger.info("Sending disk-only VM snapshot creation of VM Snapshot [{}] command for host [{}].", vmSnapshot.getUuid(), hostId);
         Answer answer = agentMgr.easySend(hostId, ccmd);
 
         if (answer != null && answer.getResult()) {
             CreateDiskOnlyVmSnapshotAnswer createDiskOnlyVMSnapshotAnswer = (CreateDiskOnlyVmSnapshotAnswer) answer;
-            return processCreateVmSnapshotAnswer(vmSnapshot, volumeInfoToSnapshotObjectMap, createDiskOnlyVMSnapshotAnswer, userVm, vmSnapshotVO, virtualSize, parentSnapshotVo);
+            VMSnapshot createdVmSnapshot = processCreateVmSnapshotAnswer(vmSnapshot, volumeInfoToSnapshotObjectMap, createDiskOnlyVMSnapshotAnswer, userVm, vmSnapshotVO,
+                    virtualSize, parentSnapshotVo);
+            notifyGuestRecoveryIssueIfNeeded(createDiskOnlyVMSnapshotAnswer, userVm, vmSnapshotVO);
+            return createdVmSnapshot;
         }
 
         logger.error("Disk-only VM snapshot for VM [{}] failed{}.", userVm.getUuid(), answer != null ? " due to" + answer.getDetails() : "");
@@ -539,6 +594,14 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             vmSnapshotDetailsDao.persist(new VMSnapshotDetailsVO(vmSnapshot.getId(), KVM_FILE_BASED_STORAGE_SNAPSHOT, String.valueOf(snapshot.getId()), true));
 
             publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_CREATE, vmSnapshot, userVm, (VolumeObjectTO) volumeInfo.getTO());
+        }
+
+        if (StringUtils.isNotBlank(answer.getNvramSnapshotPath())) {
+            vmSnapshotDetailsDao.addDetail(vmSnapshot.getId(), KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM, answer.getNvramSnapshotPath(), false);
+        } else if (isUefiVm(userVm)) {
+            logger.warn("Disk-only snapshot [{}] for UEFI VM [{}] was created without an NVRAM sidecar and cannot be safely reverted. "
+                    + "Upgrade the KVM agent and take a new snapshot.",
+                    vmSnapshot.getUuid(), userVm.getUuid());
         }
 
         vmSnapshotVO.setCurrent(true);
@@ -649,6 +712,101 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             realSize += snapshot.getPhysicalSize();
         }
         return realSize;
+    }
+
+    protected boolean isUefiVm(UserVm userVm) {
+        return vmInstanceDetailsDao.findDetail(userVm.getId(), ApiConstants.BootType.UEFI.toString()) != null;
+    }
+
+    protected PrimaryDataStoreTO getRootVolumePrimaryDataStore(List<VolumeObjectTO> volumeTOs) {
+        return (PrimaryDataStoreTO) volumeTOs.stream()
+                .filter(volumeObjectTO -> Volume.Type.ROOT.equals(volumeObjectTO.getVolumeType()))
+                .findFirst()
+                .orElseThrow(() -> new CloudRuntimeException("Failed to locate the root volume while handling the VM snapshot."))
+                .getDataStore();
+    }
+
+    protected PrimaryDataStoreTO getRootVolumePrimaryDataStoreForCleanup(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> volumeTOs) {
+        try {
+            return getRootVolumePrimaryDataStore(volumeTOs);
+        } catch (CloudRuntimeException e) {
+            logger.warn("Failed to locate the root volume while cleaning up the NVRAM sidecar for VM snapshot [{}].", vmSnapshot.getUuid(), e);
+            return null;
+        }
+    }
+
+    protected PrimaryDataStoreTO getPrimaryDataStoreForNvramCleanup(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> volumeTOs) {
+        PrimaryDataStoreTO rootSnapshotPrimaryDataStore = getRootSnapshotPrimaryDataStoreForCleanup(vmSnapshot);
+        return rootSnapshotPrimaryDataStore != null ? rootSnapshotPrimaryDataStore : getRootVolumePrimaryDataStoreForCleanup(vmSnapshot, volumeTOs);
+    }
+
+    protected PrimaryDataStoreTO getRootSnapshotPrimaryDataStoreForCleanup(VMSnapshotVO vmSnapshot) {
+        try {
+            return (PrimaryDataStoreTO) getVolumeSnapshotsAssociatedWithVmSnapshot(vmSnapshot).stream()
+                    .map(snapshotDataStoreVO -> (SnapshotObjectTO) snapshotDataFactory.getSnapshot(snapshotDataStoreVO.getSnapshotId(),
+                            snapshotDataStoreVO.getDataStoreId(), DataStoreRole.Primary).getTO())
+                    .filter(snapshotObjectTO -> Volume.Type.ROOT.equals(snapshotObjectTO.getVolume().getVolumeType()))
+                    .findFirst()
+                    .orElseThrow(() -> new CloudRuntimeException("Failed to locate the root volume snapshot while handling the VM snapshot."))
+                    .getDataStore();
+        } catch (CloudRuntimeException e) {
+            logger.warn("Failed to locate the root volume snapshot while cleaning up the NVRAM sidecar for VM snapshot [{}].", vmSnapshot.getUuid(), e);
+            return null;
+        }
+    }
+
+    protected String getNvramSnapshotPath(VMSnapshotVO vmSnapshot) {
+        VMSnapshotDetailsVO nvramDetail = vmSnapshotDetailsDao.findDetail(vmSnapshot.getId(), KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM);
+        return nvramDetail != null ? nvramDetail.getValue() : null;
+    }
+
+    protected void validateHostSupportsUefiNvramAwareDiskOnlySnapshots(Long hostId, UserVm userVm, String operation) {
+        if (!isUefiVm(userVm)) {
+            return;
+        }
+
+        if (!isHostCapabilityEnabled(hostId, Host.HOST_UEFI_ENABLE)) {
+            throw new CloudRuntimeException(String.format("Cannot %s a disk-only snapshot for UEFI VM [%s] on host [%s] because the host does not advertise "
+                    + "UEFI support. Ensure the host is configured with UEFI support and retry.", operation, userVm.getUuid(), hostId));
+        }
+
+        if (!isHostCapabilityEnabled(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM)) {
+            throw new CloudRuntimeException(String.format("Cannot %s a disk-only snapshot for UEFI VM [%s] on host [%s] because the KVM agent does not advertise "
+                    + "NVRAM-aware disk-only snapshot support. Upgrade the host and retry.", operation, userVm.getUuid(), hostId));
+        }
+    }
+
+    protected boolean isHostCapabilityEnabled(Long hostId, String capabilityName) {
+        DetailVO hostCapability = hostDetailsDao.findDetail(hostId, capabilityName);
+        return hostCapability != null && Boolean.parseBoolean(hostCapability.getValue());
+    }
+
+    protected void validateHostSupportsNvramSidecarCleanup(VMSnapshotVO vmSnapshotVO, Long hostId, String operation) {
+        if (StringUtils.isBlank(getNvramSnapshotPath(vmSnapshotVO))) {
+            return;
+        }
+
+        if (!isHostCapabilityEnabled(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM)) {
+            throw new CloudRuntimeException(String.format("Cannot %s VM snapshot [%s] on host [%s] because the KVM agent does not advertise "
+                    + "NVRAM-aware disk-only snapshot support and the snapshot has an NVRAM sidecar that must be cleaned up. Upgrade the host and retry.",
+                    operation, vmSnapshotVO.getUuid(), hostId));
+        }
+    }
+
+    protected void notifyGuestRecoveryIssueIfNeeded(CreateDiskOnlyVmSnapshotAnswer answer, UserVm userVm, VMSnapshotVO vmSnapshot) {
+        if (StringUtils.isBlank(answer.getDetails())) {
+            return;
+        }
+
+        String subject = String.format("Disk-only VM snapshot [%s] completed with guest recovery warnings", vmSnapshot.getUuid());
+        String message = String.format("Disk-only VM snapshot [%s] for UEFI VM [%s] completed, but post-snapshot guest recovery reported: %s",
+                vmSnapshot.getUuid(), userVm.getUuid(), answer.getDetails());
+        logger.error(message);
+        try {
+            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_VM_SNAPSHOT, userVm.getDataCenterId(), userVm.getPodIdToDeployIn(), subject, message);
+        } catch (Exception e) {
+            logger.warn("Failed to send post-snapshot guest recovery alert for VM snapshot [{}].", vmSnapshot.getUuid(), e);
+        }
     }
 
     /**
