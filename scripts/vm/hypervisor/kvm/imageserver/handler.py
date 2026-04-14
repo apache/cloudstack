@@ -24,7 +24,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs
 
 from .backends import NbdBackend, create_backend
-from .concurrency import ConcurrencyManager
 from .config import TransferRegistry
 from .constants import CHUNK_SIZE, MAX_PARALLEL_READS, MAX_PARALLEL_WRITES, MAX_PATCH_JSON_SIZE
 from .util import is_fallback_dirty_response, json_bytes, now_s
@@ -38,14 +37,13 @@ class Handler(BaseHTTPRequestHandler):
     All backend I/O is delegated to ImageBackend implementations via the
     create_backend() factory.
 
-    Class-level attributes _concurrency and _registry are injected
+    Class-level attribute _registry is injected
     by the server at startup (see server.py / make_handler()).
     """
 
     server_version = "cloudstack-image-server/1.0"
     server_protocol = "HTTP/1.1"
 
-    _concurrency: ConcurrencyManager
     _registry: TransferRegistry
 
     _CONTENT_RANGE_RE = re.compile(r"^bytes\s+(\d+)-(\d+)/(?:\*|\d+)$")
@@ -493,10 +491,6 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_get_image(
         self, image_id: str, cfg: Dict[str, Any], range_header: Optional[str]
     ) -> None:
-        if not self._concurrency.acquire_read(image_id):
-            self._send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "too many parallel reads")
-            return
-
         start = now_s()
         bytes_sent = 0
         try:
@@ -564,7 +558,6 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 pass
         finally:
-            self._concurrency.release_read(image_id)
             dur = now_s() - start
             logging.info(
                 "GET end image_id=%s bytes=%d duration_s=%.3f", image_id, bytes_sent, dur
@@ -573,10 +566,6 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_put_image(
         self, image_id: str, cfg: Dict[str, Any], content_length: int, flush: bool
     ) -> None:
-        if not self._concurrency.acquire_write(image_id):
-            self._send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "too many parallel writes")
-            return
-
         start = now_s()
         bytes_written = 0
         try:
@@ -596,7 +585,6 @@ class Handler(BaseHTTPRequestHandler):
             logging.error("PUT error image_id=%s err=%r", image_id, e)
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
-            self._concurrency.release_write(image_id)
             dur = now_s() - start
             logging.info(
                 "PUT end image_id=%s bytes=%d duration_s=%.3f", image_id, bytes_written, dur
@@ -610,10 +598,6 @@ class Handler(BaseHTTPRequestHandler):
         content_length: int,
         flush: bool,
     ) -> None:
-        if not self._concurrency.acquire_write(image_id):
-            self._send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "too many parallel writes")
-            return
-
         start = now_s()
         bytes_written = 0
         try:
@@ -650,7 +634,6 @@ class Handler(BaseHTTPRequestHandler):
             logging.error("PUT range error image_id=%s err=%r", image_id, e)
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
-            self._concurrency.release_write(image_id)
             dur = now_s() - start
             logging.info(
                 "PUT range end image_id=%s bytes=%d duration_s=%.3f flush=%s",
@@ -725,10 +708,6 @@ class Handler(BaseHTTPRequestHandler):
         size: int,
         flush: bool,
     ) -> None:
-        if not self._concurrency.acquire_write(image_id):
-            self._send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "too many parallel writes")
-            return
-
         start = now_s()
         try:
             logging.info(
@@ -749,7 +728,6 @@ class Handler(BaseHTTPRequestHandler):
             logging.error("PATCH zero error image_id=%s err=%r", image_id, e)
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
-            self._concurrency.release_write(image_id)
             dur = now_s() - start
             logging.info("PATCH zero end image_id=%s duration_s=%.3f", image_id, dur)
 
@@ -760,10 +738,6 @@ class Handler(BaseHTTPRequestHandler):
         range_header: str,
         content_length: int,
     ) -> None:
-        if not self._concurrency.acquire_write(image_id):
-            self._send_error_json(HTTPStatus.SERVICE_UNAVAILABLE, "too many parallel writes")
-            return
-
         start = now_s()
         bytes_written = 0
         try:
@@ -807,7 +781,6 @@ class Handler(BaseHTTPRequestHandler):
             logging.error("PATCH range error image_id=%s err=%r", image_id, e)
             self._send_error_json(HTTPStatus.INTERNAL_SERVER_ERROR, "backend error")
         finally:
-            self._concurrency.release_write(image_id)
             dur = now_s() - start
             logging.info(
                 "PATCH range end image_id=%s bytes=%d duration_s=%.3f",

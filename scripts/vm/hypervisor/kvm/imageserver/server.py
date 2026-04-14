@@ -33,7 +33,6 @@ except ImportError:
     class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):  # type: ignore[no-redef]
         pass
 
-from .concurrency import ConcurrencyManager
 from .config import TransferRegistry, validate_transfer_config
 from .constants import (
     CONTROL_RECV_BUFFER,
@@ -42,14 +41,11 @@ from .constants import (
     CONTROL_SOCKET_PERMISSIONS,
     DEFAULT_HTTP_PORT,
     DEFAULT_LISTEN_ADDRESS,
-    MAX_PARALLEL_READS,
-    MAX_PARALLEL_WRITES,
 )
 from .handler import Handler
 
 
 def make_handler(
-    concurrency: ConcurrencyManager,
     registry: TransferRegistry,
 ) -> Type[Handler]:
     """
@@ -60,7 +56,6 @@ def make_handler(
     """
 
     class ConfiguredHandler(Handler):
-        _concurrency = concurrency
         _registry = registry
 
     return ConfiguredHandler
@@ -186,8 +181,7 @@ def main() -> None:
     )
 
     registry = TransferRegistry()
-    concurrency = ConcurrencyManager(MAX_PARALLEL_READS, MAX_PARALLEL_WRITES)
-    handler_cls = make_handler(concurrency, registry)
+    handler_cls = make_handler(registry)
 
     ctrl_thread = threading.Thread(
         target=_control_listener,
