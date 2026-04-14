@@ -1065,11 +1065,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find patch.sh");
         }
 
-        heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
-        if (heartBeatPath == null) {
-            throw new ConfigurationException("Unable to find kvmheartbeat.sh");
-        }
-
         createVmPath = Script.findScript(storageScriptsDir, "createvm.sh");
         if (createVmPath == null) {
             throw new ConfigurationException("Unable to find the createvm.sh");
@@ -1332,7 +1327,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String[] info = NetUtils.getNetworkParams(privateNic);
 
-        kvmhaMonitor = new KVMHAMonitor(null, info[0], heartBeatPath);
+        kvmhaMonitor = new KVMHAMonitor(null, info[0]);
         final Thread ha = new Thread(kvmhaMonitor);
         ha.start();
 
@@ -4849,6 +4844,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 LOGGER.trace("Ignoring libvirt error.", e);
             }
         }
+    }
+
+    public InterfaceDef getInterface(final Connect conn, final String vmName, final String macAddress) {
+        List<InterfaceDef> interfaces = getInterfaces(conn, vmName);
+        return interfaces.stream().filter(interfaceDef -> interfaceDef.getMacAddress().equals(macAddress))
+                .findFirst().orElseThrow(() -> new CloudRuntimeException(String.format("Unable to find NIC with MAC address %s.", macAddress)));
     }
 
     public List<DiskDef> getDisks(final Connect conn, final String vmName) {

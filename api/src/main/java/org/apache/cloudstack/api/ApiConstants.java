@@ -20,6 +20,7 @@ public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
     public static final String ACCOUNT_NAME = "accountname";
+    public static final String ACCOUNT_STATE_TO_SHOW = "accountstatetoshow";
     public static final String ACCOUNT_TYPE = "accounttype";
     public static final String ACCOUNT_ID = "accountid";
     public static final String ACCOUNT_IDS = "accountids";
@@ -508,6 +509,7 @@ public class ApiConstants {
     public static final String REPAIR = "repair";
     public static final String REPETITION_ALLOWED = "repetitionallowed";
     public static final String REQUIRES_HVM = "requireshvm";
+    public static final String RESERVED_RESOURCE_DETAILS = "reservedresourcedetails";
     public static final String RESOURCES = "resources";
     public static final String RESOURCE_COUNT = "resourcecount";
     public static final String RESOURCE_NAME = "resourcename";

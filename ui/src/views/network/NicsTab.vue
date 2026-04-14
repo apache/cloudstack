@@ -54,6 +54,13 @@
           icon="environment-outlined"
           :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
           @onClick="onAcquireSecondaryIPAddress(record)" />
+        <tooltip-button
+          v-if="resource.hypervisor === 'KVM'"
+          tooltipPlacement="bottom"
+          :tooltip="$t('label.edit.nic')"
+          icon="edit-outlined"
+          :disabled="(!('updateVmNic' in $store.getters.apis))"
+          @onClick="onUpdateNic(record)" />
         <a-popconfirm
           :title="$t('message.network.removenic')"
           @confirm="removeNIC(record.nic)"
@@ -195,7 +202,7 @@
       <a-divider />
       <div v-ctrl-enter="submitSecondaryIP">
         <div class="modal-form">
-          <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
+          <p class="modal-form__label--no-margin">{{ $t('label.publicip') }}:</p>
           <a-select
             v-if="editNicResource.type==='Shared'"
             v-model:value="newSecondaryIp"
@@ -247,6 +254,31 @@
         </a-list-item>
       </a-list>
     </a-modal>
+
+    <a-modal
+      :visible="showUpdateNicModal"
+      :title="$t('label.edit.nic')"
+      :maskClosable="false"
+      :closable="true"
+      :footer="null"
+      @cancel="closeModals"
+    >
+      {{ $t('message.network.update.nic') }}
+
+      <a-form
+        @finish="submitUpdateNic"
+        v-ctrl-enter="submitUpdateNic">
+        <a-form-item name="linkstate" ref="linkstate">
+          <p class="modal-form__label">{{ $t('state.enabled') }}:</p>
+          <a-switch v-model:checked="editNicStateValue" @change="val => { editNicStateValue = val }" />
+        </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="closeModals">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="submitUpdateNic">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
+    </a-modal>
   </a-spin>
 </template>
 
@@ -283,6 +315,7 @@ export default {
       showAddNetworkModal: false,
       showUpdateIpModal: false,
       showSecondaryIpModal: false,
+      showUpdateNicModal: false,
       addNetworkData: {
         allNetworks: [],
         network: '',
@@ -293,6 +326,7 @@ export default {
       editIpAddressNic: '',
       editIpAddressValue: '',
       editNetworkId: '',
+      editNicStateValue: false,
       secondaryIPs: [],
       selectedNicId: '',
       newSecondaryIp: '',
@@ -365,6 +399,7 @@ export default {
       this.showAddNetworkModal = false
       this.showUpdateIpModal = false
       this.showSecondaryIpModal = false
+      this.showUpdateNicModal = false
       this.addNetworkData.network = ''
       this.addNetworkData.ipaddress = ''
       this.addNetworkData.macaddress = ''
@@ -391,6 +426,11 @@ export default {
       this.editNicResource = record.nic
       this.editNetworkId = record.nic.networkid
       this.fetchSecondaryIPs(record.nic.id)
+    },
+    onUpdateNic (record) {
+      this.editNicResource = record.nic
+      this.editNicStateValue = record.nic.enabled
+      this.showUpdateNicModal = true
     },
     submitAddNetwork () {
       if (this.loadingNic) return
@@ -617,12 +657,46 @@ export default {
         this.loadingNic = false
         this.fetchSecondaryIPs(this.selectedNicId)
       })
+    },
+    submitUpdateNic () {
+      if (this.loadingNic) return
+      this.loadingNic = true
+      this.showUpdateNicModal = false
+      const params = {
+        nicId: this.editNicResource.id,
+        enabled: this.editNicStateValue
+      }
+      postAPI('updateVmNic', params).then(response => {
+        this.$pollJob({
+          jobId: response.updatevmnicresponse.jobid,
+          successMessage: this.$t('message.success.update.nic'),
+          successMethod: () => {
+            this.loadingNic = false
+            this.closeModals()
+          },
+          errorMessage: this.$t('label.error'),
+          errorMethod: () => {
+            this.loadingNic = false
+            this.closeModals()
+          },
+          loadingMessage: this.$t('message.update.nic.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.loadingNic = false
+            this.closeModals()
+            this.$emit('refresh')
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+        this.loadingNic = false
+      })
     }
   }
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .modal-form {
   display: flex;
   flex-direction: column;
@@ -634,6 +708,7 @@ export default {
 
     &--no-margin {
       margin-top: 0;
+      font-weight: bold;
     }
   }
 }
