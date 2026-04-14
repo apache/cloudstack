@@ -27,6 +27,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.secstorage.HeuristicVO;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.heuristics.presetvariables.PresetVariables;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.logging.log4j.Logger;
@@ -65,6 +66,9 @@ public class HeuristicRuleHelperTest {
     DataStore dataStoreMock;
 
     @Mock
+    TemplateDataStoreDao templateDataStoreDaoMock;
+
+    @Mock
     Logger loggerMock;
 
     @Spy
@@ -76,6 +80,7 @@ public class HeuristicRuleHelperTest {
         Mockito.doReturn("template-name").when(vmTemplateVOMock).getName();
         Mockito.doReturn(Storage.ImageFormat.QCOW2).when(vmTemplateVOMock).getFormat();
         Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(vmTemplateVOMock).getHypervisorType();
+        Mockito.doReturn(Storage.TemplateType.USER).when(vmTemplateVOMock).getTemplateType();
         Mockito.doReturn("snapshot-name").when(snapshotInfoMock).getName();
         Mockito.doReturn(1024L).when(snapshotInfoMock).getSize();
         Mockito.doReturn(Hypervisor.HypervisorType.VMware).when(snapshotInfoMock).getHypervisorType();
@@ -166,31 +171,28 @@ public class HeuristicRuleHelperTest {
     }
 
     @Test
-    public void interpretHeuristicRuleTestHeuristicRuleDoesNotReturnAStringShouldThrowCloudRuntimeException() {
+    public void interpretHeuristicRuleTestHeuristicRuleDoesNotReturnAStringShouldReturnNull() {
         String heuristicRule = "1";
 
         Mockito.doNothing().when(heuristicRuleHelperSpy).buildPresetVariables(Mockito.any(JsInterpreter.class), Mockito.any(HeuristicType.class), Mockito.anyLong(),
                 Mockito.any());
 
-        String expectedMessage = String.format("Error while interpreting heuristic rule [%s], the rule did not return a String.", heuristicRule);
-        CloudRuntimeException assertThrows = Assert.assertThrows(CloudRuntimeException.class,
-                () -> heuristicRuleHelperSpy.interpretHeuristicRule(heuristicRule, HeuristicType.TEMPLATE, volumeVOMock, 1L));
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        DataStore result = heuristicRuleHelperSpy.interpretHeuristicRule(heuristicRule, HeuristicType.TEMPLATE, volumeVOMock, 1L);
+
+        Assert.assertNull(result);
     }
 
     @Test
-    public void interpretHeuristicRuleTestHeuristicRuleReturnAStringWithInvalidUuidShouldThrowCloudRuntimeException() {
+    public void interpretHeuristicRuleTestHeuristicRuleReturnAStringWithInvalidUuidShouldReturnNull() {
         String heuristicRule = "'uuid'";
 
         Mockito.doNothing().when(heuristicRuleHelperSpy).buildPresetVariables(Mockito.any(JsInterpreter.class), Mockito.any(HeuristicType.class), Mockito.anyLong(),
                 Mockito.any());
         Mockito.doReturn(null).when(dataStoreManagerMock).getImageStoreByUuid(Mockito.anyString());
 
-        String expectedMessage = String.format("Unable to find a secondary storage with the UUID [%s] returned by the heuristic rule [%s]. Check if the rule is " +
-                "returning a valid UUID.", "uuid", heuristicRule);
-        CloudRuntimeException assertThrows = Assert.assertThrows(CloudRuntimeException.class,
-                () -> heuristicRuleHelperSpy.interpretHeuristicRule(heuristicRule, HeuristicType.TEMPLATE, volumeVOMock, 1L));
-        Assert.assertEquals(expectedMessage, assertThrows.getMessage());
+        DataStore result = heuristicRuleHelperSpy.interpretHeuristicRule(heuristicRule, HeuristicType.TEMPLATE, volumeVOMock, 1L);
+
+        Assert.assertNull(result);
     }
 
     @Test
