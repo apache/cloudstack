@@ -84,10 +84,12 @@ public class ExtensionsImportManagerImpl extends ManagerBase implements Extensio
         } catch (IOException e) {
             throw new CloudRuntimeException("Failed to extract extension archive during import at: " + extensionRootPath, e);
         }
+        final Map<String, String> details = extensionConfig.spec.getDetails();
+        final String reservedResourceDetails = extensionConfig.spec.reservedResourceDetails;
         return Transaction.execute((TransactionCallbackWithException<Extension, CloudRuntimeException>) status -> {
             Extension extension = extensionsManager.createExtension(name, extensionConfig.metadata.description,
                     extensionConfig.spec.type, extensionConfig.spec.entrypoint.path, Extension.State.Enabled.name(),
-                    false, Collections.emptyMap());
+                    false, details, reservedResourceDetails);
 
             for (ExtensionConfig.CustomAction action : extensionConfig.spec.customActions) {
                 Map<Integer, Map<String, String>> parameters = action.getParametersAsMap();

@@ -148,8 +148,8 @@ import java.util.HashSet;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 
-import static org.apache.cloudstack.vm.UnmanagedVMsManagerImpl.KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME;
-import static org.apache.cloudstack.vm.UnmanagedVMsManagerImpl.VM_IMPORT_DEFAULT_TEMPLATE_NAME;
+import static org.apache.cloudstack.vm.UnmanagedVMsManager.KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME;
+import static org.apache.cloudstack.vm.UnmanagedVMsManager.VM_IMPORT_DEFAULT_TEMPLATE_NAME;
 
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -1058,7 +1058,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             //submit processEvent
             if (StringUtils.isEmpty(errMsg)) {
-                snapshotInfo.processEvent(Event.OperationSuccessed);
+                snapshotInfo.processEvent(Event.OperationSucceeded);
             } else {
                 snapshotInfo.processEvent(Event.OperationFailed);
             }
@@ -1221,7 +1221,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     // command to copy this data from cache to secondary storage. We
                     // then clean up the cache.
 
-                    destOnStore.processEvent(Event.OperationSuccessed, copyCmdAnswer);
+                    destOnStore.processEvent(Event.OperationSucceeded, copyCmdAnswer);
 
                     CopyCommand cmd = new CopyCommand(destOnStore.getTO(), destData.getTO(), primaryStorageDownloadWait,
                             VirtualMachineManager.ExecuteInSequence.value());
@@ -1271,7 +1271,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 try {
                     if (StringUtils.isEmpty(errMsg)) {
-                        snapshotInfo.processEvent(Event.OperationSuccessed);
+                        snapshotInfo.processEvent(Event.OperationSucceeded);
                     }
                     else {
                         snapshotInfo.processEvent(Event.OperationFailed);
@@ -1404,7 +1404,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             try {
                 if (StringUtils.isEmpty(errMsg)) {
-                    snapshotInfo.processEvent(Event.OperationSuccessed);
+                    snapshotInfo.processEvent(Event.OperationSucceeded);
                 }
                 else {
                     snapshotInfo.processEvent(Event.OperationFailed);
@@ -2366,7 +2366,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 _volumeDao.update(volumeVO.getId(), volumeVO);
 
-                _volumeService.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event.OperationSuccessed, null, srcVolumeInfo, destVolumeInfo, false);
+                _volumeService.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event.OperationSucceeded, null, srcVolumeInfo, destVolumeInfo, false);
 
                 // Update the volume ID for snapshots on secondary storage
                 if (!_snapshotDao.listByVolumeId(srcVolumeInfo.getId()).isEmpty()) {
@@ -2565,8 +2565,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Destination storage pool with ID " + dataStore.getId() + " was not located.");
             }
 
-            boolean isSrcAndDestPoolPowerFlexStorage = srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex) && destStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex);
-            if (srcStoragePoolVO.isManaged() && !isSrcAndDestPoolPowerFlexStorage && srcStoragePoolVO.getId() != destStoragePoolVO.getId()) {
+            if (srcStoragePoolVO.isManaged() && srcStoragePoolVO.getId() != destStoragePoolVO.getId()) {
                 throw new CloudRuntimeException("Migrating a volume online with KVM from managed storage is not currently supported.");
             }
 
@@ -2704,7 +2703,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 try {
                     if (StringUtils.isEmpty(errMsg)) {
-                        volumeInfo.processEvent(Event.OperationSuccessed);
+                        volumeInfo.processEvent(Event.OperationSucceeded);
                     }
                     else {
                         volumeInfo.processEvent(Event.OperationFailed);

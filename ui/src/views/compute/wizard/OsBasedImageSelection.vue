@@ -47,7 +47,7 @@
         @change="handleGuestOsCategoryChange">
         <template #radio-option="{ item }">
           <div class="radio-option">
-            <div class="radio-opion__icon">
+            <div class="radio-option__icon">
               <resource-icon v-if="item.icon && item.icon.base64image" :image="item.icon.base64image" size="os" style="margin-bottom: 2px; margin-left: 1px" />
               <font-awesome-icon v-else-if="['-1', '0'].includes(item.id)" :icon="['fas', item.id === '0' ? 'user' : 'images']" size="2x" :style="categoryFontAwesomeIconStyle" />
               <os-logo v-else size="2x" :os-name="item.name" />
@@ -367,7 +367,7 @@ export default {
     text-overflow: ellipsis;
   }
 
-  .radio-opion__icon {
+  .radio-option__icon {
     width: 30px;
     height: 30px;
     object-fit: contain;

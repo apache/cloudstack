@@ -32,7 +32,7 @@ import java.util.List;
         since = "4.17.0", authorized = {RoleType.Admin})
 public class ListMgmtsMetricsCmd  extends ListMgmtsCmd {
 
-    @Parameter(name = MetricConstants.SYSTEM, type = CommandType.BOOLEAN, entityType = ManagementServerMetricsResponse.class, description = "include system level stats")
+    @Parameter(name = MetricConstants.SYSTEM, type = CommandType.BOOLEAN, entityType = ManagementServerMetricsResponse.class, description = "Include system level stats")
     private boolean system;
 
     @Inject

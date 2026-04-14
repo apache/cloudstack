@@ -61,6 +61,11 @@ public class DownloadErrorState extends DownloadInactiveState {
     }
 
     @Override
+    public String handleLimitReached() {
+        return Status.LIMIT_REACHED.toString();
+    }
+
+    @Override
     public String getName() {
         return Status.DOWNLOAD_ERROR.toString();
     }

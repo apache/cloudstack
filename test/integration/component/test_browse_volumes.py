@@ -1315,7 +1315,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             "Check number of SSVMs with number of zones"
         )
         # For each secondary storage VM check private IP,
-        # public IP, link local IP and DNS
+        # public IP, Control IP and DNS
         for ssvm in list_ssvm_response:
 
             self.debug("SSVM state: %s" % ssvm.state)
@@ -1334,7 +1334,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.assertEqual(
                 hasattr(ssvm, 'linklocalip'),
                 True,
-                "Check whether SSVM has link local IP field"
+                "Check whether SSVM has Control IP field"
             )
 
             self.assertEqual(
@@ -1589,7 +1589,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         self.assertEqual(
             hasattr(ssvm_response, 'linklocalip'),
             True,
-            "Check whether SSVM has link local IP field"
+            "Check whether SSVM has Control IP field"
         )
 
         self.assertEqual(

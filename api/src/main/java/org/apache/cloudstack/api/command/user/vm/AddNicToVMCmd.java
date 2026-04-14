@@ -40,14 +40,13 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
+@APICommand(name = "addNicToVirtualMachine", description = "Adds Instance to specified Network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
     private static final String s_name = "addnictovirtualmachineresponse";
@@ -57,19 +56,19 @@ public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="Virtual Machine ID")
+            required=true, description = "Instance ID")
     private Long vmId;
 
     @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "Network ID")
     private Long netId;
 
-    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "IP Address for the new network")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "IP Address for the new Network")
     private String ipaddr;
 
-    @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "Mac Address for the new network")
+    @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "Mac Address for the new Network")
     private String macaddr;
 
-    @Parameter(name = ApiConstants.DHCP_OPTIONS, type = CommandType.MAP, description = "DHCP options which are passed to the nic"
+    @Parameter(name = ApiConstants.DHCP_OPTIONS, type = CommandType.MAP, description = "DHCP options which are passed to the NIC"
             + " Example: dhcpoptions[0].dhcp:114=url&dhcpoptions[0].dhcp:66=www.test.com")
     private Map dhcpOptions;
 
@@ -121,7 +120,7 @@ public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Adding network " + this._uuidMgr.getUuid(Network.class, getNetworkId()) + " to user vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
+        return "Adding NIC on Network " + getResourceUuid(ApiConstants.NETWORK_ID) + " to User Instance: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID);
     }
 
     @Override
@@ -167,7 +166,7 @@ public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()) + " Network Id: " + this._uuidMgr.getUuid(Network.class, getNetworkId()));
+        CallContext.current().setEventDetails("Instance ID: " + getResourceUuid(ApiConstants.VIRTUAL_MACHINE_ID) + " Network ID: " + getResourceUuid(ApiConstants.NETWORK_ID));
         UserVm result = _userVmService.addNicToVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));
@@ -177,7 +176,7 @@ public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add NIC to vm. Refer to server logs for details.");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add NIC to Instance. Refer to server logs for details.");
         }
     }
 }

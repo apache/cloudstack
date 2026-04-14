@@ -34,155 +34,155 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class DomainRouterResponse extends BaseResponseWithAnnotations implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the id of the router")
+    @Param(description = "The ID of the router")
     private String id;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "the Zone ID for the router")
+    @Param(description = "The Zone ID for the router")
     private String zoneId;
 
     @SerializedName(ApiConstants.ZONE_NAME)
-    @Param(description = "the Zone name for the router")
+    @Param(description = "The Zone name for the router")
     private String zoneName;
 
     @SerializedName(ApiConstants.DNS1)
-    @Param(description = "the first DNS for the router")
+    @Param(description = "The first DNS for the router")
     private String dns1;
 
     @SerializedName(ApiConstants.DNS2)
-    @Param(description = "the second DNS for the router")
+    @Param(description = "The second DNS for the router")
     private String dns2;
 
     @SerializedName(ApiConstants.IP6_DNS1)
-    @Param(description = "the first IPv6 DNS for the router")
+    @Param(description = "The first IPv6 DNS for the router")
     private String ip6Dns1;
 
     @SerializedName(ApiConstants.IP6_DNS2)
-    @Param(description = "the second IPv6 DNS for the router")
+    @Param(description = "The second IPv6 DNS for the router")
     private String ip6Dns2;
 
     @SerializedName("networkdomain")
-    @Param(description = "the network domain for the router")
+    @Param(description = "The Network domain for the router")
     private String networkDomain;
 
     @SerializedName(ApiConstants.GATEWAY)
-    @Param(description = "the gateway for the router")
+    @Param(description = "The gateway for the router")
     private String gateway;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the router")
+    @Param(description = "The name of the router")
     private String name;
 
     @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "the Pod ID for the router")
+    @Param(description = "The Pod ID for the router")
     private String podId;
 
     @SerializedName(ApiConstants.POD_NAME)
-    @Param(description = "the Pod name for the router", since = "4.13.2")
+    @Param(description = "The Pod name for the router", since = "4.13.2")
     private String podName;
 
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "the host ID for the router")
+    @Param(description = "The host ID for the router")
     private String hostId;
 
     @SerializedName("hostname")
-    @Param(description = "the hostname for the router")
+    @Param(description = "The hostname for the router")
     private String hostName;
 
     @SerializedName(ApiConstants.HOST_CONTROL_STATE)
-    @Param(description = "the control state of the host for the router")
+    @Param(description = "The control state of the host for the router")
     private String hostControlState;
 
     @SerializedName("hypervisor")
-    @Param(description = "the hypervisor on which the template runs")
+    @Param(description = "The hypervisor on which the Template runs")
     private String hypervisor;
 
     @SerializedName(ApiConstants.LINK_LOCAL_IP)
-    @Param(description = "the link local IP address for the router")
+    @Param(description = "The Control IP address for the router")
     private String linkLocalIp;
 
     @SerializedName(ApiConstants.LINK_LOCAL_MAC_ADDRESS)
-    @Param(description = "the link local MAC address for the router")
+    @Param(description = "The link local MAC address for the router")
     private String linkLocalMacAddress;
 
     @SerializedName(ApiConstants.LINK_LOCAL_MAC_NETMASK)
-    @Param(description = "the link local netmask for the router")
+    @Param(description = "The link local netmask for the router")
     private String linkLocalNetmask;
 
     @SerializedName(ApiConstants.LINK_LOCAL_NETWORK_ID)
-    @Param(description = "the ID of the corresponding link local network")
+    @Param(description = "The ID of the corresponding link local Network")
     private String linkLocalNetworkId;
 
     @SerializedName(ApiConstants.PUBLIC_IP)
-    @Param(description = "the public IP address for the router")
+    @Param(description = "The public IP address for the router")
     private String publicIp;
 
     @SerializedName("publicmacaddress")
-    @Param(description = "the public MAC address for the router")
+    @Param(description = "The public MAC address for the router")
     private String publicMacAddress;
 
     @SerializedName("publicnetmask")
-    @Param(description = "the public netmask for the router")
+    @Param(description = "The public netmask for the router")
     private String publicNetmask;
 
     @SerializedName("publicnetworkid")
-    @Param(description = "the ID of the corresponding public network")
+    @Param(description = "The ID of the corresponding public Network")
     private String publicNetworkId;
 
     @SerializedName("guestipaddress")
-    @Param(description = "the guest IP address for the router")
+    @Param(description = "The guest IP address for the router")
     private String guestIpAddress;
 
     @SerializedName("guestmacaddress")
-    @Param(description = "the guest MAC address for the router")
+    @Param(description = "The guest MAC address for the router")
     private String guestMacAddress;
 
     @SerializedName("guestnetmask")
-    @Param(description = "the guest netmask for the router")
+    @Param(description = "The guest netmask for the router")
     private String guestNetmask;
 
     @SerializedName("guestnetworkid")
-    @Param(description = "the ID of the corresponding guest network")
+    @Param(description = "The ID of the corresponding guest Network")
     private String guestNetworkId;
 
     @SerializedName("guestnetworkname")
-    @Param(description = "the name of the corresponding guest network")
+    @Param(description = "The name of the corresponding guest Network")
     private String guestNetworkName;
 
     @SerializedName(ApiConstants.TEMPLATE_ID)
-    @Param(description = "the template ID for the router")
+    @Param(description = "The Template ID for the router")
     private String templateId;
 
     @SerializedName(ApiConstants.TEMPLATE_NAME)
-    @Param(description = "the template name for the router", since = "4.13.2")
+    @Param(description = "The Template name for the router", since = "4.13.2")
     private String templateName;
 
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "the date and time the router was created")
+    @Param(description = "The date and time the router was created")
     private Date created;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the router")
+    @Param(description = "The state of the router")
     private State state;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account associated with the router")
+    @Param(description = "The Account associated with the router")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the ipaddress")
+    @Param(description = "The project id of the IP address")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the address")
+    @Param(description = "The project name of the address")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID associated with the router")
+    @Param(description = "The domain ID associated with the router")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain associated with the router")
+    @Param(description = "The domain associated with the router")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
@@ -190,27 +190,27 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     private String domainPath;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
-    @Param(description = "the ID of the service offering of the virtual machine")
+    @Param(description = "The ID of the service offering of the Instance")
     private String serviceOfferingId;
 
     @SerializedName("serviceofferingname")
-    @Param(description = "the name of the service offering of the virtual machine")
+    @Param(description = "The name of the service offering of the Instance")
     private String serviceOfferingName;
 
     @SerializedName("isredundantrouter")
-    @Param(description = "if this router is an redundant virtual router")
+    @Param(description = "If this router is an redundant virtual router")
     private boolean isRedundantRouter;
 
     @SerializedName("redundantstate")
-    @Param(description = "the state of redundant virtual router")
+    @Param(description = "The state of redundant virtual router")
     private String redundantState;
 
     @SerializedName("version")
-    @Param(description = "the version of template")
+    @Param(description = "The version of Template")
     private String version;
 
     @SerializedName("scriptsversion")
-    @Param(description = "the version of scripts")
+    @Param(description = "The version of scripts")
     private String scriptsVersion;
 
     @SerializedName(ApiConstants.VPC_ID)
@@ -218,23 +218,23 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     private String vpcId;
 
     @SerializedName("vpcname")
-    @Param(description = "the name of VPC the router belongs to")
+    @Param(description = "The name of VPC the router belongs to")
     private String vpcName;
 
     @SerializedName(ApiConstants.ROLE)
-    @Param(description = "role of the domain router")
+    @Param(description = "Role of the domain router")
     private String role;
 
     @SerializedName("nic")
-    @Param(description = "the list of nics associated with the router", responseObject = NicResponse.class, since = "4.0")
+    @Param(description = "The list of NICs associated with the router", responseObject = NicResponse.class, since = "4.0")
     private Set<NicResponse> nics;
 
     @SerializedName("requiresupgrade")
-    @Param(description = "true if the router template requires upgrader")
+    @Param(description = "True if the router Template requires upgrade")
     private boolean requiresUpgrade;
 
     @SerializedName(ApiConstants.HEALTHCHECK_FAILED)
-    @Param(description = "true if any health checks had failed")
+    @Param(description = "True if any health checks had failed")
     private boolean healthChecksFailed;
 
     @SerializedName("healthcheckresults")
@@ -242,7 +242,7 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     List<RouterHealthCheckResultResponse> healthCheckResults;
 
     @SerializedName("softwareversion")
-    @Param(description = "the version of the code / software in the router")
+    @Param(description = "The version of the code / software in the router")
     private String softwareVersion;
 
     @SerializedName(ApiConstants.ARCH)

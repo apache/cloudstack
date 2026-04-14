@@ -58,7 +58,7 @@ public interface ExtensionsManager extends Manager {
     Extension createExtension(CreateExtensionCmd cmd);
 
     Extension createExtension(String name, String description, String type, String relativePath, String state,
-                   Boolean orchestratorRequiresPrepareVm, Map<String, String> details);
+                   Boolean orchestratorRequiresPrepareVm, Map<String, String> details, String reservedResourceDetails);
 
     boolean prepareExtensionPathAcrossServers(Extension extension);
 

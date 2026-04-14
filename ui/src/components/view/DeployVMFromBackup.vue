@@ -975,6 +975,9 @@ export default {
           }, {
             id: 'aarch64',
             description: 'ARM 64 bits (aarch64)'
+          }, {
+            id: 's390x',
+            description: 'IBM Z 64 bits (s390x)'
           }
         ]
       }
@@ -1451,7 +1454,7 @@ export default {
     this.initForm()
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
     this.showOverrideDiskOfferingOption = this.dataPreFill.overridediskoffering
-
+    this.selectedArchitecture = this.dataPreFill.backupArch ? this.dataPreFill.backupArch : this.architectureTypes.opts[0].id
     if (this.dataPreFill.isIso) {
       this.tabKey = 'isoid'
     } else {
@@ -1540,46 +1543,6 @@ export default {
     fillValue (field) {
       this.form[field] = this.dataPreFill[field]
     },
-    fetchZoneByQuery () {
-      return new Promise(resolve => {
-        let zones = []
-        let apiName = ''
-        const params = {}
-        if (this.templateId) {
-          apiName = 'listTemplates'
-          params.listall = true
-          params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
-          params.id = this.templateId
-        } else if (this.isoId) {
-          apiName = 'listIsos'
-          params.listall = true
-          params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
-          params.id = this.isoId
-        } else if (this.networkId) {
-          params.listall = true
-          params.id = this.networkId
-          apiName = 'listNetworks'
-        }
-        if (!apiName) return resolve(zones)
-
-        getAPI(apiName, params).then(json => {
-          let objectName
-          const responseName = [apiName.toLowerCase(), 'response'].join('')
-          for (const key in json[responseName]) {
-            if (key === 'count') {
-              continue
-            }
-            objectName = key
-            break
-          }
-          const data = json?.[responseName]?.[objectName] || []
-          zones = data.map(item => item.zoneid)
-          return resolve(zones)
-        }).catch(() => {
-          return resolve(zones)
-        })
-      })
-    },
     async fetchData () {
       this.fetchZones(null, null)
       _.each(this.params, (param, name) => {
@@ -1589,7 +1552,7 @@ export default {
       })
       this.fetchBootTypes()
       this.fetchBootModes()
-      this.fetchInstaceGroups()
+      this.fetchInstanceGroups()
       this.fetchIoPolicyTypes()
       nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
@@ -1640,7 +1603,7 @@ export default {
         { id: 'storage_specific', description: 'storage_specific' }
       ]
     },
-    fetchInstaceGroups () {
+    fetchInstanceGroups () {
       this.options.instanceGroups = []
       getAPI('listInstanceGroups', {
         account: this.$store.getters.project?.id ? null : this.$store.getters.userInfo.account,
@@ -1718,6 +1681,7 @@ export default {
           if (template.details['vmware-to-kvm-mac-addresses']) {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
+          this.selectedArchitecture = template?.arch || 'x86_64'
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -2137,7 +2101,9 @@ export default {
         this.owner.domainid = null
         this.owner.projectid = OwnerOptions.selectedProject
       }
-      this.resetData()
+      if (OwnerOptions.initialized) {
+        this.resetData()
+      }
     },
     fetchZones (zoneId, listZoneAllow) {
       this.zones = []
@@ -2342,9 +2308,6 @@ export default {
       this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.isZoneSelectedMultiArch = this.zone.ismultiarch
-      if (this.isZoneSelectedMultiArch) {
-        this.selectedArchitecture = this.architectureTypes.opts[0].id
-      }
       this.zoneSelected = true
       this.form.startvm = true
       this.selectedZone = this.zoneId
@@ -2467,12 +2430,12 @@ export default {
           configuration.cpunumber = 0
           configuration.cpuspeed = 0
           configuration.memory = 0
-          for (var harwareItem of configuration.hardwareItems) {
-            if (harwareItem.resourceType === 'Processor') {
-              configuration.cpunumber = harwareItem.virtualQuantity
-              configuration.cpuspeed = harwareItem.reservation
-            } else if (harwareItem.resourceType === 'Memory') {
-              configuration.memory = harwareItem.virtualQuantity
+          for (var hardwareItem of configuration.hardwareItems) {
+            if (hardwareItem.resourceType === 'Processor') {
+              configuration.cpunumber = hardwareItem.virtualQuantity
+              configuration.cpuspeed = hardwareItem.reservation
+            } else if (hardwareItem.resourceType === 'Memory') {
+              configuration.memory = hardwareItem.virtualQuantity
             }
           }
           configurations.push(configuration)

@@ -45,7 +45,6 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -76,7 +75,6 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupRepository;
-import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
@@ -321,7 +319,6 @@ import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
-import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
@@ -361,6 +358,8 @@ import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
+import org.apache.cloudstack.acl.dao.ApiKeyPairDao;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -498,6 +497,7 @@ public class ApiDBUtils {
     static BackupRepositoryDao s_backupRepositoryDao;
     static NicDao s_nicDao;
     static ResourceManagerUtil s_resourceManagerUtil;
+    static ApiKeyPairDao s_apiKeyPairDao;
     static SnapshotPolicyDetailsDao s_snapshotPolicyDetailsDao;
     static ObjectStoreDao s_objectStoreDao;
 
@@ -764,6 +764,8 @@ public class ApiDBUtils {
     @Inject
     private ResourceManagerUtil resourceManagerUtil;
     @Inject
+    private ApiKeyPairDao apiKeyPairDao;
+    @Inject
     SnapshotPolicyDetailsDao snapshotPolicyDetailsDao;
 
     @Inject
@@ -907,6 +909,7 @@ public class ApiDBUtils {
         s_backupRepositoryDao = backupRepositoryDao;
         s_resourceIconDao = resourceIconDao;
         s_resourceManagerUtil = resourceManagerUtil;
+        s_apiKeyPairDao = apiKeyPairDao;
         s_objectStoreDao = objectStoreDao;
         s_bucketDao = bucketDao;
         s_virtualMachineManager = virtualMachineManager;
@@ -1767,7 +1770,7 @@ public class ApiDBUtils {
             return null;
         }
         String jobInstanceId = null;
-        ApiCommandResourceType jobInstanceType = EnumUtils.fromString(ApiCommandResourceType.class, job.getInstanceType(), ApiCommandResourceType.None);
+        ApiCommandResourceType jobInstanceType = EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, job.getInstanceType(), ApiCommandResourceType.None);
 
         if (job.getInstanceId() == null) {
             // when assert is hit, implement 'getInstanceId' of BaseAsyncCmd and return appropriate instance id
@@ -1984,10 +1987,8 @@ public class ApiDBUtils {
     }
 
     public static UserResponse newUserResponse(ResponseView view, Long domainId, UserAccountJoinVO usr) {
-        UserResponse response = s_userAccountJoinDao.newUserResponse(view, usr);
-        if(!AccountManager.UseSecretKeyInResponse.value()){
-            response.setSecretKey(null);
-        }
+        ApiKeyPairVO lastKeyPair = searchForLatestUserKeyPair(usr.getId());
+        UserResponse response = s_userAccountJoinDao.newUserResponse(view, usr, lastKeyPair);
         // Populate user account role information
         if (usr.getAccountRoleId() != null) {
             Role role = s_roleService.findRole( usr.getAccountRoleId());
@@ -2002,6 +2003,10 @@ public class ApiDBUtils {
         else
             response.setIsCallerChildDomain(false);
         return response;
+    }
+
+    public static ApiKeyPairVO searchForLatestUserKeyPair(Long userId) {
+        return s_apiKeyPairDao.getLastApiKeyCreatedByUser(userId);
     }
 
     public static UserAccountJoinVO newUserView(User usr) {
@@ -2223,6 +2228,10 @@ public class ApiDBUtils {
         return s_nicSecondaryIpDao.listByNicId(nicId);
     }
 
+    public static NicVO findNicById(long nicId) {
+        return s_nicDao.findById(nicId);
+    }
+
     public static TemplateResponse newTemplateUpdateResponse(TemplateJoinVO vr) {
         return s_templateJoinDao.newUpdateResponse(vr);
     }
@@ -2291,16 +2300,16 @@ public class ApiDBUtils {
         return s_accountService.isAdmin(account.getId());
     }
 
+    public static Account getSystemAccount() {
+        return s_accountService.getSystemAccount();
+    }
+
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
     }
 
     public static ResourceIconVO getResourceIconByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
-    }
-
-    public static BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {
-        return s_backupScheduleDao.newBackupScheduleResponse(schedule);
     }
 
     public static BackupOfferingResponse newBackupOfferingResponse(BackupOffering offering) {

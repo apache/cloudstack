@@ -16,14 +16,24 @@
 // under the License.
 package com.cloud.upgrade;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import java.sql.SQLException;
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
-import java.util.Arrays;
+import javax.sql.DataSource;
 
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import org.junit.runner.RunWith;
+
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.upgrade.DatabaseUpgradeChecker.NoopDbUpgrade;
 import com.cloud.upgrade.dao.DbUpgrade;
@@ -43,7 +53,50 @@ import com.cloud.upgrade.dao.Upgrade471to480;
 import com.cloud.upgrade.dao.Upgrade480to481;
 import com.cloud.upgrade.dao.Upgrade490to4910;
 
+import com.cloud.utils.db.TransactionLegacy;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
+
+
+@RunWith(MockitoJUnitRunner.class)
 public class DatabaseUpgradeCheckerTest {
+
+    @Mock
+    DataSource dataSource;
+
+    @Mock
+    Connection connection;
+
+    @Mock
+    PreparedStatement preparedStatement;
+
+    @Mock
+    ResultSet resultSet;
+
+    private DataSource backupDataSource;
+
+    @Before
+    public void setup() throws Exception {
+        Field dsField = TransactionLegacy.class.getDeclaredField("s_ds");
+        dsField.setAccessible(true);
+        backupDataSource = (DataSource) dsField.get(null);
+        dsField.set(null, dataSource);
+
+        Mockito.when(dataSource.getConnection()).thenReturn(connection);
+        Mockito.when(connection.prepareStatement(ArgumentMatchers.anyString())).thenReturn(preparedStatement);
+        Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
+    }
+
+    @After
+    public void cleanup() throws Exception {
+        Field dsField = TransactionLegacy.class.getDeclaredField("s_ds");
+        dsField.setAccessible(true);
+        dsField.set(null, backupDataSource);
+    }
 
     @Test
     public void testCalculateUpgradePath480to481() {
@@ -79,7 +132,7 @@ public class DatabaseUpgradeCheckerTest {
         assertTrue(upgrades.length >= 1);
         assertTrue(upgrades[0] instanceof Upgrade490to4910);
 
-        assertTrue(Arrays.equals(new String[] {"4.9.0", currentVersion.toString()}, upgrades[0].getUpgradableVersionRange()));
+        assertArrayEquals(new String[]{"4.9.0", currentVersion.toString()}, upgrades[0].getUpgradableVersionRange());
         assertEquals(currentVersion.toString(), upgrades[0].getUpgradedVersion());
 
     }
@@ -104,7 +157,7 @@ public class DatabaseUpgradeCheckerTest {
         assertTrue(upgrades[3] instanceof Upgrade41120to41130);
         assertTrue(upgrades[4] instanceof Upgrade41120to41200);
 
-        assertTrue(Arrays.equals(new String[] {"4.11.0.0", "4.11.1.0"}, upgrades[1].getUpgradableVersionRange()));
+        assertArrayEquals(new String[]{"4.11.0.0", "4.11.1.0"}, upgrades[1].getUpgradableVersionRange());
         assertEquals(currentVersion.toString(), upgrades[4].getUpgradedVersion());
 
     }
@@ -151,12 +204,12 @@ public class DatabaseUpgradeCheckerTest {
         assertTrue(upgrades[5] instanceof Upgrade471to480);
         assertTrue(upgrades[6] instanceof Upgrade480to481);
 
-        assertTrue(Arrays.equals(new String[] {"4.8.1", currentVersion.toString()}, upgrades[upgrades.length - 1].getUpgradableVersionRange()));
+        assertArrayEquals(new String[]{"4.8.1", currentVersion.toString()}, upgrades[upgrades.length - 1].getUpgradableVersionRange());
         assertEquals(currentVersion.toString(), upgrades[upgrades.length - 1].getUpgradedVersion());
     }
 
     @Test
-    public void testCalculateUpgradePathUnkownDbVersion() {
+    public void testCalculateUpgradePathUnknownDbVersion() {
 
         final CloudStackVersion dbVersion = CloudStackVersion.parse("4.99.0.0");
         assertNotNull(dbVersion);
@@ -173,7 +226,7 @@ public class DatabaseUpgradeCheckerTest {
     }
 
     @Test
-    public void testCalculateUpgradePathFromKownDbVersion() {
+    public void testCalculateUpgradePathFromKnownDbVersion() {
 
         final CloudStackVersion dbVersion = CloudStackVersion.parse("4.17.0.0");
         assertNotNull(dbVersion);
@@ -306,4 +359,25 @@ public class DatabaseUpgradeCheckerTest {
         assertEquals(upgrades.length + 1, upgradesFromSecurityReleaseToNext.length);
         assertTrue(upgradesFromSecurityReleaseToNext[upgradesFromSecurityReleaseToNext.length - 1] instanceof NoopDbUpgrade);
     }
+
+    @Test
+    public void isStandalone() throws SQLException {
+        // simulate zero 'UP' hosts -> standalone
+        Mockito.when(resultSet.next()).thenReturn(true);
+        Mockito.when(resultSet.getInt(1)).thenReturn(0);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        assertTrue("DatabaseUpgradeChecker should be a standalone component", checker.isStandalone());
+    }
+
+    @Test
+    public void isNotStandalone() throws SQLException {
+        // simulate at least one 'UP' host -> not standalone
+        Mockito.when(resultSet.next()).thenReturn(true);
+        Mockito.when(resultSet.getInt(1)).thenReturn(1);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        assertFalse("DatabaseUpgradeChecker should not be a standalone component", checker.isStandalone());
+    }
+
 }

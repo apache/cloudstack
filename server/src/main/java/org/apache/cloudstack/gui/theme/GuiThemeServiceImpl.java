@@ -60,7 +60,7 @@ public class GuiThemeServiceImpl implements GuiThemeService {
 
     protected Logger logger = LogManager.getLogger(getClass());
 
-    private static final List<String> ALLOWED_PRIMITIVE_PROPERTIES = List.of("appTitle", "footer", "loginFooter", "logo", "minilogo", "banner");
+    private static final List<String> ALLOWED_PRIMITIVE_PROPERTIES = List.of("appTitle", "footer", "loginFooter", "logo", "minilogo", "banner", "defaultLanguage");
 
     private static final List<String> ALLOWED_ERROR_PROPERTIES = List.of("403", "404", "500");
 
@@ -433,9 +433,9 @@ public class GuiThemeServiceImpl implements GuiThemeService {
     public void removeGuiTheme(RemoveGuiThemeCmd cmd) {
         Long guiThemeId = cmd.getId();
         GuiThemeVO guiThemeVO = guiThemeDao.findById(guiThemeId);
-        CallContext.current().setEventDetails(String.format("ID: %s", guiThemeId));
 
         if (guiThemeVO != null) {
+            CallContext.current().setEventDetails(String.format("ID: %s", guiThemeVO.getUuid()));
             guiThemeDao.remove(guiThemeId);
         } else {
             logger.error("Unable to find a GUI theme with the specified ID [{}].", guiThemeId);

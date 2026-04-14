@@ -47,8 +47,8 @@
           <tooltip-label :title="$t('label.path')" :tooltip="apiParams.path.description"/>
         </template>
         <div class="path-input-container">
-          <span v-if="!!safeName" :title="extenstionBasePath" class="path-input-base">
-            {{ extenstionBasePath }}
+          <span v-if="!!safeName" :title="extensionBasePath" class="path-input-base">
+            {{ extensionBasePath }}
           </span>
           <a-input
             v-model:value="form.path"
@@ -88,6 +88,14 @@
         <div style="margin-bottom: 10px">{{ $t('message.add.extension.details') }}</div>
         <details-input
           v-model:value="form.details" />
+      </a-form-item>
+      <a-form-item name="reservedresourcedetails" ref="reservedresourcedetails">
+        <template #label>
+          <tooltip-label :title="$t('label.reservedresourcedetails')" :tooltip="apiParams.reservedresourcedetails.description"/>
+        </template>
+        <a-input
+          v-model:value="form.reservedresourcedetails"
+          :placeholder="apiParams.reservedresourcedetails.description" />
       </a-form-item>
       <a-form-item name="state" ref="state">
         <template #label>
@@ -137,7 +145,7 @@ export default {
       }
       return value.replace(/[^a-zA-Z0-9._-]/g, '_').toLowerCase()
     },
-    extenstionBasePath () {
+    extensionBasePath () {
       return (this.$store.getters.features.extensionspath || '[EXTENSIONS_PATH]') + '/' + this.safeName + '/'
     }
   },
@@ -200,6 +208,9 @@ export default {
           Object.entries(values.details).forEach(([key, value]) => {
             params['details[0].' + key] = value
           })
+        }
+        if (values.reservedresourcedetails) {
+          params.reservedresourcedetails = values.reservedresourcedetails
         }
         postAPI('createExtension', params).then(response => {
           this.$emit('refresh-data')

@@ -29,7 +29,7 @@
     </template>
     <template #select-option="{ item }">
       <span>
-        <resource-icon v-if="item.icon && zone1.icon.base64image" :image="item.icon.base64image" size="2x" style="margin-right: 5px"/>
+        <resource-icon v-if="item.icon && item.icon.base64image" :image="item.icon.base64image" size="2x" style="margin-right: 5px"/>
         <global-outlined v-else style="margin-right: 5px" />
         {{ item.name }}
       </span>

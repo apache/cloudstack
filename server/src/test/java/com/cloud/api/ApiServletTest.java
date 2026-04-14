@@ -16,35 +16,8 @@
 // under the License.
 package com.cloud.api;
 
-import com.cloud.api.auth.ListUserTwoFactorAuthenticatorProvidersCmd;
-import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
-import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
-import com.cloud.server.ManagementServer;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManagerImpl;
-import com.cloud.user.AccountService;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
-import com.cloud.utils.HttpUtils;
-import com.cloud.vm.UserVmManager;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.auth.APIAuthenticationManager;
-import org.apache.cloudstack.api.auth.APIAuthenticationType;
-import org.apache.cloudstack.api.auth.APIAuthenticator;
-import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import static org.mockito.ArgumentMatchers.nullable;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -56,10 +29,45 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.nullable;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.auth.APIAuthenticationManager;
+import org.apache.cloudstack.api.auth.APIAuthenticationType;
+import org.apache.cloudstack.api.auth.APIAuthenticator;
+import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
+import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import com.cloud.api.auth.ListUserTwoFactorAuthenticatorProvidersCmd;
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
+import com.cloud.api.auth.ValidateUserTwoFactorAuthenticationCodeCmd;
+import com.cloud.server.ManagementServer;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.utils.HttpUtils;
+import com.cloud.vm.UserVmManager;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApiServletTest {
+
+    private static final String[] STATE_CHANGING_COMMAND_CHECK_NAME_PARAM =
+            {ApiServer.EnforcePostRequestsAndTimestamps.key()};
 
     @Mock
     ApiServer apiServer;
@@ -97,17 +105,20 @@ public class ApiServletTest {
     @Mock
     AccountService accountMgr;
 
-    @Mock ConfigKey<Boolean> useForwardHeader;
+    @Mock
+    ConfigDepotImpl mockConfigDepot;
+
     StringWriter responseWriter;
 
     ApiServlet servlet;
-    ApiServlet spyServlet;
+
+    private ConfigDepotImpl originalConfigDepot;
+
     @SuppressWarnings("unchecked")
     @Before
     public void setup() throws SecurityException, NoSuchFieldException,
-    IllegalArgumentException, IllegalAccessException, IOException, UnknownHostException {
+            IllegalArgumentException, IllegalAccessException, IOException {
         servlet = new ApiServlet();
-        spyServlet = Mockito.spy(servlet);
         responseWriter = new StringWriter();
         Mockito.when(response.getWriter()).thenReturn(
                 new PrintWriter(responseWriter));
@@ -131,6 +142,7 @@ public class ApiServletTest {
         apiServerField.setAccessible(true);
         apiServerField.set(servlet, apiServer);
 
+        setupConfigDepotMock();
     }
 
     /**
@@ -151,6 +163,33 @@ public class ApiServletTest {
         Field smsField = ApiDBUtils.class.getDeclaredField("s_ms");
         smsField.setAccessible(true);
         smsField.set(null, null);
+        restoreConfigDepot();
+    }
+
+    private void setupConfigDepotMock() throws NoSuchFieldException, IllegalAccessException {
+        Field depotField = ConfigKey.class.getDeclaredField("s_depot");
+        depotField.setAccessible(true);
+        originalConfigDepot = (ConfigDepotImpl) depotField.get(null);
+        depotField.set(null, mockConfigDepot);
+        Mockito.when(mockConfigDepot.getConfigStringValue(
+            Mockito.anyString(),
+            Mockito.any(ConfigKey.Scope.class),
+            Mockito.any()
+        )).thenReturn(null);
+    }
+
+    private void restoreConfigDepot() throws Exception {
+        Field depotField = ConfigKey.class.getDeclaredField("s_depot");
+        depotField.setAccessible(true);
+        depotField.set(null, originalConfigDepot);
+    }
+
+    private void setConfigValue(String configName, String value) {
+        Mockito.when(mockConfigDepot.getConfigStringValue(
+            Mockito.eq(configName),
+            Mockito.eq(ConfigKey.Scope.Global),
+            Mockito.isNull()
+        )).thenReturn(value);
     }
 
     @Test
@@ -261,43 +300,40 @@ public class ApiServletTest {
 
     @Test
     public void getClientAddressWithXForwardedFor() throws UnknownHostException {
-        String[] proxynet = {"127.0.0.0/8"};
-        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
-        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
+        setConfigValue("proxy.header.verify", "true");
+        setConfigValue("proxy.cidr", "127.0.0.0/8");
+        Mockito.when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         Mockito.when(request.getHeader(Mockito.eq("X-Forwarded-For"))).thenReturn("192.168.1.1");
-        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), spyServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressWithHttpXForwardedFor() throws UnknownHostException {
-        String[] proxynet = {"127.0.0.0/8"};
-        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
-        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
+        setConfigValue("proxy.header.verify", "true");
+        setConfigValue("proxy.cidr", "127.0.0.0/8");
         Mockito.when(request.getHeader(Mockito.eq("HTTP_X_FORWARDED_FOR"))).thenReturn("192.168.1.1");
-        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), spyServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressWithRemoteAddr() throws UnknownHostException {
-        String[] proxynet = {"127.0.0.0/8"};
-        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
-        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
-        Assert.assertEquals(InetAddress.getByName("127.0.0.1"), spyServlet.getClientAddress(request));
+        setConfigValue("proxy.header.verify", "true");
+        setConfigValue("proxy.cidr", "127.0.0.0/8");
+        Assert.assertEquals(InetAddress.getByName("127.0.0.1"), ApiServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressWithHttpClientIp() throws UnknownHostException {
-        String[] proxynet = {"127.0.0.0/8"};
-        Mockito.when(spyServlet.proxyNets()).thenReturn(proxynet);
-        Mockito.when(spyServlet.doUseForwardHeaders()).thenReturn(true);
+        setConfigValue("proxy.header.verify", "true");
+        setConfigValue("proxy.cidr", "127.0.0.0/8");
         Mockito.when(request.getHeader(Mockito.eq("HTTP_CLIENT_IP"))).thenReturn("192.168.1.1");
-        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), spyServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
     }
 
     @Test
     public void getClientAddressDefault() throws UnknownHostException {
         Mockito.when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-        Assert.assertEquals(InetAddress.getByName("127.0.0.1"), spyServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("127.0.0.1"), ApiServlet.getClientAddress(request));
     }
 
     @Test
@@ -431,5 +467,89 @@ public class ApiServletTest {
                 responseType, request, response);
 
         Assert.assertEquals(false, result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForPostMethod() {
+        String command = "updateConfiguration";
+        String method = "POST";
+        Map<String, Object[]> params = new HashMap<>();
+
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsTrueForNullCommandAndMethod() {
+        String command = null;
+        String method = null;
+        Map<String, Object[]> params = new HashMap<>();
+
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForGetHttpMethodAnnotation() {
+        String command = "isAccountAllowedToCreateOfferingsWithTags";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        Class<?> cmdClass = IsAccountAllowedToCreateOfferingsWithTagsCmd.class;
+        APICommand apiCommand = cmdClass.getAnnotation(APICommand.class);
+        Mockito.doReturn(cmdClass).when(apiServer).getCmdClass(command);
+        Assert.assertNotNull(apiCommand);
+        Assert.assertEquals("GET", apiCommand.httpMethod());
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForMatchingGetRequestPattern() {
+        String command = "listZones";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsTrueForMissingNameParameter() {
+        String command = "updateConfiguration";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForUpdateConfigurationEnforcePostRequestsKey() {
+        String command = "updateConfiguration";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        params.put("name", STATE_CHANGING_COMMAND_CHECK_NAME_PARAM);
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForWrongApiEnforcePostRequestsKey() {
+        String command = "updateSomeApi";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        params.put("name", STATE_CHANGING_COMMAND_CHECK_NAME_PARAM);
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isStateChangingCommandNotUsingPOSTReturnsFalseForUpdateConfigurationNonEnforcePostRequestsKey() {
+        String command = "updateConfiguration";
+        String method = "GET";
+        Map<String, Object[]> params = new HashMap<>();
+        params.put("name", new String[] { "key" });
+        boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+        Assert.assertTrue(result);
     }
 }

@@ -111,7 +111,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         FreezeThawVMAnswer freezeAnswer = null;
         FreezeThawVMCommand thawCmd = null;
         FreezeThawVMAnswer thawAnswer = null;
-        List<SnapshotInfo> forRollback = new ArrayList<>();
+        List<SnapshotInfo> snapshotsForRollback = new ArrayList<>();
         long startFreeze = 0;
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.CreateRequested);
@@ -144,7 +144,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 vmSnapshotVO.setParent(current.getId());
             }
             CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(userVm.getInstanceName(), userVm.getUuid(), target, volumeTOs,  guestOS.getDisplayName());
-            logger.info("Creating VM snapshot for KVM hypervisor without memory");
+            logger.info("Creating Instance Snapshot for KVM hypervisor without memory");
 
             List<VolumeInfo> vinfos = new ArrayList<>();
             for (VolumeObjectTO volumeObjectTO : volumeTOs) {
@@ -165,7 +165,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 logger.info("The virtual machine is frozen");
                 for (VolumeInfo vol : vinfos) {
                     long startSnapshtot = System.nanoTime();
-                    SnapshotInfo snapInfo = createDiskSnapshot(vmSnapshot, forRollback, vol);
+                    SnapshotInfo snapInfo = createDiskSnapshot(vmSnapshot, snapshotsForRollback, vol);
 
                     if (snapInfo == null) {
                         thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
@@ -183,11 +183,11 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                             TimeUnit.MILLISECONDS.convert(elapsedTime(startFreeze), TimeUnit.NANOSECONDS)));
                 }
             } else {
-                throw new CloudRuntimeException("Could not freeze VM." + freezeAnswer.getDetails());
+                throw new CloudRuntimeException("Could not freeze Instance." + freezeAnswer.getDetails());
             }
             if (answer != null && answer.getResult()) {
                 processAnswer(vmSnapshotVO, userVm, answer, null);
-                logger.debug("Create vm snapshot " + vmSnapshot.getName() + " succeeded for vm: " + userVm.getInstanceName());
+                logger.debug("Create Instance Snapshot " + vmSnapshot.getName() + " succeeded for Instance: " + userVm.getInstanceName());
                 long new_chain_size = 0;
                 for (VolumeObjectTO volumeTo : answer.getVolumeTOs()) {
                     publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_CREATE, vmSnapshot, userVm, volumeTo);
@@ -197,18 +197,18 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 result = true;
                 return vmSnapshot;
             } else {
-                String errMsg = "Creating VM snapshot: " + vmSnapshot.getName() + " failed";
+                String errMsg = "Creating Instance Snapshot: " + vmSnapshot.getName() + " failed";
                 logger.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
         } catch (OperationTimedoutException e) {
-            logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+            logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
             throw new CloudRuntimeException(
-                    "Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+                    "Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
         } catch (AgentUnavailableException e) {
-            logger.debug("Creating VM snapshot: " + vmSnapshot.getName() + " failed", e);
+            logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed", e);
             throw new CloudRuntimeException(
-                    "Creating VM snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+                    "Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
         } catch (CloudRuntimeException e) {
             throw new CloudRuntimeException(e.getMessage());
         } finally {
@@ -222,7 +222,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 }
             }
             if (!result) {
-                for (SnapshotInfo snapshotInfo : forRollback) {
+                for (SnapshotInfo snapshotInfo : snapshotsForRollback) {
                     rollbackDiskSnapshot(snapshotInfo);
                 }
                 try {
@@ -234,7 +234,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                     }
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -247,9 +247,9 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
         } catch (NoTransitionException e) {
-            logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
+            logger.debug("Failed to change Instance Snapshot state with event ExpungeRequested");
             throw new CloudRuntimeException(
-                    "Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
+                    "Failed to change Instance Snapshot state with event ExpungeRequested: " + e.getMessage());
         }
 
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
@@ -284,7 +284,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                     vmSnapshotDetailsDao.remove(vmSnapshotDetailsVO.getId());
                 }
             }
-            String errMsg = String.format("Delete of VM snapshot [%s] of VM [%s] failed due to [%s]", vmSnapshot.getName(), userVm.getUserId(), err);
+            String errMsg = String.format("Delete of Instance Snapshot [%s] of Instance [%s] failed due to [%s]", vmSnapshot.getName(), userVm.getUserId(), err);
             logger.error(errMsg, err);
             throw new CloudRuntimeException(errMsg, err);
         }
@@ -328,7 +328,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 try {
                     vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
                 } catch (NoTransitionException e1) {
-                    logger.error("Cannot set vm snapshot state due to: " + e1.getMessage());
+                    logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
                 }
             }
         }
@@ -388,10 +388,16 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
     //Rollback if one of disks snapshot fails
     protected void rollbackDiskSnapshot(SnapshotInfo snapshotInfo) {
+        if (snapshotInfo == null) {
+            return;
+        }
         Long snapshotID = snapshotInfo.getId();
         SnapshotVO snapshot = snapshotDao.findById(snapshotID);
+        if (snapshot == null) {
+            return;
+        }
         deleteSnapshotByStrategy(snapshot);
-        logger.debug("Rollback is executed: deleting snapshot with id:" + snapshotID);
+        logger.debug("Rollback is executed: deleting snapshot with id: {}", snapshotID);
     }
 
     protected void deleteSnapshotByStrategy(SnapshotVO snapshot) {
@@ -400,10 +406,10 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         if (strategy != null) {
             boolean snapshotForDelete = strategy.deleteSnapshot(snapshot.getId(), null);
             if (!snapshotForDelete) {
-                throw new CloudRuntimeException("Failed to delete snapshot");
+                throw new CloudRuntimeException("Failed to delete Snapshot");
             }
         } else {
-            throw new CloudRuntimeException("Could not find the primary storage of the snapshot");
+            throw new CloudRuntimeException("Could not find the primary storage of the Snapshot");
         }
     }
 
@@ -413,7 +419,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         for (VMSnapshotDetailsVO vmSnapshotDetailsVO : listSnapshots) {
                 SnapshotVO snapshot = snapshotDao.findById(Long.parseLong(vmSnapshotDetailsVO.getValue()));
                 if (snapshot == null) {
-                    throw new CloudRuntimeException("Could not find snapshot for VM snapshot");
+                    throw new CloudRuntimeException("Could not find Snapshot for Instance Snapshot");
                 }
                 deleteSnapshotByStrategy(snapshot);
                 vmSnapshotDetailsDao.remove(vmSnapshotDetailsVO.getId());
@@ -426,15 +432,15 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
             SnapshotInfo sInfo = snapshotDataFactory.getSnapshotOnPrimaryStore(Long.parseLong(vmSnapshotDetailsVO.getValue()));
             SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(sInfo, SnapshotOperation.REVERT);
             if (snapshotStrategy == null) {
-                throw new CloudRuntimeException(String.format("Could not find strategy for snapshot uuid [%s]", sInfo.getId()));
+                throw new CloudRuntimeException(String.format("Could not find strategy for Snapshot UUID [%s]", sInfo.getId()));
             }
             if (!snapshotStrategy.revertSnapshot(sInfo)) {
-                throw new CloudRuntimeException("Failed to revert snapshot");
+                throw new CloudRuntimeException("Failed to revert Snapshot");
             }
         }
     }
 
-    protected SnapshotInfo createDiskSnapshot(VMSnapshot vmSnapshot, List<SnapshotInfo> forRollback, VolumeInfo vol) {
+    protected SnapshotInfo createDiskSnapshot(VMSnapshot vmSnapshot, List<SnapshotInfo> snapshotsForRollback, VolumeInfo vol) {
         String snapshotName = vmSnapshot.getId() + "_" + vol.getUuid();
         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(), vol.getId(), vol.getDiskOfferingId(),
                               snapshotName, (short) Snapshot.Type.GROUP.ordinal(),  Snapshot.Type.GROUP.name(),  vol.getSize(), vol.getMinIops(),  vol.getMaxIops(), Hypervisor.HypervisorType.KVM, null);
@@ -448,6 +454,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         vol.addPayload(setPayload(vol, snapshot, quiescevm));
         SnapshotInfo snapshotInfo = snapshotDataFactory.getSnapshot(snapshot.getId(), vol.getDataStore());
         snapshotInfo.addPayload(vol.getpayload());
+        snapshotsForRollback.add(snapshotInfo);
         SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshotInfo, SnapshotOperation.TAKE);
         if (snapshotStrategy == null) {
             throw new CloudRuntimeException("Could not find strategy for snapshot uuid:" + snapshotInfo.getUuid());
@@ -455,8 +462,6 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         snapshotInfo = snapshotStrategy.takeSnapshot(snapshotInfo);
         if (snapshotInfo == null) {
             throw new CloudRuntimeException("Failed to create snapshot");
-        } else {
-          forRollback.add(snapshotInfo);
         }
         vmSnapshotDetailsDao.persist(new VMSnapshotDetailsVO(vmSnapshot.getId(), STORAGE_SNAPSHOT, String.valueOf(snapshot.getId()), true));
         snapshotInfo.markBackedUp();

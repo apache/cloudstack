@@ -168,7 +168,7 @@ public class KVMStoragePoolManager {
             result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails(), isVMMigrate);
 
             if (!result) {
-                logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                logger.error("Failed to connect disks via Instance spec for Instance: " + vmName + " volume:" + vol.toString());
                 return result;
             }
         }
@@ -258,7 +258,7 @@ public class KVMStoragePoolManager {
                 boolean subResult = adaptor.disconnectPhysicalDisk(vol.getPath(), pool);
 
                 if (!subResult) {
-                    logger.error("Failed to disconnect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
+                    logger.error("Failed to disconnect disks via Instance spec for Instance: " + vmName + " volume:" + vol.toString());
 
                     result = false;
                 }
@@ -289,6 +289,7 @@ public class KVMStoragePoolManager {
 
         if (pool instanceof LibvirtStoragePool) {
             addPoolDetails(uuid, (LibvirtStoragePool) pool);
+            ((LibvirtStoragePool) pool).setType(type);
         }
 
         return pool;
@@ -390,6 +391,9 @@ public class KVMStoragePoolManager {
     private synchronized KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean primaryStorage) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = adaptor.createStoragePool(name, host, port, path, userInfo, type, details, primaryStorage);
+        if (pool instanceof LibvirtStoragePool) {
+            ((LibvirtStoragePool) pool).setType(type);
+        }
 
         // LibvirtStorageAdaptor-specific statement
         if (pool.isPoolSupportHA() && primaryStorage) {

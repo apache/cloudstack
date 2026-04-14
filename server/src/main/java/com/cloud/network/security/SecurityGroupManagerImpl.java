@@ -212,7 +212,6 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             try {
                 cleanupFinishedWork();
                 cleanupUnfinishedWork();
-                //processScheduledWork();
             } catch (Throwable th) {
                 logger.error("Problem with SG Cleanup", th);
             }
@@ -399,7 +398,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         Collections.sort(affectedVms);
         if (logger.isTraceEnabled()) {
-            logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " vms");
+            logger.trace("Security Group Mgr: scheduling ruleset updates for " + affectedVms.size() + " Instances");
         }
         boolean locked = _workLock.lock(_globalWorkLockTimeout);
         if (!locked) {
@@ -1038,14 +1037,14 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
                             locked = true;
                             return;
                         }
-                        logger.warn("Unable to acquire lock on vm {}", vm);
+                        logger.warn("Unable to acquire lock on Instance {}", vm);
                         return;
                     }
                     locked = true;
                     Long agentId = null;
                     VmRulesetLogVO log = _rulesetLogDao.findByVmId(userVmId);
                     if (log == null) {
-                        logger.warn("Cannot find log record for vm {}", vm);
+                        logger.warn("Cannot find log record for Instance {}", vm);
                         return;
                     }
                     seqnum = log.getLogsequence();
@@ -1279,7 +1278,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
             }
         }
         if (affectedVms.size() > 0) {
-            logger.info("Network Group full sync for agent " + agentId + " found " + affectedVms.size() + " vms out of sync");
+            logger.info("Network Group full sync for agent " + agentId + " found " + affectedVms.size() + " Instances out of sync");
             scheduleRulesetUpdateToHosts(affectedVms, false, null);
         }
 

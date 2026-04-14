@@ -61,6 +61,7 @@ public class ExtensionConfig {
         public Entrypoint entrypoint;
         public Orchestrator orchestrator;
         private Map<String, String> details;
+        public String reservedResourceDetails;
         public boolean enabled;
         public List<CustomAction> customActions;
 

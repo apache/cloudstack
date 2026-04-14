@@ -283,7 +283,7 @@ class TestWebhooks(cloudstackTestCase):
             description=description,
             secretkey=secretkey,
             state=state
-        )['webhook']
+        )
         self.assertNotEqual(
             updated_webhook,
             None,

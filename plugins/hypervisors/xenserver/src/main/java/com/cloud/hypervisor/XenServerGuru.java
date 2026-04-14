@@ -199,7 +199,7 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
         boolean isSourceObjectSnapshotTypeAndDestinationObjectTemplateType = srcData.getObjectType() == DataObjectType.SNAPSHOT
                 && destData.getObjectType() == DataObjectType.TEMPLATE;
         if (!isSourceObjectSnapshotTypeAndDestinationObjectTemplateType) {
-            logger.debug("We are returning the default host to execute commands because the source and destination objects are not snapshot and template respectively.");
+            logger.debug("We are returning the default host to execute commands because the source and destination objects are not Snapshot and Template respectively.");
             return defaultHostToExecuteCommands;
         }
         HostVO defaultHostToExecuteCommand = hostDao.findById(hostId);

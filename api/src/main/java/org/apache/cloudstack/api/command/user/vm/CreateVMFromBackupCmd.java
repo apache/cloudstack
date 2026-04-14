@@ -51,6 +51,7 @@ public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL
     @Parameter(name = ApiConstants.BACKUP_ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,
@@ -137,7 +138,7 @@ public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
                     message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                 }
             }
-            logger.info(String.format("%s: %s", message.toString(), ex.getLocalizedMessage()));
+            logger.info("{}: {}", message.toString(), ex.getLocalizedMessage());
             logger.debug(message.toString(), ex);
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, message.toString());
         }

@@ -30,15 +30,15 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class ApplicationLoadBalancerRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.SOURCE_PORT)
-    @Param(description = "source port of the load balancer rule")
+    @Param(description = "Source port of the Load balancer rule")
     private Integer sourcePort;
 
     @SerializedName(ApiConstants.INSTANCE_PORT)
-    @Param(description = "instance port of the load balancer rule")
+    @Param(description = "Instance port of the Load balancer rule")
     private Integer instancePort;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the load balancer rule")
+    @Param(description = "The state of the Load balancer rule")
     private String state;
 
     public void setSourcePort(Integer sourcePort) {

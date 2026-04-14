@@ -29,39 +29,39 @@ import com.cloud.serializer.Param;
 @SuppressWarnings("unused")
 public class VpnUsersResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the vpn userID")
+    @Param(description = "The VPN user ID")
     private String id;
 
     @SerializedName(ApiConstants.USERNAME)
-    @Param(description = "the username of the vpn user")
+    @Param(description = "The username of the VPN user")
     private String userName;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account of the remote access vpn")
+    @Param(description = "The Account of the remote access VPN")
     private String accountName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain id of the account of the remote access vpn")
+    @Param(description = "The domain ID of the Account of the remote access VPN")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the account of the remote access vpn")
+    @Param(description = "The domain name of the Account of the remote access VPN")
     private String domainName;
 
     @SerializedName(ApiConstants.DOMAIN_PATH)
-    @Param(description = "path of the domain to which the remote access vpn belongs", since = "4.19.2.0")
+    @Param(description = "Path of the domain to which the remote access VPN belongs", since = "4.19.2.0")
     private String domainPath;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id of the vpn")
+    @Param(description = "The project ID of the VPN")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vpn")
+    @Param(description = "The project name of the VPN")
     private String projectName;
 
     @SerializedName(ApiConstants.STATE)
-    @Param(description = "the state of the Vpn User, can be 'Add', 'Revoke' or 'Active'.")
+    @Param(description = "The state of the VPN User, can be 'Add', 'Revoke' or 'Active'.")
     private String state;
 
     public void setId(String id) {

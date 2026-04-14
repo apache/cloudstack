@@ -22,7 +22,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.org.Grouping;
 import com.cloud.storage.DataStoreRole;
@@ -30,6 +29,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotZoneDao;
@@ -44,6 +44,7 @@ import com.cloud.utils.Pair;
 
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.api.command.user.snapshot.DeleteSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -100,6 +101,10 @@ public class SnapshotManagerImplTest {
     VolumeDao volumeDao;
     @Mock
     SnapshotPolicyDao snapshotPolicyDao;
+    @Mock
+    SnapshotScheduler snapshotScheduler;
+    @Mock
+    TaggedResourceService taggedResourceService;
     @InjectMocks
     SnapshotManagerImpl snapshotManager = new SnapshotManagerImpl();
 
@@ -108,6 +113,8 @@ public class SnapshotManagerImplTest {
         snapshotManager._snapshotPolicyDao = snapshotPolicyDao;
         snapshotManager._volsDao = volumeDao;
         snapshotManager._accountMgr = accountManager;
+        snapshotManager._snapSchedMgr = snapshotScheduler;
+        snapshotManager.taggedResourceService = taggedResourceService;
     }
 
     @After
@@ -164,7 +171,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(ref1.getDataStoreId()).thenReturn(2L);
         Mockito.when(ref1.getRole()).thenReturn(DataStoreRole.Image);
         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref, ref1);
-        Mockito.when(snapshotStoreDao.findBySnapshotId(snapshotId)).thenReturn(snapshotStoreList);
+        Mockito.when(snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId)).thenReturn(snapshotStoreList);
         Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(100L);
         Mockito.when(dataStoreManager.getStoreZoneId(2L, DataStoreRole.Image)).thenReturn(101L);
         Pair<List<SnapshotDataStoreVO>, List<Long>> pair = snapshotManager.getStoreRefsAndZonesForSnapshotDelete(snapshotId, null);
@@ -189,7 +196,7 @@ public class SnapshotManagerImplTest {
         Mockito.when(ref2.getDataStoreId()).thenReturn(3L);
         Mockito.when(ref2.getRole()).thenReturn(DataStoreRole.Image);
         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref, ref1, ref2);
-        Mockito.when(snapshotStoreDao.findBySnapshotId(snapshotId)).thenReturn(snapshotStoreList);
+        Mockito.when(snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId)).thenReturn(snapshotStoreList);
         Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(zoneId);
         Mockito.when(dataStoreManager.getStoreZoneId(2L, DataStoreRole.Primary)).thenReturn(zoneId);
         Mockito.when(dataStoreManager.getStoreZoneId(3L, DataStoreRole.Image)).thenReturn(2L);
@@ -309,12 +316,11 @@ public class SnapshotManagerImplTest {
         Mockito.when(result1.isFailed()).thenReturn(false);
         AsyncCallFuture<SnapshotResult> future1 = Mockito.mock(AsyncCallFuture.class);
         try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(Mockito.any(), Mockito.any(), Mockito.anyLong());
             Mockito.when(future.get()).thenReturn(result);
             Mockito.when(snapshotService.queryCopySnapshot(Mockito.any())).thenReturn(future);
             Mockito.when(future1.get()).thenReturn(result1);
             Mockito.when(snapshotService.copySnapshot(Mockito.any(SnapshotInfo.class), Mockito.anyString(), Mockito.any(DataStore.class))).thenReturn(future1);
-        } catch (ResourceAllocationException | ResourceUnavailableException | ExecutionException | InterruptedException e) {
+        } catch (ResourceUnavailableException | ExecutionException | InterruptedException e) {
             Assert.fail(e.getMessage());
         }
         List<Long> addedZone = new ArrayList<>();
@@ -519,5 +525,89 @@ public class SnapshotManagerImplTest {
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.first().size());
         Assert.assertEquals(Integer.valueOf(1), result.second());
+    }
+
+    @Test
+    public void testDeleteSnapshotPoliciesForRemovedVolume() {
+        Long policyId = 1L;
+        Long volumeId = 10L;
+        Long accountId = 2L;
+
+        DeleteSnapshotPoliciesCmd cmd = Mockito.mock(DeleteSnapshotPoliciesCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(policyId);
+        Mockito.when(cmd.getIds()).thenReturn(null);
+
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getId()).thenReturn(accountId);
+        CallContext.register(Mockito.mock(User.class), caller);
+
+        SnapshotPolicyVO policyVO = Mockito.mock(SnapshotPolicyVO.class);
+        Mockito.when(policyVO.getId()).thenReturn(policyId);
+        Mockito.when(policyVO.getVolumeId()).thenReturn(volumeId);
+        Mockito.when(policyVO.getUuid()).thenReturn("policy-uuid");
+        Mockito.when(snapshotPolicyDao.findById(policyId)).thenReturn(policyVO);
+
+        // Volume is removed (expunged) but findByIdIncludingRemoved should still return it
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeDao.findByIdIncludingRemoved(volumeId)).thenReturn(volumeVO);
+
+        Mockito.when(snapshotPolicyDao.remove(policyId)).thenReturn(true);
+
+        boolean result = snapshotManager.deleteSnapshotPolicies(cmd);
+
+        Assert.assertTrue(result);
+        Mockito.verify(volumeDao).findByIdIncludingRemoved(volumeId);
+        Mockito.verify(snapshotScheduler).removeSchedule(volumeId, policyId);
+        Mockito.verify(snapshotPolicyDao).remove(policyId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDeleteSnapshotPoliciesNoPolicyId() {
+        DeleteSnapshotPoliciesCmd cmd = Mockito.mock(DeleteSnapshotPoliciesCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(null);
+        Mockito.when(cmd.getIds()).thenReturn(null);
+
+        snapshotManager.deleteSnapshotPolicies(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDeleteSnapshotPoliciesPolicyNotFound() {
+        Long policyId = 1L;
+
+        DeleteSnapshotPoliciesCmd cmd = Mockito.mock(DeleteSnapshotPoliciesCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(policyId);
+        Mockito.when(cmd.getIds()).thenReturn(null);
+
+        Mockito.when(snapshotPolicyDao.findById(policyId)).thenReturn(null);
+
+        snapshotManager.deleteSnapshotPolicies(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDeleteSnapshotPoliciesVolumeNotFound() {
+        Long policyId = 1L;
+        Long volumeId = 10L;
+
+        DeleteSnapshotPoliciesCmd cmd = Mockito.mock(DeleteSnapshotPoliciesCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(policyId);
+        Mockito.when(cmd.getIds()).thenReturn(null);
+
+        SnapshotPolicyVO policyVO = Mockito.mock(SnapshotPolicyVO.class);
+        Mockito.when(policyVO.getVolumeId()).thenReturn(volumeId);
+        Mockito.when(snapshotPolicyDao.findById(policyId)).thenReturn(policyVO);
+
+        // Volume doesn't exist at all (even when including removed)
+        Mockito.when(volumeDao.findByIdIncludingRemoved(volumeId)).thenReturn(null);
+
+        snapshotManager.deleteSnapshotPolicies(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDeleteSnapshotPoliciesManualPolicyId() {
+        DeleteSnapshotPoliciesCmd cmd = Mockito.mock(DeleteSnapshotPoliciesCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(Snapshot.MANUAL_POLICY_ID);
+        Mockito.when(cmd.getIds()).thenReturn(null);
+
+        snapshotManager.deleteSnapshotPolicies(cmd);
     }
 }
