@@ -964,7 +964,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         Storage.ProvisioningType provisioningType = diskOffering.getProvisioningType();
 
-        List<String> tags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(displayVolume, diskOffering);
+        List<String> tags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(displayVolume, diskOffering, null);
         if (tags.size() == 1 && tags.get(0) == null) {
             tags = new ArrayList<>();
         }
@@ -2809,7 +2809,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         Account owner = _accountDao.findById(volumeToAttach.getAccountId());
-        List<String> resourceLimitStorageTags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering);
+        List<String> resourceLimitStorageTags = _resourceLimitMgr.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering, null);
         Long requiredPrimaryStorageSpace = getRequiredPrimaryStorageSizeForVolumeAttach(resourceLimitStorageTags, volumeToAttach);
 
         try (CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, resourceLimitStorageTags, requiredPrimaryStorageSpace, reservationDao, _resourceLimitMgr)) {

@@ -1789,8 +1789,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             return;
         }
 
-        List<String> currentTags = getResourceLimitStorageTagsForResourceCountOperation(true, currentOffering);
-        List<String> tagsAfterUpdate = getResourceLimitStorageTagsForResourceCountOperation(true, newOffering);
+        List<String> currentTags = getResourceLimitStorageTagsForResourceCountOperation(true, currentOffering, null);
+        List<String> tagsAfterUpdate = getResourceLimitStorageTagsForResourceCountOperation(true, newOffering, null);
         if (currentTags.isEmpty() && tagsAfterUpdate.isEmpty()) {
             return;
         }
@@ -2118,8 +2118,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             Long currentMemory, Long newMemory, ServiceOffering currentOffering, ServiceOffering newOffering,
             VirtualMachineTemplate currentTemplate, VirtualMachineTemplate newTemplate, List<Reserver> reservations
     ) throws ResourceAllocationException {
-        List<String> currentTags = getResourceLimitHostTagsForResourceCountOperation(true, currentOffering, currentTemplate);
-        List<String> tagsAfterUpdate = getResourceLimitHostTagsForResourceCountOperation(true, newOffering, newTemplate);
+        List<String> currentTags = getResourceLimitHostTagsForResourceCountOperation(true, currentOffering, currentTemplate, null);
+        List<String> tagsAfterUpdate = getResourceLimitHostTagsForResourceCountOperation(true, newOffering, newTemplate, null);
         if (currentTags.isEmpty() && tagsAfterUpdate.isEmpty()) {
             return;
         }

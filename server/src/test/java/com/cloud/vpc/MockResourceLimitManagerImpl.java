@@ -279,7 +279,7 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     @Override
-    public List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering) {
+    public List<String> getResourceLimitStorageTagsForResourceCountOperation(Boolean display, DiskOffering diskOffering, Boolean enforceResourceLimitOnDisplayFalse) {
         return null;
     }
 

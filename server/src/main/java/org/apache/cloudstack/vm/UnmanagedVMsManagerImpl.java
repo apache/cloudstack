@@ -2773,7 +2773,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
 
         List<Reserver> reservations = new ArrayList<>();
-        List<String> resourceLimitStorageTags = resourceLimitService.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering);
+        List<String> resourceLimitStorageTags = resourceLimitService.getResourceLimitStorageTagsForResourceCountOperation(true, diskOffering, null);
         try {
         CheckedReservation volumeReservation = new CheckedReservation(owner, Resource.ResourceType.volume, resourceLimitStorageTags,
                     CollectionUtils.isNotEmpty(resourceLimitStorageTags) ? 1L : 0L, reservationDao, resourceLimitService);

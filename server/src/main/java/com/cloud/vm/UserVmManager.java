@@ -40,7 +40,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import org.jetbrains.annotations.NotNull;
 
 import static com.cloud.user.ResourceLimitService.ResourceLimitHostTags;
 
