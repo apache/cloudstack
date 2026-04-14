@@ -469,7 +469,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             endpointsToRunResize = new long[] {ep.getId()};
         }
         ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(),
-                resizeParameter.newSize, resizeParameter.shrinkOk, resizeParameter.instanceName, vol.getChainInfo(), vol.getPassphrase(), vol.getEncryptFormat());
+                resizeParameter.newSize, resizeParameter.shrinkOk, resizeParameter.instanceName, vol.getChainInfo(), vol.getPassphrase(), vol.getEncryptFormat(),
+                resizeParameter.newReadRateIops, resizeParameter.newWriteRateIops);
         if (pool.getParent() != 0) {
             resizeCmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }

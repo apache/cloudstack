@@ -36,6 +36,8 @@ public class MigrateVolumeCommand extends Command {
     String attachedVmName;
     Volume.Type volumeType;
     String hostGuidInTargetCluster;
+    Long newReadRateIops;
+    Long newWriteRateIops;
 
     private DataTO srcData;
     private DataTO destData;
@@ -149,5 +151,21 @@ public class MigrateVolumeCommand extends Command {
     @Override
     public boolean isReconcile() {
         return true;
+    }
+
+    public Long getNewWriteRateIops() {
+        return newWriteRateIops;
+    }
+
+    public void setNewWriteRateIops(Long newWriteRateIops) {
+        this.newWriteRateIops = newWriteRateIops;
+    }
+
+    public Long getNewReadRateIops() {
+        return newReadRateIops;
+    }
+
+    public void setNewReadRateIops(Long newReadRateIops) {
+        this.newReadRateIops = newReadRateIops;
     }
 }
