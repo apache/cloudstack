@@ -2289,6 +2289,10 @@ public class ApiDBUtils {
         return s_accountService.isAdmin(account.getId());
     }
 
+    public static Account getSystemAccount() {
+        return s_accountService.getSystemAccount();
+    }
+
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
     }

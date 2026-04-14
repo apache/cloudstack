@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,14 +15,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package org.apache.cloudstack.extension;
+package com.cloud.resourcelimit;
+
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.resourcelimit.Reserver;
 
 import java.util.List;
 
-public interface ExtensionHelper {
-    Long getExtensionIdForCluster(long clusterId);
-    Extension getExtension(long id);
-    Extension getExtensionForCluster(long clusterId);
-    List<String> getExtensionReservedResourceDetails(long extensionId);
+public class ReservationHelper {
+
+    public static void closeAll(List<Reserver> reservations) throws CloudRuntimeException {
+        for (Reserver reservation : reservations) {
+            reservation.close();
+        }
+    }
+
 }

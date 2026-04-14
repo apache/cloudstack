@@ -15,13 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.extension;
+package org.apache.cloudstack.resourcelimit;
 
-import java.util.List;
+/**
+ * Interface implemented by <code>CheckedReservation</code>.
+ * </br></br>
+ * This is defined in <code>cloud-api</code> to allow methods declared in modules that do not depend on <code>cloud-server</code>
+ * to receive <code>CheckedReservations</code> as parameters.
+ */
+public interface Reserver extends AutoCloseable {
 
-public interface ExtensionHelper {
-    Long getExtensionIdForCluster(long clusterId);
-    Extension getExtension(long id);
-    Extension getExtensionForCluster(long clusterId);
-    List<String> getExtensionReservedResourceDetails(long extensionId);
+    void close();
+
 }

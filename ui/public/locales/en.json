@@ -2104,6 +2104,7 @@
 "label.requireshvm": "HVM",
 "label.requiresupgrade": "Requires upgrade",
 "label.reserved": "Reserved",
+"label.reservedresourcedetails": "Reserved resource details",
 "label.reserved.system.gateway": "Reserved system gateway",
 "label.reserved.system.ip": "Reserved system IP",
 "label.reserved.system.netmask": "Reserved system netmask",
