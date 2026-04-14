@@ -338,6 +338,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             return false;
         }
 
+        if (_imgStoreDao.findById(imageStore.getId()).isReadonly()) {
+            logger.info("Image store [{}] is marked as read-only. Skip downloading template to this image store.", imageStore);
+            return false;
+        }
+
         if (!_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
             logger.info("Image store doesn't have enough capacity. Skip downloading template to this image store [{}].", imageStore);
             return false;
