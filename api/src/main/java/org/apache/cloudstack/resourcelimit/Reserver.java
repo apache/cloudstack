@@ -15,20 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.backup.dao;
+package org.apache.cloudstack.resourcelimit;
 
-import java.util.Date;
-import java.util.List;
+/**
+ * Interface implemented by <code>CheckedReservation</code>.
+ * </br></br>
+ * This is defined in <code>cloud-api</code> to allow methods declared in modules that do not depend on <code>cloud-server</code>
+ * to receive <code>CheckedReservations</code> as parameters.
+ */
+public interface Reserver extends AutoCloseable {
 
-import com.cloud.utils.DateUtil;
-import org.apache.cloudstack.backup.BackupScheduleVO;
+    void close();
 
-import com.cloud.utils.db.GenericDao;
-
-public interface BackupScheduleDao extends GenericDao<BackupScheduleVO, Long> {
-    List<BackupScheduleVO> listByVM(Long vmId);
-
-    BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType);
-
-    List<BackupScheduleVO> getSchedulesToExecute(Date currentTimestamp);
 }

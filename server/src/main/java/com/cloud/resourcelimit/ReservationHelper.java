@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,21 +15,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package org.apache.cloudstack.backup.dao;
+package com.cloud.resourcelimit;
 
-import java.util.Date;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.resourcelimit.Reserver;
+
 import java.util.List;
 
-import com.cloud.utils.DateUtil;
-import org.apache.cloudstack.backup.BackupScheduleVO;
+public class ReservationHelper {
 
-import com.cloud.utils.db.GenericDao;
+    public static void closeAll(List<Reserver> reservations) throws CloudRuntimeException {
+        for (Reserver reservation : reservations) {
+            reservation.close();
+        }
+    }
 
-public interface BackupScheduleDao extends GenericDao<BackupScheduleVO, Long> {
-    List<BackupScheduleVO> listByVM(Long vmId);
-
-    BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType);
-
-    List<BackupScheduleVO> getSchedulesToExecute(Date currentTimestamp);
 }
