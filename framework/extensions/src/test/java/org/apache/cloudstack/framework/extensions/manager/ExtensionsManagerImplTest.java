@@ -29,6 +29,7 @@ import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -91,10 +92,12 @@ import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDetailsDao;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionDetailsVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionVO;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -786,6 +789,8 @@ public class ExtensionsManagerImplTest {
         when(cmd.getPath()).thenReturn(null);
         when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
         when(cmd.getState()).thenReturn(null);
+        String reservedResourceDetails = "abc,xyz";
+        when(cmd.getReservedResourceDetails()).thenReturn(reservedResourceDetails);
         when(extensionDao.findByName("ext1")).thenReturn(null);
         when(extensionDao.persist(any())).thenAnswer(inv -> {
             ExtensionVO extensionVO = inv.getArgument(0);
@@ -793,11 +798,20 @@ public class ExtensionsManagerImplTest {
             return extensionVO;
         });
         when(managementServerHostDao.listBy(any())).thenReturn(Collections.emptyList());
-
+        List<ExtensionDetailsVO> detailsList = new ArrayList<>();
+        doAnswer(inv -> {
+            List<ExtensionDetailsVO> detailsVO = inv.getArgument(0);
+            detailsList.addAll(detailsVO);
+            return null;
+        }).when(extensionDetailsDao).saveDetails(anyList());
         Extension ext = extensionsManager.createExtension(cmd);
 
         assertEquals("ext1", ext.getName());
         verify(extensionDao).persist(any());
+        assertTrue(CollectionUtils.isNotEmpty(detailsList));
+        assertTrue(detailsList.stream()
+                .anyMatch(detail -> ApiConstants.RESERVED_RESOURCE_DETAILS.equals(detail.getName())
+                    && reservedResourceDetails.equals(detail.getValue())));
     }
 
     @Test
@@ -1044,14 +1058,32 @@ public class ExtensionsManagerImplTest {
     public void updateExtensionsDetails_SavesDetails_WhenDetailsProvided() {
         long extensionId = 10L;
         Map<String, String> details = Map.of("foo", "bar", "baz", "qux");
-        extensionsManager.updateExtensionsDetails(false, details, null, extensionId);
+        extensionsManager.updateExtensionsDetails(false, details, null, null, extensionId);
         verify(extensionDetailsDao).saveDetails(any());
+    }
+
+    @Test
+    public void updateExtensionsDetails_PersistReservedDetail_WhenProvided() {
+        long extensionId = 10L;
+        when(extensionDetailsDao.persist(any())).thenReturn(mock(ExtensionDetailsVO.class));
+        extensionsManager.updateExtensionsDetails(false, null, null, "abc,xyz", extensionId);
+        verify(extensionDetailsDao).persist(any());
+    }
+
+    @Test
+    public void updateExtensionsDetails_UpdateReservedDetail_WhenProvided() {
+        long extensionId = 10L;
+        when(extensionDetailsDao.findDetail(anyLong(), eq(ApiConstants.RESERVED_RESOURCE_DETAILS)))
+                .thenReturn(mock(ExtensionDetailsVO.class));
+        when(extensionDetailsDao.update(anyLong(), any())).thenReturn(true);
+        extensionsManager.updateExtensionsDetails(false, null, null, "abc,xyz", extensionId);
+        verify(extensionDetailsDao).update(anyLong(), any());
     }
 
     @Test
     public void updateExtensionsDetails_DoesNothing_WhenDetailsAndCleanupAreNull() {
         long extensionId = 11L;
-        extensionsManager.updateExtensionsDetails(null, null, null, extensionId);
+        extensionsManager.updateExtensionsDetails(null, null, null, null, extensionId);
         verify(extensionDetailsDao, never()).removeDetails(anyLong());
         verify(extensionDetailsDao, never()).saveDetails(any());
     }
@@ -1059,7 +1091,7 @@ public class ExtensionsManagerImplTest {
     @Test
     public void updateExtensionsDetails_RemovesDetailsOnly_WhenCleanupIsTrue() {
         long extensionId = 12L;
-        extensionsManager.updateExtensionsDetails(true, null, null, extensionId);
+        extensionsManager.updateExtensionsDetails(true, null, null, null, extensionId);
         verify(extensionDetailsDao).removeDetails(extensionId);
         verify(extensionDetailsDao, never()).saveDetails(any());
     }
@@ -1067,7 +1099,7 @@ public class ExtensionsManagerImplTest {
     @Test
     public void updateExtensionsDetails_PersistsOrchestratorFlag_WhenFlagIsNotNull() {
         long extensionId = 13L;
-        extensionsManager.updateExtensionsDetails(false, null, true, extensionId);
+        extensionsManager.updateExtensionsDetails(false, null, true, null, extensionId);
         verify(extensionDetailsDao).persist(any());
     }
 
@@ -1076,7 +1108,7 @@ public class ExtensionsManagerImplTest {
         long extensionId = 14L;
         Map<String, String> details = Map.of("foo", "bar");
         doThrow(CloudRuntimeException.class).when(extensionDetailsDao).saveDetails(any());
-        extensionsManager.updateExtensionsDetails(false, details, null, extensionId);
+        extensionsManager.updateExtensionsDetails(false, details, null, null, extensionId);
     }
 
     @Test
@@ -1267,7 +1299,8 @@ public class ExtensionsManagerImplTest {
         when(extensionsFilesystemManager.getExtensionPath("entry2.sh")).thenReturn("/some/path/entry2.sh");
 
         Map<String, String> hiddenDetails = Map.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, "false");
-        when(extensionDetailsDao.listDetailsKeyPairs(2L, List.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM)))
+        when(extensionDetailsDao.listDetailsKeyPairs(2L, List.of(
+                ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, ApiConstants.RESERVED_RESOURCE_DETAILS)))
                 .thenReturn(hiddenDetails);
 
         EnumSet<ApiConstants.ExtensionDetails> viewDetails = EnumSet.noneOf(ApiConstants.ExtensionDetails.class);
@@ -2743,5 +2776,120 @@ public class ExtensionsManagerImplTest {
         assertEquals(msUuid, response.getManagementServerId());
         assertEquals(msName, response.getManagementServerName());
         assertEquals(url, response.getUrl());
+    }
+
+    @Test
+    public void getExtensionReservedResourceDetailsReturnsEmptyListWhenDetailsNotFound() {
+        long extensionId = 1L;
+        when(extensionDetailsDao.findDetail(extensionId, ApiConstants.RESERVED_RESOURCE_DETAILS)).thenReturn(null);
+
+        List<String> result = extensionsManager.getExtensionReservedResourceDetails(extensionId);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getExtensionReservedResourceDetailsReturnsEmptyListWhenValueIsBlank() {
+        long extensionId = 2L;
+        ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
+        when(detailsVO.getValue()).thenReturn("   ");
+        when(extensionDetailsDao.findDetail(extensionId, ApiConstants.RESERVED_RESOURCE_DETAILS)).thenReturn(detailsVO);
+
+        List<String> result = extensionsManager.getExtensionReservedResourceDetails(extensionId);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getExtensionReservedResourceDetailsReturnsListOfTrimmedDetails() {
+        long extensionId = 3L;
+        ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
+        when(detailsVO.getValue()).thenReturn(" detail1 , detail2,detail3 ");
+        when(extensionDetailsDao.findDetail(extensionId, ApiConstants.RESERVED_RESOURCE_DETAILS)).thenReturn(detailsVO);
+
+        List<String> result = extensionsManager.getExtensionReservedResourceDetails(extensionId);
+
+        assertNotNull(result);
+        assertEquals(3, result.size());
+        assertEquals("detail1", result.get(0));
+        assertEquals("detail2", result.get(1));
+        assertEquals("detail3", result.get(2));
+    }
+
+    @Test
+    public void getExtensionReservedResourceDetailsHandlesEmptyPartsGracefully() {
+        long extensionId = 4L;
+        ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
+        when(detailsVO.getValue()).thenReturn("detail1,,detail2, ,detail3");
+        when(extensionDetailsDao.findDetail(extensionId, ApiConstants.RESERVED_RESOURCE_DETAILS)).thenReturn(detailsVO);
+
+        List<String> result = extensionsManager.getExtensionReservedResourceDetails(extensionId);
+
+        assertNotNull(result);
+        assertEquals(3, result.size());
+        assertEquals("detail1", result.get(0));
+        assertEquals("detail2", result.get(1));
+        assertEquals("detail3", result.get(2));
+    }
+
+    @Test
+    public void getExtensionReservedResourceDetailsReturnsEmptyListWhenSplitResultsInNoParts() {
+        long extensionId = 5L;
+        ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
+        when(detailsVO.getValue()).thenReturn(",");
+        when(extensionDetailsDao.findDetail(extensionId, ApiConstants.RESERVED_RESOURCE_DETAILS)).thenReturn(detailsVO);
+
+        List<String> result = extensionsManager.getExtensionReservedResourceDetails(extensionId);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void addInbuiltExtensionReservedResourceDetailsDoesNothingWhenExtensionNotFound() {
+        when(extensionDao.findById(1L)).thenReturn(null);
+        List<String> reservedResourceDetails = new ArrayList<>();
+        extensionsManager.addInbuiltExtensionReservedResourceDetails(1L, reservedResourceDetails);
+        assertTrue(reservedResourceDetails.isEmpty());
+    }
+
+    @Test
+    public void addInbuiltExtensionReservedResourceDetailsDoesNothingForUserDefinedExtension() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extension.isUserDefined()).thenReturn(true);
+        when(extensionDao.findById(2L)).thenReturn(extension);
+        List<String> reservedResourceDetails = new ArrayList<>();
+        reservedResourceDetails.add("existing-detail");
+        extensionsManager.addInbuiltExtensionReservedResourceDetails(2L, reservedResourceDetails);
+        assertEquals(1, reservedResourceDetails.size());
+        assertTrue(reservedResourceDetails.contains("existing-detail"));
+    }
+
+    @Test
+    public void addInbuiltExtensionReservedResourceDetailsDoesNothingWhenNoMatchFound() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extension.isUserDefined()).thenReturn(false);
+        when(extension.getName()).thenReturn("no-such-inbuilt-key-expected");
+        when(extensionDao.findById(3L)).thenReturn(extension);
+        List<String> reservedResourceDetails = new ArrayList<>();
+        extensionsManager.addInbuiltExtensionReservedResourceDetails(3L, reservedResourceDetails);
+        assertTrue(reservedResourceDetails.isEmpty());
+    }
+
+    @Test
+    public void addInbuiltExtensionReservedResourceDetailsAddedDetails() {
+        ExtensionVO extension = mock(ExtensionVO.class);
+        when(extension.isUserDefined()).thenReturn(false);
+        Map.Entry<String, List<String>> entry =
+                ExtensionsManagerImpl.INBUILT_RESERVED_RESOURCE_DETAILS.entrySet().iterator().next();
+        when(extension.getName()).thenReturn(entry.getKey());
+        when(extensionDao.findById(3L)).thenReturn(extension);
+        List<String> reservedResourceDetails = new ArrayList<>();
+        extensionsManager.addInbuiltExtensionReservedResourceDetails(3L, reservedResourceDetails);
+        assertFalse(reservedResourceDetails.isEmpty());
+        assertEquals(reservedResourceDetails.size(), entry.getValue().size());
+        assertTrue(reservedResourceDetails.containsAll(entry.getValue()));
     }
 }

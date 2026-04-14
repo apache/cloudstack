@@ -1002,7 +1002,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             break; // TODO
         }
         return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId), getInstallPath(jobId),
-                getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
+                getDownloadTemplateSize(jobId), td.getDownloadedBytes(), getDownloadCheckSum(jobId));
     }
 
     private String getInstallPath(String jobId) {
