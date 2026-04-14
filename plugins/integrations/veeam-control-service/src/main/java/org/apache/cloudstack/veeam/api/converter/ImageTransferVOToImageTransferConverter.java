@@ -42,7 +42,7 @@ public class ImageTransferVOToImageTransferConverter {
         final String basePath = VeeamControlService.ContextPath.value();
         imageTransfer.setId(vo.getUuid());
         imageTransfer.setHref(basePath + ImageTransfersRouteHandler.BASE_ROUTE + "/" + vo.getUuid());
-        imageTransfer.setActive(Boolean.toString(vo.getProgress() != null && vo.getProgress() > 0 && vo.getProgress() < 100));
+        imageTransfer.setActive(Boolean.toString(org.apache.cloudstack.backup.ImageTransfer.Phase.transferring.equals(vo.getPhase())));
         imageTransfer.setDirection(vo.getDirection().name());
         imageTransfer.setFormat("cow");
         imageTransfer.setInactivityTimeout(Integer.toString(3600));

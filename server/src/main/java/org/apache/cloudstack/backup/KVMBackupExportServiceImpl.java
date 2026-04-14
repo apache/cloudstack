@@ -28,9 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -53,10 +50,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.stereotype.Component;
@@ -84,7 +79,6 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.ReflectionUse;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -141,8 +135,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Inject
     AsyncJobManager asyncJobManager;
-
-    private ScheduledExecutorService imageTransferStatusExecutor;
 
     VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -878,7 +870,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         response.setDiskId(volume.getUuid());
         response.setTransferUrl(imageTransferVO.getTransferUrl());
         response.setPhase(imageTransferVO.getPhase().toString());
-        response.setProgress(imageTransferVO.getProgress());
         response.setDirection(imageTransferVO.getDirection().toString());
         response.setCreated(imageTransferVO.getCreated());
         return response;
@@ -886,24 +877,11 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     @Override
     public boolean start() {
-        imageTransferStatusExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Image-Transfer-Status-Executor"));
-        long pollingInterval = ImageTransferPollingInterval.value();
-        imageTransferStatusExecutor.scheduleAtFixedRate(new ManagedContextRunnable() {
-            @Override
-            protected void runInContext() {
-                try {
-                    pollImageTransferProgress();
-                } catch (final Throwable t) {
-                    logger.warn("Catch throwable in image transfer poll task ", t);
-                }
-            }
-        }, pollingInterval, pollingInterval, TimeUnit.SECONDS);
         return true;
     }
 
     @Override
     public boolean stop() {
-        imageTransferStatusExecutor.shutdown();
         return true;
     }
 
@@ -945,91 +923,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             }
         }
 
-    private void pollImageTransferProgress() {
-        try {
-            List<ImageTransferVO> transferringTransfers = imageTransferDao.listByPhaseAndDirection(
-                    ImageTransfer.Phase.transferring, ImageTransfer.Direction.upload);
-            if (transferringTransfers == null || transferringTransfers.isEmpty()) {
-                return;
-            }
-
-            Map<Long, List<ImageTransferVO>> transfersByHost = transferringTransfers.stream()
-                    .collect(Collectors.groupingBy(ImageTransferVO::getHostId));
-            Map<Long, VolumeVO> transferVolumeMap = new HashMap<>();
-
-            for (Map.Entry<Long, List<ImageTransferVO>> entry : transfersByHost.entrySet()) {
-                Long hostId = entry.getKey();
-                List<ImageTransferVO> hostTransfers = entry.getValue();
-
-                try {
-                    List<String> transferIds = new ArrayList<>();
-                    Map<String, String> volumePaths = new HashMap<>();
-                    Map<String, Long> volumeSizes = new HashMap<>();
-
-                    for (ImageTransferVO transfer : hostTransfers) {
-                        VolumeVO volume = volumeDao.findById(transfer.getVolumeId());
-                        if (volume == null) {
-                            logger.warn("Volume not found for image transfer: {}", transfer.getUuid());
-                            imageTransferDao.remove(transfer.getId());
-                            continue;
-                        }
-                        transferVolumeMap.put(transfer.getId(), volume);
-
-                        String transferId = transfer.getUuid();
-                        transferIds.add(transferId);
-
-                        if (volume.getPath() == null) {
-                            logger.warn("Volume path is null for image transfer: {}", transfer.getUuid());
-                            continue;
-                        }
-                        String volumePath = getVolumePathForFileBasedBackend(volume);
-                        volumePaths.put(transferId, volumePath);
-                        volumeSizes.put(transferId, volume.getSize());
-                    }
-
-                    if (transferIds.isEmpty()) {
-                        continue;
-                    }
-
-                    GetImageTransferProgressCommand cmd = new GetImageTransferProgressCommand(transferIds, volumePaths, volumeSizes);
-                    GetImageTransferProgressAnswer answer = (GetImageTransferProgressAnswer) agentManager.send(hostId, cmd);
-
-                    if (answer == null || !answer.getResult() || MapUtils.isEmpty(answer.getProgressMap())) {
-                        logger.warn("Failed to get progress for transfers on host {}: {}", hostId,
-                                answer != null ? answer.getDetails() : "null answer");
-                        continue;
-                    }
-
-                    for (ImageTransferVO transfer : hostTransfers) {
-                        String transferId = transfer.getUuid();
-                        Long currentSize = answer.getProgressMap().get(transferId);
-                        if (currentSize == null) {
-                            continue;
-                        }
-                        VolumeVO volume = transferVolumeMap.get(transfer.getId());
-                        long totalSize = getVolumeTotalSize(volume);
-                        int progress = Math.max((int)((currentSize * 100) / totalSize), 100);
-                        transfer.setProgress(progress);
-                        if (currentSize >= 100) {
-                            transfer.setPhase(ImageTransfer.Phase.finished);
-                            logger.debug("Updated phase for image transfer {} to finished", transferId);
-                        }
-                        imageTransferDao.update(transfer.getId(), transfer);
-                        logger.debug("Updated progress for image transfer {}: {}%", transferId, progress);
-                    }
-
-                } catch (AgentUnavailableException | OperationTimedoutException e) {
-                    logger.warn("Failed to communicate with host {} for image transfer progress", hostId);
-                } catch (Exception e) {
-                    logger.error("Error polling image transfer progress for host " + hostId, e);
-                }
-            }
-
-        } catch (Exception e) {
-            logger.error("Error in pollImageTransferProgress", e);
-        }
-    }
-
     private long getVolumeTotalSize(VolumeVO volume) {
         VolumeDetailVO detail = volumeDetailsDao.findDetail(volume.getId(), ApiConstants.VIRTUAL_SIZE);
         if (detail != null) {
@@ -1063,7 +956,6 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
-                ImageTransferPollingInterval,
                 ImageTransferIdleTimeoutSeconds,
                 ExposeKVMBackupExportServiceApis
         };

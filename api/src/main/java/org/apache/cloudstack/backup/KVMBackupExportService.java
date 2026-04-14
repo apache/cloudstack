@@ -38,11 +38,6 @@ import com.cloud.utils.component.PluggableService;
  */
 public interface KVMBackupExportService extends Configurable, PluggableService {
 
-    ConfigKey<Long> ImageTransferPollingInterval = new ConfigKey<>("Advanced", Long.class,
-            "image.transfer.polling.interval",
-            "10",
-            "The image transfer progress polling interval in seconds.", true, ConfigKey.Scope.Global);
-
     ConfigKey<Integer> ImageTransferIdleTimeoutSeconds = new ConfigKey<>("Advanced", Integer.class,
             "image.transfer.idle.timeout.seconds",
             "600",
