@@ -58,6 +58,7 @@ import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -86,6 +87,7 @@ import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.bgp.BGPService;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.ClusterVO;
@@ -214,6 +216,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
@@ -447,6 +450,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     ClusterDao clusterDao;
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
+    @Inject
+    private ReservationDao reservationDao;
 
     protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
     ScheduledExecutorService _executor;
@@ -2752,12 +2757,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return null;
         }
 
-        final boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, aclType);
-        //check resource limits
-        if (updateResourceCount) {
-            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.network, isDisplayNetworkEnabled);
-        }
-
         // Validate network offering
         if (ntwkOff.getState() != NetworkOffering.State.Enabled) {
             // see NetworkOfferingVO
@@ -2775,6 +2774,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         boolean ipv6 = false;
+
+        try (CheckedReservation networkReservation = new CheckedReservation(owner, domainId, Resource.ResourceType.network, null, null, 1L, reservationDao, _resourceLimitMgr)) {
 
         if (StringUtils.isNoneBlank(ip6Gateway, ip6Cidr)) {
             ipv6 = true;
@@ -3115,8 +3116,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     }
                 }
 
-                if (updateResourceCount) {
-                    _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.network, isDisplayNetworkEnabled);
+                if (isResourceCountUpdateNeeded(ntwkOff)) {
+                    changeAccountResourceCountOrRecalculateDomainResourceCount(owner.getAccountId(), domainId, isDisplayNetworkEnabled, true);
                 }
                 UsageEventUtils.publishNetworkCreation(network);
 
@@ -3127,6 +3128,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         CallContext.current().setEventDetails("Network ID: " + network.getUuid());
         CallContext.current().putContextParameter(Network.class, network.getUuid());
         return network;
+        }
     }
 
     @Override
@@ -3492,9 +3494,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             }
 
                             final NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());
-                            final boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, networkFinal.getAclType());
-                            if (updateResourceCount) {
-                                _resourceLimitMgr.decrementResourceCount(networkFinal.getAccountId(), ResourceType.network, networkFinal.getDisplayNetwork());
+                            if (isResourceCountUpdateNeeded(ntwkOff)) {
+                                changeAccountResourceCountOrRecalculateDomainResourceCount(networkFinal.getAccountId(), networkFinal.getDomainId(), networkFinal.getDisplayNetwork(), false);
                             }
                         }
                         return deletedVlans.second();
@@ -3517,6 +3518,23 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return success;
     }
 
+    /**
+     * If it is a shared network with {@link ACLType#Domain}, it will belong to account {@link Account#ACCOUNT_ID_SYSTEM} and the resources will be not incremented for the
+     * domain. Therefore, we force the recalculation of the domain's resource count in this case. Otherwise, it will change the count for the account owner.
+     * @param incrementAccountResourceCount If true, the account resource count will be incremented by 1; otherwise, it will decremented by 1.
+     */
+    private void changeAccountResourceCountOrRecalculateDomainResourceCount(Long accountId, Long domainId, boolean displayNetwork, boolean incrementAccountResourceCount) {
+        if (Account.ACCOUNT_ID_SYSTEM == accountId && ObjectUtils.isNotEmpty(domainId)) {
+            _resourceLimitMgr.recalculateDomainResourceCount(domainId, ResourceType.network, null);
+        } else {
+            if (incrementAccountResourceCount) {
+                _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.network, displayNetwork);
+            } else {
+                _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.network, displayNetwork);
+            }
+        }
+    }
+
     private void publishDeletedVlanRanges(List<VlanVO> deletedVlanRangeToPublish) {
         if (CollectionUtils.isNotEmpty(deletedVlanRangeToPublish)) {
             for (VlanVO vlan : deletedVlanRangeToPublish) {
@@ -3526,10 +3544,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean resourceCountNeedsUpdate(final NetworkOffering ntwkOff, final ACLType aclType) {
-        //Update resource count only for Isolated account specific non-system networks
-        final boolean updateResourceCount = ntwkOff.getGuestType() == GuestType.Isolated && !ntwkOff.isSystemOnly() && aclType == ACLType.Account;
-        return updateResourceCount;
+    public boolean isResourceCountUpdateNeeded(NetworkOffering networkOffering) {
+        return !networkOffering.isSystemOnly();
     }
 
     protected Pair<Boolean, List<VlanVO>> deleteVlansInNetwork(final NetworkVO network, final long userId, final Account callerAccount) {
