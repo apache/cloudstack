@@ -622,6 +622,7 @@ public class ApiConstants {
     public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USER_SECRET_KEY = "usersecretkey";
+    public static final String USE_VDDK = "usevddk";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String USE_VIRTUAL_ROUTER_IP_RESOLVER = "userouteripresolver";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
