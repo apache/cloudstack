@@ -21,8 +21,6 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-
 public class Upgrade42030to42040 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     @Override
