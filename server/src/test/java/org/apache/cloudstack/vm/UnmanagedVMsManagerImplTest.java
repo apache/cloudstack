@@ -783,7 +783,6 @@ public class UnmanagedVMsManagerImplTest {
             useVddk = true;
             ovfExportSupported = true;
             when(importVmCmd.getDetails()).thenReturn(Map.of(
-                    "libguestfs.backend", "libvirt",
                     "vddk.lib.dir", "/opt/vmware-vddk/override",
                     "vddk.transports", "nbd:nbdssl",
                     "vddk.thumbprint", "AA:BB:CC:DD:EE"));

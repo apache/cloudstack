@@ -22,10 +22,12 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.Locale;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -319,6 +321,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 UUID.randomUUID());
         try {
             Files.writeString(Path.of(passwordFilePath), vcenterPassword);
+            Files.setPosixFilePermissions(Path.of(passwordFilePath), Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
             logger.debug("({}) Written vCenter password to {}", originalVMName, passwordFilePath);
         } catch (Exception e) {
             logger.error("({}) Failed to write vCenter password file {}: {}", originalVMName, passwordFilePath, e.getMessage());
@@ -326,7 +329,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         }
 
         try {
-            String vpxUrl = buildVpxUrl(vmwareInstance, originalVMName);
+            String vpxUrl = buildVpxUrl(vmwareInstance);
 
             StringBuilder cmd = new StringBuilder();
 
@@ -355,7 +358,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
             if (StringUtils.isNotBlank(vddkTransports)) {
                 cmd.append("-io vddk-transports=").append(vddkTransports).append(" ");
             }
-            cmd.append(originalVMName).append(" ");
+            cmd.append(vmwareInstance.getInstanceName()).append(" ");
             cmd.append("-o local ");
             cmd.append("-os ").append(temporaryConvertFolder).append(" ");
             cmd.append("-of qcow2 ");
@@ -457,8 +460,9 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
      * Format:
      * vpx://user@vcenter/DC/cluster/host?no_verify=1
      */
-    private String buildVpxUrl(RemoteInstanceTO vmwareInstance, String originalVMName) {
+    private String buildVpxUrl(RemoteInstanceTO vmwareInstance) {
 
+        String vmName = vmwareInstance.getInstanceName();
         String vcenter = vmwareInstance.getVcenterHost();
         String username = vmwareInstance.getVcenterUsername();
         String datacenter = vmwareInstance.getDatacenterName();
@@ -485,7 +489,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
         url.append("?no_verify=1");
 
-        logger.info("({}) Using VPX URL: {}", originalVMName, url);
+        logger.info("({}) Using VPX URL: {}", vmName, url);
         return url.toString();
     }
 }
