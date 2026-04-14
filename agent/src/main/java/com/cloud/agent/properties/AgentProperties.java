@@ -886,6 +886,11 @@ public class AgentProperties{
      */
     public static final Property<Boolean> CREATE_FULL_CLONE = new Property<>("create.full.clone", false);
 
+    /**
+     * Time, in seconds, to wait before retrying to rebase during the incremental snapshot process.
+     * */
+    public static final Property<Integer> INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT = new Property<>("incremental.snapshot.retry.rebase.wait", 60);
+
 
     /**
      * Maximum number of backup validation jobs that can be executed at the same time. Values lower than 0 remove the limit, meaning that as many validations as possible will be done at

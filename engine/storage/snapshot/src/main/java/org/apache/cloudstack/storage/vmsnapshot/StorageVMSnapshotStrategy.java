@@ -116,7 +116,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         FreezeThawVMAnswer freezeAnswer = null;
         FreezeThawVMCommand thawCmd = null;
         FreezeThawVMAnswer thawAnswer = null;
-        List<SnapshotInfo> forRollback = new ArrayList<>();
+        List<SnapshotInfo> snapshotsForRollback = new ArrayList<>();
         long startFreeze = 0;
         try {
             vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.CreateRequested);
@@ -170,7 +170,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 logger.info("The virtual machine is frozen");
                 for (VolumeInfo vol : vinfos) {
                     long startSnapshtot = System.nanoTime();
-                    SnapshotInfo snapInfo = createDiskSnapshot(vmSnapshot, forRollback, vol);
+                    SnapshotInfo snapInfo = createDiskSnapshot(vmSnapshot, snapshotsForRollback, vol);
 
                     if (snapInfo == null) {
                         thawAnswer = (FreezeThawVMAnswer) agentMgr.send(hostId, thawCmd);
@@ -227,7 +227,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
                 }
             }
             if (!result) {
-                for (SnapshotInfo snapshotInfo : forRollback) {
+                for (SnapshotInfo snapshotInfo : snapshotsForRollback) {
                     rollbackDiskSnapshot(snapshotInfo);
                 }
                 try {
@@ -404,10 +404,16 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
     //Rollback if one of disks snapshot fails
     protected void rollbackDiskSnapshot(SnapshotInfo snapshotInfo) {
+        if (snapshotInfo == null) {
+            return;
+        }
         Long snapshotID = snapshotInfo.getId();
         SnapshotVO snapshot = snapshotDao.findById(snapshotID);
+        if (snapshot == null) {
+            return;
+        }
         deleteSnapshotByStrategy(snapshot);
-        logger.debug("Rollback is executed: deleting snapshot with id:" + snapshotID);
+        logger.debug("Rollback is executed: deleting snapshot with id: {}", snapshotID);
     }
 
     protected void deleteSnapshotByStrategy(SnapshotVO snapshot) {
@@ -450,7 +456,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         }
     }
 
-    protected SnapshotInfo createDiskSnapshot(VMSnapshot vmSnapshot, List<SnapshotInfo> forRollback, VolumeInfo vol) {
+    protected SnapshotInfo createDiskSnapshot(VMSnapshot vmSnapshot, List<SnapshotInfo> snapshotsForRollback, VolumeInfo vol) {
         String snapshotName = vmSnapshot.getId() + "_" + vol.getUuid();
         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(), vol.getId(), vol.getDiskOfferingId(),
                               snapshotName, (short) Snapshot.Type.GROUP.ordinal(),  Snapshot.Type.GROUP.name(),  vol.getSize(), vol.getMinIops(),  vol.getMaxIops(), Hypervisor.HypervisorType.KVM, null);
@@ -464,6 +470,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         vol.addPayload(setPayload(vol, snapshot, quiescevm));
         SnapshotInfo snapshotInfo = snapshotDataFactory.getSnapshot(snapshot.getId(), vol.getDataStore());
         snapshotInfo.addPayload(vol.getpayload());
+        snapshotsForRollback.add(snapshotInfo);
         SnapshotStrategy snapshotStrategy = storageStrategyFactory.getSnapshotStrategy(snapshotInfo, SnapshotOperation.TAKE);
         if (snapshotStrategy == null) {
             throw new CloudRuntimeException("Could not find strategy for snapshot uuid:" + snapshotInfo.getUuid());
@@ -471,8 +478,6 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         snapshotInfo = snapshotStrategy.takeSnapshot(snapshotInfo);
         if (snapshotInfo == null) {
             throw new CloudRuntimeException("Failed to create snapshot");
-        } else {
-          forRollback.add(snapshotInfo);
         }
         vmSnapshotDetailsDao.persist(new VMSnapshotDetailsVO(vmSnapshot.getId(), STORAGE_SNAPSHOT, String.valueOf(snapshot.getId()), true));
         snapshotInfo.markBackedUp();

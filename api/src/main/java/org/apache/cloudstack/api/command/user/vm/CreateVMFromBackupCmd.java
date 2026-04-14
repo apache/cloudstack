@@ -52,6 +52,7 @@ public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL
     @Parameter(name = ApiConstants.BACKUP_ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,

@@ -289,6 +289,7 @@ public class KVMStoragePoolManager {
 
         if (pool instanceof LibvirtStoragePool && addDetails) {
             addPoolDetails(uuid, (LibvirtStoragePool) pool);
+            ((LibvirtStoragePool) pool).setType(type);
         }
 
         return pool;
@@ -390,6 +391,9 @@ public class KVMStoragePoolManager {
     private synchronized KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean primaryStorage) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = adaptor.createStoragePool(name, host, port, path, userInfo, type, details, primaryStorage);
+        if (pool instanceof LibvirtStoragePool) {
+            ((LibvirtStoragePool) pool).setType(type);
+        }
 
         // LibvirtStorageAdaptor-specific statement
         if (pool.isPoolSupportHA() && primaryStorage) {

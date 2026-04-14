@@ -93,6 +93,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.poll.BackgroundPollTask;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
@@ -101,6 +102,8 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDispatcher;
@@ -134,6 +137,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -179,6 +183,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -250,6 +256,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private GuestOSDao _guestOSDao;
     @Inject
     private DomainHelper domainHelper;
+    @Inject
+    ReservationDao reservationDao;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -1032,14 +1040,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         Long backupScheduleId = getBackupScheduleId(job);
         boolean isScheduledBackup = backupScheduleId != null;
         Account owner = accountManager.getAccount(vm.getAccountId());
-        try {
-            resourceLimitMgr.checkResourceLimit(owner, Resource.ResourceType.backup);
-        } catch (ResourceAllocationException e) {
-            if (isScheduledBackup) {
-                sendExceededBackupLimitAlert(owner.getUuid(), Resource.ResourceType.backup);
-            }
-            throw e;
-        }
 
         Long backupSize = 0L;
         for (final Volume volume: volumeDao.findByInstance(vmId)) {
@@ -1051,40 +1051,55 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 backupSize += volumeSize;
             }
         }
-        try {
-            resourceLimitMgr.checkResourceLimit(owner, Resource.ResourceType.backup_storage, backupSize);
-        } catch (ResourceAllocationException e) {
-            if (isScheduledBackup) {
-                sendExceededBackupLimitAlert(owner.getUuid(), Resource.ResourceType.backup_storage);
-            }
-            throw e;
-        }
-
-        ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, vm.getAccountId(),
-                EventTypes.EVENT_VM_BACKUP_CREATE, "creating backup for VM ID:" + vm.getUuid(),
-                vmId, ApiCommandResourceType.VirtualMachine.toString(),
-                true, 0);
-
-        Pair<Boolean, Backup> result = backupProvider.takeBackup(vm, cmd.getQuiesceVM(), cmd.isIsolated());
-        if (!result.first()) {
-            throw new CloudRuntimeException("Failed to create VM backup");
-        }
-        Backup backup = result.second();
-        if (backup != null) {
-            BackupVO vmBackup = backupDao.findById(result.second().getId());
-            vmBackup.setBackupScheduleId(backupScheduleId);
-            if (cmd.getName() != null) {
-                vmBackup.setName(cmd.getName());
-            }
-            vmBackup.setDescription(cmd.getDescription());
-            backupDao.update(vmBackup.getId(), vmBackup);
-            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
-        }
+        createCheckedBackup(cmd, owner, isScheduledBackup, backupSize, vm, vmId, backupProvider, backupScheduleId);
         if (isScheduledBackup) {
             deleteOldestBackupFromScheduleIfRequired(vmId, backupScheduleId);
         }
         return true;
+    }
+
+    private void createCheckedBackup(CreateBackupCmd cmd, Account owner, boolean isScheduledBackup, Long backupSize,
+                 VMInstanceVO vm, Long vmId, BackupProvider backupProvider, Long backupScheduleId)
+            throws ResourceAllocationException {
+        try (CheckedReservation backupReservation = new CheckedReservation(owner, Resource.ResourceType.backup,
+                1L, reservationDao, resourceLimitMgr);
+             CheckedReservation backupStorageReservation = new CheckedReservation(owner,
+                     Resource.ResourceType.backup_storage, backupSize, reservationDao, resourceLimitMgr)) {
+
+            ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, vm.getAccountId(),
+                    EventTypes.EVENT_VM_BACKUP_CREATE, "creating backup for VM ID:" + vm.getUuid(),
+                    vmId, ApiCommandResourceType.VirtualMachine.toString(),
+                    true, 0);
+
+            Pair<Boolean, Backup> result = backupProvider.takeBackup(vm, cmd.getQuiesceVM(), cmd.isIsolated());
+            if (!result.first()) {
+                throw new CloudRuntimeException("Failed to create VM backup");
+            }
+            Backup backup = result.second();
+            if (backup != null) {
+                BackupVO vmBackup = backupDao.findById(result.second().getId());
+                vmBackup.setBackupScheduleId(backupScheduleId);
+                if (cmd.getName() != null) {
+                    vmBackup.setName(cmd.getName());
+                }
+                vmBackup.setDescription(cmd.getDescription());
+                backupDao.update(vmBackup.getId(), vmBackup);
+                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
+                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
+            }
+        } catch (Exception e) {
+            if (e instanceof ResourceAllocationException) {
+                ResourceAllocationException rae = (ResourceAllocationException)e;
+                if (isScheduledBackup && (Resource.ResourceType.backup.equals(rae.getResourceType()) ||
+                        Resource.ResourceType.backup_storage.equals(rae.getResourceType()))) {
+                    sendExceededBackupLimitAlert(owner.getUuid(), rae.getResourceType());
+                }
+                throw rae;
+            } else if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException)e;
+            }
+            throw new CloudRuntimeException("Failed to create backup for VM with ID: " + vm.getUuid(), e);
+        }
     }
 
     /**
@@ -1213,7 +1228,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         sb.and("backupOfferingId", sb.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
-            sb.or().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
+            sb.and().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
             SearchBuilder<VMInstanceVO> vmSearch = vmInstanceDao.createSearchBuilder();
             sb.join("vmSearch", vmSearch, sb.entity().getVmId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
             sb.or("vmSearch", "keywordVmName", vmSearch.entity().getHostName(), SearchCriteria.Op.LIKE);
@@ -1826,19 +1841,35 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException(String.format("Backup offering with ID [%s] does not exist.", backup.getBackupOfferingId()));
         }
         final BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
-        boolean result = backupProvider.deleteBackup(backup, forced);
-        if (result) {
-            resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
-            Long backupSize = backup.getSize() != null ? backup.getSize() : 0L;
-            resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backupSize);
-            if (backupDao.remove(backup.getId())) {
-                checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
-                return true;
-            } else {
-                return false;
+        return deleteCheckedBackup(forced, backupProvider, backup, vm);
+    }
+
+    private boolean deleteCheckedBackup(Boolean forced, BackupProvider backupProvider, BackupVO backup, VMInstanceVO vm) {
+        Account owner = accountManager.getAccount(backup.getAccountId());
+        long backupSize = backup.getSize() != null ? backup.getSize() : 0L;
+        try (CheckedReservation backupReservation = new CheckedReservation(owner, Resource.ResourceType.backup,
+                backup.getId(), null, -1L, reservationDao, resourceLimitMgr);
+             CheckedReservation backupStorageReservation = new CheckedReservation(owner,
+                     Resource.ResourceType.backup_storage, backup.getId(), null, -1 * backupSize,
+                     reservationDao, resourceLimitMgr)) {
+            boolean result = backupProvider.deleteBackup(backup, forced);
+            if (result) {
+                resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
+                resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backupSize);
+                if (backupDao.remove(backup.getId())) {
+                    checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
+                    return true;
+                } else {
+                    return false;
+                }
             }
+            throw new CloudRuntimeException("Failed to delete the backup");
+        } catch (Exception e) {
+            if (e instanceof CloudRuntimeException) {
+                throw (CloudRuntimeException) e;
+            }
+            throw new CloudRuntimeException("Failed to delete the backup due to: " + e.getMessage(), e);
         }
-        throw new CloudRuntimeException("Failed to delete the backup");
     }
 
     private void checkForPendingBackupJobs(final BackupVO backup) {

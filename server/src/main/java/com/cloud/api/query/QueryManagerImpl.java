@@ -31,7 +31,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -383,7 +382,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 @Component
-public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
+public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable, ResourceIdSupport {
 
 
     private static final String ID_FIELD = "id";
@@ -925,25 +924,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer entryTime = cmd.getEntryTime();
         Integer duration = cmd.getDuration();
         Long startId = cmd.getStartId();
-        final String resourceUuid = cmd.getResourceId();
-        final String resourceTypeStr = cmd.getResourceType();
+        final String resourceUuid = getResourceUuid(cmd.getResourceId());
+        final ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
         final String stateStr = cmd.getState();
-        ApiCommandResourceType resourceType = null;
         Long resourceId = null;
-        if (resourceTypeStr != null) {
-            resourceType = ApiCommandResourceType.fromString(resourceTypeStr);
-            if (resourceType == null) {
-                throw new InvalidParameterValueException(String.format("Invalid %s", ApiConstants.RESOURCE_TYPE));
-            }
-        }
         if (resourceUuid != null) {
-            if (resourceTypeStr == null) {
+            if (resourceType == null) {
                 throw new InvalidParameterValueException(String.format("%s parameter must be used with %s parameter", ApiConstants.RESOURCE_ID, ApiConstants.RESOURCE_TYPE));
-            }
-            try {
-                UUID.fromString(resourceUuid);
-            } catch (IllegalArgumentException ex) {
-                throw new InvalidParameterValueException(String.format("Invalid %s", ApiConstants.RESOURCE_ID));
             }
             Object object = entityManager.findByUuidIncludingRemoved(resourceType.getAssociatedClass(), resourceUuid);
             if (object instanceof InternalIdentity) {
@@ -3288,6 +3275,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (cmd.getManagementServerId() != null) {
             ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
             sc.setParameters("executingMsid", msHost.getMsid());
+        }
+
+        if (cmd.getResourceType() != null) {
+            ApiCommandResourceType resourceType = getResourceType(cmd.getResourceType());
+            sc.addAnd("instanceType", SearchCriteria.Op.EQ, resourceType.toString());
+
+            final String resourceId = getResourceUuid(cmd.getResourceId());
+            if (resourceId != null) {
+                sc.addAnd("instanceUuid", SearchCriteria.Op.EQ, resourceId);
+            }
+        } else if (cmd.getResourceId() != null) {
+            throw new InvalidParameterValueException(String.format("%s parameter must be used with %s parameter", ApiConstants.RESOURCE_ID, ApiConstants.RESOURCE_TYPE));
         }
 
         return _jobJoinDao.searchAndCount(sc, searchFilter);
@@ -6437,5 +6436,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending,
                 AllowUserViewAllDomainAccounts, AllowUserViewAllDataCenters, SharePublicTemplatesWithOtherDomains, ReturnVmStatsOnVmList};
+    }
+
+    @Override
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
+
+    @Override
+    public AccountManager getAccountManager() {
+        return accountMgr;
     }
 }
