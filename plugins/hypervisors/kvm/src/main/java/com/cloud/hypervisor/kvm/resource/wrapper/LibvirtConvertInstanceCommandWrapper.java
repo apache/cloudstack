@@ -109,12 +109,11 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                     logger.error("({}) {}", originalVMName, err);
                     return new Answer(cmd, false, err);
                 }
-                String libguestfsBackend = StringUtils.defaultIfBlank(resolveVddkSetting(cmd.getLibguestfsBackend(), serverResource.getLibguestfsBackend()), "direct");
                 String vddkTransports = resolveVddkSetting(cmd.getVddkTransports(), serverResource.getVddkTransports());
                 String configuredVddkThumbprint = resolveVddkSetting(cmd.getVddkThumbprint(), serverResource.getVddkThumbprint());
                 String passwordOption = serverResource.getDetectedPasswordFileOption();
                 result = performInstanceConversionUsingVddk(sourceInstance, originalVMName, temporaryConvertPath,
-                        vddkLibDir, libguestfsBackend, vddkTransports, configuredVddkThumbprint,
+                        vddkLibDir, serverResource.getLibguestfsBackend(), vddkTransports, configuredVddkThumbprint,
                         timeout, verboseModeEnabled, extraParams, temporaryConvertUuid, passwordOption);
             } else {
                 logger.info("({}) Using OVF-based conversion (export + local convert)", originalVMName);
@@ -331,8 +330,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
 
             StringBuilder cmd = new StringBuilder();
 
-            String effectiveLibguestfsBackend = StringUtils.defaultIfBlank(libguestfsBackend, "direct");
-            cmd.append("export LIBGUESTFS_BACKEND=").append(effectiveLibguestfsBackend).append(" && ");
+            cmd.append("export LIBGUESTFS_BACKEND=").append(libguestfsBackend).append(" && ");
 
             cmd.append("virt-v2v ");
             cmd.append("--root first ");

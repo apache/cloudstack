@@ -888,7 +888,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private boolean convertInstanceVerboseMode = false;
     private Map<String, String> convertInstanceEnv = null;
     private String vddkLibDir = null;
-    private String libguestfsBackend = "direct";
+    private static final String libguestfsBackend = "direct";
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
@@ -1200,8 +1200,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             LOGGER.info("Detected nbdkit VDDK plugin version: {}", vddkVersion);
         }
 
-        libguestfsBackend = StringUtils.defaultIfBlank(
-                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBGUESTFS_BACKEND), "direct");
         vddkTransports = StringUtils.trimToNull(
                 AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_TRANSPORTS));
         vddkThumbprint = StringUtils.trimToNull(

@@ -912,7 +912,6 @@ public class UnmanagedVMsManagerImplTest {
                     }
                     ConvertInstanceCommand convertCmd = (ConvertInstanceCommand) command;
                     return convertCmd.isUseVddk()
-                            && "libvirt".equals(convertCmd.getLibguestfsBackend())
                             && "/opt/vmware-vddk/override".equals(convertCmd.getVddkLibDir())
                             && "nbd:nbdssl".equals(convertCmd.getVddkTransports())
                             && "AA:BB:CC:DD:EE".equals(convertCmd.getVddkThumbprint());

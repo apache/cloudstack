@@ -32,7 +32,6 @@ public class ConvertInstanceCommand extends Command {
     private int threadsCountToExportOvf = 0;
     private String extraParams;
     private boolean useVddk;
-    private String libguestfsBackend;
     private String vddkLibDir;
     private String vddkTransports;
     private String vddkThumbprint;
@@ -101,14 +100,6 @@ public class ConvertInstanceCommand extends Command {
 
     public void setUseVddk(boolean useVddk) {
         this.useVddk = useVddk;
-    }
-
-    public String getLibguestfsBackend() {
-        return libguestfsBackend;
-    }
-
-    public void setLibguestfsBackend(String libguestfsBackend) {
-        this.libguestfsBackend = libguestfsBackend;
     }
 
     public String getVddkLibDir() {

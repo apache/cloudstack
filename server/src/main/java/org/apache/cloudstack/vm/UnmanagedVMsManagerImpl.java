@@ -208,7 +208,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     private static final List<Storage.StoragePoolType> forceConvertToPoolAllowedTypes =
             Arrays.asList(Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.Filesystem,
                     Storage.StoragePoolType.SharedMountPoint);
-    private static final String DETAIL_LIBGUESTFS_BACKEND = "libguestfs.backend";
     private static final String DETAIL_VDDK_TRANSPORTS = "vddk.transports";
     private static final String DETAIL_VDDK_THUMBPRINT = "vddk.thumbprint";
 
@@ -2173,7 +2172,6 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             return;
         }
 
-        cmd.setLibguestfsBackend(StringUtils.trimToNull(details.get(DETAIL_LIBGUESTFS_BACKEND)));
         cmd.setVddkLibDir(StringUtils.trimToNull(details.get(Host.HOST_VDDK_LIB_DIR)));
         cmd.setVddkTransports(StringUtils.trimToNull(details.get(DETAIL_VDDK_TRANSPORTS)));
         cmd.setVddkThumbprint(StringUtils.trimToNull(details.get(DETAIL_VDDK_THUMBPRINT)));

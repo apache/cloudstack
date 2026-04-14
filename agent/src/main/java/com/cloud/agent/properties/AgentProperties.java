@@ -817,13 +817,6 @@ public class AgentProperties{
     public static final Property<String> VDDK_LIB_DIR = new Property<>("vddk.lib.dir", null, String.class);
 
     /**
-     * Value for the LIBGUESTFS_BACKEND env var used during VMware to KVM conversion via VDDK.
-     * Data type: String.<br>
-     * Default value: <code>direct</code>
-     */
-    public static final Property<String> LIBGUESTFS_BACKEND = new Property<>("libguestfs.backend", "direct", String.class);
-
-    /**
      * Ordered list of VDDK transports for virt-v2v, passed as <code>-io vddk-transports=&lt;value&gt;</code>.
      * Example: <code>nbd:nbdssl</code>.
      * Data type: String.<br>
