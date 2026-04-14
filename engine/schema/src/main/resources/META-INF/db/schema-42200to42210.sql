@@ -33,3 +33,23 @@ UPDATE `cloud`.`alert` SET type = 34 WHERE name = 'ALERT.VR.PRIVATE.IFACE.MTU';
 
 -- Update configuration 'kvm.ssh.to.agent' description and is_dynamic fields
 UPDATE `cloud`.`configuration` SET description = 'True if the management server will restart the agent service via SSH into the KVM hosts after or during maintenance operations', is_dynamic = 1 WHERE name = 'kvm.ssh.to.agent';
+
+-- Sanitize legacy network-level addressing fields for Public networks
+UPDATE `cloud`.`networks`
+SET `broadcast_uri` = NULL,
+	`gateway` = NULL,
+	`cidr` = NULL,
+	`ip6_gateway` = NULL,
+	`ip6_cidr` = NULL
+WHERE `traffic_type` = 'Public';
+
+UPDATE `cloud`.`vm_template` SET guest_os_id = 99 WHERE name = 'kvm-default-vm-import-dummy-template';
+
+-- Update existing vm_template records with NULL type to "USER"
+UPDATE `cloud`.`vm_template` SET `type` = 'USER' WHERE `type` IS NULL;
+
+-- remove unused config item
+DELETE FROM `cloud`.`configuration` WHERE name = 'consoleproxy.cmd.port';
+
+-- Drops the unused "backup_interval_type" column of the "cloud.backups" table
+ALTER TABLE `cloud`.`backups` DROP COLUMN `backup_interval_type`;

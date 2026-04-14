@@ -18,6 +18,9 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_OVFTOOL_VERSION;
+import static com.cloud.host.Host.HOST_VDDK_LIB_DIR;
+import static com.cloud.host.Host.HOST_VDDK_SUPPORT;
+import static com.cloud.host.Host.HOST_VDDK_VERSION;
 import static com.cloud.host.Host.HOST_VIRTV2V_VERSION;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
@@ -363,6 +366,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "rpm -qa | grep -i virtio-win";
     public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
     public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
+    public static final String VDDK_AUTODETECT_PATH_CMD = "find / -type d -name 'vmware-vix-disklib-distrib' 2>/dev/null | head -n 1";
 
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MIN = 2;
     public static final int LIBVIRT_CGROUP_CPU_SHARES_MAX = 262144;
@@ -882,11 +886,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected StorageSubsystemCommandHandler storageHandler;
 
     private boolean convertInstanceVerboseMode = false;
-    private String[] convertInstanceEnv = null;
+    private Map<String, String> convertInstanceEnv = null;
+    private String vddkLibDir = null;
+    private static final String libguestfsBackend = "direct";
     protected boolean dpdkSupport = false;
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
     protected String cachePath;
+    private String vddkTransports = null;
+    private String vddkThumbprint = null;
+    private String vddkVersion = null;
+    private String detectedPasswordFileOption = null;
     protected String javaTempDir = System.getProperty("java.io.tmpdir");
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
@@ -947,8 +957,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return convertInstanceVerboseMode;
     }
 
-    public String[] getConvertInstanceEnv() {
+    public Map<String, String> getConvertInstanceEnv() {
         return convertInstanceEnv;
+    }
+
+    public String getVddkLibDir() {
+        return vddkLibDir;
+    }
+
+    public String getLibguestfsBackend() {
+        return libguestfsBackend;
+    }
+
+    public String getVddkTransports() {
+        return vddkTransports;
+    }
+
+    public String getVddkThumbprint() {
+        return vddkThumbprint;
+    }
+
+    public String getVddkVersion() {
+        return vddkVersion;
     }
 
     /**
@@ -1063,11 +1093,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find patch.sh");
         }
 
-        heartBeatPath = Script.findScript(kvmScriptsDir, "kvmheartbeat.sh");
-        if (heartBeatPath == null) {
-            throw new ConfigurationException("Unable to find kvmheartbeat.sh");
-        }
-
         createVmPath = Script.findScript(storageScriptsDir, "createvm.sh");
         if (createVmPath == null) {
             throw new ConfigurationException("Unable to find the createvm.sh");
@@ -1155,6 +1180,37 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String convertEnvVirtv2vTmpDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONVERT_ENV_VIRTV2V_TMPDIR);
 
         setConvertInstanceEnv(convertEnvTmpDir, convertEnvVirtv2vTmpDir);
+
+        vddkLibDir = StringUtils.trimToNull(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_LIB_DIR));
+        if (StringUtils.isNotBlank(vddkLibDir) && !isVddkLibDirValid(vddkLibDir)) {
+            LOGGER.warn("Configured VDDK library dir [{}] is invalid (missing lib64/libvixDiskLib.so), attempting auto-detection", vddkLibDir);
+            vddkLibDir = null;
+        }
+        if (StringUtils.isBlank(vddkLibDir)) {
+            vddkLibDir = detectVddkLibDir();
+        }
+        if (StringUtils.isNotBlank(vddkLibDir)) {
+            LOGGER.info("Detected VDDK library dir: {}", vddkLibDir);
+        } else {
+            LOGGER.warn("Could not detect a valid VDDK library dir; VDDK conversion will be unavailable");
+        }
+
+        vddkVersion = detectVddkVersion();
+        if (StringUtils.isNotBlank(vddkVersion)) {
+            LOGGER.info("Detected nbdkit VDDK plugin version: {}", vddkVersion);
+        }
+
+        vddkTransports = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_TRANSPORTS));
+        vddkThumbprint = StringUtils.trimToNull(
+                AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VDDK_THUMBPRINT));
+
+        detectedPasswordFileOption = detectPasswordFileOption();
+        if (StringUtils.isNotBlank(detectedPasswordFileOption)) {
+            LOGGER.info("Detected virt-v2v password option: {}", detectedPasswordFileOption);
+        } else {
+            LOGGER.warn("Could not detect virt-v2v password option, VDDK conversions may fail");
+        }
 
         pool = (String)params.get("pool");
         if (pool == null) {
@@ -1330,7 +1386,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         final String[] info = NetUtils.getNetworkParams(privateNic);
 
-        kvmhaMonitor = new KVMHAMonitor(null, info[0], heartBeatPath);
+        kvmhaMonitor = new KVMHAMonitor(null, info[0]);
         final Thread ha = new Thread(kvmhaMonitor);
         ha.start();
 
@@ -1437,14 +1493,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return;
         }
         if (StringUtils.isNotBlank(convertEnvTmpDir) && StringUtils.isNotBlank(convertEnvVirtv2vTmpDir)) {
-            convertInstanceEnv = new String[2];
-            convertInstanceEnv[0] = String.format("%s=%s", "TMPDIR", convertEnvTmpDir);
-            convertInstanceEnv[1] = String.format("%s=%s", "VIRT_V2V_TMPDIR", convertEnvVirtv2vTmpDir);
+            convertInstanceEnv = new HashMap<>(2);
+            convertInstanceEnv.put("TMPDIR", convertEnvTmpDir);
+            convertInstanceEnv.put("VIRT_V2V_TMPDIR", convertEnvVirtv2vTmpDir);
         } else {
-            convertInstanceEnv = new String[1];
+            convertInstanceEnv = new HashMap<>(1);
             String key = StringUtils.isNotBlank(convertEnvTmpDir) ? "TMPDIR" : "VIRT_V2V_TMPDIR";
             String value = StringUtils.isNotBlank(convertEnvTmpDir) ? convertEnvTmpDir : convertEnvVirtv2vTmpDir;
-            convertInstanceEnv[0] = String.format("%s=%s", key, value);
+            convertInstanceEnv.put(key, value);
         }
     }
 
@@ -1969,7 +2025,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (final String ifNamePattern : ifNamePatterns) {
             commonPattern.append("|(").append(ifNamePattern).append(".*)");
         }
-        if(fname.matches(commonPattern.toString())) {
+        if (fname.matches(commonPattern.toString())) {
             return true;
         }
         return false;
@@ -2496,11 +2552,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)(\\D*)(\\d*)");
         final Matcher matcher = pattern.matcher(pif);
         LOGGER.debug("getting broadcast uri for pif " + pif + " and bridge " + brName);
-        if(matcher.find()) {
+        if (matcher.find()) {
             if (brName.startsWith("brvx")){
                 return BroadcastDomainType.Vxlan.toUri(matcher.group(2)).toString();
-            }
-            else{
+            } else {
                 if (!matcher.group(6).isEmpty()) {
                     return BroadcastDomainType.Vlan.toUri(matcher.group(6)).toString();
                 } else if (!matcher.group(4).isEmpty()) {
@@ -3730,7 +3785,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 } else if (volume.getType() == Volume.Type.DATADISK) {
                     final KVMPhysicalDisk physicalDisk = storagePoolManager.getPhysicalDisk(store.getPoolType(), store.getUuid(), data.getPath());
                     final KVMStoragePool pool = physicalDisk.getPool();
-                    if(StoragePoolType.RBD.equals(pool.getType())) {
+                    if (StoragePoolType.RBD.equals(pool.getType())) {
                         final int devId = volume.getDiskSeq().intValue();
                         final String device = mapRbdDevice(physicalDisk);
                         if (device != null) {
@@ -4218,6 +4273,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setHostTags(getHostTags());
         boolean instanceConversionSupported = hostSupportsInstanceConversion();
         cmd.getHostDetails().put(HOST_INSTANCE_CONVERSION, String.valueOf(instanceConversionSupported));
+        cmd.getHostDetails().put(HOST_VDDK_SUPPORT, String.valueOf(hostSupportsVddk()));
+        if (StringUtils.isNotBlank(vddkLibDir)) {
+            cmd.getHostDetails().put(HOST_VDDK_LIB_DIR, vddkLibDir);
+        }
+        if (StringUtils.isNotBlank(vddkVersion)) {
+            cmd.getHostDetails().put(HOST_VDDK_VERSION, vddkVersion);
+        }
         if (instanceConversionSupported) {
             cmd.getHostDetails().put(HOST_VIRTV2V_VERSION, getHostVirtV2vVersion());
         }
@@ -4775,12 +4837,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         String dataDiskController = details.get(VmDetailConstants.DATA_DISK_CONTROLLER);
         if (StringUtils.isNotBlank(dataDiskController)) {
-            LOGGER.debug("Passed custom disk controller for DATA disk " + dataDiskController);
-            for (DiskDef.DiskBus bus : DiskDef.DiskBus.values()) {
-                if (bus.toString().equalsIgnoreCase(dataDiskController)) {
-                    LOGGER.debug("Found matching enum for disk controller for DATA disk " + dataDiskController);
-                    return bus;
-                }
+            LOGGER.debug("Passed custom disk controller for DATA disk {}", dataDiskController);
+            DiskDef.DiskBus bus = DiskDef.DiskBus.fromValue(dataDiskController);
+            if (bus != null) {
+                LOGGER.debug("Found matching enum for disk controller for DATA disk {}", dataDiskController);
+                return bus;
             }
         }
         return null;
@@ -5189,7 +5250,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         for (int i = 0; i < memoryStats.length; i++) {
-            if(memoryStats[i].getTag() == UNUSEDMEMORY) {
+            if (memoryStats[i].getTag() == UNUSEDMEMORY) {
                 freeMemory = memoryStats[i].getValue();
                 break;
             }
@@ -5761,12 +5822,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return hypervisorType;
     }
 
-    public String mapRbdDevice(final KVMPhysicalDisk disk){
+    public String mapRbdDevice(final KVMPhysicalDisk disk) {
         final KVMStoragePool pool = disk.getPool();
         //Check if rbd image is already mapped
         final String[] splitPoolImage = disk.getPath().split("/");
         String device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"[ ]*"+splitPoolImage[1]+"\" | grep -o \"[^ ]*[ ]*$\"");
-        if(device == null) {
+        if (device == null) {
             //If not mapped, map and return mapped device
             Script.runSimpleBashScript("rbd map " + disk.getPath() + " --id " + pool.getAuthUserName());
             device = Script.runSimpleBashScript("rbd showmapped | grep \""+splitPoolImage[0]+"[ ]*"+splitPoolImage[1]+"\" | grep -o \"[^ ]*[ ]*$\"");
@@ -5934,6 +5995,66 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return exitValue == 0;
     }
 
+    public boolean hostSupportsVddk() {
+        return hostSupportsVddk(null);
+    }
+
+    public boolean hostSupportsVddk(String overriddenVddkLibDir) {
+        String effectiveVddkLibDir = StringUtils.trimToNull(overriddenVddkLibDir);
+        if (StringUtils.isBlank(effectiveVddkLibDir)) {
+            effectiveVddkLibDir = StringUtils.trimToNull(vddkLibDir);
+        }
+        if (StringUtils.isBlank(effectiveVddkLibDir) || !isVddkLibDirValid(effectiveVddkLibDir)) {
+            effectiveVddkLibDir = detectVddkLibDir();
+        }
+        return hostSupportsInstanceConversion() && isVddkLibDirValid(effectiveVddkLibDir) && StringUtils.isNotBlank(detectVddkVersion());
+    }
+
+    protected boolean isVddkLibDirValid(String path) {
+        if (StringUtils.isBlank(path)) {
+            return false;
+        }
+        File libDir = new File(path, "lib64");
+        if (!libDir.isDirectory()) {
+            return false;
+        }
+        File[] libs = libDir.listFiles((dir, name) -> name.startsWith("libvixDiskLib.so"));
+        return libs != null && libs.length > 0;
+    }
+
+    protected String detectVddkLibDir() {
+        String detectedPath = StringUtils.trimToNull(Script.runSimpleBashScript(VDDK_AUTODETECT_PATH_CMD));
+        if (StringUtils.isNotBlank(detectedPath) && isVddkLibDirValid(detectedPath)) {
+            return detectedPath;
+        }
+        return null;
+    }
+
+    protected String detectVddkVersion() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("nbdkit", "vddk", "--version");
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            process.waitFor();
+
+            if (StringUtils.isBlank(output)) {
+                return null;
+            }
+
+            for (String line : output.split("\\R")) {
+                String trimmed = StringUtils.trimToEmpty(line);
+                if (trimmed.startsWith("vddk ")) {
+                    return StringUtils.trimToNull(trimmed.substring("vddk ".length()));
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            LOGGER.error("Failed to detect vddk version: {}", e.getMessage());
+            return null;
+        }
+    }
+
     public boolean hostSupportsWindowsGuestConversion() {
         if (isUbuntuOrDebianHost()) {
             int exitValue = Script.runSimpleBashScriptForExitValue(UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD);
@@ -5946,6 +6067,40 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean hostSupportsOvfExport() {
         int exitValue = Script.runSimpleBashScriptForExitValue(OVF_EXPORT_SUPPORTED_CHECK_CMD);
         return exitValue == 0;
+    }
+
+    /**
+     * Detect which password option virt-v2v supports by examining its --help output
+     * @return "-ip" if supported (virt-v2v >= 2.8.1), "--password-file" if older version, or null if detection fails
+     */
+    protected String detectPasswordFileOption() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("virt-v2v", "--help");
+            Process process = pb.start();
+
+            String output = new String(process.getInputStream().readAllBytes());
+            process.waitFor();
+
+            if (output.contains("-ip <filename>")) {
+                return "-ip";
+            } else if (output.contains("--password-file")) {
+                return "--password-file";
+            } else {
+                LOGGER.error("virt-v2v does not support -ip or --password-file");
+                return null;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to detect virt-v2v password option: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get the detected password file option for virt-v2v
+     * @return the password option ("-ip" or "--password-file") or null if not detected
+     */
+    public String getDetectedPasswordFileOption() {
+        return detectedPasswordFileOption;
     }
 
     public String getHostVirtV2vVersion() {

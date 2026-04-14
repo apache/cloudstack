@@ -59,7 +59,20 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import com.cloud.storage.dao.SnapshotPolicyDao;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -83,6 +96,7 @@ import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -93,18 +107,6 @@ import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
@@ -131,6 +133,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.as.AutoScaleManager;
@@ -155,6 +158,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -171,6 +175,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -193,6 +198,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
@@ -690,7 +696,6 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).validateOldAndNewAccounts(Mockito.nullable(Account.class), Mockito.nullable(Account.class), Mockito.anyLong(), Mockito.nullable(String.class), Mockito.nullable(Long.class));
         Mockito.doNothing().when(userVmManagerImpl).validateIfVmHasNoRules(Mockito.any(), Mockito.anyLong());
         Mockito.doNothing().when(userVmManagerImpl).removeInstanceFromInstanceGroup(Mockito.anyLong());
-        Mockito.doNothing().when(userVmManagerImpl).verifyResourceLimitsForAccountAndStorage(Mockito.any(), Mockito.any(), Mockito.any(), anyList(), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).validateIfNewOwnerHasAccessToTemplate(Mockito.any(), Mockito.any(), Mockito.any());
 
         Mockito.doNothing().when(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -1475,6 +1480,9 @@ public class UserVmManagerImplTest {
         when(cmd.getVmId()).thenReturn(vmId);
         when(cmd.getTemplateId()).thenReturn(2L);
         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+        KubernetesServiceHelper helper = mock(KubernetesServiceHelper.class);
+        when(helper.findByVmId(anyLong())).thenReturn(null);
+        userVmManagerImpl.setKubernetesServiceHelpers(Collections.singletonList(helper));
 
         userVmManagerImpl.restoreVM(cmd);
     }
@@ -1698,23 +1706,11 @@ public class UserVmManagerImplTest {
         Mockito.when(vol5.isDisplay()).thenReturn(true);
 
         List<VolumeVO> volumes = List.of(vol1, undisplayedVolume, vol3, vol4, vol5);
-        Long size = volumes.stream().filter(VolumeVO::isDisplay).mapToLong(VolumeVO::getSize).sum();
-        try {
-            userVmManagerImpl.checkVolumesLimits(account, volumes);
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimit(account, Resource.ResourceType.volume, 4);
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimit(account, Resource.ResourceType.primary_storage, size);
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag1", 2);
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag2", 3);
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag1",
-                            vol1.getSize() + vol5.getSize());
-            Mockito.verify(resourceLimitMgr, times(1))
-                    .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag2",
-                            vol1.getSize() + vol3.getSize() + vol5.getSize());
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            userVmManagerImpl.checkVolumesLimits(account, volumes, reservations);
+            Assert.assertEquals(8, reservations.size());
         } catch (ResourceAllocationException e) {
             Assert.fail(e.getMessage());
         }
@@ -2005,26 +2001,26 @@ public class UserVmManagerImplTest {
 
     @Test
     public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsTrueDoesNotCallVmResourceLimitCheck() throws ResourceAllocationException {
+        List<Reserver> reservations = new ArrayList<>();
         LinkedList<VolumeVO> volumeVoList = new LinkedList<VolumeVO>();
         Mockito.doReturn(true).when(userVmManagerImpl).countOnlyRunningVmsInResourceLimitation();
 
-        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock);
+        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock, reservations);
 
-        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.volume, 0l);
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.primary_storage, 0l);
+        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVolumeResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
     public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsFalseCallsVmResourceLimitCheck() throws ResourceAllocationException {
+        List<Reserver> reservations = new ArrayList<>();
         LinkedList<VolumeVO> volumeVoList = new LinkedList<VolumeVO>();
         Mockito.doReturn(false).when(userVmManagerImpl).countOnlyRunningVmsInResourceLimitation();
 
-        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock);
+        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock, reservations);
 
-        Mockito.verify(resourceLimitMgr).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.volume, 0l);
-        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.primary_storage, 0l);
+        Mockito.verify(resourceLimitMgr).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).checkVolumesLimits(Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -3069,7 +3065,7 @@ public class UserVmManagerImplTest {
         configureDoNothingForMethodsThatWeDoNotWantToTest();
 
         doThrow(ResourceAllocationException.class).when(userVmManagerImpl).verifyResourceLimitsForAccountAndStorage(Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.any());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
         Assert.assertThrows(ResourceAllocationException.class, () -> userVmManagerImpl.moveVmToUser(assignVmCmdMock));
     }
@@ -4177,4 +4173,55 @@ public class UserVmManagerImplTest {
         verify(userVmDao, times(1)).releaseFromLockTable(vmId);
     }
 
+    @Test
+    public void testTransitionExpungingToErrorVmInExpungingState() throws Exception {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Expunging);
+        when(vm.getUuid()).thenReturn("test-uuid");
+        when(userVmDao.findById(vmId)).thenReturn(vm);
+        when(virtualMachineManager.stateTransitTo(eq(vm), eq(VirtualMachine.Event.OperationFailedToError), eq(null))).thenReturn(true);
+
+        java.lang.reflect.Method method = UserVmManagerImpl.class.getDeclaredMethod("transitionExpungingToError", long.class);
+        method.setAccessible(true);
+        method.invoke(userVmManagerImpl, vmId);
+
+        Mockito.verify(virtualMachineManager).stateTransitTo(vm, VirtualMachine.Event.OperationFailedToError, null);
+    }
+
+    @Test
+    public void testTransitionExpungingToErrorVmNotInExpungingState() throws Exception {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(userVmDao.findById(vmId)).thenReturn(vm);
+
+        java.lang.reflect.Method method = UserVmManagerImpl.class.getDeclaredMethod("transitionExpungingToError", long.class);
+        method.setAccessible(true);
+        method.invoke(userVmManagerImpl, vmId);
+
+        Mockito.verify(virtualMachineManager, Mockito.never()).stateTransitTo(any(VirtualMachine.class), any(VirtualMachine.Event.class), any());
+    }
+
+    @Test
+    public void testTransitionExpungingToErrorVmNotFound() throws Exception {
+        when(userVmDao.findById(vmId)).thenReturn(null);
+
+        java.lang.reflect.Method method = UserVmManagerImpl.class.getDeclaredMethod("transitionExpungingToError", long.class);
+        method.setAccessible(true);
+        method.invoke(userVmManagerImpl, vmId);
+
+        Mockito.verify(virtualMachineManager, Mockito.never()).stateTransitTo(any(VirtualMachine.class), any(VirtualMachine.Event.class), any());
+    }
+
+    @Test
+    public void testTransitionExpungingToErrorHandlesNoTransitionException() throws Exception {
+        UserVmVO vm = mock(UserVmVO.class);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Expunging);
+        when(userVmDao.findById(vmId)).thenReturn(vm);
+        when(virtualMachineManager.stateTransitTo(eq(vm), eq(VirtualMachine.Event.OperationFailedToError), eq(null)))
+                .thenThrow(new NoTransitionException("no transition"));
+
+        java.lang.reflect.Method method = UserVmManagerImpl.class.getDeclaredMethod("transitionExpungingToError", long.class);
+        method.setAccessible(true);
+        method.invoke(userVmManagerImpl, vmId);
+    }
 }
