@@ -8,7 +8,9 @@ to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
 
+
   http://www.apache.org/licenses/LICENSE-2.0
+
 
 Unless required by applicable law or agreed to in writing,
 software distributed under the License is distributed on an
@@ -20,9 +22,11 @@ under the License.
 <Configuration monitorInterval="60">
    <Appenders>
 
+
       <!-- ================================= -->
       <!-- Preserve messages in a local file -->
       <!-- ================================= -->
+
 
       <!-- A time/date based rolling appender -->
       <RollingFile name="FILE" append="true" fileName="@AGENTLOG@" filePattern="@AGENTLOG@.%d{yyyy-MM-dd}.gz">
@@ -33,21 +37,31 @@ under the License.
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
       </RollingFile>
 
+
       <!-- ============================== -->
       <!-- Append messages to the console -->
       <!-- ============================== -->
 
+
       <Console name="CONSOLE" target="SYSTEM_OUT">
-          <ThresholdFilter level="OFF" onMatch="ACCEPT" onMismatch="DENY"/>
-          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
+         <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="ACCEPT"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
+      </Console>
+
+      <Console name="CONSOLE_ERR" target="SYSTEM_ERR">
+         <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
       </Console>
    </Appenders>
 
+
    <Loggers>
+
 
       <!-- ================ -->
       <!-- Limit categories -->
       <!-- ================ -->
+
 
       <Logger name="com.cloud" level="INFO"/>
       <Logger name="org.apache" level="INFO"/>
@@ -57,14 +71,18 @@ under the License.
       <Logger name="httpclient.wire" level="INFO"/>
       <Logger name="org.apache.http.wire" level="INFO"/>
 
+
       <!-- ======================= -->
       <!-- Setup the Root category -->
       <!-- ======================= -->
 
+
       <Root level="INFO">
          <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="CONSOLE_ERR"/>
          <AppenderRef ref="FILE"/>
       </Root>
+
 
    </Loggers>
 </Configuration>
