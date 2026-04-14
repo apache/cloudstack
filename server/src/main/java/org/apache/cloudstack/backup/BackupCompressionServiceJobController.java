@@ -105,7 +105,7 @@ public class BackupCompressionServiceJobController extends InternalBackupService
             }
 
             for (DataCenterVO zone : zones) {
-                if (!BackupManager.BackupFrameworkEnabled.valueIn(zone.getId())) {
+                if (!isFrameworkEnabledForZone(zone)) {
                     logger.debug("Backup framework is not enabled for zone [{}], will not run the backup compression task for this zone.", zone.getUuid());
                     continue;
                 }
@@ -156,7 +156,7 @@ public class BackupCompressionServiceJobController extends InternalBackupService
     /**
      * Submit FinalizeCompression jobs, this should be called before submitStartJobsForExecution.
      * */
-    private HashSet<Long> submitFinalizeJobsForExecution(List<InternalBackupServiceJobVO> jobsToExecute, List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList, long zoneId) {
+    protected HashSet<Long> submitFinalizeJobsForExecution(List<InternalBackupServiceJobVO> jobsToExecute, List<Pair<HostVO, Long>> hostAndNumberOfJobsPairList, long zoneId) {
         List<InternalBackupServiceJobVO> submittedJobs = new ArrayList<>();
         HashSet<Long> setOfInstancesWithExecutingCompressionJobs = new HashSet<>();
         for (InternalBackupServiceJobVO job : jobsToExecute) {
@@ -207,7 +207,7 @@ public class BackupCompressionServiceJobController extends InternalBackupService
         }
     }
 
-    private List<InternalBackupServiceJobVO> filterJobsOfDomainsAndAccountsWithDisabledCompressionTask(List<InternalBackupServiceJobVO> jobsToFilter) {
+    protected List<InternalBackupServiceJobVO> filterJobsOfDomainsAndAccountsWithDisabledCompressionTask(List<InternalBackupServiceJobVO> jobsToFilter) {
         ArrayList<InternalBackupServiceJobVO> filteredJobs = new ArrayList<>();
         for (InternalBackupServiceJobVO job : jobsToFilter) {
             if (backupCompressionTaskEnabled.valueIn(job.getAccountId())) {

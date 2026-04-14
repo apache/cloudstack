@@ -113,7 +113,7 @@ public class BackupValidationServiceController extends InternalBackupServiceJobC
             }
 
             for (DataCenterVO zone : zones) {
-                if (!BackupManager.BackupFrameworkEnabled.valueIn(zone.getId())) {
+                if (!isFrameworkEnabledForZone(zone)) {
                     logger.debug("Backup framework is not enabled for zone [{}], will not run the backup validation task for this zone.", zone.getUuid());
                     continue;
                 }
@@ -179,7 +179,7 @@ public class BackupValidationServiceController extends InternalBackupServiceJobC
         }
     }
 
-    private List<InternalBackupServiceJobVO> filterJobsOfDomainsAndAccountsWithDisabledValidationTask(List<InternalBackupServiceJobVO> jobsToFilter) {
+    protected List<InternalBackupServiceJobVO> filterJobsOfDomainsAndAccountsWithDisabledValidationTask(List<InternalBackupServiceJobVO> jobsToFilter) {
         ArrayList<InternalBackupServiceJobVO> filteredJobs = new ArrayList<>();
         for (InternalBackupServiceJobVO job : jobsToFilter) {
             if (backupValidationTaskEnabled.valueIn(job.getAccountId())) {

@@ -224,7 +224,7 @@ public abstract class InternalBackupServiceJobController extends ManagerBase {
         return hostAndNumberOfJobsPairList;
     }
 
-    private Integer getMaxConcurrentCompressionsPerHost(ConfigKey<Integer> jobsPerHostConfiguration, HostVO host) {
+    protected Integer getMaxConcurrentCompressionsPerHost(ConfigKey<Integer> jobsPerHostConfiguration, HostVO host) {
         if (host.getDetail(jobsPerHostConfiguration.key()) != null) {
             return Integer.valueOf(host.getDetail(jobsPerHostConfiguration.key()));
         } else {
@@ -269,6 +269,11 @@ public abstract class InternalBackupServiceJobController extends ManagerBase {
             }
             busyInstances.add(job.getInstanceId());
         }
+    }
+
+
+    protected Boolean isFrameworkEnabledForZone(DataCenterVO zone) {
+        return BackupManager.BackupFrameworkEnabled.valueIn(zone.getId());
     }
 
     protected void submitQueuedJob(InternalBackupServiceJobVO job, long zoneId, String logId) {
