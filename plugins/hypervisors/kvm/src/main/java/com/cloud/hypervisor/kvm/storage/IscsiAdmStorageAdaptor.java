@@ -510,6 +510,19 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         try {
             QemuImg q = new QemuImg(timeout);
             q.convert(srcFile, destFile);
+            // Below fix is required when vendor depends on host based copy rather than storage CAN_CREATE_VOLUME_FROM_VOLUME capability
+            // When host based template copy is triggered , small size template sits in RAM(depending on host memory and RAM) and copy is marked successful and by the time flush to storage is triggered
+            // disconnectPhysicalDisk would disconnect the lun , hence template staying in RAM is not copied to storage lun. Below does flushing of data to storage and marking
+            // copy as successful once flush is complete.
+            Script flushCmd = new Script(true, "blockdev", 0, logger);
+            flushCmd.add("--flushbufs", destDisk.getPath());
+            String flushResult = flushCmd.execute();
+            if (flushResult != null) {
+                logger.warn("iSCSI copyPhysicalDisk: blockdev --flushbufs returned: {}", flushResult);
+            }
+            Script syncCmd = new Script(true, "sync", 0, logger);
+            syncCmd.execute();
+            logger.info("iSCSI copyPhysicalDisk: flush/sync completed ");
         } catch (QemuImgException | LibvirtException ex) {
             String msg = "Failed to copy data from " + srcDisk.getPath() + " to " +
                     destDisk.getPath() + ". The error was the following: " + ex.getMessage();
