@@ -50,4 +50,3 @@ public interface NetworkCustomActionProvider {
      */
     String runCustomAction(Network network, String actionName, Map<String, Object> parameters);
 }
-

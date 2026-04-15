@@ -1,3 +1,22 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ -->
+
 # Network Extension Script Protocol
 
 This document describes the complete interface between Apache CloudStack's
@@ -1068,9 +1087,7 @@ esac
 exit 0
 ```
 
-For a full production implementation see:
-- `extensions/network-namespace/network-namespace.sh` — management-server
-  entry-point (SSH proxy).
-- `extensions/network-namespace/network-namespace-wrapper.sh` — KVM-host
-  wrapper that implements all commands using Linux network namespaces.
+For a full production implementation see https://github.com/apache/cloudstack-extensions/tree/network-namespace/Network-Namespace:
+- `network-namespace.sh` — management-server entry-point (SSH proxy).
+- `enetwork-namespace-wrapper.sh` — KVM-host wrapper that implements all commands using Linux network namespaces.
 
