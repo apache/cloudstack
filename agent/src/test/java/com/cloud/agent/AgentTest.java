@@ -33,7 +33,6 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.net.InetSocketAddress;
 
 import javax.naming.ConfigurationException;
@@ -75,9 +74,6 @@ public class AgentTest {
         // fix LOGGER access to inject mock
         Field field = link.getClass().getDeclaredField("LOGGER");
         field.setAccessible(true);
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
         field.set(null, logger);
         when(logger.isTraceEnabled()).thenReturn(true);
 
