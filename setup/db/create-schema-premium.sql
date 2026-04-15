@@ -70,7 +70,8 @@ CREATE TABLE  `cloud_usage`.`usage_vm_instance` (
   `template_id` bigint unsigned NOT NULL,
   `hypervisor_type` varchar(255),
   `start_date` DATETIME NOT NULL,
-  `end_date` DATETIME NULL
+  `end_date` DATETIME NULL,
+  UNIQUE KEY (`vm_instance_id`, `usage_type`, `start_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD INDEX `i_usage_vm_instance__account_id`(`account_id`);
