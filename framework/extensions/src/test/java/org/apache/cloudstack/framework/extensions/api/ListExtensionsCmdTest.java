@@ -18,6 +18,7 @@
 package org.apache.cloudstack.framework.extensions.api;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -88,5 +89,45 @@ public class ListExtensionsCmdTest {
         List<String> detailsList = Arrays.asList("invalidValue");
         setPrivateField("details", detailsList);
         cmd.getDetails();
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests for new getters: type, resourceId, resourceType
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void testGetTypeReturnsValueWhenSet() {
+        setPrivateField("type", "NetworkOrchestrator");
+        assertEquals("NetworkOrchestrator", cmd.getType());
+    }
+
+    @Test
+    public void testGetTypeReturnsNullWhenUnset() {
+        setPrivateField("type", null);
+        assertNull(cmd.getType());
+    }
+
+    @Test
+    public void testGetResourceIdReturnsValueWhenSet() {
+        setPrivateField("resourceId", "pnet-uuid-123");
+        assertEquals("pnet-uuid-123", cmd.getResourceId());
+    }
+
+    @Test
+    public void testGetResourceIdReturnsNullWhenUnset() {
+        setPrivateField("resourceId", null);
+        assertNull(cmd.getResourceId());
+    }
+
+    @Test
+    public void testGetResourceTypeReturnsValueWhenSet() {
+        setPrivateField("resourceType", "PhysicalNetwork");
+        assertEquals("PhysicalNetwork", cmd.getResourceType());
+    }
+
+    @Test
+    public void testGetResourceTypeReturnsNullWhenUnset() {
+        setPrivateField("resourceType", null);
+        assertNull(cmd.getResourceType());
     }
 }
