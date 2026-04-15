@@ -7268,7 +7268,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                     for (final String prvNameStr : svcPrv.get(serviceStr)) {
                         // check if provider is supported
-                        final Network.Provider provider = Network.Provider.getProvider(prvNameStr);
+                        final Network.Provider provider = _networkModel.resolveProvider(prvNameStr);
                         if (provider == null) {
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
@@ -7954,7 +7954,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // 1) Vaidate the detail values - have to match the lb provider
                 // name
                 final String providerStr = details.get(detail);
-                if (Network.Provider.getProvider(providerStr) == null) {
+                if (_networkModel.resolveProvider(providerStr) == null) {
                     throw new InvalidParameterValueException("Invalid value " + providerStr + " for the detail " + detail);
                 }
                 if (serviceProviderMap.get(Service.Lb) != null) {

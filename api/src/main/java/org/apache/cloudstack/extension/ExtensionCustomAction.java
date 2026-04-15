@@ -48,7 +48,8 @@ import com.google.gson.reflect.TypeToken;
 
 public interface ExtensionCustomAction extends InternalIdentity, Identity {
     enum ResourceType {
-        VirtualMachine(com.cloud.vm.VirtualMachine.class);
+        VirtualMachine(com.cloud.vm.VirtualMachine.class),
+        Network(com.cloud.network.Network.class);
 
         private final Class<?> clazz;
 

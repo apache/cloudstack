@@ -64,6 +64,8 @@ import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -329,6 +331,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     Site2SiteVpnConnectionDao site2SiteVpnConnectionDao;
     @Inject
     Site2SiteCustomerGatewayDao site2SiteCustomerGatewayDao;
+    @Inject
+    ExtensionHelper extensionHelper;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private List<VpcProvider> vpcElements = null;
@@ -701,7 +705,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     final Set<Provider> providers = new HashSet<Provider>();
                     for (final String prvNameStr : serviceEntry.getValue()) {
                         // check if provider is supported
-                        final Network.Provider provider = Network.Provider.getProvider(prvNameStr);
+                        final Network.Provider provider = _ntwkModel.resolveProvider(prvNameStr);
                         if (provider == null) {
                             throw new InvalidParameterValueException("Invalid service provider: " + prvNameStr);
                         }
@@ -1248,12 +1252,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         for (final VpcOfferingServiceMapVO instance : map) {
             final Service service = Service.getService(instance.getService());
+            if (service == null) {
+                continue;
+            }
             Set<Provider> providers;
             providers = serviceProviderMap.get(service);
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }
-            providers.add(Provider.getProvider(instance.getProvider()));
+            final Provider provider = _ntwkModel.resolveProvider(instance.getProvider());
+            if (provider != null) {
+                providers.add(provider);
+            }
             serviceProviderMap.put(service, providers);
         }
 
@@ -1844,6 +1854,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if (provider == null) {
                 // Default to VPCVirtualRouter
                 provider = Provider.VPCVirtualRouter.getName();
+            } else {
+                provider = _ntwkModel.resolveProvider(provider).getName();
             }
 
             if (!_ntwkModel.isProviderEnabledInZone(zoneId, provider)) {
@@ -2027,9 +2039,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (! userIps.isEmpty()) {
             try {
                 _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
-                if (isVpcForProvider(Provider.Nsx, vpc) || isVpcForProvider(Provider.Netris, vpc)) {
+                if (isVpcForProvider(Provider.Nsx, vpc) || isVpcForProvider(Provider.Netris, vpc)
+                        || isVpcForProvider(Provider.NetworkExtension, vpc)) {
                     boolean isForNsx = _vpcOffSvcMapDao.isProviderForVpcOffering(Provider.Nsx, vpc.getVpcOfferingId());
-                    String providerName = isForNsx ? Provider.Nsx.getName() : Provider.Netris.getName();
+                    boolean isForNetris = _vpcOffSvcMapDao.isProviderForVpcOffering(Provider.Netris, vpc.getVpcOfferingId());
+                    String providerName = isForNsx ? Provider.Nsx.getName()
+                            : (isForNetris ? Provider.Netris.getName() : Provider.NetworkExtension.getName());
                     VpcProvider providerElement = (VpcProvider) _ntwkModel.getElementImplementingProvider(providerName);
                     if (Objects.nonNull(providerElement)) {
                         providerElement.updateVpcSourceNatIp(vpc, requestedIp);
@@ -2503,7 +2518,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // 1) in current release, only vpc provider is supported by Vpc offering
         final List<Provider> providers = _ntwkModel.getNtwkOffDistinctProviders(guestNtwkOff.getId());
         for (final Provider provider : providers) {
-            if (!supportedProviders.contains(provider)) {
+            if (!supportedProviders.contains(provider)
+                    && !extensionHelper.isNetworkExtensionProvider(provider.getName())) {
                 throw new InvalidParameterValueException("Provider of type " + provider.getName() + " is not supported for network offerings that can be used in VPC");
             }
         }
@@ -2610,17 +2626,32 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     public List<VpcProvider> getVpcElements() {
+        // Static providers (VPCVirtualRouter, JuniperContrailVpcRouter) are initialized once.
         if (vpcElements == null) {
             vpcElements = new ArrayList<VpcProvider>();
-            vpcElements.add((VpcProvider) _ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
-            vpcElements.add((VpcProvider) _ntwkModel.getElementImplementingProvider(Provider.JuniperContrailVpcRouter.getName()));
+            final NetworkElement vpcVirtualRouter = _ntwkModel.getElementImplementingProvider(Provider.VPCVirtualRouter.getName());
+            if (vpcVirtualRouter instanceof VpcProvider) {
+                vpcElements.add((VpcProvider) vpcVirtualRouter);
+            }
+
+            final NetworkElement contrailVpcRouter = _ntwkModel.getElementImplementingProvider(Provider.JuniperContrailVpcRouter.getName());
+            if (contrailVpcRouter instanceof VpcProvider) {
+                vpcElements.add((VpcProvider) contrailVpcRouter);
+            }
         }
 
-        if (vpcElements == null) {
-            throw new CloudRuntimeException("Failed to initialize vpc elements");
+        // Extension-backed providers are re-fetched every call so that dynamically
+        // registered extensions are picked up without requiring a server restart.
+        final List<VpcProvider> result = new ArrayList<>(vpcElements);
+        for (final Extension extension : extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator)) {
+            final String providerName = extension.getName();
+            final NetworkElement element = _ntwkModel.getElementImplementingProvider(providerName);
+            if (element instanceof VpcProvider) {
+                result.add((VpcProvider) element);
+            }
         }
 
-        return vpcElements;
+        return result;
     }
 
     @Override
@@ -3929,7 +3960,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Map<String, Provider> providers = new HashMap<String, Provider>();
         for (final String providerName : providerNames) {
             if (!providers.containsKey(providerName)) {
-                providers.put(providerName, Network.Provider.getProvider(providerName));
+                providers.put(providerName, _ntwkModel.resolveProvider(providerName));
             }
         }
 

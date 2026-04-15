@@ -99,6 +99,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -247,14 +248,21 @@ public class VpcManagerImplTest {
     @Test
     public void getVpcOffSvcProvidersMapForEmptyServiceTest() {
         long vpcOffId = 1L;
+        VpcOfferingServiceMapVO svcMap = mock(VpcOfferingServiceMapVO.class);
+        Mockito.when(svcMap.getService()).thenReturn(Service.SourceNat.getName());
+        Mockito.when(svcMap.getProvider()).thenReturn(Provider.VPCVirtualRouter.getName());
+        Mockito.when(networkModel.resolveProvider(Provider.VPCVirtualRouter.getName()))
+               .thenReturn(Provider.VPCVirtualRouter);
         List<VpcOfferingServiceMapVO> list = new ArrayList<VpcOfferingServiceMapVO>();
-        list.add(mock(VpcOfferingServiceMapVO.class));
+        list.add(svcMap);
         Mockito.when(manager._vpcOffSvcMapDao.listByVpcOffId(vpcOffId)).thenReturn(list);
 
         Map<Service, Set<Provider>> map = manager.getVpcOffSvcProvidersMap(vpcOffId);
 
         assertNotNull(map);
         assertEquals(map.size(), 1);
+        assertTrue(map.containsKey(Service.SourceNat));
+        assertTrue(map.get(Service.SourceNat).contains(Provider.VPCVirtualRouter));
     }
 
     protected Map<String, String> createFakeCapabilityInputMap() {

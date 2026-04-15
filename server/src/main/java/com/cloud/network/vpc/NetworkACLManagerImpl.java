@@ -33,8 +33,10 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkACLServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.NetworkACLItem.State;
 import com.cloud.network.vpc.dao.NetworkACLDao;
@@ -75,6 +77,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     private MessageBus _messageBus;
     @Inject
     private ResourceTagDao resourceTagDao;
+    @Inject
+    NetworkServiceMapDao networkServiceMapDao;
 
     private List<NetworkACLServiceProvider> _networkAclElements;
 
@@ -442,11 +446,22 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             logger.debug("Applying NetworkACL for network: {} with Network ACL service provider", network);
             handled = element.applyNetworkACLs(network, rules);
             if (handled) {
-                // publish message on message bus, so that network elements implementing distributed routing
-                // capability can act on the event
-                _messageBus.publish(_name, "Network_ACL_Replaced", PublishScope.LOCAL, network);
                 break;
             }
+        }
+        if (!foundProvider) {
+            // Get provider name and get the element by provider name (it could be an external provider)
+            String aclProviderName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.NetworkACL);
+            if (aclProviderName != null) {
+                foundProvider = true;
+                NetworkElement element = _networkModel.getElementImplementingProvider(aclProviderName);
+                handled = ((NetworkACLServiceProvider) element).applyNetworkACLs(network, rules);
+            }
+        }
+        if (handled) {
+            // publish message on message bus, so that network elements implementing distributed routing
+            // capability can act on the event
+            _messageBus.publish(_name, "Network_ACL_Replaced", PublishScope.LOCAL, network);
         }
         if (!foundProvider) {
             logger.debug("Unable to find NetworkACL service provider for network: {}", network);

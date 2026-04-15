@@ -35,6 +35,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.extension.ExtensionHelper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -135,6 +136,7 @@ public class NetworkOrchestratorTest extends TestCase {
         testOrchestrator.routerJoinDao = mock(DomainRouterJoinDao.class);
         testOrchestrator._ipAddrMgr = mock(IpAddressManager.class);
         testOrchestrator._entityMgr = mock(EntityManager.class);
+        testOrchestrator.extensionHelper = mock(ExtensionHelper.class);
         DhcpServiceProvider provider = mock(DhcpServiceProvider.class);
 
         Map<Network.Capability, String> capabilities = new HashMap<Network.Capability, String>();

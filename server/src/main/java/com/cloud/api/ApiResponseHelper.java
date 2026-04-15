@@ -548,6 +548,8 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
     ResourceIconManager resourceIconManager;
     @Inject
     AsyncJobDao asyncJobDao;
+    @Inject
+    NetworkModel networkModel;
 
     public static String getPrettyDomainPath(String path) {
         if (path == null) {
@@ -3302,7 +3304,7 @@ public class ApiResponseHelper implements ResponseGenerator, ResourceIdSupport {
         }
         response.setServices(services);
 
-        Provider serviceProvider = Provider.getProvider(result.getProviderName());
+        Provider serviceProvider = networkModel.resolveProvider(result.getProviderName());
         boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
         response.setCanEnableIndividualServices(canEnableIndividualServices);
 

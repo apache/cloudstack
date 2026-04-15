@@ -66,6 +66,7 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.extension.ExtensionHelper;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NetworkModelImplTest {
@@ -80,6 +81,8 @@ public class NetworkModelImplTest {
     private NetworkDao _networksDao;
     @Inject
     private NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+    @Mock
+    private ExtensionHelper extensionHelper;
 
     @Spy
     @InjectMocks
@@ -96,6 +99,8 @@ public class NetworkModelImplTest {
         networkModel._networkOfferingDao = networkOfferingDao;
         networkModel._ntwkSrvcDao = networkServiceMapDao;
         networkModel._ntwkOfferingSrvcDao = networkOfferingServiceMapDao;
+        ReflectionTestUtils.setField(networkModel, "extensionHelper", extensionHelper);
+        Mockito.lenient().when(extensionHelper.isNetworkExtensionProvider(Mockito.anyString())).thenReturn(false);
     }
 
     private void prepareMocks(boolean isIp6, Network network, DataCenter zone, VpcVO vpc,
@@ -242,8 +247,8 @@ public class NetworkModelImplTest {
         networkOfferingVO.setForVpc(true);
         Network network = new NetworkVO();
         List<NetworkServiceMapVO> networkServiceMapVOs = new ArrayList<>();
-        networkServiceMapVOs.add(new NetworkServiceMapVO(15L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter));
-        networkServiceMapVOs.add(new NetworkServiceMapVO(15L, Network.Service.SourceNat, Network.Provider.VPCVirtualRouter));
+        networkServiceMapVOs.add(new NetworkServiceMapVO(15L, Network.Service.Firewall.getName(), Network.Provider.VPCVirtualRouter.getName()));
+        networkServiceMapVOs.add(new NetworkServiceMapVO(15L, Network.Service.SourceNat.getName(), Network.Provider.VPCVirtualRouter.getName()));
         NetworkElement element = new VpcVirtualRouterElement();
 
         ReflectionTestUtils.setField(networkModel, "networkElements", List.of(element));

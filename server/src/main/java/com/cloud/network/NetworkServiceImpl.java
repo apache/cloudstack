@@ -68,6 +68,8 @@ import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.extension.ExtensionResourceMap;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -399,6 +401,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     MessageBus _messageBus;
     @Inject
     NetworkDetailsDao _networkDetailsDao;
+    @Inject
+    ExtensionsManager extensionsManager;
     @Inject
     LoadBalancerDao _loadBalancerDao;
     @Inject
@@ -3067,8 +3071,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     protected boolean providersConfiguredForExternalNetworking(Collection<String> providers) {
         for (String providerStr : providers) {
-            Provider provider = Network.Provider.getProvider(providerStr);
-            if (provider.isExternal()) {
+            Provider provider = _networkModel.resolveProvider(providerStr);
+            if (provider != null && provider.isExternal()) {
                 return true;
             }
         }
@@ -4370,7 +4374,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_UPDATE, eventDescription = "updating physical network", async = true)
-    public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRange, String state) {
+    public PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRange, String state, Map<String, String> externalDetails) {
 
         // verify input parameters
         PhysicalNetworkVO network = _physicalNetworkDao.findById(id);
@@ -4424,6 +4428,29 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             addOrRemoveVnets(listOfRanges, network);
         }
         _physicalNetworkDao.update(id, network);
+
+        // If external details provided, and an extension is registered on this physical network,
+        // update the extension_resource_map_details accordingly.
+        try {
+            if (externalDetails != null && !externalDetails.isEmpty()) {
+                Pair<Boolean, ExtensionResourceMap> needDetailsUpdateMapPair =
+                        extensionsManager.extensionResourceMapDetailsNeedUpdate(id,
+                                ExtensionResourceMap.ResourceType.PhysicalNetwork, externalDetails);
+                if (Boolean.TRUE.equals(needDetailsUpdateMapPair.first())) {
+                    ExtensionResourceMap extensionResourceMap = needDetailsUpdateMapPair.second();
+                    if (extensionResourceMap == null) {
+                        throw new InvalidParameterValueException(
+                                String.format("Physical network: %s is not registered with any extension, details cannot be updated",
+                                        network.getId()));
+                    }
+                    extensionsManager.updateExtensionResourceMapDetails(extensionResourceMap.getId(), externalDetails);
+                }
+            }
+        } catch (Exception e) {
+            // Log warning but don't fail the update
+            logger.warn("Failed to update external details for physical network {}: {}", id, e.getMessage());
+        }
+
         return network;
 
     }
@@ -5096,7 +5123,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Provider provider = null;
         if (providerName != null) {
-            provider = Network.Provider.getProvider(providerName);
+            provider = _networkModel.resolveProvider(providerName);
             if (provider == null) {
                 throw new InvalidParameterValueException("Invalid Network Service Provider=" + providerName);
             }
@@ -5133,7 +5160,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (providerName != null) {
-            Provider provider = Network.Provider.getProvider(providerName);
+            Provider provider = _networkModel.resolveProvider(providerName);
             if (provider == null) {
                 throw new InvalidParameterValueException("Invalid Network Service Provider=" + providerName);
             }

@@ -203,6 +203,20 @@ export default {
           }
         },
         {
+          api: 'runCustomAction',
+          icon: 'thunderbolt-outlined',
+          label: 'label.run.action',
+          dataView: true,
+          show: (record) => {
+            return 'runCustomAction' in store.getters.apis &&
+              'listCustomActions' in store.getters.apis &&
+              record.service && record.service.some(s =>
+              s.provider && s.provider.some(p => p.name === 'ExternalNetwork'))
+          },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RunCustomAction.vue')))
+        },
+        {
           api: 'deleteNetwork',
           icon: 'delete-outlined',
           label: 'label.action.delete.network',
