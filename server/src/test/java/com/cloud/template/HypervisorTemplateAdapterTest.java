@@ -494,7 +494,7 @@ public class HypervisorTemplateAdapterTest {
 
         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneCopyCount, 1);
 
-        Mockito.verify(loggerMock, times(1)).info("Replica limit of {} reached for zone [{}]; skipping image store [{}].", 1, dataCenterVOMock, dataStoreMock);
+        Mockito.verify(loggerMock, times(1)).info("Copy limit of {} reached for zone [{}]; skipping image store [{}].", 1, dataCenterVOMock, dataStoreMock);
         Assert.assertFalse(result);
     }
 

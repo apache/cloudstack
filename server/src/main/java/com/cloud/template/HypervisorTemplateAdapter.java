@@ -294,10 +294,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
                 standardImageStoreAllocation(imageStores, template, zoneId);
             } else {
-                int replicaLimit = isPrivateTemplate(template)
-                        ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId)
-                        : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId);
-                validateSecondaryStorageAndCreateTemplate(List.of(imageStore), template, new HashMap<>(), replicaLimit);
+                int copyLimit = getSecStorageCopyLimit(template, zoneId);
+                validateSecondaryStorageAndCreateTemplate(List.of(imageStore), template, new HashMap<>(), copyLimit);
             }
         }
     }
@@ -311,18 +309,16 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     }
 
     protected void standardImageStoreAllocation(List<DataStore> imageStores, VMTemplateVO template, long zoneId) {
-        int replicaLimit = isPrivateTemplate(template)
-                ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId)
-                : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId);
+        int copyLimit = getSecStorageCopyLimit(template, zoneId);
         Collections.shuffle(imageStores);
-        validateSecondaryStorageAndCreateTemplate(imageStores, template, new HashMap<>(), replicaLimit);
+        validateSecondaryStorageAndCreateTemplate(imageStores, template, new HashMap<>(), copyLimit);
     }
 
-    protected void validateSecondaryStorageAndCreateTemplate(List<DataStore> imageStores, VMTemplateVO template, Map<Long, Integer> zoneCopyCount, int replicaLimit) {
+    protected void validateSecondaryStorageAndCreateTemplate(List<DataStore> imageStores, VMTemplateVO template, Map<Long, Integer> zoneCopyCount, int copyLimit) {
         for (DataStore imageStore : imageStores) {
             Long zoneId = imageStore.getScope().getScopeId();
 
-            if (!isZoneAndImageStoreAvailable(imageStore, zoneId, zoneCopyCount, replicaLimit)) {
+            if (!isZoneAndImageStoreAvailable(imageStore, zoneId, zoneCopyCount, copyLimit)) {
                 continue;
             }
 

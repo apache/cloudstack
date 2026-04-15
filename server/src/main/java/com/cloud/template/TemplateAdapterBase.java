@@ -167,7 +167,13 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         return heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, heuristicType, template);
     }
 
-    protected boolean isZoneAndImageStoreAvailable(DataStore imageStore, Long zoneId, Map<Long, Integer> zoneCopyCount, int replicaLimit) {
+    protected int getSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
+        return isPrivateTemplate(template)
+                ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId)
+                : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId);
+    }
+
+    protected boolean isZoneAndImageStoreAvailable(DataStore imageStore, Long zoneId, Map<Long, Integer> zoneCopyCount, int copyLimit) {
         if (zoneId == null) {
             logger.warn(String.format("Zone ID is null, cannot allocate ISO/template in image store [%s].", imageStore));
             return false;
@@ -190,8 +196,8 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         }
 
         int currentCount = zoneCopyCount.getOrDefault(zoneId, 0);
-        if (replicaLimit > 0 && currentCount >= replicaLimit) {
-            logger.info("Replica limit of {} reached for zone [{}]; skipping image store [{}].", replicaLimit, zone, imageStore);
+        if (copyLimit > 0 && currentCount >= copyLimit) {
+            logger.info("Copy limit of {} reached for zone [{}]; skipping image store [{}].", copyLimit, zone, imageStore);
             return false;
         }
 
@@ -204,16 +210,13 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
      * {@link TemplateProfile#getZoneIdList()}.
      */
     protected void postUploadAllocation(List<DataStore> imageStores, VMTemplateVO template, List<TemplateOrVolumePostUploadCommand> payloads) {
-        boolean isPrivate = isPrivateTemplate(template);
         Map<Long, Integer> zoneCopyCount = new HashMap<>();
         Collections.shuffle(imageStores);
         for (DataStore imageStore : imageStores) {
             Long zoneId_is = imageStore.getScope().getScopeId();
-            int replicaLimit = zoneId_is == null ? 0 : (isPrivate
-                    ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId_is)
-                    : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId_is));
+            int copyLimit = zoneId_is == null ? 0 : getSecStorageCopyLimit(template, zoneId_is);
 
-            if (!isZoneAndImageStoreAvailable(imageStore, zoneId_is, zoneCopyCount, replicaLimit)) {
+            if (!isZoneAndImageStoreAvailable(imageStore, zoneId_is, zoneCopyCount, copyLimit)) {
                 continue;
             }
 

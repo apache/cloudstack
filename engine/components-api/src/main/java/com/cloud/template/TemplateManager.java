@@ -45,8 +45,8 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface TemplateManager {
     static final String AllowPublicUserTemplatesCK = "allow.public.user.templates";
     static final String TemplatePreloaderPoolSizeCK = "template.preloader.pool.size";
-    static final String PublicTemplateSecStorageCopyCK = "public.template.secstorage.copy";
-    static final String PrivateTemplateSecStorageCopyCK = "private.template.secstorage.copy";
+    static final String PublicTemplateSecStorageCopyCK = "secstorage.public.template.copy.max";
+    static final String PrivateTemplateSecStorageCopyCK = "secstorage.private.template.copy.max";
 
     static final ConfigKey<Boolean> AllowPublicUserTemplates = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowPublicUserTemplatesCK, "true",
         "If false, users will not be able to create public Templates.", true, ConfigKey.Scope.Account);
