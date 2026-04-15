@@ -129,8 +129,8 @@ public enum ApiCommandResourceType {
     }
 
     public static ApiCommandResourceType fromString(String value) {
-        if (StringUtils.isNotEmpty(value) && EnumUtils.isValidEnum(ApiCommandResourceType.class, value)) {
-            return valueOf(value);
+        if (StringUtils.isNotBlank(value) && EnumUtils.isValidEnumIgnoreCase(ApiCommandResourceType.class, value)) {
+            return EnumUtils.getEnumIgnoreCase(ApiCommandResourceType.class, value);
         }
         return null;
     }

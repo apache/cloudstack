@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -117,6 +118,13 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
                since = "4.23.0")
     private Long kmsKeyId;
 
+    @Parameter(name = ApiConstants.STORAGE_ID,
+            type = CommandType.UUID,
+            entityType = StoragePoolResponse.class,
+            description = "Storage pool ID to create the volume in. Cannot be used with the snapshotid parameter.",
+            authorized = {RoleType.Admin})
+    private Long storageId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -159,6 +167,13 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     private Long getProjectId() {
         return projectId;
+    }
+
+    public Long getStorageId() {
+        if (snapshotId != null && storageId != null) {
+            throw new IllegalArgumentException("StorageId parameter cannot be specified with the SnapshotId parameter.");
+        }
+        return storageId;
     }
 
     public Boolean getDisplayVolume() {

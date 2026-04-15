@@ -357,7 +357,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             volumePools.add(dataStore != null ? (PrimaryDataStoreTO)dataStore.getTO() : null);
 
             String volumePathPrefix = getVolumePathPrefix(storagePool);
-            volumePaths.add(String.format("%s/%s", volumePathPrefix, volume.getPath()));
+            String volumePathSuffix = getVolumePathSuffix(storagePool);
+            volumePaths.add(String.format("%s%s%s", volumePathPrefix, volume.getPath(), volumePathSuffix));
         }
         return new Pair<>(volumePools, volumePaths);
     }
@@ -367,12 +368,22 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (ScopeType.HOST.equals(storagePool.getScope()) ||
                 Storage.StoragePoolType.SharedMountPoint.equals(storagePool.getPoolType()) ||
                 Storage.StoragePoolType.RBD.equals(storagePool.getPoolType())) {
-            volumePathPrefix = storagePool.getPath();
+            volumePathPrefix = storagePool.getPath() + "/";
+        } else if (Storage.StoragePoolType.Linstor.equals(storagePool.getPoolType())) {
+            volumePathPrefix = "/dev/drbd/by-res/cs-";
         } else {
             // Should be Storage.StoragePoolType.NetworkFilesystem
-            volumePathPrefix = String.format("/mnt/%s", storagePool.getUuid());
+            volumePathPrefix = String.format("/mnt/%s/", storagePool.getUuid());
         }
         return volumePathPrefix;
+    }
+
+    private String getVolumePathSuffix(StoragePoolVO storagePool) {
+        if (Storage.StoragePoolType.Linstor.equals(storagePool.getPoolType())) {
+            return "/0";
+        } else {
+            return "";
+        }
     }
 
     @Override
@@ -419,7 +430,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
         restoreCommand.setVmName(vmNameAndState.first());
-        restoreCommand.setRestoreVolumePaths(Collections.singletonList(String.format("%s/%s", getVolumePathPrefix(pool), volumeUUID)));
+        String restoreVolumePath = String.format("%s%s%s", getVolumePathPrefix(pool), volumeUUID, getVolumePathSuffix(pool));
+        restoreCommand.setRestoreVolumePaths(Collections.singletonList(restoreVolumePath));
+        restoreCommand.setRestoreVolumeSizes(Collections.singletonList(backedUpVolumeSize));
         DataStore dataStore = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         restoreCommand.setRestoreVolumePools(Collections.singletonList(dataStore != null ? (PrimaryDataStoreTO)dataStore.getTO() : null));
         restoreCommand.setDiskType(backupVolumeInfo.getType().name().toLowerCase(Locale.ROOT));
