@@ -1322,8 +1322,10 @@ public class ApiConstants {
     public static final String VNF_CONFIGURE_MANAGEMENT = "vnfconfiguremanagement";
     public static final String VNF_CIDR_LIST = "vnfcidrlist";
 
+    public static final String AUTHORIZE_URL = "authorizeurl";
     public static final String CLIENT_ID = "clientid";
     public static final String REDIRECT_URI = "redirecturi";
+    public static final String TOKEN_URL = "tokenurl";
 
     public static final String IS_TAG_A_RULE = "istagarule";
 

@@ -16,17 +16,6 @@
 //under the License.
 package org.apache.cloudstack.oauth2.github;
 
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.cloudstack.auth.UserOAuth2Authenticator;
-import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
-import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.inject.Inject;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -35,6 +24,18 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.auth.UserOAuth2Authenticator;
+import org.apache.cloudstack.oauth2.dao.OauthProviderDao;
+import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
+import org.apache.commons.lang3.StringUtils;
+
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authenticator {
 
@@ -85,10 +86,9 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
 
     protected String getAccessToken(String secretCode) throws CloudRuntimeException {
         OauthProviderVO githubProvider = _oauthProviderDao.findByProvider(getName());
-        String tokenUrl = "https://github.com/login/oauth/access_token";
         String generatedAccessToken = null;
         try {
-            URL url = new URL(tokenUrl);
+            URL url = new URL(githubProvider.getTokenUrl());
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");

@@ -202,6 +202,18 @@
           <a-typography-text>Sign in with Google</a-typography-text>
         </a-button>
       </div>
+      <div class="social-auth" v-if="keycloakprovider">
+        <a-button
+          @click="handleKeycloakProviderAndDomain"
+          tag="a"
+          color="primary"
+          :href="getKeycloakUrl(from)"
+          class="auth-btn keycloak-auth"
+          style="height: 38px; width: 185px; padding: 0" >
+          <img src="/assets/keycloak.svg" style="width: 32px; padding: 5px" />
+          <a-typography-text>Sign in with Keycloak</a-typography-text>
+        </a-button>
+      </div>
     </div>
   </a-form>
 </template>
@@ -231,10 +243,14 @@ export default {
       socialLogin: false,
       googleprovider: false,
       githubprovider: false,
+      keycloakprovider: false,
       googleredirecturi: '',
       githubredirecturi: '',
+      keycloakredirecturi: '',
       googleclientid: '',
       githubclientid: '',
+      keycloakclientid: '',
+      keycloakauthorizeurl: '',
       loginType: 0,
       state: {
         time: 60,
@@ -325,8 +341,14 @@ export default {
               this.githubclientid = item.clientid
               this.githubredirecturi = item.redirecturi
             }
+            if (item.provider === 'keycloak') {
+              this.keycloakprovider = item.enabled
+              this.keycloakclientid = item.clientid
+              this.keycloakredirecturi = item.redirecturi
+              this.keycloakauthorizeurl = item.authorizeurl
+            }
           })
-          this.socialLogin = this.googleprovider || this.githubprovider
+          this.socialLogin = this.googleprovider || this.githubprovider || this.keycloakprovider
         }
       })
       postAPI('forgotPassword', {}).then(response => {
@@ -361,6 +383,10 @@ export default {
     handleGoogleProviderAndDomain () {
       this.handleDomain()
       this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'google')
+    },
+    handleKeycloakProviderAndDomain () {
+      this.handleDomain()
+      this.$store.commit('SET_OAUTH_PROVIDER_USED_TO_LOGIN', 'keycloak')
     },
     handleDomain () {
       const values = toRaw(this.form)
@@ -400,6 +426,18 @@ export default {
       const qs = new URLSearchParams(options)
 
       return `${rootUrl}?${qs.toString()}`
+    },
+    getKeycloakUrl (from) {
+      const rootURl = keycloakauthorizeurl
+      const options = {
+        client_id: this.keycloakclientid,
+        scope: 'openid email',
+        state: from
+      }
+
+      const qs = new URLSearchParams(options)
+
+      return `${rootURl}?${qs.toString()}`
     },
     handleSubmit (e) {
       e.preventDefault()
