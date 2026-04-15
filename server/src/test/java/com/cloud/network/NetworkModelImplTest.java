@@ -18,6 +18,9 @@ package com.cloud.network;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -54,6 +57,9 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkServiceMapVO;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.vpc.VpcVO;
@@ -67,6 +73,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.extension.ExtensionHelper;
+import org.apache.cloudstack.framework.extensions.network.NetworkExtensionElement;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NetworkModelImplTest {
@@ -84,6 +91,15 @@ public class NetworkModelImplTest {
     @Mock
     private ExtensionHelper extensionHelper;
 
+    @Mock
+    private NetworkExtensionElement networkExtensionElement;
+
+    @Mock
+    private PhysicalNetworkDao physicalNetworkDao;
+
+    @Mock
+    private PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
+
     @Spy
     @InjectMocks
     private NetworkModelImpl networkModel = new NetworkModelImpl();
@@ -100,6 +116,9 @@ public class NetworkModelImplTest {
         networkModel._ntwkSrvcDao = networkServiceMapDao;
         networkModel._ntwkOfferingSrvcDao = networkOfferingServiceMapDao;
         ReflectionTestUtils.setField(networkModel, "extensionHelper", extensionHelper);
+        ReflectionTestUtils.setField(networkModel, "networkExtensionElement", networkExtensionElement);
+        ReflectionTestUtils.setField(networkModel, "_physicalNetworkDao", physicalNetworkDao);
+        ReflectionTestUtils.setField(networkModel, "_pNSPDao", physicalNetworkServiceProviderDao);
         Mockito.lenient().when(extensionHelper.isNetworkExtensionProvider(Mockito.anyString())).thenReturn(false);
     }
 
@@ -277,5 +296,117 @@ public class NetworkModelImplTest {
         NicProfile result = networkModel.getNicProfile(vm, nic, mock(DataCenterVO.class));
 
         assertNotNull(result);
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests for getElementImplementingProvider with extension provider
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void getElementImplementingProviderReturnsExtensionElementForExtensionProvider() {
+        String providerName = "my-ext-provider";
+        // Provider is not in the static map, so element would be null
+        ReflectionTestUtils.setField(networkModel, "networkElements", new ArrayList<>());
+        when(extensionHelper.isNetworkExtensionProvider(providerName)).thenReturn(true);
+        NetworkExtensionElement mockElement = mock(NetworkExtensionElement.class);
+        when(networkExtensionElement.withProviderName(providerName)).thenReturn(mockElement);
+
+        NetworkElement result = networkModel.getElementImplementingProvider(providerName);
+        // When the element is a NetworkExtensionElement (which is a NetworkElement), result should not be null
+        assertNotNull(result);
+    }
+
+    @Test
+    public void getElementImplementingProviderReturnsNullForUnknownNonExtensionProvider() {
+        String providerName = "unknown-provider";
+        ReflectionTestUtils.setField(networkModel, "networkElements", new ArrayList<>());
+        when(extensionHelper.isNetworkExtensionProvider(providerName)).thenReturn(false);
+
+        NetworkElement result = networkModel.getElementImplementingProvider(providerName);
+        assertNull(result);
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests for resolveProvider
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void resolveProviderReturnsKnownProvider() {
+        Network.Provider result = networkModel.resolveProvider(Network.Provider.VirtualRouter.getName());
+        assertNotNull(result);
+        assertEquals(Network.Provider.VirtualRouter, result);
+    }
+
+    @Test
+    public void resolveProviderReturnsTransientProviderForExtensionProvider() {
+        String extensionName = "my-ext-network-provider";
+        when(extensionHelper.isNetworkExtensionProvider(extensionName)).thenReturn(true);
+
+        Network.Provider result = networkModel.resolveProvider(extensionName);
+        assertNotNull(result);
+        assertEquals(extensionName, result.getName());
+    }
+
+    @Test
+    public void resolveProviderReturnsNullForUnknownNonExtensionProvider() {
+        String providerName = "totally-unknown";
+        when(extensionHelper.isNetworkExtensionProvider(providerName)).thenReturn(false);
+
+        Network.Provider result = networkModel.resolveProvider(providerName);
+        assertNull(result);
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests for canElementEnableIndividualServicesByName
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void canElementEnableIndividualServicesByNameReturnsFalseForNullProvider() {
+        assertFalse(networkModel.canElementEnableIndividualServicesByName(null));
+    }
+
+    @Test
+    public void canElementEnableIndividualServicesByNameReturnsFalseForUnknownProvider() {
+        when(extensionHelper.isNetworkExtensionProvider("unknown")).thenReturn(false);
+        assertFalse(networkModel.canElementEnableIndividualServicesByName("unknown"));
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests for getExternalProviderCapabilities
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void getExternalProviderCapabilitiesCallsExtensionHelper() {
+        Map<Network.Service, Map<Network.Capability, String>> caps = new HashMap<>();
+        when(extensionHelper.getNetworkCapabilitiesForProvider(10L, "my-ext")).thenReturn(caps);
+
+        Map<Network.Service, Map<Network.Capability, String>> result =
+                networkModel.getExternalProviderCapabilities(10L, "my-ext");
+        assertEquals(caps, result);
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests for isServiceProvidedByNsp (via listSupportedNetworkServiceProviders)
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void listSupportedNetworkServiceProvidersIncludesExtensionBackedProviders() {
+        com.cloud.network.dao.PhysicalNetworkVO physNet = mock(com.cloud.network.dao.PhysicalNetworkVO.class);
+        when(physNet.getId()).thenReturn(1L);
+        when(physicalNetworkDao.listAll()).thenReturn(List.of(physNet));
+
+        PhysicalNetworkServiceProviderVO nsp = mock(PhysicalNetworkServiceProviderVO.class);
+        when(nsp.getProviderName()).thenReturn("my-ext");
+        when(physicalNetworkServiceProviderDao.listBy(1L)).thenReturn(List.of(nsp));
+        when(extensionHelper.isNetworkExtensionProvider("my-ext")).thenReturn(true);
+
+        // networkElements is empty so no standard providers found
+        ReflectionTestUtils.setField(networkModel, "networkElements", new ArrayList<>());
+
+        // We call with null service to test the inclusion path (parameter is service name String)
+        List<? extends Network.Provider> result = networkModel.listSupportedNetworkServiceProviders(null);
+
+        boolean found = result.stream().anyMatch(p -> "my-ext".equalsIgnoreCase(p.getName()));
+        assertTrue("Extension-backed provider should be included", found);
     }
 }

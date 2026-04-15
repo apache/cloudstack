@@ -1090,4 +1090,3 @@ exit 0
 For a full production implementation see https://github.com/apache/cloudstack-extensions/tree/network-namespace/Network-Namespace:
 - `network-namespace.sh` — management-server entry-point (SSH proxy).
 - `enetwork-namespace-wrapper.sh` — KVM-host wrapper that implements all commands using Linux network namespaces.
-
