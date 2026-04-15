@@ -1585,7 +1585,7 @@ public class BackupManagerTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testDeleteBackupBlockedByPendingJobs() {
+    public void testDeleteBackupBlockedByPendingJobs() throws ResourceAllocationException {
         Long backupId = 1L;
         Long vmId = 2L;
 
