@@ -18,6 +18,7 @@
 package org.apache.cloudstack.framework.extensions.api;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.when;
 import java.util.EnumSet;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,6 +43,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import com.cloud.user.Account;
 
 public class UpdateRegisteredExtensionCmdTest {
 
@@ -58,6 +62,48 @@ public class UpdateRegisteredExtensionCmdTest {
     public void extensionIdReturnsNullWhenUnset() {
         ReflectionTestUtils.setField(cmd, "extensionId", null);
         assertNull(cmd.getExtensionId());
+    }
+
+    @Test
+    public void extensionIdReturnsValueWhenSet() {
+        Long extensionId = 42L;
+        ReflectionTestUtils.setField(cmd, "extensionId", extensionId);
+        assertEquals(extensionId, cmd.getExtensionId());
+    }
+
+    @Test
+    public void cleanupDetailsReturnsNullWhenUnset() {
+        ReflectionTestUtils.setField(cmd, "cleanupDetails", null);
+        assertNull(cmd.isCleanupDetails());
+    }
+
+    @Test
+    public void cleanupDetailsReturnsTrueWhenSet() {
+        ReflectionTestUtils.setField(cmd, "cleanupDetails", true);
+        assertTrue(cmd.isCleanupDetails());
+    }
+
+    @Test
+    public void cleanupDetailsReturnsFalseWhenSetToFalse() {
+        ReflectionTestUtils.setField(cmd, "cleanupDetails", false);
+        assertFalse(cmd.isCleanupDetails());
+    }
+
+    @Test
+    public void getEntityOwnerIdReturnsSystemAccountId() {
+        assertEquals(Account.ACCOUNT_ID_SYSTEM, cmd.getEntityOwnerId());
+    }
+
+    @Test
+    public void getApiResourceTypeReturnsExtension() {
+        assertEquals(ApiCommandResourceType.Extension, cmd.getApiResourceType());
+    }
+
+    @Test
+    public void getApiResourceIdReturnsExtensionId() {
+        Long extensionId = 99L;
+        ReflectionTestUtils.setField(cmd, "extensionId", extensionId);
+        assertEquals(extensionId, cmd.getApiResourceId());
     }
 
     @Test
