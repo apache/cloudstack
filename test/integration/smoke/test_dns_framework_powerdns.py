@@ -24,7 +24,7 @@ import logging
 import socket
 
 class TestCloudStackDNSFramework(cloudstackTestCase):
-    
+
     @classmethod
     def setUpClass(cls):
         """
@@ -80,12 +80,12 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         time.sleep(15)
 
         cls.logger.info("PDNS is up and running")
-        
+
         # Construct PDNS URL once
         cls.pdns_url = f"http://{cls.marvin_vm_ip}"
         cls.logger.info(f"PDNS endpoint: {cls.pdns_url}")
-        
-        
+
+
     def test_01_list_dns_providers(self):
         """
         List DNS providers, expect PowerDNS provider to be present
@@ -95,7 +95,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         response = self.api_client.listDnsProviders(list_providers_cmd)
         self.assertIsNotNone(response, "Failed to list DNS providers")
         self.logger.info(f"DNS Providers found: {[provider.name for provider in response]}")
-    
+
     def test_02_add_dns_server(self):
         """
         Register PDNS as DNS provider in CloudStack
@@ -107,7 +107,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self.__class__.dns_server_id = response.id
         self.logger.info(f"DNS Provider added: {response.id}")
         self.assertIsNotNone(response.id, "DNS server ID should not be None")
-        
+
 
     def test_03_list_dns_servers(self):
         """
@@ -121,7 +121,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self.assertEqual(len(response), 1, "Expected exactly one DNS server")
         self.assertEqual(response[0].id, self.dns_server_id, "DNS server ID mismatch")
 
-    
+
     def test_04_create_dns_zone(self):
         """
         Create a DNS zone in the added PDNS provider
@@ -133,7 +133,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self.__class__.dns_zone_id = response.id
         self.logger.info(f"DNS Zone created: {response.id}")
 
-    
+
     def test_05_list_dns_zones(self):
         """
         List DNS zones and verify the newly created zone is present
@@ -160,7 +160,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         )
         self.assertIsNotNone(response, "Failed to create DNS record")
         self.assertEqual(response.name, "www.example.com", "DNS record name mismatch")
-    
+
     def test_07_create_aaaa_dns_records(self):
         """
         Create AAAA DNS records in the previously created zone
@@ -180,7 +180,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         """
         Create an MX DNS record in the previously created zone
         """
-        self.logger.info("Creating an MX DNS record")   
+        self.logger.info("Creating an MX DNS record")
         response = self._create_record(
             self.dns_zone_id,
             "example.com",
@@ -263,13 +263,13 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         response = self.api_client.listDnsServers(list_cmd)
         dns_servers = response or []
         self.assertEqual(len(dns_servers), 0, "Expected no DNS servers after deletion")
-    
+
     @classmethod
     def tearDownClass(cls):
         """
         Stop PDNS after tests
         """
-        
+
         try:
             cls.logger.info("Stopping PDNS stack...")
 
@@ -293,7 +293,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         cmd.contents = contents
 
         return self.api_client.createDnsRecord(cmd)
-    
+
 
     def _add_dns_server(self):
         cmd = addDnsServer.addDnsServerCmd()
@@ -308,7 +308,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         cmd.publicdomainsuffix = "pdns-public.example.com"
 
         return self.api_client.addDnsServer(cmd)
-    
+
     def _create_zone(self, server_id):
         cmd = createDnsZone.createDnsZoneCmd()
         cmd.dnsserverid = server_id
@@ -316,3 +316,4 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         cmd.description = "Test DNS Zone for PDNS"
 
         return self.api_client.createDnsZone(cmd)
+    
