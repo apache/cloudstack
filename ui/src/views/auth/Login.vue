@@ -430,9 +430,11 @@ export default {
     getKeycloakUrl (from) {
       const rootURl = this.keycloakauthorizeurl
       const options = {
+        redirect_uri: this.keycloakredirecturi,
         client_id: this.keycloakclientid,
+        response_type: 'code',
         scope: 'openid email',
-        state: from
+        state: 'cloudstack'
       }
 
       const qs = new URLSearchParams(options)
