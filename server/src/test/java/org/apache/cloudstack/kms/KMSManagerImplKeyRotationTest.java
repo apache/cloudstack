@@ -25,12 +25,15 @@ import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
 import org.apache.cloudstack.kms.dao.KMSKeyDao;
 import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
+import com.cloud.event.ActionEventUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -225,18 +228,20 @@ public class KMSManagerImplKeyRotationTest {
         when(kmsProvider.wrapKey(plainDek, KeyPurpose.VOLUME_ENCRYPTION, "new-kek-label", newProfileId))
                 .thenReturn(newWrappedKey);
 
-        kmsManager.rewrapSingleKey(wrappedKeyVO, kmsKey, newVersion, kmsProvider);
+        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            kmsManager.rewrapSingleKey(wrappedKeyVO, kmsKey, newVersion, kmsProvider);
 
-        // Verify unwrap was called
-        verify(kmsManager).unwrapKey(wrappedKeyId);
+            // Verify unwrap was called
+            verify(kmsManager).unwrapKey(wrappedKeyId);
 
-        // Verify wrap was called with new profile
-        verify(kmsProvider).wrapKey(plainDek, KeyPurpose.VOLUME_ENCRYPTION, "new-kek-label", newProfileId);
+            // Verify wrap was called with new profile
+            verify(kmsProvider).wrapKey(plainDek, KeyPurpose.VOLUME_ENCRYPTION, "new-kek-label", newProfileId);
 
-        // Verify wrapped key was updated
-        verify(wrappedKeyVO).setKekVersionId(newVersionId);
-        verify(wrappedKeyVO).setWrappedBlob("new-wrapped-blob".getBytes());
-        verify(kmsWrappedKeyDao).update(wrappedKeyId, wrappedKeyVO);
+            // Verify wrapped key was updated
+            verify(wrappedKeyVO).setKekVersionId(newVersionId);
+            verify(wrappedKeyVO).setWrappedBlob("new-wrapped-blob".getBytes());
+            verify(kmsWrappedKeyDao).update(wrappedKeyId, wrappedKeyVO);
+        }
     }
 
     /**

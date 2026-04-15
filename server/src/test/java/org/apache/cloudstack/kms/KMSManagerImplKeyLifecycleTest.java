@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.kms;
 
+import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.framework.kms.KMSException;
@@ -32,6 +33,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockedStatic;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -330,10 +333,12 @@ public class KMSManagerImplKeyLifecycleTest {
         when(hsmProfileDao.findById(10L)).thenReturn(profile);
         doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
 
-        kmsManager.deleteUserKMSKey(key);
+        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            kmsManager.deleteUserKMSKey(key);
 
-        verify(kmsProvider).deleteKek("kek-label");
-        verify(kmsKeyDao).remove(keyId);
+            verify(kmsProvider).deleteKek("kek-label");
+            verify(kmsKeyDao).remove(keyId);
+        }
     }
 
     @Test
@@ -355,9 +360,11 @@ public class KMSManagerImplKeyLifecycleTest {
         doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
         doThrow(KMSException.kekOperationFailed("provider error")).when(kmsProvider).deleteKek(anyString());
 
-        kmsManager.deleteUserKMSKey(key);
+        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            kmsManager.deleteUserKMSKey(key);
 
-        verify(kmsKeyDao).remove(keyId);
+            verify(kmsKeyDao).remove(keyId);
+        }
     }
 
     @Test
@@ -391,11 +398,13 @@ public class KMSManagerImplKeyLifecycleTest {
         when(hsmProfileDao.findById(20L)).thenReturn(profile);
         doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
 
-        boolean result = kmsManager.deleteKMSKeysByAccountId(accountId);
+        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            boolean result = kmsManager.deleteKMSKeysByAccountId(accountId);
 
-        assertTrue(result);
-        verify(kmsProvider).deleteKek("kek-label");
-        verify(kmsKeyDao).remove(10L);
+            assertTrue(result);
+            verify(kmsProvider).deleteKek("kek-label");
+            verify(kmsKeyDao).remove(10L);
+        }
     }
 
     @Test
@@ -418,9 +427,11 @@ public class KMSManagerImplKeyLifecycleTest {
         doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
         doThrow(new RuntimeException("provider unavailable")).when(kmsProvider).deleteKek(anyString());
 
-        boolean result = kmsManager.deleteKMSKeysByAccountId(accountId);
+        try (MockedStatic<ActionEventUtils> actionEventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            boolean result = kmsManager.deleteKMSKeysByAccountId(accountId);
 
-        assertTrue(result);
-        verify(kmsKeyDao).remove(10L);
+            assertTrue(result);
+            verify(kmsKeyDao).remove(10L);
+        }
     }
 }
