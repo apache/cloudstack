@@ -18,8 +18,8 @@
 //
 package org.apache.cloudstack.oauth2;
 
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.Domain;
+import com.cloud.user.DomainService;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -56,7 +56,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
     protected OauthProviderDao _oauthProviderDao;
 
     @Inject
-    private DomainDao _domainDao;
+    private DomainService _domainService;
 
     protected static Map<String, UserOAuth2Authenticator> userOAuth2AuthenticationProvidersMap = new HashMap<>();
 
@@ -247,28 +247,35 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
             if (GLOBAL_DOMAIN_FILTER.equals(domainUuid)) {
                 return GLOBAL_DOMAIN_ID;
             }
-            DomainVO domain = _domainDao.findByUuid(domainUuid);
+            Domain domain = _domainService.getDomain(domainUuid);
             if (Objects.nonNull(domain)) {
                 return domain.getId();
             }
         }
         final String[] domainArray = (String[])params.get(ApiConstants.DOMAIN);
         if (ArrayUtils.isNotEmpty(domainArray)) {
-            String path = domainArray[0];
+            String path = normalizeDomainPath(domainArray[0]);
             if (StringUtils.isNotEmpty(path)) {
-                if (!path.startsWith("/")) {
-                    path = "/" + path;
-                }
-                if (!path.endsWith("/")) {
-                    path += "/";
-                }
-                DomainVO domain = _domainDao.findDomainByPath(path);
+                Domain domain = _domainService.findDomainByIdOrPath(null, path);
                 if (Objects.nonNull(domain)) {
                     return domain.getId();
                 }
             }
         }
         return null;
+    }
+
+    protected String normalizeDomainPath(String path) {
+        if (StringUtils.isEmpty(path)) {
+            return null;
+        }
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        if (!path.endsWith("/")) {
+            path += "/";
+        }
+        return path;
     }
 
     @Override

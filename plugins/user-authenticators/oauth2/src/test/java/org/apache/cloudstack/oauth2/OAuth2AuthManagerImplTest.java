@@ -19,8 +19,8 @@
 
 package org.apache.cloudstack.oauth2;
 
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.Domain;
+import com.cloud.user.DomainService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.oauth2.api.command.DeleteOAuthProviderCmd;
@@ -61,7 +61,7 @@ public class OAuth2AuthManagerImplTest {
     OauthProviderDao _oauthProviderDao;
 
     @Mock
-    DomainDao _domainDao;
+    DomainService _domainService;
 
     AutoCloseable closeable;
     @Before
@@ -273,9 +273,9 @@ public class OAuth2AuthManagerImplTest {
         Map<String, Object[]> params = new HashMap<>();
         params.put(ApiConstants.DOMAIN_ID, new String[]{"test-uuid-123"});
 
-        DomainVO domain = Mockito.mock(DomainVO.class);
+        Domain domain = Mockito.mock(Domain.class);
         when(domain.getId()).thenReturn(10L);
-        when(_domainDao.findByUuid("test-uuid-123")).thenReturn(domain);
+        when(_domainService.getDomain("test-uuid-123")).thenReturn(domain);
 
         Long result = _authManager.resolveDomainId(params);
         assertEquals(Long.valueOf(10L), result);
@@ -295,9 +295,9 @@ public class OAuth2AuthManagerImplTest {
         Map<String, Object[]> params = new HashMap<>();
         params.put(ApiConstants.DOMAIN, new String[]{"ROOT/child"});
 
-        DomainVO domain = Mockito.mock(DomainVO.class);
+        Domain domain = Mockito.mock(Domain.class);
         when(domain.getId()).thenReturn(20L);
-        when(_domainDao.findDomainByPath("/ROOT/child/")).thenReturn(domain);
+        when(_domainService.findDomainByIdOrPath(null, "/ROOT/child/")).thenReturn(domain);
 
         Long result = _authManager.resolveDomainId(params);
         assertEquals(Long.valueOf(20L), result);
@@ -308,9 +308,9 @@ public class OAuth2AuthManagerImplTest {
         Map<String, Object[]> params = new HashMap<>();
         params.put(ApiConstants.DOMAIN, new String[]{"/ROOT/child/"});
 
-        DomainVO domain = Mockito.mock(DomainVO.class);
+        Domain domain = Mockito.mock(Domain.class);
         when(domain.getId()).thenReturn(20L);
-        when(_domainDao.findDomainByPath("/ROOT/child/")).thenReturn(domain);
+        when(_domainService.findDomainByIdOrPath(null, "/ROOT/child/")).thenReturn(domain);
 
         Long result = _authManager.resolveDomainId(params);
         assertEquals(Long.valueOf(20L), result);
@@ -321,7 +321,7 @@ public class OAuth2AuthManagerImplTest {
         Map<String, Object[]> params = new HashMap<>();
         params.put(ApiConstants.DOMAIN_ID, new String[]{"nonexistent-uuid"});
 
-        when(_domainDao.findByUuid("nonexistent-uuid")).thenReturn(null);
+        when(_domainService.getDomain("nonexistent-uuid")).thenReturn(null);
 
         Long result = _authManager.resolveDomainId(params);
         assertNull(result);
@@ -340,9 +340,9 @@ public class OAuth2AuthManagerImplTest {
         params.put(ApiConstants.DOMAIN_ID, new String[]{"test-uuid"});
         params.put(ApiConstants.DOMAIN, new String[]{"/ROOT/child/"});
 
-        DomainVO domain = Mockito.mock(DomainVO.class);
+        Domain domain = Mockito.mock(Domain.class);
         when(domain.getId()).thenReturn(10L);
-        when(_domainDao.findByUuid("test-uuid")).thenReturn(domain);
+        when(_domainService.getDomain("test-uuid")).thenReturn(domain);
 
         Long result = _authManager.resolveDomainId(params);
         assertEquals(Long.valueOf(10L), result);
@@ -354,10 +354,10 @@ public class OAuth2AuthManagerImplTest {
         params.put(ApiConstants.DOMAIN_ID, new String[]{"bad-uuid"});
         params.put(ApiConstants.DOMAIN, new String[]{"/ROOT/"});
 
-        when(_domainDao.findByUuid("bad-uuid")).thenReturn(null);
-        DomainVO domain = Mockito.mock(DomainVO.class);
+        when(_domainService.getDomain("bad-uuid")).thenReturn(null);
+        Domain domain = Mockito.mock(Domain.class);
         when(domain.getId()).thenReturn(1L);
-        when(_domainDao.findDomainByPath("/ROOT/")).thenReturn(domain);
+        when(_domainService.findDomainByIdOrPath(null, "/ROOT/")).thenReturn(domain);
 
         Long result = _authManager.resolveDomainId(params);
         assertEquals(Long.valueOf(1L), result);
