@@ -114,4 +114,3 @@ public class UpdateRegisteredExtensionCmd extends BaseCmd {
         return getExtensionId();
     }
 }
-
