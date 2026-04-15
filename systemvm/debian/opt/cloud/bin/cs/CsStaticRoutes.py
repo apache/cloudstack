@@ -53,7 +53,7 @@ class CsStaticRoutes(CsDataBag):
                 logging.info("Deleted static route %s via %s from PBR table %s" % (network, gateway, table_name))
         else:
             # Add to main table (existing logic)
-            command = "ip route show | grep %s | awk '{print $1, $3}'" % network
+            command = "ip route show | grep '^%s' | awk '{print $1, $3}'" % network
             result = CsHelper.execute(command)
             if not result:
                 route_command = "ip route add %s via %s" % (network, gateway)
@@ -66,7 +66,7 @@ class CsStaticRoutes(CsDataBag):
                 cs_route = CsRoute()
                 table_name = cs_route.get_tablename(device)
                 # Check if route already exists in the PBR table
-                check_command = "ip route show table %s | grep %s | awk '{print $1, $3}'" % (table_name, network)
+                check_command = "ip route show table %s | grep '^%s' | awk '{print $1, $3}'" % (table_name, network)
                 result = CsHelper.execute(check_command)
                 if not result:
                     # Add route to the interface-specific table
