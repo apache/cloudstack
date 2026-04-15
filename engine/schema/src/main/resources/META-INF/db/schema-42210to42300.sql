@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`image_transfer`(
     `domain_id` bigint unsigned NOT NULL COMMENT 'Domain ID',
     `data_center_id` bigint unsigned NOT NULL COMMENT 'Data Center ID',
     `backup_id` bigint unsigned COMMENT 'Backup ID',
-    `disk_id` bigint unsigned NOT NULL COMMENT 'Disk/Volume ID',
+    `volume_id` bigint unsigned NOT NULL COMMENT 'Volume ID',
     `host_id` bigint unsigned NOT NULL COMMENT 'Host ID',
     `transfer_url` varchar(255) COMMENT 'ImageIO transfer URL',
     `file` varchar(255) COMMENT 'File for the file backend',
