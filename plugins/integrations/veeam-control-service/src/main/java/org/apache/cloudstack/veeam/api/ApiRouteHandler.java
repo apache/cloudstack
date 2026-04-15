@@ -18,7 +18,6 @@
 package org.apache.cloudstack.veeam.api;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +39,7 @@ import org.apache.cloudstack.veeam.api.dto.SummaryCount;
 import org.apache.cloudstack.veeam.api.dto.Version;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 
-import com.cloud.utils.UuidUtils;
+import com.cloud.user.AccountService;
 import com.cloud.utils.component.ManagerBase;
 
 public class ApiRouteHandler extends ManagerBase implements RouteHandler {
@@ -48,6 +47,9 @@ public class ApiRouteHandler extends ManagerBase implements RouteHandler {
 
     @Inject
     ServerAdapter serverAdapter;
+
+    @Inject
+    AccountService accountService;
 
     @Override
     public boolean canHandle(String method, String path) {
@@ -97,8 +99,7 @@ public class ApiRouteHandler extends ManagerBase implements RouteHandler {
 
         /* ---------------- Product info ---------------- */
         ProductInfo productInfo = new ProductInfo();
-        productInfo.setInstanceId(UuidUtils.nameUUIDFromBytes(
-                VeeamControlService.BindAddress.value().getBytes(StandardCharsets.UTF_8)).toString());
+        productInfo.setInstanceId(accountService.getSystemAccount().getUuid());
         productInfo.name = VeeamControlService.PLUGIN_NAME;
 
         productInfo.version = Version.fromPackageAndCSVersion(true);

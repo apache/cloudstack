@@ -77,10 +77,17 @@ public class VeeamControlServer {
                 StringUtils.isNotEmpty(keystorePassword) &&
                 StringUtils.isNotEmpty(keyManagerPassword) &&
                 Files.exists(Paths.get(keystorePath));
-        final String bind = VeeamControlService.BindAddress.value();
+        long managementServerHostId = veeamControlService.getCurrentManagementServerHostId();
+        final String bindAddress = VeeamControlService.BindAddress.valueIn(managementServerHostId);
+        final String bindHost = StringUtils.trimToNull(bindAddress);
         final int port = VeeamControlService.Port.value();
+        final String bindDisplay = bindHost == null ?
+                String.format("all interfaces, port: %d", port) :
+                String.format("host: %s, port: %d", bindHost, port);
         String ctxPath = VeeamControlService.ContextPath.value();
-        LOGGER.info("Veeam Control server - bind: {}, port: {}, context: {} with {} handlers", bind, port, ctxPath,
+        LOGGER.info("Veeam Control server - {}, context: {} with {} handlers",
+                bindDisplay,
+                ctxPath,
                 routeHandlers != null ? routeHandlers.size() : 0);
 
 
@@ -102,20 +109,20 @@ public class VeeamControlServer {
                     new SslConnectionFactory(sslContextFactory, "http/1.1"),
                     new HttpConnectionFactory(https)
             );
-            httpsConnector.setHost(bind);
+            httpsConnector.setHost(bindHost);
             httpsConnector.setPort(port);
             server.addConnector(httpsConnector);
 
-            LOGGER.info("Veeam Control API server HTTPS enabled on {}:{}", bind, port);
+            LOGGER.info("Veeam Control API server HTTPS enabled on {}", bindDisplay);
         } else {
             final HttpConfiguration http = new HttpConfiguration();
             final ServerConnector httpConnector = new ServerConnector(server, new HttpConnectionFactory(http));
-            httpConnector.setHost(bind);
+            httpConnector.setHost(bindHost);
             httpConnector.setPort(port);
             server.addConnector(httpConnector);
 
             LOGGER.warn("Veeam Control API server HTTPS is NOT configured (missing keystore path/passwords). " +
-                    "Starting HTTP on {}:{} instead.", bind, port);
+                    "Starting HTTP on {} instead.", bindDisplay);
         }
 
         final ServletContextHandler ctx =
@@ -140,7 +147,7 @@ public class VeeamControlServer {
 
         server.start();
 
-        LOGGER.info("Started Veeam Control API server on {}:{} with context {}", bind, port, ctxPath);
+        LOGGER.info("Started Veeam Control API server on {}:{} with context {}", bindDisplay, port, ctxPath);
     }
 
     @NotNull

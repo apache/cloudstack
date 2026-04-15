@@ -21,15 +21,23 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.utils.cache.SingleCache;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.veeam.utils.DataUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.net.NetUtils;
 
 public class VeeamControlServiceImpl extends ManagerBase implements VeeamControlService {
+
+    @Inject
+    ManagementServerHostDao managementServerHostDao;
 
     private List<RouteHandler> routeHandlers;
     private VeeamControlServer veeamControlServer;
@@ -61,6 +69,13 @@ public class VeeamControlServiceImpl extends ManagerBase implements VeeamControl
 
     public void setRouteHandlers(final List<RouteHandler> routeHandlers) {
         this.routeHandlers = routeHandlers;
+    }
+
+    @Override
+    public long getCurrentManagementServerHostId() {
+        ManagementServerHostVO hostVO =
+                managementServerHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+        return hostVO.getId();
     }
 
     @Override

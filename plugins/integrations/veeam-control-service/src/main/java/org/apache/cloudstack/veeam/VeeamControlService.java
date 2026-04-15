@@ -31,7 +31,8 @@ public interface VeeamControlService extends PluggableService, Configurable {
     ConfigKey<Boolean> Enabled = new ConfigKey<>("Advanced", Boolean.class, "integration.veeam.control.enabled",
             "false", "Enable the Veeam Integration REST API server", false);
     ConfigKey<String> BindAddress = new ConfigKey<>("Advanced", String.class, "integration.veeam.control.bind.address",
-            "127.0.0.1", "Bind address for Veeam Integration REST API server", false);
+            "", "Bind address for Veeam Integration REST API server", false,
+            ConfigKey.Scope.ManagementServer);
     ConfigKey<Integer> Port = new ConfigKey<>("Advanced", Integer.class, "integration.veeam.control.port",
             "8090", "Port for Veeam Integration REST API server", false);
     ConfigKey<String> ContextPath = new ConfigKey<>("Advanced", String.class, "integration.veeam.control.context.path",
@@ -56,6 +57,7 @@ public interface VeeamControlService extends PluggableService, Configurable {
             "", "Comma-separated list of CIDR blocks representing clients allowed to access the API. " +
                     "If empty, all clients will be allowed. Example: '192.168.1.1/24,192.168.2.100/32", true);
 
+    long getCurrentManagementServerHostId();
 
     List<String> getAllowedClientCidrs();
 
