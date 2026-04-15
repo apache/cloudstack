@@ -104,6 +104,7 @@ class TransferRegistry:
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
+        self._cv = threading.Condition(self._lock)
         self._transfers: Dict[str, Dict[str, Any]] = {}
         self._last_activity: Dict[str, float] = {}
         self._inflight: Dict[str, int] = {}
@@ -127,7 +128,9 @@ class TransferRegistry:
             logging.error("unregister rejected invalid transfer_id=%r", transfer_id)
             with self._lock:
                 return len(self._transfers)
-        with self._lock:
+        with self._cv:
+            while self._inflight.get(safe_id, 0) > 0:
+                self._cv.wait()
             self._transfers.pop(safe_id, None)
             self._last_activity.pop(safe_id, None)
             self._inflight.pop(safe_id, None)
@@ -168,12 +171,13 @@ class TransferRegistry:
             yield
         finally:
             now = time.monotonic()
-            with self._lock:
+            with self._cv:
                 count = self._inflight.get(safe_id, 1) - 1
                 if count <= 0:
                     self._inflight.pop(safe_id, None)
                     if safe_id in self._transfers:
                         self._last_activity[safe_id] = now
+                    self._cv.notify_all()
                 else:
                     self._inflight[safe_id] = count
 
