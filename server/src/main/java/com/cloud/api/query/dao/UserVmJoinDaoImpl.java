@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VnfNicResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
@@ -91,7 +92,6 @@ import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmStats;
-import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
@@ -128,7 +128,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     @Inject
     VMTemplateDao vmTemplateDao;
     @Inject
-    NicDetailsDao nicDetailsDao;
+    ExtensionHelper extensionHelper;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -463,7 +463,16 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
             // Remove deny listed settings if user is not admin
             if (caller.getType() != Account.Type.ADMIN) {
-                String[] userVmSettingsToHide = QueryService.UserVMDeniedDetails.value().split(",");
+                List<String> userVmSettingsToHide = new ArrayList<>();
+                String[] parts = QueryService.UserVMDeniedDetails.value().split(",");
+                if (parts.length > 0) {
+                    Collections.addAll(userVmSettingsToHide, parts);
+                }
+                if (userVm.getTemplateExtensionId() != null) {
+                    userVmSettingsToHide.addAll(extensionHelper.getExtensionReservedResourceDetails(
+                            userVm.getTemplateExtensionId()));
+                }
+
                 for (String key : userVmSettingsToHide) {
                     resourceDetails.remove(key.trim());
                 }
@@ -523,7 +532,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         return userVmResponse;
     }
 
-
     private long computeLeaseDurationFromExpiryDate(Date created, Date leaseExpiryDate) {
         LocalDate createdDate = created.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         LocalDate expiryDate = leaseExpiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
@@ -559,7 +567,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
     /**
      * The resulting Response attempts to be in line with what is returned from
-     * @see com.cloud.api.ApiResponseHelper#createNicResponse(Nic)
+     * @see com.cloud.api.ApiResponseHelper#{code}createNicResponse(Nic){code}
      */
     @Override
     public UserVmResponse setUserVmResponse(ResponseView view, UserVmResponse userVmData, UserVmJoinVO uvo) {

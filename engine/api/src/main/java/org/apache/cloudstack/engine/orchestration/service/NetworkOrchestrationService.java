@@ -310,7 +310,7 @@ public interface NetworkOrchestrationService {
 
     void removeDhcpServiceInSubnet(Nic nic);
 
-    boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType);
+    boolean isResourceCountUpdateNeeded(NetworkOffering networkOffering);
 
     void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest);
 

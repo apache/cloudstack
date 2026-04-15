@@ -216,6 +216,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Inject
     AccountService accountService;
 
+    // Map of in-built extension names and their reserved resource details that shouldn't be accessible to end-users
+    protected static final Map<String, List<String>> INBUILT_RESERVED_RESOURCE_DETAILS = Map.of(
+            "proxmox", List.of("proxmox_vmid")
+    );
+
     private ScheduledExecutorService extensionPathStateCheckExecutor;
 
     protected String getDefaultExtensionRelativePath(String name) {
@@ -563,6 +568,25 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         updateExtensionPathReady(extension, true);
     }
 
+    protected void addInbuiltExtensionReservedResourceDetails(long extensionId, List<String> reservedResourceDetails) {
+        ExtensionVO vo = extensionDao.findById(extensionId);
+        if (vo == null || vo.isUserDefined()) {
+            return;
+        }
+        String lowerName = StringUtils.defaultString(vo.getName()).toLowerCase();
+        Optional<Map.Entry<String, List<String>>> match = INBUILT_RESERVED_RESOURCE_DETAILS.entrySet().stream()
+                .filter(e -> lowerName.contains(e.getKey().toLowerCase()))
+                .findFirst();
+        if (match.isPresent()) {
+            Set<String> existing = new HashSet<>(reservedResourceDetails);
+            for (String detailKey : match.get().getValue()) {
+                if (existing.add(detailKey)) {
+                    reservedResourceDetails.add(detailKey);
+                }
+            }
+        }
+    }
+
     @Override
     public String getExtensionsPath() {
         return externalProvisioner.getExtensionsPath();
@@ -577,6 +601,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         String relativePath = cmd.getPath();
         final Boolean orchestratorRequiresPrepareVm = cmd.isOrchestratorRequiresPrepareVm();
         final String stateStr = cmd.getState();
+        final String reservedResourceDetails = cmd.getReservedResourceDetails();
         ExtensionVO extensionByName = extensionDao.findByName(name);
         if (extensionByName != null) {
             throw new CloudRuntimeException("Extension by name already exists");
@@ -623,6 +648,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 detailsVOList.add(new ExtensionDetailsVO(extension.getId(),
                         ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM, String.valueOf(orchestratorRequiresPrepareVm),
                         false));
+            }
+            if (StringUtils.isNotBlank(reservedResourceDetails)) {
+                detailsVOList.add(new ExtensionDetailsVO(extension.getId(),
+                        ApiConstants.RESERVED_RESOURCE_DETAILS, reservedResourceDetails, false));
             }
             if (CollectionUtils.isNotEmpty(detailsVOList)) {
                 extensionDetailsDao.saveDetails(detailsVOList);
@@ -704,6 +733,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final String stateStr = cmd.getState();
         final Map<String, String> details = cmd.getDetails();
         final Boolean cleanupDetails = cmd.isCleanupDetails();
+        final String reservedResourceDetails = cmd.getReservedResourceDetails();
         final ExtensionVO extensionVO = extensionDao.findById(id);
         if (extensionVO == null) {
             throw new InvalidParameterValueException("Failed to find the extension");
@@ -732,7 +762,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
                         extensionVO.getName()));
             }
-            updateExtensionsDetails(cleanupDetails, details, orchestratorRequiresPrepareVm, id);
+            updateExtensionsDetails(cleanupDetails, details, orchestratorRequiresPrepareVm, reservedResourceDetails,
+                    id);
             return extensionVO;
         });
         if (StringUtils.isNotBlank(stateStr)) {
@@ -748,9 +779,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         return result;
     }
 
-    protected void updateExtensionsDetails(Boolean cleanupDetails, Map<String, String> details, Boolean orchestratorRequiresPrepareVm, long id) {
+    protected void updateExtensionsDetails(Boolean cleanupDetails, Map<String, String> details,
+               Boolean orchestratorRequiresPrepareVm, String reservedResourceDetails, long id) {
         final boolean needToUpdateAllDetails = Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details);
-        if (!needToUpdateAllDetails && orchestratorRequiresPrepareVm == null) {
+        if (!needToUpdateAllDetails && orchestratorRequiresPrepareVm == null &&
+                StringUtils.isBlank(reservedResourceDetails)) {
             return;
         }
         if (needToUpdateAllDetails) {
@@ -760,6 +793,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             if (orchestratorRequiresPrepareVm != null) {
                 hiddenDetails.put(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
                         String.valueOf(orchestratorRequiresPrepareVm));
+            }
+            if (StringUtils.isNotBlank(reservedResourceDetails)) {
+                hiddenDetails.put(ApiConstants.RESERVED_RESOURCE_DETAILS, reservedResourceDetails);
             }
             if (MapUtils.isNotEmpty(hiddenDetails)) {
                 hiddenDetails.forEach((key, value) -> detailsVOList.add(
@@ -775,15 +811,29 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 extensionDetailsDao.removeDetails(id);
             }
         } else {
-            ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(id,
-                    ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM);
-            if (detailsVO == null) {
-                extensionDetailsDao.persist(new ExtensionDetailsVO(id,
-                        ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
-                        String.valueOf(orchestratorRequiresPrepareVm), false));
-            } else if (Boolean.parseBoolean(detailsVO.getValue()) != orchestratorRequiresPrepareVm) {
-                detailsVO.setValue(String.valueOf(orchestratorRequiresPrepareVm));
-                extensionDetailsDao.update(detailsVO.getId(), detailsVO);
+            if (orchestratorRequiresPrepareVm != null) {
+                ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(id,
+                        ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM);
+                if (detailsVO == null) {
+                    extensionDetailsDao.persist(new ExtensionDetailsVO(id,
+                            ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
+                            String.valueOf(orchestratorRequiresPrepareVm), false));
+                } else if (Boolean.parseBoolean(detailsVO.getValue()) != orchestratorRequiresPrepareVm) {
+                    detailsVO.setValue(String.valueOf(orchestratorRequiresPrepareVm));
+                    extensionDetailsDao.update(detailsVO.getId(), detailsVO);
+                }
+            }
+            if (StringUtils.isNotBlank(reservedResourceDetails)) {
+                ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(id,
+                        ApiConstants.RESERVED_RESOURCE_DETAILS);
+                if (detailsVO == null) {
+                    extensionDetailsDao.persist(new ExtensionDetailsVO(id,
+                            ApiConstants.RESERVED_RESOURCE_DETAILS,
+                            reservedResourceDetails, false));
+                } else if (!reservedResourceDetails.equals(detailsVO.getValue())) {
+                    detailsVO.setValue(reservedResourceDetails);
+                    extensionDetailsDao.update(detailsVO.getId(), detailsVO);
+                }
             }
         }
     }
@@ -961,11 +1011,15 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             hiddenDetails = extensionDetails.second();
         } else {
             hiddenDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId(),
-                    List.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM));
+                    List.of(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM,
+                            ApiConstants.RESERVED_RESOURCE_DETAILS));
         }
         if (hiddenDetails.containsKey(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM)) {
             response.setOrchestratorRequiresPrepareVm(Boolean.parseBoolean(
                     hiddenDetails.get(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM)));
+        }
+        if (hiddenDetails.containsKey(ApiConstants.RESERVED_RESOURCE_DETAILS)) {
+            response.setReservedResourceDetails(hiddenDetails.get(ApiConstants.RESERVED_RESOURCE_DETAILS));
         }
         response.setObjectName(Extension.class.getSimpleName().toLowerCase());
         return response;
@@ -1603,6 +1657,24 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             return null;
         }
         return extensionDao.findById(extensionId);
+    }
+
+    @Override
+    public List<String> getExtensionReservedResourceDetails(long extensionId) {
+        ExtensionDetailsVO detailsVO = extensionDetailsDao.findDetail(extensionId,
+                ApiConstants.RESERVED_RESOURCE_DETAILS);
+        if (detailsVO == null || !StringUtils.isNotBlank(detailsVO.getValue())) {
+            return Collections.emptyList();
+        }
+        List<String> reservedDetails = new ArrayList<>();
+        String[] parts = detailsVO.getValue().split(",");
+        for (String part : parts) {
+            if (StringUtils.isNotBlank(part)) {
+                reservedDetails.add(part.trim());
+            }
+        }
+        addInbuiltExtensionReservedResourceDetails(extensionId, reservedDetails);
+        return reservedDetails;
     }
 
     @Override
