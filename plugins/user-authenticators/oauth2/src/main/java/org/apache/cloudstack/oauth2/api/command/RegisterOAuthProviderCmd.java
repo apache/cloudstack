@@ -116,10 +116,10 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     public void execute() throws ServerApiException, ConcurrentOperationException, EntityExistsException {
         if (StringUtils.equals("keycloak", getProvider())) {
             if (getAuthorizeUrl() == null || "".equals(getAuthorizeUrl())) {
-                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "authorizationurl parameter is mandatory for custom OAuth Provider");
+                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter authorizationurl is mandatory for keycloak OAuth Provider");
             }
             if (getTokenUrl() == null || "".equals(getTokenUrl())) {
-                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "tokenurl parameter is mandatory for custom OAuth Provider");
+                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter tokenurl is mandatory for keycloak OAuth Provider");
             }
         }
 
