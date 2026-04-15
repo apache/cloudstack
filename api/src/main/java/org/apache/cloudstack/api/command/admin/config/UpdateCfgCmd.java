@@ -16,9 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.config;
 
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,6 +27,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -37,6 +36,7 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 
 @APICommand(name = "updateConfiguration", description = "Updates a configuration.", responseObject = ConfigurationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
