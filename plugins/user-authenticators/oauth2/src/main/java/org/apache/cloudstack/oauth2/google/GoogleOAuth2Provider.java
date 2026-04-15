@@ -62,8 +62,8 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
     }
 
     @Override
-    public String verifyCodeAndFetchEmail(String secretCode) {
-        return verifyCodeAndFetchEmail(secretCode, null);
+    public String verifySecretCodeAndFetchEmail(String secretCode) {
+        return verifySecretCodeAndFetchEmail(secretCode, null);
     }
 
     protected void clearAccessAndRefreshTokens() {
@@ -87,7 +87,7 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
             throw new CloudAuthenticationException("Google provider is not registered, so user cannot be verified");
         }
 
-        String verifiedEmail = verifyCodeAndFetchEmail(secretCode, domainId);
+        String verifiedEmail = verifySecretCodeAndFetchEmail(secretCode, domainId);
         if (verifiedEmail == null || !email.equals(verifiedEmail)) {
             throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
         }
@@ -97,7 +97,7 @@ public class GoogleOAuth2Provider extends AdapterBase implements UserOAuth2Authe
     }
 
     @Override
-    public String verifyCodeAndFetchEmail(String secretCode, Long domainId) {
+    public String verifySecretCodeAndFetchEmail(String secretCode, Long domainId) {
         OauthProviderVO provider = _oauthProviderDao.findByProviderAndDomainWithGlobalFallback(getName(), domainId);
         String clientId = provider.getClientId();
         String secret = provider.getSecretKey();

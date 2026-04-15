@@ -59,8 +59,8 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
     }
 
     @Override
-    public String verifyCodeAndFetchEmail(String secretCode) {
-        return verifyCodeAndFetchEmail(secretCode, null);
+    public String verifySecretCodeAndFetchEmail(String secretCode) {
+        return verifySecretCodeAndFetchEmail(secretCode, null);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
             throw new CloudRuntimeException("Github provider is not registered, so user cannot be verified");
         }
 
-        String verifiedEmail = verifyCodeAndFetchEmail(secretCode, domainId);
+        String verifiedEmail = verifySecretCodeAndFetchEmail(secretCode, domainId);
         if (StringUtils.isEmpty(verifiedEmail) || !email.equals(verifiedEmail)) {
             throw new CloudRuntimeException("Unable to verify the email address with the provided secret");
         }
@@ -85,7 +85,7 @@ public class GithubOAuth2Provider extends AdapterBase implements UserOAuth2Authe
     }
 
     @Override
-    public String verifyCodeAndFetchEmail(String secretCode, Long domainId) {
+    public String verifySecretCodeAndFetchEmail(String secretCode, Long domainId) {
         String accessToken = getAccessToken(secretCode, domainId);
         if (StringUtils.isEmpty(accessToken)) {
             return null;

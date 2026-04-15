@@ -112,7 +112,7 @@ public class VerifyOAuthCodeAndGetUserCmd extends BaseListCmd implements APIAuth
         }
         domainId = _oauth2mgr.resolveDomainId(params);
 
-        String email = _oauth2mgr.verifyCodeAndFetchEmail(secretCode, provider, domainId);
+        String email = _oauth2mgr.verifySecretCodeAndFetchEmail(secretCode, provider, domainId);
         if (email != null) {
             UserResponse response = new UserResponse();
             response.setEmail(email);
