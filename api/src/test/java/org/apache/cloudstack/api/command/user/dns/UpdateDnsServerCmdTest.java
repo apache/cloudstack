@@ -39,7 +39,7 @@ public class UpdateDnsServerCmdTest extends BaseDnsCmdTest {
         setField(cmd, "id", ENTITY_ID);
         setField(cmd, "name", "updated-dns");
         setField(cmd, "url", "http://updated.dns.com");
-        setField(cmd, "credentials", "new-api-key");
+        setField(cmd, "apiKey", "new-api-key");
         setField(cmd, "port", 9090);
         setField(cmd, "isPublic", true);
         setField(cmd, "publicDomainSuffix", "updated.example.com");
@@ -55,7 +55,7 @@ public class UpdateDnsServerCmdTest extends BaseDnsCmdTest {
         assertEquals(Long.valueOf(ENTITY_ID), cmd.getId());
         assertEquals("updated-dns", cmd.getName());
         assertEquals("http://updated.dns.com", cmd.getUrl());
-        assertEquals("new-api-key", cmd.getCredentials());
+        assertEquals("new-api-key", cmd.getApiKey());
         assertEquals(Integer.valueOf(9090), cmd.getPort());
         assertTrue(cmd.isPublic());
         assertEquals("updated.example.com", cmd.getPublicDomainSuffix());

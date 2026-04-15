@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`dns_server` (
     `provider_type` varchar(255) NOT NULL COMMENT 'Provider type such as PowerDns',
     `url` varchar(1024) NOT NULL COMMENT 'dns server url',
     `dns_username` varchar(255) COMMENT 'username or email for dns server credentials',
-    `api_key` varchar(255) NOT NULL COMMENT 'dns server api_key',
+    `api_key` varchar(255) NOT NULL COMMENT 'api key or token for the dns server ',
     `external_server_id` varchar(255) COMMENT 'dns server id e.g. localhost for powerdns',
     `port` int(11) DEFAULT NULL COMMENT 'optional dns server port',
     `name_servers` varchar(1024) DEFAULT NULL COMMENT 'Comma separated list of name servers',
@@ -186,7 +186,3 @@ CREATE TABLE IF NOT EXISTS `cloud`.`dns_zone_network_map` (
   CONSTRAINT `fk_dns_map__zone_id` FOREIGN KEY (`dns_zone_id`) REFERENCES `dns_zone` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_dns_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Set default limit to 10 DNS zones for standard Accounts
-INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`, `default_value`)
-VALUES ('Advanced', 'DEFAULT', 'ResourceLimitManager', 'max.account.dns_zones', '10', 'The default maximum number of DNS zones that can be created by an Account', '10');
