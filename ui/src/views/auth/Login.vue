@@ -428,7 +428,7 @@ export default {
       return `${rootUrl}?${qs.toString()}`
     },
     getKeycloakUrl (from) {
-      const rootURl = keycloakauthorizeurl
+      const rootURl = this.keycloakauthorizeurl
       const options = {
         client_id: this.keycloakclientid,
         scope: 'openid email',
