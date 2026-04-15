@@ -34,7 +34,7 @@
         <swagger-annotations.version>1.6.2</swagger-annotations.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-        <jackson-databind.version>2.13.4</jackson-databind.version>
+        <jackson-databind.version>2.13.4.2</jackson-databind.version>
         <assertj.version>3.24.2</assertj.version>
         <junit-jupiter.version>5.8.1</junit-jupiter.version>
         <mockito.version>3.12.4</mockito.version>
