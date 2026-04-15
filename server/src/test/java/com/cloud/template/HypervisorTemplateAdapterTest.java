@@ -337,7 +337,7 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
         Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(Long.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(null).when(_templateMgr).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
-        Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class));
+        Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class), Mockito.anyLong());
 
         _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
 
@@ -353,11 +353,11 @@ public class HypervisorTemplateAdapterTest {
         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
         Mockito.doReturn(null).when(_adapter).getImageStoresThrowsExceptionIfNotFound(Mockito.any(Long.class), Mockito.any(TemplateProfile.class));
         Mockito.doReturn(null).when(_templateMgr).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
-        Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class));
+        Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class), Mockito.anyLong());
 
         _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
 
-        Mockito.verify(_adapter, Mockito.times(1)).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class));
+        Mockito.verify(_adapter, Mockito.times(1)).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class), Mockito.anyLong());
     }
 
     @Test

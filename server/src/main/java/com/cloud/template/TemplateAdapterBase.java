@@ -204,13 +204,14 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
      * {@link TemplateProfile#getZoneIdList()}.
      */
     protected void postUploadAllocation(List<DataStore> imageStores, VMTemplateVO template, List<TemplateOrVolumePostUploadCommand> payloads) {
-        int replicaLimit = isPrivateTemplate(template)
-                ? TemplateManager.PrivateTemplateSecStorageCopy.value()
-                : TemplateManager.PublicTemplateSecStorageCopy.value();
+        boolean isPrivate = isPrivateTemplate(template);
         Map<Long, Integer> zoneCopyCount = new HashMap<>();
         Collections.shuffle(imageStores);
         for (DataStore imageStore : imageStores) {
             Long zoneId_is = imageStore.getScope().getScopeId();
+            int replicaLimit = zoneId_is == null ? 0 : (isPrivate
+                    ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId_is)
+                    : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId_is));
 
             if (!isZoneAndImageStoreAvailable(imageStore, zoneId_is, zoneCopyCount, replicaLimit)) {
                 continue;

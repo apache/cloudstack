@@ -292,11 +292,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
             if (imageStore == null) {
                 List<DataStore> imageStores = getImageStoresThrowsExceptionIfNotFound(zoneId, profile);
-                standardImageStoreAllocation(imageStores, template);
+                standardImageStoreAllocation(imageStores, template, zoneId);
             } else {
                 int replicaLimit = isPrivateTemplate(template)
-                        ? TemplateManager.PrivateTemplateSecStorageCopy.value()
-                        : TemplateManager.PublicTemplateSecStorageCopy.value();
+                        ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId)
+                        : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId);
                 validateSecondaryStorageAndCreateTemplate(List.of(imageStore), template, new HashMap<>(), replicaLimit);
             }
         }
@@ -310,10 +310,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         return imageStores;
     }
 
-    protected void standardImageStoreAllocation(List<DataStore> imageStores, VMTemplateVO template) {
+    protected void standardImageStoreAllocation(List<DataStore> imageStores, VMTemplateVO template, long zoneId) {
         int replicaLimit = isPrivateTemplate(template)
-                ? TemplateManager.PrivateTemplateSecStorageCopy.value()
-                : TemplateManager.PublicTemplateSecStorageCopy.value();
+                ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId)
+                : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId);
         Collections.shuffle(imageStores);
         validateSecondaryStorageAndCreateTemplate(imageStores, template, new HashMap<>(), replicaLimit);
     }
