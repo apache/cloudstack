@@ -179,7 +179,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         caller.setContext(context);
         if (data.getType() == DataObjectType.TEMPLATE) {
             if (dataStoreDao.findById(dataStore.getId()).isReadonly()) {
-                logger.debug("Template [{}] will not be download to image store [{}] because this store is marked as read-only.", data.getName(),
+                logger.debug("Template [{}] will not be downloaded to image store [{}] because this store is marked as read-only.", data.getName(),
                         dataStore.getName());
                 return;
             }

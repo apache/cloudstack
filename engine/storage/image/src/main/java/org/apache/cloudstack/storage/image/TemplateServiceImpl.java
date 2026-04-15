@@ -299,7 +299,7 @@ public class TemplateServiceImpl implements TemplateService {
 
     protected boolean shouldDownloadTemplateToStore(VMTemplateVO template, DataStore store) {
         if (dataStoreDao.findById(store.getId()).isReadonly()) {
-            logger.debug("Template [{}] will not be download to image store [{}] because this store is marked as read-only.", template.getUniqueName(),
+            logger.debug("Template [{}] will not be downloaded to image store [{}] because this store is marked as read-only.", template.getUniqueName(),
                     store.getName());
             return false;
         }
@@ -307,7 +307,7 @@ public class TemplateServiceImpl implements TemplateService {
         Long zoneId = store.getScope().getScopeId();
         DataStore directedStore = _tmpltMgr.verifyHeuristicRulesForZone(template, zoneId);
         if (directedStore != null && store.getId() != directedStore.getId()) {
-            logger.info("Template [{}] will not be download to image store [{}], as a heuristic rule is directing it to another store.",
+            logger.info("Template [{}] will not be downloaded to image store [{}], as a heuristic rule is directing it to another store.",
                     template.getUniqueName(), store.getName());
             return false;
         }
