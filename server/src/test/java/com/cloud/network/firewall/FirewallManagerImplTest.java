@@ -176,4 +176,3 @@ public class FirewallManagerImplTest {
         assertFalse(result);
     }
 }
-
