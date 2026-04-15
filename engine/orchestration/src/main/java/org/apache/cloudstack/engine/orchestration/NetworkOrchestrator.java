@@ -177,6 +177,10 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.RouterNetworkDao;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionHelper;
+import org.apache.cloudstack.framework.extensions.network.NetworkExtensionElement;
+
 import com.cloud.network.element.AggregatedCommandExecutor;
 import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.network.element.DhcpServiceProvider;
@@ -368,6 +372,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     private BGPService bgpService;
     @Inject
     private Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
+    @Inject
+    protected ExtensionHelper extensionHelper;
+    @Inject
+    private NetworkExtensionElement networkExtensionElement;
 
     @Override
     public List<NetworkGuru> getNetworkGurus() {
@@ -460,6 +468,28 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
 
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<>();
+
+    /**
+     * Returns the full list of network elements to iterate when implementing,
+     * shutting down, or otherwise orchestrating a network.
+     *
+     * <p>The base list ({@link #networkElements}, wired by Spring) is extended
+     * at runtime with one transient {@link NetworkExtensionElement} per
+     * registered {@code NetworkOrchestrator} extension.  This keeps the
+     * Spring bean list free from {@code NetworkExtensionElement} and allows
+     * dynamic discovery of extensions without a restart.</p>
+     */
+    private List<NetworkElement> getNetworkElementsIncludingExtensions() {
+        List<Extension> extensions = extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator);
+        if (extensions == null || extensions.isEmpty()) {
+            return networkElements;
+        }
+        List<NetworkElement> combined = new ArrayList<>(networkElements);
+        for (Extension ext : extensions) {
+            combined.add(networkExtensionElement.withProviderName(ext.getName()));
+        }
+        return combined;
+    }
 
     private void updateRouterDefaultDns(final VirtualMachineProfile vmProfile, final NicProfile nicProfile) {
         if (!Type.DomainRouter.equals(vmProfile.getType()) || !nicProfile.isDefaultNic()) {
@@ -1686,7 +1716,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
-        for (final NetworkElement element : networkElements) {
+        for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
                 ((AggregatedCommandExecutor) element).prepareAggregatedExecution(network, dest);
             }
@@ -1703,7 +1733,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 ex.addProxyObject(_entityMgr.findById(DataCenter.class, network.getDataCenterId()).getUuid());
                 throw ex;
             }
-            for (final NetworkElement element : networkElements) {
+            for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
                 if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
                     if (!((AggregatedCommandExecutor) element).completeAggregatedExecution(network, dest)) {
                         logger.warn("Failed to re-program the network as a part of network {} implement due to aggregated commands execution failure!", network);
@@ -1717,7 +1747,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
             reconfigureAndApplyStaticRouteForVpcVpn(network);
         } finally {
-            for (final NetworkElement element : networkElements) {
+            for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
                 if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
                     ((AggregatedCommandExecutor) element).cleanupAggregatedExecution(network, dest);
                 }
@@ -1738,7 +1768,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     private void implementNetworkElements(final DeployDestination dest, final ReservationContext context, final Network network, final NetworkOffering offering, final List<Provider> providersToImplement)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        for (NetworkElement element : networkElements) {
+        for (NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (providersToImplement.contains(element.getProvider())) {
                 if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                     // The physicalNetworkId will not get translated into a uuid by the response serializer,
@@ -2031,7 +2061,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public void configureUpdateInSequence(Network network) {
         List<Provider> providers = getNetworkProviders(network.getId());
-        for (NetworkElement element : networkElements) {
+        for (NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (providers.contains(element.getProvider())) {
                 if (element instanceof RedundantResource) {
                     ((RedundantResource) element).configureResource(network);
@@ -2044,7 +2074,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public int getResourceCount(Network network) {
         List<Provider> providers = getNetworkProviders(network.getId());
         int resourceCount = 0;
-        for (NetworkElement element : networkElements) {
+        for (NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (providers.contains(element.getProvider())) {
                 //currently only one element implements the redundant resource interface
                 if (element instanceof RedundantResource) {
@@ -2075,7 +2105,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public void finalizeUpdateInSequence(Network network, boolean success) {
         List<Provider> providers = getNetworkProviders(network.getId());
-        for (NetworkElement element : networkElements) {
+        for (NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (providers.contains(element.getProvider())) {
                 //currently only one element implements the redundant resource interface
                 if (element instanceof RedundantResource) {
@@ -2102,7 +2132,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private void setHypervisorHostnameInNetwork(VirtualMachineProfile vm, DeployDestination dest, Network network, NicProfile profile, boolean migrationSuccessful) {
-        for (final NetworkElement element : networkElements) {
+        for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.UserData) && element instanceof UserDataServiceProvider
                 && (element instanceof ConfigDriveNetworkElement && !migrationSuccessful || element instanceof VirtualRouterElement && migrationSuccessful)) {
                 String errorMsg = String.format("Failed to add hypervisor host name while applying the userdata during the migration of VM %s, " +
@@ -2230,7 +2260,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         updateNic(nic, network, 1);
 
         final List<Provider> providersToImplement = getNetworkProviders(network.getId());
-        for (final NetworkElement element : networkElements) {
+        for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (providersToImplement.contains(element.getProvider())) {
                 if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                     throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
@@ -2285,7 +2315,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
             final List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (final NetworkElement element : networkElements) {
+            for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                         throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
@@ -2329,7 +2359,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
             }
             final List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (final NetworkElement element : networkElements) {
+            for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                         throw new CloudRuntimeException(String.format("Service provider %s either doesn't exist or is not enabled in physical network: %s",
@@ -2411,7 +2441,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
             final List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (final NetworkElement element : networkElements) {
+            for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                         throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
@@ -2447,7 +2477,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
             final List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (final NetworkElement element : networkElements) {
+            for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
                 if (providersToImplement.contains(element.getProvider())) {
                     if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                         throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
@@ -2534,7 +2564,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             final Network network = networkToRelease.first();
             final NicProfile profile = networkToRelease.second();
             final List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (final NetworkElement element : networkElements) {
+            for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
                 if (providersToImplement.contains(element.getProvider())) {
                     logger.debug("Asking {} to release {}", element.getName(), profile);
                     //NOTE: Context appear to never be used in release method
@@ -2597,7 +2627,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
          */
         if (nic.getReservationStrategy() == Nic.ReservationStrategy.Create) {
             final List<Provider> providersToImplement = getNetworkProviders(network.getId());
-            for (final NetworkElement element : networkElements) {
+            for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
                 if (providersToImplement.contains(element.getProvider())) {
                     logger.debug("Asking {} to release {}, according to the reservation strategy {}.", element.getName(), nic, nic.getReservationStrategy());
                     try {
@@ -3328,7 +3358,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         // 2) Shutdown all the network elements
         boolean success = true;
-        for (final NetworkElement element : networkElements) {
+        for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (providersToShutdown.contains(element.getProvider())) {
                 try {
                     logger.debug("Sending network shutdown to {}", element.getName());
@@ -3439,7 +3469,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         // get providers to destroy
         final List<Provider> providersToDestroy = getNetworkProviders(network.getId());
-        for (final NetworkElement element : networkElements) {
+        for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (providersToDestroy.contains(element.getProvider())) {
                 try {
                     logger.debug("Sending destroy to {}", element);
@@ -3810,7 +3840,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public void cleanupNicDhcpDnsEntry(Network network, VirtualMachineProfile vmProfile, NicProfile nicProfile) {
 
         final List<Provider> networkProviders = getNetworkProviders(network.getId());
-        for (final NetworkElement element : networkElements) {
+        for (final NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (networkProviders.contains(element.getProvider())) {
                 if (!_networkModel.isProviderEnabledInPhysicalNetwork(_networkModel.getPhysicalNetworkId(network), element.getProvider().getName())) {
                     throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + " either doesn't exist or is not enabled in physical network id: "
@@ -3846,7 +3876,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
      * @throws InsufficientCapacityException
      */
     private boolean rollingRestartRouters(final NetworkVO network, final NetworkOffering offering, final DeployDestination dest, final ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!NetworkOrchestrationService.RollingRestartEnabled.value()) {
+        if (!isRollingRestartSupport(network)) {
             if (shutdownNetworkElementsAndResources(context, true, network)) {
                 implementNetworkElementsAndResources(dest, context, network, offering);
                 return true;
@@ -3892,6 +3922,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         return areRoutersRunning(routerDao.findByNetwork(network.getId()));
+    }
+
+    private boolean isRollingRestartSupport(final NetworkVO network) {
+        if (!NetworkOrchestrator.RollingRestartEnabled.value()) {
+             return false;
+        }
+        List<NetworkServiceMapVO> services = _ntwkSrvcDao.getServicesInNetwork(network.getId());
+        for (NetworkServiceMapVO service : services) {
+            NetworkElement element = _networkModel.getElementImplementingProvider(service.getProvider());
+            if (element == null || !element.rollingRestartSupported()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void setRestartRequired(final NetworkVO network, final boolean restartRequired) {
@@ -4455,6 +4499,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             if (provider == null) {
                 provider = _networkModel.getDefaultUniqueProviderForService(service).getName();
+            } else {
+                provider = _networkModel.resolveProvider(provider).getName();
             }
 
             // check that provider is supported
@@ -4480,7 +4526,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final List<String> providerNames = _ntwkSrvcDao.getDistinctProviders(networkId);
         final List<Provider> providers = new ArrayList<>();
         for (final String providerName : providerNames) {
-            providers.add(Network.Provider.getProvider(providerName));
+            providers.add(_networkModel.resolveProvider(providerName));
         }
 
         return providers;
@@ -4646,7 +4692,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (providers == null) {
                 providers = new HashSet<>();
             }
-            providers.add(Provider.getProvider(nsm.getProvider()));
+            providers.add(_networkModel.resolveProvider(nsm.getProvider()));
             map.put(Service.getService(nsm.getService()), providers);
         }
         return map;
@@ -4931,10 +4977,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public void expungeLbVmRefs(List<Long> vmIds, Long batchSize) {
-        if (CollectionUtils.isEmpty(networkElements) || CollectionUtils.isEmpty(vmIds)) {
+        if (CollectionUtils.isEmpty(getNetworkElementsIncludingExtensions()) || CollectionUtils.isEmpty(vmIds)) {
             return;
         }
-        for (NetworkElement element : networkElements) {
+        for (NetworkElement element : getNetworkElementsIncludingExtensions()) {
             if (element instanceof LoadBalancingServiceProvider) {
                 LoadBalancingServiceProvider lbProvider = (LoadBalancingServiceProvider)element;
                 lbProvider.expungeLbVmRefs(vmIds, batchSize);

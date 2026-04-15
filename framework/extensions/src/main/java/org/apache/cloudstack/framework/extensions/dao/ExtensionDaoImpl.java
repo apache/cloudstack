@@ -17,6 +17,9 @@
 
 package org.apache.cloudstack.framework.extensions.dao;
 
+import java.util.List;
+
+import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -39,7 +42,13 @@ public class ExtensionDaoImpl extends GenericDaoBase<ExtensionVO, Long> implemen
     public ExtensionVO findByName(String name) {
         SearchCriteria<ExtensionVO> sc = AllFieldSearch.create();
         sc.setParameters("name", name);
-
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<ExtensionVO> listByType(Extension.Type type) {
+        SearchCriteria<ExtensionVO> sc = AllFieldSearch.create();
+        sc.setParameters("type", type);
+        return listBy(sc);
     }
 }

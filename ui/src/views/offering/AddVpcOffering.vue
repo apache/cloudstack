@@ -86,6 +86,15 @@
                 <a-select-option key="" >{{ }}</a-select-option>
                 <a-select-option :value="'NSX'" :label="$t('label.nsx')"> {{ $t('label.nsx') }} </a-select-option>
                 <a-select-option :value="'Netris'" :label="$t('label.netris')"> {{ $t('label.netris') }} </a-select-option>
+                <!-- Dynamic extension-based providers registered to guest physical networks.
+                     The value is the extension/NSP name for correct provider resolution. -->
+                <a-select-option
+                  v-for="ext in availableExtensionProviders"
+                  :key="ext.name"
+                  :value="ext.name"
+                  :label="ext.name">
+                  {{ ext.name }} <span style="color: #aaa">({{ $t('label.external.network.provider') }})</span>
+                </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
@@ -152,8 +161,8 @@
                   <CheckBoxSelectPair
                     :resourceKey="item.name"
                     :checkBoxLabel="item.description"
-                    :forExternalNetProvider="form.provider === 'NSX' || form.provider === 'Netris'"
-                    :defaultCheckBoxValue="form.provider === 'NSX' || form.provider === 'Netris'"
+                    :forExternalNetProvider="form.provider === 'NSX' || form.provider === 'Netris' || isExternalNetworkProvider"
+                    :defaultCheckBoxValue="form.provider === 'NSX' || form.provider === 'Netris' || isExternalNetworkProvider"
                     :selectOptions="item.provider"
                     @handle-checkselectpair-change="handleSupportedServiceChange"/>
                 </a-list-item>
@@ -337,7 +346,20 @@ export default {
         enabled: true
       },
       nsxSupportedServicesMap: {},
+      externalNetworkProviderObj: {
+        name: '',
+        description: 'External Network',
+        enabled: true
+      },
+      externalNetworkSupportedServicesMap: {},
+      availableExtensionProviders: [],
       conservemode: false
+    }
+  },
+  computed: {
+    isExternalNetworkProvider () {
+      const selectedProvider = this.form?.provider || this.provider
+      return this.availableExtensionProviders.some(e => e.name === selectedProvider)
     }
   },
   beforeCreate () {
@@ -384,6 +406,25 @@ export default {
       this.fetchSupportedServiceData()
       this.fetchIpv6NetworkOfferingConfiguration()
       this.fetchRoutedNetworkConfiguration()
+      this.fetchExtensionProviders()
+    },
+    fetchExtensionProviders () {
+      getAPI('listExtensions', { type: 'NetworkOrchestrator', state: 'Enabled' }).then(json => {
+        const allExts = (json.listextensionsresponse && json.listextensionsresponse.extension) || []
+        if (allExts.length === 0) {
+          this.availableExtensionProviders = []
+          return
+        }
+        getAPI('listNetworkServiceProviders', {}).then(nspJson => {
+          const nsps = (nspJson.listnetworkserviceprovidersresponse && nspJson.listnetworkserviceprovidersresponse.networkserviceprovider) || []
+          const nspNames = new Set(nsps.map(n => n.name))
+          this.availableExtensionProviders = allExts.filter(e => nspNames.has(e.name))
+        }).catch(() => {
+          this.availableExtensionProviders = allExts
+        })
+      }).catch(() => {
+        this.availableExtensionProviders = []
+      })
     },
     isAdmin () {
       return isAdmin()
@@ -433,7 +474,18 @@ export default {
     },
     fetchSupportedServiceData () {
       var services = []
-      if (this.provider === 'NSX') {
+      if (this.isExternalNetworkProvider) {
+        const serviceMap = this._buildExternalVpcServiceMap()
+        Object.keys(serviceMap).forEach(serviceName => {
+          services.push({
+            name: serviceName,
+            enabled: true,
+            provider: Array.isArray(serviceMap[serviceName])
+              ? serviceMap[serviceName]
+              : [serviceMap[serviceName]]
+          })
+        })
+      } else if (this.provider === 'NSX') {
         services.push({
           name: 'Dhcp',
           enabled: true,
@@ -624,8 +676,75 @@ export default {
       if (this.provider === 'NSX') {
         this.form.nsxsupportlb = true
         this.handleNsxLbService(true)
+      } else if (this.isExternalNetworkProvider) {
+        this._buildExternalVpcServiceMap()
       }
       this.fetchSupportedServiceData()
+    },
+    _getExtensionServices (extDef) {
+      if (!extDef || !extDef.details) {
+        return []
+      }
+
+      const capsJson = extDef.details['network.capabilities']
+      if (capsJson) {
+        try {
+          const caps = JSON.parse(capsJson)
+          if (caps && Array.isArray(caps.services)) {
+            return caps.services
+          }
+        } catch (e) {
+          // Ignore malformed capabilities and fallback to network.services.
+        }
+      }
+
+      const servicesCsv = extDef.details['network.services']
+      if (servicesCsv && typeof servicesCsv === 'string') {
+        return servicesCsv.split(',').map(x => x.trim()).filter(x => x.length > 0)
+      }
+      return []
+    },
+    _buildExternalVpcServiceMap () {
+      const selectedProvider = this.form?.provider || this.provider
+      const extProviderObj = {
+        name: selectedProvider,
+        description: selectedProvider,
+        enabled: true
+      }
+      const extWithFallbackProviders = [
+        { name: selectedProvider },
+        { name: 'VpcVirtualRouter' },
+        { name: 'ConfigDrive' }
+      ]
+      const serviceMap = {
+        Dhcp: extWithFallbackProviders,
+        Dns: extWithFallbackProviders,
+        UserData: extWithFallbackProviders
+      }
+
+      const extDef = this.availableExtensionProviders.find(e => e.name === selectedProvider)
+      const services = this._getExtensionServices(extDef)
+      const allowedVpcServices = new Set([
+        'Gateway', 'Lb', 'StaticNat', 'SourceNat', 'NetworkACL', 'PortForwarding', 'Vpn'
+      ])
+
+      services.forEach(service => {
+        if (allowedVpcServices.has(service)) {
+          serviceMap[service] = [{ name: selectedProvider }]
+        }
+      })
+
+      // Fallback for older extensions that only declare partial details.
+      if (Object.keys(serviceMap).length <= 3) {
+        serviceMap.SourceNat = [{ name: selectedProvider }]
+        serviceMap.StaticNat = [{ name: selectedProvider }]
+        serviceMap.PortForwarding = [{ name: selectedProvider }]
+        serviceMap.NetworkACL = [{ name: selectedProvider }]
+      }
+
+      this.externalNetworkProviderObj = extProviderObj
+      this.externalNetworkSupportedServicesMap = serviceMap
+      return serviceMap
     },
     handleNsxLbService (supportLb) {
       console.log(supportLb)

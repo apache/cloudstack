@@ -34,7 +34,24 @@
             api="listExtensions"
             :apiParams="extensionsApiParams"
             resourceType="extension"
+            @change-option="updateResourceTypeByExtension"
             defaultIcon="appstore-add-outlined" />
+      </a-form-item>
+      <a-form-item name="resourcetype" ref="resourcetype">
+        <template #label>
+          <tooltip-label :title="$t('label.resourcetype')" :tooltip="apiParams.resourcetype.description"/>
+        </template>
+        <a-select
+          v-model:value="form.resourcetype"
+          :placeholder="apiParams.resourcetype.description"
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option v-for="opt in resourceTypeOptions" :key="opt" :label="opt">
+            {{ opt }}
+          </a-select-option>
+        </a-select>
       </a-form-item>
       <a-form-item name="name" ref="name">
         <template #label>
@@ -152,6 +169,7 @@ export default {
   data () {
     return {
       roleTypes: [],
+      resourceTypeOptions: ['VirtualMachine', 'Network'],
       loading: false
     }
   },
@@ -165,6 +183,7 @@ export default {
     this.initForm()
     if (this.extension) {
       this.form.extensionid = this.extension.id
+      this.updateResourceTypeByExtension(this.extension)
     }
     this.roleTypes = this.$fetchCustomActionRoleTypes()
   },
@@ -173,12 +192,29 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         enabled: true,
-        timeout: 5
+        timeout: 5,
+        resourcetype: 'VirtualMachine'
       })
       this.rules = reactive({
         extensionid: [{ required: true, message: `${this.$t('message.error.select')}` }],
-        name: [{ required: true, message: `${this.$t('message.error.name')}` }]
+        name: [{ required: true, message: `${this.$t('message.error.name')}` }],
+        resourcetype: [{ required: true, message: `${this.$t('message.error.select')}` }]
       })
+    },
+    updateResourceTypeByExtension (selectedExtension) {
+      const type = selectedExtension?.type
+      if (type === 'NetworkOrchestrator') {
+        this.resourceTypeOptions = ['Network']
+        this.form.resourcetype = 'Network'
+      } else if (type === 'Orchestrator') {
+        this.resourceTypeOptions = ['VirtualMachine']
+        this.form.resourcetype = 'VirtualMachine'
+      } else {
+        this.resourceTypeOptions = ['VirtualMachine', 'Network']
+        if (!this.form.resourcetype) {
+          this.form.resourcetype = 'VirtualMachine'
+        }
+      }
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -189,6 +225,7 @@ export default {
         const params = {
           extensionid: values.extensionid || this.extension.id,
           name: values.name,
+          resourcetype: values.resourcetype,
           enabled: values.enabled
         }
         const keys = ['description', 'allowedroletypes', 'successmessage', 'errormessage', 'timeout']

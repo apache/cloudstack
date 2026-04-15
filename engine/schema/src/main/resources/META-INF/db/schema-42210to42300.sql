@@ -208,3 +208,7 @@ INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
 SELECT uuid(), role_id, 'quotaResourceStatement', permission, sort_order
 FROM cloud.role_permissions rp
 WHERE rule = 'quotaStatement' AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaResourceStatement');
+
+-- Increase length of value of extension details from 255 to 4096 to support longer details value
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.extension_details', 'value', 'value', 'VARCHAR(4096)');
+CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.extension_resource_map_details', 'value', 'value', 'VARCHAR(4096)');
