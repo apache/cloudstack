@@ -162,7 +162,7 @@ export default {
     },
     fetchExtensionTypes () {
       this.extensionTypes = []
-      const extensionTypesList = ['Orchestrator']
+      const extensionTypesList = ['Orchestrator', 'NetworkOrchestrator']
       extensionTypesList.forEach((item) => {
         this.extensionTypes.push({
           id: item,

@@ -81,6 +81,12 @@ public class NetworkServiceMapVO implements InternalIdentity {
         this.provider = provider.getName();
     }
 
+    public NetworkServiceMapVO(long networkId, String serviceName, String providerName) {
+        this.networkId = networkId;
+        this.service = serviceName;
+        this.provider = providerName;
+    }
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[Network Service[");

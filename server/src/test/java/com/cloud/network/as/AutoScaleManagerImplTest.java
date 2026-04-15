@@ -423,6 +423,8 @@ public class AutoScaleManagerImplTest {
         when(conditionDao.findById(any())).thenReturn(conditionMock);
         when(conditionDao.persist(any(ConditionVO.class))).thenReturn(conditionMock);
 
+        when(networkModel.resolveProvider(counterProvider)).thenReturn(Network.Provider.VirtualRouter);
+
         when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any());
 

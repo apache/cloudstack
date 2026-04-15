@@ -69,9 +69,11 @@ import com.cloud.network.dao.FirewallRulesDcidrsDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.NetworkACLServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.rules.FirewallManager;
@@ -150,6 +152,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     EntityManager entityManager;
     @Inject
     NsxProviderDao nsxProviderDao;
+    @Inject
+    NetworkServiceMapDao networkServiceMapDao;
+
     List<FirewallServiceProvider> _firewallElements;
 
     List<PortForwardingServiceProvider> _pfElements;
@@ -617,12 +622,25 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             String supportedProtocols;
             String supportedTrafficTypes = null;
             if (purpose == FirewallRule.Purpose.Firewall) {
-                supportedTrafficTypes = caps.get(Capability.SupportedTrafficDirection).toLowerCase();
+                String supportedTrafficTypesStr = caps.get(Capability.SupportedTrafficDirection);
+                if (supportedTrafficTypesStr == null) {
+                    throw new CloudRuntimeException("Supported traffic direction capability is not defined for Firewall service");
+                }
+                supportedTrafficTypes = supportedTrafficTypesStr.toLowerCase();
             }
 
             if (purpose == FirewallRule.Purpose.Firewall && trafficType == FirewallRule.TrafficType.Egress) {
+                // throw an exception if cap is not found
+                String supportedProtocolsStr = caps.get(Capability.SupportedEgressProtocols);
+                if (supportedProtocolsStr == null) {
+                    throw new CloudRuntimeException("Supported egress protocols capability is not defined for Firewall service");
+                }
                 supportedProtocols = caps.get(Capability.SupportedEgressProtocols).toLowerCase();
             } else {
+                String supportedProtocolsStr = caps.get(Capability.SupportedProtocols);
+                if (supportedProtocolsStr == null) {
+                    throw new CloudRuntimeException("Supported protocols capability is not defined for " + purpose + " service");
+                }
                 supportedProtocols = caps.get(Capability.SupportedProtocols).toLowerCase();
             }
 
@@ -700,17 +718,33 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 if (handled)
                     break;
             }
+            if (!handled) {
+                // Get provider name and get the element by provider name (it could be an external provider)
+                String fwProviderName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.Firewall);
+                if (fwProviderName != null) {
+                    NetworkElement element = _networkModel.getElementImplementingProvider(fwProviderName);
+                    handled = ((FirewallServiceProvider) element).applyFWRules(network, rules);
+                }
+            }
             break;
         case PortForwarding:
-                for (PortForwardingServiceProvider element : _pfElements) {
+            for (PortForwardingServiceProvider element : _pfElements) {
                 Network.Provider provider = element.getProvider();
                 boolean  isPfProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, provider);
                 if (!isPfProvider) {
                     continue;
                 }
-                    handled = element.applyPFRules(network, (List<PortForwardingRule>)rules);
+                handled = element.applyPFRules(network, (List<PortForwardingRule>)rules);
                 if (handled)
                     break;
+            }
+            if (!handled) {
+                // Get provider name and get the element by provider name (it could be an external provider)
+                String pfProviderName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.PortForwarding);
+                if (pfProviderName != null) {
+                    NetworkElement element = _networkModel.getElementImplementingProvider(pfProviderName);
+                    handled = ((PortForwardingServiceProvider) element).applyPFRules(network, (List<PortForwardingRule>) rules);
+                }
             }
             break;
             /*        case NetworkACL:
@@ -726,7 +760,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             }
             break;*/
         default:
-                assert (false) : "Unexpected fall through in applying rules to the network elements";
+            assert (false) : "Unexpected fall through in applying rules to the network elements";
             logger.error("FirewallManager cannot process rules of type " + purpose);
             throw new CloudRuntimeException("FirewallManager cannot process rules of type " + purpose);
         }

@@ -24,7 +24,8 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface ExtensionResourceMap extends InternalIdentity, Identity {
     enum ResourceType {
-        Cluster
+        Cluster,
+        PhysicalNetwork
     }
 
     long getExtensionId();
