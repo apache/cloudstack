@@ -20,19 +20,23 @@ under the License.
 <Configuration monitorInterval="60">
    <Appenders>
 
-       <!-- ============================== -->
-       <!-- Append messages to the console -->
-       <!-- ============================== -->
+      <!-- ============================== -->
+      <!-- Append messages to the console -->
+      <!-- ============================== -->
 
-       <Console name="CONSOLE" target="SYSTEM_OUT">
-          <ThresholdFilter level="OFF" onMatch="ACCEPT" onMismatch="DENY"/>
-          <PatternLayout pattern="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%ex%n"/>
-       </Console>
+      <Console name="CONSOLE" target="SYSTEM_OUT">
+         <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="ACCEPT"/>
+         <PatternLayout pattern="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%ex%n"/>
+      </Console>
 
+      <Console name="CONSOLE_ERR" target="SYSTEM_ERR">
+         <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%ex%n"/>
+      </Console>
 
-       <!-- ================================ -->
-       <!-- Append messages to the usage log -->
-       <!-- ================================ -->
+      <!-- ================================ -->
+      <!-- Append messages to the usage log -->
+      <!-- ================================ -->
 
       <RollingFile name="USAGE" append="true" fileName="@USAGELOG@" filePattern="@USAGELOG@.%d{yyyy-MM-dd}{GMT}.gz">
          <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
@@ -44,9 +48,9 @@ under the License.
    </Appenders>
 
    <Loggers>
-        <!-- ================ -->
-        <!-- Limit categories -->
-        <!-- ================ -->
+      <!-- ================ -->
+      <!-- Limit categories -->
+      <!-- ================ -->
 
       <Logger name="com.cloud" level="DEBUG"/>
 
@@ -62,6 +66,7 @@ under the License.
 
       <Root level="INFO">
          <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="CONSOLE_ERR"/>
          <AppenderRef ref="USAGE"/>
       </Root>
 
