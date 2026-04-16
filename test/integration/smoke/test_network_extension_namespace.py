@@ -97,7 +97,7 @@ ENTRY_POINT_SCRIPT_LOCAL = os.path.join(_SCRIPT_CACHE_DIR, ENTRY_POINT_FILENAME)
 # Tests select a subset when creating NetworkOfferings.
 NETWORK_SERVICES = (
     "Dhcp,Dns,UserData,"
-    "SourceNat,StaticNat,PortForwarding,Firewall,Lb,NetworkACL"
+    "SourceNat,StaticNat,PortForwarding,Firewall,Lb,NetworkACL,CustomAction"
 )
 
 # Per-service capabilities JSON object (no "services" wrapper).
@@ -143,6 +143,9 @@ NETWORK_SERVICE_CAPABILITIES_JSON = json.dumps({
     },
     "NetworkACL": {
         "SupportedProtocols": "tcp,udp,icmp"
+    },
+    "CustomAction": {
+        "Supported": "true"
     }
 })
 
@@ -385,8 +388,9 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
                 (all with SSH connectivity verification via keypair)
       test_06 — VPC multi-tier + VPC restart with SSH verification
       test_07 — VPC Network ACL testing with multiple tiers and traffic rules
-      test_08 — custom-action smoke for Policy-Based Routing (PBR) actions
+      test_08 — custom-action smoke for Policy-Based Routing (PBR) actions on isolated network
       test_09 — VPC source NAT IP update without VPC restart
+      test_10 — custom-action smoke for Policy-Based Routing (PBR) actions on VPC tier network
     """
 
     @staticmethod
@@ -2167,7 +2171,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
         """
         self._check_kvm_host_prerequisites(['ip', 'arping', 'dnsmasq', 'haproxy'])
 
-        svc = "SourceNat,PortForwarding,Dhcp,Dns,UserData"
+        svc = "SourceNat,PortForwarding,Dhcp,Dns,UserData,CustomAction"
         nw_offering, _ext_name = self._setup_extension_nsp_offering(
             "extnet-pbr", supported_services=svc)
         _account, network, vm = self._create_account_network_vm(
@@ -2296,11 +2300,20 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
                     action.delete(self.apiclient)
                 except Exception:
                     pass
-            vm.delete(self.apiclient, expunge=True)
-            self.cleanup = [o for o in self.cleanup if o != vm]
-            network.delete(self.apiclient)
-            self.cleanup = [o for o in self.cleanup if o != network]
-            self._teardown_extension()
+            try:
+                vm.delete(self.apiclient, expunge=True)
+                self.cleanup = [o for o in self.cleanup if o != vm]
+            except Exception:
+                pass
+            try:
+                network.delete(self.apiclient)
+                self.cleanup = [o for o in self.cleanup if o != network]
+            except Exception:
+                pass
+            try:
+                self._teardown_extension()
+            except Exception:
+                pass
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     def test_09_vpc_source_nat_ip_update(self):
@@ -2339,6 +2352,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             })
             self.cleanup.append(vpc_tier_offering)
             vpc_tier_offering.update(self.apiclient, state='Enabled')
+            self.logger.info("VPC tier offering '%s' enabled", vpc_tier_offering.name)
 
             # VPC offering
             _vpc_prov = {s.strip(): ext_name for s in svc.split(',')}
@@ -2350,6 +2364,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             })
             self.cleanup.append(vpc_offering)
             vpc_offering.update(self.apiclient, state='Enabled')
+            self.logger.info("VPC offering '%s' enabled", vpc_offering.name)
 
             account = Account.create(
                 self.apiclient,
@@ -2371,6 +2386,7 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
                 domainid=account.domainid
             )
             self.cleanup.insert(0, vpc)
+            self.logger.info("VPC created: %s (%s)", vpc.name, vpc.id)
 
             tier = Network.create(
                 self.apiclient,
@@ -2586,3 +2602,241 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
                 self._teardown_extension()
             except Exception:
                 pass
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_10_vpc_custom_action_policy_based_routing(self):
+        """Custom-action smoke test for PBR lifecycle helpers on a VPC.
+
+        Same as test_08 but exercised against a VPC instead of
+        an isolated network.  Verifies that network custom actions work
+        correctly in a VPC context:
+          - routing tables
+          - routes per table
+          - policy rules
+        """
+        self._check_kvm_host_prerequisites(['ip', 'arping', 'dnsmasq', 'haproxy'])
+
+        svc = "SourceNat,PortForwarding,Dhcp,Dns,UserData,NetworkACL,CustomAction"
+        _nw_offering, ext_name = self._setup_extension_nsp_offering(
+            "extnet-vpc-pbr", supported_services=svc, for_vpc=True)
+
+        # ---- VPC tier network offering (useVpc=on) ----
+        _tier_prov = {s.strip(): ext_name for s in svc.split(',')}
+        vpc_tier_offering = NetworkOffering.create(self.apiclient, {
+            "name":              "ExtNet-VPCTier-PBR-%s" % random_gen(),
+            "displaytext":       "ExtNet VPC tier offering for PBR",
+            "guestiptype":       "Isolated",
+            "traffictype":       "GUEST",
+            "availability":      "Optional",
+            "useVpc":            "on",
+            "supportedservices": svc,
+            "serviceProviderList": _tier_prov,
+            "serviceCapabilityList": {
+                "SourceNat": {"SupportedSourceNatTypes": "peraccount"},
+            },
+        })
+        self.cleanup.append(vpc_tier_offering)
+        vpc_tier_offering.update(self.apiclient, state='Enabled')
+
+        # ---- VPC offering ----
+        _vpc_prov = {s.strip(): ext_name for s in svc.split(',')}
+        vpc_offering = VpcOffering.create(self.apiclient, {
+            "name":              "ExtNet-VPC-PBR-%s" % random_gen(),
+            "displaytext":       "ExtNet VPC offering for PBR",
+            "supportedservices": svc,
+            "serviceProviderList": _vpc_prov,
+        })
+        self.cleanup.append(vpc_offering)
+        vpc_offering.update(self.apiclient, state='Enabled')
+
+        suffix = random_gen()
+        account = Account.create(
+            self.apiclient,
+            self.services["account"],
+            admin=True,
+            domainid=self.domain.id
+        )
+        self.cleanup.append(account)
+
+        vpc = VPC.create(
+            self.apiclient,
+            {"name":        "extnet-vpc-pbr-%s" % suffix,
+             "displaytext": "ExtNet VPC PBR %s" % suffix,
+             "cidr":        "10.1.0.0/16"},
+            vpcofferingid=vpc_offering.id,
+            zoneid=self.zone.id,
+            account=account.name,
+            domainid=account.domainid
+        )
+        self.cleanup.insert(0, vpc)
+
+        tier = Network.create(
+            self.apiclient,
+            {"name":        "tier-pbr-%s" % suffix,
+             "displaytext": "Tier PBR %s" % suffix},
+            accountid=account.name,
+            domainid=account.domainid,
+            networkofferingid=vpc_tier_offering.id,
+            zoneid=self.zone.id,
+            vpcid=vpc.id,
+            gateway="10.1.1.1",
+            netmask="255.255.255.0"
+        )
+        self.cleanup.insert(0, tier)
+
+        svc_offering = ServiceOffering.list(self.apiclient, issystem=False)[0]
+        vm = VirtualMachine.create(
+            self.apiclient,
+            {"displayname": "vm-pbr-%s" % suffix,
+             "name":        "vm-pbr-%s" % suffix,
+             "zoneid":      self.zone.id},
+            accountid=account.name,
+            domainid=account.domainid,
+            serviceofferingid=svc_offering.id,
+            templateid=self.template.id,
+            networkids=[tier.id]
+        )
+        self.cleanup.insert(0, vm)
+
+        table_name = "app-%s" % random.randint(100, 999)
+        route_cidr = "172.30.%d.0/24" % random.randint(1, 200)
+
+        actions = []
+        try:
+            def _mk_action(name, parameters=[]):
+                a = ExtensionCustomAction.create(
+                    self.apiclient,
+                    extensionid=self.extension.id,
+                    enabled=True,
+                    name=name,
+                    description="VPC PBR smoke: %s" % name,
+                    resourcetype='Vpc',
+                    parameters=parameters
+                )
+                actions.append(a)
+                return a
+
+            act_create_table = _mk_action("pbr-create-table", parameters=[
+                {"name": "table-id", "type": "STRING", "required": True},
+                {"name": "table-name", "type": "STRING", "required": True},
+            ])
+            act_delete_table = _mk_action("pbr-delete-table", parameters=[
+                {"name": "table-name", "type": "STRING", "required": True},
+            ])
+            act_list_tables  = _mk_action("pbr-list-tables")
+            act_add_route    = _mk_action("pbr-add-route", parameters=[
+                {"name": "table", "type": "STRING", "required": True},
+                {"name": "route", "type": "STRING", "required": True},
+            ])
+            act_delete_route = _mk_action("pbr-delete-route", parameters=[
+                {"name": "table", "type": "STRING", "required": True},
+                {"name": "route", "type": "STRING", "required": True},
+            ])
+            act_list_routes  = _mk_action("pbr-list-routes", parameters=[
+                {"name": "table", "type": "STRING", "required": False},
+            ])
+            act_add_rule     = _mk_action("pbr-add-rule", parameters=[
+                {"name": "table", "type": "STRING", "required": True},
+                {"name": "rule", "type": "STRING", "required": True},
+            ])
+            act_delete_rule  = _mk_action("pbr-delete-rule", parameters=[
+                {"name": "table", "type": "STRING", "required": True},
+                {"name": "rule", "type": "STRING", "required": True},
+            ])
+            act_list_rules   = _mk_action("pbr-list-rules", parameters=[
+                {"name": "table", "type": "STRING", "required": False},
+            ])
+
+            # 1) Create and list routing table
+            out = act_create_table.run(
+                self.apiclient,
+                resourceid=vpc.id,
+                parameters=[{"table-id": "100", "table-name": table_name}],
+            )
+            self.assertTrue(getattr(out, 'success', False), "pbr-create-table should succeed")
+
+            out = act_list_tables.run(self.apiclient, resourceid=vpc.id)
+            self.assertTrue(getattr(out, 'success', False), "pbr-list-tables should succeed")
+            self.assertIn(table_name, self._custom_action_details(out))
+
+            # 2) Add and list route in table
+            out = act_add_route.run(
+                self.apiclient,
+                resourceid=vpc.id,
+                parameters=[{"table": table_name, "route": "blackhole %s" % route_cidr}],
+            )
+            self.assertTrue(getattr(out, 'success', False), "pbr-add-route should succeed")
+
+            out = act_list_routes.run(
+                self.apiclient,
+                resourceid=vpc.id,
+                parameters=[{"table": table_name}],
+            )
+            self.assertTrue(getattr(out, 'success', False), "pbr-list-routes should succeed")
+            self.assertIn(route_cidr, self._custom_action_details(out))
+
+            # 3) Add and list policy rule
+            out = act_add_rule.run(
+                self.apiclient,
+                resourceid=vpc.id,
+                parameters=[{"table": table_name, "rule": "to %s" % route_cidr}],
+            )
+            self.assertTrue(getattr(out, 'success', False), "pbr-add-rule should succeed")
+
+            out = act_list_rules.run(
+                self.apiclient,
+                resourceid=vpc.id,
+                parameters=[{"table": table_name}],
+            )
+            self.assertTrue(getattr(out, 'success', False), "pbr-list-rules should succeed")
+            self.assertIn(table_name, self._custom_action_details(out))
+
+            # 4) Delete policy rule, route, and table
+            out = act_delete_rule.run(
+                self.apiclient,
+                resourceid=vpc.id,
+                parameters=[{"table": table_name, "rule": "to %s" % route_cidr}],
+            )
+            self.assertTrue(getattr(out, 'success', False), "pbr-delete-rule should succeed")
+
+            out = act_delete_route.run(
+                self.apiclient,
+                resourceid=vpc.id,
+                parameters=[{"table": table_name, "route": "blackhole %s" % route_cidr}],
+            )
+            self.assertTrue(getattr(out, 'success', False), "pbr-delete-route should succeed")
+
+            out = act_delete_table.run(
+                self.apiclient,
+                resourceid=vpc.id,
+                parameters=[{"table-name": table_name}],
+            )
+            self.assertTrue(getattr(out, 'success', False), "pbr-delete-table should succeed")
+
+            self.logger.info("test_10 PASSED")
+        finally:
+            for action in actions:
+                try:
+                    action.delete(self.apiclient)
+                except Exception:
+                    pass
+            try:
+                vm.delete(self.apiclient, expunge=True)
+                self.cleanup = [o for o in self.cleanup if o != vm]
+            except Exception:
+                pass
+            try:
+                tier.delete(self.apiclient)
+                self.cleanup = [o for o in self.cleanup if o != tier]
+            except Exception:
+                pass
+            try:
+                vpc.delete(self.apiclient)
+                self.cleanup = [o for o in self.cleanup if o != vpc]
+            except Exception:
+                pass
+            try:
+                self._teardown_extension()
+            except Exception:
+                pass
+

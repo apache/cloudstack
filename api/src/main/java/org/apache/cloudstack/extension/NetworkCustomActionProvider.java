@@ -20,13 +20,15 @@ package org.apache.cloudstack.extension;
 import java.util.Map;
 
 import com.cloud.network.Network;
+import com.cloud.network.vpc.Vpc;
 
 /**
  * Implemented by network elements that support running custom actions on a
- * managed network (e.g. NetworkExtensionElement).
+ * managed network or VPC (e.g. NetworkExtensionElement).
  *
  * <p>This interface is looked up by {@code ExtensionsManagerImpl} to dispatch
- * {@code runCustomAction} requests whose resource type is {@code Network}.</p>
+ * {@code runCustomAction} requests whose resource type is {@code Network}
+ * or {@code Vpc}.</p>
  */
 public interface NetworkCustomActionProvider {
 
@@ -40,6 +42,15 @@ public interface NetworkCustomActionProvider {
     boolean canHandleCustomAction(Network network);
 
     /**
+     * Returns {@code true} if this provider can handle custom actions for
+     * the given VPC.
+     *
+     * @param vpc the target VPC
+     * @return {@code true} if this provider can handle the VPC
+     */
+    boolean canHandleVpcCustomAction(Vpc vpc);
+
+    /**
      * Runs a named custom action against the external network device that
      * manages the given network.
      *
@@ -49,4 +60,15 @@ public interface NetworkCustomActionProvider {
      * @return output from the action script, or {@code null} on failure
      */
     String runCustomAction(Network network, String actionName, Map<String, Object> parameters);
+
+    /**
+     * Runs a named custom action against the external network device that
+     * manages the given VPC.
+     *
+     * @param vpc        the CloudStack VPC on which to run the action
+     * @param actionName the action name
+     * @param parameters optional parameters supplied by the caller
+     * @return output from the action script, or {@code null} on failure
+     */
+    String runCustomAction(Vpc vpc, String actionName, Map<String, Object> parameters);
 }
