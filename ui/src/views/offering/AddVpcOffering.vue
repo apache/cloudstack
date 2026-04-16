@@ -86,15 +86,6 @@
                 <a-select-option key="" >{{ }}</a-select-option>
                 <a-select-option :value="'NSX'" :label="$t('label.nsx')"> {{ $t('label.nsx') }} </a-select-option>
                 <a-select-option :value="'Netris'" :label="$t('label.netris')"> {{ $t('label.netris') }} </a-select-option>
-                <!-- Dynamic extension-based providers registered to guest physical networks.
-                     The value is the extension/NSP name for correct provider resolution. -->
-                <a-select-option
-                  v-for="ext in availableExtensionProviders"
-                  :key="ext.name"
-                  :value="ext.name"
-                  :label="ext.name">
-                  {{ ext.name }} <span style="color: #aaa">({{ $t('label.external.network.provider') }})</span>
-                </a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
@@ -161,8 +152,8 @@
                   <CheckBoxSelectPair
                     :resourceKey="item.name"
                     :checkBoxLabel="item.description"
-                    :forExternalNetProvider="form.provider === 'NSX' || form.provider === 'Netris' || isExternalNetworkProvider"
-                    :defaultCheckBoxValue="form.provider === 'NSX' || form.provider === 'Netris' || isExternalNetworkProvider"
+                    :forExternalNetProvider="form.provider === 'NSX' || form.provider === 'Netris'"
+                    :defaultCheckBoxValue="form.provider === 'NSX' || form.provider === 'Netris'"
                     :selectOptions="item.provider"
                     @handle-checkselectpair-change="handleSupportedServiceChange"/>
                 </a-list-item>

@@ -213,7 +213,7 @@ export default {
         {
           api: 'runCustomAction',
           icon: 'thunderbolt-outlined',
-          label: 'label.run.action',
+          label: 'label.run.custom.action',
           dataView: true,
           show: (record) => {
             return 'runCustomAction' in store.getters.apis &&
