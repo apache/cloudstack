@@ -1113,7 +1113,7 @@
 "label.new.password": "Nova senha",
 "label.new.project": "Novo projeto",
 "label.new.secondaryip.description": "Insira um novo endere\u00e7o IP secund\u00e1rio",
-"label.new.secondaryip.description.description": "Insira uma nova descri\u00e7\u00e3o ao endere\u00e7o IP secund\u00e1rio",
+"label.new.secondaryip.description.description": "Insira uma descri\u00e7\u00e3o para o novo endere\u00e7o IP secund\u00e1rio",
 "label.new.tag": "Nova etiqueta",
 "label.new.vm": "Nova VM",
 "label.newdiskoffering": "Nova oferta",
