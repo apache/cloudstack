@@ -1232,7 +1232,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
      */
     private Set<String> resolveExtensionServices(Extension extension) {
         Map<String, String> extDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
-        Set<String> parsed = parseServicesFromDetailKeys(extDetails);
+        Set<String> parsed = parseNetworkServicesFromDetailKeys(extDetails);
         if (!parsed.isEmpty()) {
             return parsed;
         }
@@ -1244,8 +1244,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
      * Resolves the set of service names from the extension detail map.
      * From {@code network.services} comma-separated key.
      */
-    @SuppressWarnings("deprecation")
-    private Set<String> parseServicesFromDetailKeys(Map<String, String> extDetails) {
+    private Set<String> parseNetworkServicesFromDetailKeys(Map<String, String> extDetails) {
         if (extDetails == null) {
             return Collections.emptySet();
         }
@@ -1274,7 +1273,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
      * extension detail map.  From the split keys
      * {@code network.services} + {@code network.service.capabilities}.
      */
-    @SuppressWarnings("deprecation")
     private Map<Service, Map<Capability, String>> buildCapabilitiesFromDetailKeys(
             Map<String, String> extDetails) {
         if (extDetails == null) {
@@ -1282,7 +1280,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         // New split format
         if (extDetails.containsKey(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY)) {
-            Set<String> serviceNames = parseServicesFromDetailKeys(extDetails);
+            Set<String> serviceNames = parseNetworkServicesFromDetailKeys(extDetails);
             if (!serviceNames.isEmpty()) {
                 JsonObject capsObj = null;
                 if (extDetails.containsKey(ExtensionHelper.NETWORK_SERVICE_CAPABILITIES_DETAIL_KEY)) {
@@ -1354,7 +1352,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             return;
         }
         Map<String, String> extDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
-        Set<String> allowedServices = parseServicesFromDetailKeys(extDetails);
+        Set<String> allowedServices = parseNetworkServicesFromDetailKeys(extDetails);
         if (allowedServices.isEmpty()) {
             // No services declared → accept any
             return;
