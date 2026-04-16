@@ -1113,7 +1113,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         if ((powerState == VirtualMachine.PowerState.PowerOff && instanceState == State.Running)
                 || (powerState == VirtualMachine.PowerState.PowerOn && instanceState == State.Stopped)) {
             HostVO instanceHost = hostDao.findById(instance.getHostId());
-            HostVO powerHost = powerHostId == instance.getHostId() ? instanceHost : hostDao.findById(powerHostId);
+            HostVO powerHost = instance.getHostId() != null && powerHostId == instance.getHostId() ? instanceHost : hostDao.findById(powerHostId);
             logger.debug("VM: {} on host: {} and power host : {} is in {} state, but power state is {}",
                     instance, instanceHost, powerHost, instanceState, powerState);
             return false;
