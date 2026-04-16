@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.List;
-import java.util.Map;
 
 
 import org.apache.cloudstack.api.APICommand;
@@ -54,12 +53,6 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "The VLAN for the physical Network")
     private String vlan;
 
-    @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
-            type = CommandType.MAP,
-            description = "Details in key/value pairs to be added to the extension-resource mapping. Use the format externaldetails[i].<key>=<value>. Example: externaldetails[0].endpoint.url=https://example.com",
-            since = "4.23.0")
-    protected Map externalDetails;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -84,10 +77,6 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
         return vlan;
     }
 
-    public Map<String, String> getExternalDetails() {
-        return convertDetailsToMap(externalDetails);
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -99,7 +88,7 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(), getNetworkSpeed(), getTags(), getVlan(), getState(), getExternalDetails());
+        PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(), getNetworkSpeed(), getTags(), getVlan(), getState());
         if (result != null) {
             PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
             response.setResponseName(getCommandName());

@@ -47,9 +47,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.extension.ExtensionResourceMap;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.After;
 import org.junit.Assert;
@@ -240,9 +238,6 @@ public class NetworkServiceImplTest {
     @Mock
     private NsxProviderDao nsxProviderDao;
 
-    @Mock
-    ExtensionsManager extensionsManager;
-
     private static Date beforeDate;
 
     private static Date afterDate;
@@ -327,7 +322,6 @@ public class NetworkServiceImplTest {
         service.networkHelper = networkHelper;
         service._ipAddrMgr = ipAddressManagerMock;
         service.nsxProviderDao = nsxProviderDao;
-        ReflectionTestUtils.setField(service, "extensionsManager", extensionsManager);
         callContextMocked = Mockito.mockStatic(CallContext.class);
         CallContext callContextMock = Mockito.mock(CallContext.class);
         callContextMocked.when(CallContext::current).thenReturn(callContextMock);
@@ -1335,68 +1329,5 @@ public class NetworkServiceImplTest {
         service.addProjectNetworksConditionToSearch(sc, false, 123L);
         Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.EQ, Account.Type.PROJECT);
         Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
-    }
-
-    // -----------------------------------------------------------------------
-    // Tests for updatePhysicalNetwork extension external details handling
-    // -----------------------------------------------------------------------
-
-    @Test
-    public void updatePhysicalNetworkUpdatesExtensionResourceMapDetailsWhenDetailsProvided() {
-        Long physNetId = 100L;
-        PhysicalNetworkVO physNet = Mockito.mock(PhysicalNetworkVO.class);
-        Mockito.when(physicalNetworkDao.findById(physNetId)).thenReturn(physNet);
-        Mockito.when(physicalNetworkDao.update(Mockito.anyLong(), any())).thenReturn(true);
-
-        Map<String, String> externalDetails = Map.of("host", "10.0.0.1", "port", "443");
-
-        ExtensionResourceMap resourceMap = Mockito.mock(ExtensionResourceMap.class);
-        Mockito.when(resourceMap.getId()).thenReturn(50L);
-        Pair<Boolean, ExtensionResourceMap> pair =
-                new Pair<>(true, resourceMap);
-        Mockito.when(extensionsManager.extensionResourceMapDetailsNeedUpdate(physNetId,
-                ExtensionResourceMap.ResourceType.PhysicalNetwork, externalDetails))
-                .thenReturn(pair);
-
-        service.updatePhysicalNetwork(physNetId, null, null, null, null, externalDetails);
-
-        Mockito.verify(extensionsManager).updateExtensionResourceMapDetails(50L, externalDetails);
-    }
-
-    @Test
-    public void updatePhysicalNetworkDoesNotUpdateExtensionWhenNoDetailsChange() {
-        Long physNetId = 101L;
-        PhysicalNetworkVO physNet = Mockito.mock(PhysicalNetworkVO.class);
-        Mockito.when(physicalNetworkDao.findById(physNetId)).thenReturn(physNet);
-        Mockito.when(physicalNetworkDao.update(Mockito.anyLong(), any())).thenReturn(true);
-
-        Map<String, String> externalDetails = Map.of("host", "10.0.0.2");
-
-        Pair<Boolean, ExtensionResourceMap> pair =
-                new Pair<>(false, null);
-        Mockito.when(extensionsManager.extensionResourceMapDetailsNeedUpdate(physNetId,
-                ExtensionResourceMap.ResourceType.PhysicalNetwork, externalDetails))
-                .thenReturn(pair);
-
-        service.updatePhysicalNetwork(physNetId, null, null, null, null, externalDetails);
-
-        Mockito.verify(extensionsManager, Mockito.never()).updateExtensionResourceMapDetails(Mockito.anyLong(), any());
-    }
-
-    @Test
-    public void updatePhysicalNetworkLogsWarningWhenExtensionUpdateFailsButDoesNotThrow() {
-        Long physNetId = 102L;
-        PhysicalNetworkVO physNet = Mockito.mock(PhysicalNetworkVO.class);
-        Mockito.when(physicalNetworkDao.findById(physNetId)).thenReturn(physNet);
-        Mockito.when(physicalNetworkDao.update(Mockito.anyLong(), any())).thenReturn(true);
-
-        Map<String, String> externalDetails = Map.of("host", "10.0.0.3");
-
-        Mockito.when(extensionsManager.extensionResourceMapDetailsNeedUpdate(physNetId,
-                ExtensionResourceMap.ResourceType.PhysicalNetwork, externalDetails))
-                .thenThrow(new RuntimeException("Test exception"));
-
-        // Should not throw
-        service.updatePhysicalNetwork(physNetId, null, null, null, null, externalDetails);
     }
 }

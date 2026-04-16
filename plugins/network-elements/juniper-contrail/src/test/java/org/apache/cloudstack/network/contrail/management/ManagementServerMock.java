@@ -328,7 +328,7 @@ public class ManagementServerMock {
             }
         }
         if (_znet.getState() != PhysicalNetwork.State.Enabled) {
-            _znet = _networkService.updatePhysicalNetwork(_znet.getId(), null, null, null, PhysicalNetwork.State.Enabled.toString(), null);
+            _znet = _networkService.updatePhysicalNetwork(_znet.getId(), null, null, null, PhysicalNetwork.State.Enabled.toString());
         }
 
         // Ensure that the physical network supports Guest traffic.
