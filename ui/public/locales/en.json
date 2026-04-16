@@ -2248,7 +2248,7 @@
 "label.secondary.storage": "Secondary Storage",
 "label.secondary.storage.vm": "Secondary Storage VM",
 "label.secondaryips": "Secondary IPs",
-"label.secondaryip.description": "Description:",
+"label.secondaryip.description": "Description",
 "label.secondarystoragelimit": "Secondary Storage limits (GiB)",
 "label.secretkey": "Secret key",
 "label.secured": "Secured",

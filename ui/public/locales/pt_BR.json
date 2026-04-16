@@ -1452,7 +1452,7 @@
 "label.secondary.storage": "Armazenamento secund\u00e1rio",
 "label.secondary.storage.vm": "VM de armazenamento secund\u00e1rio",
 "label.secondaryips": "IPs secund\u00e1rios",
-"label.secondaryip.description": "Descri\u00e7\u00e3o:",
+"label.secondaryip.description": "Descri\u00e7\u00e3o",
 "label.secondarystoragelimit": "Limites do armazenamento secund\u00e1rio (GiB)",
 "label.secretkey": "Chave secreta",
 "label.secured": "Protegido",
