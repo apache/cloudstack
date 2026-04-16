@@ -107,8 +107,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
 import org.apache.cloudstack.storage.template.VnfTemplateManager;
-
 import org.apache.cloudstack.test.utils.SpringUtils;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

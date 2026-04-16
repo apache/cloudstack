@@ -554,6 +554,7 @@ public class VpcManagerImplTest {
         doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyInt());
         List<Long> bgpPeerIds = Arrays.asList(11L, 12L);
         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, null, vpcDomain,
                     ip4Dns[0], ip4Dns[1], null, null, true, 1500, 24, null, bgpPeerIds, false);
         } catch (ResourceAllocationException e) {
