@@ -1400,6 +1400,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_EXTENSION_UPDATE, Extension.class);
         entityEventDetails.put(EVENT_EXTENSION_DELETE, Extension.class);
         entityEventDetails.put(EVENT_EXTENSION_SYNC, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_DOWNLOAD, Extension.class);
         entityEventDetails.put(EVENT_EXTENSION_RESOURCE_REGISTER, Extension.class);
         entityEventDetails.put(EVENT_EXTENSION_RESOURCE_UNREGISTER, Extension.class);
         entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_ADD, ExtensionCustomAction.class);
