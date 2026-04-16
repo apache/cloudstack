@@ -48,7 +48,7 @@ public interface VeeamControlService extends PluggableService, Configurable {
                     "and optionally assign them to other users.",
             true);
     ConfigKey<Boolean> InstanceRestoreAssignOwner = new ConfigKey<>("Advanced", Boolean.class,
-            "integration.veeam.instance.restore.assign.owner",
+            "integration.veeam.control.instance.restore.assign.owner",
             "false", "Attempt to assign restored Instance to the owner based on OVF and network " +
             "details. If the assignment fails or set to false then the Instance will remain owned by the service " +
             "account", true);
