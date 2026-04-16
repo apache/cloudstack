@@ -979,6 +979,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         File payloadFile = null;
         try {
             payloadFile = File.createTempFile("cs-extnet-" + command + "-", ".payload");
+            logger.debug("Writing payload {} to payload file {}", payload, payloadFile);
             Files.writeString(payloadFile.toPath(), payload != null ? payload : "", StandardCharsets.UTF_8);
 
             List<String> cmdArgs = new ArrayList<>();
@@ -1083,7 +1084,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
     @Override
     public boolean canHandleCustomAction(Network network) {
-        return canHandle(network, null);
+        return canHandle(network, Service.CustomAction);
     }
 
     /**
@@ -1109,6 +1110,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         cmdLine.add("custom-action");
         cmdLine.add("--network-id");
         cmdLine.add(String.valueOf(network.getId()));
+        cmdLine.addAll(getVpcIdArgs(network));
         cmdLine.add("--action");
         cmdLine.add(actionName);
         cmdLine.add(ARG_ACTION_PARAMS);
@@ -1141,6 +1143,69 @@ public class NetworkExtensionElement extends AdapterBase implements
         } catch (Exception e) {
             logger.error("Failed to execute custom action '{}': {}", actionName, e.getMessage(), e);
             throw new CloudRuntimeException("Failed to execute custom action: " + actionName, e);
+        }
+    }
+
+    @Override
+    public boolean canHandleVpcCustomAction(Vpc vpc) {
+        return resolveExtensionForVpc(vpc) != null;
+    }
+
+    /**
+     * Runs a custom action on the external network device for a VPC.
+     * The script receives {@code --vpc-id} (no {@code --network-id}).
+     */
+    @Override
+    public String runCustomAction(Vpc vpc, String actionName, Map<String, Object> parameters) {
+        Pair<Long, Extension> physNetAndExt = resolveExtensionForVpc(vpc);
+        if (physNetAndExt == null) {
+            throw new CloudRuntimeException("No extension found for VPC " + vpc.getId());
+        }
+        Long physicalNetworkId = physNetAndExt.first();
+        Extension extension = physNetAndExt.second();
+        File scriptFile = resolveScriptFileForVpc(physicalNetworkId, extension);
+
+        String physicalNetworkDetailsJson = buildPhysicalNetworkDetailsJson(physicalNetworkId, extension);
+        String vpcExtDetailsJson = getVpcExtensionDetailsJson(vpc.getId());
+        String actionParamsJson = buildActionParamsJson(parameters);
+
+        List<String> cmdLine = new ArrayList<>();
+        cmdLine.add(scriptFile.getAbsolutePath());
+        cmdLine.add("custom-action");
+        cmdLine.add("--vpc-id");
+        cmdLine.add(String.valueOf(vpc.getId()));
+        cmdLine.add("--action");
+        cmdLine.add(actionName);
+        cmdLine.add(ARG_ACTION_PARAMS);
+        cmdLine.add(actionParamsJson);
+        cmdLine.add(ARG_PHYSICAL_NETWORK_EXTENSION_DETAILS);
+        cmdLine.add(physicalNetworkDetailsJson);
+        cmdLine.add(ARG_NETWORK_EXTENSION_DETAILS);
+        cmdLine.add(vpcExtDetailsJson);
+
+        logger.info("Running custom action '{}' on VPC {} (extension: {}, params: {} key(s))",
+                actionName, vpc.getId(), extension != null ? extension.getName() : "unknown",
+                parameters != null ? parameters.size() : 0);
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder(cmdLine);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            byte[] output = process.getInputStream().readAllBytes();
+            int exitCode = process.waitFor();
+            String outputStr = new String(output).trim();
+
+            logger.debug("Running VPC custom action script: {}", String.join(" ", cmdLine));
+
+            if (exitCode != 0) {
+                logger.error("VPC custom action '{}' failed (exit {}): {}", actionName, exitCode, outputStr);
+                return null;
+            }
+            logger.info("VPC custom action '{}' completed successfully", actionName);
+            return outputStr.isEmpty() ? "OK" : outputStr;
+        } catch (Exception e) {
+            logger.error("Failed to execute VPC custom action '{}': {}", actionName, e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to execute VPC custom action: " + actionName, e);
         }
     }
 

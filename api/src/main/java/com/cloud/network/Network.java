@@ -116,6 +116,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
         public static final Service Connectivity = new Service("Connectivity", Capability.DistributedRouter, Capability.RegionLevelVpc, Capability.StretchedL2Subnet,
                 Capability.NoVlan, Capability.PublicAccess);
+        public static final Service CustomAction = new Service("CustomAction");
 
         private final String name;
         private final Capability[] caps;

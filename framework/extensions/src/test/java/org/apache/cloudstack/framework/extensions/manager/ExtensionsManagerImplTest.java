@@ -2569,6 +2569,7 @@ public class ExtensionsManagerImplTest {
         when(extensionDetailsDao.listDetailsKeyPairs(1L)).thenReturn(Collections.emptyMap());
 
         ExtensionResourceMapVO savedMap = mock(ExtensionResourceMapVO.class);
+        when(savedMap.getExtensionId()).thenReturn(1L);
         when(extensionResourceMapDao.persist(any())).thenReturn(savedMap);
 
         when(physicalNetworkServiceProviderDao.findByServiceProvider(42L, "my-ext")).thenReturn(null);

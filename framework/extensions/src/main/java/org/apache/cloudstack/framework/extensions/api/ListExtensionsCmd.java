@@ -70,7 +70,7 @@ public class ListExtensionsCmd extends BaseListCmd {
                     + " When no parameters are passed, all the details are returned.")
     private List<String> details;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "Type of the extension (e.g. Orchestrator, NetworkOrchestrator). Default is Orchestrator if not set")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "Type of the extension (e.g. Orchestrator, NetworkOrchestrator)")
     private String type;
 
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING,
@@ -78,7 +78,7 @@ public class ListExtensionsCmd extends BaseListCmd {
     private String resourceId;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING,
-            description = "Type of the resource (e.g. Cluster, PhysicalNetwork). Default is Cluster if not set")
+            description = "Type of the resource (e.g. Cluster, PhysicalNetwork)")
     private String resourceType;
 
     /////////////////////////////////////////////////////

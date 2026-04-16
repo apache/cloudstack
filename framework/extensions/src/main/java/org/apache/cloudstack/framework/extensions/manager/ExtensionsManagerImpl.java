@@ -141,6 +141,8 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -241,6 +243,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     NetworkServiceMapDao networkServiceMapDao;
+
+    @Inject
+    VpcServiceMapDao vpcServiceMapDao;
 
     @Inject
     NetworkModel networkModel;
@@ -472,6 +477,19 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 return null;
             }
             return extensionDao.findById(maps.get(0).getExtensionId());
+        } else if (resourceType == ExtensionCustomAction.ResourceType.Vpc) {
+            com.cloud.network.vpc.Vpc vpc = (com.cloud.network.vpc.Vpc) object;
+            // Find extension via the VPC's tier networks
+            List<NetworkVO> tierNetworks = networkDao.listByVpc(vpc.getId());
+            if (CollectionUtils.isNotEmpty(tierNetworks)) {
+                for (NetworkVO tierNetwork : tierNetworks) {
+                    Extension ext = getExtensionFromResource(ExtensionCustomAction.ResourceType.Network, tierNetwork.getUuid());
+                    if (ext != null) {
+                        return ext;
+                    }
+                }
+            }
+            return null;
         }
         return null;
     }
@@ -1103,19 +1121,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
         if (Boolean.TRUE.equals(cleanupDetails)) {
             extensionResourceMapDetailsDao.removeDetails(targetMapping.getId());
-        } else {
+        } else if (MapUtils.isNotEmpty(details)) {
             List<ExtensionResourceMapDetailsVO> detailsList = buildExtensionResourceDetailsArray(targetMapping.getId(), details);
-            if (CollectionUtils.isNotEmpty(detailsList)) {
-                appendHiddenExtensionResourceDetails(targetMapping.getId(), detailsList);
-            }
+            appendHiddenExtensionResourceDetails(targetMapping.getId(), detailsList);
             detailsList = detailsList.stream()
                     .filter(detail -> detail.getValue() != null)
                     .collect(Collectors.toList());
-            if (CollectionUtils.isNotEmpty(detailsList)) {
-                extensionResourceMapDetailsDao.saveDetails(detailsList);
-            } else {
-                extensionResourceMapDetailsDao.removeDetails(targetMapping.getId());
-            }
+            extensionResourceMapDetailsDao.saveDetails(detailsList);
         }
 
         return extensionDao.findById(extensionId);
@@ -1222,7 +1234,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                         + "with services {}", extension.getName(), physicalNetwork.getId(), services);
             }
 
-            return extensionMap;
+            return savedExtensionMap;
         });
     }
 
@@ -1335,6 +1347,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         nsp.setVpnServiceProvided(services.contains("Vpn"));
         nsp.setSecuritygroupServiceProvided(services.contains("SecurityGroup"));
         nsp.setNetworkAclServiceProvided(services.contains("NetworkACL"));
+        nsp.setCustomActionServiceProvided(services.contains("CustomAction"));
     }
 
     /** Keys that are always stored with display=false (sensitive). */
@@ -1463,7 +1476,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     if (CollectionUtils.isNotEmpty(networksUsingProvider)) {
                         throw new CloudRuntimeException(String.format(
                                 "Cannot unregister extension '%s' from physical network %s. "
-                                        + "Provider is used by %d existing network(s)",
+                                        + "Provider is used by %d existing network service(s)",
                                 ext.getName(), physNetId, networksUsingProvider.size()));
                     }
                 }
@@ -1953,6 +1966,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             // Network custom action: dispatched directly to NetworkCustomActionProvider (no agent)
             Network network = (Network) entity;
             return runNetworkCustomAction(network, customActionVO, extensionVO, actionResourceType, cmdParameters);
+        } else if (entity instanceof Vpc) {
+            // VPC custom action: find a tier network and dispatch to the same NetworkCustomActionProvider
+            Vpc vpc = (Vpc) entity;
+            return runVpcCustomAction(vpc, customActionVO, extensionVO, actionResourceType, cmdParameters);
         }
 
         if (clusterId == null || hostId == null) {
@@ -2061,9 +2078,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             parameters = ExtensionCustomAction.Parameter.validateParameterValues(actionParameters, cmdParameters);
         }
 
-        // Find the provider name for this network (try each service until we find one)
+        // Find the provider name for this network (try CustomAction first, then other services)
         String providerName = null;
-        for (Service service : new Service[]{Service.SourceNat, Service.StaticNat,
+        for (Service service : new Service[]{Service.CustomAction, Service.SourceNat, Service.StaticNat,
                 Service.PortForwarding, Service.Firewall, Service.Gateway}) {
             providerName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), service);
             if (StringUtils.isNotBlank(providerName)) {
@@ -2109,6 +2126,91 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             result.put(ApiConstants.DETAILS, success ? output : "Action failed — check management server logs for details");
         } catch (Exception e) {
             logger.error("Network custom action '{}' threw exception: {}", actionName, e.getMessage(), e);
+            result.put(ApiConstants.DETAILS, "Action failed: " + e.getMessage());
+        }
+        response.setResult(result);
+        return response;
+    }
+
+    /**
+     * Executes a custom action for a VPC resource by finding the VPC's
+     * extension provider and dispatching directly to it (no tier network lookup).
+     */
+    protected CustomActionResultResponse runVpcCustomAction(Vpc vpc,
+            ExtensionCustomActionVO customActionVO, ExtensionVO extensionVO,
+            ExtensionCustomAction.ResourceType actionResourceType,
+            Map<String, String> cmdParameters) {
+
+        final String actionName = customActionVO.getName();
+        CustomActionResultResponse response = new CustomActionResultResponse();
+        response.setId(customActionVO.getUuid());
+        response.setName(actionName);
+        response.setObjectName("customactionresult");
+        Map<String, String> result = new HashMap<>();
+        response.setSuccess(false);
+        result.put(ApiConstants.MESSAGE, getActionMessage(false, customActionVO, extensionVO, actionResourceType, vpc));
+
+        // Resolve action parameters
+        List<ExtensionCustomAction.Parameter> actionParameters = null;
+        Pair<Map<String, String>, Map<String, String>> allDetails =
+                extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(customActionVO.getId());
+        if (allDetails.second().containsKey(ApiConstants.PARAMETERS)) {
+            actionParameters = ExtensionCustomAction.Parameter.toListFromJson(
+                    allDetails.second().get(ApiConstants.PARAMETERS));
+        }
+        Map<String, Object> parameters = null;
+        if (CollectionUtils.isNotEmpty(actionParameters)) {
+            parameters = ExtensionCustomAction.Parameter.validateParameterValues(actionParameters, cmdParameters);
+        }
+
+        // Find the provider name for this VPC
+        String providerName = null;
+        for (Service service : new Service[]{Service.CustomAction, Service.SourceNat, Service.StaticNat,
+                Service.PortForwarding, Service.NetworkACL, Service.Gateway}) {
+            providerName = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), service);
+            if (StringUtils.isNotBlank(providerName)) {
+                break;
+            }
+        }
+        if (StringUtils.isBlank(providerName)) {
+            logger.error("No VPC service provider found for VPC {}", vpc.getId());
+            result.put(ApiConstants.DETAILS, "No VPC service provider found for this VPC");
+            response.setResult(result);
+            return response;
+        }
+
+        // Get the network element implementing that provider
+        NetworkElement element = networkModel.getElementImplementingProvider(providerName);
+        if (element == null) {
+            logger.error("No NetworkElement found implementing provider '{}' for VPC {}", providerName, vpc.getId());
+            result.put(ApiConstants.DETAILS, "No network element found for provider: " + providerName);
+            response.setResult(result);
+            return response;
+        }
+
+        // The element must implement NetworkCustomActionProvider
+        if (!(element instanceof NetworkCustomActionProvider)) {
+            logger.error("Network element '{}' for provider '{}' does not support VPC custom actions",
+                    element.getClass().getSimpleName(), providerName);
+            result.put(ApiConstants.DETAILS, "Provider '" + providerName + "' does not support custom actions");
+            response.setResult(result);
+            return response;
+        }
+
+        NetworkCustomActionProvider provider = (NetworkCustomActionProvider) element;
+        try {
+            if (!provider.canHandleVpcCustomAction(vpc)) {
+                throw new CloudRuntimeException("Provider '" + providerName + "' cannot handle custom action for this VPC");
+            }
+            logger.info("Running VPC custom action '{}' on VPC {} via {} (provider: {})",
+                    actionName, vpc.getId(), element.getClass().getSimpleName(), providerName);
+            String output = provider.runCustomAction(vpc, actionName, parameters);
+            boolean success = output != null;
+            response.setSuccess(success);
+            result.put(ApiConstants.MESSAGE, getActionMessage(success, customActionVO, extensionVO, actionResourceType, vpc));
+            result.put(ApiConstants.DETAILS, success ? output : "Action failed — check management server logs for details");
+        } catch (Exception e) {
+            logger.error("VPC custom action '{}' threw exception: {}", actionName, e.getMessage(), e);
             result.put(ApiConstants.DETAILS, "Action failed: " + e.getMessage());
         }
         response.setResult(result);
