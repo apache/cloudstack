@@ -706,6 +706,7 @@ export default {
       }
       this.loading = true
       getAPI('listExtensions', {
+        type: 'Orchestrator'
       }).then(response => {
         this.extensionsList = response.listextensionsresponse.extension || []
       }).catch(error => {
