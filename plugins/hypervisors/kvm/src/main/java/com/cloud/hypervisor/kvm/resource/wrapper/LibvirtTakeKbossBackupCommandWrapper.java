@@ -92,7 +92,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
      * <br/>
      * If an exception is caught while copying the volumes, will try to recover the VM to the previous state so that it is consistent.
      * */
-    private void backupVolumes(TakeKbossBackupCommand command, LibvirtComputingResource resource, KVMStoragePoolManager storagePoolManager, List<KbossTO> kbossTOS,
+    protected void backupVolumes(TakeKbossBackupCommand command, LibvirtComputingResource resource, KVMStoragePoolManager storagePoolManager, List<KbossTO> kbossTOS,
             List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName, boolean runningVM,
             Map<String, Pair<String, Long>> mapVolumeUuidToDeltaPathOnSecondaryAndDeltaSize) {
         try {
@@ -117,7 +117,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
         }
     }
 
-    private int calculateRemainingTime(int maxWaitInMillis, long startTimeMillis) throws TimeoutException {
+    protected int calculateRemainingTime(int maxWaitInMillis, long startTimeMillis) throws TimeoutException {
         maxWaitInMillis -= (int)(System.currentTimeMillis() - startTimeMillis);
         if (maxWaitInMillis < 0) {
             throw new TimeoutException("Timeout while converting backups to secondary storage.");
@@ -129,7 +129,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
      * For each KbossTO, will merge its DeltaMergeTreeTO (if it exists). Also, if this is the end of the chain, will also end the chain for the volume.
      * Will populate the mapVolumeUuidToNewVolumePath argument.
      * */
-    private void cleanupVm(TakeKbossBackupCommand command, LibvirtComputingResource resource, List<KbossTO> kbossTOS, String vmName, boolean runningVM,
+    protected void cleanupVm(TakeKbossBackupCommand command, LibvirtComputingResource resource, List<KbossTO> kbossTOS, String vmName, boolean runningVM,
             Map<String, String> mapVolumeUuidToNewVolumePath) {
         for (KbossTO kbossTO : kbossTOS) {
             VolumeObjectTO volumeObjectTO = kbossTO.getVolumeObjectTO();
@@ -160,7 +160,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
      * Copy the backup delta to the secondary storage. Since we created a snapshot on top of the volume, the volume is now the backup delta.
      * If there were snapshots created after the last backup, they'll be copied alongside and merged in the secondary storage.
      * */
-    private Pair<String, Long> copyBackupDeltaToSecondary(KVMStoragePoolManager storagePoolManager, KbossTO kbossTO, List<String> chainImageStoreUrls, String imageStoreUrl,
+    protected Pair<String, Long> copyBackupDeltaToSecondary(KVMStoragePoolManager storagePoolManager, KbossTO kbossTO, List<String> chainImageStoreUrls, String imageStoreUrl,
             int waitInMillis) {
         VolumeObjectTO delta = kbossTO.getVolumeObjectTO();
         String parentDeltaPathOnSecondary = kbossTO.getPathBackupParentOnSecondary();
@@ -233,7 +233,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
      * If there were VM snapshots created after the last backup, we will have copied them alongside the backup delta. If this is the case, we will commit all of them into a single
      * base file so that we are left with one file per volume per backup.
      * */
-    private void commitTopDeltaOnBaseBackupOnSecondaryIfNeeded(String topDelta, String backupOnSecondary, KVMStoragePool imagePool, String backupOnSecondaryFullPath,
+    protected void commitTopDeltaOnBaseBackupOnSecondaryIfNeeded(String topDelta, String backupOnSecondary, KVMStoragePool imagePool, String backupOnSecondaryFullPath,
             int waitInMillis) throws LibvirtException, QemuImgException {
         if (topDelta.equals(backupOnSecondary)) {
             return;
@@ -255,7 +255,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
      * - If we fail to backup we have to clean up the secondary storage.<br/>
      * - If we had VM snapshots created after the last backup, we copied multiple files to secondary storage, and thus we have to clean them up after merging them.
      * */
-    private void removeTemporaryDeltas(List<String> temporaryDeltasToRemove, boolean result) {
+    protected void removeTemporaryDeltas(List<String> temporaryDeltasToRemove, boolean result) {
         if (result) {
             temporaryDeltasToRemove.remove(0);
         }
@@ -278,7 +278,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
      * @param volumeUuid volume uuid, used for logging.
      * @param waitInMillis timeout in milliseconds.
      * */
-    private void convertDeltaToSecondary(String pathDeltaOnPrimary, String pathDeltaOnSecondary, String pathParentOnSecondary, String volumeUuid, int waitInMillis)
+    protected void convertDeltaToSecondary(String pathDeltaOnPrimary, String pathDeltaOnSecondary, String pathParentOnSecondary, String volumeUuid, int waitInMillis)
             throws QemuImgException, LibvirtException {
         QemuImgFile backupDestination = new QemuImgFile(pathDeltaOnSecondary, QemuImg.PhysicalDiskFormat.QCOW2);
         QemuImgFile backupOrigin = new QemuImgFile(pathDeltaOnPrimary, QemuImg.PhysicalDiskFormat.QCOW2);
@@ -298,7 +298,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
     }
 
 
-    private void endChainForVolume(LibvirtComputingResource resource, VolumeObjectTO volumeObjectTO, String vmName, boolean isVmRunning, String volumeUuid, String baseVolumePath)
+    protected void endChainForVolume(LibvirtComputingResource resource, VolumeObjectTO volumeObjectTO, String vmName, boolean isVmRunning, String volumeUuid, String baseVolumePath)
             throws BackupException {
 
         BackupDeltaTO baseVolume = new BackupDeltaTO(volumeObjectTO.getDataStore(), Hypervisor.HypervisorType.KVM, baseVolumePath);
@@ -315,7 +315,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
      *  - Merge back any backup deltas created;
      *  - Remove the data backed up to the secondary storage;
      * */
-    private void recoverPreviousVmStateAndDeletePartialBackup(LibvirtComputingResource resource, List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName,
+    protected void recoverPreviousVmStateAndDeletePartialBackup(LibvirtComputingResource resource, List<Pair<VolumeObjectTO, String>> volumeTosAndNewPaths, String vmName,
             boolean runningVm, Map<String, Pair<String, Long>> mapVolumeUuidToDeltaPathOnSecondaryAndSize, KVMStoragePoolManager storagePoolManager, String imageStoreUrl) {
         logger.error("There has been an exception during the backup creation process. We will try to revert the VM [{}] to its previous state.", vmName);
 
@@ -338,7 +338,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
         }
     }
 
-    private void cleanupDeltaOnSecondary(KVMStoragePoolManager storagePoolManager, String imageStoreUrl, String deltaPath) {
+    protected void cleanupDeltaOnSecondary(KVMStoragePoolManager storagePoolManager, String imageStoreUrl, String deltaPath) {
         KVMStoragePool imagePool = null;
 
         try {
@@ -358,7 +358,7 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
     }
 
 
-    private void mergeBackupDelta(LibvirtComputingResource resource, DeltaMergeTreeTO deltaMergeTreeTO, VolumeObjectTO volumeObjectTO, String vmName, boolean isVmRunning,
+    protected void mergeBackupDelta(LibvirtComputingResource resource, DeltaMergeTreeTO deltaMergeTreeTO, VolumeObjectTO volumeObjectTO, String vmName, boolean isVmRunning,
             String volumeUuid, boolean countNewestDeltaAsGrandchild) throws BackupException {
         try {
             if (isVmRunning) {
@@ -375,11 +375,11 @@ public class LibvirtTakeKbossBackupCommandWrapper extends CommandWrapper<TakeKbo
         }
     }
 
-    private String getRelativePathOnSecondaryForBackup(long accountId, long volumeId, String backupPath) {
+    protected String getRelativePathOnSecondaryForBackup(long accountId, long volumeId, String backupPath) {
         return String.format("%s%s%s%s%s%s%s", "backups", File.separator, accountId, File.separator, volumeId, File.separator, backupPath);
     }
 
-    private void createDirsIfNeeded(String deltaFullPath, String volumeUuid) {
+    protected void createDirsIfNeeded(String deltaFullPath, String volumeUuid) {
         String dirs = deltaFullPath.substring(0, deltaFullPath.lastIndexOf(File.separator));
         try {
             Files.createDirectories(Path.of(dirs));

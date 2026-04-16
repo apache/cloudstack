@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
@@ -41,13 +42,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.function.Predicate;
 
+import org.apache.cloudstack.api.command.user.backup.CreateBackupOfferingCmd;
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -271,6 +276,9 @@ public class BackupManagerTest {
 
     @Mock
     private AccountService accountServiceMock;
+
+    @Mock
+    private DomainVO domainVOMock;
 
     private Gson gson;
 
@@ -2720,4 +2728,179 @@ public class BackupManagerTest {
         assertTrue(values.contains(String.valueOf(21L)));
         assertTrue(values.contains(String.valueOf(22L)));
     }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void createBackupOfferingTestOfferingAlreadyExists() {
+        long zoneId = 1L;
+        String offeringName = "name";
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(backupOfferingVOMock).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(offeringName).when(cmd).getName();
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void createBackupOfferingTestInvalidDomainId() {
+        long zoneId = 1L;
+        String offeringName = "name";
+        long domainId = 3L;
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(null).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(offeringName).when(cmd).getName();
+        doReturn(List.of(domainId)).when(cmd).getDomainIds();
+        doReturn(null).when(domainDao).findById(domainId);
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void createBackupOfferingTestInvalidBackupProvider() {
+        long zoneId = 1L;
+        String offeringName = "name";
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(null).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(offeringName).when(cmd).getName();
+        doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+        doReturn("dummy").when(backupProvider).getName();
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+    }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void createBackupOfferingTestInvalidProviderOffering() {
+        long zoneId = 1L;
+        String offeringName = "name";
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(null).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(offeringName).when(cmd).getName();
+        doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+        doReturn("kboss").when(backupProvider).getName();
+        doReturn(false).when(backupProvider).isValidProviderOffering(zoneId, null);
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+    }
+
+    @Test
+    public void createBackupOfferingTestAddsDetails() {
+        long zoneId = 1L;
+        String offeringName = "name";
+        long domainId = 3L;
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(null).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(List.of(domainId)).when(cmd).getDomainIds();
+        doReturn(domainVOMock).when(domainDao).findById(domainId);
+        doReturn(offeringName).when(cmd).getName();
+        doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+        doReturn(backupOfferingVOMock).when(backupOfferingDao).persist(any());
+        doReturn("kboss").when(backupProvider).getName();
+        doReturn(true).when(backupProvider).isValidProviderOffering(zoneId, null);
+        doReturn(true).when(cmd).isCompress();
+        doReturn(true).when(cmd).isValidate();
+        doReturn(true).when(cmd).isAllowExtractFile();
+        doReturn(true).when(cmd).isAllowQuickRestore();
+        doReturn(3).when(cmd).getBackupChainSize();
+        doReturn(Backup.CompressionLibrary.zlib).when(cmd).getCompressionLibrary();
+        doReturn("execute_command").when(cmd).getValidationSteps();
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+        verify(backupOfferingDao).persist(any());
+        ArrayList<String> detailsToBeSaved = new ArrayList<>(List.of(ApiConstants.DOMAIN_ID, ApiConstants.COMPRESS, ApiConstants.VALIDATE, ApiConstants.ALLOW_EXTRACT_FILE,
+                ApiConstants.ALLOW_QUICK_RESTORE, ApiConstants.BACKUP_CHAIN_SIZE, ApiConstants.COMPRESSION_LIBRARY, ApiConstants.VALIDATION_STEPS));
+        verify(backupOfferingDetailsDao).saveDetails(ArgumentMatchers.argThat( detailList -> {
+            if (CollectionUtils.isEmpty(detailList) || detailList.size() < 8) {
+                return false;
+            }
+            for (BackupOfferingDetailsVO detailsVO : detailList) {
+                detailsToBeSaved.removeIf(detailName -> detailsVO.getName().equals(detailName));
+            }
+
+            return detailsToBeSaved.isEmpty();
+        }));
+    }
+
+    @Test
+    public void createBackupOfferingTestAddsNoDetails() {
+        long zoneId = 1L;
+        String offeringName = "name";
+
+        doNothing().when(backupManager).validateBackupForZone(zoneId);
+        doReturn(null).when(backupOfferingDao).findByName(offeringName, zoneId);
+        CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+        doReturn(zoneId).when(cmd).getZoneId();
+        doReturn(offeringName).when(cmd).getName();
+        doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+        doReturn(backupOfferingVOMock).when(backupOfferingDao).persist(any());
+        doReturn("kboss").when(backupProvider).getName();
+        doReturn(true).when(backupProvider).isValidProviderOffering(zoneId, null);
+        doReturn(false).when(cmd).isCompress();
+        doReturn(false).when(cmd).isValidate();
+        doReturn(false).when(cmd).isAllowExtractFile();
+        doReturn(false).when(cmd).isAllowQuickRestore();
+        doReturn(null).when(cmd).getBackupChainSize();
+        doReturn(null).when(cmd).getCompressionLibrary();
+        doReturn(null).when(cmd).getValidationSteps();
+
+        backupManager.createBackupOffering(cmd);
+
+        verify(backupManager).validateBackupForZone(zoneId);
+        verify(backupOfferingDao).persist(any());
+        verify(backupOfferingDetailsDao, never()).saveDetails(any());
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

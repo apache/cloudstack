@@ -72,7 +72,7 @@ public class LibvirtRestoreKbossBackupCommandWrapper extends CommandWrapper<Rest
         return new RestoreKbossBackupAnswer(cmd, secondaryStorageUuids);
     }
 
-    private void restoreVolumes(Set<Pair<BackupDeltaTO, VolumeObjectTO>> backupToAndVolumeObjectPairs, KVMStoragePool secondaryStorage, KVMStoragePoolManager storagePoolManager,
+    protected void restoreVolumes(Set<Pair<BackupDeltaTO, VolumeObjectTO>> backupToAndVolumeObjectPairs, KVMStoragePool secondaryStorage, KVMStoragePoolManager storagePoolManager,
             boolean quickRestore, int timeoutInMillis) throws LibvirtException, QemuImgException {
         for (Pair<BackupDeltaTO, VolumeObjectTO> backupToVolumeToPair : backupToAndVolumeObjectPairs) {
             String fullBackupPath = secondaryStorage.getLocalPathFor(backupToVolumeToPair.first().getPath());
@@ -97,7 +97,7 @@ public class LibvirtRestoreKbossBackupCommandWrapper extends CommandWrapper<Rest
         }
     }
 
-    private void deleteDeltas(Set<BackupDeltaTO> deltasToRemove, KVMStoragePoolManager storagePoolManager) throws IOException {
+    protected void deleteDeltas(Set<BackupDeltaTO> deltasToRemove, KVMStoragePoolManager storagePoolManager) throws IOException {
         for (BackupDeltaTO deltaToRemove : deltasToRemove) {
             PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) deltaToRemove.getDataStore();
             KVMStoragePool primaryStoragePool = storagePoolManager.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
@@ -107,7 +107,7 @@ public class LibvirtRestoreKbossBackupCommandWrapper extends CommandWrapper<Rest
         }
     }
 
-    private KVMStoragePool mountSecondaryStorages(Set<String> parentSecondaryStorageUrls, String secondaryStorageUrl, KVMStoragePoolManager storagePoolManager, Set<String> secondaryStorageUuids) {
+    protected KVMStoragePool mountSecondaryStorages(Set<String> parentSecondaryStorageUrls, String secondaryStorageUrl, KVMStoragePoolManager storagePoolManager, Set<String> secondaryStorageUuids) {
         for (String url : parentSecondaryStorageUrls) {
             KVMStoragePool pool = storagePoolManager.getStoragePoolByURI(url);
             secondaryStorageUuids.add(pool.getUuid());
