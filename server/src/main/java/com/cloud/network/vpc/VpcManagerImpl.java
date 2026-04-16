@@ -1855,7 +1855,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 // Default to VPCVirtualRouter
                 provider = Provider.VPCVirtualRouter.getName();
             } else {
-                provider = _ntwkModel.resolveProvider(provider).getName();
+                final Provider resolvedProvider = _ntwkModel.resolveProvider(provider);
+                if (resolvedProvider == null) {
+                    throw new InvalidParameterValueException("Invalid provider " + provider + " configured for service " + service);
+                }
+                provider = resolvedProvider.getName();
             }
 
             if (!_ntwkModel.isProviderEnabledInZone(zoneId, provider)) {

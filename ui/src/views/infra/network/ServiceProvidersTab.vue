@@ -1258,7 +1258,7 @@ export default {
 
       this.extensionProviderLoading = true
       try {
-        // registerExtension auto-creates the NSP (Enabled) with services from network.capabilities
+        // registerExtension auto-creates the NSP (Enabled) with services from network.service.capabilities
         await postAPI('registerExtension', {
           extensionid: extensionId,
           resourceid: this.resource.id,

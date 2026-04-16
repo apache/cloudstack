@@ -4253,6 +4253,6 @@
 "label.external.network.service": "External Network Service",
 "message.confirm.disable.external.network.provider": "Are you sure you want to disable the External Network provider?",
 "message.no.network.orchestrator.extensions": "No NetworkOrchestrator extensions found. Please create one first via createExtension API.",
-"message.extension.services.from.capabilities": "Services are derived automatically from the extension's network.capabilities detail.",
+"message.extension.services.from.capabilities": "Services are derived automatically from the extension's network.service.capabilities detail.",
 "message.select.extension": "Please select an extension."
 }
