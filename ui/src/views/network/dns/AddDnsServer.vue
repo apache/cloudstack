@@ -80,15 +80,15 @@
             style="width: 100%" />
         </a-form-item>
 
-        <a-form-item name="credentials" ref="credentials">
+        <a-form-item name="apikey" ref="apikey">
           <template #label>
             <tooltip-label
-              :title="$t('label.dns.credentials')"
-              :tooltip="apiParams.credentials?.description" />
+              :title="$t('label.dns.apikey')"
+              :tooltip="apiParams.apikey?.description" />
           </template>
           <a-input-password
-            v-model:value="form.credentials"
-            :placeholder="apiParams.credentials?.description || 'Enter API Key'" />
+            v-model:value="form.apikey"
+            :placeholder="apiParams.apikey?.description || 'Enter API Key'" />
         </a-form-item>
 
         <a-form-item name="externalserverid" ref="externalserverid">
@@ -192,7 +192,7 @@ export default {
         { validator: this.validatePort }
       ],
       provider: [{ required: true, message: this.$t('message.error.required.input') }],
-      credentials: [{ required: true, message: this.$t('message.error.required.input') }],
+      apikey: [{ required: true, message: this.$t('message.error.required.input') }],
       externalserverid: [{ required: true, message: this.$t('message.error.required.input') }],
       nameservers: [
         { required: true, type: 'array', min: 1, message: this.$t('message.error.required.input') },
@@ -220,7 +220,7 @@ export default {
           url: this.form.url?.trim().replace(/\/$/, ''),
           port: this.form.port,
           provider: this.form.provider,
-          credentials: this.form.credentials,
+          apikey: this.form.apikey.trim(),
           externalserverid: this.form.externalserverid.trim(),
           nameservers: this.form.nameservers?.map(ns => ns.toLowerCase().trim()).filter(Boolean),
           ispublic: this.form.ispublic

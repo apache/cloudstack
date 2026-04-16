@@ -316,4 +316,3 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         cmd.description = "Test DNS Zone for PDNS"
 
         return self.api_client.createDnsZone(cmd)
-    

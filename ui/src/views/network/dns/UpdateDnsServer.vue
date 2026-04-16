@@ -60,11 +60,11 @@
             style="width: 100%" />
         </a-form-item>
 
-        <a-form-item name="credentials">
+        <a-form-item name="apikey">
           <template #label>
-            <tooltip-label :title="$t('label.dns.credentials')" :tooltip="apiParams.credentials?.description" />
+            <tooltip-label :title="$t('label.dns.apikey')" :tooltip="apiParams.apikey?.description" />
           </template>
-          <a-input-password v-model:value="form.credentials" :placeholder="apiParams.credentials?.description" />
+          <a-input-password v-model:value="form.apikey" :placeholder="apiParams.apikey?.description" />
         </a-form-item>
 
         <a-form-item v-if="isAdminOrDomainAdmin()" name="publicdomainsuffix">
@@ -186,8 +186,8 @@ export default {
           ispublic: this.form.ispublic,
           state: this.form.state
         }
-        if (this.form.credentials) {
-          params.credentials = this.form.credentials
+        if (this.form.apikey) {
+          params.apikey = this.form.apikey.trim()
         }
         if (this.form.ispublic) {
           params.publicdomainsuffix = this.form.publicdomainsuffix?.trim().toLowerCase()
