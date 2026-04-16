@@ -686,7 +686,7 @@ export default {
         return []
       }
 
-      const capsJson = extDef.details['network.capabilities']
+      const capsJson = extDef.details['network.service.capabilities']
       if (capsJson) {
         try {
           const caps = JSON.parse(capsJson)

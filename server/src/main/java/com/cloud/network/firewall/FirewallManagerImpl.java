@@ -723,7 +723,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 String fwProviderName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.Firewall);
                 if (fwProviderName != null) {
                     NetworkElement element = _networkModel.getElementImplementingProvider(fwProviderName);
-                    handled = ((FirewallServiceProvider) element).applyFWRules(network, rules);
+                    if (element instanceof FirewallServiceProvider) {
+                        handled = ((FirewallServiceProvider) element).applyFWRules(network, rules);
+                    }
                 }
             }
             break;
@@ -743,7 +745,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 String pfProviderName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.PortForwarding);
                 if (pfProviderName != null) {
                     NetworkElement element = _networkModel.getElementImplementingProvider(pfProviderName);
-                    handled = ((PortForwardingServiceProvider) element).applyPFRules(network, (List<PortForwardingRule>) rules);
+                    if (element instanceof PortForwardingServiceProvider) {
+                        handled = ((PortForwardingServiceProvider) element).applyPFRules(network, (List<PortForwardingRule>) rules);
+                    }
                 }
             }
             break;
