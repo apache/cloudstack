@@ -411,7 +411,7 @@ public class FirstFitAllocator extends BaseAllocator {
      * If service offering did not request for vGPU, then move all host with GPU to the end of the host priority list.
      */
     protected void prioritizeHostsByGpuEnabled(ServiceOffering offering, List<Host> prioritizedHosts) {
-        boolean serviceOfferingRequestedVGpu = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) != null  && offering.getVgpuProfileId() == null;
+        boolean serviceOfferingRequestedVGpu = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) != null || offering.getVgpuProfileId() != null;
 
         if (serviceOfferingRequestedVGpu) {
             return;
