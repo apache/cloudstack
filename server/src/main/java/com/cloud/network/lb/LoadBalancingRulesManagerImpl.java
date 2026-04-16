@@ -2055,7 +2055,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             String lbProviderName = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
             if (lbProviderName != null) {
                 NetworkElement element = _networkModel.getElementImplementingProvider(lbProviderName);
-                handled = ((LoadBalancingServiceProvider) element).applyLBRules(network, rules);
+                if (element instanceof LoadBalancingServiceProvider) {
+                    handled = ((LoadBalancingServiceProvider) element).applyLBRules(network, rules);
+                }
             }
         }
         return handled;

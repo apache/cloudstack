@@ -1079,7 +1079,7 @@ export default {
           ...(!this.forVpc && { Firewall: this.Netris })
         }
       } else if (this.isExternalNetworkProvider) {
-        // Extension-backed provider: services come from the extension's network.capabilities.
+        // Extension-backed provider: services come from the extension's network.service.capabilities.
         // this.provider is the extension name (= NSP name)
         const extProviderObj = {
           name: this.provider,
@@ -1087,7 +1087,7 @@ export default {
           enabled: true
         }
         const svcMap = { Dhcp: this.VR, Dns: this.VR, UserData: this.VR }
-        // Infer services from the selected extension's network.capabilities detail
+        // Infer services from the selected extension's network.service.capabilities detail
         const extDef = this.availableExtensionProviders.find(e => e.name === this.provider)
         const services = this._getExtensionServices(extDef)
         if (services.length > 0) {
@@ -1110,9 +1110,9 @@ export default {
       this.fetchSupportedServiceData()
     },
     _getExtensionServices (extDef) {
-      if (!extDef || !extDef.details || !extDef.details['network.capabilities']) return []
+      if (!extDef || !extDef.details || !extDef.details['network.service.capabilities']) return []
       try {
-        const caps = JSON.parse(extDef.details['network.capabilities'])
+        const caps = JSON.parse(extDef.details['network.service.capabilities'])
         return (caps && caps.services) ? caps.services : []
       } catch (e) {
         return []

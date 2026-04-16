@@ -196,7 +196,7 @@ import java.util.stream.Collectors;
  * <pre>{"host":"192.168.1.10","namespace":"cs-net-42"}</pre>
  *
  * <h3>Network capabilities</h3>
- * When creating the extension, set detail {@code network.capabilities} to a
+ * When creating the extension, set detail {@code network.service.capabilities} to a
  * JSON object describing the services and their capabilities:
  * <pre>
  * {
@@ -333,7 +333,7 @@ public class NetworkExtensionElement extends AdapterBase implements
     public Map<Service, Map<Capability, String>> getCapabilities() {
         try {
             // If this element is scoped to a provider name, prefer capabilities stored
-            // in the extension's "network.capabilities" detail.  The ExtensionHelper
+            // in the extension's "network.service.capabilities" detail.  The ExtensionHelper
             // exposes a helper that loads the Service→Capability map from the DB.
             if (providerName != null && !providerName.isBlank()) {
                 Map<Service, Map<Capability, String>> caps = extensionHelper.getNetworkCapabilitiesForProvider(null, providerName);
@@ -342,7 +342,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 }
             }
         } catch (Exception e) {
-            logger.warn("Failed to load network capabilities from extension details for provider '{}': {}", providerName, e.getMessage());
+            logger.warn("Failed to load network service capabilities from extension details for provider '{}': {}", providerName, e.getMessage());
         }
 
         return DEFAULT_CAPABILITIES;

@@ -1266,7 +1266,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }
-            providers.add(resolveProvider(instance.getProvider()));
+
+            final Provider provider = resolveProvider(instance.getProvider());
+            if (provider != null) {
+                providers.add(provider);
+            }
             serviceProviderMap.put(Service.getService(service), providers);
         }
 

@@ -455,7 +455,10 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             if (aclProviderName != null) {
                 foundProvider = true;
                 NetworkElement element = _networkModel.getElementImplementingProvider(aclProviderName);
-                handled = ((NetworkACLServiceProvider) element).applyNetworkACLs(network, rules);
+                if (element instanceof NetworkACLServiceProvider) {
+                    logger.debug("Applying NetworkACL for network: {} with Network ACL service provider: {}", network, aclProviderName);
+                    handled = ((NetworkACLServiceProvider) element).applyNetworkACLs(network, rules);
+                }
             }
         }
         if (handled) {
