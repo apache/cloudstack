@@ -686,18 +686,6 @@ export default {
         return []
       }
 
-      const capsJson = extDef.details['network.service.capabilities']
-      if (capsJson) {
-        try {
-          const caps = JSON.parse(capsJson)
-          if (caps && Array.isArray(caps.services)) {
-            return caps.services
-          }
-        } catch (e) {
-          // Ignore malformed capabilities and fallback to network.services.
-        }
-      }
-
       const servicesCsv = extDef.details['network.services']
       if (servicesCsv && typeof servicesCsv === 'string') {
         return servicesCsv.split(',').map(x => x.trim()).filter(x => x.length > 0)
@@ -725,7 +713,7 @@ export default {
       const extDef = this.availableExtensionProviders.find(e => e.name === selectedProvider)
       const services = this._getExtensionServices(extDef)
       const allowedVpcServices = new Set([
-        'Gateway', 'Lb', 'StaticNat', 'SourceNat', 'NetworkACL', 'PortForwarding', 'Vpn'
+        'Gateway', 'Lb', 'StaticNat', 'SourceNat', 'NetworkACL', 'PortForwarding', 'Vpn', 'CustomAction'
       ])
 
       services.forEach(service => {
