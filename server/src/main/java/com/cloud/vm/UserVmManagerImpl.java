@@ -5813,7 +5813,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // use it to encrypt & save the vm password
             encryptAndStorePassword(vm, password);
             // overwrite VmPassword
-            params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.VmPassword, password);
+            params = createParameterInParameterMap(params, VirtualMachineProfile.Param.VmPassword, password);
         }
 
         if (additionalParams.containsKey(VirtualMachineProfile.Param.BootIntoSetup)) {
@@ -5824,7 +5824,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             //overwrite BootIntoSetup
             Object paramValue = additionalParams.get(VirtualMachineProfile.Param.BootIntoSetup);
             logger.trace("It was specified whether to enter setup mode: {}", paramValue.toString());
-            params = createParameterInParameterMap(params, additionalParams, VirtualMachineProfile.Param.BootIntoSetup, paramValue);
+            params = createParameterInParameterMap(params, VirtualMachineProfile.Param.BootIntoSetup, paramValue);
         }
 
         VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
