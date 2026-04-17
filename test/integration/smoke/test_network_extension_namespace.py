@@ -405,6 +405,37 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             return getattr(result, 'details', '') or ''
         return ''
 
+    def _run_custom_action_logged(self, action, resourceid, parameters=None):
+        """Run a custom action and log the request/response for smoke debugging."""
+        action_name = getattr(action, 'name', None) or getattr(action, 'customactionname', None) or str(action)
+        action_id = getattr(action, 'id', None)
+        self.logger.info(
+            "runCustomAction command: action=%s id=%s resourceid=%s parameters=%s",
+            action_name,
+            action_id,
+            resourceid,
+            parameters if parameters is not None else []
+        )
+        if parameters is None:
+            out = action.run(self.apiclient, resourceid=resourceid)
+        else:
+            out = action.run(self.apiclient, resourceid=resourceid, parameters=parameters)
+        result = getattr(out, 'result', None)
+        message = ''
+        if isinstance(result, dict):
+            message = result.get('message', '') or ''
+        elif hasattr(result, '__dict__'):
+            message = getattr(result, 'message', '') or ''
+        self.logger.info(
+            "runCustomAction output: action=%s success=%s message=%s details=%s raw=%s",
+            action_name,
+            getattr(out, 'success', None),
+            message,
+            self._custom_action_details(out),
+            out
+        )
+        return out
+
     @classmethod
     def setUpClass(cls):
         testClient = super(TestNetworkExtensionNamespace, cls).getClsTestClient()
@@ -2228,27 +2259,27 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             ])
 
             # 1) Create and list routing table
-            out = act_create_table.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_create_table,
                 resourceid=network.id,
                 parameters=[{"table-id": "100", "table-name": table_name}],
             )
             self.assertTrue(getattr(out, 'success', False), "pbr-create-table should succeed")
 
-            out = act_list_tables.run(self.apiclient, resourceid=network.id)
+            out = self._run_custom_action_logged(act_list_tables, resourceid=network.id)
             self.assertTrue(getattr(out, 'success', False), "pbr-list-tables should succeed")
             self.assertIn(table_name, self._custom_action_details(out))
 
             # 2) Add and list route in table
-            out = act_add_route.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_add_route,
                 resourceid=network.id,
                 parameters=[{"table": table_name, "route": "blackhole %s" % route_cidr}],
             )
             self.assertTrue(getattr(out, 'success', False), "pbr-add-route should succeed")
 
-            out = act_list_routes.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_list_routes,
                 resourceid=network.id,
                 parameters=[{"table": table_name}],
             )
@@ -2256,15 +2287,15 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             self.assertIn(route_cidr, self._custom_action_details(out))
 
             # 3) Add and list policy rule
-            out = act_add_rule.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_add_rule,
                 resourceid=network.id,
                 parameters=[{"table": table_name, "rule": "to %s" % route_cidr}],
             )
             self.assertTrue(getattr(out, 'success', False), "pbr-add-rule should succeed")
 
-            out = act_list_rules.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_list_rules,
                 resourceid=network.id,
                 parameters=[{"table": table_name}],
             )
@@ -2272,22 +2303,22 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             self.assertIn(table_name, self._custom_action_details(out))
 
             # 4) Delete policy rule, route, and table
-            out = act_delete_rule.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_delete_rule,
                 resourceid=network.id,
                 parameters=[{"table": table_name, "rule": "to %s" % route_cidr}],
             )
             self.assertTrue(getattr(out, 'success', False), "pbr-delete-rule should succeed")
 
-            out = act_delete_route.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_delete_route,
                 resourceid=network.id,
                 parameters=[{"table": table_name, "route": "blackhole %s" % route_cidr}],
             )
             self.assertTrue(getattr(out, 'success', False), "pbr-delete-route should succeed")
 
-            out = act_delete_table.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_delete_table,
                 resourceid=network.id,
                 parameters=[{"table-name": table_name}],
             )
@@ -2748,27 +2779,27 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             ])
 
             # 1) Create and list routing table
-            out = act_create_table.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_create_table,
                 resourceid=vpc.id,
                 parameters=[{"table-id": "100", "table-name": table_name}],
             )
             self.assertTrue(getattr(out, 'success', False), "pbr-create-table should succeed")
 
-            out = act_list_tables.run(self.apiclient, resourceid=vpc.id)
+            out = self._run_custom_action_logged(act_list_tables, resourceid=vpc.id)
             self.assertTrue(getattr(out, 'success', False), "pbr-list-tables should succeed")
             self.assertIn(table_name, self._custom_action_details(out))
 
             # 2) Add and list route in table
-            out = act_add_route.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_add_route,
                 resourceid=vpc.id,
                 parameters=[{"table": table_name, "route": "blackhole %s" % route_cidr}],
             )
             self.assertTrue(getattr(out, 'success', False), "pbr-add-route should succeed")
 
-            out = act_list_routes.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_list_routes,
                 resourceid=vpc.id,
                 parameters=[{"table": table_name}],
             )
@@ -2776,15 +2807,15 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             self.assertIn(route_cidr, self._custom_action_details(out))
 
             # 3) Add and list policy rule
-            out = act_add_rule.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_add_rule,
                 resourceid=vpc.id,
                 parameters=[{"table": table_name, "rule": "to %s" % route_cidr}],
             )
             self.assertTrue(getattr(out, 'success', False), "pbr-add-rule should succeed")
 
-            out = act_list_rules.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_list_rules,
                 resourceid=vpc.id,
                 parameters=[{"table": table_name}],
             )
@@ -2792,22 +2823,22 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
             self.assertIn(table_name, self._custom_action_details(out))
 
             # 4) Delete policy rule, route, and table
-            out = act_delete_rule.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_delete_rule,
                 resourceid=vpc.id,
                 parameters=[{"table": table_name, "rule": "to %s" % route_cidr}],
             )
             self.assertTrue(getattr(out, 'success', False), "pbr-delete-rule should succeed")
 
-            out = act_delete_route.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_delete_route,
                 resourceid=vpc.id,
                 parameters=[{"table": table_name, "route": "blackhole %s" % route_cidr}],
             )
             self.assertTrue(getattr(out, 'success', False), "pbr-delete-route should succeed")
 
-            out = act_delete_table.run(
-                self.apiclient,
+            out = self._run_custom_action_logged(
+                act_delete_table,
                 resourceid=vpc.id,
                 parameters=[{"table-name": table_name}],
             )
