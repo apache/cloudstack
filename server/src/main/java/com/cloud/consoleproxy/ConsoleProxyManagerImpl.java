@@ -1525,9 +1525,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             return false;
         }
 
-        List<ConsoleProxyVO> l = consoleProxyDao.getProxyListInStates(dataCenterId, State.Starting, State.Stopping);
-        if (!l.isEmpty()) {
-            logger.debug("Zone {} has {} console proxy VM(s) in transition state.", zone, l.size());
+        List<ConsoleProxyVO> consoleProxiesInTransitionStates = consoleProxyDao.getProxyListInStates(dataCenterId, State.Starting, State.Stopping);
+        if (!consoleProxiesInTransitionStates.isEmpty()) {
+            logger.debug("Zone {} has {} console proxy VM(s) in transition state.", zone, consoleProxiesInTransitionStates.size());
             return false;
         }
 
