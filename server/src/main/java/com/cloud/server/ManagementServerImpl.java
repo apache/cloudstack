@@ -43,6 +43,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.query.MutualExclusiveIdsManagerBase;
+import com.cloud.network.vpc.VpcVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -831,7 +833,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLifecycle;
-import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
@@ -874,7 +875,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDetailsDao;
 
-public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
+public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implements ManagementServer, Configurable {
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
     static final String FOR_SYSTEMVMS = "forsystemvms";
@@ -2649,12 +2650,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (associatedNetworkId != null) {
-            _accountMgr.checkAccess(caller, null, false, networkDao.findById(associatedNetworkId));
-            sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+            NetworkVO associatedNetwork = networkDao.findById(associatedNetworkId);
+
+            if (associatedNetwork != null) {
+                _accountMgr.checkAccess(caller, null, false, associatedNetwork);
+                sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
+            }
         }
+
         if (vpcId != null) {
-            _accountMgr.checkAccess(caller, null, false, _vpcDao.findById(vpcId));
-            sc.setParameters("vpcId", vpcId);
+            VpcVO vpc = _vpcDao.findById(vpcId);
+
+            if (vpc != null) {
+                _accountMgr.checkAccess(caller, null, false, vpc);
+                sc.setParameters("vpcId", vpcId);
+            }
         }
 
         addrs = _publicIpAddressDao.search(sc, searchFilter); // Allocated
@@ -2671,12 +2681,15 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
             if (associatedNetworkId != null) {
                 NetworkVO guestNetwork = networkDao.findById(associatedNetworkId);
-                if (zoneId == null) {
-                    zoneId = guestNetwork.getDataCenterId();
-                } else if (zoneId != guestNetwork.getDataCenterId()) {
-                    throw new InvalidParameterValueException("Please specify a valid associated network id in the specified zone.");
+
+                if (guestNetwork != null) {
+                    if (zoneId == null) {
+                        zoneId = guestNetwork.getDataCenterId();
+                    } else if (zoneId != guestNetwork.getDataCenterId()) {
+                        throw new InvalidParameterValueException("Please specify a valid associated network id in the specified zone.");
+                    }
+                    owner = _accountDao.findById(guestNetwork.getAccountId());
                 }
-                owner = _accountDao.findById(guestNetwork.getAccountId());
             }
             List<DataCenterVO> dcList = new ArrayList<>();
             if (zoneId == null){
@@ -2885,7 +2898,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(final ListGuestOsCmd cmd) {
-        final Long id = cmd.getId();
+        List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
         final Long osCategoryId = cmd.getOsCategoryId();
         final String description = cmd.getDescription();
         final String keyword = cmd.getKeyword();
@@ -2893,7 +2906,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long pageSize = cmd.getPageSizeVal();
         Boolean forDisplay = cmd.getDisplay();
 
-        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, id, osCategoryId, description, keyword, forDisplay);
+        return _guestOSDao.listGuestOSByCriteria(startIndex, pageSize, ids, osCategoryId, description, keyword, forDisplay);
     }
 
     @Override
@@ -3025,27 +3038,40 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Hypervisor version parameter cannot be used without specifying a hypervisor : XenServer, KVM or VMware");
         }
 
-        final SearchCriteria<GuestOSHypervisorVO> sc = _guestOSHypervisorDao.createSearchCriteria();
+        SearchBuilder<GuestOSHypervisorVO> sb = _guestOSHypervisorDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("guestOsName", sb.entity().getGuestOsName(), SearchCriteria.Op.LIKE);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.LIKE);
+        sb.and("hypervisorVersion", sb.entity().getHypervisorVersion(), SearchCriteria.Op.LIKE);
+        sb.and(guestOsId, sb.entity().getGuestOsId(), SearchCriteria.Op.EQ);
+        SearchBuilder<GuestOSVO> guestOSSearch = _guestOSDao.createSearchBuilder();
+        guestOSSearch.and("display", guestOSSearch.entity().isDisplay(), SearchCriteria.Op.LIKE);
+        sb.join("guestOSSearch", guestOSSearch, sb.entity().getGuestOsId(), guestOSSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+
+        final SearchCriteria<GuestOSHypervisorVO> sc = sb.create();
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", SearchCriteria.Op.EQ, id);
         }
 
         if (osTypeId != null) {
-            sc.addAnd(guestOsId, SearchCriteria.Op.EQ, osTypeId);
+            sc.setParameters(guestOsId, osTypeId);
         }
 
         if (osNameForHypervisor != null) {
-            sc.addAnd("guestOsName", SearchCriteria.Op.LIKE, "%" + osNameForHypervisor + "%");
+            sc.setParameters("guestOsName", "%" + osNameForHypervisor + "%");
         }
 
         if (hypervisor != null) {
-            sc.addAnd("hypervisorType", SearchCriteria.Op.LIKE, "%" + hypervisor + "%");
+            sc.setParameters("hypervisorType", "%" + hypervisor + "%");
         }
 
         if (hypervisorVersion != null) {
-            sc.addAnd("hypervisorVersion", SearchCriteria.Op.LIKE, "%" + hypervisorVersion + "%");
+            sc.setParameters("hypervisorVersion", "%" + hypervisorVersion + "%");
         }
+
+        // Exclude the mappings for guest OS marked as display = false
+        sc.setJoinParameters("guestOSSearch", "display", true);
 
         if (osDisplayName != null) {
             List<GuestOSVO> guestOSVOS = _guestOSDao.listLikeDisplayName(osDisplayName);
