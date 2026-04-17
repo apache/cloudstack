@@ -5945,7 +5945,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     /**
      * Create or overwrite a parameter in the list
      * @param params the list of parameters
-     * @param parameter the parameter to creat/overwrite
+     * @param parameter the parameter to create/overwrite
      * @param parameterValue the value to give to the parameter
      * @return the resulting updated list of parameters
      */
