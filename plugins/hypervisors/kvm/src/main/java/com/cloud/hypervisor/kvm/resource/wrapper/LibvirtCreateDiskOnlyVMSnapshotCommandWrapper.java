@@ -41,6 +41,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.File;
@@ -315,11 +317,31 @@ public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
 
     protected void verifyVmFilesystemsFrozen(Domain domain, String vmName) throws LibvirtException, IOException {
         String status = getResultOfQemuCommand(FreezeThawVMCommand.STATUS, domain);
-        if (StringUtils.isBlank(status) || !new JsonParser().parse(status).isJsonObject()) {
+        if (StringUtils.isBlank(status)) {
             throw new IOException(String.format("Failed to verify VM [%s] filesystem freeze state before taking the disk-only VM snapshot. Result: %s", vmName, status));
         }
 
-        String statusResult = new JsonParser().parse(status).getAsJsonObject().get("return").getAsString();
+        JsonObject statusObject;
+        try {
+            JsonElement statusElement = new JsonParser().parse(status);
+            if (!statusElement.isJsonObject()) {
+                throw new IOException(String.format("Failed to verify VM [%s] filesystem freeze state before taking the disk-only VM snapshot. Result: %s", vmName, status));
+            }
+            statusObject = statusElement.getAsJsonObject();
+        } catch (RuntimeException e) {
+            throw new IOException(String.format("Failed to verify VM [%s] filesystem freeze state before taking the disk-only VM snapshot. Result: %s", vmName, status), e);
+        }
+
+        if (statusObject.has("error")) {
+            throw new IOException(String.format("Failed to verify VM [%s] filesystem freeze state before taking the disk-only VM snapshot. Result: %s", vmName, status));
+        }
+
+        JsonElement returnElement = statusObject.get("return");
+        if (returnElement == null || !returnElement.isJsonPrimitive() || !returnElement.getAsJsonPrimitive().isString()) {
+            throw new IOException(String.format("Failed to verify VM [%s] filesystem freeze state before taking the disk-only VM snapshot. Result: %s", vmName, status));
+        }
+
+        String statusResult = returnElement.getAsString();
         if (!FreezeThawVMCommand.FREEZE.equals(statusResult)) {
             throw new IOException(String.format("Failed to freeze VM [%s] filesystems before taking the disk-only VM snapshot. Status: %s", vmName, statusResult));
         }

@@ -470,6 +470,80 @@ public class LibvirtDiskOnlyVMSnapshotCommandWrapperTest {
     }
 
     @Test
+    public void testVerifyVmFilesystemsFrozenFailsForQemuErrorResponse() throws Exception {
+        LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper() {
+            @Override
+            protected String getResultOfQemuCommand(String cmd, Domain domain) {
+                return "{\"error\":{\"class\":\"GenericError\",\"desc\":\"guest agent failure\"}}";
+            }
+        };
+
+        try {
+            wrapper.verifyVmFilesystemsFrozen(mock(Domain.class), "vm-name");
+            fail("QEMU guest agent error responses must be treated as IO failures.");
+        } catch (IOException e) {
+            assertTrue(e.getMessage().contains("Failed to verify VM [vm-name] filesystem freeze state"));
+        }
+    }
+
+    @Test
+    public void testTakeDiskOnlyVmSnapshotOfRunningVmReturnsFailureAnswerWhenFreezeStatusJsonIsMalformed() throws Exception {
+        final boolean[] thawCalled = {false};
+        LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper() {
+            @Override
+            protected Pair<String, java.util.Map<String, Pair<Long, String>>> createSnapshotXmlAndNewVolumePathMap(List<VolumeObjectTO> volumeObjectTOS,
+                    List<com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef> disks, VMSnapshotTO target, LibvirtComputingResource resource) {
+                return new Pair<>("<domainsnapshot/>", Collections.emptyMap());
+            }
+
+            @Override
+            protected boolean shouldSuspendVmForSnapshot(CreateDiskOnlyVmSnapshotCommand cmd) {
+                return false;
+            }
+
+            @Override
+            protected boolean shouldFreezeVmFilesystemsForSnapshot(CreateDiskOnlyVmSnapshotCommand cmd) {
+                return true;
+            }
+
+            @Override
+            protected void freezeVmFilesystems(Domain domain, String vmName) {
+            }
+
+            @Override
+            protected String getResultOfQemuCommand(String cmd, Domain domain) {
+                return "not-json";
+            }
+
+            @Override
+            protected boolean thawVmFilesystemsIfNeeded(Domain domain, String vmName) {
+                thawCalled[0] = true;
+                return true;
+            }
+        };
+        LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+        LibvirtUtilitiesHelper libvirtUtilitiesHelper = mock(LibvirtUtilitiesHelper.class);
+        org.libvirt.Connect connect = mock(org.libvirt.Connect.class);
+        Domain domain = mock(Domain.class);
+        CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+        VMSnapshotTO target = mock(VMSnapshotTO.class);
+
+        when(command.getVmName()).thenReturn("vm-name");
+        when(command.getVolumeTOs()).thenReturn(List.of());
+        when(command.getTarget()).thenReturn(target);
+        when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+        when(libvirtUtilitiesHelper.getConnection()).thenReturn(connect);
+        when(resource.getDisks(connect, "vm-name")).thenReturn(List.of());
+        when(resource.getDomain(connect, "vm-name")).thenReturn(domain);
+
+        CreateDiskOnlyVmSnapshotAnswer answer = (CreateDiskOnlyVmSnapshotAnswer) wrapper.takeDiskOnlyVmSnapshotOfRunningVm(command, resource);
+
+        assertFalse(answer.getResult());
+        assertTrue(answer.getDetails().contains("Failed to verify VM [vm-name] filesystem freeze state"));
+        assertTrue("Thaw must be attempted when freeze verification fails on malformed JSON", thawCalled[0]);
+    }
+
+    @Test
     public void testTakeDiskOnlyVmSnapshotOfRunningVmSuspendsBeforeNvramCopyForQuiescedUefiSnapshots() throws Exception {
         List<String> operations = new ArrayList<>();
         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper() {
