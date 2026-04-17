@@ -438,7 +438,7 @@ public class FirstFitAllocatorTest {
   }
 
   @Test
-  public void prioritizeHostsByGpuEnabledTestServiceOfferingRequestedVGpuShouldDoNothing() {
+  public void prioritizeHostsByGpuEnabledTestServiceOfferingRequestedVGpuViaDetailShouldDoNothing() {
     List<Host> hosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
     ServiceOfferingDetailsVO requestedVGpuType = mock(ServiceOfferingDetailsVO.class);
 
@@ -452,11 +452,24 @@ public class FirstFitAllocatorTest {
   }
 
   @Test
+  public void prioritizeHostsByGpuEnabledTestServiceOfferingRequestedVGpuViaProfileIdShouldDoNothing() {
+    List<Host> hosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
+
+    Mockito.doReturn(1L).when(serviceOffering).getVgpuProfileId();
+    firstFitAllocatorSpy.prioritizeHostsByGpuEnabled(serviceOffering, hosts);
+
+    Assert.assertEquals(3, hosts.size());
+    Assert.assertEquals(host1, hosts.get(0));
+    Assert.assertEquals(host2, hosts.get(1));
+    Assert.assertEquals(host3, hosts.get(2));
+  }
+
+  @Test
   public void prioritizeHostsByGpuEnabledTestServiceOfferingDidNotRequestVGpuShouldReorderList() {
     List<Host> allHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
-    ServiceOfferingDetailsVO requestedVGpuType = null;
 
-    Mockito.doReturn(requestedVGpuType).when(serviceOfferingDetailsDao).findDetail(Mockito.anyLong(), Mockito.anyString());
+    Mockito.doReturn(null).when(serviceOfferingDetailsDao).findDetail(Mockito.anyLong(), Mockito.anyString());
+    Mockito.doReturn(null).when(serviceOffering).getVgpuProfileId();
     Mockito.doReturn(1L).when(host1).getId();
     Mockito.doReturn(2L).when(host2).getId();
     Mockito.doReturn(3L).when(host3).getId();
@@ -474,9 +487,9 @@ public class FirstFitAllocatorTest {
   @Test
   public void prioritizeHostsByGpuEnabledTestServiceOfferingDidNotRequestVGpuShouldNotReorderListIfThereIsNoHostWithVGpu() {
     List<Host> allHosts = new ArrayList<>(Arrays.asList(host1, host2, host3));
-    ServiceOfferingDetailsVO requestedVGpuType = null;
 
-    Mockito.doReturn(requestedVGpuType).when(serviceOfferingDetailsDao).findDetail(Mockito.anyLong(), Mockito.anyString());
+    Mockito.doReturn(null).when(serviceOfferingDetailsDao).findDetail(Mockito.anyLong(), Mockito.anyString());
+    Mockito.doReturn(null).when(serviceOffering).getVgpuProfileId();
     Mockito.doReturn(1L).when(host1).getId();
     Mockito.doReturn(2L).when(host2).getId();
     Mockito.doReturn(3L).when(host3).getId();
