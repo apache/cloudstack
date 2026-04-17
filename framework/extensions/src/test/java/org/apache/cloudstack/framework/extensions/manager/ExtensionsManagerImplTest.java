@@ -40,6 +40,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import java.io.File;
 import java.security.InvalidParameterException;
@@ -136,6 +137,8 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.NetworkElement;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import org.apache.cloudstack.extension.NetworkCustomActionProvider;
 import com.cloud.org.Cluster;
 import com.cloud.serializer.GsonHelper;
@@ -206,6 +209,8 @@ public class ExtensionsManagerImplTest {
     private NetworkDao networkDao;
     @Mock
     private NetworkServiceMapDao networkServiceMapDao;
+    @Mock
+    private VpcServiceMapDao vpcServiceMapDao;
     @Mock
     private NetworkModel networkModel;
 
@@ -1828,6 +1833,231 @@ public class ExtensionsManagerImplTest {
 
             assertFalse(result.getSuccess());
         }
+    }
+
+    @Test
+    public void runNetworkCustomAction_NoProviderFound_ReturnsFailureResponse() {
+        Network network = mock(Network.class);
+        when(network.getId()).thenReturn(11L);
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(actionVO.getId()).thenReturn(10L);
+        when(actionVO.getUuid()).thenReturn("action-uuid");
+        when(actionVO.getName()).thenReturn("dump-config");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(10L))
+                .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+
+        CustomActionResultResponse response = extensionsManager.runNetworkCustomAction(
+                network, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Network, Collections.emptyMap());
+
+        assertFalse(response.getSuccess());
+        assertEquals("No network service provider found for this network", response.getResult().get(ApiConstants.DETAILS));
+    }
+
+    @Test
+    public void runNetworkCustomAction_ProviderElementMissing_ReturnsFailureResponse() {
+        Network network = mock(Network.class);
+        when(network.getId()).thenReturn(12L);
+        when(networkServiceMapDao.getProviderForServiceInNetwork(12L, Network.Service.CustomAction)).thenReturn("ExtProvider");
+        when(networkModel.getElementImplementingProvider("ExtProvider")).thenReturn(null);
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(actionVO.getId()).thenReturn(11L);
+        when(actionVO.getUuid()).thenReturn("action-uuid");
+        when(actionVO.getName()).thenReturn("dump-config");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(11L))
+                .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+
+        CustomActionResultResponse response = extensionsManager.runNetworkCustomAction(
+                network, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Network, Collections.emptyMap());
+
+        assertFalse(response.getSuccess());
+        assertEquals("No network element found for provider: ExtProvider", response.getResult().get(ApiConstants.DETAILS));
+    }
+
+    @Test
+    public void runNetworkCustomAction_ProviderCannotHandle_ReturnsFailureResponse() {
+        Network network = mock(Network.class);
+        when(network.getId()).thenReturn(13L);
+        when(networkServiceMapDao.getProviderForServiceInNetwork(13L, Network.Service.CustomAction)).thenReturn("ExtProvider");
+
+        NetworkElement element = mock(NetworkElement.class, withSettings().extraInterfaces(NetworkCustomActionProvider.class));
+        NetworkCustomActionProvider provider = (NetworkCustomActionProvider) element;
+        when(networkModel.getElementImplementingProvider("ExtProvider")).thenReturn(element);
+        when(provider.canHandleCustomAction(network)).thenReturn(false);
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(actionVO.getId()).thenReturn(12L);
+        when(actionVO.getUuid()).thenReturn("action-uuid");
+        when(actionVO.getName()).thenReturn("dump-config");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(12L))
+                .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+
+        CustomActionResultResponse response = extensionsManager.runNetworkCustomAction(
+                network, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Network, Collections.emptyMap());
+
+        assertFalse(response.getSuccess());
+        assertTrue(response.getResult().get(ApiConstants.DETAILS).contains("cannot handle custom action"));
+    }
+
+    @Test
+    public void runNetworkCustomAction_ProviderDoesNotImplementCustomAction_ReturnsFailureResponse() {
+        Network network = mock(Network.class);
+        when(network.getId()).thenReturn(131L);
+        when(networkServiceMapDao.getProviderForServiceInNetwork(131L, Network.Service.CustomAction)).thenReturn("ExtProvider");
+
+        NetworkElement element = mock(NetworkElement.class);
+        when(networkModel.getElementImplementingProvider("ExtProvider")).thenReturn(element);
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(actionVO.getId()).thenReturn(121L);
+        when(actionVO.getUuid()).thenReturn("action-uuid");
+        when(actionVO.getName()).thenReturn("dump-config");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(121L))
+                .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+
+        CustomActionResultResponse response = extensionsManager.runNetworkCustomAction(
+                network, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Network, Collections.emptyMap());
+
+        assertFalse(response.getSuccess());
+        assertTrue(response.getResult().get(ApiConstants.DETAILS).contains("does not support custom actions"));
+    }
+
+    @Test
+    public void runNetworkCustomAction_SuccessfulExecution_ReturnsSuccessResponse() {
+        Network network = mock(Network.class);
+        when(network.getId()).thenReturn(14L);
+        when(networkServiceMapDao.getProviderForServiceInNetwork(14L, Network.Service.CustomAction)).thenReturn("ExtProvider");
+
+        NetworkElement element = mock(NetworkElement.class, withSettings().extraInterfaces(NetworkCustomActionProvider.class));
+        NetworkCustomActionProvider provider = (NetworkCustomActionProvider) element;
+        when(networkModel.getElementImplementingProvider("ExtProvider")).thenReturn(element);
+        when(provider.canHandleCustomAction(network)).thenReturn(true);
+        when(provider.runCustomAction(eq(network), eq("dump-config"), any())).thenReturn("dump-output");
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(actionVO.getId()).thenReturn(13L);
+        when(actionVO.getUuid()).thenReturn("action-uuid");
+        when(actionVO.getName()).thenReturn("dump-config");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(13L))
+                .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+
+        CustomActionResultResponse response = extensionsManager.runNetworkCustomAction(
+                network, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Network, Collections.emptyMap());
+
+        assertTrue(response.getSuccess());
+        assertEquals("dump-output", response.getResult().get(ApiConstants.DETAILS));
+    }
+
+    @Test
+    public void runVpcCustomAction_ProviderNotCustomActionProvider_ReturnsFailureResponse() {
+        Vpc vpc = mock(Vpc.class);
+        when(vpc.getId()).thenReturn(21L);
+        when(vpcServiceMapDao.getProviderForServiceInVpc(21L, Network.Service.CustomAction)).thenReturn("VpcProvider");
+
+        NetworkElement element = mock(NetworkElement.class);
+        when(networkModel.getElementImplementingProvider("VpcProvider")).thenReturn(element);
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(actionVO.getId()).thenReturn(20L);
+        when(actionVO.getUuid()).thenReturn("action-uuid");
+        when(actionVO.getName()).thenReturn("dump-config");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(20L))
+                .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+
+        CustomActionResultResponse response = extensionsManager.runVpcCustomAction(
+                vpc, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Vpc, Collections.emptyMap());
+
+        assertFalse(response.getSuccess());
+        assertTrue(response.getResult().get(ApiConstants.DETAILS).contains("does not support custom actions"));
+    }
+
+    @Test
+    public void runVpcCustomAction_NoProviderFound_ReturnsFailureResponse() {
+        Vpc vpc = mock(Vpc.class);
+        when(vpc.getId()).thenReturn(211L);
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(actionVO.getId()).thenReturn(201L);
+        when(actionVO.getUuid()).thenReturn("action-uuid");
+        when(actionVO.getName()).thenReturn("dump-config");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(201L))
+                .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+
+        CustomActionResultResponse response = extensionsManager.runVpcCustomAction(
+                vpc, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Vpc, Collections.emptyMap());
+
+        assertFalse(response.getSuccess());
+        assertEquals("No VPC service provider found for this VPC", response.getResult().get(ApiConstants.DETAILS));
+    }
+
+    @Test
+    public void runVpcCustomAction_ProviderCannotHandleVpc_ReturnsFailureResponse() {
+        Vpc vpc = mock(Vpc.class);
+        when(vpc.getId()).thenReturn(212L);
+        when(vpcServiceMapDao.getProviderForServiceInVpc(212L, Network.Service.CustomAction)).thenReturn("VpcProvider");
+
+        NetworkElement element = mock(NetworkElement.class, withSettings().extraInterfaces(NetworkCustomActionProvider.class));
+        NetworkCustomActionProvider provider = (NetworkCustomActionProvider) element;
+        when(networkModel.getElementImplementingProvider("VpcProvider")).thenReturn(element);
+        when(provider.canHandleVpcCustomAction(vpc)).thenReturn(false);
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(actionVO.getId()).thenReturn(202L);
+        when(actionVO.getUuid()).thenReturn("action-uuid");
+        when(actionVO.getName()).thenReturn("dump-config");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(202L))
+                .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+
+        CustomActionResultResponse response = extensionsManager.runVpcCustomAction(
+                vpc, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Vpc, Collections.emptyMap());
+
+        assertFalse(response.getSuccess());
+        assertTrue(response.getResult().get(ApiConstants.DETAILS).contains("cannot handle custom action"));
+    }
+
+    @Test
+    public void runVpcCustomAction_SuccessfulExecution_ReturnsSuccessResponse() {
+        Vpc vpc = mock(Vpc.class);
+        when(vpc.getId()).thenReturn(22L);
+        when(vpcServiceMapDao.getProviderForServiceInVpc(22L, Network.Service.CustomAction)).thenReturn("VpcProvider");
+
+        NetworkElement element = mock(NetworkElement.class, withSettings().extraInterfaces(NetworkCustomActionProvider.class));
+        NetworkCustomActionProvider provider = (NetworkCustomActionProvider) element;
+        when(networkModel.getElementImplementingProvider("VpcProvider")).thenReturn(element);
+        when(provider.canHandleVpcCustomAction(vpc)).thenReturn(true);
+        when(provider.runCustomAction(eq(vpc), eq("dump-config"), any())).thenReturn("vpc-dump-output");
+
+        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+        when(actionVO.getId()).thenReturn(21L);
+        when(actionVO.getUuid()).thenReturn("action-uuid");
+        when(actionVO.getName()).thenReturn("dump-config");
+        when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(21L))
+                .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+
+        ExtensionVO extensionVO = mock(ExtensionVO.class);
+
+        CustomActionResultResponse response = extensionsManager.runVpcCustomAction(
+                vpc, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Vpc, Collections.emptyMap());
+
+        assertTrue(response.getSuccess());
+        assertEquals("vpc-dump-output", response.getResult().get(ApiConstants.DETAILS));
     }
 
     @Test
