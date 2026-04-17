@@ -106,7 +106,7 @@ public class KeycloakOAuth2ProviderTest {
     @Test(expected = CloudRuntimeException.class)
     public void testVerifyCodeAndFetchEmailNetworkFailure() throws IOException {
         when(oauthProviderDao.findByProvider("keycloak")).thenReturn(mockProviderVO);
-        when(httpClient.execute(any(HttpPost.class))).thenThrow(new IOException("Connexion refusée"));
+        when(httpClient.execute(any(HttpPost.class))).thenThrow(new IOException("Connection refused"));
 
         provider.verifyCodeAndFetchEmail("code");
     }
