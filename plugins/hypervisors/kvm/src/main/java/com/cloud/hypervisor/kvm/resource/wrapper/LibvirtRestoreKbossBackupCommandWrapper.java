@@ -34,7 +34,6 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.jetbrains.annotations.NotNull;
 import org.libvirt.LibvirtException;
 
 import java.io.IOException;
