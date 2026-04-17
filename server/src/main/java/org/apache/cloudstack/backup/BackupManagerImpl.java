@@ -1083,18 +1083,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
                 resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
             }
-        } catch (Exception e) {
-            if (e instanceof ResourceAllocationException) {
-                ResourceAllocationException rae = (ResourceAllocationException)e;
-                if (isScheduledBackup && (Resource.ResourceType.backup.equals(rae.getResourceType()) ||
-                        Resource.ResourceType.backup_storage.equals(rae.getResourceType()))) {
-                    sendExceededBackupLimitAlert(owner.getUuid(), rae.getResourceType());
-                }
-                throw rae;
-            } else if (e instanceof CloudRuntimeException) {
-                throw (CloudRuntimeException)e;
+        } catch (ResourceAllocationException e) {
+            if (isScheduledBackup && (Resource.ResourceType.backup.equals(e.getResourceType()) ||
+                    Resource.ResourceType.backup_storage.equals(e.getResourceType()))) {
+                sendExceededBackupLimitAlert(owner.getUuid(), e.getResourceType());
             }
-            throw new CloudRuntimeException("Failed to create backup for VM with ID: " + vm.getUuid(), e);
+            throw e;
         }
     }
 
@@ -1147,7 +1141,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
      * @param vmId The ID of the VM associated with the backups
      * @param backupScheduleId Backup schedule ID of the backups
      */
-    protected void deleteOldestBackupFromScheduleIfRequired(Long vmId, long backupScheduleId) {
+    protected void deleteOldestBackupFromScheduleIfRequired(Long vmId, long backupScheduleId) throws ResourceAllocationException {
         BackupScheduleVO backupScheduleVO = backupScheduleDao.findById(backupScheduleId);
         if (backupScheduleVO == null || backupScheduleVO.getMaxBackups() == 0) {
             logger.info("The schedule does not have a retention specified and, hence, not deleting any backups from it.", vmId);
@@ -1171,7 +1165,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
      * @param amountOfBackupsToDelete Number of backups to be deleted from the list of backups
      * @param backupScheduleId ID of the backup schedule associated with the backups
      */
-    protected void deleteExcessBackups(List<BackupVO> backups, int amountOfBackupsToDelete, long backupScheduleId) {
+    protected void deleteExcessBackups(List<BackupVO> backups, int amountOfBackupsToDelete, long backupScheduleId) throws ResourceAllocationException {
         logger.debug("Deleting the [{}] oldest backups from the schedule [ID: {}].", amountOfBackupsToDelete, backupScheduleId);
 
         for (int i = 0; i < amountOfBackupsToDelete; i++) {
@@ -1815,7 +1809,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_DELETE, eventDescription = "deleting VM backup", async = true)
-    public boolean deleteBackup(final Long backupId, final Boolean forced) {
+    public boolean deleteBackup(final Long backupId, final Boolean forced) throws ResourceAllocationException {
         final BackupVO backup = backupDao.findByIdIncludingRemoved(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
@@ -1840,7 +1834,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return deleteCheckedBackup(forced, backupProvider, backup, vm);
     }
 
-    private boolean deleteCheckedBackup(Boolean forced, BackupProvider backupProvider, BackupVO backup, VMInstanceVO vm) {
+    private boolean deleteCheckedBackup(Boolean forced, BackupProvider backupProvider, BackupVO backup, VMInstanceVO vm) throws ResourceAllocationException {
         Account owner = accountManager.getAccount(backup.getAccountId());
         long backupSize = backup.getSize() != null ? backup.getSize() : 0L;
         try (CheckedReservation backupReservation = new CheckedReservation(owner, Resource.ResourceType.backup,
@@ -1860,11 +1854,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 }
             }
             throw new CloudRuntimeException("Failed to delete the backup");
-        } catch (Exception e) {
-            if (e instanceof CloudRuntimeException) {
-                throw (CloudRuntimeException) e;
-            }
-            throw new CloudRuntimeException("Failed to delete the backup due to: " + e.getMessage(), e);
         }
     }
 
