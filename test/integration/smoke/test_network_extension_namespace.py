@@ -2839,4 +2839,3 @@ class TestNetworkExtensionNamespace(cloudstackTestCase):
                 self._teardown_extension()
             except Exception:
                 pass
-
