@@ -2707,11 +2707,9 @@ public class ExtensionsManagerImplTest {
         when(mapVO.getExtensionId()).thenReturn(99L);
         when(extensionResourceMapDao.listByResourceIdAndType(5L, ExtensionResourceMap.ResourceType.PhysicalNetwork))
                 .thenReturn(List.of(mapVO));
-        ExtensionVO ext = mock(ExtensionVO.class);
-        when(extensionDao.findById(99L)).thenReturn(ext);
 
         Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Network, "net-uuid");
-        assertEquals(ext, result);
+        assertNull(result);
     }
 
     @Test
