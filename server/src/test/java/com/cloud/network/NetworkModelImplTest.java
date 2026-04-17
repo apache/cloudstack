@@ -60,6 +60,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.vpc.VpcVO;
@@ -391,7 +392,7 @@ public class NetworkModelImplTest {
 
     @Test
     public void listSupportedNetworkServiceProvidersIncludesExtensionBackedProviders() {
-        com.cloud.network.dao.PhysicalNetworkVO physNet = mock(com.cloud.network.dao.PhysicalNetworkVO.class);
+        PhysicalNetworkVO physNet = mock(PhysicalNetworkVO.class);
         when(physNet.getId()).thenReturn(1L);
         when(physicalNetworkDao.listAll()).thenReturn(List.of(physNet));
 

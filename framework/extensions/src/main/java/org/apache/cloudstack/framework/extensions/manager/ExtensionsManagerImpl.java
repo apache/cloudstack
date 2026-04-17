@@ -470,15 +470,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     }
                 }
             }
-            // Fallback: return the first extension registered on the physical network
-            List<ExtensionResourceMapVO> maps = extensionResourceMapDao.listByResourceIdAndType(
-                    physicalNetworkId, ExtensionResourceMap.ResourceType.PhysicalNetwork);
-            if (CollectionUtils.isEmpty(maps)) {
-                return null;
-            }
-            return extensionDao.findById(maps.get(0).getExtensionId());
+            return null;
         } else if (resourceType == ExtensionCustomAction.ResourceType.Vpc) {
-            com.cloud.network.vpc.Vpc vpc = (com.cloud.network.vpc.Vpc) object;
+            Vpc vpc = (Vpc) object;
             // Find extension via the VPC's tier networks
             List<NetworkVO> tierNetworks = networkDao.listByVpc(vpc.getId());
             if (CollectionUtils.isNotEmpty(tierNetworks)) {
@@ -1248,7 +1242,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (!parsed.isEmpty()) {
             return parsed;
         }
-        // Default: the full set of services NetworkExtensionElement supports
+        // Falls back to an empty set if not present
         return new HashSet<>();
     }
 

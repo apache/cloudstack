@@ -197,9 +197,6 @@ export default {
     }
   },
   computed: {
-    isExtensionTab () {
-      return this.registeredExtensions.some(ext => ext.name === this.tabKey)
-    },
     hardcodedNsps () {
       return [
         {
@@ -1168,9 +1165,6 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
-    },
-    _updateServicesFromExtension (extensionId) {
-      // No longer needed — services are derived from extension capabilities server-side
     },
     fetchData () {
       if (!this.resource || !('id' in this.resource)) {

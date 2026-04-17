@@ -68,7 +68,6 @@ import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -400,8 +399,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     MessageBus _messageBus;
     @Inject
     NetworkDetailsDao _networkDetailsDao;
-    @Inject
-    ExtensionsManager extensionsManager;
     @Inject
     LoadBalancerDao _loadBalancerDao;
     @Inject
