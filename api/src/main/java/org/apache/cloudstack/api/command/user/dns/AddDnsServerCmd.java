@@ -59,11 +59,11 @@ public class AddDnsServerCmd extends BaseCmd {
     private String provider;
 
     @Parameter(name = ApiConstants.DNS_USER_NAME, type = CommandType.STRING,
-            description = "Username or email associated with the external DNS provider account (used for authentication)")
+            description = "Username or email associated with the DNS provider account (used for authentication)")
     private String dnsUserName;
 
-    @Parameter(name = ApiConstants.API_KEY, required = true, type = CommandType.STRING, description = "API key or token for the external provider")
-    private String apiKey;
+    @Parameter(name = ApiConstants.DNS_API_KEY, required = true, type = CommandType.STRING, description = "API key or token for the DNS provider")
+    private String dnsApiKey;
 
     @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, description = "Port number of the external DNS server")
     private Integer port;
@@ -89,8 +89,8 @@ public class AddDnsServerCmd extends BaseCmd {
 
     public String getUrl() { return url; }
 
-    public String getApiKey() {
-        return apiKey;
+    public String getDnsApiKey() {
+        return dnsApiKey;
     }
 
     public Integer getPort() {

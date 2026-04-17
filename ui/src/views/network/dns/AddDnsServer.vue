@@ -60,9 +60,9 @@
             showSearch>
             <a-select-option
               v-for="provider in providers"
-              :key="provider.name || provider"
-              :value="provider.name || provider">
-              {{ provider.description || provider.name || provider }}
+              :key="provider.name"
+              :value="provider.name">
+              {{ provider.description || provider.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -80,15 +80,15 @@
             style="width: 100%" />
         </a-form-item>
 
-        <a-form-item name="apikey" ref="apikey">
+        <a-form-item name="dnsapikey" ref="dnsapikey">
           <template #label>
             <tooltip-label
-              :title="$t('label.dns.apikey')"
-              :tooltip="apiParams.apikey?.description" />
+              :title="$t('label.dns.dnsapikey')"
+              :tooltip="apiParams.dnsapikey?.description" />
           </template>
           <a-input-password
-            v-model:value="form.apikey"
-            :placeholder="apiParams.apikey?.description || 'Enter API Key'" />
+            v-model:value="form.dnsapikey"
+            :placeholder="apiParams.dnsapikey?.description || 'Enter API Key'" />
         </a-form-item>
 
         <a-form-item name="externalserverid" ref="externalserverid">
@@ -125,7 +125,8 @@
             mode="tags"
             style="width: 100%"
             :token-separators="[',', ' ']"
-            :placeholder="apiParams.nameservers?.description" />
+            :placeholder="apiParams.nameservers?.description"
+            @change="onNameserversChange" />
         </a-form-item>
 
         <a-form-item v-if="isAdminOrDomainAdmin()" name="ispublic" ref="ispublic">
@@ -154,6 +155,8 @@
 <script>
 import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+
+const FQDN_REGEX = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
 
 export default {
   name: 'AddDnsServer',
@@ -192,13 +195,15 @@ export default {
         { validator: this.validatePort }
       ],
       provider: [{ required: true, message: this.$t('message.error.required.input') }],
-      apikey: [{ required: true, message: this.$t('message.error.required.input') }],
+      dnsapikey: [{ required: true, message: this.$t('message.error.required.input') }],
       externalserverid: [{ required: true, message: this.$t('message.error.required.input') }],
       nameservers: [
         { required: true, type: 'array', min: 1, message: this.$t('message.error.required.input') },
         { validator: this.validateNameservers }
-      ],
-      publicdomainsuffix: [{ validator: this.validatePublicDomainSuffix }]
+      ]
+    }
+    if (this.isAdminOrDomainAdmin()) {
+      this.rules.publicdomainsuffix = [{ validator: this.validatePublicDomainSuffix }]
     }
     this.fetchProviders()
   },
@@ -217,16 +222,16 @@ export default {
       try {
         const params = {
           name: this.form.name.trim(),
-          url: this.form.url?.trim().replace(/\/$/, ''),
+          url: this.form.url?.trim().replace(/\/+$/, ''),
           port: this.form.port,
           provider: this.form.provider,
-          apikey: this.form.apikey.trim(),
-          externalserverid: this.form.externalserverid.trim(),
-          nameservers: this.form.nameservers?.map(ns => ns.toLowerCase().trim()).filter(Boolean),
+          dnsapikey: this.form.dnsapikey?.trim(),
+          externalserverid: this.form.externalserverid?.trim(),
+          nameservers: this.form.nameservers || [],
           ispublic: this.form.ispublic
         }
         if (this.form.ispublic) {
-          params.publicdomainsuffix = this.form.publicdomainsuffix?.trim().toLowerCase()
+          params.publicdomainsuffix = this.form.publicdomainsuffix?.toLowerCase().trim()
         }
         await postAPI('addDnsServer', params)
         this.$notification.success({
@@ -253,13 +258,14 @@ export default {
       try {
         const response = await getAPI('listDnsProviders')
         const listResponse = response?.listdnsprovidersresponse || {}
-        this.providers = listResponse.dnsprovider || listResponse.provider || []
-        if (this.providers.length > 0) {
-          const defaultProvider = this.providers[0]
-          this.form.provider = defaultProvider.name || defaultProvider
+        this.providers = Array.isArray(listResponse.dnsprovider) ? listResponse.dnsprovider : []
+        if (!this.form.provider && this.providers.length > 0) {
+          this.form.provider = this.providers[0].name || ''
         }
       } catch (error) {
         console.error('Failed to fetch DNS providers', error)
+        this.providers = []
+        this.form.provider = ''
         this.$message.warning('Could not load DNS providers.')
       } finally {
         this.fetchingProviders = false
@@ -296,10 +302,8 @@ export default {
         return Promise.resolve()
       }
 
-      const fqdnRegex = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
-
       for (const ns of value) {
-        if (!fqdnRegex.test(ns)) {
+        if (!FQDN_REGEX.test(ns)) {
           return Promise.reject(new Error('Invalid nameserver'))
         }
       }
@@ -314,14 +318,11 @@ export default {
       if (!this.form.ispublic) {
         return Promise.resolve()
       }
-
-      if (!value) {
+      const normalized = value?.toLowerCase().trim()
+      if (!normalized) {
         return Promise.reject(new Error(this.$t('message.error.required.publicdomainsuffix')))
       }
-
-      const fqdnRegex = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
-
-      if (!fqdnRegex.test(value)) {
+      if (!FQDN_REGEX.test(normalized)) {
         return Promise.reject(new Error('Invalid domain suffix'))
       }
 
@@ -329,6 +330,11 @@ export default {
     },
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    onNameserversChange (value) {
+      this.form.nameservers = (value || [])
+        .map(ns => ns?.toLowerCase().trim())
+        .filter(Boolean)
     }
   }
 }

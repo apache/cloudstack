@@ -22,7 +22,8 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        layout="vertical">
+        layout="vertical"
+        :disabled="loading">
 
         <a-form-item name="name" ref="name">
           <template #label>
@@ -33,7 +34,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name?.description"
-            v-focus="true" />
+            v-focus />
         </a-form-item>
 
         <a-form-item name="url" ref="url">
@@ -60,11 +61,11 @@
             style="width: 100%" />
         </a-form-item>
 
-        <a-form-item name="apikey">
+        <a-form-item name="dnsapikey">
           <template #label>
-            <tooltip-label :title="$t('label.dns.apikey')" :tooltip="apiParams.apikey?.description" />
+            <tooltip-label :title="$t('label.dns.dnsapikey')" :tooltip="apiParams.dnsapikey?.description" />
           </template>
-          <a-input-password v-model:value="form.apikey" :placeholder="apiParams.apikey?.description" />
+          <a-input-password v-model:value="form.dnsapikey" :placeholder="apiParams.dnsapikey?.description" />
         </a-form-item>
 
         <a-form-item v-if="isAdminOrDomainAdmin()" name="publicdomainsuffix">
@@ -86,7 +87,8 @@
             mode="tags"
             style="width: 100%"
             :token-separators="[',', ' ']"
-            :placeholder="apiParams.nameservers?.description" />
+            :placeholder="apiParams.nameservers?.description"
+            @change="onNameserversChange"/>
         </a-form-item>
 
         <a-form-item v-if="isAdminOrDomainAdmin()" name="ispublic">
@@ -116,6 +118,8 @@
 import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
+const FQDN_REGEX = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
+
 export default {
   name: 'UpdateDnsServer',
   components: {
@@ -134,7 +138,8 @@ export default {
       form: {
         name: '',
         url: '',
-        port: 53
+        port: 53,
+        dnsapikey: ''
       },
       rules: {}
     }
@@ -151,15 +156,22 @@ export default {
         { required: true, message: this.$t('message.error.required.input') },
         { validator: this.validatePort }
       ],
-      publicdomainsuffix: [{ validator: this.validatePublicDomainSuffix }],
-      state: [{ required: true, message: this.$t('message.error.required.input') }]
+      nameservers: [
+        { required: true, type: 'array', min: 1, message: this.$t('message.error.required.input') },
+        { validator: this.validateNameservers }
+      ]
+    }
+    if (this.isAdminOrDomainAdmin()) {
+      this.rules.publicdomainsuffix = [{ validator: this.validatePublicDomainSuffix }]
     }
     this.form.name = this.resource.name
     this.form.url = this.resource.url
     this.form.port = this.resource.port
-    this.form.publicdomainsuffix = this.resource.publicdomainsuffix
     this.form.nameservers = this.resource.nameservers || []
-    this.form.ispublic = this.resource.ispublic
+    this.form.ispublic = this.resource.ispublic ?? false
+    if (this.isAdminOrDomainAdmin()) {
+      this.form.publicdomainsuffix = this.resource.publicdomainsuffix
+    }
   },
   methods: {
     async handleSubmit () {
@@ -180,14 +192,14 @@ export default {
         const params = {
           id: this.resource.id,
           name: this.form.name.trim(),
-          url: this.form.url?.trim().replace(/\/$/, ''),
+          url: this.form.url?.trim().replace(/\/+$/, ''),
           port: this.form.port,
-          nameservers: this.form.nameservers?.map(ns => ns.toLowerCase().trim()).filter(Boolean),
-          ispublic: this.form.ispublic,
-          state: this.form.state
+          nameservers: this.form.nameservers || [],
+          ispublic: this.form.ispublic
         }
-        if (this.form.apikey) {
-          params.apikey = this.form.apikey.trim()
+        const dnsapikey = this.form.dnsapikey?.trim()
+        if (dnsapikey) {
+          params.dnsapikey = dnsapikey
         }
         if (this.form.ispublic) {
           params.publicdomainsuffix = this.form.publicdomainsuffix?.trim().toLowerCase()
@@ -244,10 +256,8 @@ export default {
         return Promise.resolve()
       }
 
-      const fqdnRegex = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
-
       for (const ns of value) {
-        if (!fqdnRegex.test(ns)) {
+        if (!FQDN_REGEX.test(ns)) {
           return Promise.reject(new Error('Invalid nameserver'))
         }
       }
@@ -262,14 +272,11 @@ export default {
       if (!this.form.ispublic) {
         return Promise.resolve()
       }
-
-      if (!value) {
+      const normalized = value?.toLowerCase().trim()
+      if (!normalized) {
         return Promise.reject(new Error(this.$t('message.error.required.publicdomainsuffix')))
       }
-
-      const fqdnRegex = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
-
-      if (!fqdnRegex.test(value)) {
+      if (!FQDN_REGEX.test(normalized)) {
         return Promise.reject(new Error('Invalid domain suffix'))
       }
 
@@ -277,6 +284,9 @@ export default {
     },
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    onNameserversChange (value) {
+      this.form.nameservers = Array.isArray(value) ? value.map(ns => ns.toLowerCase().trim()).filter(Boolean) : []
     }
   }
 }

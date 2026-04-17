@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`dns_server` (
     `provider_type` varchar(255) NOT NULL COMMENT 'Provider type such as PowerDns',
     `url` varchar(1024) NOT NULL COMMENT 'dns server url',
     `dns_username` varchar(255) COMMENT 'username or email for dns server credentials',
-    `api_key` varchar(255) NOT NULL COMMENT 'api key or token for the dns server ',
+    `dns_api_key` varchar(255) NOT NULL COMMENT 'api key or token for the dns server ',
     `external_server_id` varchar(255) COMMENT 'dns server id e.g. localhost for powerdns',
     `port` int(11) DEFAULT NULL COMMENT 'optional dns server port',
     `name_servers` varchar(1024) DEFAULT NULL COMMENT 'Comma separated list of name servers',

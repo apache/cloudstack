@@ -37,7 +37,7 @@ public interface DnsServer extends InternalIdentity, Identity, ControlledEntity 
 
     List<String> getNameServers();
 
-    String getApiKey();
+    String getDnsApiKey();
 
     long getAccountId();
 

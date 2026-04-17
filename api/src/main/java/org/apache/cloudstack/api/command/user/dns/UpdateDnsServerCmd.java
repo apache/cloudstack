@@ -58,8 +58,8 @@ public class UpdateDnsServerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "API URL of the provider")
     private String url;
 
-    @Parameter(name = ApiConstants.API_KEY, type = CommandType.STRING, required = false, description = "API Key or Credentials for the external provider")
-    private String apiKey;
+    @Parameter(name = ApiConstants.DNS_API_KEY, type = CommandType.STRING, required = false, description = "API Key or Credentials for the external provider")
+    private String dnsApiKey;
 
     @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, description = "Port number of the external DNS server")
     private Integer port;
@@ -83,8 +83,8 @@ public class UpdateDnsServerCmd extends BaseCmd {
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getUrl() { return url; }
-    public String getApiKey() {
-        return apiKey;
+    public String getDnsApiKey() {
+        return dnsApiKey;
     }
     public Integer getPort() {
         return port;

@@ -177,7 +177,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
         DnsProviderType type = cmd.getProvider();
         DnsServerVO server = new DnsServerVO(cmd.getName(), cmd.getUrl(), cmd.getPort(), cmd.getExternalServerId(), type,
-                cmd.getDnsUserName(), cmd.getApiKey(), isDnsPublic, publicDomainSuffix, cmd.getNameServers(),
+                cmd.getDnsUserName(), cmd.getDnsApiKey(), isDnsPublic, publicDomainSuffix, cmd.getNameServers(),
                 caller.getAccountId(), caller.getDomainId());
         try {
             DnsProvider provider = getProviderByType(type);
@@ -233,7 +233,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
         boolean validationRequired = false;
         String originalUrl = dnsServer.getUrl();
-        String originalKey = dnsServer.getApiKey();
+        String originalKey = dnsServer.getDnsApiKey();
 
         if (cmd.getName() != null) {
             dnsServer.setName(cmd.getName());
@@ -250,8 +250,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             }
         }
 
-        if (cmd.getApiKey() != null && !cmd.getApiKey().equals(originalKey)) {
-            dnsServer.setApiKey(cmd.getApiKey());
+        if (cmd.getDnsApiKey() != null && !cmd.getDnsApiKey().equals(originalKey)) {
+            dnsServer.setDnsApiKey(cmd.getDnsApiKey());
             validationRequired = true;
         }
 

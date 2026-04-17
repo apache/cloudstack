@@ -69,8 +69,8 @@ public class DnsServerVO implements DnsServer {
     private String dnsUserName;
 
     @Encrypt
-    @Column(name = "api_key")
-    private String apiKey;
+    @Column(name = "dns_api_key")
+    private String dnsApiKey;
 
     @Column(name = "external_server_id")
     private String externalServerId;
@@ -107,7 +107,7 @@ public class DnsServerVO implements DnsServer {
         this.created = new Date();
     }
 
-    public DnsServerVO(String name, String url, Integer port, String externalServerId, DnsProviderType providerType, String dnsUserName, String apiKey,
+    public DnsServerVO(String name, String url, Integer port, String externalServerId, DnsProviderType providerType, String dnsUserName, String dnsApiKey,
                        boolean isPublic, String publicDomainSuffix, List<String> nameServers, Long accountId, Long domainId) {
         this();
         this.name = name;
@@ -116,7 +116,7 @@ public class DnsServerVO implements DnsServer {
         this.externalServerId = externalServerId;
         this.providerType = providerType;
         this.dnsUserName = dnsUserName;
-        this.apiKey = apiKey;
+        this.dnsApiKey = dnsApiKey;
         this.accountId = accountId;
         this.domainId = domainId;
         this.publicDomainSuffix = publicDomainSuffix;
@@ -151,8 +151,8 @@ public class DnsServerVO implements DnsServer {
     }
 
     @Override
-    public String getApiKey() {
-        return apiKey;
+    public String getDnsApiKey() {
+        return dnsApiKey;
     }
 
     @Override
@@ -209,8 +209,8 @@ public class DnsServerVO implements DnsServer {
         this.publicDomainSuffix = publicDomainSuffix;
     }
 
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
+    public void setDnsApiKey(String dnsApiKey) {
+        this.dnsApiKey = dnsApiKey;
     }
 
     public void setPort(Integer port) {

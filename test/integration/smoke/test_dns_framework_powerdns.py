@@ -160,6 +160,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         )
         self.assertIsNotNone(response, "Failed to create DNS record")
         self.assertEqual(response.name, "www.example.com", "DNS record name mismatch")
+        self._assert_dns("www.example.com", "A", expected="10.1.1.10")
 
     def test_07_create_aaaa_dns_records(self):
         """
@@ -174,6 +175,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         )
         self.assertIsNotNone(response, "Failed to create AAAA DNS record")
         self.assertTrue(response.name is not None, "DNS record name should not be None")
+        self._assert_dns("www.example.com", "AAAA", expected="2001:db8::10")
 
 
     def test_08_create_mx_dns_record(self):
@@ -189,6 +191,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         )
         self.assertIsNotNone(response, "Failed to create MX DNS record")
         self.assertTrue(response.name is not None, "DNS record name should not be None")
+        self._assert_dns("example.com", "MX", contains=["10", "mail.example.com"])
 
 
     def test_09_list_dns_records(self):
@@ -299,7 +302,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         cmd = addDnsServer.addDnsServerCmd()
         cmd.name = "pdns-server"
         cmd.url = self.pdns_url
-        cmd.credentials = "supersecretapikey"
+        cmd.dnsapikey = "supersecretapikey"
         cmd.provider = "PowerDNS"
         cmd.nameservers = ["ns1.example.com", "ns2.example.com"]
         cmd.externalserverid = "localhost"
@@ -309,6 +312,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
 
         return self.api_client.addDnsServer(cmd)
 
+
     def _create_zone(self, server_id):
         cmd = createDnsZone.createDnsZoneCmd()
         cmd.dnsserverid = server_id
@@ -316,3 +320,43 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         cmd.description = "Test DNS Zone for PDNS"
 
         return self.api_client.createDnsZone(cmd)
+
+
+    def _dig(self, name, rtype):
+        dns_ip = self.__class__.marvin_vm_ip
+        dns_port = 5353
+
+        cmd = [
+            "dig",
+            f"@{dns_ip}",
+            "-p",
+            str(dns_port),
+            name,
+            rtype,
+            "+short"
+        ]
+        self.logger.info(f"Running: {' '.join(cmd)}")
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        self.assertEqual(result.returncode, 0, f"dig failed: {result.stderr}")
+        output = result.stdout.strip().replace("\n", " ")
+        self.logger.info(f"dig output: {output}")
+        return output
+
+
+    def _assert_dns(self, name, rtype, expected=None, contains=None):
+        output = self._dig(name, rtype)
+
+        if expected is not None:
+            self.assertIn(expected, output)
+
+        if contains:
+            for item in contains:
+                self.assertIn(item, output)
+
+        return output

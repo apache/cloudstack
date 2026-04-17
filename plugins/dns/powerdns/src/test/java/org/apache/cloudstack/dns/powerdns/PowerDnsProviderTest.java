@@ -73,7 +73,7 @@ public class PowerDnsProviderTest {
         ReflectionTestUtils.setField(provider, "client", clientMock);
 
         when(serverMock.getUrl()).thenReturn("http://pdns:8081");
-        when(serverMock.getApiKey()).thenReturn("secret");
+        when(serverMock.getDnsApiKey()).thenReturn("secret");
         when(serverMock.getPort()).thenReturn(8081);
         when(serverMock.getExternalServerId()).thenReturn("localhost");
         when(serverMock.getNameServers()).thenReturn(Arrays.asList("ns1.example.com"));
@@ -133,13 +133,13 @@ public class PowerDnsProviderTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testValidateServerFieldsNullApiKey() {
-        when(serverMock.getApiKey()).thenReturn(null);
+        when(serverMock.getDnsApiKey()).thenReturn(null);
         provider.validateRequiredServerFields(serverMock);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testValidateServerFieldsBlankApiKey() {
-        when(serverMock.getApiKey()).thenReturn("");
+        when(serverMock.getDnsApiKey()).thenReturn("");
         provider.validateRequiredServerFields(serverMock);
     }
 

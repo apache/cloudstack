@@ -44,13 +44,13 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
 
     public void validate(DnsServer server) throws DnsProviderException {
         validateRequiredServerFields(server);
-        client.validateServerId(server.getUrl(), server.getPort(), server.getApiKey(), server.getExternalServerId());
+        client.validateServerId(server.getUrl(), server.getPort(), server.getDnsApiKey(), server.getExternalServerId());
     }
 
     @Override
     public String validateAndResolveServer(DnsServer server) throws Exception {
         validateRequiredServerFields(server);
-        return client.resolveServerId(server.getUrl(), server.getPort(), server.getApiKey(), server.getExternalServerId());
+        return client.resolveServerId(server.getUrl(), server.getPort(), server.getDnsApiKey(), server.getExternalServerId());
     }
 
     @Override
@@ -59,7 +59,7 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
         return client.createZone(
                 server.getUrl(),
                 server.getPort(),
-                server.getApiKey(),
+                server.getDnsApiKey(),
                 server.getExternalServerId(),
                 zone.getName(),
                 ApiConstants.NATIVE_ZONE, false, server.getNameServers()
@@ -69,7 +69,7 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     @Override
     public void deleteZone(DnsServer server, DnsZone zone) throws DnsProviderException {
         validateRequiredServerAndZoneFields(server, zone);
-        client.deleteZone(server.getUrl(), server.getPort(), server.getApiKey(), server.getExternalServerId(), zone.getName());
+        client.deleteZone(server.getUrl(), server.getPort(), server.getDnsApiKey(), server.getExternalServerId(), zone.getName());
     }
 
     @Override
@@ -78,7 +78,7 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
         client.updateZone(
                 server.getUrl(),
                 server.getPort(),
-                server.getApiKey(),
+                server.getDnsApiKey(),
                 server.getExternalServerId(),
                 zone.getName(), ApiConstants.NATIVE_ZONE, false, server.getNameServers());
     }
@@ -93,7 +93,7 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
         return applyRecord(
                 server.getUrl(),
                 server.getPort(),
-                server.getApiKey(),
+                server.getDnsApiKey(),
                 server.getExternalServerId(),
                 zone.getName(), record, ChangeType.REPLACE);
     }
@@ -109,7 +109,7 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
         validateRequiredServerAndZoneFields(server, zone);
         return applyRecord(server.getUrl(),
                 server.getPort(),
-                server.getApiKey(),
+                server.getDnsApiKey(),
                 server.getExternalServerId(),
                 zone.getName(), record, ChangeType.DELETE);
     }
@@ -125,7 +125,7 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     public List<DnsRecord> listRecords(DnsServer server, DnsZone zone) throws DnsProviderException {
         validateRequiredServerAndZoneFields(server, zone);
         List<DnsRecord> records = new ArrayList<>();
-        Iterable<JsonNode> rrsetNodes = client.listRecords(server.getUrl(), server.getPort(), server.getApiKey(),
+        Iterable<JsonNode> rrsetNodes = client.listRecords(server.getUrl(), server.getPort(), server.getDnsApiKey(),
                 server.getExternalServerId(), zone.getName());
 
         for (JsonNode rrset : rrsetNodes) {
@@ -154,7 +154,7 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     }
 
     public boolean dnsRecordExists(DnsServer server, DnsZone zone, String recordName, String recordType) throws DnsProviderException {
-        return client.dnsRecordExists(server.getUrl(), server.getPort(), server.getApiKey(),
+        return client.dnsRecordExists(server.getUrl(), server.getPort(), server.getDnsApiKey(),
                 server.getExternalServerId(), zone.getName(), recordName, recordType);
     }
 
@@ -169,7 +169,7 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
         if (StringUtils.isBlank(server.getUrl())) {
             throw new IllegalArgumentException("PowerDNS API URL cannot be empty");
         }
-        if (StringUtils.isBlank(server.getApiKey())) {
+        if (StringUtils.isBlank(server.getDnsApiKey())) {
             throw new IllegalArgumentException("PowerDNS API key cannot be empty");
         }
     }

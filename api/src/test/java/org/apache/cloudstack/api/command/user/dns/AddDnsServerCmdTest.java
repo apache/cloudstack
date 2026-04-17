@@ -40,7 +40,7 @@ public class AddDnsServerCmdTest extends BaseDnsCmdTest {
         setField(cmd, "name", "test-dns");
         setField(cmd, "url", "http://dns.example.com");
         setField(cmd, "provider", "PowerDNS");
-        setField(cmd, "apiKey", "api-key-123");
+        setField(cmd, "dnsApiKey", "api-key-123");
         setField(cmd, "port", 8081);
         setField(cmd, "isPublic", true);
         setField(cmd, "publicDomainSuffix", "public.example.com");
@@ -56,7 +56,7 @@ public class AddDnsServerCmdTest extends BaseDnsCmdTest {
 
         assertEquals("test-dns", cmd.getName());
         assertEquals("http://dns.example.com", cmd.getUrl());
-        assertEquals("api-key-123", cmd.getApiKey());
+        assertEquals("api-key-123", cmd.getDnsApiKey());
         assertEquals(Integer.valueOf(8081), cmd.getPort());
         assertTrue(cmd.isPublic());
         assertEquals("public.example.com", cmd.getPublicDomainSuffix());

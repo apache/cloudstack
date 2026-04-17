@@ -51,7 +51,7 @@ public class DnsServerVOTest {
         assertEquals(Integer.valueOf(8081), vo.getPort());
         assertEquals("localhost", vo.getExternalServerId());
         assertEquals(DnsProviderType.PowerDNS, vo.getProviderType());
-        assertEquals("api-key-123", vo.getApiKey());
+        assertEquals("api-key-123", vo.getDnsApiKey());
         assertTrue(vo.getPublicServer());
         assertEquals("public.example.com", vo.getPublicDomainSuffix());
         assertEquals(nameServers, vo.getNameServers());
@@ -82,8 +82,8 @@ public class DnsServerVOTest {
         vo.setPort(9090);
         assertEquals(Integer.valueOf(9090), vo.getPort());
 
-        vo.setApiKey("new-key");
-        assertEquals("new-key", vo.getApiKey());
+        vo.setDnsApiKey("new-key");
+        assertEquals("new-key", vo.getDnsApiKey());
 
         vo.setPublicServer(true);
         assertTrue(vo.getPublicServer());

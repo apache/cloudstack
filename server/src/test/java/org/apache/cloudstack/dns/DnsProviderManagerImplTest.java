@@ -849,10 +849,10 @@ public class DnsProviderManagerImplTest {
         org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd cmd = mock(
                 org.apache.cloudstack.api.command.user.dns.UpdateDnsServerCmd.class);
         when(cmd.getId()).thenReturn(SERVER_ID);
-        when(cmd.getApiKey()).thenReturn("new-api-key");
+        when(cmd.getDnsApiKey()).thenReturn("new-api-key");
 
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
-        Mockito.doReturn("old-api-key").when(serverVO).getApiKey();
+        Mockito.doReturn("old-api-key").when(serverVO).getDnsApiKey();
         Mockito.doReturn("http://original:8081").when(serverVO).getUrl();
         Mockito.doReturn(DnsProviderType.PowerDNS).when(serverVO).getProviderType();
 

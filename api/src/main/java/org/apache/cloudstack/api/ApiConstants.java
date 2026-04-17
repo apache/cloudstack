@@ -1352,6 +1352,7 @@ public class ApiConstants {
     // DNS provider related
     public static final String NAME_SERVERS = "nameservers";
     public static final String DNS_USER_NAME = "dnsusername";
+    public static final String DNS_API_KEY = "dnsapikey";
     public static final String DNS_ZONE_ID = "dnszoneid";
     public static final String DNS_ZONE = "dnszone";
     public static final String DNS_RECORD = "dnsrecord";
