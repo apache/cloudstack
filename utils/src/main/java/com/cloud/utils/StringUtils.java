@@ -438,4 +438,9 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 
         return null;
     }
+
+    public static boolean isBlank(String str) {
+        return org.apache.commons.lang3.StringUtils.isBlank(str);
+    }
+
 }

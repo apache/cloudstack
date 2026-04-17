@@ -1141,68 +1141,76 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private UserVm rebootVirtualMachine(long vmId, boolean enterSetup, boolean forced) throws InsufficientCapacityException, ResourceUnavailableException {
         UserVmVO vm = _vmDao.findById(vmId);
 
-        if (logger.isTraceEnabled()) {
-            logger.trace("reboot {} with enterSetup set to {}", vm, Boolean.toString(enterSetup));
-        }
-
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
             logger.warn("Vm {} with id={} doesn't exist or is not in correct state", vm, vmId);
             return null;
         }
 
-        if (vm.getState() == State.Running && vm.getHostId() != null) {
-            collectVmDiskAndNetworkStatistics(vm, State.Running);
-
-            if (forced) {
-                Host vmOnHost = _hostDao.findById(vm.getHostId());
-                if (vmOnHost == null || vmOnHost.getResourceState() != ResourceState.Enabled || vmOnHost.getStatus() != Status.Up ) {
-                    throw new CloudRuntimeException("Unable to force reboot the VM as the host: " + vm.getHostId() + " is not in the right state");
-                }
-                return forceRebootVirtualMachine(vm, vm.getHostId(), enterSetup);
-            }
-
-            DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
-            try {
-                if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
-                    //List all networks of vm
-                    List<Long> vmNetworks = _vmNetworkMapDao.getNetworks(vmId);
-                    List<DomainRouterVO> routers = new ArrayList<>();
-                    //List the stopped routers
-                    for (long vmNetworkId : vmNetworks) {
-                        List<DomainRouterVO> router = _routerDao.listStopped(vmNetworkId);
-                        routers.addAll(router);
-                    }
-                    //A vm may not have many nics attached and even fewer routers might be stopped (only in exceptional cases)
-                    //Safe to start the stopped router serially, this is consistent with the way how multiple networks are added to vm during deploy
-                    //and routers are started serially ,may revisit to make this process parallel
-                    for (DomainRouterVO routerToStart : routers) {
-                        logger.warn("Trying to start router {} as part of vm: {} reboot", routerToStart, vm);
-                        _virtualNetAppliance.startRouter(routerToStart.getId(),true);
-                    }
-                }
-            } catch (ConcurrentOperationException e) {
-                throw new CloudRuntimeException("Concurrent operations on starting router. " + e);
-            } catch (Exception ex) {
-                throw new CloudRuntimeException("Router start failed due to" + ex);
-            } finally {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Rebooting vm {}{}.", vm, enterSetup ? " entering hardware setup menu" : " as is");
-                }
-                Map<VirtualMachineProfile.Param,Object> params = null;
-                if (enterSetup) {
-                    params = new HashMap<>();
-                    params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("Adding %s to paramlist", VirtualMachineProfile.Param.BootIntoSetup));
-                    }
-                }
-                _itMgr.reboot(vm.getUuid(), params);
-            }
-            return _vmDao.findById(vmId);
-        } else {
+        if (vm.getState() != State.Running || vm.getHostId() == null) {
             logger.error("Vm {} is not in Running state, failed to reboot", vm);
             return null;
         }
+
+        collectVmDiskAndNetworkStatistics(vm, State.Running);
+
+        if (forced) {
+            return handleForcedReboot(vm, enterSetup);
+        }
+
+        try {
+            startRoutersIfNeeded(vm, vmId);
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException("Concurrent operations on starting router. " + e);
+        } catch (Exception ex) {
+            throw new CloudRuntimeException("Router start failed due to" + ex);
+        } finally {
+            if (logger.isInfoEnabled()) {
+                logger.info("Rebooting vm {}{}.", vm, enterSetup ? " entering hardware setup menu" : " as is");
+            }
+            Map<VirtualMachineProfile.Param, Object> params = buildRebootParamsIfNeeded(enterSetup);
+            _itMgr.reboot(vm.getUuid(), params);
+        }
+
+        return _vmDao.findById(vmId);
+    }
+
+    private UserVm handleForcedReboot(UserVmVO vm, boolean enterSetup) {
+        Host vmOnHost = _hostDao.findById(vm.getHostId());
+        if (vmOnHost == null || vmOnHost.getResourceState() != ResourceState.Enabled || vmOnHost.getStatus() != Status.Up) {
+            throw new CloudRuntimeException("Unable to force reboot the VM as the host: " + vm.getHostId() + " is not in the right state");
+        }
+        return forceRebootVirtualMachine(vm, vm.getHostId(), enterSetup);
+    }
+
+    private void startRoutersIfNeeded(UserVmVO vm, long vmId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException  {
+        DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
+        if (dc.getNetworkType() != DataCenter.NetworkType.Advanced) {
+            return;
+        }
+
+        // List all networks of vm
+        List<Long> vmNetworks = _vmNetworkMapDao.getNetworks(vmId);
+        List<DomainRouterVO> routers = new ArrayList<>();
+        // List the stopped routers
+        for (long vmNetworkId : vmNetworks) {
+            List<DomainRouterVO> router = _routerDao.listStopped(vmNetworkId);
+            routers.addAll(router);
+        }
+
+        // Safe to start the stopped router serially, consistent with deploy/start behavior
+        for (DomainRouterVO routerToStart : routers) {
+            logger.warn("Trying to start router {} as part of vm: {} reboot", routerToStart, vm);
+            _virtualNetAppliance.startRouter(routerToStart.getId(), true);
+        }
+    }
+
+    private Map<VirtualMachineProfile.Param, Object> buildRebootParamsIfNeeded(boolean enterSetup) {
+        if (!enterSetup) {
+            return null;
+        }
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<>();
+        params.put(VirtualMachineProfile.Param.BootIntoSetup, Boolean.TRUE);
+        return params;
     }
 
     private UserVm forceRebootVirtualMachine(UserVmVO vm, long hostId, boolean enterSetup) {
