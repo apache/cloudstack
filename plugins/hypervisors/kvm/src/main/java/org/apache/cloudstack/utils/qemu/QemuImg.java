@@ -187,6 +187,12 @@ public class QemuImg {
         _qemuImgPath = qemuImgPath;
     }
 
+    /**
+     * Created for testing purposes
+     * */
+    protected QemuImg() {
+    }
+
     /* These are all methods supported by the qemu-img tool. */
 
     /**
@@ -918,7 +924,7 @@ public class QemuImg {
             throw new QemuImgException("File should not be null");
         }
 
-        final Script s = new Script(_qemuImgPath, timeout);
+        final Script s = createScript(_qemuImgPath, timeout);
         s.add("commit");
 
         if (file.getFormat() != null) {
@@ -938,6 +944,13 @@ public class QemuImg {
         if (result != null) {
             throw new QemuImgException(result);
         }
+    }
+
+    /**
+     * This was created to facilitate testing
+     * */
+    protected Script createScript(String path, int timeout) {
+        return new Script(path, timeout);
     }
 
     /**

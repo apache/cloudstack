@@ -18,6 +18,7 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.backup.RestoreKbossBackupAnswer;
 import org.apache.cloudstack.backup.RestoreKbossBackupCommand;
@@ -26,13 +27,14 @@ import org.apache.cloudstack.storage.to.DeltaMergeTreeTO;
 import org.apache.cloudstack.storage.to.KbossTO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.LibvirtException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -40,9 +42,11 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 
+import java.io.IOException;
 import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -87,12 +91,15 @@ public class LibvirtRestoreKbossBackupCommandWrapperTest {
     @Mock
     private RestoreKbossBackupCommand cmdMock;
 
+    @Mock
+    private QemuImg qemuImgMock;
+
     @Spy
     @InjectMocks
     private LibvirtRestoreKbossBackupCommandWrapper libvirtRestoreKbossBackupCommandWrapperSpy;
 
     @Test
-    public void executeTestLibvirtException() throws LibvirtException, QemuImgException {
+    public void executeTestException() throws LibvirtException, QemuImgException {
         doReturn(primaryDataStoreToMock).when(backupDeltaTOMock).getDataStore();
         doReturn(Set.of(new Pair<>(backupDeltaTOMock, volumeObjectToMock1))).when(cmdMock).getBackupAndVolumePairs();
         doReturn(null).when(libvirtRestoreKbossBackupCommandWrapperSpy).mountSecondaryStorages(any(), any(), any(), any());
@@ -100,6 +107,68 @@ public class LibvirtRestoreKbossBackupCommandWrapperTest {
 
         RestoreKbossBackupAnswer answer = (RestoreKbossBackupAnswer)libvirtRestoreKbossBackupCommandWrapperSpy.execute(cmdMock, libvirtComputingResourceMock);
         assertFalse(answer.getResult());
-
     }
+
+
+    @Test
+    public void executeTestLibvirtNotQuickRestore() throws LibvirtException, QemuImgException, IOException {
+        doReturn(primaryDataStoreToMock).when(backupDeltaTOMock).getDataStore();
+        doReturn(Set.of(new Pair<>(backupDeltaTOMock, volumeObjectToMock1))).when(cmdMock).getBackupAndVolumePairs();
+        doReturn(kvmStoragePoolManagerMock).when(libvirtComputingResourceMock).getStoragePoolMgr();
+        doReturn(kvmStoragePool1).when(kvmStoragePoolManagerMock).getStoragePoolByURI(any());
+        doReturn("uuid").when(kvmStoragePool1).getUuid();
+        doNothing().when(libvirtRestoreKbossBackupCommandWrapperSpy).restoreVolumes(any(), any(), any(), anyBoolean(), anyInt());
+        doNothing().when(libvirtRestoreKbossBackupCommandWrapperSpy).deleteDeltas(any(), any());
+
+        doReturn(false).when(cmdMock).isQuickRestore();
+
+        RestoreKbossBackupAnswer answer = (RestoreKbossBackupAnswer)libvirtRestoreKbossBackupCommandWrapperSpy.execute(cmdMock, libvirtComputingResourceMock);
+        assertTrue(answer.getResult());
+        verify(kvmStoragePoolManagerMock).deleteStoragePool(Storage.StoragePoolType.NetworkFilesystem, "uuid");
+    }
+
+
+    @Test
+    public void executeTestLibvirtQuickRestore() throws LibvirtException, QemuImgException, IOException {
+        doReturn(primaryDataStoreToMock).when(backupDeltaTOMock).getDataStore();
+        doReturn(Set.of(new Pair<>(backupDeltaTOMock, volumeObjectToMock1))).when(cmdMock).getBackupAndVolumePairs();
+        doReturn(kvmStoragePoolManagerMock).when(libvirtComputingResourceMock).getStoragePoolMgr();
+        doReturn(kvmStoragePool1).when(kvmStoragePoolManagerMock).getStoragePoolByURI(any());
+        doReturn("uuid").when(kvmStoragePool1).getUuid();
+        doNothing().when(libvirtRestoreKbossBackupCommandWrapperSpy).restoreVolumes(any(), any(), any(), anyBoolean(), anyInt());
+        doNothing().when(libvirtRestoreKbossBackupCommandWrapperSpy).deleteDeltas(any(), any());
+
+        doReturn(true).when(cmdMock).isQuickRestore();
+
+        RestoreKbossBackupAnswer answer = (RestoreKbossBackupAnswer)libvirtRestoreKbossBackupCommandWrapperSpy.execute(cmdMock, libvirtComputingResourceMock);
+        assertTrue(answer.getResult());
+        verify(kvmStoragePoolManagerMock, never()).deleteStoragePool(Storage.StoragePoolType.NetworkFilesystem, "uuid");
+    }
+
+    @Test
+    public void restoreVolumesTestQuickRestore() throws LibvirtException, QemuImgException {
+        doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
+        doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
+        doReturn("p2").when(kvmStoragePool2).getLocalPathFor(any());
+        doReturn(qemuImgMock).when(libvirtRestoreKbossBackupCommandWrapperSpy).getQemuImg(anyInt());
+
+        libvirtRestoreKbossBackupCommandWrapperSpy.restoreVolumes(Set.of(new Pair<>(backupDeltaTOMock, volumeObjectToMock1)), kvmStoragePool1, kvmStoragePoolManagerMock,
+                true, 1000);
+
+        verify(qemuImgMock).create(any(), (QemuImgFile)any());
+    }
+
+    @Test
+    public void restoreVolumesTestNormalRestore() throws LibvirtException, QemuImgException {
+        doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
+        doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
+        doReturn("p2").when(kvmStoragePool2).getLocalPathFor(any());
+        doReturn(qemuImgMock).when(libvirtRestoreKbossBackupCommandWrapperSpy).getQemuImg(anyInt());
+
+        libvirtRestoreKbossBackupCommandWrapperSpy.restoreVolumes(Set.of(new Pair<>(backupDeltaTOMock, volumeObjectToMock1)), kvmStoragePool1, kvmStoragePoolManagerMock,
+                false, 1000);
+
+        verify(qemuImgMock).convert(any(), any());
+    }
+
 }

@@ -2144,7 +2144,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
-    private Answer deleteBackup(DeleteCommand cmd) {
+    protected Answer deleteBackup(DeleteCommand cmd) {
         BackupDeltaTO deltaTo = (BackupDeltaTO) cmd.getData();
         NfsTO nfs = (NfsTO)deltaTo.getDataStore();
         String parent = getRootDir(nfs.getUrl(), _nfsVersion);
@@ -2175,7 +2175,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         File deltaDir = deltaFile.getParentFile();
-        if (deltaDir.isDirectory() && deltaDir.list().length == 0 && !deltaDir.delete()) {
+        if (!deleteEmptyDirectory(deltaDir)) {
             details = String.format("Unable to delete directory [%s] at path [%s].", deltaDir.getName(), deltaDir.getPath());
             logger.debug(details);
             return new BackupDeleteAnswer(cmd, false, details);
@@ -2183,8 +2183,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         return new Answer(cmd, true, null);
     }
-    private BackupDeleteAnswer deleteScreenshot(DeleteCommand cmd, String screenshotRelativePath, String parent) {
 
+    protected BackupDeleteAnswer deleteScreenshot(DeleteCommand cmd, String screenshotRelativePath, String parent) {
         if (screenshotRelativePath != null) {
             if (screenshotRelativePath.startsWith(File.separator)) {
                 screenshotRelativePath = screenshotRelativePath.substring(1);
@@ -2199,6 +2199,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
         }
         return null;
+    }
+
+    protected boolean deleteEmptyDirectory(File dir) {
+        if (dir == null || !dir.isDirectory()) {
+            return true;
+        }
+        if (dir.list().length > 0) {
+            return true;
+        }
+        return dir.delete();
     }
 
     private String deleteCheckpointIfExists(DataTO obj, String parent) {
@@ -2392,7 +2402,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     }
 
-    private String deleteLocalFile(String fullPath) {
+    protected String deleteLocalFile(String fullPath) {
         Script command = new Script("/bin/bash", logger);
         command.add("-c");
         command.add("rm -rf " + fullPath);

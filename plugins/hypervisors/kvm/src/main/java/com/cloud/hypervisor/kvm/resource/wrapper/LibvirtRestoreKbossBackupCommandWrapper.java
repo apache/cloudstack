@@ -34,6 +34,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.jetbrains.annotations.NotNull;
 import org.libvirt.LibvirtException;
 
 import java.io.IOException;
@@ -85,7 +86,7 @@ public class LibvirtRestoreKbossBackupCommandWrapper extends CommandWrapper<Rest
             QemuImgFile backup = new QemuImgFile(fullBackupPath, QemuImg.PhysicalDiskFormat.QCOW2);
             QemuImgFile volume = new QemuImgFile(fullVolumePath, QemuImg.PhysicalDiskFormat.QCOW2);
 
-            QemuImg qemuImg = new QemuImg(timeoutInMillis);
+            QemuImg qemuImg = getQemuImg(timeoutInMillis);
 
             if (quickRestore) {
                 logger.info("Creating delta over old volume [{}] at [{}] with backing store stored at [{}].", volumeObjectTO.getUuid(), fullVolumePath, fullBackupPath);
@@ -95,6 +96,10 @@ public class LibvirtRestoreKbossBackupCommandWrapper extends CommandWrapper<Rest
                 qemuImg.convert(backup, volume);
             }
         }
+    }
+
+    protected QemuImg getQemuImg(int timeoutInMillis) throws LibvirtException, QemuImgException {
+        return new QemuImg(timeoutInMillis);
     }
 
     protected void deleteDeltas(Set<BackupDeltaTO> deltasToRemove, KVMStoragePoolManager storagePoolManager) throws IOException {
