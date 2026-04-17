@@ -186,7 +186,7 @@
           :href="getGitHubUrl(from)"
           class="auth-btn github-auth"
           style="height: 38px; width: 185px; padding: 0; margin-bottom: 5px;" >
-          <img src="/assets/github.svg" style="width: 32px; padding: 5px" />
+          <img src="/assets/github.svg" alt="Google" style="width: 32px; padding: 5px" />
           <a-typography-text>Sign in with Github</a-typography-text>
         </a-button>
       </div>
@@ -198,7 +198,7 @@
           :href="getGoogleUrl(from)"
           class="auth-btn google-auth"
           style="height: 38px; width: 185px; padding: 0" >
-          <img src="/assets/google.svg" style="width: 32px; padding: 5px" />
+          <img src="/assets/google.svg" alt="Github" style="width: 32px; padding: 5px" />
           <a-typography-text>Sign in with Google</a-typography-text>
         </a-button>
       </div>
@@ -210,7 +210,7 @@
           :href="getKeycloakUrl(from)"
           class="auth-btn keycloak-auth"
           style="height: 38px; width: 185px; padding: 0" >
-          <img src="/assets/keycloak.svg" style="width: 32px; padding: 5px" />
+          <img src="/assets/keycloak.svg" alt="Keycloak" style="width: 32px; padding: 5px" />
           <a-typography-text>Sign in with Keycloak</a-typography-text>
         </a-button>
       </div>

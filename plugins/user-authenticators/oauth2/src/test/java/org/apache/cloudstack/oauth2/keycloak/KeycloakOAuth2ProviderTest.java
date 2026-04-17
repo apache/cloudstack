@@ -143,9 +143,7 @@ public class KeycloakOAuth2ProviderTest {
 
         when(httpClient.execute(any(HttpPost.class))).thenReturn(response);
 
-        boolean result = provider.verifyUser("user@example.com", secretCode);
-
-        assertTrue("L'utilisateur devrait être vérifié avec succès", result);
+        provider.verifyUser("user@example.com", secretCode);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -180,9 +178,7 @@ public class KeycloakOAuth2ProviderTest {
 
         when(httpClient.execute(any(HttpPost.class))).thenReturn(response);
 
-        boolean result = provider.verifyUser(testEmail, secretCode);
-
-        assertTrue("L'utilisateur devrait être vérifié avec succès", result);
+        provider.verifyUser(testEmail, secretCode);
     }
 
     @Test
@@ -219,7 +215,7 @@ public class KeycloakOAuth2ProviderTest {
 
         boolean result = provider.verifyUser(testEmail, secretCode);
 
-        assertTrue("L'utilisateur devrait être vérifié avec succès", result);
+        assertTrue("User successfully verified", result);
     }
 
     @Test

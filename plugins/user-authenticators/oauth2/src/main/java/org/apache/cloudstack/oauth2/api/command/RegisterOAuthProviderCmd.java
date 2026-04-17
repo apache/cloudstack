@@ -31,8 +31,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
-import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.ConcurrentOperationException;
 
@@ -58,7 +58,7 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider", required = true)
     private String redirectUri;
 
-    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL for OAuth initialization (only required for keyloack provider)")
+    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL for OAuth initialization (only required for keycloack provider)")
     private String authorizeUrl;
 
     @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL for OAuth finalization (only required for keycloak provider)")
@@ -115,10 +115,10 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException, EntityExistsException {
         if (StringUtils.equals("keycloak", getProvider())) {
-            if (getAuthorizeUrl() == null || "".equals(getAuthorizeUrl())) {
-                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter authorizationurl is mandatory for keycloak OAuth Provider");
+            if (StringUtils.isBlank(getAuthorizeUrl())) {
+                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter authorizeurl is mandatory for keycloak OAuth Provider");
             }
-            if (getTokenUrl() == null || "".equals(getTokenUrl())) {
+            if (StringUtils.isBlank(getTokenUrl())) {
                 throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter tokenurl is mandatory for keycloak OAuth Provider");
             }
         }

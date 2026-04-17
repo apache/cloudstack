@@ -99,6 +99,9 @@ public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Aut
     @Override
     public String verifyCodeAndFetchEmail(String secretCode) {
         OauthProviderVO provider = oauthProviderDao.findByProvider(getName());
+        if (provider == null) {
+            throw new CloudAuthenticationException("Keycloak provider is not registered, so user cannot be verified");
+        }
 
         if (StringUtils.isBlank(idToken)) {
             String auth = provider.getClientId() + ":" + provider.getSecretKey();
@@ -115,7 +118,7 @@ public class KeycloakOAuth2Provider extends AdapterBase implements UserOAuth2Aut
             try {
                 post.setEntity(new UrlEncodedFormEntity(params));
             } catch (UnsupportedEncodingException e) {
-                throw new CloudRuntimeException("Unable to generating URL parameters: " + e.getMessage());
+                throw new CloudRuntimeException("Unable to generate URL parameters: " + e.getMessage());
             }
 
             try (CloseableHttpResponse response = httpClient.execute(post)) {
