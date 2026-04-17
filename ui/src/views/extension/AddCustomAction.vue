@@ -169,7 +169,7 @@ export default {
   data () {
     return {
       roleTypes: [],
-      resourceTypeOptions: ['VirtualMachine', 'Network'],
+      resourceTypeOptions: ['VirtualMachine', 'Network', 'Vpc'],
       loading: false
     }
   },
@@ -204,13 +204,13 @@ export default {
     updateResourceTypeByExtension (selectedExtension) {
       const type = selectedExtension?.type
       if (type === 'NetworkOrchestrator') {
-        this.resourceTypeOptions = ['Network']
+        this.resourceTypeOptions = ['Network', 'Vpc']
         this.form.resourcetype = 'Network'
       } else if (type === 'Orchestrator') {
         this.resourceTypeOptions = ['VirtualMachine']
         this.form.resourcetype = 'VirtualMachine'
       } else {
-        this.resourceTypeOptions = ['VirtualMachine', 'Network']
+        this.resourceTypeOptions = ['VirtualMachine', 'Network', 'Vpc']
         if (!this.form.resourcetype) {
           this.form.resourcetype = 'VirtualMachine'
         }

@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -52,5 +53,21 @@ public class NetworkTest {
         // another transient provider with same name should be considered equal
         Network.Provider transientProviderNew = Network.Provider.createTransientProvider("NetworkExtension");
         assertTrue("List should contain the new transient provider with same name", providers.contains(transientProviderNew));
+    }
+
+    @Test
+    public void testCustomActionServiceLookup() {
+        Network.Service customAction = Network.Service.getService("CustomAction");
+        assertNotNull("CustomAction service should be available", customAction);
+        assertTrue("CustomAction should be part of the supported services list",
+                Network.Service.listAllServices().contains(customAction));
+    }
+
+    @Test
+    public void testTransientProviderIsNotGloballyRegistered() {
+        Network.Provider transientProvider = Network.Provider.createTransientProvider("TransientOnly");
+        assertNotNull(transientProvider);
+        assertNull("Transient provider should not be retrievable from the global registry",
+                Network.Provider.getProvider("TransientOnly"));
     }
 }

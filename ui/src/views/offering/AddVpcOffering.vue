@@ -337,20 +337,7 @@ export default {
         enabled: true
       },
       nsxSupportedServicesMap: {},
-      externalNetworkProviderObj: {
-        name: '',
-        description: 'External Network',
-        enabled: true
-      },
-      externalNetworkSupportedServicesMap: {},
-      availableExtensionProviders: [],
       conservemode: false
-    }
-  },
-  computed: {
-    isExternalNetworkProvider () {
-      const selectedProvider = this.form?.provider || this.provider
-      return this.availableExtensionProviders.some(e => e.name === selectedProvider)
     }
   },
   beforeCreate () {
@@ -397,25 +384,6 @@ export default {
       this.fetchSupportedServiceData()
       this.fetchIpv6NetworkOfferingConfiguration()
       this.fetchRoutedNetworkConfiguration()
-      this.fetchExtensionProviders()
-    },
-    fetchExtensionProviders () {
-      getAPI('listExtensions', { type: 'NetworkOrchestrator', state: 'Enabled' }).then(json => {
-        const allExts = (json.listextensionsresponse && json.listextensionsresponse.extension) || []
-        if (allExts.length === 0) {
-          this.availableExtensionProviders = []
-          return
-        }
-        getAPI('listNetworkServiceProviders', {}).then(nspJson => {
-          const nsps = (nspJson.listnetworkserviceprovidersresponse && nspJson.listnetworkserviceprovidersresponse.networkserviceprovider) || []
-          const nspNames = new Set(nsps.map(n => n.name))
-          this.availableExtensionProviders = allExts.filter(e => nspNames.has(e.name))
-        }).catch(() => {
-          this.availableExtensionProviders = allExts
-        })
-      }).catch(() => {
-        this.availableExtensionProviders = []
-      })
     },
     isAdmin () {
       return isAdmin()
@@ -465,18 +433,7 @@ export default {
     },
     fetchSupportedServiceData () {
       var services = []
-      if (this.isExternalNetworkProvider) {
-        const serviceMap = this._buildExternalVpcServiceMap()
-        Object.keys(serviceMap).forEach(serviceName => {
-          services.push({
-            name: serviceName,
-            enabled: true,
-            provider: Array.isArray(serviceMap[serviceName])
-              ? serviceMap[serviceName]
-              : [serviceMap[serviceName]]
-          })
-        })
-      } else if (this.provider === 'NSX') {
+      if (this.provider === 'NSX') {
         services.push({
           name: 'Dhcp',
           enabled: true,
@@ -563,82 +520,48 @@ export default {
           provider: [{ name: 'VpcVirtualRouter' }]
         })
       } else {
-        services.push({
-          name: 'Dhcp',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'ConfigDrive' }
-          ]
+        this.supportedServiceLoading = true
+        getAPI('listSupportedNetworkServices').then(json => {
+          const vpcServices = ['Dhcp', 'Dns', 'Lb', 'Gateway', 'StaticNat', 'SourceNat', 'NetworkACL', 'PortForwarding', 'UserData', 'Vpn', 'Connectivity', 'CustomAction']
+          services = (json?.listsupportednetworkservicesresponse?.networkservice || [])
+            .filter(service => vpcServices.includes(service.name))
+            .map(service => {
+              const providerMap = {}
+              const providers = [...(service.provider || []), ...(service.name === 'Lb' ? [{ name: 'InternalLbVm' }] : [])]
+                .map(provider => {
+                  const providerName = provider.name === 'VirtualRouter' ? 'VpcVirtualRouter' : provider.name
+                  const enabled = providerName === 'InternalLbVm'
+                    ? service.name === 'Lb'
+                    : !['VirtualRouter', 'Nsx', 'Netris'].includes(providerName)
+                  return {
+                    name: providerName,
+                    description: providerName,
+                    enabled
+                  }
+                })
+                .filter(provider => {
+                  if (providerMap[provider.name]) {
+                    return false
+                  }
+                  providerMap[provider.name] = true
+                  return true
+                })
+              return {
+                ...service,
+                description: service.name,
+                provider: providers
+              }
+            })
+
+          this.supportedServices = []
+          if (this.networkmode === 'ROUTED') {
+            services = services.filter(service => !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name))
+          }
+          this.supportedServices = services
+        }).finally(() => {
+          this.supportedServiceLoading = false
         })
-        services.push({
-          name: 'Dns',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'ConfigDrive' }
-          ]
-        })
-        services.push({
-          name: 'Lb',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'InternalLbVm' }
-          ]
-        })
-        services.push({
-          name: 'Gateway',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'BigSwitchBcf' }
-          ]
-        })
-        services.push({
-          name: 'StaticNat',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'BigSwitchBcf' }
-          ]
-        })
-        services.push({
-          name: 'SourceNat',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'BigSwitchBcf' }
-          ]
-        })
-        services.push({
-          name: 'NetworkACL',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'BigSwitchBcf' }
-          ]
-        })
-        services.push({
-          name: 'PortForwarding',
-          provider: [{ name: 'VpcVirtualRouter' }]
-        })
-        services.push({
-          name: 'UserData',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'ConfigDrive' }
-          ]
-        })
-        services.push({
-          name: 'Vpn',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'BigSwitchBcf' }
-          ]
-        })
-        services.push({
-          name: 'Connectivity',
-          provider: [
-            { name: 'BigSwitchBcf' },
-            { name: 'NiciraNvp' },
-            { name: 'Ovs' },
-            { name: 'JuniperContrailVpcRouter' }
-          ]
-        })
+        return
       }
       this.supportedServices = []
       if (this.networkmode === 'ROUTED') {
@@ -667,63 +590,8 @@ export default {
       if (this.provider === 'NSX') {
         this.form.nsxsupportlb = true
         this.handleNsxLbService(true)
-      } else if (this.isExternalNetworkProvider) {
-        this._buildExternalVpcServiceMap()
       }
       this.fetchSupportedServiceData()
-    },
-    _getExtensionServices (extDef) {
-      if (!extDef || !extDef.details) {
-        return []
-      }
-
-      const servicesCsv = extDef.details['network.services']
-      if (servicesCsv && typeof servicesCsv === 'string') {
-        return servicesCsv.split(',').map(x => x.trim()).filter(x => x.length > 0)
-      }
-      return []
-    },
-    _buildExternalVpcServiceMap () {
-      const selectedProvider = this.form?.provider || this.provider
-      const extProviderObj = {
-        name: selectedProvider,
-        description: selectedProvider,
-        enabled: true
-      }
-      const extWithFallbackProviders = [
-        { name: selectedProvider },
-        { name: 'VpcVirtualRouter' },
-        { name: 'ConfigDrive' }
-      ]
-      const serviceMap = {
-        Dhcp: extWithFallbackProviders,
-        Dns: extWithFallbackProviders,
-        UserData: extWithFallbackProviders
-      }
-
-      const extDef = this.availableExtensionProviders.find(e => e.name === selectedProvider)
-      const services = this._getExtensionServices(extDef)
-      const allowedVpcServices = new Set([
-        'Gateway', 'Lb', 'StaticNat', 'SourceNat', 'NetworkACL', 'PortForwarding', 'Vpn', 'CustomAction'
-      ])
-
-      services.forEach(service => {
-        if (allowedVpcServices.has(service)) {
-          serviceMap[service] = [{ name: selectedProvider }]
-        }
-      })
-
-      // Fallback for older extensions that only declare partial details.
-      if (Object.keys(serviceMap).length <= 3) {
-        serviceMap.SourceNat = [{ name: selectedProvider }]
-        serviceMap.StaticNat = [{ name: selectedProvider }]
-        serviceMap.PortForwarding = [{ name: selectedProvider }]
-        serviceMap.NetworkACL = [{ name: selectedProvider }]
-      }
-
-      this.externalNetworkProviderObj = extProviderObj
-      this.externalNetworkSupportedServicesMap = serviceMap
-      return serviceMap
     },
     handleNsxLbService (supportLb) {
       console.log(supportLb)
