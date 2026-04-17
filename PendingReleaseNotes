@@ -48,3 +48,8 @@ example.ver.1 > example.ver.2:
   * UEFI disk-only instance snapshots taken before this change do not contain an
     NVRAM sidecar and cannot be safely reverted. Take a new snapshot after
     upgrading before relying on revert for UEFI VMs.
+
+  * Taking a disk-only instance snapshot for KVM UEFI VMs now briefly suspends
+    the guest while the NVRAM sidecar is copied, so that the captured firmware
+    state is consistent with the disk snapshot. Non-UEFI VMs are unaffected and
+    continue to snapshot live.
