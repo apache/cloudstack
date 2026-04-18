@@ -146,4 +146,3 @@ class TestTeardownTiming(ImageServerTestCase):
         finally:
             sender.join(timeout=1)
             cleanup()
-
