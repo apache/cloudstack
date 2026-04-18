@@ -42,7 +42,7 @@ class Handler(BaseHTTPRequestHandler):
     """
 
     server_version = "cloudstack-image-server/1.0"
-    server_protocol = "HTTP/1.1"
+    protocol_version = "HTTP/1.1"
 
     _registry: TransferRegistry
 
@@ -78,12 +78,33 @@ class Handler(BaseHTTPRequestHandler):
         try:
             self.wfile.write(body)
         except BrokenPipeError:
-            pass
+            logging.error(
+                "HTTP response write failure status=%s method=%s path=%s err=%s",
+                int(status),
+                self.command,
+                self.path,
+                "client disconnected",
+            )
 
     def _send_error_json(self, status: int, message: str) -> None:
+        logging.error(
+            "HTTP failure status=%s method=%s path=%s message=%s",
+            int(status),
+            self.command,
+            self.path,
+            message,
+        )
         self._send_json(status, {"error": message})
 
     def _send_range_not_satisfiable(self, size: int) -> None:
+        logging.error(
+            "HTTP failure status=%s method=%s path=%s message=%s size=%s",
+            int(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE),
+            self.command,
+            self.path,
+            "range not satisfiable",
+            size,
+        )
         self.send_response(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
         self._send_imageio_headers()
         self.send_header("Content-Type", "application/json")
@@ -94,7 +115,13 @@ class Handler(BaseHTTPRequestHandler):
         try:
             self.wfile.write(body)
         except BrokenPipeError:
-            pass
+            logging.error(
+                "HTTP response write failure status=%s method=%s path=%s err=%s",
+                int(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE),
+                self.command,
+                self.path,
+                "client disconnected",
+            )
 
     # ------------------------------------------------------------------
     # Parsing helpers
@@ -493,6 +520,7 @@ class Handler(BaseHTTPRequestHandler):
     ) -> None:
         start = now_s()
         bytes_sent = 0
+        expected_bytes = 0
         try:
             logging.info("GET start image_id=%s range=%s", image_id, range_header or "-")
             backend = create_backend(cfg)
@@ -524,6 +552,7 @@ class Handler(BaseHTTPRequestHandler):
                         return
                     status = HTTPStatus.PARTIAL_CONTENT
                     content_length = (end_off_incl - start_off) + 1
+                expected_bytes = content_length
 
                 self.send_response(status)
                 self._send_imageio_headers()
@@ -539,11 +568,26 @@ class Handler(BaseHTTPRequestHandler):
                     to_read = min(CHUNK_SIZE, end_excl - offset)
                     data = session.read(offset, to_read)
                     if not data:
+                        logging.error(
+                            "GET short read image_id=%s expected_bytes=%d sent_bytes=%d offset=%d",
+                            image_id,
+                            expected_bytes,
+                            bytes_sent,
+                            offset,
+                        )
+                        self.close_connection = True
                         break
                     try:
                         self.wfile.write(data)
                     except BrokenPipeError:
-                        logging.info("GET client disconnected image_id=%s at=%d", image_id, offset)
+                        logging.error(
+                            "GET client disconnected image_id=%s at=%d expected_bytes=%d sent_bytes=%d",
+                            image_id,
+                            offset,
+                            expected_bytes,
+                            bytes_sent,
+                        )
+                        self.close_connection = True
                         break
                     offset += len(data)
                     bytes_sent += len(data)
@@ -558,6 +602,13 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 pass
         finally:
+            if expected_bytes > 0 and bytes_sent < expected_bytes:
+                logging.error(
+                    "GET incomplete image_id=%s expected_bytes=%d sent_bytes=%d",
+                    image_id,
+                    expected_bytes,
+                    bytes_sent,
+                )
             dur = now_s() - start
             logging.info(
                 "GET end image_id=%s bytes=%d duration_s=%.3f", image_id, bytes_sent, dur
@@ -603,7 +654,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             logging.info(
                 "PUT range start image_id=%s Content-Range=%s content_length=%d flush=%s",
-                image_id, content_range, content_length, flush,
+                image_id,content_range, content_length, flush,
             )
             try:
                 start_off, _end_inclusive = self._parse_content_range(content_range)
