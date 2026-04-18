@@ -153,6 +153,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         // CAN_CREATE_VOLUME_FROM_SNAPSHOT see note from CAN_CREATE_VOLUME_FROM_VOLUME
         mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_SNAPSHOT.toString(), Boolean.TRUE.toString());
         mapCapabilities.put(DataStoreCapabilities.CAN_REVERT_VOLUME_TO_SNAPSHOT.toString(), Boolean.TRUE.toString());
+        mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_TEMPLATE_FROM_SNAPSHOT.toString(), Boolean.TRUE.toString());
 
         return mapCapabilities;
     }
@@ -720,6 +721,13 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
     }
 
+    private static boolean canCopySnapshotToVolumeCond(DataObject srcData, DataObject dstData) {
+        return srcData.getType() == DataObjectType.SNAPSHOT && dstData.getType() == DataObjectType.VOLUME
+            && srcData.getDataStore().getRole() == DataStoreRole.Primary
+            && dstData.getDataStore().getRole() == DataStoreRole.Primary
+            && srcData.getDataStore().getId() == dstData.getDataStore().getId();
+    }
+
     private static boolean canCopySnapshotCond(DataObject srcData, DataObject dstData) {
         return srcData.getType() == DataObjectType.SNAPSHOT && dstData.getType() == DataObjectType.SNAPSHOT
             && (dstData.getDataStore().getRole() == DataStoreRole.Image
@@ -747,7 +755,10 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     {
         logger.debug("LinstorPrimaryDataStoreDriverImpl.canCopy: " + srcData.getType() + " -> " + dstData.getType());
 
-        if (canCopySnapshotCond(srcData, dstData)) {
+        if (canCopySnapshotToVolumeCond(srcData, dstData)) {
+            StoragePoolVO storagePool = _storagePoolDao.findById(srcData.getDataStore().getId());
+            return storagePool.getStorageProviderName().equals(LinstorUtil.PROVIDER_NAME);
+        } else if (canCopySnapshotCond(srcData, dstData)) {
             SnapshotInfo sinfo = (SnapshotInfo) srcData;
             VolumeInfo volume = sinfo.getBaseVolume();
             StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
@@ -766,6 +777,27 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         return false;
     }
 
+    private CopyCommandResult copySnapshotToVolume(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo) {
+        String errMsg = null;
+        CopyCmdAnswer answer = null;
+        try {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(snapshotInfo.getDataStore().getId());
+            String rscName = LinstorUtil.RSC_PREFIX + volumeInfo.getUuid();
+            createResourceFromSnapshot(snapshotInfo.getId(), rscName, storagePoolVO);
+
+            VolumeObjectTO volumeTO = (VolumeObjectTO) volumeInfo.getTO();
+            volumeTO.setPath(volumeInfo.getUuid());
+            volumeTO.setSize(volumeInfo.getSize());
+            answer = new CopyCmdAnswer(volumeTO);
+        } catch (Exception e) {
+            errMsg = "Failed to create volume from snapshot: " + e.getMessage();
+            logger.error(errMsg, e);
+        }
+        CopyCommandResult result = new CopyCommandResult(null, answer);
+        result.setResult(errMsg);
+        return result;
+    }
+
     @Override
     public void copyAsync(DataObject srcData, DataObject dstData, AsyncCompletionCallback<CopyCommandResult> callback)
     {
@@ -773,7 +805,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             + srcData.getType() + " -> " + dstData.getType());
 
         final CopyCommandResult res;
-        if (canCopySnapshotCond(srcData, dstData)) {
+        if (canCopySnapshotToVolumeCond(srcData, dstData)) {
+            res = copySnapshotToVolume((SnapshotInfo) srcData, (VolumeInfo) dstData);
+        } else if (canCopySnapshotCond(srcData, dstData)) {
             String errMsg = null;
             Answer answer = copySnapshot(srcData, dstData);
             if (answer != null && !answer.getResult()) {

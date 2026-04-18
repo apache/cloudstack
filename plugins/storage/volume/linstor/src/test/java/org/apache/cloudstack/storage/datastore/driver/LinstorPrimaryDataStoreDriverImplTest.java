@@ -25,13 +25,24 @@ import com.linbit.linstor.api.model.ResourceGroup;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.storage.DataStoreRole;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.Mockito.mock;
@@ -41,6 +52,9 @@ import static org.mockito.Mockito.when;
 public class LinstorPrimaryDataStoreDriverImplTest {
 
     private DevelopersApi api;
+
+    @Mock
+    private PrimaryDataStoreDao _storagePoolDao;
 
     @InjectMocks
     private LinstorPrimaryDataStoreDriverImpl linstorPrimaryDataStoreDriver;
@@ -84,5 +98,99 @@ public class LinstorPrimaryDataStoreDriverImplTest {
 
         layers = LinstorUtil.getEncryptedLayerList(api, "EncryptedGrp");
         Assert.assertEquals(Arrays.asList(LayerType.DRBD, LayerType.LUKS, LayerType.STORAGE), layers);
+    }
+
+    @Test
+    public void testGetCapabilitiesIncludesCreateTemplateFromSnapshot() {
+        Map<String, String> caps = linstorPrimaryDataStoreDriver.getCapabilities();
+
+        Assert.assertTrue("Linstor should advertise CAN_CREATE_TEMPLATE_FROM_SNAPSHOT",
+                Boolean.parseBoolean(caps.get(DataStoreCapabilities.CAN_CREATE_TEMPLATE_FROM_SNAPSHOT.toString())));
+    }
+
+    @Test
+    public void testCanCopySnapshotToVolumeOnSamePrimary() {
+        DataStore primaryStore = mock(DataStore.class);
+        when(primaryStore.getRole()).thenReturn(DataStoreRole.Primary);
+        when(primaryStore.getId()).thenReturn(1L);
+
+        SnapshotInfo snapshot = mock(SnapshotInfo.class);
+        when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+        when(snapshot.getDataStore()).thenReturn(primaryStore);
+
+        VolumeInfo volume = mock(VolumeInfo.class);
+        when(volume.getType()).thenReturn(DataObjectType.VOLUME);
+        when(volume.getDataStore()).thenReturn(primaryStore);
+
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getStorageProviderName()).thenReturn(LinstorUtil.PROVIDER_NAME);
+        when(_storagePoolDao.findById(1L)).thenReturn(pool);
+
+        Assert.assertTrue("canCopy should return true for SNAPSHOT -> VOLUME on same Linstor primary",
+                linstorPrimaryDataStoreDriver.canCopy(snapshot, volume));
+    }
+
+    @Test
+    public void testCanCopySnapshotToVolumeRejectsNonLinstor() {
+        DataStore primaryStore = mock(DataStore.class);
+        when(primaryStore.getRole()).thenReturn(DataStoreRole.Primary);
+        when(primaryStore.getId()).thenReturn(1L);
+
+        SnapshotInfo snapshot = mock(SnapshotInfo.class);
+        when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+        when(snapshot.getDataStore()).thenReturn(primaryStore);
+
+        VolumeInfo volume = mock(VolumeInfo.class);
+        when(volume.getType()).thenReturn(DataObjectType.VOLUME);
+        when(volume.getDataStore()).thenReturn(primaryStore);
+
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getStorageProviderName()).thenReturn("SomeOtherProvider");
+        when(_storagePoolDao.findById(1L)).thenReturn(pool);
+
+        Assert.assertFalse("canCopy should return false for non-Linstor storage",
+                linstorPrimaryDataStoreDriver.canCopy(snapshot, volume));
+    }
+
+    @Test
+    public void testCanCopySnapshotToVolumeRejectsCrossPrimary() {
+        DataStore srcStore = mock(DataStore.class);
+        when(srcStore.getRole()).thenReturn(DataStoreRole.Primary);
+        when(srcStore.getId()).thenReturn(1L);
+
+        DataStore destStore = mock(DataStore.class);
+        when(destStore.getRole()).thenReturn(DataStoreRole.Primary);
+        when(destStore.getId()).thenReturn(2L);
+
+        SnapshotInfo snapshot = mock(SnapshotInfo.class);
+        when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+        when(snapshot.getDataStore()).thenReturn(srcStore);
+
+        VolumeInfo volume = mock(VolumeInfo.class);
+        when(volume.getType()).thenReturn(DataObjectType.VOLUME);
+        when(volume.getDataStore()).thenReturn(destStore);
+
+        Assert.assertFalse("canCopy should return false for SNAPSHOT -> VOLUME across different primary stores",
+                linstorPrimaryDataStoreDriver.canCopy(snapshot, volume));
+    }
+
+    @Test
+    public void testCanCopySnapshotToVolumeRejectsImageDest() {
+        DataStore primaryStore = mock(DataStore.class);
+        when(primaryStore.getRole()).thenReturn(DataStoreRole.Primary);
+
+        DataStore imageStore = mock(DataStore.class);
+        when(imageStore.getRole()).thenReturn(DataStoreRole.Image);
+
+        SnapshotInfo snapshot = mock(SnapshotInfo.class);
+        when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+        when(snapshot.getDataStore()).thenReturn(primaryStore);
+
+        VolumeInfo volume = mock(VolumeInfo.class);
+        when(volume.getType()).thenReturn(DataObjectType.VOLUME);
+        when(volume.getDataStore()).thenReturn(imageStore);
+
+        Assert.assertFalse("canCopy should return false when destination is Image store",
+                linstorPrimaryDataStoreDriver.canCopy(snapshot, volume));
     }
 }
