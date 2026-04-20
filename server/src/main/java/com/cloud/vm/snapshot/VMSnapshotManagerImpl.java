@@ -449,7 +449,6 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
      * Create, persist and return vm snapshot for userVmVo with given parameters.
      * Persistence and support for custom service offerings are done on the same transaction
      * @param userVmVo user vm
-     * @param vmId vm id
      * @param vsDescription vm description
      * @param vmSnapshotName vm snapshot name
      * @param vsDisplayName vm snapshot display name
@@ -759,11 +758,17 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                     "Instance Snapshot reverting failed because the Instance is not in Running or Stopped state.");
         }
 
-        if (userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk || userVm.getState() == VirtualMachine.State.Stopped
-                && vmSnapshotVo.getType() == VMSnapshot.Type.DiskAndMemory) {
+        if (userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk) {
             throw new InvalidParameterValueException(
-                    "Reverting to the Instance Snapshot is not allowed for running Instances as this would result in a Instance state change. For running Instances only Snapshots with memory can be reverted. In order to revert to a Snapshot without memory you need to first stop the Instance."
-                            + " Snapshot");
+                    "Reverting to the Instance Snapshot is not allowed for running Instances as this would result in an Instance state change. " +
+                            "For running Instances only Snapshots with memory can be reverted. " +
+                            "In order to revert to a Snapshot without memory you need to first stop the Instance.");
+        }
+
+        if (userVm.getState() == VirtualMachine.State.Stopped && vmSnapshotVo.getType() == VMSnapshot.Type.DiskAndMemory) {
+            throw new InvalidParameterValueException(
+                    "Reverting to the Instance Snapshot is not allowed for stopped Instances when the Snapshot contains memory as this would result in an Instance state change. " +
+                            "In order to revert to a Snapshot with memory you need to first start the Instance.");
         }
 
         // if snapshot is not created, error out
@@ -816,37 +821,59 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     /**
-     * If snapshot was taken with a different service offering than actual used in vm, should change it back to it
-     * @param userVm vm to change service offering (if necessary)
-     * @param vmSnapshotVo vm snapshot
+     * Check if service offering change is needed for user vm when reverting to vm snapshot.
+     * Service offering change is needed when snapshot was taken with a different service offering than actual used in vm.
+     * Service offering change is also needed when service offering is dynamic and the amount of cpu, memory or cpu speed
+     * has been changed since snapshot was taken.
+     * @param userVm
+     * @param vmSnapshotVo
+     * @return true if service offering change is needed; false otherwise
      */
-    protected void updateUserVmServiceOffering(UserVm userVm, VMSnapshotVO vmSnapshotVo) {
+    protected boolean userVmServiceOfferingNeedsChange(UserVm userVm, VMSnapshotVO vmSnapshotVo) {
         if (vmSnapshotVo.getServiceOfferingId() != userVm.getServiceOfferingId()) {
-            changeUserVmServiceOffering(userVm, vmSnapshotVo);
+            return true;
         }
+
+        ServiceOfferingVO currentServiceOffering = _serviceOfferingDao.findByIdIncludingRemoved(userVm.getId(), userVm.getServiceOfferingId());
+        if (currentServiceOffering.isDynamic()) {
+            Map<String, String> vmDetails = getVmMapDetails(vmSnapshotVo);
+            ServiceOfferingVO newServiceOffering = _serviceOfferingDao.getComputeOffering(currentServiceOffering, vmDetails);
+
+            int newCpu = newServiceOffering.getCpu();
+            int newMemory = newServiceOffering.getRamSize();
+            int newSpeed = newServiceOffering.getSpeed();
+            int currentCpu = currentServiceOffering.getCpu();
+            int currentMemory = currentServiceOffering.getRamSize();
+            int currentSpeed = currentServiceOffering.getSpeed();
+
+            if (newCpu != currentCpu || newMemory != currentMemory || newSpeed != currentSpeed) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * Get user vm details as a map
-     * @param userVm user vm
+     * @param vmSnapshotVo snapshot to get the details from
      * @return map
      */
-    protected Map<String, String> getVmMapDetails(UserVm userVm) {
-        List<VMInstanceDetailVO> userVmDetails = _vmInstanceDetailsDao.listDetails(userVm.getId());
+    protected Map<String, String> getVmMapDetails(VMSnapshotVO vmSnapshotVo) {
+        List<VMSnapshotDetailsVO> vmSnapshotDetails = _vmSnapshotDetailsDao.listDetails(vmSnapshotVo.getId());
         Map<String, String> details = new HashMap<String, String>();
-        for (VMInstanceDetailVO detail : userVmDetails) {
+        for (VMSnapshotDetailsVO detail : vmSnapshotDetails) {
             details.put(detail.getName(), detail.getValue());
         }
         return details;
     }
 
     /**
-     * Update service offering on {@link userVm} to the one specified in {@link vmSnapshotVo}
+     * Update service offering on {code}userVm{code} to the one specified in {code}vmSnapshotVo{code}
      * @param userVm user vm to be updated
      * @param vmSnapshotVo vm snapshot
      */
     protected void changeUserVmServiceOffering(UserVm userVm, VMSnapshotVO vmSnapshotVo) {
-        Map<String, String> vmDetails = getVmMapDetails(userVm);
+        Map<String, String> vmDetails = getVmMapDetails(vmSnapshotVo);
         boolean result = upgradeUserVmServiceOffering(userVm, vmSnapshotVo.getServiceOfferingId(), vmDetails);
         if (! result){
             throw new CloudRuntimeException("Instance Snapshot reverting failed because the Instance service offering couldn't be changed to the one used when Snapshot was taken");
@@ -855,8 +882,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     }
 
     /**
-     * Upgrade virtual machine {@linkplain vmId} to new service offering {@linkplain serviceOfferingId}
-     * @param vmId vm id
+     * Upgrade virtual machine {code}vm{code} to new service offering {code}serviceOfferingId{code}
+     * @param vm vm
      * @param serviceOfferingId service offering id
      * @param details vm details
      * @return if operation was successful
@@ -943,8 +970,10 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
+                    if (userVmServiceOfferingNeedsChange(userVm, vmSnapshotVo)) {
+                        changeUserVmServiceOffering(userVm, vmSnapshotVo);
+                    }
                     revertCustomServiceOfferingDetailsFromVmSnapshot(userVm, vmSnapshotVo);
-                    updateUserVmServiceOffering(userVm, vmSnapshotVo);
                 }
             });
             return userVm;
@@ -1294,7 +1323,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     public Pair<JobInfo.Status, String> orchestrateCreateVMSnapshot(VmWorkCreateVMSnapshot work) throws Exception {
         VMSnapshot snapshot = orchestrateCreateVMSnapshot(work.getVmId(), work.getVmSnapshotId(), work.isQuiesceVm());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
-                _jobMgr.marshallResultObject(new Long(snapshot.getId())));
+                _jobMgr.marshallResultObject(Long.valueOf(snapshot.getId())));
     }
 
     @ReflectionUse

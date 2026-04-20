@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.bucket;
 
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.storage.object.Bucket;
 import com.cloud.user.Account;
@@ -82,7 +83,7 @@ public class DeleteBucketCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ConcurrentOperationException {
+    public void execute() throws ConcurrentOperationException, ResourceAllocationException {
         CallContext.current().setEventDetails("Bucket ID: " + getResourceUuid(ApiConstants.ID));
         boolean result = _bucketService.deleteBucket(id, CallContext.current().getCallingAccount());
         SuccessResponse response = new SuccessResponse(getCommandName());

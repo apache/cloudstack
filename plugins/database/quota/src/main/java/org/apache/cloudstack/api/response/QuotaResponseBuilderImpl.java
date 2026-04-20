@@ -47,6 +47,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
@@ -160,12 +161,6 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private final Class<?>[] assignableClasses = {GenericPresetVariable.class, ComputingResources.class};
 
     private Set<Account.Type> accountTypesThatCanListAllQuotaSummaries = Sets.newHashSet(Account.Type.ADMIN, Account.Type.DOMAIN_ADMIN);
-
-    protected void checkActivationRulesAllowed(String activationRule) {
-        if (!_quotaService.isJsInterpretationEnabled() && StringUtils.isNotEmpty(activationRule)) {
-            throw new PermissionDeniedException("Quota Tariff Activation Rule cannot be set, as Javascript interpretation is disabled in the configuration.");
-        }
-    }
 
     @Override
     public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff, boolean returnActivationRule) {
@@ -424,14 +419,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         Integer position = cmd.getPosition();
 
         warnQuotaTariffUpdateDeprecatedFields(cmd);
+        jsInterpreterHelper.ensureInterpreterEnabledIfParameterProvided(ApiConstants.ACTIVATION_RULE, StringUtils.isNotBlank(activationRule));
 
         QuotaTariffVO currentQuotaTariff = _quotaTariffDao.findByName(name);
 
         if (currentQuotaTariff == null) {
             throw new InvalidParameterValueException(String.format("There is no quota tariffs with name [%s].", name));
         }
-
-        checkActivationRulesAllowed(activationRule);
 
         Date currentQuotaTariffStartDate = currentQuotaTariff.getEffectiveOn();
 
@@ -653,13 +647,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         String activationRule = cmd.getActivationRule();
         Integer position = ObjectUtils.defaultIfNull(cmd.getPosition(), 1);
 
+        jsInterpreterHelper.ensureInterpreterEnabledIfParameterProvided(ApiConstants.ACTIVATION_RULE, StringUtils.isNotBlank(activationRule));
+
         QuotaTariffVO currentQuotaTariff = _quotaTariffDao.findByName(name);
 
         if (currentQuotaTariff != null) {
             throw new InvalidParameterValueException(String.format("A quota tariff with name [%s] already exist.", name));
         }
-
-        checkActivationRulesAllowed(activationRule);
 
         if (startDate.compareTo(now) < 0) {
             throw new InvalidParameterValueException(String.format("The value passed as Quota tariff's start date is in the past: [%s]. " +
