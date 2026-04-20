@@ -72,9 +72,14 @@ public class ListProjectRolesCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        if (getProjectId() != null && _projectService.getProject(getProjectId()) == null) {
-            throw new InvalidParameterValueException("Failed to find project by ID.");
+        Project project = null;
+        if (getProjectId() != null && getProjectId() > 0) {
+            project = _projectService.getProject(getProjectId());
+            if (project == null) {
+                throw new InvalidParameterValueException("Unable to find project by ID.");
+            }
         }
+        final String projectUuid = project != null ? project.getUuid() : null;
         List<ProjectRole> projectRoles;
         if (getProjectId() != null && getProjectRoleId() != null) {
             projectRoles = Collections.singletonList(projRoleService.findProjectRole(getProjectRoleId(), getProjectId()));
@@ -89,17 +94,17 @@ public class ListProjectRolesCmd extends BaseListCmd {
             if (role == null) {
                 continue;
             }
-            roleResponses.add(setupProjectRoleResponse(role));
+            roleResponses.add(setupProjectRoleResponse(role, projectUuid));
         }
         response.setResponses(roleResponses);
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
 
-    private ProjectRoleResponse setupProjectRoleResponse(final ProjectRole role) {
+    private ProjectRoleResponse setupProjectRoleResponse(final ProjectRole role, final String projectUuid) {
         final ProjectRoleResponse response = new ProjectRoleResponse();
         response.setId(role.getUuid());
-        response.setProjectId(_projectService.getProject(role.getProjectId()).getUuid());
+        response.setProjectId(projectUuid);
         response.setRoleName(role.getName());
         response.setDescription(role.getDescription());
         response.setObjectName("projectrole");
@@ -110,4 +115,5 @@ public class ListProjectRolesCmd extends BaseListCmd {
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccountId();
     }
+}
 }
