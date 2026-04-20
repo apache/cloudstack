@@ -183,7 +183,8 @@ public class Storage {
         Linstor(true, true, EncryptionSupport.Storage),
         DatastoreCluster(true, true, EncryptionSupport.Unsupported), // for VMware, to abstract pool of clusters
         StorPool(true, true, EncryptionSupport.Hypervisor),
-        FiberChannel(true, true, EncryptionSupport.Unsupported); // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
+        FiberChannel(true, true, EncryptionSupport.Unsupported), // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
+        NVMeTCP(true, true, EncryptionSupport.Unsupported); // NVMe over TCP (NVMe-oF/TCP) Pool for KVM hypervisors; volumes are identified by EUI-128 NGUID (/dev/disk/by-id/nvme-eui.<eui>)
 
         private final boolean shared;
         private final boolean overProvisioning;
