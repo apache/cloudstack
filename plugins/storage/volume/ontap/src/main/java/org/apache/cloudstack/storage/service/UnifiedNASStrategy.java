@@ -45,8 +45,6 @@ import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.feign.model.CliSnapshotRestoreRequest;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
-import org.apache.cloudstack.storage.utils.Constants;
-import org.apache.cloudstack.storage.utils.Utility;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
@@ -123,14 +121,14 @@ public class UnifiedNASStrategy extends NASStrategy {
     public CloudStackVolume getCloudStackVolume(Map<String, String> cloudStackVolumeMap) {
         logger.info("getCloudStackVolume: Get cloudstack volume " + cloudStackVolumeMap);
         CloudStackVolume cloudStackVolume = null;
-        FileInfo fileInfo = getFile(cloudStackVolumeMap.get(Constants.VOLUME_UUID),cloudStackVolumeMap.get(Constants.FILE_PATH));
+        FileInfo fileInfo = getFile(cloudStackVolumeMap.get(OntapStorageConstants.VOLUME_UUID),cloudStackVolumeMap.get(OntapStorageConstants.FILE_PATH));
 
         if(fileInfo != null){
             cloudStackVolume = new CloudStackVolume();
-            cloudStackVolume.setFlexVolumeUuid(cloudStackVolumeMap.get(Constants.VOLUME_UUID));
+            cloudStackVolume.setFlexVolumeUuid(cloudStackVolumeMap.get(OntapStorageConstants.VOLUME_UUID));
             cloudStackVolume.setFile(fileInfo);
         } else {
-            logger.warn("getCloudStackVolume: File not found for volume UUID: {} and file path: {}", cloudStackVolumeMap.get(Constants.VOLUME_UUID), cloudStackVolumeMap.get(Constants.FILE_PATH));
+            logger.warn("getCloudStackVolume: File not found for volume UUID: {} and file path: {}", cloudStackVolumeMap.get(OntapStorageConstants.VOLUME_UUID), cloudStackVolumeMap.get(OntapStorageConstants.FILE_PATH));
         }
 
         return cloudStackVolume;
@@ -141,9 +139,9 @@ public class UnifiedNASStrategy extends NASStrategy {
         logger.info("createAccessGroup: Create access group {}: " , accessGroup);
 
         Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(accessGroup.getStoragePoolId());
-        String svmName = details.get(Constants.SVM_NAME);
-        String volumeUUID = details.get(Constants.VOLUME_UUID);
-        String volumeName = details.get(Constants.VOLUME_NAME);
+        String svmName = details.get(OntapStorageConstants.SVM_NAME);
+        String volumeUUID = details.get(OntapStorageConstants.VOLUME_UUID);
+        String volumeName = details.get(OntapStorageConstants.VOLUME_NAME);
 
         // Create the export policy
         ExportPolicy policyRequest = createExportPolicyRequest(accessGroup,svmName,volumeName);
@@ -153,8 +151,8 @@ public class UnifiedNASStrategy extends NASStrategy {
             // attach export policy to volume of storage pool
             assignExportPolicyToVolume(volumeUUID,createdPolicy.getName());
             // save the export policy details in storage pool details
-            storagePoolDetailsDao.addDetail(accessGroup.getStoragePoolId(), Constants.EXPORT_POLICY_ID, String.valueOf(createdPolicy.getId()), true);
-            storagePoolDetailsDao.addDetail(accessGroup.getStoragePoolId(), Constants.EXPORT_POLICY_NAME, createdPolicy.getName(), true);
+            storagePoolDetailsDao.addDetail(accessGroup.getStoragePoolId(), OntapStorageConstants.EXPORT_POLICY_ID, String.valueOf(createdPolicy.getId()), true);
+            storagePoolDetailsDao.addDetail(accessGroup.getStoragePoolId(), OntapStorageConstants.EXPORT_POLICY_NAME, createdPolicy.getName(), true);
             logger.info("Successfully assigned exportPolicy {} to volume {}", policyRequest.getName(), volumeName);
             accessGroup.setPolicy(policyRequest);
             return accessGroup;
@@ -174,10 +172,10 @@ public class UnifiedNASStrategy extends NASStrategy {
 
         try {
             Map<String, String> details = storagePoolDetailsDao.listDetailsKeyPairs(accessGroup.getStoragePoolId());
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
             // Determine export policy attached to the storage pool
-            String exportPolicyName = details.get(Constants.EXPORT_POLICY_NAME);
-            String exportPolicyId = details.get(Constants.EXPORT_POLICY_ID);
+            String exportPolicyName = details.get(OntapStorageConstants.EXPORT_POLICY_NAME);
+            String exportPolicyId = details.get(OntapStorageConstants.EXPORT_POLICY_ID);
 
             try {
                 nasFeignClient.deleteExportPolicyById(authHeader,exportPolicyId);
@@ -225,7 +223,7 @@ public class UnifiedNASStrategy extends NASStrategy {
             nasFeignClient.createExportPolicy(authHeader,  policy);
             OntapResponse<ExportPolicy> policiesResponse = null;
             try {
-                Map<String, Object> queryParams = Map.of(Constants.NAME, policy.getName());
+                Map<String, Object> queryParams = Map.of(OntapStorageConstants.NAME, policy.getName());
                 policiesResponse = nasFeignClient.getExportPolicyResponse(authHeader, queryParams);
                 if (policiesResponse == null || policiesResponse.getRecords().isEmpty()) {
                     throw new CloudRuntimeException("Export policy " + policy.getName() + " was not created on ONTAP. " +
@@ -303,7 +301,7 @@ public class UnifiedNASStrategy extends NASStrategy {
     private boolean createFile(String volumeUuid, String filePath, FileInfo fileInfo) {
         logger.info("createFile: Creating file: {} in volume: {}", filePath, volumeUuid);
         try {
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
             nasFeignClient.createFile(authHeader, volumeUuid, filePath, fileInfo);
             logger.info("createFile: File created successfully: {} in volume: {}", filePath, volumeUuid);
             return true;
@@ -319,7 +317,7 @@ public class UnifiedNASStrategy extends NASStrategy {
     private boolean deleteFile(String volumeUuid, String filePath) {
         logger.info("deleteFile: Deleting file: {} from volume: {}", filePath, volumeUuid);
         try {
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
             nasFeignClient.deleteFile(authHeader, volumeUuid, filePath);
             logger.info("deleteFile: File deleted successfully: {} from volume: {}", filePath, volumeUuid);
             return true;
@@ -335,7 +333,7 @@ public class UnifiedNASStrategy extends NASStrategy {
     private OntapResponse<FileInfo> getFileInfo(String volumeUuid, String filePath) {
         logger.debug("getFileInfo: Getting file info for: {} in volume: {}", filePath, volumeUuid);
         try {
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
             OntapResponse<FileInfo> response = nasFeignClient.getFileResponse(authHeader, volumeUuid, filePath);
             logger.debug("getFileInfo: Retrieved file info for: {} in volume: {}", filePath, volumeUuid);
             return response;
@@ -355,7 +353,7 @@ public class UnifiedNASStrategy extends NASStrategy {
     private boolean updateFile(String volumeUuid, String filePath, FileInfo fileInfo) {
         logger.info("updateFile: Updating file: {} in volume: {}", filePath, volumeUuid);
         try {
-            String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+            String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
             nasFeignClient.updateFile( authHeader, volumeUuid, filePath, fileInfo);
             logger.info("updateFile: File updated successfully: {} in volume: {}", filePath, volumeUuid);
             return true;
@@ -485,7 +483,7 @@ public class UnifiedNASStrategy extends NASStrategy {
     private FileInfo getFile(String volumeUuid, String filePath) {
         logger.info("Get File: {} for volume: {}", filePath, volumeUuid);
 
-        String authHeader = Utility.generateAuthHeader(storage.getUsername(), storage.getPassword());
+        String authHeader = OntapStorageUtils.generateAuthHeader(storage.getUsername(), storage.getPassword());
         OntapResponse<FileInfo> fileResponse = null;
         try {
             fileResponse = nasFeignClient.getFileResponse(authHeader, volumeUuid, filePath);

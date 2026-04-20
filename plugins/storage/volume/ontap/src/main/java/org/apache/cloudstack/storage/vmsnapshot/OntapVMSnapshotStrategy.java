@@ -39,8 +39,7 @@ import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.StorageStrategy;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.storage.utils.Constants;
-import org.apache.cloudstack.storage.utils.Utility;
+import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,6 +68,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 
 /**
  * VM Snapshot strategy for NetApp ONTAP managed storage using FlexVolume-level snapshots.
@@ -95,7 +95,7 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
  * <h3>Metadata in vm_snapshot_details:</h3>
  * <p>Each FlexVolume snapshot is stored as a detail row with:
  * <ul>
- *   <li>name = {@value Constants#ONTAP_FLEXVOL_SNAPSHOT}</li>
+ *   <li>name = {@value OntapStorageConstants#ONTAP_FLEXVOL_SNAPSHOT}</li>
  *   <li>value = {@code "<flexVolUuid>::<snapshotUuid>::<snapshotName>::<volumePath>::<poolId>::<protocol>"}</li>
  * </ul>
  * One row is persisted per CloudStack volume (not per FlexVolume) so that the
@@ -139,7 +139,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
         // For existing (non-Allocated) snapshots, check if we created them
         if (!VMSnapshot.State.Allocated.equals(vmSnapshotVO.getState())) {
             // Check for our FlexVolume snapshot details first
-            List<VMSnapshotDetailsVO> flexVolDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), Constants.ONTAP_FLEXVOL_SNAPSHOT);
+            List<VMSnapshotDetailsVO> flexVolDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT);
             if (CollectionUtils.isNotEmpty(flexVolDetails)) {
                 // Verify the volumes are still on ONTAP storage
                 if (allVolumesOnOntapManagedStorage(vmSnapshot.getVmId())) {
@@ -233,7 +233,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                         volume.getId(), pool.getName());
                 return false;
             }
-            if (!Constants.ONTAP_PLUGIN_NAME.equals(pool.getStorageProviderName())) {
+            if (!OntapStorageConstants.ONTAP_PLUGIN_NAME.equals(pool.getStorageProviderName())) {
                 logger.debug("allVolumesOnOntapManagedStorage: Volume [{}] is on managed pool [{}] with provider [{}], not ONTAP",
                         volume.getId(), pool.getName(), pool.getStorageProviderName());
                 return false;
@@ -384,7 +384,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     long startSnapshot = System.nanoTime();
 
                     // Build storage strategy from pool details to get the feign client
-                    StorageStrategy storageStrategy = Utility.getStrategyByStoragePoolDetails(groupInfo.poolDetails);
+                    StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(groupInfo.poolDetails);
                     SnapshotFeignClient snapshotClient = storageStrategy.getSnapshotFeignClient();
                     String authHeader = storageStrategy.getAuthHeader();
 
@@ -410,7 +410,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     // Retrieve the created snapshot UUID by name
                     String snapshotUuid = resolveSnapshotUuid(snapshotClient, authHeader, flexVolUuid, snapshotNameBase);
 
-                    String protocol = groupInfo.poolDetails.get(Constants.PROTOCOL);
+                    String protocol = groupInfo.poolDetails.get(OntapStorageConstants.PROTOCOL);
 
                     // Create one detail per CloudStack volume in this FlexVol group (for single-file restore during revert)
                     for (Long volumeId : groupInfo.volumeIds) {
@@ -447,7 +447,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             // ── Step 4: Persist FlexVolume snapshot details (one row per CloudStack volume) ──
             for (FlexVolSnapshotDetail detail : createdSnapshots) {
                 vmSnapshotDetailsDao.persist(new VMSnapshotDetailsVO(
-                        vmSnapshot.getId(), Constants.ONTAP_FLEXVOL_SNAPSHOT, detail.toString(), true));
+                        vmSnapshot.getId(), OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT, detail.toString(), true));
             }
 
             // ── Step 5: Finalize via parent processAnswer ──
@@ -508,7 +508,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                 try {
                     List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshot.getId());
                     for (VMSnapshotDetailsVO detail : vmSnapshotDetails) {
-                        if (Constants.ONTAP_FLEXVOL_SNAPSHOT.equals(detail.getName())) {
+                        if (OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT.equals(detail.getName())) {
                             vmSnapshotDetailsDao.remove(detail.getId());
                         }
                     }
@@ -547,7 +547,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     volumeTOs, guestOS.getDisplayName());
 
             // Check for FlexVolume snapshots (new approach)
-            List<VMSnapshotDetailsVO> flexVolDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), Constants.ONTAP_FLEXVOL_SNAPSHOT);
+            List<VMSnapshotDetailsVO> flexVolDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT);
             if (CollectionUtils.isNotEmpty(flexVolDetails)) {
                 deleteFlexVolSnapshots(flexVolDetails);
             }
@@ -602,7 +602,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
                     userVm.getUuid(), vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
 
             // Check for FlexVolume snapshots (new approach)
-            List<VMSnapshotDetailsVO> flexVolDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), Constants.ONTAP_FLEXVOL_SNAPSHOT);
+            List<VMSnapshotDetailsVO> flexVolDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT);
             if (CollectionUtils.isNotEmpty(flexVolDetails)) {
                 revertFlexVolSnapshots(flexVolDetails);
             }
@@ -652,7 +652,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             }
 
             Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(volumeVO.getPoolId());
-            String flexVolUuid = poolDetails.get(Constants.VOLUME_UUID);
+            String flexVolUuid = poolDetails.get(OntapStorageConstants.VOLUME_UUID);
             if (flexVolUuid == null || flexVolUuid.isEmpty()) {
                 throw new CloudRuntimeException("FlexVolume UUID not found in pool details for pool [" + volumeVO.getPoolId() + "]");
             }
@@ -675,8 +675,8 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
     String buildSnapshotName(VMSnapshot vmSnapshot) {
         String name = "vmsnap_" + vmSnapshot.getId() + "_" + System.currentTimeMillis();
         // ONTAP snapshot names: max 256 chars, must start with letter, only alphanumeric and underscores
-        if (name.length() > Constants.MAX_SNAPSHOT_NAME_LENGTH) {
-            name = name.substring(0, Constants.MAX_SNAPSHOT_NAME_LENGTH);
+        if (name.length() > OntapStorageConstants.MAX_SNAPSHOT_NAME_LENGTH) {
+            name = name.substring(0, OntapStorageConstants.MAX_SNAPSHOT_NAME_LENGTH);
         }
         return name;
     }
@@ -714,10 +714,10 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
     String resolveVolumePathOnOntap(Long volumeId, String protocol, Map<String, String> poolDetails) {
         if (ProtocolType.ISCSI.name().equalsIgnoreCase(protocol)) {
             // iSCSI – the LUN's ONTAP name is stored as a volume detail
-            VolumeDetailVO lunDetail = volumeDetailsDao.findDetail(volumeId, Constants.LUN_DOT_NAME);
+            VolumeDetailVO lunDetail = volumeDetailsDao.findDetail(volumeId, OntapStorageConstants.LUN_DOT_NAME);
             if (lunDetail == null || lunDetail.getValue() == null || lunDetail.getValue().isEmpty()) {
                 throw new CloudRuntimeException(
-                        "LUN name (volume detail '" + Constants.LUN_DOT_NAME + "') not found for iSCSI volume [" + volumeId + "]");
+                        "LUN name (volume detail '" + OntapStorageConstants.LUN_DOT_NAME + "') not found for iSCSI volume [" + volumeId + "]");
             }
             return lunDetail.getValue();
         } else {
@@ -736,7 +736,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
     void rollbackFlexVolSnapshot(FlexVolSnapshotDetail detail) {
         try {
             Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(detail.poolId);
-            StorageStrategy storageStrategy = Utility.getStrategyByStoragePoolDetails(poolDetails);
+            StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(poolDetails);
             SnapshotFeignClient client = storageStrategy.getSnapshotFeignClient();
             String authHeader = storageStrategy.getAuthHeader();
 
@@ -770,7 +770,7 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             // Only delete the ONTAP snapshot once per FlexVol+Snapshot pair
             if (!deletedSnapshots.containsKey(dedupeKey)) {
                 Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(detail.poolId);
-                StorageStrategy storageStrategy = Utility.getStrategyByStoragePoolDetails(poolDetails);
+                StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(poolDetails);
                 SnapshotFeignClient client = storageStrategy.getSnapshotFeignClient();
                 String authHeader = storageStrategy.getAuthHeader();
 
@@ -819,13 +819,13 @@ public class OntapVMSnapshotStrategy extends StorageVMSnapshotStrategy {
             }
 
             Map<String, String> poolDetails = storagePoolDetailsDao.listDetailsKeyPairs(detail.poolId);
-            StorageStrategy storageStrategy = Utility.getStrategyByStoragePoolDetails(poolDetails);
+            StorageStrategy storageStrategy = OntapStorageUtils.getStrategyByStoragePoolDetails(poolDetails);
             SnapshotFeignClient snapshotClient = storageStrategy.getSnapshotFeignClient();
             String authHeader = storageStrategy.getAuthHeader();
 
             // Get SVM name and FlexVolume name from pool details
-            String svmName = poolDetails.get(Constants.SVM_NAME);
-            String flexVolName = poolDetails.get(Constants.VOLUME_NAME);
+            String svmName = poolDetails.get(OntapStorageConstants.SVM_NAME);
+            String flexVolName = poolDetails.get(OntapStorageConstants.VOLUME_NAME);
 
             if (svmName == null || svmName.isEmpty()) {
                 throw new CloudRuntimeException("SVM name not found in pool details for pool [" + detail.poolId + "]");

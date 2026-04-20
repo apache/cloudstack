@@ -34,8 +34,8 @@ import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
-import org.apache.cloudstack.storage.utils.Constants;
-import org.apache.cloudstack.storage.utils.Utility;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
+import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -137,8 +137,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<Lun> response = new OntapResponse<>();
         response.setRecords(List.of(createdLun));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
@@ -175,8 +175,8 @@ class UnifiedSANStrategyTest {
         when(feignException.status()).thenReturn(500);
         when(feignException.getMessage()).thenReturn("Internal server error");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
@@ -197,8 +197,8 @@ class UnifiedSANStrategyTest {
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lun);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             doNothing().when(sanFeignClient).deleteLun(eq(authHeader), eq("lun-uuid-123"), anyMap());
@@ -223,8 +223,8 @@ class UnifiedSANStrategyTest {
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(404);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             doThrow(feignException).when(sanFeignClient).deleteLun(eq(authHeader), eq("lun-uuid-123"), anyMap());
@@ -238,8 +238,8 @@ class UnifiedSANStrategyTest {
     void testGetCloudStackVolume_Success() {
         // Setup
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.NAME, "/vol/vol1/lun1");
 
         Lun lun = new Lun();
         lun.setName("/vol/vol1/lun1");
@@ -248,8 +248,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<Lun> response = new OntapResponse<>();
         response.setRecords(List.of(lun));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunResponse(eq(authHeader), anyMap())).thenReturn(response);
@@ -269,14 +269,14 @@ class UnifiedSANStrategyTest {
     void testGetCloudStackVolume_NotFound_ReturnsNull() {
         // Setup
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.NAME, "/vol/vol1/lun1");
 
         OntapResponse<Lun> response = new OntapResponse<>();
         response.setRecords(new ArrayList<>());
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunResponse(eq(authHeader), anyMap())).thenReturn(response);
@@ -297,8 +297,8 @@ class UnifiedSANStrategyTest {
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -315,10 +315,10 @@ class UnifiedSANStrategyTest {
         OntapResponse<Igroup> response = new OntapResponse<>();
         response.setRecords(List.of(createdIgroup));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.createIgroup(eq(authHeader), eq(true), any(Igroup.class)))
@@ -350,8 +350,8 @@ class UnifiedSANStrategyTest {
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -365,10 +365,10 @@ class UnifiedSANStrategyTest {
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(409);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.createIgroup(eq(authHeader), eq(true), any(Igroup.class)))
@@ -389,8 +389,8 @@ class UnifiedSANStrategyTest {
         accessGroup.setStoragePoolId(1L);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -414,10 +414,10 @@ class UnifiedSANStrategyTest {
         OntapResponse<Igroup> response = new OntapResponse<>();
         response.setRecords(List.of(igroup));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(response);
@@ -437,8 +437,8 @@ class UnifiedSANStrategyTest {
         accessGroup.setStoragePoolId(1L);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -451,10 +451,10 @@ class UnifiedSANStrategyTest {
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(404);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenThrow(feignException);
@@ -468,8 +468,8 @@ class UnifiedSANStrategyTest {
     void testGetAccessGroup_Success() {
         // Setup
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.NAME, "igroup1");
 
         Igroup igroup = new Igroup();
         igroup.setName("igroup1");
@@ -477,8 +477,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<Igroup> response = new OntapResponse<>();
         response.setRecords(List.of(igroup));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(response);
@@ -497,9 +497,9 @@ class UnifiedSANStrategyTest {
     void testEnableLogicalAccess_Success() {
         // Setup
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
 
         LunMap lunMap = new LunMap();
         lunMap.setLogicalUnitNumber(0);
@@ -507,8 +507,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<LunMap> response = new OntapResponse<>();
         response.setRecords(List.of(lunMap));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.createLunMap(eq(authHeader), eq(true), any(LunMap.class)))
@@ -520,8 +520,8 @@ class UnifiedSANStrategyTest {
 
             // Verify
             assertNotNull(result);
-            assertTrue(result.containsKey(Constants.LOGICAL_UNIT_NUMBER));
-            assertEquals("0", result.get(Constants.LOGICAL_UNIT_NUMBER));
+            assertTrue(result.containsKey(OntapStorageConstants.LOGICAL_UNIT_NUMBER));
+            assertEquals("0", result.get(OntapStorageConstants.LOGICAL_UNIT_NUMBER));
 
             verify(sanFeignClient).createLunMap(eq(authHeader), eq(true), any(LunMap.class));
         }
@@ -531,9 +531,9 @@ class UnifiedSANStrategyTest {
     void testEnableLogicalAccess_AlreadyMapped_ReturnsLunNumber() {
         // Setup
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
 
         LunMap lunMap = new LunMap();
         lunMap.setLogicalUnitNumber(5);
@@ -541,8 +541,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<LunMap> response = new OntapResponse<>();
         response.setRecords(List.of(lunMap));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             Exception exception = new RuntimeException("LUN already mapped to this group");
@@ -554,7 +554,7 @@ class UnifiedSANStrategyTest {
 
             // Verify
             assertNotNull(result);
-            assertEquals("5", result.get(Constants.LOGICAL_UNIT_NUMBER));
+            assertEquals("5", result.get(OntapStorageConstants.LOGICAL_UNIT_NUMBER));
         }
     }
 
@@ -562,11 +562,11 @@ class UnifiedSANStrategyTest {
     void testDisableLogicalAccess_Success() {
         // Setup
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.LUN_DOT_UUID, "lun-uuid-123");
-        values.put(Constants.IGROUP_DOT_UUID, "igroup-uuid-123");
+        values.put(OntapStorageConstants.LUN_DOT_UUID, "lun-uuid-123");
+        values.put(OntapStorageConstants.IGROUP_DOT_UUID, "igroup-uuid-123");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             doNothing().when(sanFeignClient).deleteLunMap(eq(authHeader), eq("lun-uuid-123"), eq("igroup-uuid-123"));
@@ -583,14 +583,14 @@ class UnifiedSANStrategyTest {
     void testDisableLogicalAccess_NotFound_SkipsDeletion() {
         // Setup
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.LUN_DOT_UUID, "lun-uuid-123");
-        values.put(Constants.IGROUP_DOT_UUID, "igroup-uuid-123");
+        values.put(OntapStorageConstants.LUN_DOT_UUID, "lun-uuid-123");
+        values.put(OntapStorageConstants.IGROUP_DOT_UUID, "igroup-uuid-123");
 
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(404);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             doThrow(feignException).when(sanFeignClient).deleteLunMap(eq(authHeader), eq("lun-uuid-123"), eq("igroup-uuid-123"));
@@ -604,9 +604,9 @@ class UnifiedSANStrategyTest {
     void testGetLogicalAccess_Success() {
         // Setup
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
 
         LunMap lunMap = new LunMap();
         lunMap.setLogicalUnitNumber(3);
@@ -614,8 +614,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<LunMap> response = new OntapResponse<>();
         response.setRecords(List.of(lunMap));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap())).thenReturn(response);
@@ -625,7 +625,7 @@ class UnifiedSANStrategyTest {
 
             // Verify
             assertNotNull(result);
-            assertEquals("3", result.get(Constants.LOGICAL_UNIT_NUMBER));
+            assertEquals("3", result.get(OntapStorageConstants.LOGICAL_UNIT_NUMBER));
         }
     }
 
@@ -633,12 +633,12 @@ class UnifiedSANStrategyTest {
     void testGetLogicalAccess_NotFound_ReturnsNull() {
         // Setup
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap()))
@@ -665,8 +665,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<LunMap> response = new OntapResponse<>();
         response.setRecords(List.of(lunMap));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap())).thenReturn(response);
@@ -696,8 +696,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<LunMap> response = new OntapResponse<>();
         response.setRecords(List.of(lunMap));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             // First call returns empty (no existing mapping), second call returns the new mapping
@@ -870,8 +870,8 @@ class UnifiedSANStrategyTest {
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -888,8 +888,8 @@ class UnifiedSANStrategyTest {
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -908,8 +908,8 @@ class UnifiedSANStrategyTest {
         lenient().when(scope.getScopeType()).thenReturn(com.cloud.storage.ScopeType.CLUSTER);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -932,8 +932,8 @@ class UnifiedSANStrategyTest {
         lenient().when(scope.getScopeType()).thenReturn(com.cloud.storage.ScopeType.CLUSTER);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -954,8 +954,8 @@ class UnifiedSANStrategyTest {
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -969,10 +969,10 @@ class UnifiedSANStrategyTest {
         when(feignException.status()).thenReturn(500);
         when(feignException.getMessage()).thenReturn("Internal server error");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.createIgroup(eq(authHeader), eq(true), any(Igroup.class)))
@@ -990,8 +990,8 @@ class UnifiedSANStrategyTest {
         accessGroup.setScope(scope);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -1004,10 +1004,10 @@ class UnifiedSANStrategyTest {
         OntapResponse<Igroup> response = new OntapResponse<>();
         response.setRecords(new ArrayList<>());
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.createIgroup(eq(authHeader), eq(true), any(Igroup.class)))
@@ -1037,8 +1037,8 @@ class UnifiedSANStrategyTest {
         accessGroup.setStoragePoolId(1L);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -1055,10 +1055,10 @@ class UnifiedSANStrategyTest {
         OntapResponse<Igroup> response = new OntapResponse<>();
         response.setRecords(List.of(igroup));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(response);
@@ -1074,8 +1074,8 @@ class UnifiedSANStrategyTest {
         accessGroup.setStoragePoolId(1L);
 
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
 
         lenient().when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
 
@@ -1089,10 +1089,10 @@ class UnifiedSANStrategyTest {
         when(feignException.status()).thenReturn(500);
         when(feignException.getMessage()).thenReturn("Internal server error");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenThrow(feignException);
@@ -1117,7 +1117,7 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetAccessGroup_NullSvmName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.NAME, "igroup1");
+        values.put(OntapStorageConstants.NAME, "igroup1");
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.getAccessGroup(values));
     }
@@ -1125,7 +1125,7 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetAccessGroup_NullIgroupName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.getAccessGroup(values));
     }
@@ -1133,15 +1133,15 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetAccessGroup_FeignExceptionNon404_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.NAME, "igroup1");
 
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(500);
         when(feignException.getMessage()).thenReturn("Internal server error");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenThrow(feignException);
@@ -1166,7 +1166,7 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetCloudStackVolume_NullSvmName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.NAME, "/vol/vol1/lun1");
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.getCloudStackVolume(values));
     }
@@ -1174,7 +1174,7 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetCloudStackVolume_NullLunName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.getCloudStackVolume(values));
     }
@@ -1182,15 +1182,15 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetCloudStackVolume_FeignExceptionNon404_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.NAME, "/vol/vol1/lun1");
 
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(500);
         when(feignException.getMessage()).thenReturn("Internal server error");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunResponse(eq(authHeader), anyMap())).thenThrow(feignException);
@@ -1209,8 +1209,8 @@ class UnifiedSANStrategyTest {
     @Test
     void testEnableLogicalAccess_MissingSvmName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.enableLogicalAccess(values));
     }
@@ -1218,8 +1218,8 @@ class UnifiedSANStrategyTest {
     @Test
     void testEnableLogicalAccess_MissingLunName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.enableLogicalAccess(values));
     }
@@ -1227,8 +1227,8 @@ class UnifiedSANStrategyTest {
     @Test
     void testEnableLogicalAccess_MissingIgroupName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.enableLogicalAccess(values));
     }
@@ -1236,12 +1236,12 @@ class UnifiedSANStrategyTest {
     @Test
     void testEnableLogicalAccess_FetchLunMapFails_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.createLunMap(eq(authHeader), eq(true), any(LunMap.class)))
@@ -1263,7 +1263,7 @@ class UnifiedSANStrategyTest {
     @Test
     void testDisableLogicalAccess_MissingLunUuid_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.IGROUP_DOT_UUID, "igroup-uuid-123");
+        values.put(OntapStorageConstants.IGROUP_DOT_UUID, "igroup-uuid-123");
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.disableLogicalAccess(values));
     }
@@ -1271,7 +1271,7 @@ class UnifiedSANStrategyTest {
     @Test
     void testDisableLogicalAccess_MissingIgroupUuid_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.LUN_DOT_UUID, "lun-uuid-123");
+        values.put(OntapStorageConstants.LUN_DOT_UUID, "lun-uuid-123");
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.disableLogicalAccess(values));
     }
@@ -1279,15 +1279,15 @@ class UnifiedSANStrategyTest {
     @Test
     void testDisableLogicalAccess_FeignExceptionNon404_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.LUN_DOT_UUID, "lun-uuid-123");
-        values.put(Constants.IGROUP_DOT_UUID, "igroup-uuid-123");
+        values.put(OntapStorageConstants.LUN_DOT_UUID, "lun-uuid-123");
+        values.put(OntapStorageConstants.IGROUP_DOT_UUID, "igroup-uuid-123");
 
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(500);
         when(feignException.getMessage()).thenReturn("Internal server error");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             doThrow(feignException).when(sanFeignClient).deleteLunMap(eq(authHeader), eq("lun-uuid-123"), eq("igroup-uuid-123"));
@@ -1306,8 +1306,8 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetLogicalAccess_MissingSvmName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.getLogicalAccess(values));
     }
@@ -1327,8 +1327,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<LunMap> response = new OntapResponse<>();
         response.setRecords(List.of(lunMap));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             // First call returns empty (no existing mapping)
@@ -1355,8 +1355,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<LunMap> emptyResponse = new OntapResponse<>();
         emptyResponse.setRecords(new ArrayList<>());
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap()))
@@ -1409,8 +1409,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<Lun> emptyResponse = new OntapResponse<>();
         emptyResponse.setRecords(new ArrayList<>());
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
@@ -1428,8 +1428,8 @@ class UnifiedSANStrategyTest {
         CloudStackVolume request = new CloudStackVolume();
         request.setLun(lun);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.createLun(eq(authHeader), eq(true), any(Lun.class)))
@@ -1467,8 +1467,8 @@ class UnifiedSANStrategyTest {
         when(feignException.status()).thenReturn(500);
         when(feignException.getMessage()).thenReturn("Internal server error");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             doThrow(feignException).when(sanFeignClient).deleteLun(eq(authHeader), eq("lun-uuid-123"), anyMap());
@@ -1481,14 +1481,14 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetCloudStackVolume_FeignException404_ReturnsNull() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.NAME, "/vol/vol1/lun1");
 
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(404);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunResponse(eq(authHeader), anyMap())).thenThrow(feignException);
@@ -1502,14 +1502,14 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetCloudStackVolume_EmptyResponse_ReturnsNull() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.NAME, "/vol/vol1/lun1");
 
         OntapResponse<Lun> emptyResponse = new OntapResponse<>();
         emptyResponse.setRecords(new ArrayList<>());
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunResponse(eq(authHeader), anyMap())).thenReturn(emptyResponse);
@@ -1523,14 +1523,14 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetAccessGroup_FeignException404_ReturnsNull() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.NAME, "igroup1");
 
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(404);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenThrow(feignException);
@@ -1544,14 +1544,14 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetAccessGroup_EmptyResponse_ReturnsNull() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.NAME, "igroup1");
 
         OntapResponse<Igroup> emptyResponse = new OntapResponse<>();
         emptyResponse.setRecords(new ArrayList<>());
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(emptyResponse);
@@ -1565,9 +1565,9 @@ class UnifiedSANStrategyTest {
     @Test
     void testEnableLogicalAccess_EmptySvmName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
 
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.enableLogicalAccess(values));
@@ -1576,9 +1576,9 @@ class UnifiedSANStrategyTest {
     @Test
     void testEnableLogicalAccess_EmptyLunName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
 
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.enableLogicalAccess(values));
@@ -1587,9 +1587,9 @@ class UnifiedSANStrategyTest {
     @Test
     void testEnableLogicalAccess_EmptyIgroupName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "");
 
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.enableLogicalAccess(values));
@@ -1598,8 +1598,8 @@ class UnifiedSANStrategyTest {
     @Test
     void testDisableLogicalAccess_EmptyLunUuid_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.LUN_DOT_UUID, "");
-        values.put(Constants.IGROUP_DOT_UUID, "igroup-uuid-123");
+        values.put(OntapStorageConstants.LUN_DOT_UUID, "");
+        values.put(OntapStorageConstants.IGROUP_DOT_UUID, "igroup-uuid-123");
 
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.disableLogicalAccess(values));
@@ -1608,8 +1608,8 @@ class UnifiedSANStrategyTest {
     @Test
     void testDisableLogicalAccess_EmptyIgroupUuid_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.LUN_DOT_UUID, "lun-uuid-123");
-        values.put(Constants.IGROUP_DOT_UUID, "");
+        values.put(OntapStorageConstants.LUN_DOT_UUID, "lun-uuid-123");
+        values.put(OntapStorageConstants.IGROUP_DOT_UUID, "");
 
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.disableLogicalAccess(values));
@@ -1618,14 +1618,14 @@ class UnifiedSANStrategyTest {
     @Test
     void testDisableLogicalAccess_FeignException404_SkipsDeletion() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.LUN_DOT_UUID, "lun-uuid-123");
-        values.put(Constants.IGROUP_DOT_UUID, "igroup-uuid-123");
+        values.put(OntapStorageConstants.LUN_DOT_UUID, "lun-uuid-123");
+        values.put(OntapStorageConstants.IGROUP_DOT_UUID, "igroup-uuid-123");
 
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(404);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             doThrow(feignException).when(sanFeignClient).deleteLunMap(eq(authHeader), eq("lun-uuid-123"), eq("igroup-uuid-123"));
@@ -1638,8 +1638,8 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetLogicalAccess_MissingLunName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
 
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.getLogicalAccess(values));
@@ -1648,8 +1648,8 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetLogicalAccess_MissingIgroupName_ThrowsException() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
 
         assertThrows(CloudRuntimeException.class,
             () -> unifiedSANStrategy.getLogicalAccess(values));
@@ -1658,15 +1658,15 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetLogicalAccess_EmptyResponse_ReturnsNull() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
 
         OntapResponse<LunMap> emptyResponse = new OntapResponse<>();
         emptyResponse.setRecords(new ArrayList<>());
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap())).thenReturn(emptyResponse);
@@ -1680,12 +1680,12 @@ class UnifiedSANStrategyTest {
     @Test
     void testGetLogicalAccess_ExceptionThrown_ReturnsNull() {
         Map<String, String> values = new HashMap<>();
-        values.put(Constants.SVM_DOT_NAME, "svm1");
-        values.put(Constants.LUN_DOT_NAME, "/vol/vol1/lun1");
-        values.put(Constants.IGROUP_DOT_NAME, "igroup1");
+        values.put(OntapStorageConstants.SVM_DOT_NAME, "svm1");
+        values.put(OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1");
+        values.put(OntapStorageConstants.IGROUP_DOT_NAME, "igroup1");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap()))
@@ -1714,8 +1714,8 @@ class UnifiedSANStrategyTest {
         igroup.setName("igroup1");
         igroup.setInitiators(null);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             boolean result = unifiedSANStrategy.validateInitiatorInAccessGroup(hostInitiator, svmName, igroup);
@@ -1737,10 +1737,10 @@ class UnifiedSANStrategyTest {
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(404);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenThrow(feignException);
@@ -1763,10 +1763,10 @@ class UnifiedSANStrategyTest {
         OntapResponse<Igroup> emptyResponse = new OntapResponse<>();
         emptyResponse.setRecords(new ArrayList<>());
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
-            utilityMock.when(() -> Utility.getIgroupName("svm1", "host1"))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName("svm1", "host1"))
                     .thenReturn("igroup1");
 
             when(sanFeignClient.getIgroupResponse(eq(authHeader), anyMap())).thenReturn(emptyResponse);
@@ -1789,8 +1789,8 @@ class UnifiedSANStrategyTest {
         OntapResponse<LunMap> response = new OntapResponse<>();
         response.setRecords(List.of(lunMap));
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.generateAuthHeader("admin", "password"))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.generateAuthHeader("admin", "password"))
                     .thenReturn(authHeader);
 
             when(sanFeignClient.getLunMapResponse(eq(authHeader), anyMap())).thenReturn(response);

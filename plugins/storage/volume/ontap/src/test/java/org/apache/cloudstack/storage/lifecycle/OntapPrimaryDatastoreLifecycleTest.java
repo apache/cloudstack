@@ -18,7 +18,8 @@
  */
 package org.apache.cloudstack.storage.lifecycle;
 
-import org.apache.cloudstack.storage.utils.Constants;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
+import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,7 +61,6 @@ import java.util.HashMap;
 import org.apache.cloudstack.storage.provider.StorageProviderFactory;
 import org.apache.cloudstack.storage.service.StorageStrategy;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.cloudstack.storage.utils.Utility;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
@@ -159,11 +159,11 @@ public class OntapPrimaryDatastoreLifecycleTest {
     public void testInitialize_positive() {
 
         HashMap<String, String> detailsMap = new HashMap<String, String>();
-        detailsMap.put(Constants.USERNAME, "testUser");
-        detailsMap.put(Constants.PASSWORD, "testPassword");
-        detailsMap.put(Constants.STORAGE_IP, "10.10.10.10");
-        detailsMap.put(Constants.SVM_NAME, "vs0");
-        detailsMap.put(Constants.PROTOCOL, "NFS3");
+        detailsMap.put(OntapStorageConstants.USERNAME, "testUser");
+        detailsMap.put(OntapStorageConstants.PASSWORD, "testPassword");
+        detailsMap.put(OntapStorageConstants.STORAGE_IP, "10.10.10.10");
+        detailsMap.put(OntapStorageConstants.SVM_NAME, "vs0");
+        detailsMap.put(OntapStorageConstants.PROTOCOL, "NFS3");
 
         Map<String, Object> dsInfos = new HashMap<>();
         dsInfos.put("zoneId",1L);
@@ -194,10 +194,10 @@ public class OntapPrimaryDatastoreLifecycleTest {
     public void testInitialize_missingRequiredDetailKey() {
 
         HashMap<String, String> detailsMap = new HashMap<String, String>();
-        detailsMap.put(Constants.USERNAME, "testUser");
-        detailsMap.put(Constants.PASSWORD, "testPassword");
-        detailsMap.put(Constants.STORAGE_IP, "10.10.10.10");
-        detailsMap.put(Constants.SVM_NAME, "vs0");
+        detailsMap.put(OntapStorageConstants.USERNAME, "testUser");
+        detailsMap.put(OntapStorageConstants.PASSWORD, "testPassword");
+        detailsMap.put(OntapStorageConstants.STORAGE_IP, "10.10.10.10");
+        detailsMap.put(OntapStorageConstants.SVM_NAME, "vs0");
 
         Map<String, Object> dsInfos = new HashMap<>();
         dsInfos.put("zoneId",1L);
@@ -222,11 +222,11 @@ public class OntapPrimaryDatastoreLifecycleTest {
     public void testInitialize_invalidCapacityBytes() {
 
         HashMap<String, String> detailsMap = new HashMap<String, String>();
-        detailsMap.put(Constants.USERNAME, "testUser");
-        detailsMap.put(Constants.PASSWORD, "testPassword");
-        detailsMap.put(Constants.STORAGE_IP, "10.10.10.10");
-        detailsMap.put(Constants.SVM_NAME, "vs0");
-        detailsMap.put(Constants.PROTOCOL, "NFS3");
+        detailsMap.put(OntapStorageConstants.USERNAME, "testUser");
+        detailsMap.put(OntapStorageConstants.PASSWORD, "testPassword");
+        detailsMap.put(OntapStorageConstants.STORAGE_IP, "10.10.10.10");
+        detailsMap.put(OntapStorageConstants.SVM_NAME, "vs0");
+        detailsMap.put(OntapStorageConstants.PROTOCOL, "NFS3");
 
         Map<String, Object> dsInfos = new HashMap<>();
         dsInfos.put("zoneId",1L);
@@ -369,11 +369,11 @@ public class OntapPrimaryDatastoreLifecycleTest {
     public void testInitialize_unexpectedDetailKey() {
 
         HashMap<String, String> detailsMap = new HashMap<String, String>();
-        detailsMap.put(Constants.USERNAME, "testUser");
-        detailsMap.put(Constants.PASSWORD, "testPassword");
-        detailsMap.put(Constants.STORAGE_IP, "10.10.10.10");
-        detailsMap.put(Constants.SVM_NAME, "vs0");
-        detailsMap.put(Constants.PROTOCOL, "NFS3");
+        detailsMap.put(OntapStorageConstants.USERNAME, "testUser");
+        detailsMap.put(OntapStorageConstants.PASSWORD, "testPassword");
+        detailsMap.put(OntapStorageConstants.STORAGE_IP, "10.10.10.10");
+        detailsMap.put(OntapStorageConstants.SVM_NAME, "vs0");
+        detailsMap.put(OntapStorageConstants.PROTOCOL, "NFS3");
         detailsMap.put("unexpectedKey", "unexpectedValue");
 
         Map<String, Object> dsInfos = new HashMap<>();
@@ -407,8 +407,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
         when(_dataStoreHelper.attachCluster(any(DataStore.class))).thenReturn(dataStore);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
 
@@ -441,8 +441,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
         when(_dataStoreHelper.attachCluster(any(DataStore.class))).thenReturn(dataStore);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
             when(_storageMgr.connectHostToSharedPool(any(HostVO.class), anyLong())).thenReturn(true);
@@ -472,8 +472,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
         when(_dataStoreHelper.attachCluster(any(DataStore.class))).thenReturn(dataStore);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
             when(_storageMgr.connectHostToSharedPool(any(HostVO.class), anyLong())).thenReturn(true);
@@ -496,8 +496,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
                 .thenReturn(mockHosts);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
 
@@ -528,8 +528,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
         when(_dataStoreHelper.attachCluster(any(DataStore.class))).thenReturn(dataStore);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
 
@@ -551,8 +551,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
                 .thenReturn(mockHosts);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
 
@@ -580,8 +580,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
         when(_dataStoreHelper.attachCluster(any(DataStore.class))).thenReturn(dataStore);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
             when(_storageMgr.connectHostToSharedPool(any(HostVO.class), anyLong())).thenReturn(true);
@@ -607,8 +607,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
         when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
 
@@ -642,8 +642,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
         when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
             when(_storageMgr.connectHostToSharedPool(any(HostVO.class), anyLong())).thenReturn(true);
@@ -674,8 +674,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
         when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
             when(_storageMgr.connectHostToSharedPool(any(HostVO.class), anyLong())).thenReturn(true);
@@ -699,8 +699,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
                 .thenReturn(mockHosts);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
 
@@ -732,8 +732,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
         when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
 
@@ -756,8 +756,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
                 .thenReturn(mockHosts);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
 
@@ -786,8 +786,8 @@ public class OntapPrimaryDatastoreLifecycleTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(poolDetails);
         when(_dataStoreHelper.attachZone(any(DataStore.class))).thenReturn(dataStore);
 
-        try (MockedStatic<Utility> utilityMock = Mockito.mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = Mockito.mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(storageStrategy);
             when(storageStrategy.createAccessGroup(any(AccessGroup.class))).thenReturn(null);
             when(_storageMgr.connectHostToSharedPool(any(HostVO.class), anyLong())).thenReturn(true);

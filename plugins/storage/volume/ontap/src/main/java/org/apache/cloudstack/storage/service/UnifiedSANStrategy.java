@@ -23,7 +23,6 @@ import com.cloud.host.HostVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import feign.FeignException;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.feign.model.Igroup;
 import org.apache.cloudstack.storage.feign.model.Initiator;
 import org.apache.cloudstack.storage.feign.model.Svm;
@@ -40,8 +39,6 @@ import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import javax.inject.Inject;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;

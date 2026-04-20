@@ -44,7 +44,7 @@ import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
-import org.apache.cloudstack.storage.utils.Constants;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -261,9 +261,9 @@ public class UnifiedNASStrategyTest {
         // Setup
         AccessGroup accessGroup = mock(AccessGroup.class);
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.VOLUME_UUID, "vol-uuid-123");
-        details.put(Constants.VOLUME_NAME, "vol1");
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.VOLUME_UUID, "vol-uuid-123");
+        details.put(OntapStorageConstants.VOLUME_NAME, "vol1");
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
@@ -282,7 +282,7 @@ public class UnifiedNASStrategyTest {
         JobResponse jobResponse = new JobResponse();
         Job job = new Job();
         job.setUuid("job-uuid-123");
-        job.setState(Constants.JOB_SUCCESS);
+        job.setState(OntapStorageConstants.JOB_SUCCESS);
         jobResponse.setJob(job);
 
         // Removed primaryDataStoreInfo mock - using storage pool ID directly
@@ -311,9 +311,9 @@ public class UnifiedNASStrategyTest {
     public void testCreateAccessGroup_FailedToCreatePolicy() {
         AccessGroup accessGroup = mock(AccessGroup.class);
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.VOLUME_UUID, "vol-uuid-123");
-        details.put(Constants.VOLUME_NAME, "vol1");
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.VOLUME_UUID, "vol-uuid-123");
+        details.put(OntapStorageConstants.VOLUME_NAME, "vol1");
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
@@ -336,9 +336,9 @@ public class UnifiedNASStrategyTest {
     public void testCreateAccessGroup_FailedToVerifyPolicy() {
         AccessGroup accessGroup = mock(AccessGroup.class);
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.VOLUME_UUID, "vol-uuid-123");
-        details.put(Constants.VOLUME_NAME, "vol1");
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.VOLUME_UUID, "vol-uuid-123");
+        details.put(OntapStorageConstants.VOLUME_NAME, "vol1");
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
@@ -366,9 +366,9 @@ public class UnifiedNASStrategyTest {
     public void testCreateAccessGroup_JobFailure() throws Exception {
         AccessGroup accessGroup = mock(AccessGroup.class);
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.VOLUME_UUID, "vol-uuid-123");
-        details.put(Constants.VOLUME_NAME, "vol1");
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.VOLUME_UUID, "vol-uuid-123");
+        details.put(OntapStorageConstants.VOLUME_NAME, "vol1");
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
@@ -387,7 +387,7 @@ public class UnifiedNASStrategyTest {
         JobResponse jobResponse = new JobResponse();
         Job job = new Job();
         job.setUuid("job-uuid-123");
-        job.setState(Constants.JOB_FAILURE); // Set to FAILURE instead of timeout
+        job.setState(OntapStorageConstants.JOB_FAILURE); // Set to FAILURE instead of timeout
         job.setMessage("Job failed");
         jobResponse.setJob(job);
 
@@ -410,9 +410,9 @@ public class UnifiedNASStrategyTest {
     public void testCreateAccessGroup_HostWithPrivateIP() throws Exception {
         AccessGroup accessGroup = mock(AccessGroup.class);
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.SVM_NAME, "svm1");
-        details.put(Constants.VOLUME_UUID, "vol-uuid-123");
-        details.put(Constants.VOLUME_NAME, "vol1");
+        details.put(OntapStorageConstants.SVM_NAME, "svm1");
+        details.put(OntapStorageConstants.VOLUME_UUID, "vol-uuid-123");
+        details.put(OntapStorageConstants.VOLUME_NAME, "vol1");
 
         List<HostVO> hosts = new ArrayList<>();
         HostVO host1 = mock(HostVO.class);
@@ -432,7 +432,7 @@ public class UnifiedNASStrategyTest {
         JobResponse jobResponse = new JobResponse();
         Job job = new Job();
         job.setUuid("job-uuid-123");
-        job.setState(Constants.JOB_SUCCESS);
+        job.setState(OntapStorageConstants.JOB_SUCCESS);
         jobResponse.setJob(job);
 
         // Removed primaryDataStoreInfo mock - using storage pool ID directly
@@ -461,8 +461,8 @@ public class UnifiedNASStrategyTest {
     public void testDeleteAccessGroup_Success() {
         AccessGroup accessGroup = mock(AccessGroup.class);
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.EXPORT_POLICY_NAME, "export-policy-1");
-        details.put(Constants.EXPORT_POLICY_ID, "1");
+        details.put(OntapStorageConstants.EXPORT_POLICY_NAME, "export-policy-1");
+        details.put(OntapStorageConstants.EXPORT_POLICY_ID, "1");
 
         when(accessGroup.getStoragePoolId()).thenReturn(1L);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
@@ -500,8 +500,8 @@ public class UnifiedNASStrategyTest {
     public void testDeleteAccessGroup_Failed() {
         AccessGroup accessGroup = mock(AccessGroup.class);
         Map<String, String> details = new HashMap<>();
-        details.put(Constants.EXPORT_POLICY_NAME, "export-policy-1");
-        details.put(Constants.EXPORT_POLICY_ID, "1");
+        details.put(OntapStorageConstants.EXPORT_POLICY_NAME, "export-policy-1");
+        details.put(OntapStorageConstants.EXPORT_POLICY_ID, "1");
 
         when(accessGroup.getStoragePoolId()).thenReturn(1L);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);

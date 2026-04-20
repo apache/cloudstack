@@ -42,8 +42,8 @@ import org.apache.cloudstack.storage.service.UnifiedSANStrategy;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
-import org.apache.cloudstack.storage.utils.Constants;
-import org.apache.cloudstack.storage.utils.Utility;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
+import org.apache.cloudstack.storage.utils.OntapStorageUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -121,8 +121,8 @@ class OntapPrimaryDatastoreDriverTest {
     @BeforeEach
     void setUp() {
         storagePoolDetails = new HashMap<>();
-        storagePoolDetails.put(Constants.PROTOCOL, ProtocolType.ISCSI.name());
-        storagePoolDetails.put(Constants.SVM_NAME, "svm1");
+        storagePoolDetails.put(OntapStorageConstants.PROTOCOL, ProtocolType.ISCSI.name());
+        storagePoolDetails.put(OntapStorageConstants.SVM_NAME, "svm1");
     }
 
     @Test
@@ -182,10 +182,10 @@ class OntapPrimaryDatastoreDriverTest {
         CloudStackVolume responseVolume = new CloudStackVolume();
         responseVolume.setLun(mockLun);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(any()))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(any()))
                     .thenReturn(sanStrategy);
-            utilityMock.when(() -> Utility.createCloudStackVolumeRequestByProtocol(
+            utilityMock.when(() -> OntapStorageUtils.createCloudStackVolumeRequestByProtocol(
                     any(), any(), any())).thenReturn(requestVolume);
             when(sanStrategy.createCloudStackVolume(any())).thenReturn(responseVolume);
 
@@ -200,8 +200,8 @@ class OntapPrimaryDatastoreDriverTest {
             assertNotNull(result);
             assertTrue(result.isSuccess());
 
-            verify(volumeDetailsDao).addDetail(eq(100L), eq(Constants.LUN_DOT_UUID), eq("lun-uuid-123"), eq(false));
-            verify(volumeDetailsDao).addDetail(eq(100L), eq(Constants.LUN_DOT_NAME), eq("/vol/vol1/lun1"), eq(false));
+            verify(volumeDetailsDao).addDetail(eq(100L), eq(OntapStorageConstants.LUN_DOT_UUID), eq("lun-uuid-123"), eq(false));
+            verify(volumeDetailsDao).addDetail(eq(100L), eq(OntapStorageConstants.LUN_DOT_NAME), eq("/vol/vol1/lun1"), eq(false));
             verify(volumeDao).update(eq(100L), any(VolumeVO.class));
         }
     }
@@ -209,7 +209,7 @@ class OntapPrimaryDatastoreDriverTest {
     @Test
     void testCreateAsync_VolumeWithNFS_Success() {
         // Setup
-        storagePoolDetails.put(Constants.PROTOCOL, ProtocolType.NFS3.name());
+        storagePoolDetails.put(OntapStorageConstants.PROTOCOL, ProtocolType.NFS3.name());
 
         when(dataStore.getId()).thenReturn(1L);
         when(dataStore.getUuid()).thenReturn("pool-uuid-123");
@@ -227,10 +227,10 @@ class OntapPrimaryDatastoreDriverTest {
 
         CloudStackVolume mockCloudStackVolume = new CloudStackVolume();
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(storagePoolDetails))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails))
                     .thenReturn(sanStrategy);
-            utilityMock.when(() -> Utility.createCloudStackVolumeRequestByProtocol(
+            utilityMock.when(() -> OntapStorageUtils.createCloudStackVolumeRequestByProtocol(
                     any(), any(), any())).thenReturn(mockCloudStackVolume);
 
             when(sanStrategy.createCloudStackVolume(any())).thenReturn(mockCloudStackVolume);
@@ -271,14 +271,14 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePoolDao.findById(1L)).thenReturn(storagePool);
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
 
-        VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, Constants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
-        VolumeDetailVO lunUuidDetail = new VolumeDetailVO(100L, Constants.LUN_DOT_UUID, "lun-uuid-123", false);
+        VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
+        VolumeDetailVO lunUuidDetail = new VolumeDetailVO(100L, OntapStorageConstants.LUN_DOT_UUID, "lun-uuid-123", false);
 
-        when(volumeDetailsDao.findDetail(100L, Constants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
-        when(volumeDetailsDao.findDetail(100L, Constants.LUN_DOT_UUID)).thenReturn(lunUuidDetail);
+        when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
+        when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.LUN_DOT_UUID)).thenReturn(lunUuidDetail);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(storagePoolDetails))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails))
                     .thenReturn(sanStrategy);
 
             doNothing().when(sanStrategy).deleteCloudStackVolume(any());
@@ -300,7 +300,7 @@ class OntapPrimaryDatastoreDriverTest {
     @Test
     void testDeleteAsync_NFSVolume_Success() {
         // Setup
-        storagePoolDetails.put(Constants.PROTOCOL, ProtocolType.NFS3.name());
+        storagePoolDetails.put(OntapStorageConstants.PROTOCOL, ProtocolType.NFS3.name());
 
         when(dataStore.getId()).thenReturn(1L);
         when(volumeInfo.getType()).thenReturn(VOLUME);
@@ -352,8 +352,8 @@ class OntapPrimaryDatastoreDriverTest {
 
         when(host.getName()).thenReturn("host1");
 
-        VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, Constants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
-        when(volumeDetailsDao.findDetail(100L, Constants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
+        VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
+        when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
 
         // Mock AccessGroup with existing igroup
         AccessGroup existingAccessGroup = new AccessGroup();
@@ -361,10 +361,10 @@ class OntapPrimaryDatastoreDriverTest {
         existingIgroup.setName("igroup1");
         existingAccessGroup.setIgroup(existingIgroup);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(storagePoolDetails))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails))
                     .thenReturn(sanStrategy);
-            utilityMock.when(() -> Utility.getIgroupName(anyString(), anyString()))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName(anyString(), anyString()))
                     .thenReturn("igroup1");
 
             when(sanStrategy.getAccessGroup(any())).thenReturn(existingAccessGroup);
@@ -403,8 +403,8 @@ class OntapPrimaryDatastoreDriverTest {
         when(volumeDao.findById(100L)).thenReturn(volumeVO);
         when(volumeVO.getId()).thenReturn(100L);
 
-        VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, Constants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
-        when(volumeDetailsDao.findDetail(100L, Constants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
+        VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
+        when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
 
         // Mock getAccessGroup returning null (igroup doesn't exist)
         AccessGroup createdAccessGroup = new AccessGroup();
@@ -412,10 +412,10 @@ class OntapPrimaryDatastoreDriverTest {
         createdIgroup.setName("igroup1");
         createdAccessGroup.setIgroup(createdIgroup);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(storagePoolDetails))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails))
                     .thenReturn(sanStrategy);
-            utilityMock.when(() -> Utility.getIgroupName(anyString(), anyString()))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName(anyString(), anyString()))
                     .thenReturn("igroup1");
 
             when(sanStrategy.getAccessGroup(any())).thenReturn(null);
@@ -451,8 +451,8 @@ class OntapPrimaryDatastoreDriverTest {
         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(storagePoolDetails);
         when(host.getName()).thenReturn("host1");
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(storagePoolDetails))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails))
                     .thenReturn(sanStrategy);
 
             // Execute - NFS has no iSCSI protocol, so revokeAccessForVolume does nothing
@@ -482,8 +482,8 @@ class OntapPrimaryDatastoreDriverTest {
         when(host.getStorageUrl()).thenReturn("iqn.1993-08.org.debian:01:host1");
         when(host.getName()).thenReturn("host1");
 
-        VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, Constants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
-        when(volumeDetailsDao.findDetail(100L, Constants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
+        VolumeDetailVO lunNameDetail = new VolumeDetailVO(100L, OntapStorageConstants.LUN_DOT_NAME, "/vol/vol1/lun1", false);
+        when(volumeDetailsDao.findDetail(100L, OntapStorageConstants.LUN_DOT_NAME)).thenReturn(lunNameDetail);
 
         Lun mockLun = new Lun();
         mockLun.setName("/vol/vol1/lun1");
@@ -497,10 +497,10 @@ class OntapPrimaryDatastoreDriverTest {
         AccessGroup mockAccessGroup = new AccessGroup();
         mockAccessGroup.setIgroup(mockIgroup);
 
-        try (MockedStatic<Utility> utilityMock = mockStatic(Utility.class)) {
-            utilityMock.when(() -> Utility.getStrategyByStoragePoolDetails(storagePoolDetails))
+        try (MockedStatic<OntapStorageUtils> utilityMock = mockStatic(OntapStorageUtils.class)) {
+            utilityMock.when(() -> OntapStorageUtils.getStrategyByStoragePoolDetails(storagePoolDetails))
                     .thenReturn(sanStrategy);
-            utilityMock.when(() -> Utility.getIgroupName(anyString(), anyString()))
+            utilityMock.when(() -> OntapStorageUtils.getIgroupName(anyString(), anyString()))
                     .thenReturn("igroup1");
 
             // Mock the methods called by getCloudStackVolumeByName and getAccessGroupByName

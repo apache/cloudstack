@@ -38,7 +38,7 @@ import org.apache.cloudstack.storage.feign.model.response.OntapResponse;
 import org.apache.cloudstack.storage.service.model.AccessGroup;
 import org.apache.cloudstack.storage.service.model.CloudStackVolume;
 import org.apache.cloudstack.storage.service.model.ProtocolType;
-import org.apache.cloudstack.storage.utils.Constants;
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -193,7 +193,7 @@ public class StorageStrategyTest {
     void setUp() {
         // Create OntapStorage using constructor (immutable object)
         OntapStorage ontapStorage = new OntapStorage("admin", "password", "192.168.1.100",
-                "svm1", null, ProtocolType.NFS3);
+                "svm1", 5000000000L, ProtocolType.NFS3);
 
         // Note: In real implementation, StorageStrategy constructor creates Feign clients
         // For testing, we'll need to mock the FeignClientFactory behavior
@@ -209,7 +209,7 @@ public class StorageStrategyTest {
         // Setup
         Svm svm = new Svm();
         svm.setName("svm1");
-        svm.setState(Constants.RUNNING);
+        svm.setState(OntapStorageConstants.RUNNING);
         svm.setNfsEnabled(true);
 
         Aggregate aggregate = new Aggregate();
@@ -221,6 +221,13 @@ public class StorageStrategyTest {
         svmResponse.setRecords(List.of(svm));
 
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
+        Aggregate aggregateDetail = mock(Aggregate.class);
+        when(aggregateDetail.getName()).thenReturn("aggr1");
+        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
+        when(aggregateDetail.getState()).thenReturn(Aggregate.StateEnum.ONLINE);
+        when(aggregateDetail.getSpace()).thenReturn(mock(Aggregate.AggregateSpace.class));
+        when(aggregateDetail.getAvailableBlockStorageSpace()).thenReturn(10000000000.0);
+        when(aggregateFeignClient.getAggregateByUUID(anyString(), eq("aggr-uuid-1"))).thenReturn(aggregateDetail);
 
         // Execute
         boolean result = storageStrategy.connect();
@@ -268,11 +275,9 @@ public class StorageStrategyTest {
     @Test
     public void testConnect_nfsNotEnabled() {
         // Setup
-        // Note: Protocol validation is currently broken in StorageStrategy (enum vs string comparison)
-        // so this test verifies connection succeeds even when NFS is disabled
         Svm svm = new Svm();
         svm.setName("svm1");
-        svm.setState(Constants.RUNNING);
+        svm.setState(OntapStorageConstants.RUNNING);
         svm.setNfsEnabled(false);
 
         Aggregate aggregate = new Aggregate();
@@ -285,25 +290,23 @@ public class StorageStrategyTest {
 
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
 
-        // Execute & Verify - connection succeeds because protocol check doesn't work
+        // Execute & Verify
         boolean result = storageStrategy.connect();
-        assertTrue(result, "connect() should succeed");
+        assertFalse(result, "connect() should fail when NFS is disabled");
     }
 
     @Test
     public void testConnect_iscsiNotEnabled() {
         // Setup - recreate with iSCSI protocol
-        // Note: Protocol validation is currently broken in StorageStrategy (enum vs string comparison)
-        // so this test verifies connection succeeds even when iSCSI is disabled
         OntapStorage iscsiStorage = new OntapStorage("admin", "password", "192.168.1.100",
-                "svm1", null, ProtocolType.ISCSI);
+                "svm1", 5000000000L, ProtocolType.ISCSI);
         storageStrategy = new TestableStorageStrategy(iscsiStorage,
                 aggregateFeignClient, volumeFeignClient, svmFeignClient,
                 jobFeignClient, networkFeignClient, sanFeignClient);
 
         Svm svm = new Svm();
         svm.setName("svm1");
-        svm.setState(Constants.RUNNING);
+        svm.setState(OntapStorageConstants.RUNNING);
         svm.setIscsiEnabled(false);
 
         Aggregate aggregate = new Aggregate();
@@ -316,9 +319,9 @@ public class StorageStrategyTest {
 
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
 
-        // Execute & Verify - connection succeeds because protocol check doesn't work
+        // Execute & Verify
         boolean result = storageStrategy.connect();
-        assertTrue(result, "connect() should succeed");
+        assertFalse(result, "connect() should fail when iSCSI is disabled");
     }
 
     @Test
@@ -326,7 +329,7 @@ public class StorageStrategyTest {
         // Setup
         Svm svm = new Svm();
         svm.setName("svm1");
-        svm.setState(Constants.RUNNING);
+        svm.setState(OntapStorageConstants.RUNNING);
         svm.setNfsEnabled(true);
         svm.setAggregates(new ArrayList<>());
 
@@ -385,7 +388,7 @@ public class StorageStrategyTest {
         // Setup job polling
         Job completedJob = new Job();
         completedJob.setUuid("job-uuid-1");
-        completedJob.setState(Constants.JOB_SUCCESS);
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
         when(jobFeignClient.getJobByUUID(anyString(), eq("job-uuid-1")))
                 .thenReturn(completedJob);
 
@@ -504,7 +507,7 @@ public class StorageStrategyTest {
         // Setup failed job
         Job failedJob = new Job();
         failedJob.setUuid("job-uuid-1");
-        failedJob.setState(Constants.JOB_FAILURE);
+        failedJob.setState(OntapStorageConstants.JOB_FAILURE);
         failedJob.setMessage("Volume creation failed");
         when(jobFeignClient.getJobByUUID(anyString(), eq("job-uuid-1")))
                 .thenReturn(failedJob);
@@ -555,7 +558,7 @@ public class StorageStrategyTest {
 
         Job completedJob = new Job();
         completedJob.setUuid("job-uuid-1");
-        completedJob.setState(Constants.JOB_SUCCESS);
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
         when(jobFeignClient.getJobByUUID(anyString(), eq("job-uuid-1")))
                 .thenReturn(completedJob);
 
@@ -584,7 +587,7 @@ public class StorageStrategyTest {
 
         Job failedJob = new Job();
         failedJob.setUuid("job-uuid-1");
-        failedJob.setState(Constants.JOB_FAILURE);
+        failedJob.setState(OntapStorageConstants.JOB_FAILURE);
         failedJob.setMessage("Deletion failed");
         when(jobFeignClient.getJobByUUID(anyString(), eq("job-uuid-1")))
                 .thenReturn(failedJob);
@@ -775,7 +778,7 @@ public class StorageStrategyTest {
     private void setupSuccessfulConnect() {
         Svm svm = new Svm();
         svm.setName("svm1");
-        svm.setState(Constants.RUNNING);
+        svm.setState(OntapStorageConstants.RUNNING);
         svm.setNfsEnabled(true);
 
         Aggregate aggregate = new Aggregate();
@@ -787,6 +790,14 @@ public class StorageStrategyTest {
         svmResponse.setRecords(List.of(svm));
 
         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
+
+        Aggregate aggregateDetail = mock(Aggregate.class);
+        when(aggregateDetail.getName()).thenReturn("aggr1");
+        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
+        when(aggregateDetail.getState()).thenReturn(Aggregate.StateEnum.ONLINE);
+        when(aggregateDetail.getSpace()).thenReturn(mock(Aggregate.AggregateSpace.class));
+        when(aggregateDetail.getAvailableBlockStorageSpace()).thenReturn(10000000000.0);
+        when(aggregateFeignClient.getAggregateByUUID(anyString(), eq("aggr-uuid-1"))).thenReturn(aggregateDetail);
     }
 
     private void setupAggregateForVolumeCreation() {
@@ -812,7 +823,7 @@ public class StorageStrategyTest {
 
         Job completedJob = new Job();
         completedJob.setUuid("job-uuid-1");
-        completedJob.setState(Constants.JOB_SUCCESS);
+        completedJob.setState(OntapStorageConstants.JOB_SUCCESS);
         when(jobFeignClient.getJobByUUID(anyString(), eq("job-uuid-1")))
                 .thenReturn(completedJob);
 

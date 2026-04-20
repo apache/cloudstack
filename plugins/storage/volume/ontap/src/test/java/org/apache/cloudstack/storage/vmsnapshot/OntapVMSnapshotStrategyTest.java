@@ -46,7 +46,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.storage.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,7 +54,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-
+import org.apache.cloudstack.storage.utils.OntapStorageConstants;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.FreezeThawVMAnswer;
 import com.cloud.agent.api.FreezeThawVMCommand;
@@ -185,7 +184,7 @@ class OntapVMSnapshotStrategyTest {
     private StoragePoolVO createOntapManagedPool(long poolId) {
         StoragePoolVO pool = mock(StoragePoolVO.class);
         when(pool.isManaged()).thenReturn(true);
-        when(pool.getStorageProviderName()).thenReturn(Constants.ONTAP_PLUGIN_NAME);
+        when(pool.getStorageProviderName()).thenReturn(OntapStorageConstants.ONTAP_PLUGIN_NAME);
         return pool;
     }
 
@@ -359,9 +358,9 @@ class OntapVMSnapshotStrategyTest {
         VMSnapshotVO vmSnapshot = createMockVmSnapshot(VMSnapshot.State.Ready, VMSnapshot.Type.Disk);
 
         List<VMSnapshotDetailsVO> details = new ArrayList<>();
-        details.add(new VMSnapshotDetailsVO(SNAPSHOT_ID, Constants.ONTAP_FLEXVOL_SNAPSHOT,
+        details.add(new VMSnapshotDetailsVO(SNAPSHOT_ID, OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT,
                 "flex-uuid::snap-uuid::vmsnap_200_123::401", true));
-        when(vmSnapshotDetailsDao.findDetails(SNAPSHOT_ID, Constants.ONTAP_FLEXVOL_SNAPSHOT)).thenReturn(details);
+        when(vmSnapshotDetailsDao.findDetails(SNAPSHOT_ID, OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT)).thenReturn(details);
 
         StrategyPriority result = strategy.canHandle(vmSnapshot);
 
@@ -374,7 +373,7 @@ class OntapVMSnapshotStrategyTest {
         VMSnapshotVO vmSnapshot = createMockVmSnapshot(VMSnapshot.State.Ready, VMSnapshot.Type.Disk);
 
         // No FlexVol details
-        when(vmSnapshotDetailsDao.findDetails(SNAPSHOT_ID, Constants.ONTAP_FLEXVOL_SNAPSHOT)).thenReturn(Collections.emptyList());
+        when(vmSnapshotDetailsDao.findDetails(SNAPSHOT_ID, OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT)).thenReturn(Collections.emptyList());
         // Has legacy details
         List<VMSnapshotDetailsVO> details = new ArrayList<>();
         details.add(new VMSnapshotDetailsVO(SNAPSHOT_ID, "kvmStorageSnapshot", "123", true));
@@ -388,7 +387,7 @@ class OntapVMSnapshotStrategyTest {
     @Test
     void testCanHandle_NonAllocated_NoDetails_ReturnsCantHandle() {
         VMSnapshotVO vmSnapshot = createMockVmSnapshot(VMSnapshot.State.Ready, VMSnapshot.Type.Disk);
-        when(vmSnapshotDetailsDao.findDetails(SNAPSHOT_ID, Constants.ONTAP_FLEXVOL_SNAPSHOT)).thenReturn(Collections.emptyList());
+        when(vmSnapshotDetailsDao.findDetails(SNAPSHOT_ID, OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT)).thenReturn(Collections.emptyList());
         when(vmSnapshotDetailsDao.findDetails(SNAPSHOT_ID, "kvmStorageSnapshot")).thenReturn(Collections.emptyList());
 
         StrategyPriority result = strategy.canHandle(vmSnapshot);
@@ -412,9 +411,9 @@ class OntapVMSnapshotStrategyTest {
 
         VMSnapshotVO vmSnapshot = createMockVmSnapshot(VMSnapshot.State.Ready, VMSnapshot.Type.Disk);
         List<VMSnapshotDetailsVO> flexVolDetails = new ArrayList<>();
-        flexVolDetails.add(new VMSnapshotDetailsVO(SNAPSHOT_ID, Constants.ONTAP_FLEXVOL_SNAPSHOT,
+        flexVolDetails.add(new VMSnapshotDetailsVO(SNAPSHOT_ID, OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT,
                 "flex-uuid::snap-uuid::vmsnap_200_123::401", true));
-        when(vmSnapshotDetailsDao.findDetails(SNAPSHOT_ID, Constants.ONTAP_FLEXVOL_SNAPSHOT)).thenReturn(flexVolDetails);
+        when(vmSnapshotDetailsDao.findDetails(SNAPSHOT_ID, OntapStorageConstants.ONTAP_FLEXVOL_SNAPSHOT)).thenReturn(flexVolDetails);
 
         StrategyPriority result = strategy.canHandle(vmSnapshot);
 
@@ -495,7 +494,7 @@ class OntapVMSnapshotStrategyTest {
         when(volumeDao.findById(VOLUME_ID_2)).thenReturn(vol2);
 
         Map<String, String> poolDetails = new HashMap<>();
-        poolDetails.put(Constants.VOLUME_UUID, "flexvol-uuid-1");
+        poolDetails.put(OntapStorageConstants.VOLUME_UUID, "flexvol-uuid-1");
         when(storagePoolDetailsDao.listDetailsKeyPairs(POOL_ID_1)).thenReturn(poolDetails);
 
         Map<String, OntapVMSnapshotStrategy.FlexVolGroupInfo> groups =
@@ -522,9 +521,9 @@ class OntapVMSnapshotStrategyTest {
         when(volumeDao.findById(VOLUME_ID_2)).thenReturn(vol2);
 
         Map<String, String> poolDetails1 = new HashMap<>();
-        poolDetails1.put(Constants.VOLUME_UUID, "flexvol-uuid-1");
+        poolDetails1.put(OntapStorageConstants.VOLUME_UUID, "flexvol-uuid-1");
         Map<String, String> poolDetails2 = new HashMap<>();
-        poolDetails2.put(Constants.VOLUME_UUID, "flexvol-uuid-2");
+        poolDetails2.put(OntapStorageConstants.VOLUME_UUID, "flexvol-uuid-2");
         when(storagePoolDetailsDao.listDetailsKeyPairs(POOL_ID_1)).thenReturn(poolDetails1);
         when(storagePoolDetailsDao.listDetailsKeyPairs(POOL_ID_2)).thenReturn(poolDetails2);
 
@@ -629,7 +628,7 @@ class OntapVMSnapshotStrategyTest {
         String name = strategy.buildSnapshotName(vmSnapshot);
 
         assertEquals(true, name.startsWith("vmsnap_200_"));
-        assertEquals(true, name.length() <= Constants.MAX_SNAPSHOT_NAME_LENGTH);
+        assertEquals(true, name.length() <= OntapStorageConstants.MAX_SNAPSHOT_NAME_LENGTH);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -651,7 +650,7 @@ class OntapVMSnapshotStrategyTest {
     void testResolveVolumePathOnOntap_ISCSI_ReturnsLunName() {
         VolumeDetailVO lunDetail = mock(VolumeDetailVO.class);
         when(lunDetail.getValue()).thenReturn("/vol/vol1/lun_301");
-        when(volumeDetailsDao.findDetail(VOLUME_ID_1, Constants.LUN_DOT_NAME)).thenReturn(lunDetail);
+        when(volumeDetailsDao.findDetail(VOLUME_ID_1, OntapStorageConstants.LUN_DOT_NAME)).thenReturn(lunDetail);
 
         String path = strategy.resolveVolumePathOnOntap(VOLUME_ID_1, "ISCSI", new HashMap<>());
 
@@ -660,7 +659,7 @@ class OntapVMSnapshotStrategyTest {
 
     @Test
     void testResolveVolumePathOnOntap_ISCSI_NoLunDetail_ThrowsException() {
-        when(volumeDetailsDao.findDetail(VOLUME_ID_1, Constants.LUN_DOT_NAME)).thenReturn(null);
+        when(volumeDetailsDao.findDetail(VOLUME_ID_1, OntapStorageConstants.LUN_DOT_NAME)).thenReturn(null);
 
         assertThrows(CloudRuntimeException.class,
                 () -> strategy.resolveVolumePathOnOntap(VOLUME_ID_1, "ISCSI", new HashMap<>()));
@@ -917,13 +916,13 @@ class OntapVMSnapshotStrategyTest {
 
         // Pool details for FlexVol grouping
         Map<String, String> poolDetails = new HashMap<>();
-        poolDetails.put(Constants.VOLUME_UUID, "flexvol-uuid-1");
-        poolDetails.put(Constants.USERNAME, "admin");
-        poolDetails.put(Constants.PASSWORD, "pass");
-        poolDetails.put(Constants.STORAGE_IP, "10.0.0.1");
-        poolDetails.put(Constants.SVM_NAME, "svm1");
-        poolDetails.put(Constants.SIZE, "107374182400");
-        poolDetails.put(Constants.PROTOCOL, "NFS3");
+        poolDetails.put(OntapStorageConstants.VOLUME_UUID, "flexvol-uuid-1");
+        poolDetails.put(OntapStorageConstants.USERNAME, "admin");
+        poolDetails.put(OntapStorageConstants.PASSWORD, "pass");
+        poolDetails.put(OntapStorageConstants.STORAGE_IP, "10.0.0.1");
+        poolDetails.put(OntapStorageConstants.SVM_NAME, "svm1");
+        poolDetails.put(OntapStorageConstants.SIZE, "107374182400");
+        poolDetails.put(OntapStorageConstants.PROTOCOL, "NFS3");
         when(storagePoolDetailsDao.listDetailsKeyPairs(POOL_ID_1)).thenReturn(poolDetails);
 
         VolumeInfo volumeInfo = mock(VolumeInfo.class);
