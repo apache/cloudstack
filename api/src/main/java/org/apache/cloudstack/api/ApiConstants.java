@@ -510,6 +510,7 @@ public class ApiConstants {
     public static final String REPAIR = "repair";
     public static final String REPETITION_ALLOWED = "repetitionallowed";
     public static final String REQUIRES_HVM = "requireshvm";
+    public static final String RESERVED_RESOURCE_DETAILS = "reservedresourcedetails";
     public static final String RESOURCES = "resources";
     public static final String RESOURCE_COUNT = "resourcecount";
     public static final String RESOURCE_NAME = "resourcename";
@@ -526,7 +527,6 @@ public class ApiConstants {
     public static final String SCHEDULE = "schedule";
     public static final String SCHEDULE_ID = "scheduleid";
     public static final String SCOPE = "scope";
-    public static final String USER_SECRET_KEY = "usersecretkey";
     public static final String SEARCH_BASE = "searchbase";
     public static final String SECONDARY_IP = "secondaryip";
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
@@ -633,6 +633,8 @@ public class ApiConstants {
     public static final String USERNAME = "username";
     public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
+    public static final String USER_SECRET_KEY = "usersecretkey";
+    public static final String USE_VDDK = "usevddk";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String USE_VIRTUAL_ROUTER_IP_RESOLVER = "userouteripresolver";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";

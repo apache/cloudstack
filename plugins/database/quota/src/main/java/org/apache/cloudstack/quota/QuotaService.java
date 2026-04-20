@@ -40,6 +40,4 @@ public interface QuotaService extends PluggableService {
 
     boolean saveQuotaAccount(AccountVO account, BigDecimal aggrUsage, Date endDate);
 
-    boolean isJsInterpretationEnabled();
-
 }

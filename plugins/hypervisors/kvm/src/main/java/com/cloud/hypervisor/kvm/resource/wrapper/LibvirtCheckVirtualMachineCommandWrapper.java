@@ -45,11 +45,10 @@ public final class LibvirtCheckVirtualMachineCommandWrapper extends CommandWrapp
             Integer vncPort = null;
             if (state == PowerState.PowerOn) {
                 vncPort = libvirtComputingResource.getVncPort(conn, command.getVmName());
-            }
-
-            Domain vm = conn.domainLookupByName(command.getVmName());
-            if (state == PowerState.PowerOn && DomainInfo.DomainState.VIR_DOMAIN_PAUSED.equals(vm.getInfo().state)) {
-                return new CheckVirtualMachineAnswer(command, PowerState.PowerUnknown, vncPort);
+                Domain vm = conn.domainLookupByName(command.getVmName());
+                if (DomainInfo.DomainState.VIR_DOMAIN_PAUSED.equals(vm.getInfo().state)) {
+                    return new CheckVirtualMachineAnswer(command, PowerState.PowerUnknown, vncPort);
+                }
             }
 
             return new CheckVirtualMachineAnswer(command, state, vncPort);
