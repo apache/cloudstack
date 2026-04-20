@@ -87,12 +87,12 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                     "LEFT JOIN dedicated_resources dr_cluster ON dr_cluster.cluster_id IS NOT NULL AND dr_cluster.cluster_id = host.cluster_id " +
                     "LEFT JOIN dedicated_resources dr_host ON dr_host.host_id IS NOT NULL AND dr_host.host_id = host.id ";
 
-    private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_INCLUDE_DEDICATED_TO_DOMAIN_JOIN_1 =
+    private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_INCLUDE_DEDICATED_JOIN_1 =
             "JOIN host ON capacity.host_id = host.id " +
                     "LEFT JOIN (SELECT affinity_group.id, agvm.instance_id FROM affinity_group_vm_map agvm JOIN affinity_group ON agvm.affinity_group_id = affinity_group.id AND affinity_group.type='ExplicitDedication') AS ag ON ag.instance_id = ? " +
-                    "LEFT JOIN dedicated_resources dr_pod ON dr_pod.pod_id IS NOT NULL AND dr_pod.pod_id = host.pod_id AND dr_pod.account_id IS NOT NULL " +
-                    "LEFT JOIN dedicated_resources dr_cluster ON dr_cluster.cluster_id IS NOT NULL AND dr_cluster.cluster_id = host.cluster_id AND dr_cluster.account_id IS NOT NULL " +
-                    "LEFT JOIN dedicated_resources dr_host ON dr_host.host_id IS NOT NULL AND dr_host.host_id = host.id AND dr_host.account_id IS NOT NULL ";
+                    "LEFT JOIN dedicated_resources dr_pod ON dr_pod.pod_id IS NOT NULL AND dr_pod.pod_id = host.pod_id AND dr_pod.account_id IS NOT NULL AND dr_pod.account_id != ownerId " +
+                    "LEFT JOIN dedicated_resources dr_cluster ON dr_cluster.cluster_id IS NOT NULL AND dr_cluster.cluster_id = host.cluster_id AND dr_cluster.account_id IS NOT NULL AND dr_cluster.account_id != ownerId " +
+                    "LEFT JOIN dedicated_resources dr_host ON dr_host.host_id IS NOT NULL AND dr_host.host_id = host.id AND dr_host.account_id IS NOT NULL AND dr_host.account_id != ownerId ";
 
     private static final String ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_JOIN_2 =
             " AND ((ag.id IS NULL AND dr_pod.pod_id IS NULL AND dr_cluster.cluster_id IS NULL AND dr_host.host_id IS NULL) OR " +
@@ -993,7 +993,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, short capacityTypeForOrdering, boolean isVr, boolean allowRoutersOnDedicatedResources, boolean isZone) {
+    public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, Long ownerId, short capacityTypeForOrdering, boolean isVr, boolean allowRoutersOnDedicatedResources, boolean isZone) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
@@ -1006,7 +1006,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
 
         if (isVr && allowRoutersOnDedicatedResources) {
-            sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_INCLUDE_DEDICATED_TO_DOMAIN_JOIN_1);
+            sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_INCLUDE_DEDICATED_JOIN_1.replace("ownerId", ownerId.toString()));
         } else {
             sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_JOIN_1);
         }

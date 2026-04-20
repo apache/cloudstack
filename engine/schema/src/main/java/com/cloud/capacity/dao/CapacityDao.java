@@ -41,7 +41,7 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 
     List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId, Long podId, Long clusterId);
 
-    Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, short capacityType,  boolean isVr, boolean allowRoutersOnDedicatedResources, boolean isZone);
+    Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, Long ownerId, short capacityType, boolean isVr, boolean allowRoutersOnDedicatedResources, boolean isZone);
 
     Ternary<Long, Long, Long> findCapacityByZoneAndHostTag(Long zoneId, String hostTag);
 
