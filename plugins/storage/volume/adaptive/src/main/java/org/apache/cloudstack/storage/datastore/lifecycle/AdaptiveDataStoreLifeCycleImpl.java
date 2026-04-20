@@ -179,7 +179,7 @@ public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycl
             parameters.setHost(uri.getHost());
             parameters.setPort(uri.getPort());
             parameters.setPath(uri.getPath() + "?" + uri.getQuery());
-            parameters.setType(StoragePoolType.FiberChannel);
+            parameters.setType(pickPoolType(uri));
             parameters.setZoneId(zoneId);
             parameters.setPodId(podId);
             parameters.setClusterId(clusterId);
@@ -400,5 +400,27 @@ public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycl
     public void disableStoragePool(DataStore store) {
         logger.info("Disabling storage pool {}", store);
         _dataStoreHelper.disable(store);
+    }
+
+    /**
+     * Resolve the CloudStack StoragePoolType from the provider URL. Adaptive
+     * plugins advertise the underlying fabric via a {@code transport=} query
+     * parameter on the URL; when absent we keep the legacy FiberChannel
+     * default for backwards compatibility with adapters that still assume it.
+     */
+    private static StoragePoolType pickPoolType(java.net.URL uri) {
+        String query = uri.getQuery();
+        if (query != null) {
+            for (String tok : query.split("&")) {
+                int i = tok.indexOf('=');
+                if (i > 0 && "transport".equalsIgnoreCase(tok.substring(0, i))) {
+                    String value = tok.substring(i + 1);
+                    if ("nvme-tcp".equalsIgnoreCase(value)) {
+                        return StoragePoolType.NVMeTCP;
+                    }
+                }
+            }
+        }
+        return StoragePoolType.FiberChannel;
     }
 }
