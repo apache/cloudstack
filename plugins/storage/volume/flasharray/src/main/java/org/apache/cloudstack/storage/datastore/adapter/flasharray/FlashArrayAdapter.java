@@ -200,9 +200,30 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
     @Override
     public void delete(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
+        String fullName = normalizeName(pod, dataObject.getExternalName());
+
+        // Snapshots live under /volume-snapshots and have the reserved form
+        // <volume>.<suffix>: the FlashArray rejects renames to any name that
+        // includes '.' or is not pure alphanumeric+'_'+'-', so we cannot
+        // tag them with a timestamp on the way out. Just mark them destroyed.
+        if (dataObject.getType() == ProviderAdapterDataObject.Type.SNAPSHOT) {
+            try {
+                FlashArrayVolume destroy = new FlashArrayVolume();
+                destroy.setDestroyed(true);
+                PATCH("/volume-snapshots?names=" + fullName, destroy, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+                });
+            } catch (CloudRuntimeException e) {
+                if (e.toString().contains("No such volume or snapshot")
+                        || e.toString().contains("Volume does not exist")) {
+                    return;
+                }
+                throw e;
+            }
+            return;
+        }
+
         // first make sure we are disconnected
         removeVlunsAll(context, pod, dataObject.getExternalName());
-        String fullName = normalizeName(pod, dataObject.getExternalName());
 
         // Rename then destroy: FlashArray keeps destroyed volumes in a recycle
         // bin (default 24h) from which they can be recovered. Renaming with a
