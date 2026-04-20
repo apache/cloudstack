@@ -764,13 +764,6 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                             "In order to revert to a Snapshot without memory you need to first stop the Instance.");
         }
 
-        if (userVm.getState() == VirtualMachine.State.Running && vmSnapshotVo.getType() == VMSnapshot.Type.Disk) {
-            throw new InvalidParameterValueException(
-                    "Reverting to the Instance Snapshot is not allowed for running Instances as this would result in an Instance state change. " +
-                            "For running Instances only Snapshots with memory can be reverted. " +
-                            "In order to revert to a Snapshot without memory you need to first stop the Instance.");
-        }
-
         if (userVm.getState() == VirtualMachine.State.Stopped && vmSnapshotVo.getType() == VMSnapshot.Type.DiskAndMemory) {
             throw new InvalidParameterValueException(
                     "Reverting to the Instance Snapshot is not allowed for stopped Instances when the Snapshot contains memory as this would result in an Instance state change. " +
