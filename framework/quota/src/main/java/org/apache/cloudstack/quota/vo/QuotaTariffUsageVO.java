@@ -27,8 +27,8 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 @Entity
-@Table(name = "quota_usage_details")
-public class QuotaUsageDetailVO implements InternalIdentity {
+@Table(name = "quota_tariff_usage")
+public class QuotaTariffUsageVO implements InternalIdentity {
     @Id
     @Column(name = "id")
     private Long id;
@@ -42,7 +42,7 @@ public class QuotaUsageDetailVO implements InternalIdentity {
     @Column(name = "quota_used")
     private BigDecimal quotaUsed;
 
-    public QuotaUsageDetailVO() {
+    public QuotaTariffUsageVO() {
         quotaUsed = new BigDecimal(0);
     }
 

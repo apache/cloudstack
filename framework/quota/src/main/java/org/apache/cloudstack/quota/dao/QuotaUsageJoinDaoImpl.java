@@ -24,7 +24,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.cloudstack.quota.vo.QuotaUsageDetailVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffUsageVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
@@ -39,10 +39,10 @@ public class QuotaUsageJoinDaoImpl extends GenericDaoBase<QuotaUsageJoinVO, Long
 
     private SearchBuilder<QuotaUsageJoinVO> searchQuotaUsages;
 
-    private SearchBuilder<QuotaUsageJoinVO> searchQuotaUsagesJoinDetails;
+    private SearchBuilder<QuotaUsageJoinVO> searchQuotaUsagesJoinTariffUsages;
 
     @Inject
-    private QuotaUsageDetailDao quotaUsageDetailDao;
+    private QuotaTariffUsageDao quotaTariffUsageDao;
 
     @PostConstruct
     public void init() {
@@ -50,13 +50,13 @@ public class QuotaUsageJoinDaoImpl extends GenericDaoBase<QuotaUsageJoinVO, Long
         prepareQuotaUsageSearchBuilder(searchQuotaUsages);
         searchQuotaUsages.done();
 
-        SearchBuilder<QuotaUsageDetailVO> searchQuotaUsageDetails = quotaUsageDetailDao.createSearchBuilder();
-        searchQuotaUsageDetails.and("tariffId", searchQuotaUsageDetails.entity().getTariffId(), SearchCriteria.Op.EQ);
-        searchQuotaUsagesJoinDetails = createSearchBuilder();
-        prepareQuotaUsageSearchBuilder(searchQuotaUsagesJoinDetails);
-        searchQuotaUsagesJoinDetails.join("searchQuotaUsageDetails", searchQuotaUsageDetails, searchQuotaUsagesJoinDetails.entity().getId(),
-                searchQuotaUsageDetails.entity().getQuotaUsageId(), JoinBuilder.JoinType.INNER);
-        searchQuotaUsagesJoinDetails.done();
+        SearchBuilder<QuotaTariffUsageVO> searchQuotaTariffUsages = quotaTariffUsageDao.createSearchBuilder();
+        searchQuotaTariffUsages.and("tariffId", searchQuotaTariffUsages.entity().getTariffId(), SearchCriteria.Op.EQ);
+        searchQuotaUsagesJoinTariffUsages = createSearchBuilder();
+        prepareQuotaUsageSearchBuilder(searchQuotaUsagesJoinTariffUsages);
+        searchQuotaUsagesJoinTariffUsages.join("searchQuotaTariffUsages", searchQuotaTariffUsages, searchQuotaUsagesJoinTariffUsages.entity().getId(),
+                searchQuotaTariffUsages.entity().getQuotaUsageId(), JoinBuilder.JoinType.INNER);
+        searchQuotaUsagesJoinTariffUsages.done();
     }
 
     private void prepareQuotaUsageSearchBuilder(SearchBuilder<QuotaUsageJoinVO> searchBuilder) {
@@ -72,7 +72,7 @@ public class QuotaUsageJoinDaoImpl extends GenericDaoBase<QuotaUsageJoinVO, Long
 
     @Override
     public List<QuotaUsageJoinVO> findQuotaUsage(Long accountId, Long domainId, Integer usageType, Long resourceId, Long networkId, Long offeringId, Date startDate, Date endDate, Long tariffId) {
-        SearchCriteria<QuotaUsageJoinVO> sc = tariffId == null ? searchQuotaUsages.create() : searchQuotaUsagesJoinDetails.create();
+        SearchCriteria<QuotaUsageJoinVO> sc = tariffId == null ? searchQuotaUsages.create() : searchQuotaUsagesJoinTariffUsages.create();
 
         sc.setParametersIfNotNull("accountId", accountId);
         sc.setParametersIfNotNull("domainId", domainId);
@@ -86,7 +86,7 @@ public class QuotaUsageJoinDaoImpl extends GenericDaoBase<QuotaUsageJoinVO, Long
             sc.setParameters("endDate", startDate, endDate);
         }
 
-        sc.setJoinParametersIfNotNull("searchQuotaUsageDetails", "tariffId", tariffId);
+        sc.setJoinParametersIfNotNull("searchQuotaTariffUsages", "tariffId", tariffId);
 
         return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<List<QuotaUsageJoinVO>>) status -> listBy(sc));
     }

@@ -17,13 +17,13 @@
 package org.apache.cloudstack.quota.dao;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.quota.vo.QuotaUsageDetailVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffUsageVO;
 import java.util.List;
 
-public interface QuotaUsageDetailDao extends GenericDao<QuotaUsageDetailVO, Long> {
+public interface QuotaTariffUsageDao extends GenericDao<QuotaTariffUsageVO, Long> {
 
-    void persistQuotaUsageDetail(QuotaUsageDetailVO quotaUsageDetail);
+    void persistQuotaTariffUsage(QuotaTariffUsageVO quotaTariffUsage);
 
-    List<QuotaUsageDetailVO> listQuotaUsageDetails(Long quotaUsageId);
+    List<QuotaTariffUsageVO> listQuotaTariffUsages(Long quotaUsageId);
 
 }

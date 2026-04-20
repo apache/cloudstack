@@ -18,7 +18,7 @@ package org.apache.cloudstack.quota.dao;
 
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.quota.vo.QuotaUsageDetailVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffUsageVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -30,27 +30,27 @@ import javax.annotation.PostConstruct;
 import java.util.List;
 
 @Component
-public class QuotaUsageDetailDaoImpl extends GenericDaoBase<QuotaUsageDetailVO, Long> implements QuotaUsageDetailDao {
-    private SearchBuilder<QuotaUsageDetailVO> searchQuotaUsageDetails;
+public class QuotaTariffUsageDaoImpl extends GenericDaoBase<QuotaTariffUsageVO, Long> implements QuotaTariffUsageDao {
+    private SearchBuilder<QuotaTariffUsageVO> searchQuotaTariffUsages;
 
     @PostConstruct
     public void init() {
-        searchQuotaUsageDetails = createSearchBuilder();
-        searchQuotaUsageDetails.and("quotaUsageId", searchQuotaUsageDetails.entity().getQuotaUsageId(), SearchCriteria.Op.EQ);
-        searchQuotaUsageDetails.done();
+        searchQuotaTariffUsages = createSearchBuilder();
+        searchQuotaTariffUsages.and("quotaUsageId", searchQuotaTariffUsages.entity().getQuotaUsageId(), SearchCriteria.Op.EQ);
+        searchQuotaTariffUsages.done();
     }
 
     @Override
-    public void persistQuotaUsageDetail(final QuotaUsageDetailVO quotaUsageDetail) {
-        logger.trace("Persisting quota usage detail [{}].", quotaUsageDetail);
-        Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<QuotaUsageDetailVO>) status -> persist(quotaUsageDetail));
+    public void persistQuotaTariffUsage(final QuotaTariffUsageVO quotaTariffUsage) {
+        logger.trace("Persisting quota tariff usage [{}].", quotaTariffUsage);
+        Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<QuotaTariffUsageVO>) status -> persist(quotaTariffUsage));
     }
 
     @Override
-    public List<QuotaUsageDetailVO> listQuotaUsageDetails(Long quotaUsageId) {
-        SearchCriteria<QuotaUsageDetailVO> sc = searchQuotaUsageDetails.create();
+    public List<QuotaTariffUsageVO> listQuotaTariffUsages(Long quotaUsageId) {
+        SearchCriteria<QuotaTariffUsageVO> sc = searchQuotaTariffUsages.create();
         sc.setParameters("quotaUsageId", quotaUsageId);
-        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<List<QuotaUsageDetailVO>>) status -> listBy(sc));
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<List<QuotaTariffUsageVO>>) status -> listBy(sc));
     }
 
 }
