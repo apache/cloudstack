@@ -204,21 +204,25 @@ public class FlashArrayAdapter implements ProviderAdapter {
         removeVlunsAll(context, pod, dataObject.getExternalName());
         String fullName = normalizeName(pod, dataObject.getExternalName());
 
-        FlashArrayVolume volume = new FlashArrayVolume();
-
-        // rename as we delete so it doesn't conflict if the template or volume is ever recreated
-        // pure keeps the volume(s) around in a Destroyed bucket for a period of time post delete
+        // Rename then destroy: FlashArray keeps destroyed volumes in a recycle
+        // bin (default 24h) from which they can be recovered. Renaming with a
+        // deletion timestamp gives operators a forensic trail when browsing the
+        // array - they can see when each destroyed copy was deleted on the
+        // CloudStack side. FlashArray rejects a single PATCH that combines
+        // {name, destroyed}, so the rename and the destroy must be issued as
+        // two separate requests each carrying only its own field.
         String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
-        volume.setExternalName(fullName + "-" + timestamp);
+        String renamedName = fullName + "-" + timestamp;
 
         try {
-            PATCH("/volumes?names=" + fullName, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+            FlashArrayVolume rename = new FlashArrayVolume();
+            rename.setExternalName(renamedName);
+            PATCH("/volumes?names=" + fullName, rename, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
             });
 
-            // now delete it with new name
-            volume.setDestroyed(true);
-
-            PATCH("/volumes?names=" + fullName + "-" + timestamp, volume, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
+            FlashArrayVolume destroy = new FlashArrayVolume();
+            destroy.setDestroyed(true);
+            PATCH("/volumes?names=" + renamedName, destroy, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
             });
         } catch (CloudRuntimeException e) {
             if (e.toString().contains("Volume does not exist")) {
