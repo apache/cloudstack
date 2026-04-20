@@ -250,7 +250,7 @@ public class CapacityDaoImplTest {
         when(pstmt.executeQuery()).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
 
-        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderClustersByAggregateCapacity(1L, 1L, (short) 1, false,true);
+        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderClustersByAggregateCapacity(1L, 1L, 1L, (short) 1, false, false, true);
         assertNotNull(result);
         assertTrue(result.first().isEmpty());
         assertTrue(result.second().isEmpty());
