@@ -57,7 +57,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
