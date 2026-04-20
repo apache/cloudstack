@@ -113,7 +113,7 @@ public interface UserVmManager extends UserVmService {
 
     ConfigKey<Boolean> EnforceResourceLimitOnValidationVm = new ConfigKey<Boolean>(
             "Advanced", Boolean.class, "enforce.resource.limit.on.backup.validation.vm", "false", "If set to true, validation VMs will be accounted in the resource limit of the " +
-            "account/domain.",true, ConfigKey.Scope.Account);
+            "account/domain.", true, ConfigKey.Scope.Account);
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 

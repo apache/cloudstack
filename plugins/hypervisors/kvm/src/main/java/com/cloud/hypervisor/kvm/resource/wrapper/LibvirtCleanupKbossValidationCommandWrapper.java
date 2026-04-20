@@ -33,6 +33,11 @@ public class LibvirtCleanupKbossValidationCommandWrapper extends CommandWrapper<
         return new Answer(command);
     }
 
+    /**
+     * The objective of this command is to remove the secondary storage references after the validation VM was stopped.
+     * Since the `getStoragePoolByURI` and `deleteStoragePool` have a reference counter, where the first method increases the count and the second one decreases the count,
+     * we must call the deleteStoragePool twice so that the command is count negative.
+     * */
     private void cleanupSecondaryStorages(CleanupKbossValidationCommand command, KVMStoragePoolManager storagePoolMgr) {
         logger.info("Cleaning up secondary storage references after backup validation process using VM [{}].", command.getVmName());
         for (String secondaryUrl : command.getSecondaryStorages()) {

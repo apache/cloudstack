@@ -141,13 +141,10 @@ public class BackupValidationServiceController extends InternalBackupServiceJobC
         }
     }
 
-
-
     @Override
     protected void submitQueuedJob(InternalBackupServiceJobVO job, long zoneId, String logId) {
         executor.submit(() -> startBackupValidation(job, zoneId, logId));
     }
-
 
     @Override
     protected List<InternalBackupServiceJobVO> getLostJobs(ClusterVO clusterVO, Calendar date, List<HostVO> hostVOS) {

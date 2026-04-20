@@ -430,6 +430,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
         this.subdomainAccess = subdomainAccess;
         this.displayNetwork = displayNetwork;
     }
+
     @Override
     public String getCommandName() {
         return s_name;

@@ -1236,7 +1236,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
 
         // Get updated record
         InternalBackupJoinVO backupJoinVO = internalBackupJoinDao.findById(backupVO.getId());
-        if (backupJoinVO.getCurrent() || (!backupChildren.isEmpty() && backupChildren.get(backupChildren.size() -1).getCurrent())) {
+        if (backupJoinVO.getCurrent() || (!backupChildren.isEmpty() && backupChildren.get(backupChildren.size() - 1).getCurrent())) {
             logger.info("As [{}] is true, we are ending the backup chain for VM [{}]. The next backup will be a full backup.",
                     BackupValidationServiceController.backupValidationEndChainOnFail.toString());
             endBackupChain(userVmDao.findById(backupVO.getVmId()));
@@ -2206,32 +2206,32 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
             setBackupAsInvalidAndSendAlert(backupVO, msg);
             return false;
         }
-        if (answer instanceof ValidateKbossVmAnswer) {
-            ValidateKbossVmAnswer validateKbossVmAnswer = (ValidateKbossVmAnswer)answer;
-            boolean result = true;
-            String msg = String.format("Backup [%s] was validated using dummy VM [%s]. The backup was deemed invalid due to: ", backupVO.getUuid(), validationVm.getName());
-            if (validateKbossVmCommand.isWaitForBoot() && !validateKbossVmAnswer.isBootValidated()) {
-                result = false;
-                msg += "\n - The VM did not boot within the expected time.";
-            }
-            if (validateKbossVmCommand.isExecuteScript() && validateKbossVmAnswer.getScriptResult() != null) {
-                result = false;
-                msg += "\n - The script did not output the expected output. Captured output: " + validateKbossVmAnswer.getScriptResult();
-            }
-            if (validateKbossVmCommand.isTakeScreenshot() && validateKbossVmAnswer.getScreenshotPath() == null) {
-                result = false;
-                msg += "\n - We were unable to take a screenshot of the VM.";
-            } else if (validateKbossVmCommand.isTakeScreenshot()) {
-                logger.debug("Saving validation screenshot path [{}] to the backup details of backup [{}].", validateKbossVmAnswer.getScreenshotPath(), backupVO.getUuid());
-                backupDetailDao.addDetail(backupVO.getId(), SCREENSHOT_PATH, validateKbossVmAnswer.getScreenshotPath(), false);
-            }
-            if (!result) {
-                setBackupAsInvalidAndSendAlert(backupVO, msg);
-            }
-
-            return result;
+        if (!(answer instanceof ValidateKbossVmAnswer)) {
+            return false;
         }
-        return false;
+        ValidateKbossVmAnswer validateKbossVmAnswer = (ValidateKbossVmAnswer)answer;
+        boolean result = true;
+        String msg = String.format("Backup [%s] was validated using dummy VM [%s]. The backup was deemed invalid due to: ", backupVO.getUuid(), validationVm.getName());
+        if (validateKbossVmCommand.isWaitForBoot() && !validateKbossVmAnswer.isBootValidated()) {
+            result = false;
+            msg += "\n - The VM did not boot within the expected time.";
+        }
+        if (validateKbossVmCommand.isExecuteScript() && validateKbossVmAnswer.getScriptResult() != null) {
+            result = false;
+            msg += "\n - The script did not output the expected output. Captured output: " + validateKbossVmAnswer.getScriptResult();
+        }
+        if (validateKbossVmCommand.isTakeScreenshot() && validateKbossVmAnswer.getScreenshotPath() == null) {
+            result = false;
+            msg += "\n - We were unable to take a screenshot of the VM.";
+        } else if (validateKbossVmCommand.isTakeScreenshot()) {
+            logger.debug("Saving validation screenshot path [{}] to the backup details of backup [{}].", validateKbossVmAnswer.getScreenshotPath(), backupVO.getUuid());
+            backupDetailDao.addDetail(backupVO.getId(), SCREENSHOT_PATH, validateKbossVmAnswer.getScreenshotPath(), false);
+        }
+        if (!result) {
+            setBackupAsInvalidAndSendAlert(backupVO, msg);
+        }
+
+        return result;
     }
 
     protected void handleBackupExceptionInRestore(VirtualMachine vm, BackupException jobResult) {
@@ -2566,15 +2566,17 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
                             BackupValidationServiceController.backupValidationBootDefaultTimeout.valueIn(backup.getAccountId()));
                     break;
                 case execute_command:
-                    configureValidationScript(cmd, backup.getVmId(), backup.getAccountId());
+                    configureValidationScript(cmd, backup);
                     break;
             }
         }
     }
 
-    protected void configureValidationScript(ValidateKbossVmCommand cmd, long vmId, long accountId) {
+    protected void configureValidationScript(ValidateKbossVmCommand cmd, BackupVO backupVO) {
+        long vmId = backupVO.getVmId();
         VMInstanceDetailVO script = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.VALIDATION_COMMAND);
         if (script == null) {
+            logger.warn("Execute command step was configured but no script given. Ignoring this step for backup [{}].", backupVO.getUuid());
             return;
         }
         cmd.setExecuteScript(true);
@@ -2585,7 +2587,7 @@ public class KbossBackupProvider extends AdapterBase implements InternalBackupPr
         cmd.setExpectedResult(scriptExpectedResult != null ? scriptExpectedResult.getValue() : "0");
         VMInstanceDetailVO scriptTimeout = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.VALIDATION_COMMAND_TIMEOUT);
         cmd.setScriptTimeout(scriptTimeout != null ? Integer.valueOf(scriptTimeout.getValue()) :
-                BackupValidationServiceController.backupValidationScriptDefaultTimeout.valueIn(accountId));
+                BackupValidationServiceController.backupValidationScriptDefaultTimeout.valueIn(backupVO.getId()));
     }
 
     protected void createBasicBackupDetails(Long imageStoreId, Long parentId, BackupVO backupVO) {

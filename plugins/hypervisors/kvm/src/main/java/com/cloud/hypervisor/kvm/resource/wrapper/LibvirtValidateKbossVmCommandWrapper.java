@@ -155,6 +155,7 @@ public class LibvirtValidateKbossVmCommandWrapper extends CommandWrapper<Validat
         }
         String script = command.getScriptToExecute();
         if (script == null) {
+            logger.warn("This command is malformed, we should execute an script for VM [{}], but no script was configured. Please review the original VM configurations.", vm.getName());
             return null;
         }
         String arguments = command.getScriptArguments();

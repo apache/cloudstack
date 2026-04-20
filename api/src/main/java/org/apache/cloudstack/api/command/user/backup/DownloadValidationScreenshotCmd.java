@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.backup;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -72,12 +73,15 @@ public class DownloadValidationScreenshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Downloading validation screenshot of backup " + getBackupId();
+        Backup backup = _entityMgr.findById(Backup.class, getBackupId());
+        if (backup == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find backup with ID [%s]", getBackupId()));
+        }
+        return "Downloading validation screenshot of backup " + backup.getUuid();
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-            NetworkRuleConflictException {
+    public void execute() {
         ExtractResponse response = internalBackupService.downloadScreenshot(getBackupId());
         response.setResponseName(getCommandName());
         response.setObjectName(getCommandName());

@@ -10185,7 +10185,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return vm;
     }
 
-
     private Network getValidationNetwork(long zoneId) {
         NetworkVO networkVo = _networkDao.findByZoneIdAndAccountIdAndGuestType(zoneId, Account.ACCOUNT_ID_SYSTEM, GuestType.Shared);
         AccountVO accountVO = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
