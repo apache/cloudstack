@@ -1372,7 +1372,7 @@ public class ApiConstants {
     public static final String DISABLED = "disabled";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String NATIVE_ZONE = "Native";
-    public static final String NIC_DNS_RECORD = "nicdnsrecord";
+    public static final String NIC_DNS_NAME = "nicdnsname";
     public static final String TIME_STAMP = "timestamp";
     public static final String INSTANCE_ID = "instanceId";
     public static final String OLD_STATE = "oldState";

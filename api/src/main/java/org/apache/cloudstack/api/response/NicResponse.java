@@ -150,9 +150,9 @@ public class NicResponse extends BaseResponse {
     @Param(description = "whether the NIC is enabled or not")
     private Boolean isEnabled;
 
-    @SerializedName("dnsrecordurl")
+    @SerializedName(ApiConstants.NIC_DNS_NAME)
     @Param(description = "Public IP address associated with this NIC via Static NAT rule")
-    private String dnsRecordUrl;
+    private String nicDnsName;
 
     public void setVmId(String vmId) {
         this.vmId = vmId;
@@ -433,7 +433,7 @@ public class NicResponse extends BaseResponse {
         isEnabled = enabled;
     }
 
-    public void setDnsRecordUrl(String dnsRecordUrl) {
-        this.dnsRecordUrl = dnsRecordUrl;
+    public void setNicDnsName(String nicDnsName) {
+        this.nicDnsName = nicDnsName;
     }
 }

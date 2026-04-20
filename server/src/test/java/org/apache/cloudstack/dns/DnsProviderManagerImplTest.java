@@ -52,7 +52,7 @@ import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.dns.dao.DnsNicJoinDao;
+import org.apache.cloudstack.dns.dao.NicDnsJoinDao;
 import org.apache.cloudstack.dns.dao.DnsServerDao;
 import org.apache.cloudstack.dns.dao.DnsServerJoinDao;
 import org.apache.cloudstack.dns.dao.DnsZoneDao;
@@ -67,6 +67,7 @@ import org.apache.cloudstack.dns.vo.DnsServerVO;
 import org.apache.cloudstack.dns.vo.DnsZoneJoinVO;
 import org.apache.cloudstack.dns.vo.DnsZoneNetworkMapVO;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
+import org.apache.cloudstack.dns.vo.NicDnsJoinVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.junit.After;
 import org.junit.Before;
@@ -127,7 +128,7 @@ public class DnsProviderManagerImplTest {
     @Mock
     NicDetailsDao nicDetailsDao;
     @Mock
-    DnsNicJoinDao dnsNicJoinDao;
+    NicDnsJoinDao nicDnsJoinDao;
     @Mock
     MessageBus messageBus;
     @Mock
@@ -896,9 +897,9 @@ public class DnsProviderManagerImplTest {
         event.put(org.apache.cloudstack.api.ApiConstants.OLD_STATE, com.cloud.vm.VirtualMachine.State.Running);
         event.put(org.apache.cloudstack.api.ApiConstants.NEW_STATE, com.cloud.vm.VirtualMachine.State.Stopped);
         event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 15L);
-        when(dnsNicJoinDao.listIncludingRemovedByVmId(15L)).thenReturn(null);
+        when(nicDnsJoinDao.listIncludingRemovedByVmId(15L)).thenReturn(null);
         subscriber.onPublishMessage("sender", "subject", event);
-        verify(dnsNicJoinDao, times(1)).listIncludingRemovedByVmId(15L);
+        verify(nicDnsJoinDao, times(1)).listIncludingRemovedByVmId(15L);
     }
 
     @Test
@@ -943,9 +944,9 @@ public class DnsProviderManagerImplTest {
         event.put(org.apache.cloudstack.api.ApiConstants.EVENT_TYPE, com.cloud.event.EventTypes.EVENT_NIC_DELETE);
         event.put(org.apache.cloudstack.api.ApiConstants.NIC_ID, 101L);
         event.put(org.apache.cloudstack.api.ApiConstants.INSTANCE_ID, 201L);
-        when(dnsNicJoinDao.findByIdIncludingRemoved(101L)).thenReturn(null);
+        when(nicDnsJoinDao.findByIdIncludingRemoved(101L)).thenReturn(null);
         subscriber.onPublishMessage("sender", "subject", event);
-        verify(dnsNicJoinDao, times(1)).findByIdIncludingRemoved(101L);
+        verify(nicDnsJoinDao, times(1)).findByIdIncludingRemoved(101L);
     }
 
     @Test
@@ -1035,7 +1036,7 @@ public class DnsProviderManagerImplTest {
     public void testSyncDnsRecordsStateNoIpv4AndNoIpv6DeletesBothRecords() throws Exception {
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
-        when(dnsNicJoinDao.listActiveByVmIdZoneAndDnsRecord(anyLong(), anyLong(), anyString()))
+        when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(anyLong(), anyLong(), anyString()))
                 .thenReturn(Collections.emptyList());
 
         manager.syncDnsRecordsState(1L, "myvm.example.com", ZONE_ID);
@@ -1049,10 +1050,10 @@ public class DnsProviderManagerImplTest {
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
 
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nic = mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO nic = mock(NicDnsJoinVO.class);
         when(nic.getIp4Address()).thenReturn("10.0.0.1");
         when(nic.getIp6Address()).thenReturn(null);
-        when(dnsNicJoinDao.listActiveByVmIdZoneAndDnsRecord(anyLong(), anyLong(), anyString()))
+        when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(anyLong(), anyLong(), anyString()))
                 .thenReturn(Collections.singletonList(nic));
 
         manager.syncDnsRecordsState(1L, "myvm.example.com", ZONE_ID);
@@ -1067,7 +1068,7 @@ public class DnsProviderManagerImplTest {
     public void testHandleVmRunningStateFoundButNoActiveNics() throws DnsProviderException {
         com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
         when(vmInstanceDao.findById(30L)).thenReturn(instanceMock);
-        when(dnsNicJoinDao.listActiveByVmId(30L)).thenReturn(Collections.emptyList());
+        when(nicDnsJoinDao.listActiveByVmId(30L)).thenReturn(Collections.emptyList());
 
         manager.handleVmRunningState(30L);
 
@@ -1077,10 +1078,10 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleVmStopAndDestroyNicWithNullDnsUrlIsSkipped() throws DnsProviderException {
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
-        when(nicMock.getNicDnsUrl()).thenReturn(null);
-        when(dnsNicJoinDao.listIncludingRemovedByVmId(31L))
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
+        when(nicMock.getNicDnsName()).thenReturn(null);
+        when(nicDnsJoinDao.listIncludingRemovedByVmId(31L))
                 .thenReturn(Collections.singletonList(nicMock));
 
         manager.handleVmStopAndDestroy(31L);
@@ -1090,16 +1091,16 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testHandleVmStopAndDestroyWithValidDnsUrlTriggersCleanup() throws Exception {
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
-        when(nicMock.getNicDnsUrl()).thenReturn("myvm.example.com");
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
+        when(nicMock.getNicDnsName()).thenReturn("myvm.example.com");
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
-        when(dnsNicJoinDao.listIncludingRemovedByVmId(32L))
+        when(nicDnsJoinDao.listIncludingRemovedByVmId(32L))
                 .thenReturn(Collections.singletonList(nicMock));
 
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
-        when(dnsNicJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(32L), eq(ZONE_ID), anyString()))
+        when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(32L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 
         try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
@@ -1119,7 +1120,7 @@ public class DnsProviderManagerImplTest {
 
             manager.handleVmStopAndDestroy(32L);
 
-            verify(nicDetailsDao).removeDetail(nicMock.getId(), org.apache.cloudstack.api.ApiConstants.NIC_DNS_RECORD);
+            verify(nicDetailsDao).removeDetail(nicMock.getId(), org.apache.cloudstack.api.ApiConstants.NIC_DNS_NAME);
             verify(dnsProviderMock, times(2)).deleteRecord(eq(serverVO), eq(zoneVO), any(DnsRecord.class));
         }
     }
@@ -1132,21 +1133,21 @@ public class DnsProviderManagerImplTest {
 
         manager.handleNicPlug(33L, 500L);
 
-        verify(dnsNicJoinDao, never()).findById(anyLong());
+        verify(nicDnsJoinDao, never()).findById(anyLong());
         verify(dnsProviderMock, never()).addRecord(any(), any(), any());
     }
 
     @Test
     public void testHandleNicUnplugNicHasValidDnsUrlTriggersSyncCleanup() throws Exception {
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
-        when(nicMock.getNicDnsUrl()).thenReturn("myvm.example.com");
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
+        when(nicMock.getNicDnsName()).thenReturn("myvm.example.com");
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
-        when(dnsNicJoinDao.findByIdIncludingRemoved(600L)).thenReturn(nicMock);
+        when(nicDnsJoinDao.findByIdIncludingRemoved(600L)).thenReturn(nicMock);
 
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
-        when(dnsNicJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(34L), eq(ZONE_ID), anyString()))
+        when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(34L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 
         try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
@@ -1166,7 +1167,7 @@ public class DnsProviderManagerImplTest {
 
             manager.handleNicUnplug(34L, 600L);
 
-            verify(nicDetailsDao).removeDetail(600L, org.apache.cloudstack.api.ApiConstants.NIC_DNS_RECORD);
+            verify(nicDetailsDao).removeDetail(600L, org.apache.cloudstack.api.ApiConstants.NIC_DNS_NAME);
             verify(dnsProviderMock, times(2)).deleteRecord(eq(serverVO), eq(zoneVO), any(DnsRecord.class));
         }
     }
@@ -1175,7 +1176,7 @@ public class DnsProviderManagerImplTest {
     public void testHandleVmHostnameChangedVmFoundButNoActiveNicsExitsEarly() throws DnsProviderException {
         com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
         when(vmInstanceDao.findById(35L)).thenReturn(instanceMock);
-        when(dnsNicJoinDao.listActiveByVmId(35L)).thenReturn(Collections.emptyList());
+        when(nicDnsJoinDao.listActiveByVmId(35L)).thenReturn(Collections.emptyList());
 
         manager.handleVmHostnameChanged(35L, "newname");
 
@@ -1185,10 +1186,10 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testIsDnsCollisionReturnsTrueForDifferentInstance() {
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO existing =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO existing =
+                mock(NicDnsJoinVO.class);
         when(existing.getInstanceId()).thenReturn(99L);
-        when(dnsNicJoinDao.findActiveByDnsRecordAndZone("vm.example.com", ZONE_ID)).thenReturn(existing);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone("vm.example.com", ZONE_ID)).thenReturn(existing);
 
         try (MockedStatic<com.cloud.event.ActionEventUtils> aeMock =
                 Mockito.mockStatic(com.cloud.event.ActionEventUtils.class)) {
@@ -1203,7 +1204,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testIsDnsCollisionReturnsFalseWhenNoExistingRecord() {
-        when(dnsNicJoinDao.findActiveByDnsRecordAndZone("vm.example.com", ZONE_ID)).thenReturn(null);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone("vm.example.com", ZONE_ID)).thenReturn(null);
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(
                 manager, "isDnsCollision", "vm.example.com", ZONE_ID, 42L);
         assertFalse(result);
@@ -1211,10 +1212,10 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testIsDnsCollisionReturnsFalseWhenSameInstance() {
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO existing =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO existing =
+                mock(NicDnsJoinVO.class);
         when(existing.getInstanceId()).thenReturn(42L);
-        when(dnsNicJoinDao.findActiveByDnsRecordAndZone("vm.example.com", ZONE_ID)).thenReturn(existing);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone("vm.example.com", ZONE_ID)).thenReturn(existing);
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(
                 manager, "isDnsCollision", "vm.example.com", ZONE_ID, 42L);
         assertFalse(result);
@@ -1226,15 +1227,15 @@ public class DnsProviderManagerImplTest {
         when(instanceMock.getState()).thenReturn(com.cloud.vm.VirtualMachine.State.Running);
         when(vmInstanceDao.findById(40L)).thenReturn(instanceMock);
 
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
-        when(dnsNicJoinDao.findById(700L)).thenReturn(nicMock);
+        when(nicDnsJoinDao.findById(700L)).thenReturn(nicMock);
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(null); // zone missing → exit after NIC lookup
 
         manager.handleNicPlug(40L, 700L);
 
-        verify(dnsNicJoinDao, times(1)).findById(700L);
+        verify(nicDnsJoinDao, times(1)).findById(700L);
         verify(dnsProviderMock, never()).addRecord(any(), any(), any());
     }
 
@@ -1244,10 +1245,10 @@ public class DnsProviderManagerImplTest {
         com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
         when(vmInstanceDao.findById(41L)).thenReturn(instanceMock);
 
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
-        when(dnsNicJoinDao.listActiveByVmId(41L)).thenReturn(Collections.singletonList(nicMock));
+        when(nicDnsJoinDao.listActiveByVmId(41L)).thenReturn(Collections.singletonList(nicMock));
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(null); // zone null → NIC skipped → empty map
 
         manager.handleVmHostnameChanged(41L, "newname");
@@ -1261,10 +1262,10 @@ public class DnsProviderManagerImplTest {
         com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
         when(vmInstanceDao.findById(42L)).thenReturn(instanceMock);
 
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
-        when(dnsNicJoinDao.listActiveByVmId(42L)).thenReturn(Collections.singletonList(nicMock));
+        when(nicDnsJoinDao.listActiveByVmId(42L)).thenReturn(Collections.singletonList(nicMock));
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(null); // zone null → NIC skipped → empty outer map
 
         manager.handleVmRunningState(42L);
@@ -1301,7 +1302,7 @@ public class DnsProviderManagerImplTest {
     public void testHandleVmRunningStateInstanceNullExitsEarly() throws DnsProviderException {
         when(vmInstanceDao.findById(50L)).thenReturn(null);
         manager.handleVmRunningState(50L);
-        verify(dnsNicJoinDao, never()).listActiveByVmId(anyLong());
+        verify(nicDnsJoinDao, never()).listActiveByVmId(anyLong());
     }
 
     @Test
@@ -1310,18 +1311,18 @@ public class DnsProviderManagerImplTest {
         when(instanceMock.getHostName()).thenReturn("myvm");
         when(vmInstanceDao.findById(51L)).thenReturn(instanceMock);
 
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
         when(nicMock.getSubDomain()).thenReturn(null);
-        when(dnsNicJoinDao.listActiveByVmId(51L)).thenReturn(Collections.singletonList(nicMock));
+        when(nicDnsJoinDao.listActiveByVmId(51L)).thenReturn(Collections.singletonList(nicMock));
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
 
         // no collision
-        when(dnsNicJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(null);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(null);
         // sync: no IPs → delete both
-        when(dnsNicJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(51L), eq(ZONE_ID), anyString()))
+        when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(51L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 
         try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
@@ -1339,7 +1340,7 @@ public class DnsProviderManagerImplTest {
             manager.handleVmRunningState(51L);
 
             verify(nicDetailsDao).addDetail(anyLong(),
-                    eq(org.apache.cloudstack.api.ApiConstants.NIC_DNS_RECORD), anyString(), eq(true));
+                    eq(org.apache.cloudstack.api.ApiConstants.NIC_DNS_NAME), anyString(), eq(true));
             verify(dnsProviderMock, times(2)).deleteRecord(eq(serverVO), eq(zoneVO), any(DnsRecord.class));
         }
     }
@@ -1350,18 +1351,18 @@ public class DnsProviderManagerImplTest {
         when(instanceMock.getHostName()).thenReturn("myvm");
         when(vmInstanceDao.findById(52L)).thenReturn(instanceMock);
 
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
         when(nicMock.getSubDomain()).thenReturn(null);
-        when(dnsNicJoinDao.listActiveByVmId(52L)).thenReturn(Collections.singletonList(nicMock));
+        when(nicDnsJoinDao.listActiveByVmId(52L)).thenReturn(Collections.singletonList(nicMock));
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
 
         // collision: different instance owns the record
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO colliding =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO colliding =
+                mock(NicDnsJoinVO.class);
         when(colliding.getInstanceId()).thenReturn(999L);
-        when(dnsNicJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(colliding);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(colliding);
 
         try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
                 Mockito.mockStatic(com.cloud.utils.db.Transaction.class);
@@ -1393,7 +1394,7 @@ public class DnsProviderManagerImplTest {
     public void testHandleVmHostnameChangedInstanceNullExitsEarly() throws DnsProviderException {
         when(vmInstanceDao.findById(60L)).thenReturn(null);
         manager.handleVmHostnameChanged(60L, "newname");
-        verify(dnsNicJoinDao, never()).listActiveByVmId(anyLong());
+        verify(nicDnsJoinDao, never()).listActiveByVmId(anyLong());
     }
 
     @Test
@@ -1401,13 +1402,13 @@ public class DnsProviderManagerImplTest {
         com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
         when(vmInstanceDao.findById(61L)).thenReturn(instanceMock);
 
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
         when(nicMock.getSubDomain()).thenReturn(null);
         // old URL already equals the new computed URL → continue (skip)
-        when(nicMock.getNicDnsUrl()).thenReturn("newname.example.com");
-        when(dnsNicJoinDao.listActiveByVmId(61L)).thenReturn(Collections.singletonList(nicMock));
+        when(nicMock.getNicDnsName()).thenReturn("newname.example.com");
+        when(nicDnsJoinDao.listActiveByVmId(61L)).thenReturn(Collections.singletonList(nicMock));
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
 
         manager.handleVmHostnameChanged(61L, "newname");
@@ -1422,19 +1423,19 @@ public class DnsProviderManagerImplTest {
         com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
         when(vmInstanceDao.findById(62L)).thenReturn(instanceMock);
 
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
         when(nicMock.getSubDomain()).thenReturn(null);
-        when(nicMock.getNicDnsUrl()).thenReturn("oldvm.example.com");   // differs from new FQDN
-        when(dnsNicJoinDao.listActiveByVmId(62L)).thenReturn(Collections.singletonList(nicMock));
+        when(nicMock.getNicDnsName()).thenReturn("oldvm.example.com");   // differs from new FQDN
+        when(nicDnsJoinDao.listActiveByVmId(62L)).thenReturn(Collections.singletonList(nicMock));
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
 
         // no collision for new record
-        when(dnsNicJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(null);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(null);
         // sync always returns empty → deleteRecord called
-        when(dnsNicJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(62L), eq(ZONE_ID), anyString()))
+        when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(62L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 
         try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
@@ -1453,10 +1454,10 @@ public class DnsProviderManagerImplTest {
 
             // Tx1: old URL removed from nic_details
             verify(nicDetailsDao).removeDetail(anyLong(),
-                    eq(org.apache.cloudstack.api.ApiConstants.NIC_DNS_RECORD));
+                    eq(org.apache.cloudstack.api.ApiConstants.NIC_DNS_NAME));
             // Tx2: new URL written to nic_details
             verify(nicDetailsDao).addDetail(anyLong(),
-                    eq(org.apache.cloudstack.api.ApiConstants.NIC_DNS_RECORD), anyString(), eq(true));
+                    eq(org.apache.cloudstack.api.ApiConstants.NIC_DNS_NAME), anyString(), eq(true));
             // deleteRecord called for both old-sync (A+AAAA) and new-sync (A+AAAA) = 4 total
             verify(dnsProviderMock, times(4)).deleteRecord(eq(serverVO), eq(zoneVO), any(DnsRecord.class));
         }
@@ -1467,21 +1468,21 @@ public class DnsProviderManagerImplTest {
         com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
         when(vmInstanceDao.findById(63L)).thenReturn(instanceMock);
 
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO nicMock =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO nicMock =
+                mock(NicDnsJoinVO.class);
         when(nicMock.getDnsZoneId()).thenReturn(ZONE_ID);
         when(nicMock.getSubDomain()).thenReturn(null);
-        when(nicMock.getNicDnsUrl()).thenReturn("oldvm.example.com");
-        when(dnsNicJoinDao.listActiveByVmId(63L)).thenReturn(Collections.singletonList(nicMock));
+        when(nicMock.getNicDnsName()).thenReturn("oldvm.example.com");
+        when(nicDnsJoinDao.listActiveByVmId(63L)).thenReturn(Collections.singletonList(nicMock));
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
 
         // collision on the new FQDN
-        org.apache.cloudstack.dns.vo.DnsNicJoinVO colliding =
-                mock(org.apache.cloudstack.dns.vo.DnsNicJoinVO.class);
+        NicDnsJoinVO colliding =
+                mock(NicDnsJoinVO.class);
         when(colliding.getInstanceId()).thenReturn(999L);
-        when(dnsNicJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(colliding);
-        when(dnsNicJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(63L), eq(ZONE_ID), anyString()))
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(colliding);
+        when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(63L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 
         try (MockedStatic<com.cloud.utils.db.Transaction> txMock =

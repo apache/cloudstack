@@ -17,6 +17,7 @@
 
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import *
+from nose.plugins.attrib import attr
 
 import subprocess
 import time
@@ -85,7 +86,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         cls.pdns_url = f"http://{cls.marvin_vm_ip}"
         cls.logger.info(f"PDNS endpoint: {cls.pdns_url}")
 
-
+    @attr(tags=["advanced"], required_hardware="true")
     def test_01_list_dns_providers(self):
         """
         List DNS providers, expect PowerDNS provider to be present
@@ -96,6 +97,8 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self.assertIsNotNone(response, "Failed to list DNS providers")
         self.logger.info(f"DNS Providers found: {[provider.name for provider in response]}")
 
+
+    @attr(tags=["advanced"], required_hardware="true")
     def test_02_add_dns_server(self):
         """
         Register PDNS as DNS provider in CloudStack
@@ -109,6 +112,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self.assertIsNotNone(response.id, "DNS server ID should not be None")
 
 
+    @attr(tags=["advanced"], required_hardware="true")
     def test_03_list_dns_servers(self):
         """
         List DNS servers and verify the newly added PDNS provider is present
@@ -122,6 +126,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self.assertEqual(response[0].id, self.dns_server_id, "DNS server ID mismatch")
 
 
+    @attr(tags=["advanced"], required_hardware="true")
     def test_04_create_dns_zone(self):
         """
         Create a DNS zone in the added PDNS provider
@@ -134,6 +139,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self.logger.info(f"DNS Zone created: {response.id}")
 
 
+    @attr(tags=["advanced"], required_hardware="true")
     def test_05_list_dns_zones(self):
         """
         List DNS zones and verify the newly created zone is present
@@ -147,6 +153,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self.assertEqual(response[0].id, self.dns_zone_id, "DNS zone ID mismatch")
         self.assertEqual(response[0].name, "example.com", "DNS zone name mismatch")
 
+    @attr(tags=["advanced"], required_hardware="true")
     def test_06_create_a_dns_record(self):
         """
         Create a DNS record in the previously created zone
@@ -162,6 +169,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self.assertEqual(response.name, "www.example.com", "DNS record name mismatch")
         self._assert_dns("www.example.com", "A", expected="10.1.1.10")
 
+    @attr(tags=["advanced"], required_hardware="true")
     def test_07_create_aaaa_dns_records(self):
         """
         Create AAAA DNS records in the previously created zone
@@ -177,7 +185,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self.assertTrue(response.name is not None, "DNS record name should not be None")
         self._assert_dns("www.example.com", "AAAA", expected="2001:db8::10")
 
-
+    @attr(tags=["advanced"], required_hardware="true")
     def test_08_create_mx_dns_record(self):
         """
         Create an MX DNS record in the previously created zone
@@ -194,6 +202,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         self._assert_dns("example.com", "MX", contains=["10", "mail.example.com"])
 
 
+    @attr(tags=["advanced"], required_hardware="true")
     def test_09_list_dns_records(self):
         """
         List DNS records in the zone and verify the created records are present
@@ -207,7 +216,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         record_types = set(record.type for record in response)
         self.assertSetEqual(record_types, {"NS", "A", "AAAA", "MX"}, "DNS record types mismatch")
 
-
+    @attr(tags=["advanced"], required_hardware="true")
     def test_10_delete_dns_record(self):
         """
         Delete one of the DNS records and verify it's removed
@@ -229,6 +238,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         remaining_record_names = set(record.name for record in response_after_deletion)
         self.assertNotIn(delete_record_cmd.name, remaining_record_names, "Deleted DNS record still present")
 
+    @attr(tags=["advanced"], required_hardware="true")
     def test_11_delete_dns_zone(self):
         """
         Delete the DNS zone and verify it's removed
@@ -249,6 +259,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
         except Exception as e:
             self.logger.info(f"Expected exception after delete: {str(e)}")
 
+    @attr(tags=["advanced"], required_hardware="true")
     def test_12_delete_dns_server(self):
         """
         Delete the PDNS DNS server and verify it's removed
@@ -324,7 +335,7 @@ class TestCloudStackDNSFramework(cloudstackTestCase):
 
     def _dig(self, name, rtype):
         dns_ip = self.__class__.marvin_vm_ip
-        dns_port = 5353
+        dns_port = 53
 
         cmd = [
             "dig",

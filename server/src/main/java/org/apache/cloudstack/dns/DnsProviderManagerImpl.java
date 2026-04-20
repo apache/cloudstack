@@ -55,7 +55,7 @@ import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.dns.dao.DnsNicJoinDao;
+import org.apache.cloudstack.dns.dao.NicDnsJoinDao;
 import org.apache.cloudstack.dns.dao.DnsServerDao;
 import org.apache.cloudstack.dns.dao.DnsServerJoinDao;
 import org.apache.cloudstack.dns.dao.DnsZoneDao;
@@ -65,7 +65,7 @@ import org.apache.cloudstack.dns.exception.DnsConflictException;
 import org.apache.cloudstack.dns.exception.DnsNotFoundException;
 import org.apache.cloudstack.dns.exception.DnsProviderException;
 import org.apache.cloudstack.dns.exception.DnsTransportException;
-import org.apache.cloudstack.dns.vo.DnsNicJoinVO;
+import org.apache.cloudstack.dns.vo.NicDnsJoinVO;
 import org.apache.cloudstack.dns.vo.DnsServerJoinVO;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
 import org.apache.cloudstack.dns.vo.DnsZoneJoinVO;
@@ -139,7 +139,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     @Inject
     VMInstanceDao vmInstanceDao;
     @Inject
-    DnsNicJoinDao dnsNicJoinDao;
+    NicDnsJoinDao nicDnsJoinDao;
 
     private DnsProvider getProviderByType(DnsProviderType type) {
         if (type == null) {
@@ -342,7 +342,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                         List<String> dnsRecordNames = records.stream().map(DnsRecord::getName).filter(Objects::nonNull)
                                 .map(name -> name.replaceAll("\\.+$", ""))
                                 .collect(Collectors.toList());
-                        nicDetailsDao.removeDetailsForValuesIn(ApiConstants.NIC_DNS_RECORD, dnsRecordNames);
+                        nicDetailsDao.removeDetailsForValuesIn(ApiConstants.NIC_DNS_NAME, dnsRecordNames);
                     }
                 } catch (Exception ex) {
                     logger.warn("Failed to fetch DNS records for dnsZone: {}, perform manual cleanup.", dnsZoneName, ex);
@@ -882,13 +882,13 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             logger.debug("Instance is not found for the given ID: {}", instanceId);
             return;
         }
-        List<DnsNicJoinVO> mappedNics = dnsNicJoinDao.listActiveByVmId(instanceId);
+        List<NicDnsJoinVO> mappedNics = nicDnsJoinDao.listActiveByVmId(instanceId);
         if (CollectionUtils.isEmpty(mappedNics)) {
             logger.debug("No active DNS zone associated to NICs");
             return;
         }
-        Map<Long, Map<String, List<DnsNicJoinVO>>> dnsZoneRecordNicMap = new HashMap<>();
-        for (DnsNicJoinVO nic : mappedNics) {
+        Map<Long, Map<String, List<NicDnsJoinVO>>> dnsZoneRecordNicMap = new HashMap<>();
+        for (NicDnsJoinVO nic : mappedNics) {
             DnsZoneVO targetZone = dnsZoneDao.findById(nic.getDnsZoneId());
             if (targetZone == null) {
                 continue;
@@ -899,11 +899,11 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                     .add(nic);
         }
 
-        for (Map.Entry<Long, Map<String, List<DnsNicJoinVO>>> zoneEntry : dnsZoneRecordNicMap.entrySet()) {
+        for (Map.Entry<Long, Map<String, List<NicDnsJoinVO>>> zoneEntry : dnsZoneRecordNicMap.entrySet()) {
             long targetZoneId = zoneEntry.getKey();
-            for (Map.Entry<String, List<DnsNicJoinVO>> dnsUrlEntry : zoneEntry.getValue().entrySet()) {
+            for (Map.Entry<String, List<NicDnsJoinVO>> dnsUrlEntry : zoneEntry.getValue().entrySet()) {
                 String dnsRecordUrl = dnsUrlEntry.getKey();
-                List<DnsNicJoinVO> nicsForThisFqdn = dnsUrlEntry.getValue();
+                List<NicDnsJoinVO> nicsForThisFqdn = dnsUrlEntry.getValue();
                 try {
                     Transaction.execute(new TransactionCallbackWithExceptionNoReturn<DnsProviderException>() {
                         @Override
@@ -911,8 +911,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                             if (isDnsCollision(dnsRecordUrl, targetZoneId, instanceId)) {
                                 return;
                             }
-                            for (DnsNicJoinVO nic : nicsForThisFqdn) {
-                                nicDetailsDao.addDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD, dnsRecordUrl, true);
+                            for (NicDnsJoinVO nic : nicsForThisFqdn) {
+                                nicDetailsDao.addDetail(nic.getId(), ApiConstants.NIC_DNS_NAME, dnsRecordUrl, true);
                             }
                             syncDnsRecordsState(instanceId, dnsRecordUrl, targetZoneId);
                         }
@@ -927,34 +927,34 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     void handleVmStopAndDestroy(long instanceId) {
-        List<DnsNicJoinVO> historicalNics = dnsNicJoinDao.listIncludingRemovedByVmId(instanceId);
+        List<NicDnsJoinVO> historicalNics = nicDnsJoinDao.listIncludingRemovedByVmId(instanceId);
         if (CollectionUtils.isEmpty(historicalNics)) {
             return;
         }
-        Map<Long, Map<String, List<DnsNicJoinVO>>> groupByDnsZone = new HashMap<>();
-        for (DnsNicJoinVO nic : historicalNics) {
+        Map<Long, Map<String, List<NicDnsJoinVO>>> groupByDnsZone = new HashMap<>();
+        for (NicDnsJoinVO nic : historicalNics) {
             // If the DNS record url is null, it means this NIC was never registered in nic_details
-            if (nic.getNicDnsUrl() == null) {
+            if (nic.getNicDnsName() == null) {
                 continue;
             }
             groupByDnsZone
                     .computeIfAbsent(nic.getDnsZoneId(), k -> new HashMap<>())
-                    .computeIfAbsent(nic.getNicDnsUrl(), k -> new ArrayList<>())
+                    .computeIfAbsent(nic.getNicDnsName(), k -> new ArrayList<>())
                     .add(nic);
         }
 
-        for (Map.Entry<Long, Map<String, List<DnsNicJoinVO>>> zoneEntry : groupByDnsZone.entrySet()) {
+        for (Map.Entry<Long, Map<String, List<NicDnsJoinVO>>> zoneEntry : groupByDnsZone.entrySet()) {
             long targetZoneId = zoneEntry.getKey();
-            for (Map.Entry<String, List<DnsNicJoinVO>> dnsRecordEntry : zoneEntry.getValue().entrySet()) {
+            for (Map.Entry<String, List<NicDnsJoinVO>> dnsRecordEntry : zoneEntry.getValue().entrySet()) {
                 String dnsRecordUrl = dnsRecordEntry.getKey();
-                List<DnsNicJoinVO> nicsForDnsUrl = dnsRecordEntry.getValue();
+                List<NicDnsJoinVO> nicsForDnsUrl = dnsRecordEntry.getValue();
 
                 try {
                     Transaction.execute(new TransactionCallbackWithExceptionNoReturn<DnsProviderException>() {
                         @Override
                         public void doInTransactionWithoutResult(TransactionStatus status) throws DnsProviderException {
-                            for (DnsNicJoinVO nic : nicsForDnsUrl) {
-                                nicDetailsDao.removeDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD);
+                            for (NicDnsJoinVO nic : nicsForDnsUrl) {
+                                nicDetailsDao.removeDetail(nic.getId(), ApiConstants.NIC_DNS_NAME);
                             }
                             // Because we just deleted the nic_details, the sync method will naturally
                             // find 0 active IPs for this VM/FQDN combo and issue a clean DELETE to PowerDNS.
@@ -978,19 +978,19 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             return;
         }
 
-        List<DnsNicJoinVO> mappedNics = dnsNicJoinDao.listActiveByVmId(instanceId);
+        List<NicDnsJoinVO> mappedNics = nicDnsJoinDao.listActiveByVmId(instanceId);
         if (CollectionUtils.isEmpty(mappedNics)) {
             return;
         }
 
-        Map<Long, Map<String, List<DnsNicJoinVO>>> dnsZoneNewRecordNicMap = new HashMap<>();
-        for (DnsNicJoinVO nic : mappedNics) {
+        Map<Long, Map<String, List<NicDnsJoinVO>>> dnsZoneNewRecordNicMap = new HashMap<>();
+        for (NicDnsJoinVO nic : mappedNics) {
             DnsZoneVO targetZone = dnsZoneDao.findById(nic.getDnsZoneId());
             if (targetZone == null) {
                 continue;
             }
 
-            String oldDnsRecordUrl = nic.getNicDnsUrl();
+            String oldDnsRecordUrl = nic.getNicDnsName();
             String newDnsRecordUrl = prepareDnsRecordUrl(newHostName, nic.getSubDomain(), targetZone.getName());
             if (newDnsRecordUrl.equals(oldDnsRecordUrl)) {
                 continue;
@@ -1001,22 +1001,22 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                     .add(nic);
         }
 
-        for (Map.Entry<Long, Map<String, List<DnsNicJoinVO>>> zoneEntry : dnsZoneNewRecordNicMap.entrySet()) {
+        for (Map.Entry<Long, Map<String, List<NicDnsJoinVO>>> zoneEntry : dnsZoneNewRecordNicMap.entrySet()) {
             long targetZoneId = zoneEntry.getKey();
 
-            for (Map.Entry<String, List<DnsNicJoinVO>> newUrlEntry : zoneEntry.getValue().entrySet()) {
+            for (Map.Entry<String, List<NicDnsJoinVO>> newUrlEntry : zoneEntry.getValue().entrySet()) {
                 String newDnsRecordUrl = newUrlEntry.getKey();
-                List<DnsNicJoinVO> nicsForThisFqdn = newUrlEntry.getValue();
+                List<NicDnsJoinVO> nicsForThisFqdn = newUrlEntry.getValue();
 
                 try {
                     Set<String> oldDnsRecordUrls = new HashSet<>();
                     Transaction.execute(new TransactionCallbackWithExceptionNoReturn<DnsProviderException>() {
                         @Override
                         public void doInTransactionWithoutResult(TransactionStatus status) throws DnsProviderException {
-                            for (DnsNicJoinVO nic : nicsForThisFqdn) {
-                                if (nic.getNicDnsUrl() != null) {
-                                    oldDnsRecordUrls.add(nic.getNicDnsUrl());
-                                    nicDetailsDao.removeDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD);
+                            for (NicDnsJoinVO nic : nicsForThisFqdn) {
+                                if (nic.getNicDnsName() != null) {
+                                    oldDnsRecordUrls.add(nic.getNicDnsName());
+                                    nicDetailsDao.removeDetail(nic.getId(), ApiConstants.NIC_DNS_NAME);
                                 }
                             }
                             for (String oldUrl : oldDnsRecordUrls) {
@@ -1031,8 +1031,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                             if (isDnsCollision(newDnsRecordUrl, targetZoneId, instanceId)) {
                                 return;
                             }
-                            for (DnsNicJoinVO nic : nicsForThisFqdn) {
-                                nicDetailsDao.addDetail(nic.getId(), ApiConstants.NIC_DNS_RECORD, newDnsRecordUrl, true);
+                            for (NicDnsJoinVO nic : nicsForThisFqdn) {
+                                nicDetailsDao.addDetail(nic.getId(), ApiConstants.NIC_DNS_NAME, newDnsRecordUrl, true);
                             }
                             // This sync call finds the newly written intent and sends an ADD/REPLACE call.
                             syncDnsRecordsState(instanceId, newDnsRecordUrl, targetZoneId);
@@ -1053,7 +1053,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         if (instance == null || instance.getState() != VirtualMachine.State.Running) {
             return;
         }
-        DnsNicJoinVO nic = dnsNicJoinDao.findById(nicId);
+        NicDnsJoinVO nic = nicDnsJoinDao.findById(nicId);
         if (nic == null) {
             logger.debug("NIC with ID: {} doesn't have DNS zone associated", nicId);
             return;
@@ -1073,7 +1073,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                     if (isDnsCollision(dnsRecordUrl, targetZone.getId(), instanceId)) {
                         return;
                     }
-                    nicDetailsDao.addDetail(nicId, ApiConstants.NIC_DNS_RECORD, dnsRecordUrl, true);
+                    nicDetailsDao.addDetail(nicId, ApiConstants.NIC_DNS_NAME, dnsRecordUrl, true);
                     syncDnsRecordsState(instanceId, dnsRecordUrl, targetZone.getId());
                     logger.debug("Successfully synced DNS on NIC Plug for: {}", dnsRecordUrl);
                 }
@@ -1086,18 +1086,18 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     void handleNicUnplug(long instanceId, long nicId) {
-        DnsNicJoinVO nic = dnsNicJoinDao.findByIdIncludingRemoved(nicId);
-        if (nic == null || nic.getNicDnsUrl() == null) {
+        NicDnsJoinVO nic = nicDnsJoinDao.findByIdIncludingRemoved(nicId);
+        if (nic == null || nic.getNicDnsName() == null) {
             return;
         }
-        String dnsRecordUrl = nic.getNicDnsUrl();
+        String dnsRecordUrl = nic.getNicDnsName();
         long dnsZoneId = nic.getDnsZoneId();
 
         try {
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<DnsProviderException>() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) throws DnsProviderException {
-                    nicDetailsDao.removeDetail(nicId, ApiConstants.NIC_DNS_RECORD);
+                    nicDetailsDao.removeDetail(nicId, ApiConstants.NIC_DNS_NAME);
                     syncDnsRecordsState(instanceId, dnsRecordUrl, dnsZoneId);
                     logger.debug("Successfully synced DNS record: {} on NIC unplug", dnsRecordUrl);
                 }
@@ -1120,7 +1120,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     private boolean isDnsCollision(String dnsRecordUrl, long targetZoneId, long instanceId) {
-        DnsNicJoinVO existing = dnsNicJoinDao.findActiveByDnsRecordAndZone(dnsRecordUrl, targetZoneId);
+        NicDnsJoinVO existing = nicDnsJoinDao.findActiveByDnsRecordAndZone(dnsRecordUrl, targetZoneId);
         if (existing != null && existing.getInstanceId() != instanceId) {
             logger.error("DNS collision: cannot register DNS record: {}. Already owned by Instance: {}.",
                     dnsRecordUrl, existing.getInstanceId());
@@ -1141,11 +1141,11 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             return;
         }
         DnsServerVO dnsServer = dnsServerDao.findById(dnsZone.getDnsServerId());
-        List<DnsNicJoinVO> activeNics = dnsNicJoinDao.listActiveByVmIdZoneAndDnsRecord(instanceId, dnsZoneId, dnsRecordUrl);
+        List<NicDnsJoinVO> activeNics = nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(instanceId, dnsZoneId, dnsRecordUrl);
 
         List<String> ipv4s = new ArrayList<>();
         List<String> ipv6s = new ArrayList<>();
-        for (DnsNicJoinVO nic : activeNics) {
+        for (NicDnsJoinVO nic : activeNics) {
             if (nic.getIp4Address() != null && !nic.getIp4Address().isEmpty()) {
                 ipv4s.add(nic.getIp4Address());
             }

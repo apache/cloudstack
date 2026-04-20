@@ -34,8 +34,8 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.api.query.vo.BaseViewVO;
 
 @Entity
-@Table(name = "dns_nic_view")
-public class DnsNicJoinVO extends BaseViewVO implements InternalIdentity, Identity {
+@Table(name = "nic_dns_view")
+public class NicDnsJoinVO extends BaseViewVO implements InternalIdentity, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -56,8 +56,8 @@ public class DnsNicJoinVO extends BaseViewVO implements InternalIdentity, Identi
     @Column(name = "ip6_address")
     private String ip6Address;
 
-    @Column(name = "nic_dns_url")
-    private String nicDnsUrl;
+    @Column(name = "nic_dns_name")
+    private String nicDnsName;
 
     @Column(name = "dns_zone_id")
     private long dnsZoneId;
@@ -68,7 +68,7 @@ public class DnsNicJoinVO extends BaseViewVO implements InternalIdentity, Identi
     @Column(name = "removed")
     private Date removed;
 
-    public DnsNicJoinVO() {
+    public NicDnsJoinVO() {
     }
 
     @Override
@@ -97,8 +97,8 @@ public class DnsNicJoinVO extends BaseViewVO implements InternalIdentity, Identi
         return subDomain;
     }
 
-    public String getNicDnsUrl() {
-        return nicDnsUrl;
+    public String getNicDnsName() {
+        return nicDnsName;
     }
 
     public String getIp4Address() {

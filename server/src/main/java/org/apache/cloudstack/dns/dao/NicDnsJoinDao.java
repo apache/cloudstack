@@ -19,11 +19,11 @@ package org.apache.cloudstack.dns.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.dns.vo.DnsNicJoinVO;
+import org.apache.cloudstack.dns.vo.NicDnsJoinVO;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface DnsNicJoinDao extends GenericDao<DnsNicJoinVO, Long> {
+public interface NicDnsJoinDao extends GenericDao<NicDnsJoinVO, Long> {
 
     /**
      * Used for Collision Checks.
@@ -31,7 +31,7 @@ public interface DnsNicJoinDao extends GenericDao<DnsNicJoinVO, Long> {
      * @param dnsZoneId
      * @return active records to see who currently owns the dnsRecordUrl.
      */
-    DnsNicJoinVO findActiveByDnsRecordAndZone(String dnsRecordUrl, long dnsZoneId);
+    NicDnsJoinVO findActiveByDnsRecordAndZone(String dnsRecordUrl, long dnsZoneId);
 
     /**
      * Used to sync DNS record url based on available ips for vmId in the dnsZone
@@ -40,19 +40,19 @@ public interface DnsNicJoinDao extends GenericDao<DnsNicJoinVO, Long> {
      * @param dnsRecordUrl
      * @return list of active nics using the dnsRecordUrl, supports null vmId for dnsZone wide query
      */
-    List<DnsNicJoinVO> listActiveByVmIdZoneAndDnsRecord(Long vmId, long dnsZoneId, String dnsRecordUrl);
+    List<NicDnsJoinVO> listActiveByVmIdZoneAndDnsRecord(Long vmId, long dnsZoneId, String dnsRecordUrl);
 
     /**
      * Used for VM Start/Running
      * @param vmId
      * @return records associated to vmId
      */
-    List<DnsNicJoinVO> listActiveByVmId(long vmId);
+    List<NicDnsJoinVO> listActiveByVmId(long vmId);
 
     /**
      * Used by Instance Destroy/Stop or NIC delete
      * @param vmId
      * @return records with soft-delete
      */
-    List<DnsNicJoinVO> listIncludingRemovedByVmId(long vmId);
+    List<NicDnsJoinVO> listIncludingRemovedByVmId(long vmId);
 }

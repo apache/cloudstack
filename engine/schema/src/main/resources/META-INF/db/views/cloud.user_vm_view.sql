@@ -143,7 +143,7 @@ SELECT
     `nics`.`broadcast_uri` AS `broadcast_uri`,
     `nics`.`isolation_uri` AS `isolation_uri`,
     `nics`.`enabled` AS `is_nic_enabled`,
-    `nic_details`.`value` AS `dns_record_url`,
+    `nic_details`.`value` AS `nic_dns_name`,
     `vpc`.`id` AS `vpc_id`,
     `vpc`.`uuid` AS `vpc_uuid`,
     `networks`.`uuid` AS `network_uuid`,
@@ -215,7 +215,7 @@ FROM
         LEFT JOIN `user_data` ON ((`user_data`.`id` = `user_vm`.`user_data_id`)))
         LEFT JOIN `nics` ON (((`vm_instance`.`id` = `nics`.`instance_id`)
         AND ISNULL(`nics`.`removed`))))
-        LEFT JOIN `nic_details` ON ((`nic_details`.`nic_id` = `nics`.`id`) AND (`nic_details`.`name` = 'nicdnsrecord')))
+        LEFT JOIN `nic_details` ON ((`nic_details`.`nic_id` = `nics`.`id`) AND (`nic_details`.`name` = 'nicdnsname')))
         LEFT JOIN `networks` ON ((`nics`.`network_id` = `networks`.`id`)))
         LEFT JOIN `vpc` ON (((`networks`.`vpc_id` = `vpc`.`id`)
         AND ISNULL(`vpc`.`removed`))))

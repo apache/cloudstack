@@ -20,28 +20,28 @@ package org.apache.cloudstack.dns.dao;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.dns.vo.DnsNicJoinVO;
+import org.apache.cloudstack.dns.vo.NicDnsJoinVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-public class DnsNicJoinDaoImpl extends GenericDaoBase<DnsNicJoinVO, Long> implements DnsNicJoinDao {
-    private final SearchBuilder<DnsNicJoinVO> activeDnsRecordZoneSearch;
-    private final SearchBuilder<DnsNicJoinVO> activeVmZoneDnsRecordSearch; // Route for null vmId
-    private final SearchBuilder<DnsNicJoinVO> activeVmSearch;
+public class NicDnsJoinDaoImpl extends GenericDaoBase<NicDnsJoinVO, Long> implements NicDnsJoinDao {
+    private final SearchBuilder<NicDnsJoinVO> activeDnsRecordZoneSearch;
+    private final SearchBuilder<NicDnsJoinVO> activeVmZoneDnsRecordSearch; // Route for null vmId
+    private final SearchBuilder<NicDnsJoinVO> activeVmSearch;
 
-    public DnsNicJoinDaoImpl() {
+    public NicDnsJoinDaoImpl() {
 
         activeDnsRecordZoneSearch = createSearchBuilder();
-        activeDnsRecordZoneSearch.and(ApiConstants.NIC_DNS_RECORD, activeDnsRecordZoneSearch.entity().getNicDnsUrl(), SearchCriteria.Op.EQ);
+        activeDnsRecordZoneSearch.and(ApiConstants.NIC_DNS_NAME, activeDnsRecordZoneSearch.entity().getNicDnsName(), SearchCriteria.Op.EQ);
         activeDnsRecordZoneSearch.and(ApiConstants.DNS_ZONE_ID, activeDnsRecordZoneSearch.entity().getDnsZoneId(), SearchCriteria.Op.EQ);
         activeDnsRecordZoneSearch.and(ApiConstants.REMOVED, activeDnsRecordZoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         activeDnsRecordZoneSearch.done();
 
         activeVmZoneDnsRecordSearch = createSearchBuilder();
         activeVmZoneDnsRecordSearch.and(ApiConstants.INSTANCE_ID, activeVmZoneDnsRecordSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        activeVmZoneDnsRecordSearch.and(ApiConstants.NIC_DNS_RECORD, activeVmZoneDnsRecordSearch.entity().getNicDnsUrl(), SearchCriteria.Op.EQ);
+        activeVmZoneDnsRecordSearch.and(ApiConstants.NIC_DNS_NAME, activeVmZoneDnsRecordSearch.entity().getNicDnsName(), SearchCriteria.Op.EQ);
         activeVmZoneDnsRecordSearch.and(ApiConstants.DNS_ZONE_ID, activeVmZoneDnsRecordSearch.entity().getDnsZoneId(), SearchCriteria.Op.EQ);
         activeVmZoneDnsRecordSearch.and(ApiConstants.REMOVED, activeVmZoneDnsRecordSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         activeVmZoneDnsRecordSearch.done();
@@ -52,39 +52,39 @@ public class DnsNicJoinDaoImpl extends GenericDaoBase<DnsNicJoinVO, Long> implem
     }
 
     @Override
-    public DnsNicJoinVO findActiveByDnsRecordAndZone(String dnsRecordUrl, long dnsZoneId) {
-        SearchCriteria<DnsNicJoinVO> sc = activeDnsRecordZoneSearch.create();
-        sc.setParameters(ApiConstants.NIC_DNS_RECORD, dnsRecordUrl);
+    public NicDnsJoinVO findActiveByDnsRecordAndZone(String dnsRecordUrl, long dnsZoneId) {
+        SearchCriteria<NicDnsJoinVO> sc = activeDnsRecordZoneSearch.create();
+        sc.setParameters(ApiConstants.NIC_DNS_NAME, dnsRecordUrl);
         sc.setParameters(ApiConstants.DNS_ZONE_ID, dnsZoneId);
         return findOneBy(sc);
     }
 
     @Override
-    public List<DnsNicJoinVO> listActiveByVmIdZoneAndDnsRecord(Long vmId, long dnsZoneId, String dnsRecordUrl) {
+    public List<NicDnsJoinVO> listActiveByVmIdZoneAndDnsRecord(Long vmId, long dnsZoneId, String dnsRecordUrl) {
         if (vmId != null) {
-            SearchCriteria<DnsNicJoinVO> sc = activeDnsRecordZoneSearch.create();
+            SearchCriteria<NicDnsJoinVO> sc = activeDnsRecordZoneSearch.create();
             sc.setParameters(ApiConstants.INSTANCE_ID, vmId);
             sc.setParameters(ApiConstants.DNS_ZONE_ID, dnsZoneId);
-            sc.setParameters(ApiConstants.NIC_DNS_RECORD, dnsRecordUrl);
+            sc.setParameters(ApiConstants.NIC_DNS_NAME, dnsRecordUrl);
             return listBy(sc);
         } else {
-            SearchCriteria<DnsNicJoinVO> sc = activeDnsRecordZoneSearch.create();
-            sc.setParameters(ApiConstants.NIC_DNS_RECORD, dnsRecordUrl);
+            SearchCriteria<NicDnsJoinVO> sc = activeDnsRecordZoneSearch.create();
+            sc.setParameters(ApiConstants.NIC_DNS_NAME, dnsRecordUrl);
             sc.setParameters(ApiConstants.DNS_ZONE_ID, dnsZoneId);
             return listBy(sc);
         }
     }
 
     @Override
-    public List<DnsNicJoinVO> listActiveByVmId(long vmId) {
-        SearchCriteria<DnsNicJoinVO> sc = activeVmSearch.create();
+    public List<NicDnsJoinVO> listActiveByVmId(long vmId) {
+        SearchCriteria<NicDnsJoinVO> sc = activeVmSearch.create();
         sc.setParameters(ApiConstants.INSTANCE_ID, vmId);
         return listBy(sc);
     }
 
     @Override
-    public List<DnsNicJoinVO> listIncludingRemovedByVmId(long vmId) {
-        SearchCriteria<DnsNicJoinVO> sc = activeVmSearch.create();
+    public List<NicDnsJoinVO> listIncludingRemovedByVmId(long vmId) {
+        SearchCriteria<NicDnsJoinVO> sc = activeVmSearch.create();
         sc.setParameters(ApiConstants.INSTANCE_ID, vmId);
         return listIncludingRemovedBy(sc);
     }

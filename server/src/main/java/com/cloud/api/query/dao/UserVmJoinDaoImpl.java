@@ -360,7 +360,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 nicResponse.setIp6Gateway(userVm.getIp6Gateway());
                 nicResponse.setIp6Cidr(userVm.getIp6Cidr());
                 nicResponse.setEnabled(userVm.isNicEnabled());
-                nicResponse.setDnsRecordUrl(userVm.getDnsRecordUrl());
+                nicResponse.setNicDnsName(userVm.getNicDnsName());
                 if (userVm.getBroadcastUri() != null) {
                     nicResponse.setBroadcastUri(userVm.getBroadcastUri().toString());
                 }
@@ -623,7 +623,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             /*13: IPv6Cidr*/
             nicResponse.setIp6Cidr(uvo.getIp6Cidr());
             /* dnsRecordUrl */
-            nicResponse.setDnsRecordUrl(uvo.getDnsRecordUrl());
+            nicResponse.setNicDnsName(uvo.getNicDnsName());
 
             /*14: deviceId*/
 // where do we find           nicResponse.setDeviceId(

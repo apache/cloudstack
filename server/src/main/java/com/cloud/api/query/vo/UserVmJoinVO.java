@@ -405,8 +405,8 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "public_ip_address")
     private String publicIpAddress;
 
-    @Column(name = "dns_record_url")
-    private String dnsRecordUrl;
+    @Column(name = "nic_dns_name")
+    private String nicDnsName;
 
     @Column(name = "user_data", updatable = true, nullable = true, length = 2048)
     private String userData;
@@ -1108,7 +1108,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return isNicEnabled;
     }
 
-    public String getDnsRecordUrl() {
-        return dnsRecordUrl;
+    public String getNicDnsName() {
+        return nicDnsName;
     }
 }
