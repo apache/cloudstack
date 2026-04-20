@@ -180,7 +180,6 @@ The UI uses the following:
 - [Ant Design Vue](https://vue.ant.design/)
 - [Ant Design Pro Vue](https://github.com/sendya/ant-design-pro-vue)
 - [Fontawesome](https://github.com/FortAwesome/vue-fontawesome)
-- [ViserJS](https://viserjs.github.io/docs.html#/viser/guide/installation)
 - [Icons](https://www.iconfinder.com/iconsets/cat-force) by [Iconka](https://iconka.com/en/downloads/cat-power/)
 
 ## History

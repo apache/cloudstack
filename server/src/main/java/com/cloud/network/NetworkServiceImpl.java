@@ -41,6 +41,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -76,6 +77,7 @@ import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -280,6 +282,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private static final ConfigKey<Boolean> AllowEmptyStartEndIpAddress = new ConfigKey<>("Advanced", Boolean.class,
             "allow.empty.start.end.ipaddress", "true", "Allow creating network without mentioning start and end IP address",
             true, ConfigKey.Scope.Account);
+    public static final ConfigKey<Boolean> AllowUsersToMakeNetworksRedundant = new ConfigKey<>("Advanced", Boolean.class,
+            "allow.users.to.make.networks.redundant", "true", "Allow Users to make Networks Redundant",
+            true, ConfigKey.Scope.Global);
     private static final long MIN_VLAN_ID = 0L;
     private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1
     private static final long MIN_GRE_KEY = 0L;
@@ -334,6 +339,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     FirewallRulesDao _firewallDao;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    ReservationDao reservationDao;
     @Inject
     DomainManager _domainMgr;
     @Inject
@@ -1152,28 +1159,26 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (ipDedicatedAccountId != null && !ipDedicatedAccountId.equals(account.getAccountId())) {
             throw new InvalidParameterValueException("Unable to reserve a IP because it is dedicated to another Account.");
         }
-        if (ipDedicatedAccountId == null) {
-            // Check that the maximum number of public IPs for the given accountId will not be exceeded
-            try {
-                _resourceLimitMgr.checkResourceLimit(account, Resource.ResourceType.public_ip);
-            } catch (ResourceAllocationException ex) {
-                logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + account);
-                throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
+
+        long reservedIpAddressesAmount = ipDedicatedAccountId == null ? 1L : 0L;
+        try (CheckedReservation publicIpAddressReservation = new CheckedReservation(account, Resource.ResourceType.public_ip, reservedIpAddressesAmount, reservationDao, _resourceLimitMgr)) {
+            List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
+            ipVO.setAllocatedTime(new Date());
+            ipVO.setAllocatedToAccountId(account.getAccountId());
+            ipVO.setAllocatedInDomainId(account.getDomainId());
+            ipVO.setState(State.Reserved);
+            if (displayIp != null) {
+                ipVO.setDisplay(displayIp);
             }
+            ipVO = _ipAddressDao.persist(ipVO);
+            if (reservedIpAddressesAmount > 0) {
+                _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
+            }
+            return ipVO;
+        } catch (ResourceAllocationException ex) {
+            logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + account);
+            throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
         }
-        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
-        ipVO.setAllocatedTime(new Date());
-        ipVO.setAllocatedToAccountId(account.getAccountId());
-        ipVO.setAllocatedInDomainId(account.getDomainId());
-        ipVO.setState(State.Reserved);
-        if (displayIp != null) {
-            ipVO.setDisplay(displayIp);
-        }
-        ipVO = _ipAddressDao.persist(ipVO);
-        if (ipDedicatedAccountId == null) {
-            _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
-        }
-        return ipVO;
     }
 
     @Override
@@ -2998,8 +3003,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throwInvalidIdException("Cannot restart a VPC tier with cleanup, please restart the whole VPC.", network.getUuid(), "network tier");
         }
         boolean makeRedundant = cmd.getMakeRedundant();
-        boolean livePatch = cmd.getLivePatch();
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+        if (makeRedundant && !_accountMgr.isRootAdmin(callerUser.getAccountId()) && !AllowUsersToMakeNetworksRedundant.value() ) {
+            throw new InvalidParameterValueException("Could not make the network redundant. Please contact administrator.");
+        }
+
+        boolean livePatch = cmd.getLivePatch();
         return restartNetwork(network, cleanup, makeRedundant, livePatch, callerUser);
     }
 
@@ -3209,7 +3218,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (displayNetwork != null && displayNetwork != network.getDisplayNetwork()) {
             // Update resource count if it needs to be updated
             NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-            if (_networkMgr.resourceCountNeedsUpdate(networkOffering, network.getAclType())) {
+            if (_networkMgr.isResourceCountUpdateNeeded(networkOffering)) {
                 _resourceLimitMgr.changeResourceCount(network.getAccountId(), Resource.ResourceType.network, displayNetwork);
             }
 
@@ -6278,7 +6287,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
+        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, AllowUsersToMakeNetworksRedundant, VRPrivateInterfaceMtu, VRPublicInterfaceMtu, AllowUsersToSpecifyVRMtu};
     }
 
     public boolean isDefaultAcl(Long aclId) {
@@ -6425,6 +6434,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         return Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
+    }
+
+    @Override
+    public Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId) {
+        return _ipAddrMgr.getPreferredNetworkIdForPublicIpRuleAssignment(ip, networkId);
     }
 
     @Override

@@ -274,7 +274,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         boolean success = false;
         NetworkACLItem rule = _networkACLService.getNetworkACLItem(getEntityId());
         try {
-            CallContext.current().setEventDetails("Rule ID: " + getEntityId());
+            CallContext.current().setEventDetails("Rule ID: " + getEntityUuid());
             success = _networkACLService.applyNetworkACL(rule.getAclId());
 
             // State is different after the rule is applied, so get new object here

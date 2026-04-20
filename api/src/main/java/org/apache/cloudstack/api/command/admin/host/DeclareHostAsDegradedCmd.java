@@ -78,7 +78,7 @@ public class DeclareHostAsDegradedCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "declaring host: " + getId() + " as Degraded";
+        return "Declaring host with ID: " + getResourceUuid(ApiConstants.ID) + " as Degraded.";
     }
 
     @Override

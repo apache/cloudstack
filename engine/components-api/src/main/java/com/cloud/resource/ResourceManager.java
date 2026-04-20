@@ -122,6 +122,8 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public boolean executeUserRequest(long hostId, ResourceState.Event event) throws AgentUnavailableException;
 
+    boolean executeUserRequest(long hostId, ResourceState.Event event, boolean isForced, boolean isForceDeleteStorage) throws AgentUnavailableException;
+
     boolean resourceStateTransitTo(Host host, Event event, long msId) throws NoTransitionException;
 
     boolean umanageHost(long hostId);
@@ -166,6 +168,8 @@ public interface ResourceManager extends ResourceService, Configurable {
     public List<HypervisorType> listAvailHypervisorInZone(Long zoneId);
 
     public HostVO findHostByGuid(String guid);
+
+    HostVO findHostByGuidPrefix(String guid);
 
     public HostVO findHostByName(String name);
 

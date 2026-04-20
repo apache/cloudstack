@@ -77,7 +77,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale Policy Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Policy ID: " + getResourceUuid(ApiConstants.ID));
         AutoScalePolicy result = _autoScaleService.updateAutoScalePolicy(this);
         if (result != null) {
             AutoScalePolicyResponse response = _responseGenerator.createAutoScalePolicyResponse(result);
@@ -130,7 +130,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating Auto Scale Policy. Policy Id: " + getId();
+        return "Updating AutoScale Policy with ID: " + getResourceUuid(ApiConstants.ID);
     }
 
     @Override

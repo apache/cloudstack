@@ -952,7 +952,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType) {
+    public boolean isResourceCountUpdateNeeded(NetworkOffering ntwkOff) {
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
@@ -1146,6 +1146,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     @Override
     public String getNicVlanValueForExternalVm(NicTO nic) {
+        return null;
+    }
+
+    @Override
+    public Long getPreferredNetworkIdForPublicIpRuleAssignment(IpAddress ip, Long networkId) {
         return null;
     }
 }

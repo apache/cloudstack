@@ -387,12 +387,14 @@ public class ResourceManagerImplTest {
 
     @Test
     public void testConnectAndRestartAgentOnHost() {
+        when(agentManager.getHostSshPort(any())).thenReturn(22);
         resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword, hostPrivateKey);
     }
 
     @Test
     public void testHandleAgentSSHEnabledNotConnectedAgent() {
         when(host.getStatus()).thenReturn(Status.Disconnected);
+        when(agentManager.getHostSshPort(any())).thenReturn(22);
         resourceManager.handleAgentIfNotConnected(host, false);
         verify(resourceManager).getHostCredentials(eq(host));
         verify(resourceManager).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
@@ -1181,5 +1183,32 @@ public class ResourceManagerImplTest {
 
         Mockito.verify(host).setStorageAccessGroups("group1,group2");
         Mockito.verify(hostDao).update(hostId, host);
+    }
+
+    @Test
+    public void executeUserRequestDeleteHostPassesForcedFlags() throws Exception {
+        Mockito.doReturn(true).when(resourceManager).doDeleteHost(anyLong(), anyBoolean(), anyBoolean());
+
+        resourceManager.executeUserRequest(hostId, ResourceState.Event.DeleteHost, true, true);
+
+        Mockito.verify(resourceManager).doDeleteHost(hostId, true, true);
+    }
+
+    @Test
+    public void executeUserRequestDeleteHostPassesNonForcedFlags() throws Exception {
+        Mockito.doReturn(true).when(resourceManager).doDeleteHost(anyLong(), anyBoolean(), anyBoolean());
+
+        resourceManager.executeUserRequest(hostId, ResourceState.Event.DeleteHost, false, false);
+
+        Mockito.verify(resourceManager).doDeleteHost(hostId, false, false);
+    }
+
+    @Test
+    public void executeUserRequestDefaultOverloadPassesFalseForDeleteHost() throws Exception {
+        Mockito.doReturn(true).when(resourceManager).doDeleteHost(anyLong(), anyBoolean(), anyBoolean());
+
+        resourceManager.executeUserRequest(hostId, ResourceState.Event.DeleteHost);
+
+        Mockito.verify(resourceManager).doDeleteHost(hostId, false, false);
     }
 }

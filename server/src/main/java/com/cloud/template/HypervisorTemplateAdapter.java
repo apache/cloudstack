@@ -34,10 +34,8 @@ import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
-import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
-import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
@@ -197,19 +195,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             profile.setSize(templateSize);
         }
         profile.setUrl(url);
-        // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
-                ResourceType.secondary_storage,
-                UriUtils.getRemoteSize(url, followRedirects));
-        return profile;
-    }
-
-    @Override
-    public TemplateProfile prepare(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException {
-        TemplateProfile profile = super.prepare(cmd);
-
-        // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage);
         return profile;
     }
 
@@ -228,19 +213,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             profile.setForCks(cmd.isForCks());
         }
         profile.setUrl(url);
-        // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()),
-                ResourceType.secondary_storage,
-                UriUtils.getRemoteSize(url, followRedirects));
-        return profile;
-    }
 
-    @Override
-    public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
-        TemplateProfile profile = super.prepare(cmd);
-
-        // Check that the resource limit for secondary storage won't be exceeded
-        _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage);
         return profile;
     }
 
@@ -268,7 +241,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             persistDirectDownloadTemplate(template.getId(), profile.getSize());
         }
 
-        _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
         return template;
     }
 
@@ -356,7 +328,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 // Set Event Details for Template/ISO Upload
                 String eventType = template.getFormat().equals(ImageFormat.ISO) ? "Iso" : "Template";
                 String eventResourceId = template.getUuid();
-                CallContext.current().setEventDetails(String.format("%s Id: %s", eventType, eventResourceId));
+                CallContext.current().setEventDetails(String.format("%s ID: %s", eventType, eventResourceId));
                 CallContext.current().putContextParameter(eventType.equals("Iso") ? eventType : VirtualMachineTemplate.class, eventResourceId);
                 if (template.getFormat().equals(ImageFormat.ISO)) {
                     CallContext.current().setEventResourceType(ApiCommandResourceType.Iso);
@@ -377,7 +349,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 if(payloads.isEmpty()) {
                     throw new CloudRuntimeException("unable to find zone or an image store with enough capacity");
                 }
-                _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
+
                 return payloads;
             }
         });
@@ -396,13 +368,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         CreateTemplateContext<TemplateApiResult> context) {
         TemplateApiResult result = callback.getResult();
         TemplateInfo template = context.template;
+        VMTemplateVO tmplt = _tmpltDao.findById(template.getId());
         if (result.isSuccess()) {
-            VMTemplateVO tmplt = _tmpltDao.findById(template.getId());
             // need to grant permission for public templates
             if (tmplt.isPublicTemplate()) {
                 _messageBus.publish(_name, TemplateManager.MESSAGE_REGISTER_PUBLIC_TEMPLATE_EVENT, PublishScope.LOCAL, tmplt.getId());
             }
-            long accountId = tmplt.getAccountId();
             if (template.getSize() != null) {
                 // publish usage event
                 String etype = EventTypes.EVENT_TEMPLATE_CREATE;
@@ -431,8 +402,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     UsageEventUtils.publishUsageEvent(etype, template.getAccountId(), -1, template.getId(), template.getName(), null, null, physicalSize,
                         template.getSize(), VirtualMachineTemplate.class.getName(), template.getUuid());
                 }
-                _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
             }
+        }
+        if (tmplt != null) {
+            long accountId = tmplt.getAccountId();
+            Account account = _accountDao.findById(accountId);
+            _resourceLimitMgr.recalculateResourceCount(accountId, account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
         }
 
         return null;

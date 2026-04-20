@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.command.ReconcileCommandService;
@@ -64,7 +65,6 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.agent.AgentManager;
@@ -805,8 +805,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 String uefiEnabled = detailsMap.get(Host.HOST_UEFI_ENABLE);
                 String virtv2vVersion = detailsMap.get(Host.HOST_VIRTV2V_VERSION);
                 String ovftoolVersion = detailsMap.get(Host.HOST_OVFTOOL_VERSION);
+                String vddkSupport = detailsMap.get(Host.HOST_VDDK_SUPPORT);
+                String vddkLibDir = detailsMap.get(Host.HOST_VDDK_LIB_DIR);
+                String vddkVersion = detailsMap.get(Host.HOST_VDDK_VERSION);
                 logger.debug("Got HOST_UEFI_ENABLE [{}] for host [{}]:", uefiEnabled, host);
-                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion)) {
+                if (ObjectUtils.anyNotNull(uefiEnabled, virtv2vVersion, ovftoolVersion, vddkSupport, vddkLibDir, vddkVersion)) {
                     _hostDao.loadDetails(host);
                     boolean updateNeeded = false;
                     if (StringUtils.isNotBlank(uefiEnabled) && !uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
@@ -819,6 +822,26 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     }
                     if (StringUtils.isNotBlank(ovftoolVersion) && !ovftoolVersion.equals(host.getDetails().get(Host.HOST_OVFTOOL_VERSION))) {
                         host.getDetails().put(Host.HOST_OVFTOOL_VERSION, ovftoolVersion);
+                        updateNeeded = true;
+                    }
+                    if (StringUtils.isNotBlank(vddkSupport) && !vddkSupport.equals(host.getDetails().get(Host.HOST_VDDK_SUPPORT))) {
+                        host.getDetails().put(Host.HOST_VDDK_SUPPORT, vddkSupport);
+                        updateNeeded = true;
+                    }
+                    if (!StringUtils.defaultString(vddkLibDir).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_VDDK_LIB_DIR)))) {
+                        if (StringUtils.isBlank(vddkLibDir)) {
+                            host.getDetails().remove(Host.HOST_VDDK_LIB_DIR);
+                        } else {
+                            host.getDetails().put(Host.HOST_VDDK_LIB_DIR, vddkLibDir);
+                        }
+                        updateNeeded = true;
+                    }
+                    if (!StringUtils.defaultString(vddkVersion).equals(StringUtils.defaultString(host.getDetails().get(Host.HOST_VDDK_VERSION)))) {
+                        if (StringUtils.isBlank(vddkVersion)) {
+                            host.getDetails().remove(Host.HOST_VDDK_VERSION);
+                        } else {
+                            host.getDetails().put(Host.HOST_VDDK_VERSION, vddkVersion);
+                        }
                         updateNeeded = true;
                     }
                     if (updateNeeded) {
@@ -2111,7 +2134,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
                 GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections,
-                RemoteAgentNewConnectionsMonitorInterval };
+                RemoteAgentNewConnectionsMonitorInterval, KVMHostDiscoverySshPort };
     }
 
     protected class SetHostParamsListener implements Listener {
@@ -2232,6 +2255,25 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs, boolean excludeHostsInMaintenance) {
         return true;
+    }
+
+    @Override
+    public int getHostSshPort(HostVO host) {
+        if (host == null) {
+            return KVMHostDiscoverySshPort.value();
+        }
+
+        if (host.getHypervisorType() != HypervisorType.KVM) {
+            return Host.DEFAULT_SSH_PORT;
+        }
+
+        _hostDao.loadDetails(host);
+        String hostPort = host.getDetail(Host.HOST_SSH_PORT);
+        if (StringUtils.isBlank(hostPort)) {
+            return KVMHostDiscoverySshPort.valueIn(host.getClusterId());
+        }
+
+        return Integer.parseInt(hostPort);
     }
 
     private GlobalLock getHostJoinLock(Long hostId) {

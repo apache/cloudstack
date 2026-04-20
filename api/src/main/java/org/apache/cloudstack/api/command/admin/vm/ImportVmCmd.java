@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -171,6 +172,21 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
             description = "(only for importing VMs from VMware to KVM) optional - if true, forces virt-v2v conversions to write directly on the provided storage pool (avoid using temporary conversion pool).")
     private Boolean forceConvertToPool;
 
+    @Parameter(name = ApiConstants.OS_ID,
+            type = CommandType.UUID,
+            entityType = GuestOSResponse.class,
+            since = "4.22.1",
+            description = "(only for importing VMs from VMware to KVM) optional - the ID of the guest OS for the imported VM.")
+    private Long guestOsId;
+
+    @Parameter(name = ApiConstants.USE_VDDK,
+            type = CommandType.BOOLEAN,
+            since = "4.22.1",
+            description = "(only for importing VMs from VMware to KVM) optional - if true, uses VDDK on the KVM conversion host for converting the VM. " +
+                    "This parameter is mutually exclusive with " + ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES + ".")
+    private Boolean useVddk;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -247,6 +263,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
         return storagePoolId;
     }
 
+    public boolean getUseVddk() {
+        return BooleanUtils.toBooleanDefaultIfNull(useVddk, true);
+    }
+
     public String getTmpPath() {
         return tmpPath;
     }
@@ -266,6 +286,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     public boolean getForceConvertToPool() {
         return BooleanUtils.toBooleanDefaultIfNull(forceConvertToPool, false);
+    }
+
+    public Long getGuestOsId() {
+        return guestOsId;
     }
 
     @Override

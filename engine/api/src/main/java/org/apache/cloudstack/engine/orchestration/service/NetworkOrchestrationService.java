@@ -122,6 +122,14 @@ public interface NetworkOrchestrationService {
                     "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
                     true,
                     Scope.Global);
+    ConfigKey<Long> NETWORK_LB_HAPROXY_IDLE_TIMEOUT = new ConfigKey<>(
+                    "Network",
+                    Long.class,
+                    "network.loadbalancer.haproxy.idle.timeout",
+                    "50000",
+                    "Load Balancer(haproxy) idle timeout in milliseconds. Use 0 for infinite.",
+                    true,
+                    Scope.Global);
 
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
@@ -310,7 +318,7 @@ public interface NetworkOrchestrationService {
 
     void removeDhcpServiceInSubnet(Nic nic);
 
-    boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType);
+    boolean isResourceCountUpdateNeeded(NetworkOffering networkOffering);
 
     void prepareAllNicsForMigration(VirtualMachineProfile vm, DeployDestination dest);
 

@@ -35,7 +35,7 @@ public interface GuestOSDao extends GenericDao<GuestOSVO, Long> {
 
     List<GuestOSVO> listByDisplayName(String displayName);
 
-    Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(Long startIndex, Long pageSize, Long id, Long osCategoryId, String description, String keyword, Boolean forDisplay);
+    Pair<List<? extends GuestOS>, Integer> listGuestOSByCriteria(Long startIndex, Long pageSize, List<Long> ids, Long osCategoryId, String description, String keyword, Boolean forDisplay);
 
     List<Long> listIdsByCategoryId(final long categoryId);
 }
