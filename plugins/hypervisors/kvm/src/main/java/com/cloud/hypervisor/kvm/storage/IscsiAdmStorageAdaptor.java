@@ -19,6 +19,8 @@ package com.cloud.hypervisor.kvm.storage;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -96,10 +98,15 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         String result = iScsiAdmCmd.execute();
 
         if (result != null) {
-            logger.debug("Failed to add iSCSI target " + volumeUuid);
-            System.out.println("Failed to add iSCSI target " + volumeUuid);
+            // Node record may already exist from a previous run; accept and proceed
+            if (isNonFatalNodeCreate(result)) {
+                logger.debug("iSCSI node already exists for {}@{}:{}, proceeding", getIqn(volumeUuid), pool.getSourceHost(), pool.getSourcePort());
+            } else {
+                logger.debug("Failed to add iSCSI target " + volumeUuid);
+                System.out.println("Failed to add iSCSI target " + volumeUuid);
 
-            return false;
+                return false;
+            }
         } else {
             logger.debug("Successfully added iSCSI target " + volumeUuid);
             System.out.println("Successfully added to iSCSI target " + volumeUuid);
@@ -123,21 +130,39 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
             }
         }
 
-        // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 --login
-        iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
+        final String host = pool.getSourceHost();
+        final int port = pool.getSourcePort();
+        final String iqn = getIqn(volumeUuid);
 
+        // Always try to login; treat benign outcomes as success (idempotent)
+        iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
         iScsiAdmCmd.add("-m", "node");
-        iScsiAdmCmd.add("-T", getIqn(volumeUuid));
-        iScsiAdmCmd.add("-p", pool.getSourceHost() + ":" + pool.getSourcePort());
+        iScsiAdmCmd.add("-T", iqn);
+        iScsiAdmCmd.add("-p", host + ":" + port);
         iScsiAdmCmd.add("--login");
 
         result = iScsiAdmCmd.execute();
 
         if (result != null) {
-            logger.debug("Failed to log in to iSCSI target " + volumeUuid);
-            System.out.println("Failed to log in to iSCSI target " + volumeUuid);
+            if (isNonFatalLogin(result)) {
+                logger.debug("iSCSI login returned benign message for {}@{}:{}: {}", iqn, host, port, result);
+                // Session already exists — a newly mapped LUN won't be visible until
+                // the kernel's next periodic SCSI scan (~30-60s).
+                Script rescanCmd = new Script(true, "iscsiadm", 0, logger);
+                rescanCmd.add("-m", "session");
+                rescanCmd.add("--rescan");
+                String rescanResult = rescanCmd.execute();
+                if (rescanResult != null) {
+                    logger.warn("iSCSI session rescan returned: {}", rescanResult);
+                } else {
+                    logger.debug("iSCSI session rescan completed successfully for {}@{}:{}", iqn, host, port);
+                }
+            } else {
+                logger.debug("Failed to log in to iSCSI target " + volumeUuid + ": " + result);
+                System.out.println("Failed to log in to iSCSI target " + volumeUuid);
 
-            return false;
+                return false;
+            }
         } else {
             logger.debug("Successfully logged in to iSCSI target " + volumeUuid);
             System.out.println("Successfully logged in to iSCSI target " + volumeUuid);
@@ -158,8 +183,23 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         return true;
     }
 
+    // Removed sessionExists() call to avoid noisy sudo/iscsiadm session queries that may fail on some setups
+
+    private boolean isNonFatalLogin(String result) {
+        if (result == null) return true;
+        String msg = result.toLowerCase();
+        // Accept messages where the session already exists
+        return msg.contains("already present") || msg.contains("already logged in") || msg.contains("session exists");
+    }
+
+    private boolean isNonFatalNodeCreate(String result) {
+        if (result == null) return true;
+        String msg = result.toLowerCase();
+        return msg.contains("already exists") || msg.contains("database exists") || msg.contains("exists");
+    }
+
     private void waitForDiskToBecomeAvailable(String volumeUuid, KVMStoragePool pool) {
-        int numberOfTries = 10;
+        int numberOfTries = 30;
         int timeBetweenTries = 1000;
 
         while (getPhysicalDisk(volumeUuid, pool).getSize() == 0 && numberOfTries > 0) {
@@ -238,6 +278,15 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     private long getDeviceSize(String deviceByPath) {
+        try {
+            if (!Files.exists(Paths.get(deviceByPath))) {
+                logger.debug("Device by-path does not exist yet: " + deviceByPath);
+                return 0L;
+            }
+        } catch (Exception ignore) {
+            // If FS check fails for any reason, fall back to blockdev call
+        }
+
         Script iScsiAdmCmd = new Script(true, "blockdev", 0, logger);
 
         iScsiAdmCmd.add("--getsize64", deviceByPath);
@@ -280,8 +329,47 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         return tmp[index].trim();
     }
 
+    /**
+     * Check if there are other LUNs on the same iSCSI target (IQN) that are still
+     * visible as block devices. This is needed because ONTAP uses a single IQN per
+     * SVM — logging out of the target would kill ALL LUNs, not just the one being
+     * disconnected.
+     *
+     * Checks /dev/disk/by-path/ for symlinks matching the same host:port + IQN but
+     * with a different LUN number.
+     */
+    private boolean hasOtherActiveLuns(String host, int port, String iqn, String lun) {
+        String prefix = "ip-" + host + ":" + port + "-iscsi-" + iqn + "-lun-";
+        java.io.File byPathDir = new java.io.File("/dev/disk/by-path");
+        if (!byPathDir.exists() || !byPathDir.isDirectory()) {
+            return false;
+        }
+        java.io.File[] entries = byPathDir.listFiles();
+        if (entries == null) {
+            return false;
+        }
+        for (java.io.File entry : entries) {
+            String name = entry.getName();
+            if (name.startsWith(prefix) && !name.equals(prefix + lun)) {
+                logger.debug("Found other active LUN on same target: " + name);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean disconnectPhysicalDisk(String host, int port, String iqn, String lun) {
-        // use iscsiadm to log out of the iSCSI target and un-discover it
+        // Check if other LUNs on the same IQN target are still in use.
+        // ONTAP (and similar) uses a single IQN per SVM with multiple LUNs.
+        // Doing iscsiadm --logout tears down the ENTIRE target session,
+        // which would destroy access to ALL LUNs — not just the one being disconnected.
+        if (hasOtherActiveLuns(host, port, iqn, lun)) {
+            logger.info("Skipping iSCSI logout for /" + iqn + "/" + lun +
+                    " — other LUNs on the same target are still active");
+            return true;
+        }
+
+        // No other LUNs active on this target — safe to logout and delete the node record.
 
         // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 --logout
         Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, logger);
@@ -422,6 +510,19 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         try {
             QemuImg q = new QemuImg(timeout);
             q.convert(srcFile, destFile);
+            // Below fix is required when vendor depends on host based copy rather than storage CAN_CREATE_VOLUME_FROM_VOLUME capability
+            // When host based template copy is triggered , small size template sits in RAM(depending on host memory and RAM) and copy is marked successful and by the time flush to storage is triggered
+            // disconnectPhysicalDisk would disconnect the lun , hence template staying in RAM is not copied to storage lun. Below does flushing of data to storage and marking
+            // copy as successful once flush is complete.
+            Script flushCmd = new Script(true, "blockdev", 0, logger);
+            flushCmd.add("--flushbufs", destDisk.getPath());
+            String flushResult = flushCmd.execute();
+            if (flushResult != null) {
+                logger.warn("iSCSI copyPhysicalDisk: blockdev --flushbufs returned: {}", flushResult);
+            }
+            Script syncCmd = new Script(true, "sync", 0, logger);
+            syncCmd.execute();
+            logger.info("iSCSI copyPhysicalDisk: flush/sync completed ");
         } catch (QemuImgException | LibvirtException ex) {
             String msg = "Failed to copy data from " + srcDisk.getPath() + " to " +
                     destDisk.getPath() + ". The error was the following: " + ex.getMessage();

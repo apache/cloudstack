@@ -390,6 +390,15 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             //Other Storage volume plugins could integrate this with their own functionality for group snapshots
             VMSnapshotStrategy snapshotStrategy = storageStrategyFactory.getVmSnapshotStrategy(userVmVo.getId(), rootVolumePool.getId(), snapshotMemory);
             if (snapshotStrategy == null) {
+                // Check if this is ONTAP managed storage with memory snapshot request - provide specific error message
+                if (snapshotMemory && rootVolumePool.isManaged() &&
+                        "ONTAP".equals(rootVolumePool.getStorageProviderName())) {
+                    String message = String.format("Memory snapshots (snapshotmemory=true) are not supported for VMs on ONTAP managed storage. " +
+                            "Instance [%s] uses ONTAP storage which only supports disk-only (crash-consistent) snapshots. " +
+                            "Please use snapshotmemory=false for disk-only snapshots.", userVmVo.getUuid());
+                    logger.error(message);
+                    throw new CloudRuntimeException(message);
+                }
                 String message = String.format("No strategy was able to handle requested snapshot for Instance [%s].", userVmVo.getUuid());
                 logger.error(message);
                 throw new CloudRuntimeException(message);

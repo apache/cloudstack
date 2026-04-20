@@ -77,6 +77,8 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
     private static final List<Storage.StoragePoolType> supportedStoragePoolTypes = List.of(Storage.StoragePoolType.Filesystem, Storage.StoragePoolType.NetworkFilesystem, Storage.StoragePoolType.SharedMountPoint);
 
+    private static final String ONTAP_PROVIDER_NAME = "NetApp ONTAP";
+
     @Inject
     protected SnapshotDataStoreDao snapshotDataStoreDao;
 
@@ -325,6 +327,11 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         for (VolumeVO volume : volumes) {
             StoragePoolVO storagePoolVO = storagePool.findById(volume.getPoolId());
+            if (storagePoolVO.isManaged() && ONTAP_PROVIDER_NAME.equals(storagePoolVO.getStorageProviderName())) {
+                logger.debug(String.format("%s as the VM has a volume on ONTAP managed storage pool [%s]. " +
+                        "ONTAP managed storage has its own dedicated VM snapshot strategy.", cantHandleLog, storagePoolVO.getName()));
+                return StrategyPriority.CANT_HANDLE;
+            }
             if (!supportedStoragePoolTypes.contains(storagePoolVO.getPoolType())) {
                 logger.debug(String.format("%s as the VM has a volume that is in a storage with unsupported type [%s].", cantHandleLog, storagePoolVO.getPoolType()));
                 return StrategyPriority.CANT_HANDLE;
@@ -503,8 +510,9 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             return processCreateVmSnapshotAnswer(vmSnapshot, volumeInfoToSnapshotObjectMap, createDiskOnlyVMSnapshotAnswer, userVm, vmSnapshotVO, virtualSize, parentSnapshotVo);
         }
 
-        logger.error("Disk-only VM snapshot for VM [{}] failed{}.", userVm.getUuid(), answer != null ? " due to" + answer.getDetails() : "");
-        throw new CloudRuntimeException(String.format("Disk-only VM snapshot for VM [%s] failed.", userVm.getUuid()));
+        String details = answer != null ? answer.getDetails() : String.format("No answer received from host [%s]. The host may be unreachable.", hostId);
+        logger.error("Disk-only VM snapshot for VM [{}] failed due to: {}.", userVm.getUuid(), details);
+        throw new CloudRuntimeException(String.format("Disk-only VM snapshot for VM [%s] failed due to: %s.", userVm.getUuid(), details));
     }
 
     /**

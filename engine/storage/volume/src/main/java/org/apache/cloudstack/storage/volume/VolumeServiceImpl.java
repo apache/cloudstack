@@ -1340,6 +1340,15 @@ public class VolumeServiceImpl implements VolumeService {
             primaryDataStore.setDetails(details);
 
             grantAccess(volumeInfo, destHost, primaryDataStore);
+            volumeInfo = volFactory.getVolume(volumeInfo.getId(), primaryDataStore);
+            // For Netapp ONTAP iscsiName or Lun path  is available only after grantAccess
+            String managedStoreTarget = volumeInfo.get_iScsiName() != null ? volumeInfo.get_iScsiName() : volumeInfo.getUuid();
+            details.put(PrimaryDataStore.MANAGED_STORE_TARGET, managedStoreTarget);
+            primaryDataStore.setDetails(details);
+            // Update destTemplateInfo with the iSCSI path from volumeInfo
+            if (destTemplateInfo instanceof TemplateObject) {
+                ((TemplateObject)destTemplateInfo).setInstallPath(volumeInfo.getPath());
+            }
 
             try {
                 motionSrv.copyAsync(srcTemplateInfo, destTemplateInfo, destHost, caller);
