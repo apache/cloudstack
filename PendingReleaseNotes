@@ -81,3 +81,13 @@ example.ver.1 > example.ver.2:
     additional key store is required. Note: attaching an encrypted RBD volume
     to a running Instance requires libvirt >= 10.1.0; booting an Instance from
     an encrypted RBD root disk works on older libvirt.
+
+  * Added NVMe-over-Fabrics (TCP) support to the adaptive storage framework
+    and the Pure Storage FlashArray plugin. Volumes on a FlashArray primary
+    pool can now be delivered to KVM hypervisors over NVMe-TCP instead of
+    Fibre Channel by setting transport=nvme-tcp on the pool's provider URL.
+    Volumes are identified on the host via EUI-128 NGUIDs and attached to
+    guests as plain block devices through the native NVMe multipath layer;
+    no device-mapper multipath configuration is required. A new
+    Storage.StoragePoolType.NVMeTCP + MultipathNVMeOFAdapterBase /
+    NVMeTCPAdapter on the KVM side back the new pool type.
