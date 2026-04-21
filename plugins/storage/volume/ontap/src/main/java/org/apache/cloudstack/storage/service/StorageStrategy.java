@@ -257,7 +257,7 @@ public abstract class StorageStrategy {
             }
             String jobUUID = jobResponse.getJob().getUuid();
 
-            Boolean jobSucceeded = jobPollForSuccess(jobUUID,OntapStorageConstants.JOB_MAX_RETRIES, OntapStorageConstants.CREATE_VOLUME_CHECK_SLEEP_TIME);
+            Boolean jobSucceeded = jobPollForSuccess(jobUUID,10, 1);
             if (!jobSucceeded) {
                 logger.error("Volume creation job failed for volume: " + volumeName);
                 throw new CloudRuntimeException("Volume creation job failed for volume: " + volumeName);
@@ -341,7 +341,7 @@ public abstract class StorageStrategy {
         try {
             // TODO: Implement lun and file deletion, if any, before deleting the volume
             JobResponse jobResponse = volumeFeignClient.deleteVolume(authHeader, volume.getUuid());
-            Boolean jobSucceeded = jobPollForSuccess(jobResponse.getJob().getUuid(),OntapStorageConstants.JOB_MAX_RETRIES, OntapStorageConstants.CREATE_VOLUME_CHECK_SLEEP_TIME);
+            Boolean jobSucceeded = jobPollForSuccess(jobResponse.getJob().getUuid(),10, 1);
             if (!jobSucceeded) {
                 logger.error("Volume deletion job failed for volume: " + volume.getName());
                 throw new CloudRuntimeException("Volume deletion job failed for volume: " + volume.getName());
