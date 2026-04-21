@@ -778,24 +778,15 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     }
 
     private CopyCommandResult copySnapshotToVolume(SnapshotInfo snapshotInfo, VolumeInfo volumeInfo) {
-        String errMsg = null;
-        CopyCmdAnswer answer = null;
-        try {
-            StoragePoolVO storagePoolVO = _storagePoolDao.findById(snapshotInfo.getDataStore().getId());
-            String rscName = LinstorUtil.RSC_PREFIX + volumeInfo.getUuid();
-            createResourceFromSnapshot(snapshotInfo.getId(), rscName, storagePoolVO);
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(snapshotInfo.getDataStore().getId());
+        String rscName = LinstorUtil.RSC_PREFIX + volumeInfo.getUuid();
+        createResourceFromSnapshot(snapshotInfo.getId(), rscName, storagePoolVO);
 
-            VolumeObjectTO volumeTO = (VolumeObjectTO) volumeInfo.getTO();
-            volumeTO.setPath(volumeInfo.getUuid());
-            volumeTO.setSize(volumeInfo.getSize());
-            answer = new CopyCmdAnswer(volumeTO);
-        } catch (Exception e) {
-            errMsg = "Failed to create volume from snapshot: " + e.getMessage();
-            logger.error(errMsg, e);
-        }
-        CopyCommandResult result = new CopyCommandResult(null, answer);
-        result.setResult(errMsg);
-        return result;
+        VolumeObjectTO volumeTO = (VolumeObjectTO) volumeInfo.getTO();
+        volumeTO.setPath(volumeInfo.getUuid());
+        volumeTO.setSize(volumeInfo.getSize());
+
+        return new CopyCommandResult(null, new CopyCmdAnswer(volumeTO));
     }
 
     @Override
