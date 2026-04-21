@@ -8,9 +8,7 @@ to you under the Apache License, Version 2.0 (the
 "License"); you may not use this file except in compliance
 with the License.  You may obtain a copy of the License at
 
-
   http://www.apache.org/licenses/LICENSE-2.0
-
 
 Unless required by applicable law or agreed to in writing,
 software distributed under the License is distributed on an
@@ -22,11 +20,9 @@ under the License.
 <Configuration monitorInterval="60">
    <Appenders>
 
-
       <!-- ================================= -->
       <!-- Preserve messages in a local file -->
       <!-- ================================= -->
-
 
       <!-- A regular appender -->
       <RollingFile name="FILE" append="true" fileName="@MSLOG@" filePattern="@MSLOG@.%d{yyyy-MM-dd}.gz">
@@ -37,7 +33,6 @@ under the License.
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </RollingFile>
 
-
       <RollingFile name="INFO-FILE" append="true" fileName="/var/log/cloudstack/management/management-server-info.log" filePattern="/var/log/cloudstack/management/management-server-info.log.%d{yyyy-MM-dd}.gz">
          <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
          <Policies>
@@ -45,7 +40,6 @@ under the License.
          </Policies>
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex%n"/>
       </RollingFile>
-
 
       <RollingFile name="APISERVER" append="true" fileName="@APISERVERLOG@" filePattern="@APISERVERLOG@.%d{yyyy-MM-dd}.gz">
          <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
@@ -55,22 +49,18 @@ under the License.
          <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </RollingFile>
 
-
       <!-- ============================== -->
       <!-- Append warnings+ to the syslog if it is listening on UDP port -->
       <!-- ============================== -->
-
 
       <Syslog name="SYSLOG" host="localhost" facility="LOCAL6">
          <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
          <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) %m%ex%n"/>
       </Syslog>
 
-
       <!-- ============================== -->
       <!-- Append messages to the console -->
       <!-- ============================== -->
-
 
       <Console name="CONSOLE" target="SYSTEM_OUT">
          <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="ACCEPT"/>
@@ -83,43 +73,31 @@ under the License.
       </Console>
    </Appenders>
 
-
    <Loggers>
-
 
       <Logger name="com.cloud" level="DEBUG"/>
 
-
       <Logger name="org.apache.cloudstack" level="DEBUG"/>
-
 
       <Logger name="org.apache" level="INFO"/>
 
-
       <Logger name="org" level="INFO"/>
-
 
       <Logger name="net" level="INFO"/>
 
-
       <Logger name="apiserver.com.cloud" level="DEBUG"/>
-
 
       <Logger name="apiserver.com.cloud" level="DEBUG" additivity="false">
          <AppenderRef ref="APISERVER"/>
       </Logger>
 
-
       <Logger name="com.amazonaws" level="INFO"/>
 
-
       <Logger name="httpclient.wire" level="INFO"/>
-
 
       <!-- ============================== -->
       <!-- Add or remove these logger for SNMP, this logger is for SNMP alerts plugin -->
       <!-- ============================== -->
-
 
       <Logger name="org.apache.cloudstack.alerts" additivity="false" level="WARN">
          <AppenderRef ref="SYSLOG"/>
@@ -130,11 +108,9 @@ under the License.
          <AppenderRef ref="ALERTSYSLOG"/>
       </Logger>
 
-
       <!-- ======================= -->
       <!-- Setup the Root category -->
       <!-- ======================= -->
-
 
       <Root level="INFO">
          <AppenderRef ref="SYSLOG"/>
@@ -143,7 +119,6 @@ under the License.
          <AppenderRef ref="FILE"/>
          <AppenderRef ref="INFO-FILE"/>
       </Root>
-
 
    </Loggers>
 </Configuration>

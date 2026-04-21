@@ -53,11 +53,8 @@ under the License.
       <!-- ================ -->
 
       <Logger name="com.cloud" level="DEBUG"/>
-
       <Logger name="org.apache" level="INFO"/>
-
       <Logger name="org" level="INFO"/>
-
       <Logger name="net" level="INFO"/>
 
       <!-- ======================= -->
