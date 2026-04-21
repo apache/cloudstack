@@ -118,11 +118,9 @@ public class OntapPrimaryDatastoreLifecycle extends BasePrimaryDataStoreLifeCycl
         }
 
         details.put(OntapStorageConstants.SIZE, capacityBytes.toString());
-        details.putIfAbsent(OntapStorageConstants.IS_DISAGGREGATED, "false");
 
         ProtocolType protocol = ProtocolType.valueOf(details.get(OntapStorageConstants.PROTOCOL));
 
-//        long volumeSize = Long.parseLong(details.get(OntapStorageConstants.SIZE));
         OntapStorage ontapStorage = new OntapStorage(
                 details.get(OntapStorageConstants.USERNAME),
                 details.get(OntapStorageConstants.PASSWORD),
