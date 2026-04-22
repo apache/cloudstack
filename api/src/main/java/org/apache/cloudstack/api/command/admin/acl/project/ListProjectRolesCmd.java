@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.projects.Project;
 import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
