@@ -25,6 +25,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.libvirt.LibvirtException;
 
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -280,12 +283,61 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
-        throw new UnsupportedOperationException("Unimplemented method 'copyPhysicalDisk'");
+        return copyPhysicalDisk(disk, name, destPool, timeout, null, null, null);
     }
 
+    /**
+     * Copy a template or source disk into a pre-provisioned NVMe namespace on
+     * this pool, so it can be consumed by a VM as a root or data volume.
+     *
+     * The destination namespace is expected to have already been created on
+     * the storage provider and connected to this host's hostgroup (that is
+     * the storage orchestrator's responsibility, not the KVM adapter's). All
+     * this method does is resolve the destination device path via
+     * {@link #getPhysicalDisk} - which will nvme ns-rescan and wait for the
+     * by-id/nvme-eui.&lt;NGUID&gt; symlink to show up if the kernel has not
+     * picked it up yet - and {@code qemu-img convert} the source image into
+     * the raw block device.
+     *
+     * User-space encryption passphrases are not supported: the provider
+     * already encrypts at rest and qemu-img LUKS on top of a shared
+     * hostgroup-scoped namespace is not a sensible layering.
+     */
     @Override
-    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[] destPassphrase, Storage.ProvisioningType provisioningType) {
-        throw new UnsupportedOperationException("Unimplemented method 'copyPhysicalDisk'");
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout,
+            byte[] srcPassphrase, byte[] destPassphrase, Storage.ProvisioningType provisioningType) {
+        if (disk == null || StringUtils.isEmpty(name) || destPool == null) {
+            throw new CloudRuntimeException("Unable to copy disk to NVMe-oF pool: source disk, destination volume name or destination pool not specified");
+        }
+        if (srcPassphrase != null || destPassphrase != null) {
+            throw new CloudRuntimeException("NVMe-oF adapter does not support user-space encrypted source or destination volumes");
+        }
+
+        KVMPhysicalDisk destDisk = destPool.getPhysicalDisk(name);
+        if (destDisk == null || StringUtils.isEmpty(destDisk.getPath())) {
+            throw new CloudRuntimeException("Unable to resolve NVMe namespace for destination volume [" + name + "] on pool [" + destPool.getUuid() + "]");
+        }
+
+        destDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+        destDisk.setVirtualSize(disk.getVirtualSize());
+        destDisk.setSize(disk.getSize());
+
+        LOGGER.info(String.format("Copying source disk [path=%s, format=%s, virtualSize=%d] to NVMe-oF namespace [path=%s] on pool [%s]",
+                disk.getPath(), disk.getFormat(), disk.getVirtualSize(), destDisk.getPath(), destPool.getUuid()));
+
+        QemuImgFile srcFile = new QemuImgFile(disk.getPath(), disk.getFormat());
+        QemuImgFile destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
+
+        try {
+            QemuImg qemu = new QemuImg(timeout);
+            qemu.convert(srcFile, destFile, true);
+        } catch (QemuImgException | LibvirtException e) {
+            throw new CloudRuntimeException("Failed to copy source disk [" + disk.getPath() + "] to NVMe-oF namespace ["
+                    + destDisk.getPath() + "] on pool [" + destPool.getUuid() + "]: " + e.getMessage(), e);
+        }
+
+        LOGGER.info("Successfully copied source disk to NVMe-oF namespace [" + destDisk.getPath() + "] on pool [" + destPool.getUuid() + "]");
+        return destDisk;
     }
 
     @Override
