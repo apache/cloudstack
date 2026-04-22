@@ -76,7 +76,7 @@ public class ListProjectRolesCmd extends BaseListCmd {
         if (getProjectId() != null && getProjectId() > 0) {
             project = _projectService.getProject(getProjectId());
             if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by ID.");
+                throw new InvalidParameterValueException("Failed to find project by ID.");
             }
         }
         final String projectUuid = project != null ? project.getUuid() : null;
