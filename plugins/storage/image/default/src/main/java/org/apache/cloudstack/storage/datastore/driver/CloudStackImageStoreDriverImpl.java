@@ -74,7 +74,7 @@ public class CloudStackImageStoreDriverImpl extends NfsImageStoreDriverImpl {
         }
 
         if (format != null) {
-            if (dataObject.getTO() != null
+            if (dataObject != null && dataObject.getTO() != null
                     && DataObjectType.VOLUME.equals(dataObject.getTO().getObjectType())
                     && HypervisorType.KVM.equals(dataObject.getTO().getHypervisorType())) {
                 // Fix: The format of KVM volumes on image store is qcow2

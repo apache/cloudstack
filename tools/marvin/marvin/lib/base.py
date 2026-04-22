@@ -6215,6 +6215,27 @@ class BackupOffering:
         cmd.forced = forced
         return (apiclient.removeVirtualMachineFromBackupOffering(cmd))
 
+    @classmethod
+    def createOffering(cls, api_client, description, name, zoneid, allowquickrestore=False, compress=False, validate=False, validationsteps=None, allowuserdrivenbackups=True):
+        """Create a backup offering"""
+
+        cmd = createBackupOffering.createBackupOfferingCmd()
+        cmd.description = description
+        cmd.name = name
+        cmd.zoneid = zoneid
+        cmd.allowuserdrivenbackups = allowuserdrivenbackups
+
+        if allowquickrestore:
+            cmd.allowquickrestore = allowquickrestore
+        if compress:
+            cmd.compress = compress
+        if validate:
+            cmd.validate = validate
+        if validationsteps:
+            cmd.validationsteps = validationsteps
+
+        return BackupOffering(api_client.createBackupOffering(cmd).__dict__)
+
 
 class Backup:
 
@@ -6288,6 +6309,14 @@ class Backup:
         virtual_machine = VirtualMachine(response.__dict__, [])
         VirtualMachine.program_ssh_access(apiclient, services, mode, cmd.networkids, virtual_machine)
         return virtual_machine
+
+    @classmethod
+    def downloadValidationScreenshot(self, apiclient, backupid):
+        """Delete VM backup"""
+
+        cmd = downloadValidationScreenshot.downloadValidationScreenshotCmd()
+        cmd.backupid = backupid
+        return (apiclient.downloadValidationScreenshot(cmd))
 
 class BackupSchedule:
 
