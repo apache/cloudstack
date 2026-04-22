@@ -4635,14 +4635,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             logger.error("error during resource reservation and allocation", e);
             throw new CloudRuntimeException(e);
         } finally {
-            for (CheckedReservation checkedReservation : checkedReservations) {
-                try {
-                    checkedReservation.close();
-                } catch (Exception e) {
-                    logger.error("error during resource reservation and allocation", e);
-                    throw new CloudRuntimeException(e);
-                }
-            }
+            ReservationHelper.closeAll(checkedReservations);
         }
     }
 
