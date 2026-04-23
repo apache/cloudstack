@@ -107,7 +107,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 String vddkLibDir = resolveVddkSetting(cmd.getVddkLibDir(), serverResource.getVddkLibDir());
                 if (StringUtils.isBlank(vddkLibDir)) {
                     String err = String.format("VDDK lib dir is not configured on the host. " +
-                            "Set '%s' in agent.properties or in details parameter of the import api calll to use VDDK-based conversion.", "vddk.lib.dir");
+                            "Set '%s' in agent.properties or in details parameter of the import api call to use VDDK-based conversion.", "vddk.lib.dir");
                     logger.error("({}) {}", originalVMName, err);
                     return new Answer(cmd, false, err);
                 }
