@@ -28,10 +28,10 @@ import org.apache.logging.log4j.Logger;
  * {@link KVMStoragePoolManager} can find it via reflection.
  */
 public class NVMeTCPAdapter extends MultipathNVMeOFAdapterBase {
-    private static final Logger LOGGER_NVMETCP = LogManager.getLogger(NVMeTCPAdapter.class);
+    private static final Logger LOGGER = LogManager.getLogger(NVMeTCPAdapter.class);
 
     public NVMeTCPAdapter() {
-        LOGGER_NVMETCP.info("Loaded NVMeTCPAdapter for StorageLayer");
+        LOGGER.info("Loaded NVMeTCPAdapter for StorageLayer");
     }
 
     @Override
