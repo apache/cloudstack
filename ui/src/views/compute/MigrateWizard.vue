@@ -338,11 +338,11 @@ export default {
     submitForm () {
       if (this.loading) return
       this.loading = true
-      const migrateApi = this.isUserVm
-        ? this.requiresStorageMigration()
-          ? 'migrateVirtualMachineWithVolume'
-          : 'migrateVirtualMachine'
-        : 'migrateSystemVm'
+      const migrateApi = !this.requiresStorageMigration()
+        ? this.isUserVm
+          ? 'migrateVirtualMachine'
+          : 'migrateSystemVm'
+        : 'migrateVirtualMachineWithVolume'
       var params = this.selectedHost.id === -1
         ? { autoselect: true, virtualmachineid: this.resource.id }
         : { hostid: this.selectedHost.id, virtualmachineid: this.resource.id }
