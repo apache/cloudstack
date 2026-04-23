@@ -4301,7 +4301,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return resourceLimitService.getResourceLimitStorageTags(diskOfferingVO);
     }
 
-    private void reserveStorageResourcesForVm(List<CheckedReservation> checkedReservations, Account owner, Long diskOfferingId, Long diskSize, List<VmDiskInfo> dataDiskInfoList, Long rootDiskOfferingId, ServiceOfferingVO offering, Long rootDiskSize) throws ResourceAllocationException {
+    private void reserveStorageResourcesForVm(List<Reserver> checkedReservations, Account owner, Long diskOfferingId, Long diskSize, List<VmDiskInfo> dataDiskInfoList, Long rootDiskOfferingId, ServiceOfferingVO offering, Long rootDiskSize) throws ResourceAllocationException {
         List<String> rootResourceLimitStorageTags = getResourceLimitStorageTags(rootDiskOfferingId != null ? rootDiskOfferingId : offering.getDiskOfferingId());
         CheckedReservation rootVolumeReservation = new CheckedReservation(owner, ResourceType.volume, rootResourceLimitStorageTags, 1L, reservationDao, resourceLimitService);
         checkedReservations.add(rootVolumeReservation);
@@ -4341,7 +4341,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template,
         HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso,
         Long rootDiskOfferingId, long volumesSize, Volume volume, Snapshot snapshot) throws ResourceAllocationException {
-        List<CheckedReservation> checkedReservations = new ArrayList<>();
+        List<Reserver> checkedReservations = new ArrayList<>();
 
         try {
             reserveStorageResourcesForVm(checkedReservations, owner, diskOfferingId, diskSize, dataDiskInfoList, rootDiskOfferingId, offering, volumesSize);
