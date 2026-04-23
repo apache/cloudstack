@@ -497,9 +497,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         }
 
-        QuotaUsageJoinVO quotaUsage = quotaUsages.get(0);
         for (Integer quotaType : QuotaTypes.listQuotaTypes().keySet()) {
-            QuotaUsageJoinVO dummy = new QuotaUsageJoinVO(quotaUsage);
+            QuotaUsageJoinVO dummy = new QuotaUsageJoinVO();
             dummy.setUsageType(quotaType);
             dummy.setQuotaUsed(BigDecimal.ZERO);
             quotaUsages.add(dummy);

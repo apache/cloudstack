@@ -171,18 +171,6 @@ public class QuotaUsageJoinVO implements InternalIdentity {
     public QuotaUsageJoinVO () {
     }
 
-    public QuotaUsageJoinVO(QuotaUsageJoinVO toClone) {
-        super();
-        this.usageItemId = toClone.usageItemId;
-        this.zoneId = toClone.zoneId;
-        this.accountId = toClone.accountId;
-        this.domainId = toClone.domainId;
-        this.usageType = toClone.usageType;
-        this.quotaUsed = toClone.quotaUsed;
-        this.startDate = toClone.startDate;
-        this.endDate = toClone.endDate;
-    }
-
     @Override
     public String toString() {
         return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "zoneId", "accountId", "domainId", "usageItemId", "usageType", "quotaUsed", "startDate",
