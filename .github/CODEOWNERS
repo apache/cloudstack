@@ -18,6 +18,7 @@
 /plugins/storage/volume/linstor @rp-
 /plugins/storage/volume/storpool @slavkap
 /plugins/storage/volume/ontap @rajiv1 @sandeeplocharla @piyush5 @suryag
+/plugins/storage/object/ECS @mhkadhum
 
 .pre-commit-config.yaml @jbampton
 /.github/linters/ @jbampton
