@@ -260,7 +260,6 @@ public class UnmanagedVMsManagerImplTest {
     ImportVMTaskVO importVMTaskVO;
     @Mock
     private VMInstanceDetailsDao vmInstanceDetailsDao;
-
     @Mock
     private ConfigKey<Boolean> configKeyMockParamsAllowed;
     @Mock
