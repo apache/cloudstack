@@ -20,7 +20,7 @@ package com.cloud.utils.exception;
 
 public class BackupException extends RuntimeException {
 
-    boolean isVmConsistent;
+    private final boolean isVmConsistent;
 
     public BackupException(String message, Throwable cause, boolean isVmConsistent) {
         super(message, cause);

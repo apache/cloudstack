@@ -165,7 +165,7 @@ public class HeuristicRuleHelper {
         }
 
         if (presetVariables.getBackup() != null) {
-            jsInterpreter.injectVariable("backup", presetVariables.getBackup().toString());
+            jsInterpreter.injectVariable("backup", presetVariables.getBackup());
         }
 
         if (presetVariables.getAccount() != null) {

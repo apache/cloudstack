@@ -6312,7 +6312,7 @@ class Backup:
 
     @classmethod
     def downloadValidationScreenshot(self, apiclient, backupid):
-        """Delete VM backup"""
+        """Download Validation Screenshot"""
 
         cmd = downloadValidationScreenshot.downloadValidationScreenshotCmd()
         cmd.backupid = backupid
