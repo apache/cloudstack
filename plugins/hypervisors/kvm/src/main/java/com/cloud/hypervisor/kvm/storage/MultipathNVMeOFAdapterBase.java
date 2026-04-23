@@ -185,7 +185,13 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
         if (details != null && details.containsKey(com.cloud.storage.StorageManager.STORAGE_POOL_DISK_WAIT.toString())) {
             String waitTime = details.get(com.cloud.storage.StorageManager.STORAGE_POOL_DISK_WAIT.toString());
             if (StringUtils.isNotEmpty(waitTime)) {
-                waitSecs = Integer.parseInt(waitTime);
+                try {
+                    waitSecs = Integer.parseInt(waitTime);
+                } catch (NumberFormatException e) {
+                    LOGGER.warn("Ignoring non-numeric " + com.cloud.storage.StorageManager.STORAGE_POOL_DISK_WAIT.toString()
+                            + "=[" + waitTime + "] on pool " + pool.getUuid() + ", falling back to default "
+                            + DEFAULT_DISK_WAIT_SECS + "s");
+                }
             }
         }
         return waitForNamespace(address, pool, waitSecs);
@@ -234,7 +240,15 @@ public abstract class MultipathNVMeOFAdapterBase implements StorageAdaptor {
             for (File ctrl : ctrls) {
                 Process p = new ProcessBuilder("nvme", "ns-rescan", "/dev/" + ctrl.getName())
                         .redirectErrorStream(true).start();
-                p.waitFor(NS_RESCAN_TIMEOUT_SECS, TimeUnit.SECONDS);
+                if (!p.waitFor(NS_RESCAN_TIMEOUT_SECS, TimeUnit.SECONDS)) {
+                    // Kill runaway nvme-cli invocations so they do not pile
+                    // up under the JVM on every poll iteration while we
+                    // are still waiting for the namespace to appear.
+                    LOGGER.debug("nvme ns-rescan /dev/" + ctrl.getName()
+                            + " did not complete within " + NS_RESCAN_TIMEOUT_SECS
+                            + "s; terminating");
+                    p.destroyForcibly();
+                }
             }
         } catch (Exception e) {
             LOGGER.debug("nvme ns-rescan attempt failed: " + e.getMessage());
