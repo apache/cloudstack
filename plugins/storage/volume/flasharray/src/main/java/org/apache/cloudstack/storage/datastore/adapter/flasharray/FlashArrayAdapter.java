@@ -593,10 +593,10 @@ public class FlashArrayAdapter implements ProviderAdapter {
 
         apiVersion = connectionDetails.get(FlashArrayAdapter.API_VERSION);
         boolean apiVersionExplicit = apiVersion != null;
-        if (apiVersion == null) {
+        if (!apiVersionExplicit) {
             apiVersion = queryParms.get(FlashArrayAdapter.API_VERSION);
             apiVersionExplicit = apiVersion != null;
-            if (apiVersion == null) {
+            if (!apiVersionExplicit) {
                 apiVersion = API_VERSION_DEFAULT;
             }
         }
@@ -702,7 +702,11 @@ public class FlashArrayAdapter implements ProviderAdapter {
                             + "/api_version, falling back to default " + API_VERSION_DEFAULT, e);
                 } finally {
                     if (vResp != null) {
-                        vResp.close();
+                        try {
+                            vResp.close();
+                        } catch (IOException e) {
+                            logger.debug("Error closing /api/api_version response from FlashArray [" + url + "]", e);
+                        }
                     }
                 }
             }
@@ -736,7 +740,11 @@ public class FlashArrayAdapter implements ProviderAdapter {
                             "Unexpected HTTP response code from FlashArray [" + url + "] - [" + statusCode
                                     + "] - " + response.getStatusLine().getReasonPhrase());
                 }
-                response.close();
+                try {
+                    response.close();
+                } catch (IOException e) {
+                    logger.debug("Error closing legacy auth/apitoken response from FlashArray [" + url + "]", e);
+                }
                 response = null;
             }
 
