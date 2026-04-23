@@ -162,6 +162,7 @@ class TestSnapshotCopy(cloudstackTestCase):
         """
 
         snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
+        # the snapshot has to be deleted when the class cleanup is done. Otherwise use Time.sleep(420) ans self.cleanup to clean it after each test. This will increase the tests execution
         self._cleanup.append(snapshot)
         self.snapshot_id = snapshot.id
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
@@ -174,6 +175,7 @@ class TestSnapshotCopy(cloudstackTestCase):
         """
 
         snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id)
+        # the snapshot has to be deleted when the class cleanup is done. Otherwise use Time.sleep(420) ans self.cleanup to clean it after each test. This will increase the tests execution
         self._cleanup.append(snapshot)
         self.snapshot_id = snapshot.id
         Snapshot.copy(self.userapiclient, self.snapshot_id, zone_ids=[str(self.additional_zone.id)], source_zone_id=self.zone.id, usestoragereplication=True)
@@ -220,6 +222,7 @@ class TestSnapshotCopy(cloudstackTestCase):
         """
 
         snapshot = Snapshot.create(self.userapiclient,volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
+        # the snapshot has to be deleted when the class cleanup is done. Otherwise use Time.sleep(420) ans self.cleanup to clean it after each test. This will increase the tests execution
         self._cleanup.append(snapshot)
         self.snapshot_id = snapshot.id
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
@@ -246,6 +249,7 @@ class TestSnapshotCopy(cloudstackTestCase):
         """Test to take volume snapshot in multiple StorPool primary storages in diff zones and create a volume in one of the additional zones
         """
         snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
+        # the snapshot has to be deleted when the class cleanup is done. Otherwise use Time.sleep(420) ans self.cleanup to clean it after each test. This will increase the tests execution
         self._cleanup.append(snapshot)
         self.snapshot_id = snapshot.id
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
@@ -261,6 +265,7 @@ class TestSnapshotCopy(cloudstackTestCase):
         """Test to take volume snapshot in multiple StorPool primary storages in diff zones and deploy a VM from snapshot in one of the additional zones
         """
         snapshot = Snapshot.create(self.userapiclient, volume_id=self.volume.id, zoneids=[str(self.additional_zone.id)], usestoragereplication=True)
+        # the snapshot has to be deleted when the class cleanup is done. Otherwise use Time.sleep(420) ans self.cleanup to clean it after each test. This will increase the tests execution
         self._cleanup.append(snapshot)
         self.snapshot_id = snapshot.id
         self.helper.verify_snapshot_copies(self.userapiclient, self.snapshot_id, [self.zone.id, self.additional_zone.id])
