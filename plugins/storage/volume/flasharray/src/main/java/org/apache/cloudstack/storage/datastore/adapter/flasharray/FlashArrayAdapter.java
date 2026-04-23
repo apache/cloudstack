@@ -23,7 +23,8 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,6 +89,9 @@ public class FlashArrayAdapter implements ProviderAdapter {
     static final ObjectMapper mapper = new ObjectMapper();
     public String pod = null;
     public String hostgroup = null;
+    private static final DateTimeFormatter DELETION_TIMESTAMP_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
+
     private String username;
     private String password;
     private String accessToken;
@@ -202,11 +206,14 @@ public class FlashArrayAdapter implements ProviderAdapter {
     public void delete(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
         String fullName = normalizeName(pod, dataObject.getExternalName());
 
-        // Snapshots live under /volume-snapshots and already use the reserved
-        // form <volume>.<suffix>. FlashArray snapshot rename constraints do
-        // not let us rename them to an arbitrary timestamp-suffixed name
-        // before deletion, so unlike volumes we skip rename and only mark
-        // them destroyed.
+        // Snapshots live under /volume-snapshots and already use the
+        // reserved form <volume>.<suffix>. FlashArray volume/snapshot names
+        // must match [A-Za-z0-9_-] and start/end with an alphanumeric, so
+        // appending our usual deletion-timestamp suffix to a snapshot name
+        // would produce a target like "<vol>.<n>-<ts>" - the embedded "."
+        // is rejected by the array. We therefore skip the rename for
+        // snapshots and only mark them destroyed; the array's own ".N"
+        // suffix already disambiguates them in the recycle bin.
         if (dataObject.getType() == ProviderAdapterDataObject.Type.SNAPSHOT) {
             try {
                 FlashArrayVolume destroy = new FlashArrayVolume();
@@ -214,8 +221,9 @@ public class FlashArrayAdapter implements ProviderAdapter {
                 PATCH("/volume-snapshots?names=" + fullName, destroy, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
                 });
             } catch (CloudRuntimeException e) {
-                if (e.toString().contains("No such volume or snapshot")
-                        || e.toString().contains("Volume does not exist")) {
+                String msg = e.getMessage();
+                if (msg != null && (msg.contains("No such volume or snapshot")
+                        || msg.contains("Volume does not exist"))) {
                     return;
                 }
                 throw e;
@@ -233,7 +241,11 @@ public class FlashArrayAdapter implements ProviderAdapter {
         // CloudStack side. FlashArray rejects a single PATCH that combines
         // {name, destroyed}, so the rename and the destroy must be issued as
         // two separate requests each carrying only its own field.
-        String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
+        // Use UTC so the rename suffix is stable regardless of the management
+        // server's local timezone or DST changes - operators correlating the
+        // CloudStack delete event with the array's audit log get a consistent
+        // wall-clock value.
+        String timestamp = DELETION_TIMESTAMP_FORMAT.format(java.time.Instant.now());
         String renamedName = fullName + "-" + timestamp;
 
         try {
@@ -247,7 +259,8 @@ public class FlashArrayAdapter implements ProviderAdapter {
             PATCH("/volumes?names=" + renamedName, destroy, new TypeReference<FlashArrayList<FlashArrayVolume>>() {
             });
         } catch (CloudRuntimeException e) {
-            if (e.toString().contains("Volume does not exist")) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("Volume does not exist")) {
                 return;
             } else {
                 throw e;
