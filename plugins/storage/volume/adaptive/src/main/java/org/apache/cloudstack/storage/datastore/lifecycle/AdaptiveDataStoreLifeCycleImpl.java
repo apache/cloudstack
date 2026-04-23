@@ -222,9 +222,9 @@ public class AdaptiveDataStoreLifeCycleImpl extends BasePrimaryDataStoreLifeCycl
             // footprint, no quota set, transient probe failure), fall through and use what the
             // user supplied rather than failing the whole registration.
             ProviderVolumeStorageStats stats = api.getManagedStorageStats();
-            if (capacityBytes != null && capacityBytes != 0) {
+            if (capacityBytes != null && capacityBytes > 0) {
                 if (stats != null && stats.getCapacityInBytes() > 0 && stats.getCapacityInBytes() < capacityBytes) {
-                    throw new InvalidParameterValueException("Capacity bytes provided exceeds the capacity of the storage endpoint: provided by user: " + capacityBytes + ", storage capacity from storage provider: " + stats.getCapacityInBytes());
+                    throw new InvalidParameterValueException("Provided capacity bytes exceed the capacity of the storage endpoint: provided by user: " + capacityBytes + ", storage capacity from storage provider: " + stats.getCapacityInBytes());
                 }
                 parameters.setCapacityBytes(capacityBytes);
             }
