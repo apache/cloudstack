@@ -87,7 +87,7 @@ public class GetRouterHealthCheckResultsCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InvalidParameterValueException, ServerApiException {
-        CallContext.current().setEventDetails("Router Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getRouterId()));
+        CallContext.current().setEventDetails("Router ID: " + getResourceUuid(ApiConstants.ROUTER_ID));
         VirtualRouter router = _routerService.findRouter(getRouterId());
         if (router == null || router.getRole() != VirtualRouter.Role.VIRTUAL_ROUTER) {
             throw new InvalidParameterValueException("Can't find router by routerId");

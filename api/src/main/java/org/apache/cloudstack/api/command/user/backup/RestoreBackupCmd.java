@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -100,7 +99,6 @@ public class RestoreBackupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        String backupUuid = _uuidMgr.getUuid(Backup.class, getBackupId());
-        return "Restoring Instance from backup: " + backupUuid;
+        return "Restoring Instance from backup with ID: " + getResourceUuid(ApiConstants.ID);
     }
 }

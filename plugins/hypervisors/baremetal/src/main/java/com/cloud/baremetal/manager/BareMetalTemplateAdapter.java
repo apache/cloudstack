@@ -106,7 +106,6 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
             }
         }
 
-        _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
         return template;
     }
 

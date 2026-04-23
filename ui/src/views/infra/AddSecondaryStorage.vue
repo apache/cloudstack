@@ -48,6 +48,7 @@
           <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
             <a-select
               v-model:value="form.zone"
+              @change="onZoneChange"
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
@@ -105,6 +106,7 @@
           <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
             <a-select
               v-model:value="form.zone"
+              @change="onZoneChange"
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
@@ -159,6 +161,17 @@
             <a-input v-model:value="form.secondaryStorageNFSPath"/>
           </a-form-item>
         </div>
+        <div v-if="showCopyTemplatesToggle">
+          <a-form-item
+            name="copyTemplatesFromOtherSecondaryStorages"
+            ref="copyTemplatesFromOtherSecondaryStorages"
+            :label="$t('label.copy.templates.from.other.secondary.storages')">
+            <a-switch
+              v-model:checked="form.copyTemplatesFromOtherSecondaryStorages"
+              @change="onCopyTemplatesToggleChanged"
+            />
+          </a-form-item>
+        </div>
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -191,7 +204,9 @@ export default {
       providers: ['NFS', 'SMB/CIFS', 'S3', 'Swift'],
       zones: [],
       loading: false,
-      secondaryStorageNFSStaging: false
+      secondaryStorageNFSStaging: false,
+      showCopyTemplatesToggle: false,
+      copyTemplatesTouched: false
     }
   },
   created () {
@@ -203,7 +218,8 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         provider: 'NFS',
-        secondaryStorageHttps: true
+        secondaryStorageHttps: true,
+        copyTemplatesFromOtherSecondaryStorages: true
       })
       this.rules = reactive({
         zone: [{ required: true, message: this.$t('label.required') }],
@@ -225,19 +241,55 @@ export default {
     },
     fetchData () {
       this.listZones()
+      this.checkOtherSecondaryStorages()
     },
     closeModal () {
       this.$emit('close-action')
     },
+    fetchCopyTemplatesConfig () {
+      if (!this.form.zone) {
+        return
+      }
+
+      getAPI('listConfigurations', {
+        name: 'copy.templates.from.other.secondary.storages',
+        zoneid: this.form.zone
+      }).then(json => {
+        const items =
+          json?.listconfigurationsresponse?.configuration || []
+
+        items.forEach(item => {
+          if (item.name === 'copy.templates.from.other.secondary.storages') {
+            this.form.copyTemplatesFromOtherSecondaryStorages =
+              item.value === 'true'
+          }
+        })
+      })
+    },
+    onZoneChange (val) {
+      this.form.zone = val
+      this.copyTemplatesTouched = false
+      this.fetchCopyTemplatesConfig()
+    },
     listZones () {
       getAPI('listZones', { showicon: true }).then(json => {
-        if (json && json.listzonesresponse && json.listzonesresponse.zone) {
-          this.zones = json.listzonesresponse.zone
-          if (this.zones.length > 0) {
-            this.form.zone = this.zones[0].id || ''
-          }
+        this.zones = json.listzonesresponse.zone || []
+
+        if (this.zones.length > 0) {
+          this.form.zone = this.zones[0].id
+          this.fetchCopyTemplatesConfig()
         }
       })
+    },
+    checkOtherSecondaryStorages () {
+      getAPI('listImageStores', { listall: true }).then(json => {
+        const stores = json?.listimagestoresresponse?.imagestore || []
+
+        this.showCopyTemplatesToggle = stores.length > 0
+      })
+    },
+    onCopyTemplatesToggleChanged (val) {
+      this.copyTemplatesTouched = true
     },
     nfsURL (server, path) {
       var url
@@ -360,6 +412,22 @@ export default {
           nfsParams.provider = 'nfs'
           nfsParams.zoneid = values.zone
           nfsParams.url = nfsUrl
+        }
+
+        if (
+          this.showCopyTemplatesToggle &&
+          this.copyTemplatesTouched
+        ) {
+          const copyTemplatesKey = 'copytemplatesfromothersecondarystorages'
+
+          const detailIdx = Object.keys(data)
+            .filter(k => k.startsWith('details['))
+            .map(k => parseInt(k.match(/details\[(\d+)\]/)[1]))
+            .reduce((a, b) => Math.max(a, b), -1) + 1
+
+          data[`details[${detailIdx}].key`] = copyTemplatesKey
+          data[`details[${detailIdx}].value`] =
+            values.copyTemplatesFromOtherSecondaryStorages.toString()
         }
 
         this.loading = true

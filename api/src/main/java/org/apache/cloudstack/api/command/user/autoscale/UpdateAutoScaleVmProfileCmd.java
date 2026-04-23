@@ -124,7 +124,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("AutoScale Policy Id: " + getId());
+        CallContext.current().setEventDetails("AutoScale Policy ID: " + getResourceUuid(ApiConstants.ID));
         AutoScaleVmProfile result = _autoScaleService.updateAutoScaleVmProfile(this);
         if (result != null) {
             AutoScaleVmProfileResponse response = _responseGenerator.createAutoScaleVmProfileResponse(result);
@@ -190,7 +190,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating AutoScale Instance Profile. Instance Profile Id: " + getId();
+        return "Updating AutoScale Instance Profile with ID: " + getId();
     }
 
     @Override

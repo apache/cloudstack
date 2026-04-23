@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.IsAccountAllowedToCreateOfferingsWithTagsResponse;
 
 @APICommand(name = "isAccountAllowedToCreateOfferingsWithTags", description = "Return true if the specified account is allowed to create offerings with tags.",
-        responseObject = IsAccountAllowedToCreateOfferingsWithTagsResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        responseObject = IsAccountAllowedToCreateOfferingsWithTagsResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        httpMethod = "GET")
 public class IsAccountAllowedToCreateOfferingsWithTagsCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "Account UUID", required = true)

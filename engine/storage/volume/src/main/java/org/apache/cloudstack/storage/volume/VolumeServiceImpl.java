@@ -387,6 +387,7 @@ public class VolumeServiceImpl implements VolumeService {
             logger.info("Expunge volume with no data store specified");
             if (canVolumeBeRemoved(volume.getId())) {
                 logger.info("Volume {} is not referred anywhere, remove it from volumes table", volume);
+                snapshotMgr.deletePoliciesForVolume(volume.getId());
                 volDao.remove(volume.getId());
             }
             future.complete(result);
@@ -422,6 +423,7 @@ public class VolumeServiceImpl implements VolumeService {
                 }
                 VMTemplateVO template = templateDao.findById(vol.getTemplateId());
                 if (template != null && !template.isDeployAsIs()) {
+                    snapshotMgr.deletePoliciesForVolume(vol.getId());
                     volDao.remove(vol.getId());
                     future.complete(result);
                     return future;
@@ -434,6 +436,9 @@ public class VolumeServiceImpl implements VolumeService {
             // no need to change state in volumes table
             volume.processEventOnly(Event.DestroyRequested);
         } else if (volume.getDataStore().getRole() == DataStoreRole.Primary) {
+            if (vol.getState() == Volume.State.Expunging) {
+                logger.info("Volume {} is already in Expunging, retrying", volume);
+            }
             volume.processEvent(Event.ExpungeRequested);
         }
 
@@ -493,6 +498,7 @@ public class VolumeServiceImpl implements VolumeService {
 
                 if (canVolumeBeRemoved(vo.getId())) {
                     logger.info("Volume {} is not referred anywhere, remove it from volumes table", vo);
+                    snapshotMgr.deletePoliciesForVolume(vo.getId());
                     volDao.remove(vo.getId());
                 }
 
@@ -1656,7 +1662,6 @@ public class VolumeServiceImpl implements VolumeService {
         // mark volume entry in volumes table as destroy state
         VolumeInfo vol = volFactory.getVolume(volumeId);
         vol.stateTransit(Volume.Event.DestroyRequested);
-        snapshotMgr.deletePoliciesForVolume(volumeId);
         annotationDao.removeByEntityType(AnnotationService.EntityType.VOLUME.name(), vol.getUuid());
 
         vol.stateTransit(Volume.Event.OperationSucceeded);

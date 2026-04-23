@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Map;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -72,6 +74,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @SerializedName("kvmsnapshotenabled")
     @Param(description = "True if Snapshot is supported for KVM host, false otherwise")
     private boolean kvmSnapshotEnabled;
+
+    @SerializedName("snapshotshowchainsize")
+    @Param(description = "True to show the parent and chain size (sum of physical size of snapshot and all its parents) for incremental snapshots", since = "4.22.1")
+    private boolean snapshotShowChainSize;
 
     @SerializedName("apilimitmax")
     @Param(description = "Max allowed number of api requests within the specified interval")
@@ -153,6 +159,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if additional configurations or extraconfig can be passed to Instances", since = "4.20.2")
     private Boolean additionalConfigEnabled;
 
+    @SerializedName(ApiConstants.VPN_CUSTOMER_GATEWAY_PARAMETERS)
+    @Param(description = "Excluded and obsolete VPN customer gateway cryptographic parameters")
+    private Map<String, Object> vpnCustomerGatewayParameters;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -195,6 +205,10 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setKVMSnapshotEnabled(boolean kvmSnapshotEnabled) {
         this.kvmSnapshotEnabled = kvmSnapshotEnabled;
+    }
+
+    public void setSnapshotShowChainSize(boolean snapshotShowChainSize) {
+        this.snapshotShowChainSize = snapshotShowChainSize;
     }
 
     public void setApiLimitInterval(Integer apiLimitInterval) {
@@ -279,5 +293,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setAdditionalConfigEnabled(Boolean additionalConfigEnabled) {
         this.additionalConfigEnabled = additionalConfigEnabled;
+    }
+
+    public void setVpnCustomerGatewayParameters(Map<String, Object> vpnCustomerGatewayParameters) {
+        this.vpnCustomerGatewayParameters = vpnCustomerGatewayParameters;
     }
 }

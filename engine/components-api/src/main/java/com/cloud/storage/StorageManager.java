@@ -228,8 +228,9 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.Global,
             null);
 
-    ConfigKey<Boolean> COPY_PUBLIC_TEMPLATES_FROM_OTHER_STORAGES = new ConfigKey<>(Boolean.class, "copy.public.templates.from.other.storages",
-            "Storage", "true", "Allow SSVMs to try copying public templates from one secondary storage to another instead of downloading them from the source.",
+    ConfigKey<Boolean> COPY_TEMPLATES_FROM_OTHER_SECONDARY_STORAGES = new ConfigKey<>(Boolean.class, "copy.templates.from.other.secondary.storages",
+            "Storage", "true", "When enabled, this feature allows templates to be copied from existing Secondary Storage servers (within the same zone or across zones) " +
+            "while adding a new Secondary Storage. If the copy operation fails, the system falls back to downloading the template from the source URL.",
             true, ConfigKey.Scope.Zone, null);
 
     /**

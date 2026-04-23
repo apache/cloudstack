@@ -120,7 +120,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     private final List<Snapshot.State> snapshotStatesAbleToDeleteSnapshot = Arrays.asList(Snapshot.State.Destroying, Snapshot.State.Destroyed, Snapshot.State.Error, Snapshot.State.Hidden);
 
     public SnapshotDataStoreVO getSnapshotImageStoreRef(long snapshotId, long zoneId) {
-        List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
+        List<SnapshotDataStoreVO> snaps = snapshotStoreDao.listBySnapshotIdAndDataStoreRoleAndStateIn(snapshotId, DataStoreRole.Image, State.Ready, State.Hidden);
         for (SnapshotDataStoreVO ref : snaps) {
             if (zoneId == dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())) {
                 return ref;
@@ -303,7 +303,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         if (Snapshot.State.Error.equals(snapshotVO.getState())) {
-            List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotId(snapshotId);
+            List<SnapshotDataStoreVO> storeRefs = snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId);
             List<Long> deletedRefs = new ArrayList<>();
             for (SnapshotDataStoreVO ref : storeRefs) {
                 boolean refZoneIdMatch = false;

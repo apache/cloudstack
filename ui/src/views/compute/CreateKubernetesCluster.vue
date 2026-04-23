@@ -65,6 +65,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <ownership-selection v-if="isAdmin()" @fetch-owner="fetchOwnerOptions"/>
         <a-form-item ref="hypervisor" name="hypervisor">
           <template #label>
             <tooltip-label :title="$t('label.hypervisor')" :tooltip="apiParams.hypervisor.description"/>
@@ -316,7 +317,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="form.advancedmode && form?.etcdnodes > 0" name="etcdtemplateid" ref="etcdtemplateid">
+        <a-form-item v-if="form.advancedmode && form.etcdnodes && form.etcdnodes > 0" name="etcdtemplateid" ref="etcdtemplateid">
           <template #label>
             <tooltip-label :title="$t('label.cks.cluster.etcd.nodes.templateid')" :tooltip="$t('label.cks.cluster.etcd.nodes.templateid')"/>
           </template>
@@ -332,6 +333,57 @@
             :placeholder="$t('label.cks.cluster.etcd.nodes.templateid')">
             <a-select-option v-for="(opt, optIndex) in templates" :key="optIndex" :label="opt.name || opt.description">
               {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item v-if="form.advancedmode" name="controlaffinitygroupids" ref="controlaffinitygroupids">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.control.nodes.affinitygroupid')" :tooltip="$t('label.cks.cluster.control.nodes.affinitygroupid')"/>
+          </template>
+          <a-select
+            v-model:value="controlAffinityGroups"
+            mode="multiple"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0"
+            :loading="affinityGroupLoading"
+            :placeholder="$t('label.cks.cluster.control.nodes.affinitygroupid')">
+            <a-select-option v-for="opt in affinityGroups" :key="opt.id" :label="opt.name">
+              {{ opt.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item v-if="form.advancedmode" name="workeraffinitygroupids" ref="workeraffinitygroupids">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.worker.nodes.affinitygroupid')" :tooltip="$t('label.cks.cluster.worker.nodes.affinitygroupid')"/>
+          </template>
+          <a-select
+            v-model:value="workerAffinityGroups"
+            mode="multiple"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0"
+            :loading="affinityGroupLoading"
+            :placeholder="$t('label.cks.cluster.worker.nodes.affinitygroupid')">
+            <a-select-option v-for="opt in affinityGroups" :key="opt.id" :label="opt.name">
+              {{ opt.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item v-if="form.advancedmode && form.etcdnodes && form.etcdnodes > 0" name="etcdaffinitygroupids" ref="etcdaffinitygroupids">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.etcd.nodes.affinitygroupid')" :tooltip="$t('label.cks.cluster.etcd.nodes.affinitygroupid')"/>
+          </template>
+          <a-select
+            v-model:value="etcdAffinityGroups"
+            mode="multiple"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0"
+            :loading="affinityGroupLoading"
+            :placeholder="$t('label.cks.cluster.etcd.nodes.affinitygroupid')">
+            <a-select-option v-for="opt in affinityGroups" :key="opt.id" :label="opt.name">
+              {{ opt.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -441,6 +493,7 @@ import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import UserDataSelection from '@views/compute/wizard/UserDataSelection'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection'
 
 export default {
   name: 'CreateKubernetesCluster',
@@ -448,7 +501,8 @@ export default {
   components: {
     TooltipLabel,
     ResourceIcon,
-    UserDataSelection
+    UserDataSelection,
+    OwnershipSelection
   },
   props: {},
   data () {
@@ -490,7 +544,13 @@ export default {
       cksNetworkOffering: null,
       asNumbersZone: [],
       asNumberLoading: false,
-      selectedAsNumber: 0
+      selectedAsNumber: 0,
+      affinityGroups: [],
+      affinityGroupLoading: false,
+      controlAffinityGroups: [],
+      workerAffinityGroups: [],
+      etcdAffinityGroups: [],
+      owner: {}
     }
   },
   beforeCreate () {
@@ -555,10 +615,37 @@ export default {
     },
     fetchData () {
       this.fetchZoneData()
-      this.fetchKeyPairData()
+      if (!this.isAdmin()) {
+        this.fetchKeyPairData()
+      }
       this.fetchCksTemplates()
       this.fetchCKSNetworkOfferingName()
       this.fetchCniConfigurations()
+    },
+    fetchAffinityGroups () {
+      this.affinityGroups = []
+      this.controlAffinityGroups = []
+      this.workerAffinityGroups = []
+      this.etcdAffinityGroups = []
+      const params = {}
+      if (!this.isObjectEmpty(this.selectedZone)) {
+        params.zoneid = this.selectedZone.id
+      }
+      if (this.owner.account) {
+        params.account = this.owner.account
+        params.domainid = this.owner.domainid
+      } else if (this.owner.projectid) {
+        params.projectid = this.owner.projectid
+      }
+      this.affinityGroupLoading = true
+      getAPI('listAffinityGroups', params).then(json => {
+        const groups = json.listaffinitygroupsresponse.affinitygroup
+        if (this.arrayHasItems(groups)) {
+          this.affinityGroups = groups.filter(group => group.type !== 'ExplicitDedication')
+        }
+      }).finally(() => {
+        this.affinityGroupLoading = false
+      })
     },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
@@ -597,9 +684,12 @@ export default {
     handleZoneChange (zone) {
       this.selectedZone = zone
       this.fetchKubernetesVersionData()
-      this.fetchNetworkData()
       this.fetchZoneHypervisors()
       this.fetchZoneASNumbers()
+      if (!this.isAdmin()) {
+        this.fetchNetworkData()
+        this.fetchAffinityGroups()
+      }
     },
     handleASNumberChange (selectedIndex) {
       this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
@@ -663,8 +753,29 @@ export default {
         }
       })
     },
+    isAdmin () {
+      return this.$store.getters.userInfo.roletype === 'Admin'
+    },
     isAdminOrDomainAdmin () {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+    },
+    fetchOwnerOptions (ownerOptions) {
+      this.owner = {}
+      if (ownerOptions.selectedAccountType === 'Account') {
+        if (!ownerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = ownerOptions.selectedAccount
+        this.owner.domainid = ownerOptions.selectedDomain
+      } else if (ownerOptions.selectedAccountType === 'Project') {
+        if (!ownerOptions.selectedProject) {
+          return
+        }
+        this.owner.projectid = ownerOptions.selectedProject
+      }
+      this.fetchNetworkData()
+      this.fetchKeyPairData()
+      this.fetchAffinityGroups()
     },
     fetchCksTemplates () {
       var filters = []
@@ -695,6 +806,12 @@ export default {
       if (!this.isObjectEmpty(this.selectedZone)) {
         params.zoneid = this.selectedZone.id
       }
+      if (this.owner.account) {
+        params.account = this.owner.account
+        params.domainid = this.owner.domainid
+      } else if (this.owner.projectid) {
+        params.projectid = this.owner.projectid
+      }
       this.networkLoading = true
       this.networks = []
       getAPI('listNetworks', params).then(json => {
@@ -713,7 +830,14 @@ export default {
     },
     fetchKeyPairData () {
       const params = {}
+      if (this.owner.account) {
+        params.account = this.owner.account
+        params.domainid = this.owner.domainid
+      } else if (this.owner.projectid) {
+        params.projectid = this.owner.projectid
+      }
       this.keyPairLoading = true
+      this.keyPairs = [this.emptyEntry]
       getAPI('listSSHKeyPairs', params).then(json => {
         const listKeyPairs = json.listsshkeypairsresponse.sshkeypair
         if (this.arrayHasItems(listKeyPairs)) {
@@ -840,6 +964,12 @@ export default {
           size: values.size,
           clustertype: 'CloudManaged'
         }
+        if (this.owner.account) {
+          params.account = this.owner.account
+          params.domainid = this.owner.domainid
+        } else if (this.owner.projectid) {
+          params.projectid = this.owner.projectid
+        }
         if (values.hypervisor !== null) {
           params.hypervisor = this.selectedZoneHypervisors[values.hypervisor].name.toLowerCase()
         }
@@ -879,6 +1009,21 @@ export default {
             params['nodetemplates[' + advancedTemplates + '].node'] = 'etcd'
             params['nodetemplates[' + advancedTemplates + '].template'] = this.templates[values.etcdtemplateid].id
             advancedTemplates++
+          }
+        }
+        if (values.advancedmode) {
+          let affinityIndex = 0
+          const addAffinityGroups = (nodeType, groups) => {
+            if (groups && groups.length > 0) {
+              params[`nodeaffinitygroups[${affinityIndex}].node`] = nodeType
+              params[`nodeaffinitygroups[${affinityIndex}].affinitygroup`] = groups.join(',')
+              affinityIndex++
+            }
+          }
+          addAffinityGroups('control', this.controlAffinityGroups)
+          addAffinityGroups('worker', this.workerAffinityGroups)
+          if (values.etcdnodes > 0) {
+            addAffinityGroups('etcd', this.etcdAffinityGroups)
           }
         }
         if (this.isValidValueForKey(values, 'noderootdisksize') && values.noderootdisksize > 0) {
