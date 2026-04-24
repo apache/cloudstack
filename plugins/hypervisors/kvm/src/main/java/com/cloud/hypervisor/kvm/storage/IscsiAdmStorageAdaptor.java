@@ -350,12 +350,54 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         }
         for (java.io.File entry : entries) {
             String name = entry.getName();
-            if (name.startsWith(prefix) && !name.equals(prefix + lun)) {
+            // Skip partition entries (e.g. lun-0-part1, lun-0-part2) — these are not
+            // independent LUNs, they are partition symlinks for the same LUN disk.
+            // Only count actual LUN entries (no "-part" suffix after the lun number).
+            if (name.startsWith(prefix) && !name.equals(prefix + lun) && !name.contains("-part")) {
                 logger.debug("Found other active LUN on same target: " + name);
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Removes a single stale SCSI device from the kernel using the sysfs interface.
+     *
+     * When ONTAP unmaps a LUN from the host's igroup, the by-path symlink and the
+     * underlying SCSI device (/dev/sdX) remain present in the kernel until explicitly
+     * removed — the kernel does not auto-remove devices from live iSCSI sessions.
+     *
+     * This method resolves the by-path symlink to the real block device name (e.g. sdd),
+     * then writes "1" to /sys/block/<dev>/device/delete — the standard Linux kernel SCSI
+     * API for removing a single device without tearing down the entire iSCSI session.
+     * Once the kernel processes the delete, it also removes the by-path symlink.
+     *
+     * This is used instead of iscsiadm --logout when other LUNs on the same IQN are still
+     * active (ONTAP single-IQN-per-SVM model), since logout would tear down ALL LUNs.
+     */
+    private void removeStaleScsiDevice(String host, int port, String iqn, String lun) {
+        String byPath = getByPath(host, port, "/" + iqn + "/" + lun);
+        java.nio.file.Path byPathLink = java.nio.file.Paths.get(byPath);
+        if (!java.nio.file.Files.exists(byPathLink)) {
+            logger.debug("by-path entry for LUN " + lun + " already gone, nothing to remove");
+            return;
+        }
+        try {
+            java.nio.file.Path realDevice = byPathLink.toRealPath();
+            String devName = realDevice.getFileName().toString();
+            java.io.File deleteFile = new java.io.File("/sys/block/" + devName + "/device/delete");
+            if (!deleteFile.exists()) {
+                logger.warn("sysfs delete entry not found for device " + devName + " — cannot remove stale SCSI device");
+                return;
+            }
+            try (java.io.FileWriter fw = new java.io.FileWriter(deleteFile)) {
+                fw.write("1");
+            }
+            logger.info("Removed stale SCSI device " + devName + " for LUN /" + iqn + "/" + lun + " via sysfs");
+        } catch (Exception e) {
+            logger.warn("Failed to remove stale SCSI device for LUN /" + iqn + "/" + lun + ": " + e.getMessage());
+        }
     }
 
     private boolean disconnectPhysicalDisk(String host, int port, String iqn, String lun) {
@@ -365,8 +407,15 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         // which would destroy access to ALL LUNs — not just the one being disconnected.
         if (hasOtherActiveLuns(host, port, iqn, lun)) {
             logger.info("Skipping iSCSI logout for /" + iqn + "/" + lun +
-                    " — other LUNs on the same target are still active");
-            return true;
+                    " — other LUNs on the same target are still active. Removing stale SCSI device for this LUN only.");
+            removeStaleScsiDevice(host, port, iqn, lun);
+            // After removing this LUN's device, re-check: if no other LUNs remain active,
+            // If it is the last one then must logout to clean up the iSCSI session entirely.
+            if (hasOtherActiveLuns(host, port, iqn, lun)) {
+                logger.info("Other LUNs still active after removing /" + iqn + "/" + lun + " — session kept alive.");
+                return true;
+            }
+            logger.info("No more active LUNs on target after removing /" + iqn + "/" + lun + " — proceeding with iSCSI logout.");
         }
 
         // No other LUNs active on this target — safe to logout and delete the node record.
