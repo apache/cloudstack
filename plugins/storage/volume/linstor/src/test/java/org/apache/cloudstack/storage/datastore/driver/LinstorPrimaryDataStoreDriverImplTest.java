@@ -29,7 +29,6 @@ import java.util.Map;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.storage.DataStoreRole;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -101,11 +100,13 @@ public class LinstorPrimaryDataStoreDriverImplTest {
     }
 
     @Test
-    public void testGetCapabilitiesIncludesCreateTemplateFromSnapshot() {
+    public void testGetCapabilitiesIncludesCreateTemplateFromSnapshotMatchesSystemSnapshot() {
         Map<String, String> caps = linstorPrimaryDataStoreDriver.getCapabilities();
 
-        Assert.assertTrue("Linstor should advertise CAN_CREATE_TEMPLATE_FROM_SNAPSHOT",
-                Boolean.parseBoolean(caps.get(DataStoreCapabilities.CAN_CREATE_TEMPLATE_FROM_SNAPSHOT.toString())));
+        Assert.assertEquals(
+                "CAN_CREATE_TEMPLATE_FROM_SNAPSHOT should match STORAGE_SYSTEM_SNAPSHOT",
+                caps.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString()),
+                caps.get(DataStoreCapabilities.CAN_CREATE_TEMPLATE_FROM_SNAPSHOT.toString()));
     }
 
     @Test
