@@ -100,6 +100,13 @@ public class OntapHostListener implements HypervisorHostListener {
             }
 
             // Get the mount path from the answer
+
+            if (!(answer instanceof ModifyStoragePoolAnswer)) {
+                throw new CloudRuntimeException(String.format(
+                        "Unexpected answer type %s returned for modify storage pool command for pool %s on host %d",
+                        answer.getClass().getName(), pool, hostId));
+            }
+
             ModifyStoragePoolAnswer mspAnswer = (ModifyStoragePoolAnswer) answer;
             StoragePoolInfo poolInfo = mspAnswer.getPoolInfo();
             if (poolInfo == null) {
