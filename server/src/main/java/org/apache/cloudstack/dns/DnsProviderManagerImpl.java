@@ -19,6 +19,7 @@ package org.apache.cloudstack.dns;
 
 import static com.cloud.event.EventTypes.EVENT_NIC_CREATE;
 import static com.cloud.event.EventTypes.EVENT_NIC_DELETE;
+import static com.cloud.event.EventTypes.EVENT_NIC_UPDATE;
 import static com.cloud.event.EventTypes.EVENT_VM_UPDATE;
 
 import java.util.ArrayList;
@@ -804,15 +805,13 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 long instanceId = (long) event.get(ApiConstants.INSTANCE_ID);
                 switch (newState) {
                     case Running:
-                        handleVmRunningState(instanceId);
+                        handleVmCreateEvent(instanceId);
                         break;
-                    case Stopped:
                     case Destroyed:
-                        handleVmStopAndDestroy(instanceId);
+                        handleVmDestroyEvent(instanceId);
                         break;
                     default:
                         logger.warn("Ignoring lifecycle event for Instance ID: {}, unsupported state={}", instanceId, newState);
-                        break;
                 }
             } catch (Exception ex) {
                 logger.error("Failed to process Instance lifecycle event", ex);
@@ -835,12 +834,19 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                     logger.warn("Insufficient data to process NIC lifecycle event: {}", args);
                     return;
                 }
-                if (EVENT_NIC_CREATE.equals(eventType)) {
-                    handleNicPlug(instanceId, nicId);
-                } else if (EVENT_NIC_DELETE.equals(eventType)) {
-                    handleNicUnplug(instanceId, nicId);
-                } else {
-                    logger.warn("Ignoring lifecycle event for NIC with ID: {}, unsupported eventType={}", nicId, eventType);
+
+                switch (eventType) {
+                    case EVENT_NIC_CREATE:
+                        handleNicPlug(instanceId, nicId);
+                        break;
+                    case EVENT_NIC_DELETE:
+                        handleNicUnplug(instanceId, nicId);
+                        break;
+                    case EVENT_NIC_UPDATE:
+                        handleNicRefresh(instanceId, nicId);
+                        break;
+                    default:
+                        logger.warn("Ignoring lifecycle event for NIC with ID: {}, unsupported eventType={}", nicId, eventType);
                 }
             } catch (Exception ex) {
                 logger.error("Failed to process NIC lifecycle event", ex);
@@ -876,7 +882,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
     }
 
-    void handleVmRunningState(long instanceId) {
+    void handleVmCreateEvent(long instanceId) {
         VirtualMachine instance = vmInstanceDao.findById(instanceId);
         if (instance == null) {
             logger.debug("Instance is not found for the given ID: {}", instanceId);
@@ -926,7 +932,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
     }
 
-    void handleVmStopAndDestroy(long instanceId) {
+    void handleVmDestroyEvent(long instanceId) {
         List<NicDnsJoinVO> historicalNics = nicDnsJoinDao.listIncludingRemovedByVmId(instanceId);
         if (CollectionUtils.isEmpty(historicalNics)) {
             return;
@@ -1107,6 +1113,11 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         } catch (Exception ex) {
             logger.error("Failed to sync DNS record: {} on NIC unplug ", dnsRecordUrl);
         }
+    }
+
+    private void handleNicRefresh(long instanceId, long nicId) {
+        handleNicUnplug(instanceId, nicId);
+        handleNicPlug(instanceId, nicId);
     }
 
     String prepareDnsRecordUrl(String hostName, String subDomain, String dnsZoneName) {

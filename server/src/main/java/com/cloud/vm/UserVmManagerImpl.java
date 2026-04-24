@@ -18,6 +18,7 @@ package com.cloud.vm;
 
 import static com.cloud.event.EventTypes.EVENT_NIC_CREATE;
 import static com.cloud.event.EventTypes.EVENT_NIC_DELETE;
+import static com.cloud.event.EventTypes.EVENT_NIC_UPDATE;
 import static com.cloud.event.EventTypes.EVENT_VM_UPDATE;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.Functionality;
 import static com.cloud.storage.Volume.IOPS_LIMIT;
@@ -1582,7 +1583,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             event.put(ApiConstants.INSTANCE_ID, instanceId);
             event.put(ApiConstants.ACCOUNT_ID, accountId);
             event.put(ApiConstants.NIC_ID, nicId);
-            event.put(ApiConstants.EVENT_TYPE, eventType); // NIC_CREATE or NIC_DELETE
+            event.put(ApiConstants.EVENT_TYPE, eventType); // NIC.CREATE, NIC.DELETE or NIC.UPDATE
             event.put(ApiConstants.TIME_STAMP, System.currentTimeMillis());
 
             messageBus.publish(_name, Nic.Topics.NIC_LIFECYCLE, PublishScope.GLOBAL, event);
@@ -1965,7 +1966,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.debug("Updating IPv4 address of NIC " + nicVO + " to " + ipaddr + "/" + nicVO.getIPv4Netmask() + " with gateway " + nicVO.getIPv4Gateway());
         nicVO.setIPv4Address(ipaddr);
         _nicDao.persist(nicVO);
-
+        publishNicEventMessageBus(vm.getId(), vm.getAccountId(), nicVO.getId(), EVENT_NIC_UPDATE);
         return vm;
     }
 
@@ -3506,10 +3507,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (cmd.getConsiderLastHost() != null) {
             additonalParams.put(VirtualMachineProfile.Param.ConsiderLastHost, cmd.getConsiderLastHost().toString());
         }
-        UserVmVO vm = _vmDao.findById(cmd.getId());
-        UserVm userVm = startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
-        publishVmLifecycleMessageBus(userVm, vm.getState(), VirtualMachine.State.Running);
-        return userVm;
+
+        return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
     }
 
     @Override
@@ -5785,7 +5784,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 status = vmEntity.stop(Long.toString(userId));
             }
             if (status) {
-                publishVmLifecycleMessageBus(vm, vm.getState(), VirtualMachine.State.Stopped);
                 return _vmDao.findById(vmId);
             } else {
                 return null;
