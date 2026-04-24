@@ -18,5 +18,3 @@
 --;
 -- Schema upgrade cleanup from 4.22.0.0 to 4.22.1.0
 --;
-
-DROP VIEW IF EXISTS `cloud`.`account_netstats_view`;

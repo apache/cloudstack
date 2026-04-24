@@ -78,6 +78,7 @@ import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.cloudstack.gpu.GpuService;
+import org.apache.cloudstack.jsinterpreter.JsInterpreterHelper;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -310,6 +311,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private GpuService gpuService;
     @Inject
     ManagementService managementService;
+    @Inject
+    JsInterpreterHelper jsInterpreterHelper;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -1169,7 +1172,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public boolean deleteHost(final long hostId, final boolean isForced, final boolean isForceDeleteStorage) {
         try {
-            final Boolean result = propagateResourceEvent(hostId, ResourceState.Event.DeleteHost);
+            final Boolean result = propagateResourceEvent(hostId, ResourceState.Event.DeleteHost, isForced, isForceDeleteStorage);
             if (result != null) {
                 return result;
             }
@@ -2818,9 +2821,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
-        managementService.checkJsInterpretationAllowedIfNeededForParameterValue(ApiConstants.IS_TAG_A_RULE,
-                Boolean.TRUE.equals(cmd.getIsTagARule()));
-
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
                 cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false,
                 cmd.getExternalDetails(), cmd.isCleanupExternalDetails());
@@ -2830,6 +2830,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             String url, List<String> hostTags, Boolean isTagARule, String annotation,
             boolean isUpdateFromHostHealthCheck, Map<String, String> externalDetails,
             boolean cleanupExternalDetails) throws NoTransitionException {
+        jsInterpreterHelper.ensureInterpreterEnabledIfParameterProvided(ApiConstants.IS_TAG_A_RULE, Boolean.TRUE.equals(isTagARule));
+
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -3902,13 +3904,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public boolean executeUserRequest(final long hostId, final ResourceState.Event event) {
+    public boolean executeUserRequest(final long hostId, final ResourceState.Event event) throws AgentUnavailableException {
+        return executeUserRequest(hostId, event, false, false);
+    }
+
+    @Override
+    public boolean executeUserRequest(final long hostId, final ResourceState.Event event, final boolean isForced, final boolean isForceDeleteStorage) throws AgentUnavailableException {
         if (event == ResourceState.Event.AdminAskMaintenance) {
             return doMaintain(hostId);
         } else if (event == ResourceState.Event.AdminCancelMaintenance) {
             return doCancelMaintenance(hostId);
         } else if (event == ResourceState.Event.DeleteHost) {
-            return doDeleteHost(hostId, false, false);
+            return doDeleteHost(hostId, isForced, isForceDeleteStorage);
         } else if (event == ResourceState.Event.Unmanaged) {
             return doUmanageHost(hostId);
         } else if (event == ResourceState.Event.UpdatePassword) {
@@ -4028,6 +4035,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     public Boolean propagateResourceEvent(final long agentId, final ResourceState.Event event) throws AgentUnavailableException {
+        return propagateResourceEvent(agentId, event, false, false);
+    }
+
+    public Boolean propagateResourceEvent(final long agentId, final ResourceState.Event event, final boolean isForced, final boolean isForceDeleteStorage) throws AgentUnavailableException {
         final String msPeer = getPeerName(agentId);
         if (msPeer == null) {
             return null;
@@ -4035,7 +4046,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         logger.debug("Propagating resource request event:" + event.toString() + " to agent:" + agentId);
         final Command[] cmds = new Command[1];
-        cmds[0] = new PropagateResourceEventCommand(agentId, event);
+        cmds[0] = new PropagateResourceEventCommand(agentId, event, isForced, isForceDeleteStorage);
 
         final String AnsStr = _clusterMgr.execute(msPeer, agentId, _gson.toJson(cmds), true);
         if (AnsStr == null) {
@@ -4046,6 +4057,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (logger.isDebugEnabled()) {
             logger.debug("Result for agent change is " + answers[0].getResult());
+        }
+
+        if (!answers[0].getResult()) {
+            final String details = answers[0].getDetails();
+            if (details != null && !details.isEmpty()) {
+                throw new CloudRuntimeException(String.format("Failed to propagate resource event %s for host %d on peer %s: %s", event, agentId, msPeer, details));
+            }
         }
 
         return answers[0].getResult();

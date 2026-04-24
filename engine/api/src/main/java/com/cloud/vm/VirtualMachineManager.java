@@ -221,6 +221,8 @@ public interface VirtualMachineManager extends Manager {
 
     Boolean updateDefaultNicForVM(VirtualMachine vm, Nic nic, Nic defaultNic);
 
+    boolean updateVmNic(VirtualMachine vm, Nic nic, Boolean enabled) throws ResourceUnavailableException;
+
     /**
      * @param vm
      * @param network
