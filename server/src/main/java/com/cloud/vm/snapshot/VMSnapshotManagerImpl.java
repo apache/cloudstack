@@ -135,6 +135,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements VMSnapshotManager, VMSnapshotService, VmWorkJobHandler, Configurable {
 
     public static final String VM_WORK_JOB_HANDLER = VMSnapshotManagerImpl.class.getSimpleName();
+    public static final String ONTAP_PLUGIN_NAME = "NetApp ONTAP";
 
     @Inject
     VMInstanceDao _vmInstanceDao;
@@ -392,7 +393,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             if (snapshotStrategy == null) {
                 // Check if this is ONTAP managed storage with memory snapshot request - provide specific error message
                 if (snapshotMemory && rootVolumePool.isManaged() &&
-                        "ONTAP".equals(rootVolumePool.getStorageProviderName())) {
+                        ONTAP_PLUGIN_NAME.equals(rootVolumePool.getStorageProviderName())) {
                     String message = String.format("Memory snapshots (snapshotmemory=true) are not supported for VMs on ONTAP managed storage. " +
                             "Instance [%s] uses ONTAP storage which only supports disk-only (crash-consistent) snapshots. " +
                             "Please use snapshotmemory=false for disk-only snapshots.", userVmVo.getUuid());
