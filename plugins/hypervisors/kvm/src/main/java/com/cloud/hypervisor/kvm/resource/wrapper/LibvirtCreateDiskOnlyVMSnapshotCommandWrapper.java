@@ -111,6 +111,7 @@ public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
             VMSnapshotTO target = cmd.getTarget();
             Pair<String, Map<String, Pair<Long, String>>> snapshotXmlAndVolumeToNewPathMap = createSnapshotXmlAndNewVolumePathMap(volumeObjectTOS, disks, target, resource);
             if (shouldFreezeVmFilesystemsForSnapshot(cmd)) {
+                // The guest-agent freeze flushes guest filesystems; suspend below prevents concurrent UEFI NVRAM writes.
                 freezeVmFilesystems(dm, vmName);
                 filesystemsFrozenByThisWrapper = true;
                 verifyVmFilesystemsFrozen(dm, vmName);
@@ -302,15 +303,9 @@ public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
         return true;
     }
 
-    protected boolean freezeVmFilesystemsIfNeeded(Domain domain, String vmName) throws LibvirtException, IOException {
-        freezeVmFilesystems(domain, vmName);
-        verifyVmFilesystemsFrozen(domain, vmName);
-        return true;
-    }
-
     protected void freezeVmFilesystems(Domain domain, String vmName) throws LibvirtException, IOException {
         String result = getResultOfQemuCommand(FreezeThawVMCommand.FREEZE, domain);
-        if (StringUtils.isBlank(result) || result.startsWith("error")) {
+        if (isQemuAgentErrorResponse(result)) {
             throw new IOException(String.format("Failed to freeze VM [%s] filesystems before taking the disk-only VM snapshot. Result: %s", vmName, result));
         }
     }
@@ -357,13 +352,26 @@ public class LibvirtCreateDiskOnlyVMSnapshotCommandWrapper extends CommandWrappe
     protected boolean thawVmFilesystemsIfNeeded(Domain domain, String vmName) {
         try {
             String result = getResultOfQemuCommand(FreezeThawVMCommand.THAW, domain);
-            if (StringUtils.isBlank(result) || result.startsWith("error")) {
+            if (isQemuAgentErrorResponse(result)) {
                 logger.warn("Failed to thaw VM [{}] filesystems after taking the disk-only VM snapshot. Result: {}", vmName, result);
                 return false;
             }
             return true;
         } catch (LibvirtException e) {
             logger.warn("Failed to thaw VM [{}] filesystems after taking the disk-only VM snapshot.", vmName, e);
+            return false;
+        }
+    }
+
+    protected boolean isQemuAgentErrorResponse(String result) {
+        if (StringUtils.isBlank(result) || result.startsWith("error")) {
+            return true;
+        }
+
+        try {
+            JsonElement resultElement = new JsonParser().parse(result);
+            return resultElement.isJsonObject() && resultElement.getAsJsonObject().has("error");
+        } catch (RuntimeException e) {
             return false;
         }
     }

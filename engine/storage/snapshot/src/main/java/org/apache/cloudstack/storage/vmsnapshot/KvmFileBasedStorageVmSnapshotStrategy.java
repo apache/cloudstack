@@ -34,6 +34,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
@@ -134,7 +135,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         logger.info("Starting VM snapshot delete process for snapshot [{}].", vmSnapshot.getUuid());
         UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
         VMSnapshotVO vmSnapshotBeingDeleted = (VMSnapshotVO) vmSnapshot;
-        Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshotBeingDeleted.getVmId());
+        Long hostId = pickHostForNvramSidecarCleanup(vmSnapshotBeingDeleted, userVm, "delete");
         validateHostSupportsNvramSidecarCleanup(vmSnapshotBeingDeleted, hostId, "delete");
         long virtualSize = 0;
         boolean isCurrent = vmSnapshotBeingDeleted.getCurrent();
@@ -197,7 +198,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
         }
 
         VMSnapshotVO vmSnapshotBeingReverted = (VMSnapshotVO) vmSnapshot;
-        Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshotBeingReverted.getVmId());
+        Long hostId = pickHostForUefiNvramAwareDiskOnlySnapshot(userVm, "revert");
         validateHostSupportsUefiNvramAwareDiskOnlySnapshots(hostId, userVm, "revert");
 
         transitStateWithoutThrow(vmSnapshotBeingReverted, VMSnapshot.Event.RevertRequested);
@@ -229,7 +230,9 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_REVERT, vmSnapshotBeingReverted, userVm, volumeObjectTo);
         }
 
-        if (isUefiVm(userVm)) {
+        if (isUefiVm(userVm) && !Objects.equals(userVm.getLastHostId(), hostId)) {
+            logger.debug("Updating last host of UEFI VM [{}] to [{}] after disk-only snapshot revert because the NVRAM state was restored on that host.",
+                    userVm.getUuid(), hostId);
             userVm.setLastHostId(hostId);
             userVmDao.update(userVm.getId(), userVm);
         }
@@ -409,7 +412,6 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
             return;
         }
 
-        validateHostSupportsNvramSidecarCleanup(vmSnapshotVO, hostId, "delete");
         DeleteDiskOnlyVmSnapshotCommand deleteSnapshotCommand = new DeleteDiskOnlyVmSnapshotCommand(List.of(), nvramSnapshotPath, primaryDataStore);
         Answer answer = agentMgr.easySend(hostId, deleteSnapshotCommand);
         if (answer == null || !answer.getResult()) {
@@ -520,7 +522,7 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         logger.info("Starting disk-only VM snapshot process for VM [{}].", userVm.getUuid());
 
-        Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
+        Long hostId = pickHostForUefiNvramAwareDiskOnlySnapshot(userVm, "create");
         validateHostSupportsUefiNvramAwareDiskOnlySnapshots(hostId, userVm, "create");
         VMSnapshotVO vmSnapshotVO = (VMSnapshotVO) vmSnapshot;
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
@@ -758,6 +760,97 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
     protected String getNvramSnapshotPath(VMSnapshotVO vmSnapshot) {
         VMSnapshotDetailsVO nvramDetail = vmSnapshotDetailsDao.findDetail(vmSnapshot.getId(), KVM_FILE_BASED_STORAGE_SNAPSHOT_NVRAM);
         return nvramDetail != null ? nvramDetail.getValue() : null;
+    }
+
+    protected Long pickHostForUefiNvramAwareDiskOnlySnapshot(UserVm userVm, String operation) {
+        Long selectedHostId = vmSnapshotHelper.pickRunningHost(userVm.getId());
+        if (!isUefiVm(userVm)) {
+            return selectedHostId;
+        }
+
+        boolean isCreate = "create".equals(operation);
+        if (isCreate) {
+            validateUefiSnapshotCreateHostOwnsActiveNvram(userVm, selectedHostId);
+        }
+
+        return pickHostWithRequiredCapabilities(userVm, selectedHostId, operation, !isCreate,
+                List.of(Host.HOST_UEFI_ENABLE, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM));
+    }
+
+    protected void validateUefiSnapshotCreateHostOwnsActiveNvram(UserVm userVm, Long selectedHostId) {
+        if (VirtualMachine.State.Running.equals(userVm.getState())) {
+            return;
+        }
+
+        Long lastHostId = userVm.getLastHostId();
+        if (lastHostId == null || !Objects.equals(lastHostId, selectedHostId)) {
+            throw new CloudRuntimeException(String.format("Cannot create a disk-only snapshot for stopped UEFI VM [%s] on host [%s] because the active NVRAM "
+                    + "state is expected on last host [%s]. Make the last host available or start the VM on a UEFI-capable KVM host before retrying.",
+                    userVm.getUuid(), selectedHostId, lastHostId));
+        }
+    }
+
+    protected Long pickHostForNvramSidecarCleanup(VMSnapshotVO vmSnapshotVO, UserVm userVm, String operation) {
+        Long selectedHostId = vmSnapshotHelper.pickRunningHost(vmSnapshotVO.getVmId());
+        if (StringUtils.isBlank(getNvramSnapshotPath(vmSnapshotVO))) {
+            return selectedHostId;
+        }
+
+        return pickHostWithRequiredCapabilities(userVm, selectedHostId, operation, true, List.of(Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM));
+    }
+
+    protected Long pickHostWithRequiredCapabilities(UserVm userVm, Long selectedHostId, String operation, boolean canFallbackFromSelectedHost,
+            List<String> requiredCapabilities) {
+        if (hostSupportsCapabilities(selectedHostId, requiredCapabilities)) {
+            return selectedHostId;
+        }
+
+        if (VirtualMachine.State.Running.equals(userVm.getState()) || !canFallbackFromSelectedHost) {
+            return selectedHostId;
+        }
+
+        return listCandidateHostsForVmSnapshot(userVm).stream()
+                .filter(host -> hostSupportsCapabilities(host.getId(), requiredCapabilities))
+                .findFirst()
+                .map(HostVO::getId)
+                .orElseThrow(() -> new CloudRuntimeException(String.format("Cannot %s disk-only snapshot state for VM [%s] because no Up and Enabled host in the "
+                        + "VM storage scope advertises [%s].", operation, userVm.getUuid(), String.join(", ", requiredCapabilities))));
+    }
+
+    protected List<HostVO> listCandidateHostsForVmSnapshot(UserVm userVm) {
+        List<VolumeVO> volumes = volumeDao.findByInstance(userVm.getId());
+        if (CollectionUtils.isEmpty(volumes)) {
+            throw new CloudRuntimeException(String.format("Cannot find a host for VM snapshot operation because VM [%s] has no volumes.", userVm.getUuid()));
+        }
+
+        VolumeVO volume = volumes.stream()
+                .filter(volumeVO -> Volume.Type.ROOT.equals(volumeVO.getVolumeType()))
+                .findFirst()
+                .orElse(volumes.get(0));
+        Long poolId = volume.getPoolId();
+        if (poolId == null) {
+            throw new CloudRuntimeException(String.format("Cannot find a host for VM snapshot operation because volume [%s] has no pool.", volume.getUuid()));
+        }
+
+        StoragePoolVO storagePoolVO = storagePool.findById(poolId);
+        if (storagePoolVO == null) {
+            throw new CloudRuntimeException(String.format("Cannot find a host for VM snapshot operation because storage pool [%s] was not found.", poolId));
+        }
+
+        List<HostVO> hosts = hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, storagePoolVO.getClusterId(), storagePoolVO.getPodId(),
+                storagePoolVO.getDataCenterId(), null);
+        if (CollectionUtils.isEmpty(hosts)) {
+            throw new CloudRuntimeException(String.format("Cannot find a host for VM snapshot operation because no Up and Enabled host was found in storage pool [%s] scope.",
+                    storagePoolVO.getUuid()));
+        }
+        return hosts;
+    }
+
+    protected boolean hostSupportsCapabilities(Long hostId, List<String> requiredCapabilities) {
+        if (hostId == null || CollectionUtils.isEmpty(requiredCapabilities)) {
+            return false;
+        }
+        return requiredCapabilities.stream().allMatch(capability -> isHostCapabilityEnabled(hostId, capability));
     }
 
     protected void validateHostSupportsUefiNvramAwareDiskOnlySnapshots(Long hostId, UserVm userVm, String operation) {
