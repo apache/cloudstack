@@ -399,7 +399,7 @@ public class LibvirtDiskOnlyVMSnapshotCommandWrapperTest {
     }
 
     @Test
-    public void testFreezeVmFilesystemsIfNeededSucceedsWhenGuestAgentReportsFrozen() throws Exception {
+    public void testFreezeAndVerifyVmFilesystemsSucceedsWhenGuestAgentReportsFrozen() throws Exception {
         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper() {
             @Override
             protected String getResultOfQemuCommand(String cmd, Domain domain) {
@@ -410,7 +410,38 @@ public class LibvirtDiskOnlyVMSnapshotCommandWrapperTest {
             }
         };
 
-        assertTrue(wrapper.freezeVmFilesystemsIfNeeded(mock(Domain.class), "vm-name"));
+        Domain domain = mock(Domain.class);
+        wrapper.freezeVmFilesystems(domain, "vm-name");
+        wrapper.verifyVmFilesystemsFrozen(domain, "vm-name");
+    }
+
+    @Test
+    public void testFreezeVmFilesystemsFailsForQemuErrorResponse() throws Exception {
+        LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper() {
+            @Override
+            protected String getResultOfQemuCommand(String cmd, Domain domain) {
+                return "{\"error\":{\"class\":\"GenericError\",\"desc\":\"guest agent failure\"}}";
+            }
+        };
+
+        try {
+            wrapper.freezeVmFilesystems(mock(Domain.class), "vm-name");
+            fail("QEMU guest agent error responses must be treated as freeze failures.");
+        } catch (IOException e) {
+            assertTrue(e.getMessage().contains("Failed to freeze VM [vm-name] filesystems"));
+        }
+    }
+
+    @Test
+    public void testThawVmFilesystemsFailsForQemuErrorResponse() {
+        LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper() {
+            @Override
+            protected String getResultOfQemuCommand(String cmd, Domain domain) {
+                return "{\"error\":{\"class\":\"GenericError\",\"desc\":\"guest agent failure\"}}";
+            }
+        };
+
+        assertFalse(wrapper.thawVmFilesystemsIfNeeded(mock(Domain.class), "vm-name"));
     }
 
     @Test

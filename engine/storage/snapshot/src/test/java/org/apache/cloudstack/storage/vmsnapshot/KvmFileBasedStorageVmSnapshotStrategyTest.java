@@ -38,8 +38,10 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -58,9 +60,12 @@ import com.cloud.agent.api.storage.RevertDiskOnlyVmSnapshotCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.uservm.UserVm;
@@ -85,6 +90,8 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
     private AgentManager agentMgr;
     private SnapshotDataStoreDao snapshotDataStoreDao;
     private HostDetailsDao hostDetailsDao;
+    private HostDao hostDao;
+    private PrimaryDataStoreDao storagePoolDao;
 
     @Before
     public void setup() {
@@ -95,12 +102,16 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         agentMgr = mock(AgentManager.class);
         snapshotDataStoreDao = mock(SnapshotDataStoreDao.class);
         hostDetailsDao = mock(HostDetailsDao.class);
+        hostDao = mock(HostDao.class);
+        storagePoolDao = mock(PrimaryDataStoreDao.class);
 
         strategy.vmSnapshotDetailsDao = vmSnapshotDetailsDao;
         strategy.vmSnapshotDao = vmSnapshotDao;
         strategy.vmSnapshotHelper = vmSnapshotHelper;
         strategy.agentMgr = agentMgr;
         strategy.snapshotDataStoreDao = snapshotDataStoreDao;
+        strategy.hostDao = hostDao;
+        strategy.storagePool = storagePoolDao;
         strategy.resourceLimitManager = mock(ResourceLimitService.class);
         strategy.snapshotDataFactory = mock(SnapshotDataFactory.class);
         strategy.userVmDao = mock(UserVmDao.class);
@@ -155,6 +166,7 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         when(userVm.getName()).thenReturn("i-10-VM");
         when(userVm.getUuid()).thenReturn("vm-uuid");
         when(userVm.getId()).thenReturn(vmId);
+        when(userVm.getLastHostId()).thenReturn(39L);
         when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
         when(strategy.vmInstanceDetailsDao.findDetail(vmId, ApiConstants.BootType.UEFI.toString()))
                 .thenReturn(new VMInstanceDetailVO(vmId, ApiConstants.BootType.UEFI.toString(), "SECURE", true));
@@ -187,6 +199,74 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
     }
 
     @Test
+    public void testPickHostForUefiNvramAwareDiskOnlySnapshotUsesCapableCandidateForRevertWhenDefaultHostLacksSupport() {
+        long vmId = 10L;
+        long defaultHostId = 40L;
+        long capableHostId = 41L;
+        long poolId = 50L;
+        long clusterId = 60L;
+        long podId = 70L;
+        long dataCenterId = 80L;
+
+        UserVmVO userVm = mock(UserVmVO.class);
+        VolumeVO rootVolume = mock(VolumeVO.class);
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+        HostVO defaultHost = mock(HostVO.class);
+        HostVO capableHost = mock(HostVO.class);
+
+        when(userVm.getId()).thenReturn(vmId);
+        when(userVm.getUuid()).thenReturn("vm-uuid");
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(strategy.vmInstanceDetailsDao.findDetail(vmId, ApiConstants.BootType.UEFI.toString()))
+                .thenReturn(new VMInstanceDetailVO(vmId, ApiConstants.BootType.UEFI.toString(), "SECURE", true));
+        when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(defaultHostId);
+        when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(rootVolume.getPoolId()).thenReturn(poolId);
+        when(strategy.volumeDao.findByInstance(vmId)).thenReturn(List.of(rootVolume));
+        when(storagePoolDao.findById(poolId)).thenReturn(storagePool);
+        when(storagePool.getClusterId()).thenReturn(clusterId);
+        when(storagePool.getPodId()).thenReturn(podId);
+        when(storagePool.getDataCenterId()).thenReturn(dataCenterId);
+        when(defaultHost.getId()).thenReturn(defaultHostId);
+        when(capableHost.getId()).thenReturn(capableHostId);
+        when(hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterId, podId, dataCenterId, null))
+                .thenReturn(List.of(defaultHost, capableHost));
+        when(hostDetailsDao.findDetail(defaultHostId, Host.HOST_UEFI_ENABLE)).thenReturn(null);
+        when(hostDetailsDao.findDetail(defaultHostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM)).thenReturn(null);
+        when(hostDetailsDao.findDetail(capableHostId, Host.HOST_UEFI_ENABLE))
+                .thenReturn(new DetailVO(capableHostId, Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString()));
+        when(hostDetailsDao.findDetail(capableHostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM))
+                .thenReturn(new DetailVO(capableHostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString()));
+
+        Long hostId = strategy.pickHostForUefiNvramAwareDiskOnlySnapshot(userVm, "revert");
+
+        assertEquals(Long.valueOf(capableHostId), hostId);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testPickHostForUefiNvramAwareDiskOnlySnapshotFailsCreateWhenSelectedHostIsNotLastHost() {
+        long vmId = 10L;
+        long lastHostId = 39L;
+        long selectedHostId = 40L;
+
+        UserVmVO userVm = mock(UserVmVO.class);
+
+        when(userVm.getId()).thenReturn(vmId);
+        when(userVm.getUuid()).thenReturn("vm-uuid");
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(userVm.getLastHostId()).thenReturn(lastHostId);
+        when(strategy.vmInstanceDetailsDao.findDetail(vmId, ApiConstants.BootType.UEFI.toString()))
+                .thenReturn(new VMInstanceDetailVO(vmId, ApiConstants.BootType.UEFI.toString(), "SECURE", true));
+        when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(selectedHostId);
+        when(hostDetailsDao.findDetail(selectedHostId, Host.HOST_UEFI_ENABLE))
+                .thenReturn(new DetailVO(selectedHostId, Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString()));
+        when(hostDetailsDao.findDetail(selectedHostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM))
+                .thenReturn(new DetailVO(selectedHostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString()));
+
+        strategy.pickHostForUefiNvramAwareDiskOnlySnapshot(userVm, "create");
+    }
+
+    @Test
     public void testDeleteNvramSnapshotIfNeededPassesPrimaryDataStoreToAgentCommand() {
         long hostId = 40L;
 
@@ -216,12 +296,11 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testDeleteNvramSnapshotIfNeededFailsWhenHostLacksNvramAwareCleanupCapability() {
+    public void testValidateHostSupportsNvramSidecarCleanupFailsWhenHostLacksNvramAwareCleanupCapability() {
         long hostId = 40L;
 
         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
         VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(20L, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
-        PrimaryDataStoreTO primaryDataStore = mock(PrimaryDataStoreTO.class);
 
         when(vmSnapshot.getId()).thenReturn(20L);
         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
@@ -229,7 +308,7 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         when(hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM)).thenReturn(null);
 
         try {
-            strategy.deleteNvramSnapshotIfNeeded(vmSnapshot, hostId, primaryDataStore);
+            strategy.validateHostSupportsNvramSidecarCleanup(vmSnapshot, hostId, "delete");
         } finally {
             verify(agentMgr, never()).easySend(eq(hostId), any());
         }
@@ -294,6 +373,7 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         when(vmSnapshot.getVmId()).thenReturn(vmId);
         when(userVm.getId()).thenReturn(vmId);
         when(userVm.getUuid()).thenReturn("vm-uuid");
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
         when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
         when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
         when(strategy.vmInstanceDetailsDao.findDetail(vmId, ApiConstants.BootType.UEFI.toString()))
@@ -318,6 +398,7 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         when(vmSnapshot.getVmId()).thenReturn(vmId);
         when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
         when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
         when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
         when(vmSnapshotDetailsDao.findDetail(vmSnapshotId, "kvmFileBasedStorageSnapshotNvram")).thenReturn(nvramDetail);
@@ -337,6 +418,7 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         when(vmSnapshot.getVmId()).thenReturn(vmId);
         when(userVm.getId()).thenReturn(vmId);
         when(userVm.getUuid()).thenReturn("vm-uuid");
+        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
         when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
         when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
         when(strategy.vmInstanceDetailsDao.findDetail(vmId, ApiConstants.BootType.UEFI.toString()))
@@ -362,6 +444,7 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         when(userVm.getState()).thenReturn(VirtualMachine.State.Stopped);
         when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
         when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
+        mockCandidateHostScope(vmId, hostId);
         when(strategy.vmInstanceDetailsDao.findDetail(vmId, ApiConstants.BootType.UEFI.toString()))
                 .thenReturn(new VMInstanceDetailVO(vmId, ApiConstants.BootType.UEFI.toString(), "SECURE", true));
         when(hostDetailsDao.findDetail(hostId, Host.HOST_UEFI_ENABLE))
@@ -385,6 +468,7 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         when(userVm.getState()).thenReturn(VirtualMachine.State.Stopped);
         when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
         when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
+        mockCandidateHostScope(vmId, hostId);
         when(strategy.vmInstanceDetailsDao.findDetail(vmId, ApiConstants.BootType.UEFI.toString()))
                 .thenReturn(new VMInstanceDetailVO(vmId, ApiConstants.BootType.UEFI.toString(), "SECURE", true));
         when(hostDetailsDao.findDetail(hostId, Host.HOST_UEFI_ENABLE)).thenReturn(null);
@@ -409,5 +493,26 @@ public class KvmFileBasedStorageVmSnapshotStrategyTest {
         strategy.notifyGuestRecoveryIssueIfNeeded(answer, userVm, vmSnapshot);
 
         verify(strategy.alertManager).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_VM_SNAPSHOT), eq(1L), eq(2L), anyString(), anyString());
+    }
+
+    private void mockCandidateHostScope(long vmId, long hostId) {
+        long poolId = 50L;
+        long clusterId = 60L;
+        long podId = 70L;
+        long dataCenterId = 80L;
+
+        VolumeVO rootVolume = mock(VolumeVO.class);
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+        HostVO host = mock(HostVO.class);
+
+        when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+        when(rootVolume.getPoolId()).thenReturn(poolId);
+        when(strategy.volumeDao.findByInstance(vmId)).thenReturn(List.of(rootVolume));
+        when(storagePoolDao.findById(poolId)).thenReturn(storagePool);
+        when(storagePool.getClusterId()).thenReturn(clusterId);
+        when(storagePool.getPodId()).thenReturn(podId);
+        when(storagePool.getDataCenterId()).thenReturn(dataCenterId);
+        when(host.getId()).thenReturn(hostId);
+        when(hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterId, podId, dataCenterId, null)).thenReturn(List.of(host));
     }
 }
