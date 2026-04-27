@@ -90,7 +90,7 @@ public class LibvirtMigrateSnapshotsBetweenSecondaryStoragesCommandWrapper exten
                     logger.debug("Migrating snapshot [{}] to destination storage pool [{}].", snapshot.getId(), destImagePool.getUuid());
                     parentSnapshotPath = copyResourceToDestDataStore(snapshot, resourceCurrentPath, destImagePool, parentSnapshotPath);
                     parentSnapshotWasMigrated = !parentSnapshotPath.equals(resourceCurrentPath);
-                    logger.debug("Snapshot [{}] migrated successfully. New parent path: [{}].", snapshot.getId(), parentSnapshotPath);
+                    logger.debug("Snapshot [{}] migrated successfully. New path: [{}].", snapshot.getId(), parentSnapshotPath);
                 } else {
                     if (parentSnapshotWasMigrated) {
                         logger.debug("Rebasing snapshot [{}] to new parent path: [{}].", snapshot.getId(), parentSnapshotPath);
