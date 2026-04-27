@@ -1129,11 +1129,9 @@ public class DnsProviderManagerImplTest {
     @Test
     public void testHandleNicPlugVmNotRunningExitsEarly() throws DnsProviderException {
         com.cloud.vm.VMInstanceVO instanceMock = mock(com.cloud.vm.VMInstanceVO.class);
-        when(instanceMock.getState()).thenReturn(com.cloud.vm.VirtualMachine.State.Stopped);
+        when(instanceMock.getState()).thenReturn(VirtualMachine.State.Destroyed);
         when(vmInstanceDao.findById(33L)).thenReturn(instanceMock);
-
         manager.handleNicPlug(33L, 500L);
-
         verify(nicDnsJoinDao, never()).findById(anyLong());
         verify(dnsProviderMock, never()).addRecord(any(), any(), any());
     }

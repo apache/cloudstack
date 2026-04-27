@@ -23,6 +23,7 @@ import static com.cloud.event.EventTypes.EVENT_NIC_UPDATE;
 import static com.cloud.event.EventTypes.EVENT_VM_UPDATE;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -141,6 +142,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     VMInstanceDao vmInstanceDao;
     @Inject
     NicDnsJoinDao nicDnsJoinDao;
+
+    private static final Set<VirtualMachine.State> VM_ALLOWED_STATES = EnumSet.of(VirtualMachine.State.Running, VirtualMachine.State.Stopped);
 
     private DnsProvider getProviderByType(DnsProviderType type) {
         if (type == null) {
@@ -1056,7 +1059,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
     void handleNicPlug(long instanceId, long nicId) {
         VirtualMachine instance = vmInstanceDao.findById(instanceId);
-        if (instance == null || instance.getState() != VirtualMachine.State.Running) {
+        if (instance == null || !VM_ALLOWED_STATES.contains(instance.getState())) {
             return;
         }
         NicDnsJoinVO nic = nicDnsJoinDao.findById(nicId);
