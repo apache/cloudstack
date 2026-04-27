@@ -236,13 +236,11 @@
   <bean id="volumeStatsDaoImpl" class="com.cloud.storage.dao.VolumeStatsDaoImpl" />
   <bean id="vpcDaoImpl" class="com.cloud.network.vpc.dao.VpcDaoImpl" />
   <bean id="vpcGatewayDaoImpl" class="com.cloud.network.vpc.dao.VpcGatewayDaoImpl" />
-  <bean id="vpcOfferingDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingDaoImpl" />
   <bean id="vpcOfferingJoinDaoImpl" class="com.cloud.api.query.dao.VpcOfferingJoinDaoImpl" />
   <bean id="vpcOfferingServiceMapDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingServiceMapDaoImpl" />
   <bean id="vpcServiceMapDaoImpl" class="com.cloud.network.vpc.dao.VpcServiceMapDaoImpl" />
   <bean id="vpnUserDaoImpl" class="com.cloud.network.dao.VpnUserDaoImpl" />
   <bean id="applicationLbRuleDaoImpl" class="org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDaoImpl" />
-  <bean id="vpcOfferingDetailsDaoImpl" class="com.cloud.network.vpc.dao.VpcOfferingDetailsDaoImpl"/>
   <bean id="networkDetailsDaoImpl" class="com.cloud.network.dao.NetworkDetailsDaoImpl" />
   <bean id="tungstenGuestNetworkIpAddressDaoImpl" class="com.cloud.network.dao.TungstenGuestNetworkIpAddressDaoImpl"/>
   <bean id="tungstenSecurityGroupRuleDaoImpl" class="com.cloud.network.security.dao.TungstenSecurityGroupRuleDaoImpl"/>
