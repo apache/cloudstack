@@ -693,24 +693,244 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException(String.format("Unable to find a running KVM host in zone %d to delete backup %s", backup.getZoneId(), backup.getUuid()));
         }
 
-        DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
-                backupRepository.getAddress(), backupRepository.getMountOptions());
+        // Repair the chain (if any) before removing the backup file. For chained backups,
+        // children that point at this backup must be re-pointed at this backup's parent
+        // (with their blocks merged via qemu-img rebase). For a full at the head of a chain
+        // with surviving children, refuse unless forced — `forced=true` then deletes the
+        // full plus every descendant.
+        ChainRepairPlan plan = computeChainRepair(backup, forced);
+        if (!plan.proceed) {
+            throw new CloudRuntimeException(plan.reason);
+        }
 
-        BackupAnswer answer;
+        // Issue rebase commands for each child that needs re-pointing (ordered so each rebase
+        // operates on a chain that still resolves: children first if there are nested ones).
+        for (RebaseStep step : plan.rebaseSteps) {
+            RebaseBackupCommand rebase = new RebaseBackupCommand(step.targetMountRelativePath,
+                    step.newBackingMountRelativePath, backupRepository.getType(),
+                    backupRepository.getAddress(), backupRepository.getMountOptions());
+            BackupAnswer rebaseAnswer;
+            try {
+                rebaseAnswer = (BackupAnswer) agentManager.send(host.getId(), rebase);
+            } catch (AgentUnavailableException e) {
+                throw new CloudRuntimeException("Unable to contact backend control plane to repair backup chain");
+            } catch (OperationTimedoutException e) {
+                throw new CloudRuntimeException("Backup chain repair (rebase) timed out, please try again");
+            }
+            if (rebaseAnswer == null || !rebaseAnswer.getResult()) {
+                throw new CloudRuntimeException(String.format(
+                        "Backup chain repair failed: rebase of %s onto %s returned %s",
+                        step.targetMountRelativePath, step.newBackingMountRelativePath,
+                        rebaseAnswer == null ? "no answer" : rebaseAnswer.getDetails()));
+            }
+            // Update the rebased child's parent reference + position in backup_details.
+            BackupDetailVO parentDetail = backupDetailsDao.findDetail(step.childBackupId, NASBackupChainKeys.PARENT_BACKUP_ID);
+            if (parentDetail != null) {
+                parentDetail.setValue(step.newParentUuid == null ? "" : step.newParentUuid);
+                backupDetailsDao.update(parentDetail.getId(), parentDetail);
+            } else if (step.newParentUuid != null) {
+                backupDetailsDao.persist(new BackupDetailVO(step.childBackupId,
+                        NASBackupChainKeys.PARENT_BACKUP_ID, step.newParentUuid, true));
+            }
+            BackupDetailVO posDetail = backupDetailsDao.findDetail(step.childBackupId, NASBackupChainKeys.CHAIN_POSITION);
+            if (posDetail != null) {
+                posDetail.setValue(String.valueOf(step.newChainPosition));
+                backupDetailsDao.update(posDetail.getId(), posDetail);
+            }
+        }
+
+        // Now delete this backup's files. For a forced delete of a full with descendants we
+        // also delete all descendants' files (newest first so each rm targets a leaf).
+        for (Backup victim : plan.toDelete) {
+            DeleteBackupCommand command = new DeleteBackupCommand(victim.getExternalId(), backupRepository.getType(),
+                    backupRepository.getAddress(), backupRepository.getMountOptions());
+            BackupAnswer answer;
+            try {
+                answer = (BackupAnswer) agentManager.send(host.getId(), command);
+            } catch (AgentUnavailableException e) {
+                throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
+            } catch (OperationTimedoutException e) {
+                throw new CloudRuntimeException("Operation to delete backup timed out, please try again");
+            }
+            if (answer == null || !answer.getResult()) {
+                logger.warn("Failed to delete backup file for {} ({}); leaving DB row intact", victim.getUuid(), victim.getExternalId());
+                return false;
+            }
+            backupDao.remove(victim.getId());
+        }
+
+        // Shift chain_position down by 1 for any survivors deeper in the chain than the
+        // backup we just removed (their direct parent reference is unchanged, but their
+        // numeric position needs to stay consistent so future full-every cadence math works).
+        if (plan.shiftPositionsBelow != null) {
+            for (Backup b : backupDao.listByVmId(null, backup.getVmId())) {
+                if (!plan.shiftPositionsBelow.chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
+                    continue;
+                }
+                int pos = chainPosition(b);
+                if (pos > plan.shiftPositionsBelow.afterPosition && pos != Integer.MAX_VALUE) {
+                    BackupDetailVO posDetail = backupDetailsDao.findDetail(b.getId(), NASBackupChainKeys.CHAIN_POSITION);
+                    if (posDetail != null) {
+                        posDetail.setValue(String.valueOf(pos - 1));
+                        backupDetailsDao.update(posDetail.getId(), posDetail);
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static final class PositionShift {
+        final String chainId;
+        final int afterPosition; // shift positions strictly greater than this by -1
+        PositionShift(String chainId, int afterPosition) {
+            this.chainId = chainId;
+            this.afterPosition = afterPosition;
+        }
+    }
+
+    /**
+     * Result of {@link #computeChainRepair}: whether to proceed, what to rebase, what to delete.
+     */
+    private static final class ChainRepairPlan {
+        final boolean proceed;
+        final String reason;
+        final List<RebaseStep> rebaseSteps;
+        final List<Backup> toDelete;
+        final PositionShift shiftPositionsBelow;
+
+        private ChainRepairPlan(boolean proceed, String reason, List<RebaseStep> rebaseSteps, List<Backup> toDelete,
+                                PositionShift shiftPositionsBelow) {
+            this.proceed = proceed;
+            this.reason = reason;
+            this.rebaseSteps = rebaseSteps;
+            this.toDelete = toDelete;
+            this.shiftPositionsBelow = shiftPositionsBelow;
+        }
+
+        static ChainRepairPlan refuse(String reason) {
+            return new ChainRepairPlan(false, reason, Collections.emptyList(), Collections.emptyList(), null);
+        }
+
+        static ChainRepairPlan proceed(List<RebaseStep> rebaseSteps, List<Backup> toDelete) {
+            return new ChainRepairPlan(true, null, rebaseSteps, toDelete, null);
+        }
+
+        static ChainRepairPlan proceed(List<RebaseStep> rebaseSteps, List<Backup> toDelete, PositionShift shift) {
+            return new ChainRepairPlan(true, null, rebaseSteps, toDelete, shift);
+        }
+    }
+
+    private static final class RebaseStep {
+        final long childBackupId;
+        final String targetMountRelativePath;
+        final String newBackingMountRelativePath;
+        final String newParentUuid;        // null when re-pointed onto an existing full's UUID is desired but unavailable
+        final int newChainPosition;
+
+        RebaseStep(long childBackupId, String targetMountRelativePath, String newBackingMountRelativePath,
+                   String newParentUuid, int newChainPosition) {
+            this.childBackupId = childBackupId;
+            this.targetMountRelativePath = targetMountRelativePath;
+            this.newBackingMountRelativePath = newBackingMountRelativePath;
+            this.newParentUuid = newParentUuid;
+            this.newChainPosition = newChainPosition;
+        }
+    }
+
+    /**
+     * Compute the chain-repair plan for deleting {@code backup}. Conservative semantics:
+     *   - Backups outside any tracked chain (no NAS chain metadata) are deleted as-is.
+     *   - A standalone backup with no children is deleted as-is.
+     *   - A middle incremental: rebase its immediate child onto its own parent, then delete it.
+     *     Descendants of that child are unaffected (their backing chain still resolves).
+     *   - A full with surviving descendants: refuse unless {@code forced=true}; then delete
+     *     full + every descendant (newest first).
+     */
+    private ChainRepairPlan computeChainRepair(Backup backup, boolean forced) {
+        String chainId = readDetail(backup, NASBackupChainKeys.CHAIN_ID);
+        if (chainId == null) {
+            // Pre-incremental backups (or callers that never wrote chain metadata) — single delete.
+            return ChainRepairPlan.proceed(Collections.emptyList(), Collections.singletonList(backup));
+        }
+
+        // Gather every backup in the same chain for this VM.
+        List<Backup> chain = new ArrayList<>();
+        for (Backup b : backupDao.listByVmId(null, backup.getVmId())) {
+            if (chainId.equals(readDetail(b, NASBackupChainKeys.CHAIN_ID))) {
+                chain.add(b);
+            }
+        }
+        chain.sort(Comparator.comparingInt(b -> chainPosition(b)));
+
+        int targetPos = chainPosition(backup);
+        boolean isFull = targetPos == 0;
+        List<Backup> descendants = chain.stream()
+                .filter(b -> chainPosition(b) > targetPos)
+                .collect(Collectors.toList());
+
+        if (isFull) {
+            if (descendants.isEmpty()) {
+                return ChainRepairPlan.proceed(Collections.emptyList(), Collections.singletonList(backup));
+            }
+            if (!forced) {
+                return ChainRepairPlan.refuse(String.format(
+                        "Backup %s is the full anchor of a chain with %d incremental(s). Delete the incrementals first, " +
+                                "or pass forced=true to remove the entire chain.",
+                        backup.getUuid(), descendants.size()));
+            }
+            // Forced delete: remove descendants newest first, then the full.
+            List<Backup> victims = new ArrayList<>(descendants);
+            victims.sort(Comparator.comparingInt((Backup b) -> chainPosition(b)).reversed());
+            victims.add(backup);
+            return ChainRepairPlan.proceed(Collections.emptyList(), victims);
+        }
+
+        // Middle (or tail) incremental.
+        if (descendants.isEmpty()) {
+            // Tail: nothing to rebase, just delete.
+            return ChainRepairPlan.proceed(Collections.emptyList(), Collections.singletonList(backup));
+        }
+
+        // Middle: only the immediate child needs to absorb our blocks and rebase onto our parent.
+        Backup immediateChild = descendants.stream()
+                .min(Comparator.comparingInt(b -> chainPosition(b)))
+                .orElseThrow(() -> new CloudRuntimeException("Internal error: no immediate child found for chain repair"));
+        Backup ourParent = chain.stream()
+                .filter(b -> chainPosition(b) == targetPos - 1)
+                .findFirst()
+                .orElseThrow(() -> new CloudRuntimeException(String.format(
+                        "Cannot delete %s: its parent (chain_position=%d) is missing from the chain",
+                        backup.getUuid(), targetPos - 1)));
+
+        VolumeVO rootVolume = volumeDao.getInstanceRootVolume(backup.getVmId());
+        String volUuid = rootVolume == null ? "root" : rootVolume.getUuid();
+        String childPath = immediateChild.getExternalId() + "/root." + volUuid + ".qcow2";
+        String parentPath = ourParent.getExternalId() + "/root." + volUuid + ".qcow2";
+
+        RebaseStep step = new RebaseStep(immediateChild.getId(), childPath, parentPath,
+                ourParent.getUuid(), chainPosition(immediateChild) - 1);
+
+        // After we delete the middle backup, every descendant's numeric chain_position
+        // becomes stale (off by one). Their backing-file pointers don't need re-writing
+        // (only the immediate child changed parents) but their position metadata does.
+        return ChainRepairPlan.proceed(
+                Collections.singletonList(step),
+                Collections.singletonList(backup),
+                new PositionShift(chainId, targetPos));
+    }
+
+    private int chainPosition(Backup b) {
+        String s = readDetail(b, NASBackupChainKeys.CHAIN_POSITION);
+        if (s == null) {
+            return Integer.MAX_VALUE; // no metadata => sort to end
+        }
         try {
-            answer = (BackupAnswer) agentManager.send(host.getId(), command);
-        } catch (AgentUnavailableException e) {
-            throw new CloudRuntimeException("Unable to contact backend control plane to initiate backup");
-        } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Operation to delete backup timed out, please try again");
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            return Integer.MAX_VALUE;
         }
-
-        if (answer != null && answer.getResult()) {
-            return backupDao.remove(backup.getId());
-        }
-
-        logger.debug("There was an error removing the backup with id {}", backup.getId());
-        return false;
     }
 
     public void syncBackupMetrics(Long zoneId) {
