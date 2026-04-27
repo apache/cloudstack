@@ -69,8 +69,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             }
         }
 
-        List<String[]> commands = new ArrayList<>();
-        commands.add(new String[]{
+        List<String> argv = new ArrayList<>(Arrays.asList(
                 libvirtComputingResource.getNasBackupPath(),
                 "-o", "backup",
                 "-v", vmName,
@@ -80,7 +79,27 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
                 "-p", backupPath,
                 "-q", command.getQuiesce() != null && command.getQuiesce() ? "true" : "false",
                 "-d", diskPaths.isEmpty() ? "" : String.join(",", diskPaths)
-        });
+        ));
+        // Incremental NAS backup args (only added when the orchestrator asked for full/inc mode).
+        if (command.getMode() != null && !command.getMode().isEmpty()) {
+            argv.add("-M");
+            argv.add(command.getMode());
+        }
+        if (command.getBitmapNew() != null && !command.getBitmapNew().isEmpty()) {
+            argv.add("--bitmap-new");
+            argv.add(command.getBitmapNew());
+        }
+        if (command.getBitmapParent() != null && !command.getBitmapParent().isEmpty()) {
+            argv.add("--bitmap-parent");
+            argv.add(command.getBitmapParent());
+        }
+        if (command.getParentPath() != null && !command.getParentPath().isEmpty()) {
+            argv.add("--parent-path");
+            argv.add(command.getParentPath());
+        }
+
+        List<String[]> commands = new ArrayList<>();
+        commands.add(argv.toArray(new String[0]));
 
         Pair<Integer, String> result = Script.executePipedCommands(commands, timeout);
 
@@ -94,21 +113,46 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
             return answer;
         }
 
+        // Strip out our incremental marker lines before parsing size, so the legacy
+        // numeric-suffix parser keeps working.
+        String stdout = result.second().trim();
+        String bitmapCreated = null;
+        boolean incrementalFallback = false;
+        StringBuilder filtered = new StringBuilder();
+        for (String line : stdout.split("\n")) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("BITMAP_CREATED=")) {
+                bitmapCreated = trimmed.substring("BITMAP_CREATED=".length());
+                continue;
+            }
+            if (trimmed.startsWith("INCREMENTAL_FALLBACK=")) {
+                incrementalFallback = true;
+                continue;
+            }
+            if (filtered.length() > 0) {
+                filtered.append("\n");
+            }
+            filtered.append(line);
+        }
+        String numericOutput = filtered.toString().trim();
+
         long backupSize = 0L;
         if (CollectionUtils.isNullOrEmpty(diskPaths)) {
-            List<String> outputLines = Arrays.asList(result.second().trim().split("\n"));
+            List<String> outputLines = Arrays.asList(numericOutput.split("\n"));
             if (!outputLines.isEmpty()) {
                 backupSize = Long.parseLong(outputLines.get(outputLines.size() - 1).trim());
             }
         } else {
-            String[] outputLines = result.second().trim().split("\n");
+            String[] outputLines = numericOutput.split("\n");
             for(String line : outputLines) {
                 backupSize = backupSize + Long.parseLong(line.split(" ")[0].trim());
             }
         }
 
-        BackupAnswer answer = new BackupAnswer(command, true, result.second().trim());
+        BackupAnswer answer = new BackupAnswer(command, true, stdout);
         answer.setSize(backupSize);
+        answer.setBitmapCreated(bitmapCreated);
+        answer.setIncrementalFallback(incrementalFallback);
         return answer;
     }
 }

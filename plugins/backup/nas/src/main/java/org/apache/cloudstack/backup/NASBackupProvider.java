@@ -48,6 +48,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupDetailsDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -140,6 +141,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Inject
     private DiskOfferingDao diskOfferingDao;
 
+    @Inject
+    private BackupDetailsDao backupDetailsDao;
+
     private Long getClusterIdFromRootVolume(VirtualMachine vm) {
         VolumeVO rootVolume = volumeDao.getInstanceRootVolume(vm.getId());
         StoragePoolVO rootDiskPool = primaryDataStoreDao.findById(rootVolume.getPoolId());
@@ -176,6 +180,168 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
         // Try to find any Host in the zone
         return resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, vm.getDataCenterId());
+    }
+
+    /**
+     * Returned by {@link #decideChain(VirtualMachine)} to describe the next backup's place in
+     * the chain: full vs incremental, the bitmap name to create, and (for incrementals) the
+     * parent bitmap and parent file path.
+     */
+    static final class ChainDecision {
+        final String mode;          // "full" or "incremental"
+        final String bitmapNew;
+        final String bitmapParent;  // null for full
+        final String parentPath;    // null for full
+        final String chainId;       // chain identifier this backup belongs to
+        final int chainPosition;    // 0 for full, N for the Nth incremental in the chain
+
+        private ChainDecision(String mode, String bitmapNew, String bitmapParent, String parentPath,
+                              String chainId, int chainPosition) {
+            this.mode = mode;
+            this.bitmapNew = bitmapNew;
+            this.bitmapParent = bitmapParent;
+            this.parentPath = parentPath;
+            this.chainId = chainId;
+            this.chainPosition = chainPosition;
+        }
+
+        static ChainDecision fullStart(String bitmapName) {
+            return new ChainDecision(NASBackupChainKeys.TYPE_FULL, bitmapName, null, null,
+                    UUID.randomUUID().toString(), 0);
+        }
+
+        static ChainDecision incremental(String bitmapNew, String bitmapParent, String parentPath,
+                                         String chainId, int chainPosition) {
+            return new ChainDecision(NASBackupChainKeys.TYPE_INCREMENTAL, bitmapNew, bitmapParent,
+                    parentPath, chainId, chainPosition);
+        }
+
+        boolean isIncremental() {
+            return NASBackupChainKeys.TYPE_INCREMENTAL.equals(mode);
+        }
+    }
+
+    /**
+     * Decides whether the next backup for {@code vm} should be a fresh full or an incremental
+     * appended to the existing chain. Stopped VMs are always full (libvirt {@code backup-begin}
+     * requires a running QEMU process). The {@code nas.backup.full.every} ConfigKey controls
+     * how many backups (full + incrementals) form one chain before a new full is forced.
+     */
+    protected ChainDecision decideChain(VirtualMachine vm) {
+        final String newBitmap = "backup-" + System.currentTimeMillis() / 1000L;
+
+        // Stopped VMs cannot do incrementals — script will also fall back, but we make the
+        // decision here so we register the right type up-front.
+        if (VirtualMachine.State.Stopped.equals(vm.getState())) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        Integer fullEvery = NASBackupFullEvery.valueIn(vm.getDataCenterId());
+        if (fullEvery == null || fullEvery <= 1) {
+            // Disabled or every-backup-is-full mode.
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // Walk this VM's backups newest→oldest, find the most recent BackedUp backup that has a
+        // bitmap stored. If we don't find one, this is the first backup in a chain — start full.
+        List<Backup> history = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        if (history == null || history.isEmpty()) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+        history.sort(Comparator.comparing(Backup::getDate).reversed());
+
+        Backup parent = null;
+        String parentBitmap = null;
+        String parentChainId = null;
+        int parentChainPosition = -1;
+        for (Backup b : history) {
+            if (!Backup.Status.BackedUp.equals(b.getStatus())) {
+                continue;
+            }
+            String bm = readDetail(b, NASBackupChainKeys.BITMAP_NAME);
+            if (bm == null) {
+                continue;
+            }
+            parent = b;
+            parentBitmap = bm;
+            parentChainId = readDetail(b, NASBackupChainKeys.CHAIN_ID);
+            String posStr = readDetail(b, NASBackupChainKeys.CHAIN_POSITION);
+            try {
+                parentChainPosition = posStr == null ? 0 : Integer.parseInt(posStr);
+            } catch (NumberFormatException e) {
+                parentChainPosition = 0;
+            }
+            break;
+        }
+        if (parent == null || parentBitmap == null || parentChainId == null) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // Force a fresh full when the chain has reached the configured length.
+        if (parentChainPosition + 1 >= fullEvery) {
+            return ChainDecision.fullStart(newBitmap);
+        }
+
+        // The script needs the parent backup's on-NAS file path so it can rebase the new
+        // qcow2 onto it. The path is stored relative to the NAS mount point — the script
+        // resolves it inside its mount session.
+        String parentPath = composeParentBackupPath(parent);
+        return ChainDecision.incremental(newBitmap, parentBitmap, parentPath,
+                parentChainId, parentChainPosition + 1);
+    }
+
+    private String readDetail(Backup backup, String key) {
+        BackupDetailVO d = backupDetailsDao.findDetail(backup.getId(), key);
+        return d == null ? null : d.getValue();
+    }
+
+    /**
+     * Compose the on-NAS path of a parent backup's root-disk qcow2. Relative to the NAS mount,
+     * matches the layout written by {@code nasbackup.sh} ({@code <backupPath>/root.<volUuid>.qcow2}).
+     */
+    private String composeParentBackupPath(Backup parent) {
+        // backupPath is stored as externalId by createBackupObject — e.g. "i-2-1234-VM/2026.04.27.13.45.00".
+        // Volume UUID for the root volume is what the script keys backup files on.
+        VolumeVO rootVolume = volumeDao.getInstanceRootVolume(parent.getVmId());
+        String volUuid = rootVolume == null ? "root" : rootVolume.getUuid();
+        return parent.getExternalId() + "/root." + volUuid + ".qcow2";
+    }
+
+    /**
+     * Persist chain metadata under backup_details. Stored here (not on the backups table) so
+     * other providers can implement their own chain semantics without schema changes.
+     */
+    private void persistChainMetadata(Backup backup, ChainDecision decision, String bitmapFromAgent) {
+        // Prefer the bitmap name confirmed by the agent (BITMAP_CREATED= line). Fall back to
+        // what we asked it to create — they should match.
+        String bitmap = bitmapFromAgent != null ? bitmapFromAgent : decision.bitmapNew;
+        if (bitmap != null) {
+            backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.BITMAP_NAME, bitmap, true));
+        }
+        backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.CHAIN_ID, decision.chainId, true));
+        backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.CHAIN_POSITION,
+                String.valueOf(decision.chainPosition), true));
+        backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.TYPE, decision.mode, true));
+        if (decision.isIncremental()) {
+            // Resolve the parent backup's UUID so restore can walk the chain by id, not by path.
+            String parentUuid = lookupParentBackupUuid(backup.getVmId(), decision.bitmapParent);
+            if (parentUuid != null) {
+                backupDetailsDao.persist(new BackupDetailVO(backup.getId(), NASBackupChainKeys.PARENT_BACKUP_ID, parentUuid, true));
+            }
+        }
+    }
+
+    private String lookupParentBackupUuid(long vmId, String parentBitmap) {
+        if (parentBitmap == null) {
+            return null;
+        }
+        for (Backup b : backupDao.listByVmId(null, vmId)) {
+            String bm = readDetail(b, NASBackupChainKeys.BITMAP_NAME);
+            if (parentBitmap.equals(bm)) {
+                return b.getUuid();
+            }
+        }
+        return null;
     }
 
     protected Host getVMHypervisorHostForBackup(VirtualMachine vm) {
@@ -215,12 +381,20 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         final String backupPath = String.format("%s/%s", vm.getInstanceName(),
                 new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(creationDate));
 
-        BackupVO backupVO = createBackupObject(vm, backupPath);
+        // Decide full vs incremental for this backup. Stopped VMs are always full
+        // (libvirt backup-begin requires a running QEMU process).
+        ChainDecision decision = decideChain(vm);
+
+        BackupVO backupVO = createBackupObject(vm, backupPath, decision.isIncremental() ? "INCREMENTAL" : "FULL");
         TakeBackupCommand command = new TakeBackupCommand(vm.getInstanceName(), backupPath);
         command.setBackupRepoType(backupRepository.getType());
         command.setBackupRepoAddress(backupRepository.getAddress());
         command.setMountOptions(backupRepository.getMountOptions());
         command.setQuiesce(quiesceVM);
+        command.setMode(decision.mode);
+        command.setBitmapNew(decision.bitmapNew);
+        command.setBitmapParent(decision.bitmapParent);
+        command.setParentPath(decision.parentPath);
 
         if (VirtualMachine.State.Stopped.equals(vm.getState())) {
             List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
@@ -249,9 +423,17 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setDate(new Date());
             backupVO.setSize(answer.getSize());
             backupVO.setStatus(Backup.Status.BackedUp);
+            // If the agent fell back to full (stopped VM mid-incremental cycle), record this
+            // backup as a full and start a new chain.
+            ChainDecision effective = decision;
+            if (answer.getIncrementalFallback()) {
+                effective = ChainDecision.fullStart(decision.bitmapNew);
+                backupVO.setType("FULL");
+            }
             List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
             backupVO.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
             if (backupDao.update(backupVO.getId(), backupVO)) {
+                persistChainMetadata(backupVO, effective, answer.getBitmapCreated());
                 return new Pair<>(true, backupVO);
             } else {
                 throw new CloudRuntimeException("Failed to update backup");
@@ -270,11 +452,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         }
     }
 
-    private BackupVO createBackupObject(VirtualMachine vm, String backupPath) {
+    private BackupVO createBackupObject(VirtualMachine vm, String backupPath, String type) {
         BackupVO backup = new BackupVO();
         backup.setVmId(vm.getId());
         backup.setExternalId(backupPath);
-        backup.setType("FULL");
+        backup.setType(type);
         backup.setDate(new Date());
         long virtualSize = 0L;
         for (final Volume volume: volumeDao.findByInstance(vm.getId())) {
