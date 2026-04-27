@@ -33,9 +33,15 @@ MOUNT_OPTS=""
 BACKUP_DIR=""
 DISK_PATHS=""
 QUIESCE=""
+# Incremental backup parameters (all optional; legacy callers omit them)
+MODE=""               # "full" or "incremental"; empty => legacy full-only behavior (no checkpoint created)
+BITMAP_NEW=""         # Bitmap/checkpoint name to create with this backup (e.g. "backup-1711586400")
+BITMAP_PARENT=""      # For incremental: parent bitmap name to read changes since
+PARENT_PATH=""        # For incremental: parent backup file path (used as backing for qemu-img rebase)
 logFile="/var/log/cloudstack/agent/agent.log"
 
 EXIT_CLEANUP_FAILED=20
+EXIT_INCREMENTAL_UNSUPPORTED=21
 
 log() {
   [[ "$verb" -eq 1 ]] && builtin echo "$@"
@@ -113,20 +119,70 @@ backup_running_vm() {
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
+  # Determine effective mode for this run.
+  # Legacy callers (no -M argument) get the original full-only behavior with no checkpoint.
+  local effective_mode="${MODE:-legacy-full}"
+  local make_checkpoint=0
+  case "$effective_mode" in
+    incremental)
+      if [[ -z "$BITMAP_PARENT" || -z "$BITMAP_NEW" || -z "$PARENT_PATH" ]]; then
+        echo "incremental mode requires --bitmap-parent, --bitmap-new, and --parent-path"
+        cleanup
+        exit 1
+      fi
+      make_checkpoint=1
+      ;;
+    full)
+      if [[ -z "$BITMAP_NEW" ]]; then
+        echo "full mode requires --bitmap-new (the bitmap to create for the next incremental)"
+        cleanup
+        exit 1
+      fi
+      make_checkpoint=1
+      ;;
+    legacy-full)
+      make_checkpoint=0
+      ;;
+    *)
+      echo "Unknown mode: $effective_mode"
+      cleanup
+      exit 1
+      ;;
+  esac
+
+  # Build backup XML (and matching checkpoint XML when applicable).
   name="root"
-  echo "<domainbackup mode='push'><disks>" > $dest/backup.xml
+  echo "<domainbackup mode='push'>" > $dest/backup.xml
+  if [[ "$effective_mode" == "incremental" ]]; then
+    echo "<incremental>$BITMAP_PARENT</incremental>" >> $dest/backup.xml
+  fi
+  echo "<disks>" >> $dest/backup.xml
+  if [[ $make_checkpoint -eq 1 ]]; then
+    echo "<domaincheckpoint><name>$BITMAP_NEW</name><disks>" > $dest/checkpoint.xml
+  fi
   while read -r disk fullpath; do
     if [[ "$fullpath" == /dev/drbd/by-res/* ]]; then
         volUuid=$(get_linstor_uuid_from_path "$fullpath")
     else
         volUuid="${fullpath##*/}"
     fi
-    echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$name.$volUuid.qcow2' /></disk>" >> $dest/backup.xml
+    if [[ "$effective_mode" == "incremental" ]]; then
+      # Incremental disk entry — no backupmode attr, libvirt picks it up from <incremental>.
+      echo "<disk name='$disk' backup='yes' type='file'><driver type='qcow2'/><target file='$dest/$name.$volUuid.qcow2' /></disk>" >> $dest/backup.xml
+    else
+      echo "<disk name='$disk' backup='yes' type='file' backupmode='full'><driver type='qcow2'/><target file='$dest/$name.$volUuid.qcow2' /></disk>" >> $dest/backup.xml
+    fi
+    if [[ $make_checkpoint -eq 1 ]]; then
+      echo "<disk name='$disk'/>" >> $dest/checkpoint.xml
+    fi
     name="datadisk"
   done < <(
     virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{print $3, $4}'
   )
   echo "</disks></domainbackup>" >> $dest/backup.xml
+  if [[ $make_checkpoint -eq 1 ]]; then
+    echo "</disks></domaincheckpoint>" >> $dest/checkpoint.xml
+  fi
 
   local thaw=0
   if [[ ${QUIESCE} == "true" ]]; then
@@ -135,10 +191,16 @@ backup_running_vm() {
     fi
   fi
 
-  # Start push backup
+  # Start push backup, atomically registering the new checkpoint when applicable.
   local backup_begin=0
-  if virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml 2>&1 > /dev/null; then
-    backup_begin=1;
+  if [[ $make_checkpoint -eq 1 ]]; then
+    if virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml --checkpointxml $dest/checkpoint.xml 2>&1 > /dev/null; then
+      backup_begin=1;
+    fi
+  else
+    if virsh -c qemu:///system backup-begin --domain $VM --backupxml $dest/backup.xml 2>&1 > /dev/null; then
+      backup_begin=1;
+    fi
   fi
 
   if [[ $thaw -eq 1 ]]; then
@@ -172,9 +234,25 @@ backup_running_vm() {
     sleep 5
   done
 
-  # Use qemu-img convert to sparsify linstor backups which get bloated due to virsh backup-begin.
+  # Sparsify behavior:
+  # - For LINSTOR backups (existing): qemu-img convert sparsifies the bloated output.
+  # - For INCREMENTAL: rebase the resulting thin qcow2 onto its parent so the chain is self-describing
+  #   (so a future restore can flatten without external chain metadata).
   name="root"
   while read -r disk fullpath; do
+    if [[ "$effective_mode" == "incremental" ]]; then
+      volUuid="${fullpath##*/}"
+      if [[ "$fullpath" == /dev/drbd/by-res/* ]]; then
+        volUuid=$(get_linstor_uuid_from_path "$fullpath")
+      fi
+      if ! qemu-img rebase -u -b "$PARENT_PATH" -F qcow2 "$dest/$name.$volUuid.qcow2" >> "$logFile" 2> >(cat >&2); then
+        echo "qemu-img rebase failed for $dest/$name.$volUuid.qcow2 onto $PARENT_PATH"
+        cleanup
+        exit 1
+      fi
+      name="datadisk"
+      continue
+    fi
     if [[ "$fullpath" != /dev/drbd/by-res/* ]]; then
       continue
     fi
@@ -191,18 +269,30 @@ backup_running_vm() {
     virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{print $3, $4}'
   )
 
-  rm -f $dest/backup.xml
+  rm -f $dest/backup.xml $dest/checkpoint.xml
   sync
 
   # Print statistics
   virsh -c qemu:///system domjobinfo $VM --completed
   du -sb $dest | cut -f1
+  if [[ -n "$BITMAP_NEW" ]]; then
+    # Echo the bitmap name on its own line so the Java caller can capture it for backup_details.
+    echo "BITMAP_CREATED=$BITMAP_NEW"
+  fi
 
   umount $mount_point
   rmdir $mount_point
 }
 
 backup_stopped_vm() {
+  # Stopped VMs cannot use libvirt's backup-begin (no QEMU process). Take a full
+  # backup via qemu-img convert. If the caller asked for incremental, fall back
+  # to full and signal the fallback so the orchestrator can record it as a full
+  # in the chain.
+  if [[ "$MODE" == "incremental" ]]; then
+    echo "INCREMENTAL_FALLBACK=full (VM stopped — incremental requires running VM)" >&2
+  fi
+
   mount_operation
   mkdir -p "$dest" || { echo "Failed to create backup directory $dest"; exit 1; }
 
@@ -278,6 +368,13 @@ cleanup() {
 function usage {
   echo ""
   echo "Usage: $0 -o <operation> -v|--vm <domain name> -t <storage type> -s <storage address> -m <mount options> -p <backup path> -d <disks path> -q|--quiesce <true|false>"
+  echo "         [-M|--mode <full|incremental>] [--bitmap-new <name>] [--bitmap-parent <name>] [--parent-path <path>]"
+  echo ""
+  echo "Incremental backup options (running VMs only; requires QEMU >= 4.2 and libvirt >= 7.2):"
+  echo "  -M|--mode full          Take a full backup AND create a checkpoint (--bitmap-new required) for future incrementals."
+  echo "  -M|--mode incremental   Take an incremental backup since --bitmap-parent and create new checkpoint --bitmap-new."
+  echo "                          Requires --bitmap-parent, --bitmap-new, and --parent-path (parent backup file for rebase)."
+  echo "  Without -M, behaves as legacy full-only backup with no checkpoint creation."
   echo ""
   exit 1
 }
@@ -321,6 +418,26 @@ while [[ $# -gt 0 ]]; do
       ;;
     -d|--diskpaths)
       DISK_PATHS="$2"
+      shift
+      shift
+      ;;
+    -M|--mode)
+      MODE="$2"
+      shift
+      shift
+      ;;
+    --bitmap-new)
+      BITMAP_NEW="$2"
+      shift
+      shift
+      ;;
+    --bitmap-parent)
+      BITMAP_PARENT="$2"
+      shift
+      shift
+      ;;
+    --parent-path)
+      PARENT_PATH="$2"
       shift
       shift
       ;;
