@@ -426,8 +426,4 @@ public class LibvirtStoragePool implements KVMStoragePool {
             return true;
         }
     }
-
-    public void setType(StoragePoolType type) {
-        this.type = type;
-    }
 }
