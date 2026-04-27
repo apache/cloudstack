@@ -1925,6 +1925,7 @@ public class LibvirtVMDef {
         static final int DEFAULT_PERIOD = 10000;
         static final int MIN_QUOTA = 1000;
         static final int MAX_PERIOD = 1000000;
+        public static final long MAX_CPU_QUOTA = 17592186044415L;
 
         public void setShares(int shares) {
             _shares = shares;

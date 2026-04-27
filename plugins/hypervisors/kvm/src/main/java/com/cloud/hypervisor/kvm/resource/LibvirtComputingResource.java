@@ -456,8 +456,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private static final int MINIMUM_QEMU_VERSION_FOR_INCREMENTAL_SNAPSHOT = 6001000;
 
-    public static final long MAX_CPU_QUOTA = 17592186044415L;
-
     protected HypervisorType hypervisorType;
     protected String hypervisorURI;
     protected long hypervisorLibvirtVersion;
@@ -3034,8 +3032,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (limitCpuUseChange && !vmTO.isLimitCpuUse()) {
-            logger.info("Updating the [{}] of the [{}] domain to [{}], because CPU limitation has been removed.", CpuSchedulerParameter.QUOTA, domain.getName(), LibvirtComputingResource.MAX_CPU_QUOTA);
-            LibvirtComputingResource.setQuota(domain, LibvirtComputingResource.MAX_CPU_QUOTA);
+            logger.info("Updating the [{}] of the [{}] domain to [{}], because CPU limitation has been removed.", CpuSchedulerParameter.QUOTA, domain.getName(), CpuTuneDef.MAX_CPU_QUOTA);
+            LibvirtComputingResource.setQuota(domain, CpuTuneDef.MAX_CPU_QUOTA);
             return;
         }
 
