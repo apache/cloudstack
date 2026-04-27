@@ -31,7 +31,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.account', 'api_key_access', 'boolean
 CALL `cloud_usage`.`IDEMPOTENT_ADD_COLUMN`('cloud_usage.account', 'api_key_access', 'boolean DEFAULT NULL COMMENT "is api key access allowed for the account" ');
 
 -- Create a new group for Usage Server related configurations
-INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('Usage Server', 'Usage Server related configuration', 9);
+INSERT IGNORE INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('Usage Server', 'Usage Server related configuration', 9);
 UPDATE `cloud`.`configuration_subgroup` set `group_id` = (SELECT `id` FROM `cloud`.`configuration_group` WHERE `name` = 'Usage Server'), `precedence` = 1 WHERE `name`='Usage';
 UPDATE `cloud`.`configuration` SET `group_id` = (SELECT `id` FROM `cloud`.`configuration_group` WHERE `name` = 'Usage Server') where `subgroup_id` = (SELECT `id` FROM `cloud`.`configuration_subgroup` WHERE `name` = 'Usage');
 

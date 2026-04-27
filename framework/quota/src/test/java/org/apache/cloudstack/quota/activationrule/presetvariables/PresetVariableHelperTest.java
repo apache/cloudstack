@@ -33,6 +33,9 @@ import com.cloud.host.HostTagVO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
@@ -43,6 +46,7 @@ import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.NetworkDao;
 import org.apache.cloudstack.quota.dao.VmTemplateDao;
+import org.apache.cloudstack.quota.dao.VpcDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -195,6 +199,12 @@ public class PresetVariableHelperTest {
     @Mock
     NetworkDao networkDaoMock;
 
+    @Mock
+    VpcDao vpcDaoMock;
+
+    @Mock
+    VpcOfferingDao vpcOfferingDaoMock;
+
     List<Integer> runningAndAllocatedVmUsageTypes = Arrays.asList(UsageTypes.RUNNING_VM, UsageTypes.ALLOCATED_VM);
     List<Integer> templateAndIsoUsageTypes = Arrays.asList(UsageTypes.TEMPLATE, UsageTypes.ISO);
 
@@ -232,6 +242,8 @@ public class PresetVariableHelperTest {
         value.setVolumeType(Volume.Type.DATADISK.toString());
         value.setState(Network.State.Implemented.toString());
         value.setResourceCounting(getResourceCountingForTests());
+        value.setNetworkOffering(getNetworkOfferingForTests());
+        value.setVpcOffering(getVpcOfferingForTests());
         return value;
     }
 
@@ -338,6 +350,20 @@ public class PresetVariableHelperTest {
         diskOffering.setId("disk_offering_id");
         diskOffering.setName("disk_offering_name");
         return diskOffering;
+    }
+
+    private GenericPresetVariable getNetworkOfferingForTests() {
+        GenericPresetVariable networkOffering = new GenericPresetVariable();
+        networkOffering.setId("network_offering_id");
+        networkOffering.setName("network_offering_name");
+        return networkOffering;
+    }
+
+    private GenericPresetVariable getVpcOfferingForTests() {
+        GenericPresetVariable vpcOffering = new GenericPresetVariable();
+        vpcOffering.setId("vpc_offering_id");
+        vpcOffering.setName("vpc_offering_name");
+        return vpcOffering;
     }
 
     private void mockMethodValidateIfObjectIsNull() {
@@ -1329,7 +1355,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getName()).when(networkVoMock).getName();
         Mockito.doReturn(expected.getState()).when(usageVoMock).getState();
         Mockito.doReturn(expected.getResourceCounting()).when(presetVariableHelperSpy).getPresetVariableValueNetworkResourceCounting(Mockito.anyLong());
-
+        Mockito.doReturn(expected.getNetworkOffering()).when(presetVariableHelperSpy).getPresetVariableValueNetworkOffering(Mockito.anyLong());
         Mockito.doReturn(UsageTypes.NETWORK).when(usageVoMock).getUsageType();
 
         Value result = new Value();
@@ -1358,5 +1384,67 @@ public class PresetVariableHelperTest {
 
         Assert.assertEquals(expected.getRunningVms(), result.getRunningVms());
         Assert.assertEquals(expected.getStoppedVms(), result.getStoppedVms());
+    }
+
+    @Test
+    public void loadPresetVariableValueForVpcTestRecordIsNotAVpcDoNothing() {
+        getQuotaTypesForTests(UsageTypes.VPC).forEach(type -> {
+            Mockito.doReturn(type.getKey()).when(usageVoMock).getUsageType();
+            presetVariableHelperSpy.loadPresetVariableValueForVpc(usageVoMock, null);
+        });
+
+        Mockito.verifyNoInteractions(vpcDaoMock);
+    }
+
+    @Test
+    public void loadPresetVariableValueForVpcTestRecordIsVpcSetFields() {
+        Value expected = getValueForTests();
+
+        VpcVO networkVoMock = Mockito.mock(VpcVO.class);
+        Mockito.doReturn(networkVoMock).when(vpcDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+
+        mockMethodValidateIfObjectIsNull();
+
+        Mockito.doReturn(expected.getId()).when(networkVoMock).getUuid();
+        Mockito.doReturn(expected.getName()).when(networkVoMock).getName();
+        Mockito.doReturn(expected.getVpcOffering()).when(presetVariableHelperSpy).getPresetVariableValueVpcOffering(Mockito.anyLong());
+
+        Mockito.doReturn(UsageTypes.VPC).when(usageVoMock).getUsageType();
+
+        Value result = new Value();
+        presetVariableHelperSpy.loadPresetVariableValueForVpc(usageVoMock, result);
+
+        assertPresetVariableIdAndName(expected, result);
+        Assert.assertEquals(expected.getVpcOffering(), result.getVpcOffering());
+    }
+
+    @Test
+    public void getPresetVariableValueNetworkOfferingTestSetValuesAndReturnObject() {
+        NetworkOfferingVO networkOfferingVoMock = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.doReturn(networkOfferingVoMock).when(networkOfferingDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        mockMethodValidateIfObjectIsNull();
+
+        GenericPresetVariable expected = getGenericPresetVariableForTests();
+        Mockito.doReturn(expected.getId()).when(networkOfferingVoMock).getUuid();
+        Mockito.doReturn(expected.getName()).when(networkOfferingVoMock).getName();
+
+        GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueNetworkOffering(1L);
+
+        assertPresetVariableIdAndName(expected, result);
+    }
+
+    @Test
+    public void getPresetVariableValueVpcOfferingTestSetValuesAndReturnObject() {
+        VpcOfferingVO vpcOfferingVoMock = Mockito.mock(VpcOfferingVO.class);
+        Mockito.doReturn(vpcOfferingVoMock).when(vpcOfferingDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        mockMethodValidateIfObjectIsNull();
+
+        GenericPresetVariable expected = getGenericPresetVariableForTests();
+        Mockito.doReturn(expected.getId()).when(vpcOfferingVoMock).getUuid();
+        Mockito.doReturn(expected.getName()).when(vpcOfferingVoMock).getName();
+
+        GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueVpcOffering(1L);
+
+        assertPresetVariableIdAndName(expected, result);
     }
 }

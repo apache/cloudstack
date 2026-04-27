@@ -89,6 +89,14 @@
         <details-input
           v-model:value="form.details" />
       </a-form-item>
+      <a-form-item name="reservedresourcedetails" ref="reservedresourcedetails">
+        <template #label>
+          <tooltip-label :title="$t('label.reservedresourcedetails')" :tooltip="apiParams.reservedresourcedetails.description"/>
+        </template>
+        <a-input
+          v-model:value="form.reservedresourcedetails"
+          :placeholder="apiParams.reservedresourcedetails.description" />
+      </a-form-item>
       <a-form-item name="state" ref="state">
         <template #label>
           <tooltip-label :title="$t('label.enabled')" :tooltip="apiParams.state.description"/>
@@ -200,6 +208,9 @@ export default {
           Object.entries(values.details).forEach(([key, value]) => {
             params['details[0].' + key] = value
           })
+        }
+        if (values.reservedresourcedetails) {
+          params.reservedresourcedetails = values.reservedresourcedetails
         }
         postAPI('createExtension', params).then(response => {
           this.$emit('refresh-data')
