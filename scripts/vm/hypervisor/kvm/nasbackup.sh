@@ -268,8 +268,20 @@ XML
       if [[ "$fullpath" == /dev/drbd/by-res/* ]]; then
         volUuid=$(get_linstor_uuid_from_path "$fullpath")
       fi
-      if ! qemu-img rebase -u -b "$PARENT_PATH" -F qcow2 "$dest/$name.$volUuid.qcow2" >> "$logFile" 2> >(cat >&2); then
-        echo "qemu-img rebase failed for $dest/$name.$volUuid.qcow2 onto $PARENT_PATH"
+      # PARENT_PATH from the orchestrator is the parent backup's path relative to the
+      # NAS mount root (e.g. "i-2-X/2026.04.27.12.00.00/root.UUID.qcow2"). Convert it to
+      # a path relative to THIS new qcow2's directory so the backing reference resolves
+      # correctly the next time the NAS is mounted (mount points are ephemeral).
+      local parent_abs="$mount_point/$PARENT_PATH"
+      if [[ ! -f "$parent_abs" ]]; then
+        echo "Parent backup file does not exist on NAS: $parent_abs"
+        cleanup
+        exit 1
+      fi
+      local parent_rel
+      parent_rel=$(realpath --relative-to="$dest" "$parent_abs")
+      if ! qemu-img rebase -u -b "$parent_rel" -F qcow2 "$dest/$name.$volUuid.qcow2" >> "$logFile" 2> >(cat >&2); then
+        echo "qemu-img rebase failed for $dest/$name.$volUuid.qcow2 onto $parent_rel"
         cleanup
         exit 1
       fi
