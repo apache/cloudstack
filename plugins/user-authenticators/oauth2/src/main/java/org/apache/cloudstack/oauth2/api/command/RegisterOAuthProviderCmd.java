@@ -63,6 +63,10 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
             description = "Domain ID for domain-specific OAuth provider. If not provided, registers as global provider", since = "4.23.0")
     private Long domainId;
 
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING,
+            description = "Domain path for domain-specific OAuth provider. Ignored when Domain ID is passed.", since = "4.23.0")
+    private String domainPath;
+
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "Any OAuth provider details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].clientsecret=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")
     protected Map details;
@@ -94,6 +98,10 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
     }
 
     public Map getDetails() {

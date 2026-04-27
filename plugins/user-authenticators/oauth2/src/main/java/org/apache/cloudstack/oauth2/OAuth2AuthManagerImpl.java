@@ -147,7 +147,7 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
         String clientId = StringUtils.trim(cmd.getClientId());
         String redirectUri = StringUtils.trim(cmd.getRedirectUri());
         String secretKey = StringUtils.trim(cmd.getSecretKey());
-        Long domainId = cmd.getDomainId();
+        Long domainId = resolveDomainIdFromIdOrPath(cmd.getDomainId(), cmd.getDomainPath());
 
         if (!isOAuthPluginEnabled(domainId)) {
             throw new CloudRuntimeException("OAuth is not enabled, please enable to register");
@@ -260,6 +260,20 @@ public class OAuth2AuthManagerImpl extends ManagerBase implements OAuth2AuthMana
                 if (Objects.nonNull(domain)) {
                     return domain.getId();
                 }
+            }
+        }
+        return null;
+    }
+
+    protected Long resolveDomainIdFromIdOrPath(Long domainId, String domainPath) {
+        if (domainId != null) {
+            return domainId;
+        }
+        String path = normalizeDomainPath(domainPath);
+        if (StringUtils.isNotEmpty(path)) {
+            Domain domain = _domainService.findDomainByIdOrPath(null, path);
+            if (Objects.nonNull(domain)) {
+                return domain.getId();
             }
         }
         return null;
