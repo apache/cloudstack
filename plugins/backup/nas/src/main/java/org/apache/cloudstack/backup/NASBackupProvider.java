@@ -85,6 +85,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             true,
             BackupFrameworkEnabled.key());
 
+    ConfigKey<Integer> NASBackupFullEvery = new ConfigKey<>("Advanced", Integer.class,
+            "nas.backup.full.every",
+            "10",
+            "Take a full NAS backup every Nth backup; remaining backups in between are incremental. " +
+                    "Counts backups, not days, so it works for hourly, daily, and ad-hoc schedules. " +
+                    "Set to 1 to disable incrementals (every backup is full).",
+            true,
+            ConfigKey.Scope.Zone,
+            BackupFrameworkEnabled.key());
+
     @Inject
     private BackupDao backupDao;
 
@@ -629,7 +639,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
-                NASBackupRestoreMountTimeout
+                NASBackupRestoreMountTimeout,
+                NASBackupFullEvery
         };
     }
 
