@@ -186,6 +186,8 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     private int incrementalSnapshotTimeout;
 
+    private int incrementalSnapshotRetryRebaseWait;
+
     private static final String CHECKPOINT_XML_TEMP_DIR = "/tmp/cloudstack/checkpointXMLs";
 
     private static final String BACKUP_XML_TEMP_DIR = "/tmp/cloudstack/backupXMLs";
@@ -273,6 +275,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         _cmdsTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CMDS_TIMEOUT) * 1000;
 
         incrementalSnapshotTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_TIMEOUT) * 1000;
+        incrementalSnapshotRetryRebaseWait = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_RETRY_REBASE_WAIT) * 1000;
         return true;
     }
 
@@ -2311,8 +2314,25 @@ public class KVMStorageProcessor implements StorageProcessor {
             QemuImg qemuImg = new QemuImg(wait);
             qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
         } catch (LibvirtException | QemuImgException e) {
-            logger.error("Exception while rebasing incremental snapshot [{}] due to: [{}].", snapshotName, e.getMessage(), e);
-            throw new CloudRuntimeException(e);
+            if (!StringUtils.contains(e.getMessage(), "Is another process using the image")) {
+                logger.error("Exception while rebasing incremental snapshot [{}] due to: [{}].", snapshotName, e.getMessage(), e);
+                throw new CloudRuntimeException(e);
+            }
+            retryRebase(snapshotName, wait, e, snapshotFile, parentSnapshotFile);
+        }
+    }
+
+    private void retryRebase(String snapshotName, int wait, Exception e, QemuImgFile snapshotFile, QemuImgFile parentSnapshotFile) {
+        logger.warn("Libvirt still has not released the lock, will wait [{}] milliseconds and try again later.", incrementalSnapshotRetryRebaseWait);
+        try {
+            Thread.sleep(incrementalSnapshotRetryRebaseWait);
+            QemuImg qemuImg = new QemuImg(wait);
+            qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
+        } catch (LibvirtException | QemuImgException | InterruptedException ex) {
+            logger.error("Unable to rebase snapshot [{}].", snapshotName, ex);
+            CloudRuntimeException cre = new CloudRuntimeException(ex);
+            cre.addSuppressed(e);
+            throw cre;
         }
     }
 
