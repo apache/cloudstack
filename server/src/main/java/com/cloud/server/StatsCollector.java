@@ -166,6 +166,7 @@ import com.codahale.metrics.JvmAttributeGaugeSet;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.jvm.BufferPoolMetricSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
@@ -387,7 +388,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private boolean _dailyOrHourly = false;
     protected long managementServerNodeId = ManagementServerNode.getManagementServerId();
     protected long msId = managementServerNodeId;
-    final static MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+    public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+
+    public static void registerMetric(String name, Metric metric) {
+        METRIC_REGISTRY.register(name, metric);
+    }
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -410,6 +415,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         registerAll("memory", new MemoryUsageGaugeSet(), METRIC_REGISTRY);
         registerAll("threads", new ThreadStatesGaugeSet(), METRIC_REGISTRY);
         registerAll("jvm", new JvmAttributeGaugeSet(), METRIC_REGISTRY);
+        try {
+            JmxReporter.forRegistry(METRIC_REGISTRY).inDomain("vm-extra").build().start();
+        } catch (Exception e) {
+            LOGGER.warn("Failed to start JMX reporter for METRIC_REGISTRY; CloudOS metrics will not be visible via JMX: " + e.getMessage());
+        }
         return true;
     }
     @Override
