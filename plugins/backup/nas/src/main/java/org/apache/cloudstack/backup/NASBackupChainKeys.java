@@ -42,6 +42,9 @@ public final class NASBackupChainKeys {
     public static final String TYPE_FULL = "full";
     public static final String TYPE_INCREMENTAL = "incremental";
 
+    /** Set to the bitmap name when this incremental had to recreate its parent bitmap on the host (informational; this incremental is larger than usual). */
+    public static final String BITMAP_RECREATED = "nas.bitmap_recreated";
+
     private NASBackupChainKeys() {
     }
 }

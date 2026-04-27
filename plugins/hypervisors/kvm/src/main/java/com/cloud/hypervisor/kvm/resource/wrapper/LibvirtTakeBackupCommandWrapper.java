@@ -117,12 +117,17 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         // numeric-suffix parser keeps working.
         String stdout = result.second().trim();
         String bitmapCreated = null;
+        String bitmapRecreated = null;
         boolean incrementalFallback = false;
         StringBuilder filtered = new StringBuilder();
         for (String line : stdout.split("\n")) {
             String trimmed = line.trim();
             if (trimmed.startsWith("BITMAP_CREATED=")) {
                 bitmapCreated = trimmed.substring("BITMAP_CREATED=".length());
+                continue;
+            }
+            if (trimmed.startsWith("BITMAP_RECREATED=")) {
+                bitmapRecreated = trimmed.substring("BITMAP_RECREATED=".length());
                 continue;
             }
             if (trimmed.startsWith("INCREMENTAL_FALLBACK=")) {
@@ -152,6 +157,7 @@ public class LibvirtTakeBackupCommandWrapper extends CommandWrapper<TakeBackupCo
         BackupAnswer answer = new BackupAnswer(command, true, stdout);
         answer.setSize(backupSize);
         answer.setBitmapCreated(bitmapCreated);
+        answer.setBitmapRecreated(bitmapRecreated);
         answer.setIncrementalFallback(incrementalFallback);
         return answer;
     }

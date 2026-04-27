@@ -150,6 +150,29 @@ backup_running_vm() {
       ;;
   esac
 
+  # When incremental, verify the parent bitmap still exists on the running domain.
+  # CloudStack rebuilds the libvirt domain XML on every VM start, so persistent bitmaps
+  # are lost across stop/start. If the parent is missing, recreate it as a fresh bitmap
+  # so libvirt accepts the <incremental> reference. The first backup after a recreate
+  # captures all writes since the recreate point — slightly larger than ideal, but correct.
+  if [[ "$effective_mode" == "incremental" ]]; then
+    if ! virsh -c qemu:///system checkpoint-list "$VM" --name 2>/dev/null | grep -qx "$BITMAP_PARENT"; then
+      cat > $dest/recreate-checkpoint.xml <<XML
+<domaincheckpoint><name>$BITMAP_PARENT</name><disks>
+$(virsh -c qemu:///system domblklist "$VM" --details 2>/dev/null | awk '$2=="disk"{printf "<disk name=\"%s\"/>\n", $3}')
+</disks></domaincheckpoint>
+XML
+      if ! virsh -c qemu:///system checkpoint-create "$VM" --xmlfile $dest/recreate-checkpoint.xml > /dev/null 2>&1; then
+        echo "Failed to recreate parent bitmap $BITMAP_PARENT for $VM"
+        cleanup
+        exit 1
+      fi
+      # Marker for the orchestrator: this incremental is larger because the bitmap was rebuilt.
+      echo "BITMAP_RECREATED=$BITMAP_PARENT"
+      rm -f $dest/recreate-checkpoint.xml
+    fi
+  fi
+
   # Build backup XML (and matching checkpoint XML when applicable).
   name="root"
   echo "<domainbackup mode='push'>" > $dest/backup.xml

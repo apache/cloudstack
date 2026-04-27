@@ -434,6 +434,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
             if (backupDao.update(backupVO.getId(), backupVO)) {
                 persistChainMetadata(backupVO, effective, answer.getBitmapCreated());
+                if (answer.getBitmapRecreated() != null) {
+                    backupDetailsDao.persist(new BackupDetailVO(backupVO.getId(),
+                            NASBackupChainKeys.BITMAP_RECREATED, answer.getBitmapRecreated(), true));
+                    logger.info("NAS incremental for VM {} recreated parent bitmap {} (likely VM was restarted since last backup)",
+                            vm.getInstanceName(), answer.getBitmapRecreated());
+                }
                 return new Pair<>(true, backupVO);
             } else {
                 throw new CloudRuntimeException("Failed to update backup");
