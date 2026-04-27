@@ -118,7 +118,7 @@
 import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
-const FQDN_REGEX = /^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$/
+const FQDN_REGEX = /^(?=.{1,253}$)(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,63}$/
 
 export default {
   name: 'UpdateDnsServer',
