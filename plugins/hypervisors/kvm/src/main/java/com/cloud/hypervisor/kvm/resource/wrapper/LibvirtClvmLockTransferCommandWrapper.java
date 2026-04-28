@@ -112,7 +112,7 @@ public class LibvirtClvmLockTransferCommandWrapper
             script.add("--noheadings");
             script.add(lvPath);
 
-            OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+            OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
             String result = script.execute(parser);
 
             if (result != null) {
@@ -121,13 +121,37 @@ public class LibvirtClvmLockTransferCommandWrapper
                     String.format("lvs command failed: %s", result));
             }
 
-            // Parse output: "  -wi-a-e--- host5.example.com"
-            String output = parser.getLine();
-            if (output == null || output.trim().isEmpty()) {
-                return new ClvmLockTransferAnswer(cmd, false, "No output from lvs command");
+            // We need to find the line that contains the actual lv_attr (starts with '-' or other attr chars)
+            String[] lines = parser.getLines().split("\n");
+            String dataLine = null;
+
+            for (String line : lines) {
+                String trimmed = line.trim();
+                // Skip empty lines and warning messages
+                // lv_attr always starts with '-', 'w', 'r', etc. and is at least 10 characters
+                if (!trimmed.isEmpty() &&
+                    trimmed.length() >= 10 &&
+                    (trimmed.charAt(0) == '-' || trimmed.charAt(0) == 'w' ||
+                     trimmed.charAt(0) == 'r' || trimmed.charAt(0) == 's' ||
+                     trimmed.charAt(0) == 'v' || trimmed.charAt(0) == 'm' ||
+                     trimmed.charAt(0) == 'p' || trimmed.charAt(0) == 'c' ||
+                     trimmed.charAt(0) == 'o')) {
+                    dataLine = trimmed;
+                    break;
+                }
             }
 
-            String[] parts = output.trim().split("\\s+");
+            if (dataLine == null) {
+                String allOutput = parser.getLines();
+                logger.warn("Could not find lv_attr data line in lvs output for volume {}: {}",
+                          volumeUuid, allOutput);
+                return new ClvmLockTransferAnswer(cmd, false,
+                    String.format("Could not parse lvs output. Full output: %s", allOutput));
+            }
+
+            logger.debug("Parsed lv_attr data line for volume {}: {}", volumeUuid, dataLine);
+
+            String[] parts = dataLine.split("\\s+");
             if (parts.length < 1) {
                 return new ClvmLockTransferAnswer(cmd, false, "Invalid lvs output format");
             }
