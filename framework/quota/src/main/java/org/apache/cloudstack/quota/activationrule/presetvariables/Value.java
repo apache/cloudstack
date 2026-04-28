@@ -96,6 +96,12 @@ public class Value extends GenericPresetVariable {
 
     private String state;
 
+    @PresetVariableDefinition(description = "Network offering of the network.", supportedTypes = {QuotaTypes.NETWORK})
+    private GenericPresetVariable networkOffering;
+
+    @PresetVariableDefinition(description = "VPC offering of the VPC.", supportedTypes = {QuotaTypes.VPC})
+    private GenericPresetVariable vpcOffering;
+
     public Host getHost() {
         return host;
     }
@@ -254,5 +260,21 @@ public class Value extends GenericPresetVariable {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public GenericPresetVariable getNetworkOffering() {
+        return networkOffering;
+    }
+
+    public void setNetworkOffering(GenericPresetVariable networkOffering) {
+        this.networkOffering = networkOffering;
+    }
+
+    public GenericPresetVariable getVpcOffering() {
+        return vpcOffering;
+    }
+
+    public void setVpcOffering(GenericPresetVariable vpcOffering) {
+        this.vpcOffering = vpcOffering;
     }
 }

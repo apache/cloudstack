@@ -583,7 +583,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall, NetUtils.TCP_PROTO);
         for (FirewallRuleVO firewallRule : firewallRules) {
             PortForwardingRuleVO pfRule = portForwardingRulesDao.findByNetworkAndPorts(networkId, firewallRule.getSourcePortStart(), firewallRule.getSourcePortEnd());
-            if (firewallRule.getSourcePortStart() == CLUSTER_NODES_DEFAULT_START_SSH_PORT || (Objects.nonNull(pfRule) && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT) ) {
+            if (Objects.equals(firewallRule.getSourcePortStart(), CLUSTER_NODES_DEFAULT_START_SSH_PORT) || (Objects.nonNull(pfRule) && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT) ) {
                 rule = firewallRule;
                 firewallService.revokeIngressFwRule(firewallRule.getId(), true);
                 logger.debug("The SSH firewall rule {} with the id {} was revoked", firewallRule.getName(), firewallRule.getId());

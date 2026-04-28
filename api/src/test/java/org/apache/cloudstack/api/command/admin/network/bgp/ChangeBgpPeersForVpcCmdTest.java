@@ -46,7 +46,7 @@ public class ChangeBgpPeersForVpcCmdTest {
     @Test
     public void testChangeBgpPeersForVpcCmd() {
         Long VpcId = 10L;
-        UUID vpcUuid = UUID.randomUUID();
+        String vpcUuid = UUID.randomUUID().toString();
         List<Long> bgpPeerIds = Arrays.asList(20L, 21L);
 
         ChangeBgpPeersForVpcCmd cmd = new ChangeBgpPeersForVpcCmd();
