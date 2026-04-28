@@ -322,10 +322,10 @@ public class DataMigrationUtility {
 
             if (isKvmIncrementalSnapshot) {
                 List<SnapshotInfo> kvmIncrementalSnapshotChain = createKvmIncrementalSnapshotChain(snapshot);
-                SnapshotInfo parent = kvmIncrementalSnapshotChain.get(0);
+                SnapshotInfo firstSnapshotInTheChain = kvmIncrementalSnapshotChain.get(0);
                 snapshotIdsAlreadyInChain.addAll(kvmIncrementalSnapshotChain.stream().map(DataObject::getId).collect(Collectors.toSet()));
-                snapshotChains.put(parent, new Pair<>(kvmIncrementalSnapshotChain, getTotalChainSize(kvmIncrementalSnapshotChain.stream().filter(snapInfo -> snapshotIdsToMigrate.contains(snapInfo.getId())).collect(Collectors.toList()))));
-                files.add(parent);
+                snapshotChains.put(firstSnapshotInTheChain, new Pair<>(kvmIncrementalSnapshotChain, getTotalChainSize(kvmIncrementalSnapshotChain.stream().filter(snapInfo -> snapshotIdsToMigrate.contains(snapInfo.getId())).collect(Collectors.toList()))));
+                files.add(firstSnapshotInTheChain);
             } else {
                 SnapshotInfo snap = snapshotFactory.getSnapshot(snapshotVO.getSnapshotId(), snapshot.getDataStoreId(), snapshot.getRole());
                 if (snap == null) {
