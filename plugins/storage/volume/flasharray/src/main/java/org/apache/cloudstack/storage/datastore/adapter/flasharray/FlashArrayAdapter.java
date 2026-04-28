@@ -206,14 +206,14 @@ public class FlashArrayAdapter implements ProviderAdapter {
     public void delete(ProviderAdapterContext context, ProviderAdapterDataObject dataObject) {
         String fullName = normalizeName(pod, dataObject.getExternalName());
 
-        // Snapshots live under /volume-snapshots and already use the
-        // reserved form <volume>.<suffix>. FlashArray volume/snapshot names
-        // must match [A-Za-z0-9_-] and start/end with an alphanumeric, so
-        // appending our usual deletion-timestamp suffix to a snapshot name
-        // would produce a target like "<vol>.<n>-<ts>" - the embedded "."
-        // is rejected by the array. We therefore skip the rename for
-        // snapshots and only mark them destroyed; the array's own ".N"
-        // suffix already disambiguates them in the recycle bin.
+        // Snapshots live under /volume-snapshots and already use the array's
+        // reserved form <volume>.<suffix>, which legitimately contains ".".
+        // The stricter [A-Za-z0-9_-] naming rule applies to regular volume
+        // names and free-form rename targets, not to these reserved snapshot
+        // names. Since FlashArray snapshot names are system-defined rather
+        // than arbitrary rename targets, we skip the usual timestamped rename
+        // and only mark snapshots destroyed; the array's own ".N" suffix
+        // already disambiguates them in the recycle bin.
         if (dataObject.getType() == ProviderAdapterDataObject.Type.SNAPSHOT) {
             try {
                 FlashArrayVolume destroy = new FlashArrayVolume();
