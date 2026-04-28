@@ -24,4 +24,3 @@ import com.cloud.utils.db.GenericDao;
 
 public interface ManagementServerHostDetailsDao extends GenericDao<ManagementServerHostDetailVO, Long>, ResourceDetailsDao<ManagementServerHostDetailVO> {
 }
-
