@@ -514,6 +514,17 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 ApiCallRcList answers = api.resourceDefinitionDelete(rd.getName());
                 checkLinstorAnswersThrow(answers);
                 deleted = true;
+
+                // LINSTOR can return success here while the resource lingers in DELETING state
+                // on the controller (down peer, lost quorum, etc.). Confirm it's actually gone
+                // — if not, log a WARN so operators can clear it manually. Don't throw: the
+                // CloudStack-side accounting has already moved on.
+                if (!LinstorUtil.waitForResourceDefinitionDeleted(api, rd.getName(),
+                        LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS)) {
+                    logger.warn("Linstor: resource {} still present {}ms after delete returned success — " +
+                            "may be stuck in DELETING. Check the LINSTOR controller (linstor resource list).",
+                            rd.getName(), LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS);
+                }
             }
         }
         return deleted;
