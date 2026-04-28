@@ -81,6 +81,10 @@ public class KVMStoragePoolManager {
     public KVMStoragePoolManager(StorageLayer storagelayer, KVMHAMonitor monitor) {
         this._haMonitor = monitor;
         this._storageMapper.put("libvirt", new LibvirtStorageAdaptor(storagelayer));
+        // Register CLVM/CLVM_NG adaptor explicitly for both types (one shared instance)
+        ClvmStorageAdaptor clvmAdaptor = new ClvmStorageAdaptor(storagelayer);
+        this._storageMapper.put(StoragePoolType.CLVM.toString(), clvmAdaptor);
+        this._storageMapper.put(StoragePoolType.CLVM_NG.toString(), clvmAdaptor);
         // add other storage adaptors manually here
 
         // add any adaptors that wish to register themselves via call to adaptor.getStoragePoolType()
@@ -92,8 +96,8 @@ public class KVMStoragePoolManager {
                 logger.debug("Skipping registration of abstract class / interface " + storageAdaptorClass.getName());
                 continue;
             }
-            if (storageAdaptorClass.isAssignableFrom(LibvirtStorageAdaptor.class)) {
-                logger.debug("Skipping re-registration of LibvirtStorageAdaptor");
+            if (storageAdaptorClass == LibvirtStorageAdaptor.class || storageAdaptorClass == ClvmStorageAdaptor.class) {
+                logger.debug("Skipping re-registration of explicitly registered adaptor: {}", storageAdaptorClass.getSimpleName());
                 continue;
             }
             try {
@@ -522,7 +526,7 @@ public class KVMStoragePoolManager {
     }
 
     public void createTemplateOnClvmNg(String templatePath, String templateUuid, int timeout, KVMStoragePool pool) {
-        LibvirtStorageAdaptor adaptor = (LibvirtStorageAdaptor) getStorageAdaptor(pool.getType());
+        StorageAdaptor adaptor = getStorageAdaptor(pool.getType());
         adaptor.createTemplateOnClvmNg(templatePath, templateUuid, timeout, pool);
     }
 

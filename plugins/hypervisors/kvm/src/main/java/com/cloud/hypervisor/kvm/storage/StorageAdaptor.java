@@ -148,4 +148,12 @@ public interface StorageAdaptor {
     default Pair<Boolean, String> unprepareStorageClient(String uuid, Map<String, String> details) {
         return new Pair<>(true, "");
     }
+
+    /**
+     * Creates a template LV on a CLVM_NG pool from the given QCOW2 template file.
+     * Default implementation is a no-op; overridden by ClvmStorageAdaptor.
+     */
+    default void createTemplateOnClvmNg(String templatePath, String templateUuid, int timeout, KVMStoragePool pool) {
+        // no-op for non-CLVM adaptors
+    }
 }
