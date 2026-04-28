@@ -61,7 +61,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.resource.ResourceManager;
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -336,6 +336,19 @@ public class VirtualMachineManagerImplTest {
         if (updatedConfigKeyDepot) {
             ReflectionTestUtils.setField(VirtualMachineManager.VmMetadataManufacturer, "s_depot", configDepotImpl);
         }
+    }
+
+    private ClvmPoolManager injectMockedClvmPoolManager() {
+        ClvmPoolManager clvmPoolManagerMock = mock(ClvmPoolManager.class);
+        ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmPoolManager", clvmPoolManagerMock);
+        return clvmPoolManagerMock;
+    }
+
+    private Method getUpdateClvmLockHostForVmVolumesMethod() throws NoSuchMethodException {
+        Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
+            "updateClvmLockHostForVmVolumes", long.class, long.class);
+        method.setAccessible(true);
+        return method;
     }
 
     @Test
@@ -1976,16 +1989,13 @@ public class VirtualMachineManagerImplTest {
         when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(clvmVolume1, clvmVolume2));
         when(storagePoolDaoMock.findById(poolId)).thenReturn(clvmPool);
 
-        ClvmLockManager clvmLockManagerMock = mock(ClvmLockManager.class);
-        ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmLockManager", clvmLockManagerMock);
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
 
-        Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
-            "updateClvmLockHostForVmVolumes", long.class, long.class);
-        method.setAccessible(true);
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
         method.invoke(virtualMachineManagerImpl, vmId, destHostId);
 
-        verify(clvmLockManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
-        verify(clvmLockManagerMock, times(1)).setClvmLockHostId(2L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(2L, destHostId);
     }
 
     @Test
@@ -2003,15 +2013,12 @@ public class VirtualMachineManagerImplTest {
         when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(nfsVolume));
         when(storagePoolDaoMock.findById(poolId)).thenReturn(nfsPool);
 
-        ClvmLockManager clvmLockManagerMock = mock(ClvmLockManager.class);
-        ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmLockManager", clvmLockManagerMock);
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
 
-        Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
-            "updateClvmLockHostForVmVolumes", long.class, long.class);
-        method.setAccessible(true);
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
         method.invoke(virtualMachineManagerImpl, vmId, destHostId);
 
-        verify(clvmLockManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
     }
 
     @Test
@@ -2038,16 +2045,13 @@ public class VirtualMachineManagerImplTest {
         when(storagePoolDaoMock.findById(clvmPoolId)).thenReturn(clvmPool);
         when(storagePoolDaoMock.findById(nfsPoolId)).thenReturn(nfsPool);
 
-        ClvmLockManager clvmLockManagerMock = mock(ClvmLockManager.class);
-        ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmLockManager", clvmLockManagerMock);
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
 
-        Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
-            "updateClvmLockHostForVmVolumes", long.class, long.class);
-        method.setAccessible(true);
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
         method.invoke(virtualMachineManagerImpl, vmId, destHostId);
 
-        verify(clvmLockManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
-        verify(clvmLockManagerMock, never()).setClvmLockHostId(2L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(2L, destHostId);
     }
 
     @Test
@@ -2057,15 +2061,12 @@ public class VirtualMachineManagerImplTest {
 
         when(volumeDaoMock.findByInstance(vmId)).thenReturn(Collections.emptyList());
 
-        ClvmLockManager clvmLockManagerMock = mock(ClvmLockManager.class);
-        ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmLockManager", clvmLockManagerMock);
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
 
-        Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
-            "updateClvmLockHostForVmVolumes", long.class, long.class);
-        method.setAccessible(true);
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
         method.invoke(virtualMachineManagerImpl, vmId, destHostId);
 
-        verify(clvmLockManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
     }
 
     @Test
@@ -2078,16 +2079,13 @@ public class VirtualMachineManagerImplTest {
 
         when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(volumeWithoutPool));
 
-        ClvmLockManager clvmLockManagerMock = mock(ClvmLockManager.class);
-        ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmLockManager", clvmLockManagerMock);
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
 
-        Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
-            "updateClvmLockHostForVmVolumes", long.class, long.class);
-        method.setAccessible(true);
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
         method.invoke(virtualMachineManagerImpl, vmId, destHostId);
 
         verify(storagePoolDaoMock, never()).findById(anyLong());
-        verify(clvmLockManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
     }
 
     @Test
@@ -2102,15 +2100,12 @@ public class VirtualMachineManagerImplTest {
         when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(volume));
         when(storagePoolDaoMock.findById(poolId)).thenReturn(null);
 
-        ClvmLockManager clvmLockManagerMock = mock(ClvmLockManager.class);
-        ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmLockManager", clvmLockManagerMock);
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
 
-        Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
-            "updateClvmLockHostForVmVolumes", long.class, long.class);
-        method.setAccessible(true);
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
         method.invoke(virtualMachineManagerImpl, vmId, destHostId);
 
-        verify(clvmLockManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
+        verify(clvmPoolManagerMock, never()).setClvmLockHostId(anyLong(), anyLong());
     }
 
     @Test
@@ -2141,17 +2136,14 @@ public class VirtualMachineManagerImplTest {
         when(storagePoolDaoMock.findById(pool1Id)).thenReturn(clvmPool1);
         when(storagePoolDaoMock.findById(pool2Id)).thenReturn(clvmPool2);
 
-        ClvmLockManager clvmLockManagerMock = mock(ClvmLockManager.class);
-        ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmLockManager", clvmLockManagerMock);
+        ClvmPoolManager clvmPoolManagerMock = injectMockedClvmPoolManager();
 
-        Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
-            "updateClvmLockHostForVmVolumes", long.class, long.class);
-        method.setAccessible(true);
+        Method method = getUpdateClvmLockHostForVmVolumesMethod();
         method.invoke(virtualMachineManagerImpl, vmId, destHostId);
 
-        verify(clvmLockManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
-        verify(clvmLockManagerMock, times(1)).setClvmLockHostId(2L, destHostId);
-        verify(clvmLockManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(1L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(2L, destHostId);
+        verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
     }
 
 }

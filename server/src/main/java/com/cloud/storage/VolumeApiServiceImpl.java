@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -371,7 +372,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     EndPointSelector _epSelector;
     @Inject
-    ClvmLockManager clvmLockManager;
+    ClvmPoolManager clvmPoolManager;
     @Inject
     private ReservationDao reservationDao;
     @Inject
@@ -416,8 +417,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public static final ConfigKey<Boolean> AllowCheckAndRepairVolume = new ConfigKey<>("Advanced", Boolean.class, "volume.check.and.repair.leaks.before.use", "false",
             "To check and repair the volume if it has any leaks before performing volume attach or VM start operations", true, ConfigKey.Scope.StoragePool);
 
-    public static final ConfigKey<Boolean> CLVMSecureZeroFill = new ConfigKey<>("Advanced", Boolean.class, "clvm.secure.zero.fill", "false",
-            "When enabled, CLVM volumes to be zero-filled at the time of deletion to prevent data from being recovered by VMs reusing the space, as thick LVM volumes write data linearly. Note: This setting is propagated to hosts when they connect to the storage pool. Changing this setting requires disconnecting and reconnecting hosts or restarting the KVM agent for it to take effect.", false, ConfigKey.Scope.StoragePool);
+
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
@@ -1825,7 +1825,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             // Clean up CLVM lock host tracking detail after successful deletion from primary storage
             if (DataStoreRole.Primary.equals(role)) {
-                clvmLockManager.clearClvmLockHostDetail(volume);
+                clvmPoolManager.clearClvmLockHostDetail(volume);
             }
         }
     }
@@ -5737,7 +5737,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 UseHttpsToUpload,
                 WaitDetachDevice,
                 AllowCheckAndRepairVolume,
-                CLVMSecureZeroFill
         };
     }
 }

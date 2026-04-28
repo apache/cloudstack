@@ -26,10 +26,10 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.storage.command.ClvmLockTransferAnswer;
-import org.apache.cloudstack.storage.command.ClvmLockTransferCommand;
+import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer;
+import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,7 +52,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ClvmLockManagerTest {
+public class ClvmPoolManagerTest {
 
     @Mock
     private VolumeDetailsDao volsDetailsDao;
@@ -64,7 +64,7 @@ public class ClvmLockManagerTest {
     private HostDao hostDao;
 
     @InjectMocks
-    private ClvmLockManager clvmLockManager;
+    private ClvmPoolManager clvmPoolManager;
 
     private static final Long VOLUME_ID = 100L;
     private static final Long HOST_ID_1 = 1L;
@@ -82,18 +82,18 @@ public class ClvmLockManagerTest {
     public void testGetClvmLockHostId_Success() {
         VolumeDetailVO detail = new VolumeDetailVO();
         detail.setValue("123");
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
 
-        Long result = clvmLockManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID);
+        Long result = clvmPoolManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID);
 
         Assert.assertEquals(Long.valueOf(123), result);
     }
 
     @Test
     public void testGetClvmLockHostId_NoDetail() {
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(null);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
 
-        Long result = clvmLockManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID);
+        Long result = clvmPoolManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID);
 
         Assert.assertNull(result);
     }
@@ -102,20 +102,20 @@ public class ClvmLockManagerTest {
     public void testGetClvmLockHostId_InvalidNumber() {
         VolumeDetailVO detail = new VolumeDetailVO();
         detail.setValue("invalid");
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
 
-        Long result = clvmLockManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID);
+        Long result = clvmPoolManager.getClvmLockHostId(VOLUME_ID, VOLUME_UUID);
 
         Assert.assertNull(result);
     }
 
     @Test
     public void testSetClvmLockHostId_NewDetail() {
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(null);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
 
-        clvmLockManager.setClvmLockHostId(VOLUME_ID, HOST_ID_1);
+        clvmPoolManager.setClvmLockHostId(VOLUME_ID, HOST_ID_1);
 
-        verify(volsDetailsDao, times(1)).addDetail(eq(VOLUME_ID), eq(VolumeInfo.CLVM_LOCK_HOST_ID),
+        verify(volsDetailsDao, times(1)).addDetail(eq(VOLUME_ID), eq(ClvmPoolManager.CLVM_LOCK_HOST_ID),
                 eq(String.valueOf(HOST_ID_1)), eq(false));
         verify(volsDetailsDao, never()).update(anyLong(), any());
     }
@@ -124,9 +124,9 @@ public class ClvmLockManagerTest {
     public void testSetClvmLockHostId_UpdateExisting() {
         VolumeDetailVO existingDetail = Mockito.mock(VolumeDetailVO.class);
         when(existingDetail.getId()).thenReturn(50L);
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(existingDetail);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(existingDetail);
 
-        clvmLockManager.setClvmLockHostId(VOLUME_ID, HOST_ID_2);
+        clvmPoolManager.setClvmLockHostId(VOLUME_ID, HOST_ID_2);
 
         verify(existingDetail, times(1)).setValue(String.valueOf(HOST_ID_2));
         verify(volsDetailsDao, times(1)).update(eq(50L), eq(existingDetail));
@@ -141,9 +141,9 @@ public class ClvmLockManagerTest {
 
         VolumeDetailVO detail = Mockito.mock(VolumeDetailVO.class);
         when(detail.getId()).thenReturn(99L);
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
 
-        clvmLockManager.clearClvmLockHostDetail(volume);
+        clvmPoolManager.clearClvmLockHostDetail(volume);
 
         verify(volsDetailsDao, times(1)).remove(99L);
     }
@@ -152,9 +152,9 @@ public class ClvmLockManagerTest {
     public void testClearClvmLockHostDetail_NoDetail() {
         VolumeVO volume = Mockito.mock(VolumeVO.class);
         when(volume.getId()).thenReturn(VOLUME_ID);
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(null);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
 
-        clvmLockManager.clearClvmLockHostDetail(volume);
+        clvmPoolManager.clearClvmLockHostDetail(volume);
 
         verify(volsDetailsDao, never()).remove(anyLong());
     }
@@ -174,7 +174,7 @@ public class ClvmLockManagerTest {
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(deactivateAnswer);
         when(agentMgr.send(eq(HOST_ID_2), any(ClvmLockTransferCommand.class))).thenReturn(activateAnswer);
 
-        boolean result = clvmLockManager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID,
+        boolean result = clvmPoolManager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID,
                 VOLUME_PATH, pool, HOST_ID_1, HOST_ID_2);
 
         Assert.assertTrue(result);
@@ -183,7 +183,7 @@ public class ClvmLockManagerTest {
 
     @Test
     public void testTransferClvmVolumeLock_NullPool() {
-        boolean result = clvmLockManager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID,
+        boolean result = clvmPoolManager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID,
                 VOLUME_PATH, null, HOST_ID_1, HOST_ID_2);
 
         Assert.assertFalse(result);
@@ -197,7 +197,7 @@ public class ClvmLockManagerTest {
         Answer activateAnswer = new Answer(null, true, null);
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(activateAnswer);
 
-        boolean result = clvmLockManager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID,
+        boolean result = clvmPoolManager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID,
                 VOLUME_PATH, pool, HOST_ID_1, HOST_ID_1);
 
         Assert.assertTrue(result);
@@ -212,7 +212,7 @@ public class ClvmLockManagerTest {
         Answer activateAnswer = new Answer(null, false, "Activation failed");
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(activateAnswer);
 
-        boolean result = clvmLockManager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID,
+        boolean result = clvmPoolManager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID,
                 VOLUME_PATH, pool, HOST_ID_1, HOST_ID_1);
 
         Assert.assertFalse(result);
@@ -226,7 +226,7 @@ public class ClvmLockManagerTest {
         when(agentMgr.send(anyLong(), any(ClvmLockTransferCommand.class)))
                 .thenThrow(new AgentUnavailableException("Agent unavailable", HOST_ID_2));
 
-        boolean result = clvmLockManager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID,
+        boolean result = clvmPoolManager.transferClvmVolumeLock(VOLUME_UUID, VOLUME_ID,
                 VOLUME_PATH, pool, HOST_ID_1, HOST_ID_2);
 
         Assert.assertFalse(result);
@@ -234,7 +234,7 @@ public class ClvmLockManagerTest {
 
     @Test
     public void testQueryCurrentLockHolder_NullPool() {
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, null, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, null, false);
 
         Assert.assertNull(result);
         verify(hostDao, never()).findByClusterId(anyLong(), any());
@@ -249,7 +249,7 @@ public class ClvmLockManagerTest {
         when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.emptyList());
         when(hostDao.findByDataCenterId(1L)).thenReturn(Collections.emptyList());
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertNull(result);
         verify(hostDao, times(1)).findByClusterId(10L, Host.Type.Routing);
@@ -271,7 +271,7 @@ public class ClvmLockManagerTest {
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
         when(hostDao.findByName("host1")).thenReturn(host);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertEquals(HOST_ID_1, result);
         verify(hostDao, never()).findByClusterId(anyLong(), any());
@@ -292,7 +292,7 @@ public class ClvmLockManagerTest {
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
         when(hostDao.findByName("host1")).thenReturn(host);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertEquals(HOST_ID_1, result);
         verify(agentMgr, times(1)).send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class));
@@ -311,7 +311,7 @@ public class ClvmLockManagerTest {
         ClvmLockTransferAnswer answer = new ClvmLockTransferAnswer(null, true, null, null, false, false, null);
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertNull(result);
     }
@@ -329,7 +329,7 @@ public class ClvmLockManagerTest {
         ClvmLockTransferAnswer answer = new ClvmLockTransferAnswer(null, true, null, "", false, false, null);
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertNull(result);
     }
@@ -348,7 +348,7 @@ public class ClvmLockManagerTest {
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
         when(hostDao.findByName("unknown-host")).thenReturn(null);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertNull(result);
     }
@@ -366,7 +366,7 @@ public class ClvmLockManagerTest {
         Answer failedAnswer = new Answer(null, false, "Query failed");
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(failedAnswer);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertNull(result);
     }
@@ -383,7 +383,7 @@ public class ClvmLockManagerTest {
 
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(null);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertNull(result);
     }
@@ -401,7 +401,7 @@ public class ClvmLockManagerTest {
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class)))
                 .thenThrow(new AgentUnavailableException("Host unavailable", HOST_ID_1));
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertNull(result);
     }
@@ -419,7 +419,7 @@ public class ClvmLockManagerTest {
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class)))
                 .thenThrow(new OperationTimedoutException(null, HOST_ID_1, 0, 0, false));
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertNull(result);
     }
@@ -436,13 +436,13 @@ public class ClvmLockManagerTest {
 
         VolumeDetailVO detail = new VolumeDetailVO();
         detail.setValue(String.valueOf(HOST_ID_1));
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
 
         ClvmLockTransferAnswer answer = new ClvmLockTransferAnswer(null, true, null, "host1", true, false, null);
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
         when(hostDao.findByName("host1")).thenReturn(host);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
 
         Assert.assertEquals(HOST_ID_1, result);
         verify(volsDetailsDao, never()).update(anyLong(), any());
@@ -462,14 +462,14 @@ public class ClvmLockManagerTest {
         VolumeDetailVO detail = Mockito.mock(VolumeDetailVO.class);
 
         detail.setValue(String.valueOf(HOST_ID_1));
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
         when(detail.getId()).thenReturn(99L);
 
         ClvmLockTransferAnswer answer = new ClvmLockTransferAnswer(null, true, null, "host2", true, false, null);
         when(agentMgr.send(eq(HOST_ID_2), any(ClvmLockTransferCommand.class))).thenReturn(answer);
         when(hostDao.findByName("host2")).thenReturn(host);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
 
         Assert.assertEquals(HOST_ID_2, result);
         verify(detail, times(1)).setValue(String.valueOf(HOST_ID_2));
@@ -486,16 +486,16 @@ public class ClvmLockManagerTest {
         HostVO host = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
         when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.singletonList(host));
 
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(null);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
 
         ClvmLockTransferAnswer answer = new ClvmLockTransferAnswer(null, true, null, "host1", true, false, null);
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
         when(hostDao.findByName("host1")).thenReturn(host);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
 
         Assert.assertEquals(HOST_ID_1, result);
-        verify(volsDetailsDao, times(1)).addDetail(eq(VOLUME_ID), eq(VolumeInfo.CLVM_LOCK_HOST_ID),
+        verify(volsDetailsDao, times(1)).addDetail(eq(VOLUME_ID), eq(ClvmPoolManager.CLVM_LOCK_HOST_ID),
                 eq(String.valueOf(HOST_ID_1)), eq(false));
     }
 
@@ -511,12 +511,12 @@ public class ClvmLockManagerTest {
 
         VolumeDetailVO detail = Mockito.mock(VolumeDetailVO.class);
         when(detail.getId()).thenReturn(99L);
-        when(volsDetailsDao.findDetail(VOLUME_ID, VolumeInfo.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
 
         ClvmLockTransferAnswer answer = new ClvmLockTransferAnswer(null, true, null, null, false, false, null);
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, true);
 
         Assert.assertNull(result);
         verify(volsDetailsDao, times(1)).remove(99L);
@@ -537,7 +537,7 @@ public class ClvmLockManagerTest {
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
         when(hostDao.findByName("kvm-host")).thenReturn(kvmHost);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertEquals(HOST_ID_1, result);
         verify(agentMgr, never()).send(eq(10L), any(ClvmLockTransferCommand.class));
@@ -559,7 +559,7 @@ public class ClvmLockManagerTest {
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
         when(hostDao.findByName("up-host")).thenReturn(upHost);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertEquals(HOST_ID_1, result);
         verify(agentMgr, never()).send(eq(10L), any(ClvmLockTransferCommand.class));
@@ -580,7 +580,7 @@ public class ClvmLockManagerTest {
         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(answer);
         when(hostDao.findByName("host1")).thenReturn(host);
 
-        Long result = clvmLockManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
+        Long result = clvmPoolManager.queryCurrentLockHolder(VOLUME_ID, VOLUME_UUID, VOLUME_PATH, pool, false);
 
         Assert.assertEquals(HOST_ID_1, result);
     }

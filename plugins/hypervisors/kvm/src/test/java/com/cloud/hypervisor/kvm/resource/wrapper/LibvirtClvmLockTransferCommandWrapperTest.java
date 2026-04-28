@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.apache.cloudstack.storage.command.ClvmLockTransferCommand;
+import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
 import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;

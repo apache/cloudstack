@@ -46,6 +46,7 @@ import com.cloud.host.HostVO;
 import com.cloud.resourcelimit.CheckedReservation;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
@@ -227,7 +228,7 @@ public class VolumeApiServiceImplTest {
     @Mock
     VolumeOrchestrationService volumeOrchestrationService;
     @Mock
-    ClvmLockManager clvmLockManager;
+    ClvmPoolManager clvmPoolManager;
 
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();

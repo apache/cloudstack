@@ -27,7 +27,7 @@ import java.util.Objects;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -110,7 +110,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     @Inject
     VolumeDataStoreDao volumeDataStoreDao;
     @Inject
-    ClvmLockManager clvmLockManager;
+    ClvmPoolManager clvmPoolManager;
 
     @Inject
     StorageManager storageManager;
@@ -340,9 +340,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         if (ep != null && volObj instanceof VolumeInfo) {
             VolumeInfo volumeInfo = (VolumeInfo) volObj;
             StoragePool destPool = (StoragePool) volObj.getDataStore();
-            if (destPool != null && ClvmLockManager.isClvmPoolType(destPool.getPoolType())) {
+            if (destPool != null && ClvmPoolManager.isClvmPoolType(destPool.getPoolType())) {
                 Long hostId = ep.getId();
-                Long existingHostId = clvmLockManager.getClvmLockHostId(
+                Long existingHostId = clvmPoolManager.getClvmLockHostId(
                         volumeInfo.getId(),
                         volumeInfo.getUuid(),
                         volumeInfo.getPath(),
@@ -350,7 +350,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                         true
                 );
                 if (existingHostId == null) {
-                    clvmLockManager.setClvmLockHostId(volumeInfo.getId(), hostId);
+                    clvmPoolManager.setClvmLockHostId(volumeInfo.getId(), hostId);
                     logger.debug("Set lock host ID {} for CLVM volume {} being created from snapshot", hostId, volumeInfo.getId());
                 }
             }

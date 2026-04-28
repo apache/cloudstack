@@ -32,7 +32,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -224,7 +224,7 @@ public class VolumeServiceImpl implements VolumeService {
     @Inject
     protected DiskOfferingDao diskOfferingDao;
     @Inject
-    ClvmLockManager clvmLockManager;
+    ClvmPoolManager clvmPoolManager;
 
     public VolumeServiceImpl() {
     }
@@ -2979,7 +2979,7 @@ public class VolumeServiceImpl implements VolumeService {
         logger.info("Transferring CLVM lock for volume {} (pool: {}) from host {} to host {}",
                 volume.getUuid(), pool.getName(), sourceHostId, destHostId);
 
-        return clvmLockManager.transferClvmVolumeLock(volume.getUuid(), volume.getId(), volume.getPath(),
+        return clvmPoolManager.transferClvmVolumeLock(volume.getUuid(), volume.getId(), volume.getPath(),
                 pool, sourceHostId, destHostId);
     }
 
@@ -2992,7 +2992,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         StoragePoolVO pool = storagePoolDao.findById(volume.getPoolId());
 
-        Long lockHostId = clvmLockManager.getClvmLockHostId(
+        Long lockHostId = clvmPoolManager.getClvmLockHostId(
                 volume.getId(),
                 volume.getUuid(),
                 volume.getPath(),
@@ -3077,14 +3077,14 @@ public class VolumeServiceImpl implements VolumeService {
             logger.debug("Cannot check if both pools are CLVM type: one or both pool types are null");
             return false;
         }
-        return ClvmLockManager.isClvmPoolType(volumePoolType) &&
-               ClvmLockManager.isClvmPoolType(vmPoolType);
+        return ClvmPoolManager.isClvmPoolType(volumePoolType) &&
+               ClvmPoolManager.isClvmPoolType(vmPoolType);
     }
 
     @Override
     public boolean isLockTransferRequired(VolumeInfo volumeToAttach, StoragePoolType volumePoolType, StoragePoolType vmPoolType,
                                           Long volumePoolId, Long vmPoolId, Long vmHostId) {
-        if (volumePoolType != null && !ClvmLockManager.isClvmPoolType(volumePoolType)) {
+        if (volumePoolType != null && !ClvmPoolManager.isClvmPoolType(volumePoolType)) {
             return false;
         }
 

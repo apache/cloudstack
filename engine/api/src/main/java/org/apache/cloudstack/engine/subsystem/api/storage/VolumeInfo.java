@@ -31,12 +31,6 @@ import java.util.Set;
 
 public interface VolumeInfo extends DownloadableDataInfo, Volume {
 
-    /**
-     * Constant for the volume detail key that stores the host ID currently holding the CLVM exclusive lock.
-     * This is used during lightweight lock migration to determine the source host for lock transfer.
-     */
-    String CLVM_LOCK_HOST_ID = "clvmLockHostId";
-
     boolean isAttachedVM();
 
     void addPayload(Object data);

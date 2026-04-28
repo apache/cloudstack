@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.cloud.storage;
+package com.cloud.storage.clvm;
 
 import java.util.Arrays;
 import java.util.List;
@@ -31,16 +31,21 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDetailsDao;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
-import org.apache.cloudstack.storage.command.ClvmLockTransferCommand;
-import org.apache.cloudstack.storage.command.ClvmLockTransferAnswer;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
+import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ClvmLockManager {
+public class ClvmPoolManager implements Configurable {
     @Inject
     private VolumeDetailsDao _volsDetailsDao;
     @Inject
@@ -49,6 +54,15 @@ public class ClvmLockManager {
     private HostDao _hostDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
+
+    /**
+     * Constant for the volume detail key that stores the host ID currently holding the CLVM exclusive lock.
+     * This is used during lightweight lock migration to determine the source host for lock transfer.
+     */
+    public static final String CLVM_LOCK_HOST_ID = "clvmLockHostId";
+
+    public static final ConfigKey<Boolean> CLVMSecureZeroFill = new ConfigKey<>("Advanced", Boolean.class, "clvm.secure.zero.fill", "false",
+            "When enabled, CLVM volumes to be zero-filled at the time of deletion to prevent data from being recovered by VMs reusing the space, as thick LVM volumes write data linearly. Note: This setting is propagated to hosts when they connect to the storage pool. Changing this setting requires disconnecting and reconnecting hosts or restarting the KVM agent for it to take effect.", false, ConfigKey.Scope.StoragePool);
 
     public static boolean isClvmPoolType(Storage.StoragePoolType poolType) {
         return Arrays.asList(Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM_NG).contains(poolType);
@@ -63,7 +77,7 @@ public class ClvmLockManager {
      * @deprecated Use getClvmLockHostId(volumeId, volumeUuid, volumePath, pool, queryActual) instead
      */
     public Long getClvmLockHostId(Long volumeId, String volumeUuid) {
-        VolumeDetailVO detail = _volsDetailsDao.findDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID);
+        VolumeDetailVO detail = _volsDetailsDao.findDetail(volumeId, CLVM_LOCK_HOST_ID);
         if (detail != null && detail.getValue() != null && !detail.getValue().isEmpty()) {
             try {
                 return Long.parseLong(detail.getValue());
@@ -108,14 +122,14 @@ public class ClvmLockManager {
      * @param hostId The host ID that holds/should hold the CLVM exclusive lock
      */
     public void setClvmLockHostId(long volumeId, long hostId) {
-        VolumeDetailVO existingDetail = _volsDetailsDao.findDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID);
+        VolumeDetailVO existingDetail = _volsDetailsDao.findDetail(volumeId, CLVM_LOCK_HOST_ID);
         if (existingDetail != null) {
             existingDetail.setValue(String.valueOf(hostId));
             _volsDetailsDao.update(existingDetail.getId(), existingDetail);
             logger.debug("Updated CLVM_LOCK_HOST_ID for volume {} to host {}", volumeId, hostId);
             return;
         }
-        _volsDetailsDao.addDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID, String.valueOf(hostId), false);
+        _volsDetailsDao.addDetail(volumeId, CLVM_LOCK_HOST_ID, String.valueOf(hostId), false);
         logger.debug("Created CLVM_LOCK_HOST_ID for volume {} with host {}", volumeId, hostId);
     }
 
@@ -199,7 +213,7 @@ public class ClvmLockManager {
                 if (hostname == null || hostname.isEmpty()) {
                     logger.debug("Volume {} is not locked (no exclusive lock held)", volumeUuid);
                     if (updateDatabase) {
-                        VolumeDetailVO detail = _volsDetailsDao.findDetail(volumeId, VolumeInfo.CLVM_LOCK_HOST_ID);
+                        VolumeDetailVO detail = _volsDetailsDao.findDetail(volumeId, CLVM_LOCK_HOST_ID);
                         if (detail != null) {
                             _volsDetailsDao.remove(detail.getId());
                         }
@@ -246,7 +260,7 @@ public class ClvmLockManager {
      */
     public void clearClvmLockHostDetail(VolumeVO volume) {
         try {
-            VolumeDetailVO detail = _volsDetailsDao.findDetail(volume.getId(), VolumeInfo.CLVM_LOCK_HOST_ID);
+            VolumeDetailVO detail = _volsDetailsDao.findDetail(volume.getId(), CLVM_LOCK_HOST_ID);
             if (detail != null) {
                 logger.debug("Removing CLVM lock host detail for deleted volume {}", volume.getUuid());
                 _volsDetailsDao.remove(detail.getId());
@@ -330,5 +344,17 @@ public class ClvmLockManager {
             logger.error("Exception during CLVM lock transfer for volume {}: {}", volumeUuid, e.getMessage(), e);
             return false;
         }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ClvmPoolManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {
+                CLVMSecureZeroFill
+        };
     }
 }

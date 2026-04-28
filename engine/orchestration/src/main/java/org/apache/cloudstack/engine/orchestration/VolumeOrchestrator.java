@@ -41,7 +41,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.agent.AgentManager;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.resourcelimit.ReservationHelper;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
@@ -278,7 +278,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Inject
     VMInstanceDao vmInstanceDao;
     @Inject
-    ClvmLockManager clvmLockManager;
+    ClvmPoolManager clvmPoolManager;
     @Inject
     AgentManager _agentMgr;
 
@@ -756,12 +756,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         // For CLVM pools, set the lock host hint so volume is created on the correct host
         // This avoids the need for shared mode activation and improves performance
-        if (ClvmLockManager.isClvmPoolType(pool.getPoolType()) && hostId != null) {
+        if (ClvmPoolManager.isClvmPoolType(pool.getPoolType()) && hostId != null) {
             logger.info("CLVM pool detected. Setting lock host {} for volume {} to route creation to correct host",
                     hostId, volumeInfo.getUuid());
             volumeInfo.setDestinationHostId(hostId);
 
-            clvmLockManager.setClvmLockHostId(volumeInfo.getId(), hostId);
+            clvmPoolManager.setClvmLockHostId(volumeInfo.getId(), hostId);
         }
 
         for (int i = 0; i < 2; i++) {
@@ -820,7 +820,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         StoragePoolVO pool = _storagePoolDao.findById(destPool.getId());
-        if (pool == null || !ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
+        if (pool == null || !ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
             return;
         }
 
@@ -833,7 +833,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return;
         }
 
-        clvmLockManager.setClvmLockHostId(migratedVolume.getId(), vm.getHostId());
+        clvmPoolManager.setClvmLockHostId(migratedVolume.getId(), vm.getHostId());
         logger.debug("Updated CLVM_LOCK_HOST_ID for {} volume {} to host {} where VM {} is running",
                 operationType, migratedVolume.getUuid(), vm.getHostId(), vm.getInstanceName());
     }
@@ -862,8 +862,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
 
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-            if (pool != null && ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
-                Long lockHostId = clvmLockManager.getClvmLockHostId(
+            if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+                Long lockHostId = clvmPoolManager.getClvmLockHostId(
                         volume.getId(),
                         volume.getUuid(),
                         volume.getPath(),
@@ -892,11 +892,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
 
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-            if (pool == null || !ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
+            if (pool == null || !ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
                 continue;
             }
 
-            Long currentLockHost = clvmLockManager.getClvmLockHostId(
+            Long currentLockHost = clvmPoolManager.getClvmLockHostId(
                     volume.getId(),
                     volume.getUuid(),
                     volume.getPath(),
@@ -905,12 +905,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             );
 
             if (currentLockHost == null) {
-                clvmLockManager.setClvmLockHostId(volume.getId(), destHostId);
+                clvmPoolManager.setClvmLockHostId(volume.getId(), destHostId);
             } else if (!currentLockHost.equals(destHostId)) {
                 logger.info("CLVM volume {} is locked on host {} but VM {} starting on host {}. Transferring lock.",
                         volume.getUuid(), currentLockHost, vm.getInstanceName(), destHostId);
 
-                if (!clvmLockManager.transferClvmVolumeLock(volume.getUuid(), volume.getId(),
+                if (!clvmPoolManager.transferClvmVolumeLock(volume.getUuid(), volume.getId(),
                         volume.getPath(), pool, currentLockHost, destHostId)) {
                     throw new CloudRuntimeException(
                             String.format("Failed to transfer CLVM lock for volume %s from host %s to host %s",
@@ -1338,8 +1338,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         Long clusterId = storagePool.getClusterId();
         logger.trace("storage-pool {}/{} is associated with cluster {}",storagePool.getName(), storagePool.getUuid(), clusterId);
         Long hostId = vm.getHostId();
-        if (hostId == null && (storagePool.isLocal() || ClvmLockManager.isClvmPoolType(storagePool.getPoolType()))) {
-            if (ClvmLockManager.isClvmPoolType(storagePool.getPoolType())) {
+        if (hostId == null && (storagePool.isLocal() || ClvmPoolManager.isClvmPoolType(storagePool.getPoolType()))) {
+            if (ClvmPoolManager.isClvmPoolType(storagePool.getPoolType())) {
                 hostId = getClvmLockHostFromVmVolumes(vm.getId());
                 if (hostId != null) {
                     logger.debug("Using CLVM lock host {} from VM {}'s existing volumes for new volume creation",
@@ -2012,11 +2012,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     // For CLVM pools, set the destination host hint so volume is created on the correct host
                     // This avoids the need for shared mode activation and improves performance
                     StoragePoolVO poolVO = _storagePoolDao.findById(destPool.getId());
-                    if (poolVO != null && ClvmLockManager.isClvmPoolType(poolVO.getPoolType())) {
+                    if (poolVO != null && ClvmPoolManager.isClvmPoolType(poolVO.getPoolType())) {
                         Long hostId = vm.getVirtualMachine().getHostId();
                         if (hostId != null) {
                             volume.setDestinationHostId(hostId);
-                            clvmLockManager.setClvmLockHostId(volume.getId(), hostId);
+                            clvmPoolManager.setClvmLockHostId(volume.getId(), hostId);
                             logger.info("CLVM pool detected during volume creation from template. Setting lock host {} for volume {} (persisted to DB) to route creation to correct host",
                                     hostId, volume.getUuid());
                         }

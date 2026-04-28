@@ -24,6 +24,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
@@ -364,12 +365,12 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public Long getDestinationHostId() {
-        // If not in memory, try to load from database (volume_details table)
-        // For CLVM volumes, this uses the CLVM_LOCK_HOST_ID which serves dual purpose:
+        // If not in memory, try to load from the database (volume_details table)
+        // For CLVM volumes, this uses the CLVM_LOCK_HOST_ID, which serves a dual purpose:
         // 1. During creation: hints where to create the volume
         // 2. After creation: tracks which host holds the exclusive lock
         if (destinationHostId == null && volumeVO != null) {
-            VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeVO.getId(), CLVM_LOCK_HOST_ID);
+            VolumeDetailVO detail = volumeDetailsDao.findDetail(volumeVO.getId(), ClvmPoolManager.CLVM_LOCK_HOST_ID);
             if (detail != null && detail.getValue() != null && !detail.getValue().isEmpty()) {
                 try {
                     destinationHostId = Long.parseLong(detail.getValue());

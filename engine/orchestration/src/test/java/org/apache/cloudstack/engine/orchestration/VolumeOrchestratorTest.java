@@ -32,7 +32,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
@@ -670,17 +670,17 @@ public class VolumeOrchestratorTest {
         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vmInstance.getInstanceName()).thenReturn(MOCK_VM_NAME);
 
-        ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
+        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
+        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
                 Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(currentHostId);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(102L), Mockito.anyString(),
+        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(102L), Mockito.anyString(),
                 Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(currentHostId);
-        Mockito.when(clvmLockManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
+        Mockito.when(clvmPoolManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
             Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
 
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(clvmPool);
 
-        setField(volumeOrchestrator, "clvmLockManager", clvmLockManager);
+        setField(volumeOrchestrator, "clvmPoolManager", clvmPoolManager);
         setField(volumeOrchestrator, "_storagePoolDao", storagePoolDao);
 
         Method method = VolumeOrchestrator.class.getDeclaredMethod(
@@ -689,10 +689,10 @@ public class VolumeOrchestratorTest {
 
         method.invoke(volumeOrchestrator, List.of(clvmVolume1, clvmVolume2), destHostId, vmInstance);
 
-        Mockito.verify(clvmLockManager, Mockito.times(1)).transferClvmVolumeLock(
+        Mockito.verify(clvmPoolManager, Mockito.times(1)).transferClvmVolumeLock(
             Mockito.eq("vol-uuid-1"), Mockito.eq(101L), Mockito.eq("vol-path-1"),
             Mockito.eq(clvmPool), Mockito.eq(currentHostId), Mockito.eq(destHostId));
-        Mockito.verify(clvmLockManager, Mockito.times(1)).transferClvmVolumeLock(
+        Mockito.verify(clvmPoolManager, Mockito.times(1)).transferClvmVolumeLock(
             Mockito.eq("vol-uuid-2"), Mockito.eq(102L), Mockito.eq("vol-path-2"),
             Mockito.eq(clvmPool), Mockito.eq(currentHostId), Mockito.eq(destHostId));
     }
@@ -710,11 +710,11 @@ public class VolumeOrchestratorTest {
 
         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
 
-        ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
+        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
 
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(nfsPool);
 
-        setField(volumeOrchestrator, "clvmLockManager", clvmLockManager);
+        setField(volumeOrchestrator, "clvmPoolManager", clvmPoolManager);
         setField(volumeOrchestrator, "_storagePoolDao", storagePoolDao);
 
         Method method = VolumeOrchestrator.class.getDeclaredMethod(
@@ -723,7 +723,7 @@ public class VolumeOrchestratorTest {
 
         method.invoke(volumeOrchestrator, List.of(nfsVolume), destHostId, vmInstance);
 
-        Mockito.verify(clvmLockManager, Mockito.never()).transferClvmVolumeLock(
+        Mockito.verify(clvmPoolManager, Mockito.never()).transferClvmVolumeLock(
             Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
             Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
     }
@@ -742,13 +742,13 @@ public class VolumeOrchestratorTest {
 
         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
 
-        ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), ArgumentMatchers.nullable(String.class),
+        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
+        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), ArgumentMatchers.nullable(String.class),
                 ArgumentMatchers.nullable(String.class), Mockito.any(), Mockito.eq(true))).thenReturn(destHostId);
 
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(clvmPool);
 
-        setField(volumeOrchestrator, "clvmLockManager", clvmLockManager);
+        setField(volumeOrchestrator, "clvmPoolManager", clvmPoolManager);
         setField(volumeOrchestrator, "_storagePoolDao", storagePoolDao);
 
         java.lang.reflect.Method method = VolumeOrchestrator.class.getDeclaredMethod(
@@ -757,7 +757,7 @@ public class VolumeOrchestratorTest {
 
         method.invoke(volumeOrchestrator, List.of(clvmVolume), destHostId, vmInstance);
 
-        Mockito.verify(clvmLockManager, Mockito.never()).transferClvmVolumeLock(
+        Mockito.verify(clvmPoolManager, Mockito.never()).transferClvmVolumeLock(
             Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
             Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
     }
@@ -767,8 +767,8 @@ public class VolumeOrchestratorTest {
         Long destHostId = 2L;
         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
 
-        ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        setField(volumeOrchestrator, "clvmLockManager", clvmLockManager);
+        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
+        setField(volumeOrchestrator, "clvmPoolManager", clvmPoolManager);
 
         Method method = VolumeOrchestrator.class.getDeclaredMethod(
             "transferClvmLocksForVmStart", List.class, Long.class, VMInstanceVO.class);
@@ -776,7 +776,7 @@ public class VolumeOrchestratorTest {
 
         method.invoke(volumeOrchestrator, new ArrayList<VolumeVO>(), destHostId, vmInstance);
 
-        Mockito.verify(clvmLockManager, Mockito.never()).getClvmLockHostId(Mockito.anyLong(), Mockito.anyString(),
+        Mockito.verify(clvmPoolManager, Mockito.never()).getClvmLockHostId(Mockito.anyLong(), Mockito.anyString(),
                 Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
     }
 
@@ -789,8 +789,8 @@ public class VolumeOrchestratorTest {
 
         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
 
-        ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        setField(volumeOrchestrator, "clvmLockManager", clvmLockManager);
+        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
+        setField(volumeOrchestrator, "clvmPoolManager", clvmPoolManager);
         setField(volumeOrchestrator, "_storagePoolDao", storagePoolDao);
 
         Method method = VolumeOrchestrator.class.getDeclaredMethod(
@@ -816,13 +816,13 @@ public class VolumeOrchestratorTest {
 
         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
 
-        ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), ArgumentMatchers.nullable(String.class),
+        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
+        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), ArgumentMatchers.nullable(String.class),
                 ArgumentMatchers.nullable(String.class), Mockito.any(), Mockito.eq(true))).thenReturn(null);
 
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(clvmPool);
 
-        setField(volumeOrchestrator, "clvmLockManager", clvmLockManager);
+        setField(volumeOrchestrator, "clvmPoolManager", clvmPoolManager);
         setField(volumeOrchestrator, "_storagePoolDao", storagePoolDao);
 
         Method method = VolumeOrchestrator.class.getDeclaredMethod(
@@ -831,8 +831,8 @@ public class VolumeOrchestratorTest {
 
         method.invoke(volumeOrchestrator, List.of(clvmVolume), destHostId, vmInstance);
 
-        Mockito.verify(clvmLockManager, Mockito.times(1)).setClvmLockHostId(101L, destHostId);
-        Mockito.verify(clvmLockManager, Mockito.never()).transferClvmVolumeLock(
+        Mockito.verify(clvmPoolManager, Mockito.times(1)).setClvmLockHostId(101L, destHostId);
+        Mockito.verify(clvmPoolManager, Mockito.never()).transferClvmVolumeLock(
             Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(),
             Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
     }
@@ -862,16 +862,16 @@ public class VolumeOrchestratorTest {
         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vmInstance.getInstanceName()).thenReturn(MOCK_VM_NAME);
 
-        ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
+        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
+        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
                 Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(currentHostId);
-        Mockito.when(clvmLockManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
+        Mockito.when(clvmPoolManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
             Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
 
         Mockito.when(storagePoolDao.findById(clvmPoolId)).thenReturn(clvmPool);
         Mockito.when(storagePoolDao.findById(nfsPoolId)).thenReturn(nfsPool);
 
-        setField(volumeOrchestrator, "clvmLockManager", clvmLockManager);
+        setField(volumeOrchestrator, "clvmPoolManager", clvmPoolManager);
         setField(volumeOrchestrator, "_storagePoolDao", storagePoolDao);
 
         Method method = VolumeOrchestrator.class.getDeclaredMethod(
@@ -880,7 +880,7 @@ public class VolumeOrchestratorTest {
 
         method.invoke(volumeOrchestrator, List.of(clvmVolume, nfsVolume), destHostId, vmInstance);
 
-        Mockito.verify(clvmLockManager, Mockito.times(1)).transferClvmVolumeLock(
+        Mockito.verify(clvmPoolManager, Mockito.times(1)).transferClvmVolumeLock(
             Mockito.eq("clvm-vol-uuid"), Mockito.eq(101L), Mockito.eq("clvm-vol-path"),
             Mockito.eq(clvmPool), Mockito.eq(currentHostId), Mockito.eq(destHostId));
     }
@@ -903,15 +903,15 @@ public class VolumeOrchestratorTest {
         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vmInstance.getInstanceName()).thenReturn(MOCK_VM_NAME);
 
-        ClvmLockManager clvmLockManager = Mockito.mock(ClvmLockManager.class);
-        Mockito.when(clvmLockManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
+        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
+        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
                 Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(currentHostId);
-        Mockito.when(clvmLockManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
+        Mockito.when(clvmPoolManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
             Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(false);
 
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(clvmPool);
 
-        setField(volumeOrchestrator, "clvmLockManager", clvmLockManager);
+        setField(volumeOrchestrator, "clvmPoolManager", clvmPoolManager);
         setField(volumeOrchestrator, "_storagePoolDao", storagePoolDao);
 
         Method method = VolumeOrchestrator.class.getDeclaredMethod(

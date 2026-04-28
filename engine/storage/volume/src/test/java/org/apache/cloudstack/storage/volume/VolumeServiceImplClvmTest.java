@@ -26,7 +26,7 @@ import static org.mockito.Mockito.eq;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -87,7 +87,7 @@ public class VolumeServiceImplClvmTest {
     private VMInstanceVO vmInstanceVOMock;
 
     @Mock
-    private ClvmLockManager clvmLockManager;
+    private ClvmPoolManager clvmPoolManager;
 
     private static final Long VOLUME_ID = 1L;
     private static final Long POOL_ID_1 = 100L;
@@ -107,7 +107,7 @@ public class VolumeServiceImplClvmTest {
         volumeService.vmDao = vmDao;
         volumeService.volFactory = volFactory;
         volumeService._volumeDao = volumeDao;
-        volumeService.clvmLockManager = clvmLockManager;
+        volumeService.clvmPoolManager = clvmPoolManager;
     }
 
     @Test
@@ -355,7 +355,7 @@ public class VolumeServiceImplClvmTest {
         when(volumeInfoMock.getPath()).thenReturn("/dev/vg1/volume-1");
         when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
         when(storagePoolVOMock.getName()).thenReturn("test-pool");
-        when(clvmLockManager.transferClvmVolumeLock(
+        when(clvmPoolManager.transferClvmVolumeLock(
                 "test-volume-uuid", VOLUME_ID, "/dev/vg1/volume-1", storagePoolVOMock, HOST_ID_1, HOST_ID_2))
                 .thenReturn(true);
 
@@ -369,7 +369,7 @@ public class VolumeServiceImplClvmTest {
         when(volumeInfoMock.getPath()).thenReturn("/dev/vg1/volume-1");
         when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
         when(storagePoolVOMock.getName()).thenReturn("test-pool");
-        when(clvmLockManager.transferClvmVolumeLock(
+        when(clvmPoolManager.transferClvmVolumeLock(
                 "test-volume-uuid", VOLUME_ID, "/dev/vg1/volume-1", storagePoolVOMock, HOST_ID_1, HOST_ID_2))
                 .thenReturn(false);
 
@@ -394,7 +394,7 @@ public class VolumeServiceImplClvmTest {
     public void testFindVolumeLockHost_ExplicitLockFound() {
         when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
         when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
-        when(clvmLockManager.getClvmLockHostId(
+        when(clvmPoolManager.getClvmLockHostId(
                 eq(VOLUME_ID), eq("test-volume-uuid"), eq("test-volume-path"), eq(storagePoolVOMock), eq(true)))
                 .thenReturn(HOST_ID_1);
 
@@ -406,7 +406,7 @@ public class VolumeServiceImplClvmTest {
     public void testFindVolumeLockHost_FromAttachedVM() {
         when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
         when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
-        when(clvmLockManager.getClvmLockHostId(
+        when(clvmPoolManager.getClvmLockHostId(
                 eq(VOLUME_ID), eq("test-volume-uuid"), eq("test-volume-path"), eq(storagePoolVOMock), eq(true)))
                 .thenReturn(null);
         when(volumeInfoMock.getInstanceId()).thenReturn(100L);
@@ -422,7 +422,7 @@ public class VolumeServiceImplClvmTest {
     public void testFindVolumeLockHost_FallbackToClusterHost() {
         when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
         when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
-        when(clvmLockManager.getClvmLockHostId(
+        when(clvmPoolManager.getClvmLockHostId(
                 eq(VOLUME_ID), eq("test-volume-uuid"), eq("test-volume-path"), eq(storagePoolVOMock), eq(true)))
                 .thenReturn(null);
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
@@ -439,7 +439,7 @@ public class VolumeServiceImplClvmTest {
     public void testFindVolumeLockHost_NoHostFound() {
         when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
         when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
-        when(clvmLockManager.getClvmLockHostId(
+        when(clvmPoolManager.getClvmLockHostId(
                 eq(VOLUME_ID), eq("test-volume-uuid"), eq("test-volume-path"), eq(storagePoolVOMock), eq(true)))
                 .thenReturn(null);
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
@@ -456,11 +456,11 @@ public class VolumeServiceImplClvmTest {
         when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
         when(volumeInfoMock.getPath()).thenReturn("/dev/vg1/volume-1");
         when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
-        when(clvmLockManager.getClvmLockHostId(
+        when(clvmPoolManager.getClvmLockHostId(
                 eq(VOLUME_ID), eq("test-volume-uuid"), eq("/dev/vg1/volume-1"), eq(storagePoolVOMock), eq(true)))
                 .thenReturn(HOST_ID_1);
         when(storagePoolVOMock.getName()).thenReturn("test-pool");
-        when(clvmLockManager.transferClvmVolumeLock(
+        when(clvmPoolManager.transferClvmVolumeLock(
                 "test-volume-uuid", VOLUME_ID, "/dev/vg1/volume-1", storagePoolVOMock, HOST_ID_1, HOST_ID_2))
                 .thenReturn(true);
         when(volFactory.getVolume(VOLUME_ID)).thenReturn(volumeInfoMock);
@@ -473,7 +473,7 @@ public class VolumeServiceImplClvmTest {
     public void testPerformLockMigration_SameHost() {
         when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
         when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
-        when(clvmLockManager.getClvmLockHostId(
+        when(clvmPoolManager.getClvmLockHostId(
                 eq(VOLUME_ID), eq("test-volume-uuid"), eq("test-volume-path"), eq(storagePoolVOMock), eq(true)))
                 .thenReturn(HOST_ID_1);
 
@@ -486,7 +486,7 @@ public class VolumeServiceImplClvmTest {
         when(volumeInfoMock.getPoolId()).thenReturn(POOL_ID_1);
         when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
         when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
-        when(clvmLockManager.getClvmLockHostId(
+        when(clvmPoolManager.getClvmLockHostId(
                 eq(VOLUME_ID), eq("test-volume-uuid"), eq("test-volume-path"), eq(storagePoolVOMock), eq(true)))
                 .thenReturn(null);
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
@@ -507,11 +507,11 @@ public class VolumeServiceImplClvmTest {
         when(volumeInfoMock.getId()).thenReturn(VOLUME_ID);
         when(volumeInfoMock.getPath()).thenReturn("/dev/vg1/volume-1");
         when(storagePoolDao.findById(POOL_ID_1)).thenReturn(storagePoolVOMock);
-        when(clvmLockManager.getClvmLockHostId(
+        when(clvmPoolManager.getClvmLockHostId(
                 eq(VOLUME_ID), eq("test-volume-uuid"), eq("/dev/vg1/volume-1"), eq(storagePoolVOMock), eq(true)))
                 .thenReturn(HOST_ID_1);
         when(storagePoolVOMock.getName()).thenReturn("test-pool");
-        when(clvmLockManager.transferClvmVolumeLock(
+        when(clvmPoolManager.transferClvmVolumeLock(
                 "test-volume-uuid", VOLUME_ID, "/dev/vg1/volume-1", storagePoolVOMock, HOST_ID_1, HOST_ID_2))
                 .thenReturn(false);
 

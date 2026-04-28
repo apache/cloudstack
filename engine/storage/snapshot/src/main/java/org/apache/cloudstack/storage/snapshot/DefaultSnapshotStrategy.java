@@ -60,7 +60,7 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
@@ -711,7 +711,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         StoragePool pool = (StoragePool) dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
-        if (pool == null || !ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
+        if (pool == null || !ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
             return false;
         }
 

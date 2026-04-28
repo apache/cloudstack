@@ -20,7 +20,7 @@ package org.apache.cloudstack.storage.endpoint;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VolumeDetailVO;
@@ -82,7 +82,7 @@ public class DefaultEndPointSelectorTest {
     private EndPoint endPointMock;
 
     @Mock
-    ClvmLockManager clvmLockManager;
+    ClvmPoolManager clvmPoolManager;
 
     @Mock
     HostDao hostDao;

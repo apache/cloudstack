@@ -21,8 +21,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
-import org.apache.cloudstack.storage.command.ClvmLockTransferCommand;
-import org.apache.cloudstack.storage.command.ClvmLockTransferAnswer;
+import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferCommand;
+import org.apache.cloudstack.storage.clvm.command.ClvmLockTransferAnswer;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;

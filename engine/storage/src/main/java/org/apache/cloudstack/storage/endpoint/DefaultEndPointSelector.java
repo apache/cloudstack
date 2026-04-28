@@ -32,7 +32,7 @@ import javax.inject.Inject;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -84,7 +84,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     @Inject
     private VolumeDetailsDao _volDetailsDao;
     @Inject
-    private ClvmLockManager clvmLockManager;
+    private ClvmPoolManager clvmPoolManager;
 
     private static final String VOL_ENCRYPT_COLUMN_NAME = "volume_encryption_support";
     private final String findOneHostOnPrimaryStorage = "select t.id from "
@@ -287,7 +287,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             DataStore srcStore = srcVolume.getDataStore();
             if (srcStore.getRole() == DataStoreRole.Primary) {
                 StoragePoolVO pool = _storagePoolDao.findById(srcStore.getId());
-                if (pool != null && ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
+                if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
                     Long lockHostId = getClvmLockHostId(srcVolume);
                     if (lockHostId != null) {
                         logger.info("Routing CLVM volume {} copy operation to source lock holder host {}",
@@ -445,7 +445,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
         // Check if this is a CLVM pool
         StoragePoolVO pool = _storagePoolDao.findById(store.getId());
-        if (pool == null || !ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
+        if (pool == null || !ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
             return null;
         }
 
@@ -507,7 +507,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         if (object instanceof VolumeInfo && store.getRole() == DataStoreRole.Primary) {
             VolumeInfo volume = (VolumeInfo) object;
             StoragePoolVO pool = _storagePoolDao.findById(store.getId());
-            if (pool != null && ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
+            if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
                 Long lockHostId = getClvmLockHostId(volume);
                 if (lockHostId != null) {
                     logger.debug("Routing CLVM volume {} operation to lock holder host {}",
@@ -621,7 +621,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                     DataStore store = volume.getDataStore();
                     if (store.getRole() == DataStoreRole.Primary) {
                         StoragePoolVO pool = _storagePoolDao.findById(store.getId());
-                        if (pool != null && ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
+                        if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
                             Long lockHostId = getClvmLockHostId(volume);
                             if (lockHostId != null) {
                                 logger.info("Routing CLVM volume {} deletion to lock holder host {}",
@@ -747,7 +747,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     protected Long getClvmLockHostId(VolumeInfo volume) {
         StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
 
-        Long lockHostId = clvmLockManager.getClvmLockHostId(
+        Long lockHostId = clvmPoolManager.getClvmLockHostId(
                 volume.getId(),
                 volume.getUuid(),
                 volume.getPath(),

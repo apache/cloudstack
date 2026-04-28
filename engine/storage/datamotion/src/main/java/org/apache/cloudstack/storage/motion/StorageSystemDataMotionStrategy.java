@@ -36,7 +36,7 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.resource.ResourceManager;
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -209,7 +209,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     @Inject
     ResourceManager resourceManager;
     @Inject
-    private ClvmLockManager clvmLockManager;
+    private ClvmPoolManager clvmPoolManager;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -2075,9 +2075,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 setVolumeMigrationOptions(srcVolumeInfo, destVolumeInfo, vmTO, srcHost, destStoragePool, migrationType);
 
-                if (ClvmLockManager.isClvmPoolType(destStoragePool.getPoolType())) {
+                if (ClvmPoolManager.isClvmPoolType(destStoragePool.getPoolType())) {
                     destVolumeInfo.setDestinationHostId(destHost.getId());
-                    clvmLockManager.setClvmLockHostId(destVolume.getId(), destHost.getId());
+                    clvmPoolManager.setClvmLockHostId(destVolume.getId(), destHost.getId());
                     logger.info("Set CLVM lock host {} for volume {} during migration to ensure creation on destination host",
                             destHost.getId(), destVolumeInfo.getUuid());
                 }
@@ -2353,7 +2353,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      */
     protected MigrateCommand.MigrateDiskInfo updateMigrateDiskInfoForBlockDevice(MigrateCommand.MigrateDiskInfo migrateDiskInfo,
                                                                                    StoragePoolVO destStoragePool) {
-        if (ClvmLockManager.isClvmPoolType(destStoragePool.getPoolType())) {
+        if (ClvmPoolManager.isClvmPoolType(destStoragePool.getPoolType())) {
 
             MigrateCommand.MigrateDiskInfo.DriverType driverType =
                 (destStoragePool.getPoolType() == StoragePoolType.CLVM_NG) ?

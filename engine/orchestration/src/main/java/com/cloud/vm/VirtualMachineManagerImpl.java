@@ -51,7 +51,7 @@ import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
 import com.cloud.agent.api.PostMigrationCommand;
-import com.cloud.storage.ClvmLockManager;
+import com.cloud.storage.clvm.ClvmPoolManager;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -469,7 +469,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     ExtensionDetailsDao extensionDetailsDao;
     @Inject
-    ClvmLockManager clvmLockManager;
+    ClvmPoolManager clvmPoolManager;
 
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
@@ -3287,26 +3287,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 logger.warn("Error while checking the vm {} on host {}", vm, dest.getHost(), e);
             }
             migrated = true;
-            if (vm.getHypervisorType() == HypervisorType.KVM && hasClvmVolumes(vm.getId())) {
-                try {
-                    logger.info("Executing post-migration tasks for VM {} with CLVM volumes on destination host {}", vm.getInstanceName(), dstHostId);
-                    final PostMigrationCommand postMigrationCommand = new PostMigrationCommand(to, vm.getInstanceName());
-                    final Answer postMigrationAnswer = _agentMgr.send(dstHostId, postMigrationCommand);
-
-                    if (postMigrationAnswer == null || !postMigrationAnswer.getResult()) {
-                        final String details = postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
-                        logger.warn("Post-migration tasks failed for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
-                            vm.getInstanceName(), dstHostId, details);
-                    } else {
-                        logger.info("Successfully completed post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostId);
-                    }
-                } catch (Exception e) {
-                    logger.warn("Exception during post-migration tasks for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
-                        vm.getInstanceName(), dstHostId, e.getMessage(), e);
-                }
-            }
-
-            updateClvmLockHostForVmVolumes(vm.getId(), dstHostId);
+            executePostMigrationCommand(vm, to, dstHostId);
         } finally {
             if (!migrated) {
                 logger.info("Migration was unsuccessful. Cleaning up: {}", vm);
@@ -3344,6 +3325,29 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
         }
+    }
+
+    private void executePostMigrationCommand(VMInstanceVO vm, VirtualMachineTO to, long dstHostId) {
+        if (vm.getHypervisorType() == HypervisorType.KVM && hasClvmVolumes(vm.getId())) {
+            try {
+                logger.info("Executing post-migration tasks for VM {} with CLVM volumes on destination host {}", vm.getInstanceName(), dstHostId);
+                final PostMigrationCommand postMigrationCommand = new PostMigrationCommand(to, vm.getInstanceName());
+                final Answer postMigrationAnswer = _agentMgr.send(dstHostId, postMigrationCommand);
+
+                if (postMigrationAnswer == null || !postMigrationAnswer.getResult()) {
+                    final String details = postMigrationAnswer != null ? postMigrationAnswer.getDetails() : "null answer returned";
+                    logger.warn("Post-migration tasks failed for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
+                            vm.getInstanceName(), dstHostId, details);
+                } else {
+                    logger.info("Successfully completed post-migration tasks for VM {} on destination host {}", vm.getInstanceName(), dstHostId);
+                }
+            } catch (Exception e) {
+                logger.warn("Exception during post-migration tasks for VM {} on destination host {}: {}. Migration completed but some cleanup may be needed.",
+                        vm.getInstanceName(), dstHostId, e.getMessage(), e);
+            }
+        }
+
+        updateClvmLockHostForVmVolumes(vm.getId(), dstHostId);
     }
 
     /**
@@ -3401,14 +3405,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      */
     private void updateClvmLockHostForVmVolumes(long vmId, long destHostId) {
         List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
-        if (volumes == null || volumes.isEmpty()) {
+        if (CollectionUtils.isEmpty(volumes)) {
             return;
         }
 
         for (VolumeVO volume : volumes) {
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-            if (pool != null && ClvmLockManager.isClvmPoolType(pool.getPoolType())) {
-                clvmLockManager.setClvmLockHostId(volume.getId(), destHostId);
+            if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+                clvmPoolManager.setClvmLockHostId(volume.getId(), destHostId);
             }
         }
     }
@@ -6507,7 +6511,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
         return volumes.stream()
             .map(v -> _storagePoolDao.findById(v.getPoolId()))
-            .anyMatch(pool -> pool != null && ClvmLockManager.isClvmPoolType(pool.getPoolType()));
+            .anyMatch(pool -> pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType()));
     }
 
     private void executePreMigrationCommand(VirtualMachineTO to, String vmInstanceName, long srcHostId) {
