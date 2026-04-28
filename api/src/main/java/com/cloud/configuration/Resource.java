@@ -38,8 +38,7 @@ public interface Resource {
         backup_storage("backup_storage", 13),
         bucket("bucket", 14),
         object_storage("object_storage", 15),
-        gpu("gpu", 16),
-        dns_zone("dns_zone", 17);
+        gpu("gpu", 16);
 
         private String name;
         private int ordinal;

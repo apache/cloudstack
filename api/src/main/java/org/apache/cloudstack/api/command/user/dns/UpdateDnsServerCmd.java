@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.dns;
 
+import java.util.List;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ACL;
@@ -58,20 +60,25 @@ public class UpdateDnsServerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "API URL of the provider")
     private String url;
 
-    @Parameter(name = ApiConstants.DNS_API_KEY, type = CommandType.STRING, required = false, description = "API Key or Credentials for the external provider")
+    @Parameter(name = ApiConstants.DNS_API_KEY, type = CommandType.STRING, description = "API Key or Credentials for the external provider")
     private String dnsApiKey;
 
     @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, description = "Port number of the external DNS server")
     private Integer port;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "Whether the DNS server is publicly accessible by other accounts")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN,
+            description = "Whether this DNS server can be used by accounts other than the owner to create and manage DNS zones")
     private Boolean isPublic;
 
-    @Parameter(name = ApiConstants.PUBLIC_DOMAIN_SUFFIX, type = CommandType.STRING, description = "The domain suffix used for public access (e.g. public.example.com)")
+    @Parameter(name = ApiConstants.PUBLIC_DOMAIN_SUFFIX, type = CommandType.STRING,
+            description = "Domain suffix that restricts DNS zones created by non-owner accounts to subdomains of this " +
+                    "suffix (for example, sub.example.com under example.com)")
     private String publicDomainSuffix;
 
-    @Parameter(name = ApiConstants.NAME_SERVERS, type = CommandType.STRING, description = "Comma separated list of name servers")
-    private String nameServers;
+    @Parameter(name = ApiConstants.NAME_SERVERS, type = CommandType.LIST, collectionType = CommandType.STRING,
+            required = true,
+            description = "Comma separated list of name servers; used to create NS records for the DNS Zone (for example, ns1.example.com, ns2.example.com)")
+    private List<String> nameServers;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Update state for the DNS server (Enabled, Disabled)")
     private String state;
@@ -95,7 +102,7 @@ public class UpdateDnsServerCmd extends BaseCmd {
     public String getPublicDomainSuffix() {
         return publicDomainSuffix;
     }
-    public String getNameServers() { return nameServers; }
+    public String getNameServers() { return String.join(",", nameServers); }
 
     @Override
     public long getEntityOwnerId() {

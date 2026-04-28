@@ -1527,7 +1527,7 @@ export default {
     },
     {
       name: 'dnsserver',
-      title: 'label.dns.server',
+      title: 'label.dns.servers',
       icon: 'cloud-server-outlined',
       permission: ['listDnsServers'],
       columns: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix'],

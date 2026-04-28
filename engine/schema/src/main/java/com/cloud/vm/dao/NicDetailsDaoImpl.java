@@ -20,6 +20,7 @@ package com.cloud.vm.dao;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
@@ -48,6 +49,9 @@ public class NicDetailsDaoImpl extends ResourceDetailsDaoBase<NicDetailVO> imple
 
     @Override
     public void removeDetailsForValuesIn(String resourceName, List<String> values) {
+        if (CollectionUtils.isEmpty(values)) {
+            return;
+        }
         SearchCriteria<NicDetailVO> sc = NameValuesSearch.create();
         sc.setParameters(ApiConstants.NAME, resourceName);
         sc.setParameters(ApiConstants.VALUE, values.toArray());

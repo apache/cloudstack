@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.dns.DnsServer;
@@ -43,7 +45,7 @@ public class UpdateDnsServerCmdTest extends BaseDnsCmdTest {
         setField(cmd, "port", 9090);
         setField(cmd, "isPublic", true);
         setField(cmd, "publicDomainSuffix", "updated.example.com");
-        setField(cmd, "nameServers", "ns1.updated.com,ns2.updated.com");
+        setField(cmd, "nameServers", Arrays.asList("ns1.updated.com", "ns2.updated.com"));
         setField(cmd, "state", "Enabled");
         return cmd;
     }

@@ -68,17 +68,22 @@ public class AddDnsServerCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, description = "Port number of the external DNS server")
     private Integer port;
 
-    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "Whether the DNS server is publicly accessible by other accounts")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN,
+            description = "Whether this DNS server can be used by accounts other than the owner to create and manage DNS zones")
     private Boolean isPublic;
 
-    @Parameter(name = ApiConstants.PUBLIC_DOMAIN_SUFFIX, type = CommandType.STRING, description = "The domain suffix used for public access (e.g. public.example.com)")
+    @Parameter(name = ApiConstants.PUBLIC_DOMAIN_SUFFIX, type = CommandType.STRING,
+            description = "Domain suffix that restricts DNS zones created by non-owner accounts to subdomains of this " +
+                    "suffix (for example, sub.example.com under example.com)")
     private String publicDomainSuffix;
 
     @Parameter(name = ApiConstants.NAME_SERVERS, type = CommandType.LIST, collectionType = CommandType.STRING,
-            required = true, description = "Comma separated list of name servers")
+            required = true,
+            description = "Comma separated list of name servers; used to create NS records for the DNS Zone (for example, ns1.example.com, ns2.example.com)")
     private List<String> nameServers;
 
-    @Parameter(name = "externalserverid", type = CommandType.STRING, description = "External server id or hostname for the DNS server, e.g., 'localhost' for PowerDNS")
+    @Parameter(name = "externalserverid", type = CommandType.STRING,
+            description = "External server id or hostname for the DNS server, e.g., 'localhost' for PowerDNS")
     private String externalServerId;
 
     /////////////////////////////////////////////////////

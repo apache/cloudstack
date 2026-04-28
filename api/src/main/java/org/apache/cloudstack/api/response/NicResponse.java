@@ -151,7 +151,7 @@ public class NicResponse extends BaseResponse {
     private Boolean isEnabled;
 
     @SerializedName(ApiConstants.NIC_DNS_NAME)
-    @Param(description = "Public IP address associated with this NIC via Static NAT rule")
+    @Param(description = "DNS name associated with this NIC's IP address")
     private String nicDnsName;
 
     public void setVmId(String vmId) {
