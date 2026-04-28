@@ -705,7 +705,7 @@ public class FlashArrayAdapter implements ProviderAdapter {
                         try {
                             vResp.close();
                         } catch (IOException e) {
-                            logger.debug("Error closing /api/api_version response from FlashArray [" + url + "]", e);
+                            logger.debug("Error closing /api_version response from FlashArray [" + url + "]", e);
                         }
                     }
                 }
