@@ -126,17 +126,7 @@ public class CreateHSMProfileCmd extends BaseCmd {
     }
 
     public Map<String, String> getDetails() {
-        Map<String, String> detailsMap = new HashMap<>();
-        if (MapUtils.isNotEmpty(details)) {
-            Collection<?> props = details.values();
-            for (Object prop : props) {
-                HashMap<String, String> detail = (HashMap<String, String>) prop;
-                for (Map.Entry<String, String> entry : detail.entrySet()) {
-                    detailsMap.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }
-        return detailsMap;
+        return convertDetailsToMap(details);
     }
 
     @Override

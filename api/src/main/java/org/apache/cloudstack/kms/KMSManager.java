@@ -103,6 +103,27 @@ public interface KMSManager extends Manager, Configurable {
             ConfigKey.Scope.Global
     );
 
+    ConfigKey<Integer> KMSOperationPoolCoreSize = new ConfigKey<>(
+            "Advanced",
+            Integer.class,
+            "kms.operation.pool.core.size",
+            "2",
+            "Minimum number of threads kept alive for KMS cryptographic operations",
+            true,
+            ConfigKey.Scope.Global
+    );
+
+    ConfigKey<Integer> KMSOperationPoolMaxSize = new ConfigKey<>(
+            "Advanced",
+            Integer.class,
+            "kms.operation.pool.max.size",
+            "100",
+            "Maximum number of concurrent threads for KMS cryptographic operations. " +
+            "Set this to match the concurrency limit of your HSM appliance or external KMS provider.",
+            true,
+            ConfigKey.Scope.Global
+    );
+
     /**
      * List all registered KMS providers
      *

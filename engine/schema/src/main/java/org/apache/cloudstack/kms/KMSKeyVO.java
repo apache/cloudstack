@@ -92,9 +92,10 @@ public class KMSKeyVO implements KMSKey {
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
 
-    public KMSKeyVO(String name, String description, String kekLabel, KeyPurpose purpose,
-            Long accountId, Long domainId, Long zoneId,
-            String algorithm, Integer keyBits) {
+    public KMSKeyVO(String name, String description, String kekLabel,
+                    KeyPurpose purpose, Long accountId, Long domainId,
+                    Long zoneId, String algorithm, Integer keyBits
+    ) {
         this();
         this.name = name;
         this.description = description;
@@ -255,8 +256,9 @@ public class KMSKeyVO implements KMSKey {
 
     @Override
     public String toString() {
-        return String.format("KMSKey %s",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "purpose",
-                        "accountId", "zoneId", "enabled"));
+        return String.format("KMSKey %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "name", "purpose",
+                "accountId", "zoneId", "enabled"
+        ));
     }
 }

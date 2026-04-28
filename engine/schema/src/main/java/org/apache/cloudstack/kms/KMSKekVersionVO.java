@@ -62,22 +62,30 @@ public class KMSKekVersionVO {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
     @Column(name = "uuid", nullable = false)
     private String uuid;
+
     @Column(name = "kms_key_id", nullable = false)
     private Long kmsKeyId;
+
     @Column(name = "version_number", nullable = false)
     private Integer versionNumber;
+
     @Column(name = "kek_label", nullable = false)
     private String kekLabel;
+
     @Column(name = "status", nullable = false, length = 32)
     @Enumerated(EnumType.STRING)
     private Status status;
+
     @Column(name = "hsm_profile_id")
     private Long hsmProfileId;
+
     @Column(name = GenericDao.CREATED_COLUMN, nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date created;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     @Temporal(TemporalType.TIMESTAMP)
     private Date removed;
