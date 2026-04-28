@@ -3573,7 +3573,6 @@
 "message.error.remove.tungsten.routing.policy": "Removing Tungsten-Fabric Routing Policy from Network failed",
 "message.error.remove.vm.schedule": "Removing Instance Schedule failed",
 "message.error.required.input": "Please enter input",
-"message.error.required.publicdomainsuffix": "Please enter the public domain suffix if the public server is enabled",
 "message.error.reset.config": "Unable to reset config to default value",
 "message.error.retrieve.kubeconfig": "Unable to retrieve Kubernetes Cluster config",
 "message.error.routing.policy.term": "Community need to have the following format number:number",

@@ -201,8 +201,8 @@ export default {
         if (dnsapikey) {
           params.dnsapikey = dnsapikey
         }
-        if (this.form.ispublic) {
-          params.publicdomainsuffix = this.form.publicdomainsuffix?.trim().toLowerCase()
+        if (this.form.publicdomainsuffix) {
+          params.publicdomainsuffix = this.form.publicdomainsuffix?.toLowerCase().trim()
         }
         await postAPI('updateDnsServer', params)
         this.$notification.success({
@@ -269,12 +269,9 @@ export default {
       return Promise.resolve()
     },
     validatePublicDomainSuffix (rule, value) {
-      if (!this.form.ispublic) {
-        return Promise.resolve()
-      }
       const normalized = value?.toLowerCase().trim()
       if (!normalized) {
-        return Promise.reject(new Error(this.$t('message.error.required.publicdomainsuffix')))
+        return Promise.resolve()
       }
       if (!FQDN_REGEX.test(normalized)) {
         return Promise.reject(new Error('Invalid domain suffix'))

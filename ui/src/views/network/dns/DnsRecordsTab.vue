@@ -22,7 +22,6 @@
         shape="round"
         style="float: right;margin-bottom: 10px; z-index: 8"
         @click="() => { showAddForm = true }">
-        <!-- <template #icon><plus-outlined /></template> -->
         {{ $t('label.dns.create.record') }}
         <plus-outlined style="margin-left: 5px;" />
       </a-button>
@@ -44,7 +43,7 @@
           <template v-if="column.dataIndex === 'ttl'">
             {{ record.ttl }}
           </template>
-          <template v-if="column.key === 'actions' &&  record.type !== 'NS'">
+          <template v-if="column.key === 'actions'">
             <a-popconfirm
               :title="$t('message.confirm.delete.dns.record')"
               @confirm="handleDeleteRecord(record)"
@@ -189,7 +188,6 @@ export default {
         name: record.name,
         type: record.type
       }
-      console.log('DeleteDnsRecord params', params)
 
       postAPI('deleteDnsRecord', params).then(() => {
         this.$notification.success({
