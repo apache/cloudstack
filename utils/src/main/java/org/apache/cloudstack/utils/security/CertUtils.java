@@ -100,12 +100,13 @@ public class CertUtils {
 
     public static List<X509Certificate> pemToX509Certificates(final String pem) throws CertificateException, IOException {
         final List<X509Certificate> certs = new ArrayList<>();
-        final PEMParser pemParser = new PEMParser(new StringReader(pem));
-        final JcaX509CertificateConverter certConverter = new JcaX509CertificateConverter().setProvider("BC");
-        Object parsedObj;
-        while ((parsedObj = pemParser.readObject()) != null) {
-            if (parsedObj instanceof X509CertificateHolder) {
-                certs.add(certConverter.getCertificate((X509CertificateHolder) parsedObj));
+        try (final PEMParser pemParser = new PEMParser(new StringReader(pem))) {
+            final JcaX509CertificateConverter certConverter = new JcaX509CertificateConverter().setProvider("BC");
+            Object parsedObj;
+            while ((parsedObj = pemParser.readObject()) != null) {
+                if (parsedObj instanceof X509CertificateHolder) {
+                    certs.add(certConverter.getCertificate((X509CertificateHolder) parsedObj));
+                }
             }
         }
         return certs;

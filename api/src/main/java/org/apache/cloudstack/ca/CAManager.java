@@ -44,7 +44,7 @@ public interface CAManager extends CAService, Configurable, PluggableService {
             "The CA provider plugin used for CloudStack internal certificate management (MS-agent encryption and authentication). " +
             "The default 'root' provider auto-generates a CA on first startup, but also supports user-provided custom CA material " +
             "via the ca.plugin.root.private.key, ca.plugin.root.public.key, and ca.plugin.root.ca.certificate settings. " +
-            "Restart management server(s) when changed.", true);
+            "Restart management server(s) when changed.", false);
 
     ConfigKey<Integer> CertKeySize = new ConfigKey<>("Advanced", Integer.class,
                                     "ca.framework.cert.keysize",
@@ -94,7 +94,7 @@ public interface CAManager extends CAService, Configurable, PluggableService {
             "ca.framework.inject.default.truststore", "true",
             "When true, injects the CA provider's certificate into the JVM default truststore on management server startup. " +
             "This allows outgoing HTTPS connections from the management server to trust servers with certificates signed by the configured CA. " +
-            "Restart management server(s) when changed.", true);
+            "Restart management server(s) when changed.", false);
 
     /**
      * Returns a list of available CA provider plugins

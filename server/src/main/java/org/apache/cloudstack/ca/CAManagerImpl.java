@@ -41,6 +41,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
@@ -578,10 +579,13 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             // Copy existing default trusted certs
             final TrustManagerFactory defaultTmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             defaultTmf.init((KeyStore) null);
-            final X509TrustManager defaultTm = (X509TrustManager) defaultTmf.getTrustManagers()[0];
             int aliasIndex = 0;
-            for (final X509Certificate cert : defaultTm.getAcceptedIssuers()) {
-                trustStore.setCertificateEntry("default-ca-" + aliasIndex++, cert);
+            for (final TrustManager tm : defaultTmf.getTrustManagers()) {
+                if (tm instanceof X509TrustManager) {
+                    for (final X509Certificate cert : ((X509TrustManager) tm).getAcceptedIssuers()) {
+                        trustStore.setCertificateEntry("default-ca-" + aliasIndex++, cert);
+                    }
+                }
             }
 
             // Add CA provider's certificates

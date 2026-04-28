@@ -108,20 +108,20 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             null,
             "The ROOT CA private key in PEM format. " +
             "When set along with the public key and certificate, CloudStack uses this custom CA instead of auto-generating one. " +
-            "All three ca.plugin.root.* keys must be set together. Restart management server(s) when changed.", true);
+            "All three ca.plugin.root.* keys must be set together. Restart management server(s) when changed.", false);
 
     private static ConfigKey<String> rootCAPublicKey = new ConfigKey<>("Hidden", String.class,
             "ca.plugin.root.public.key",
             null,
             "The ROOT CA public key in PEM format (X.509/SPKI: must start with '-----BEGIN PUBLIC KEY-----'). " +
-            "Required when providing a custom CA. Restart management server(s) when changed.", true);
+            "Required when providing a custom CA. Restart management server(s) when changed.", false);
 
     private static ConfigKey<String> rootCACertificate = new ConfigKey<>("Hidden", String.class,
             "ca.plugin.root.ca.certificate",
             null,
             "The CA certificate(s) in PEM format (must start with '-----BEGIN CERTIFICATE-----'). " +
             "For intermediate CAs, concatenate the signing cert first, followed by intermediate(s) and root. " +
-            "Required when providing a custom CA. Restart management server(s) when changed.", true);
+            "Required when providing a custom CA. Restart management server(s) when changed.", false);
 
     private static ConfigKey<String> rootCAIssuerDN = new ConfigKey<>("Advanced", String.class,
             "ca.plugin.root.issuer.dn",
