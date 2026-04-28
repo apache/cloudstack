@@ -44,7 +44,7 @@
             value="#{storagePoolAllocatorsRegistry.registered}" />
     </bean>
 
-    <bean id="clvmLockManager" class="com.cloud.storage.clvm.ClvmPoolManager" />
+    <bean id="clvmPoolManager" class="com.cloud.storage.clvm.ClvmPoolManager" />
 
     <bean id="storageOrchestrator"
           class="org.apache.cloudstack.engine.orchestration.StorageOrchestrator"/>
