@@ -326,25 +326,45 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
         String result = getVgStats.execute(parser);
 
         if (result != null) {
-            throw new CloudRuntimeException("Failed to get VG stats for " + vgName + ": " + result);
+            String errorMsg = "Failed to get statistics for volume group " + vgName + ": " + result;
+            logger.error(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
         }
 
-        String output = parser.getLines();
-        if (output == null || output.trim().isEmpty()) {
-            throw new CloudRuntimeException("Empty output from vgs for VG: " + vgName);
+        String output = parser.getLines().trim();
+        String[] lines = output.split("\\n");
+        String dataLine = null;
+
+        for (String line : lines) {
+            line = line.trim();
+            if (!line.isEmpty() && Character.isDigit(line.charAt(0))) {
+                dataLine = line;
+                break;
+            }
         }
 
-        String[] parts = output.trim().split("\\s+");
-        if (parts.length < 2) {
-            throw new CloudRuntimeException("Unexpected vgs output format for VG " + vgName + ": " + output);
+        if (dataLine == null) {
+            String errorMsg = "No valid data line found in vgs output for " + vgName + ": " + output;
+            logger.error(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
+
+        String[] stats = dataLine.split("\\s+");
+
+        if (stats.length < 2) {
+            String errorMsg = "Unexpected output from vgs command for " + vgName + ": " + dataLine;
+            logger.error(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
         }
 
         try {
-            long capacity = Long.parseLong(parts[0].trim());
-            long available = Long.parseLong(parts[1].trim());
+            long capacity = Long.parseLong(stats[0].trim());
+            long available = Long.parseLong(stats[1].trim());
             return new long[]{capacity, available};
         } catch (NumberFormatException e) {
-            throw new CloudRuntimeException("Failed to parse VG stats for " + vgName + ": " + output, e);
+            String errorMsg = "Failed to parse VG statistics for " + vgName + ": " + e.getMessage();
+            logger.error(errorMsg);
+            throw new CloudRuntimeException(errorMsg, e);
         }
     }
 
