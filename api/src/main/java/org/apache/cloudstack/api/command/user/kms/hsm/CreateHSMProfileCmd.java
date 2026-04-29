@@ -39,11 +39,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.kms.KMSException;
 import org.apache.cloudstack.kms.HSMProfile;
 import org.apache.cloudstack.kms.KMSManager;
-import org.apache.commons.collections.MapUtils;
 
 import javax.inject.Inject;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 @APICommand(name = "createHSMProfile", description = "Creates a new HSM profile", responseObject = HSMProfileResponse.class,
