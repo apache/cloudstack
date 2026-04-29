@@ -57,11 +57,19 @@ public interface VeeamControlService extends PluggableService, Configurable {
             "", "Comma-separated list of CIDR blocks representing clients allowed to access the API. " +
                     "If empty, all clients will be allowed. Example: '192.168.1.1/24,192.168.2.100/32", true);
 
+    ConfigKey<Boolean> DeveloperLogs = new ConfigKey<>("Developer", Boolean.class, "integration.veeam.control.developer.logs",
+            "false", "Enable verbose logging for development and troubleshooting purposes. " +
+            "Logs will include detailed information about API requests, responses, and internal operations.", false);
+
     long getCurrentManagementServerHostId();
 
     List<String> getAllowedClientCidrs();
 
+    String getInstanceId();
+
     boolean validateCredentials(String username, String password);
+
+    String getHmacSecret();
 
     static String getPackageVersion() {
         return VeeamControlService.class.getPackage().getImplementationVersion();

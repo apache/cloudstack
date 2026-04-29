@@ -21,7 +21,7 @@ public class ReportedDevice extends BaseDto {
     private String comment;
     private String description;
     private NamedList<Ip> ips;
-    private Mac Mac;
+    private Mac mac;
     private String name;
     private String type;
     private Vm vm;
@@ -51,11 +51,11 @@ public class ReportedDevice extends BaseDto {
     }
 
     public Mac getMac() {
-        return Mac;
+        return mac;
     }
 
     public void setMac(Mac mac) {
-        Mac = mac;
+        this.mac = mac;
     }
 
     public String getName() {

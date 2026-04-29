@@ -17,9 +17,9 @@
 
 package org.apache.cloudstack.veeam.api.converter;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.DataCentersRouteHandler;
@@ -50,7 +50,6 @@ public class DataCenterJoinVOToDataCenterConverter {
         dc.setStatus(Grouping.AllocationState.Enabled.equals(zone.getAllocationState()) ? "up" : "down");
         dc.setLocal("false");
         dc.setQuotaMode("disabled");
-        dc.setStorageFormat("v5");
 
         // ---- Versions ----
         final Version ver = Version.fromPackageAndCSVersion(false);
@@ -61,11 +60,10 @@ public class DataCenterJoinVOToDataCenterConverter {
         dc.setMacPool(Ref.of(basePath + "/macpools/default", "default"));
 
         // ---- Related links ----
-        dc.link = Arrays.asList(
-                Link.of(href + "/clusters", "clusters"),
-                Link.of(href + "/networks", "networks"),
-                Link.of(href + "/storagedomains", "storagedomains")
-        );
+
+        dc.link = Stream.of("cluster", "networks", "storagedomains")
+                .map(rel -> Link.of(rel, href + "/" + rel))
+                .collect(Collectors.toList());
 
         return dc;
     }

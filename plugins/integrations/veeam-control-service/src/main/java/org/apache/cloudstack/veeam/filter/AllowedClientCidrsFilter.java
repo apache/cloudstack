@@ -64,8 +64,8 @@ public class AllowedClientCidrsFilter implements Filter {
         final HttpServletResponse resp = (HttpServletResponse) response;
 
         if (veeamControlService == null) {
-            LOGGER.warn("Failed to inject VeeamControlService, allowing request by default");
-            chain.doFilter(request, response);
+            LOGGER.error("Failed to inject VeeamControlService, rejecting request because allowed client CIDRs cannot be evaluated");
+            resp.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Service Unavailable");
             return;
         }
 

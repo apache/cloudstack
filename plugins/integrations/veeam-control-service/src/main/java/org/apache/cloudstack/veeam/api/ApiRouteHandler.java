@@ -39,7 +39,6 @@ import org.apache.cloudstack.veeam.api.dto.SummaryCount;
 import org.apache.cloudstack.veeam.api.dto.Version;
 import org.apache.cloudstack.veeam.utils.Negotiation;
 
-import com.cloud.user.AccountService;
 import com.cloud.utils.component.ManagerBase;
 
 public class ApiRouteHandler extends ManagerBase implements RouteHandler {
@@ -49,7 +48,7 @@ public class ApiRouteHandler extends ManagerBase implements RouteHandler {
     ServerAdapter serverAdapter;
 
     @Inject
-    AccountService accountService;
+    VeeamControlService veeamControlService;
 
     @Override
     public boolean canHandle(String method, String path) {
@@ -99,7 +98,7 @@ public class ApiRouteHandler extends ManagerBase implements RouteHandler {
 
         /* ---------------- Product info ---------------- */
         ProductInfo productInfo = new ProductInfo();
-        productInfo.setInstanceId(accountService.getSystemAccount().getUuid());
+        productInfo.setInstanceId(veeamControlService.getInstanceId());
         productInfo.name = VeeamControlService.PLUGIN_NAME;
 
         productInfo.version = Version.fromPackageAndCSVersion(true);

@@ -127,16 +127,16 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "Indicates whether the VM from which the backup was taken is expunged or not", since = "4.22.0")
     private Boolean isVmExpunged;
 
-    @SerializedName("from_checkpoint_id")
-    @Param(description = "Previous active checkpoint id for incremental backups", since = "4.22.0")
+    @SerializedName(ApiConstants.FROM_CHECKPOINT_ID)
+    @Param(description = "Previous active checkpoint ID for incremental backups", since = "4.23.0")
     private String fromCheckpointId;
 
-    @SerializedName("to_checkpoint_id")
-    @Param(description = "Next checkpoint id for incremental backups", since = "4.22.0")
+    @SerializedName(ApiConstants.TO_CHECKPOINT_ID)
+    @Param(description = "Next checkpoint ID for incremental backups", since = "4.23.0")
     private String toCheckpointId;
 
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description = "Host ID where the backup is running", since = "4.22.0")
+    @Param(description = "Host ID where the backup is running", since = "4.23.0")
     private String hostId;
 
     public String getId() {

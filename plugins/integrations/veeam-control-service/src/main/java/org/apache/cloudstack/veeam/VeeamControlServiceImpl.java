@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.veeam;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +32,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.user.AccountService;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.net.NetUtils;
 
@@ -38,6 +41,9 @@ public class VeeamControlServiceImpl extends ManagerBase implements VeeamControl
 
     @Inject
     ManagementServerHostDao managementServerHostDao;
+
+    @Inject
+    AccountService accountService;
 
     private List<RouteHandler> routeHandlers;
     private VeeamControlServer veeamControlServer;
@@ -84,9 +90,20 @@ public class VeeamControlServiceImpl extends ManagerBase implements VeeamControl
     }
 
     @Override
+    public String getInstanceId() {
+        return accountService.getSystemAccount().getUuid();
+    }
+
+    @Override
     public boolean validateCredentials(String username, String password) {
         return DataUtil.constantTimeEquals(Username.value(), username) &&
                 DataUtil.constantTimeEquals(Password.value(), password);
+    }
+
+    @Override
+    public String getHmacSecret() {
+        String base = getInstanceId() + ":" + Port.value() + ":" + Username.value() + Password.value();
+        return UuidUtils.nameUUIDFromBytes(base.getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     @Override
@@ -132,7 +149,8 @@ public class VeeamControlServiceImpl extends ManagerBase implements VeeamControl
                 Password,
                 ServiceAccountId,
                 InstanceRestoreAssignOwner,
-                AllowedClientCidrs
+                AllowedClientCidrs,
+                DeveloperLogs
         };
     }
 }

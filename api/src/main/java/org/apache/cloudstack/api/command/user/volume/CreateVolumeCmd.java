@@ -163,7 +163,8 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     public Long getStorageId() {
         if (snapshotId != null && storageId != null) {
-            throw new IllegalArgumentException("StorageId parameter cannot be specified with the SnapshotId parameter.");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "StorageId parameter cannot be specified with the SnapshotId parameter.");
         }
         return storageId;
     }

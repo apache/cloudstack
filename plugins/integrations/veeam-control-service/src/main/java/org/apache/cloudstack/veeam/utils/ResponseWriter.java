@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.cloudstack.veeam.VeeamControlService;
 import org.apache.cloudstack.veeam.api.dto.Fault;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,7 +65,10 @@ public final class ResponseWriter {
             return;
         }
 
-        LOGGER.info("Writing response: {}\n{}", status, payload);
+        if (VeeamControlService.DeveloperLogs.value()) {
+            LOGGER.debug("Writing response: status={}, contentType={}, payloadLength={}\n{}",
+                    status, contentType, payload.length(), payload);
+        }
 
         resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
         resp.setHeader("Content-Type", contentType);

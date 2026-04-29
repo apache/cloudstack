@@ -261,6 +261,7 @@ public class ApiConstants {
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String FOR_SYSTEM_VMS = "forsystemvms";
     public static final String FOR_PROVIDER = "forprovider";
+    public static final String FROM_CHECKPOINT_ID = "fromcheckpointid";
     public static final String FULL_PATH = "fullpath";
     public static final String GATEWAY = "gateway";
     public static final String IP6_GATEWAY = "ip6gateway";
@@ -610,6 +611,7 @@ public class ApiConstants {
     public static final String TENANT_NAME = "tenantname";
     public static final String TOTAL = "total";
     public static final String TOTAL_SUBNETS = "totalsubnets";
+    public static final String TO_CHECKPOINT_ID = "tocheckpointid";
     public static final String TYPE = "type";
     public static final String TRUST_STORE = "truststore";
     public static final String TRUST_STORE_PASSWORD = "truststorepass";

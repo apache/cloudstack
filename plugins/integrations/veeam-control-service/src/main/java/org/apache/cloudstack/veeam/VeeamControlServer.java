@@ -25,7 +25,9 @@ import java.util.Enumeration;
 import java.util.List;
 
 import javax.servlet.DispatcherType;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.cloudstack.utils.server.ServerPropertiesUtil;
 import org.apache.cloudstack.veeam.api.ApiRouteHandler;
@@ -155,33 +157,27 @@ public class VeeamControlServer {
         // Handler for root ('/') path
         final ServletContextHandler root = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
         root.setContextPath("/");
-        root.addServlet(new ServletHolder(new javax.servlet.http.HttpServlet() {
+        root.addServlet(new ServletHolder(new HttpServlet() {
             private static final long serialVersionUID = 1L;
 
             @Override
-            protected void doGet(javax.servlet.http.HttpServletRequest req, javax.servlet.http.HttpServletResponse resp)
+            protected void doGet(HttpServletRequest req, HttpServletResponse resp)
                     throws java.io.IOException {
                 resp.setContentType("text/plain");
-                resp.setStatus(javax.servlet.http.HttpServletResponse.SC_OK);
+                resp.setStatus(HttpServletResponse.SC_OK);
                 resp.getWriter().println("Veeam Control API");
             }
 
             @Override
-            protected void doPost(javax.servlet.http.HttpServletRequest req, javax.servlet.http.HttpServletResponse resp)
+            protected void doPost(HttpServletRequest req, HttpServletResponse resp)
                     throws java.io.IOException {
                 doGet(req, resp);
             }
         }), "/*");
 
         final RequestLog requestLog = (request, response) -> {
-            final String uri = request.getRequestURI() +
-                    (request.getQueryString() != null ? "?" + request.getQueryString() : "");
-            LOGGER.info("Request - remoteAddr: {}, method: {}, uri: {}, headers: {}, status: {}",
-                    request.getRemoteAddr(),
-                    request.getMethod(),
-                    uri,
-                    dumpRequestHeaders(request),
-                    response.getStatus());
+            LOGGER.debug("Handled request - {}",
+                    () -> getRequestResponseMetadata(request, response));
         };
 
         final RequestLogHandler requestLogHandler = new RequestLogHandler();
@@ -201,16 +197,25 @@ public class VeeamControlServer {
         }
     }
 
-    private static String dumpRequestHeaders(HttpServletRequest request) {
+    private static String getRequestResponseMetadata(HttpServletRequest request, HttpServletResponse response) {
         final StringBuilder sb = new StringBuilder();
-        final Enumeration<String> headerNames = request.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            final String name = headerNames.nextElement();
-            final Enumeration<String> values = request.getHeaders(name);
-            while (values.hasMoreElements()) {
-                sb.append(name).append("=").append(values.nextElement()).append("; ");
+        sb.append("remote address: ").append(request.getRemoteAddr()).append(", ");
+        sb.append("method: ").append(request.getMethod()).append(", ");
+        sb.append("uri: ").append(request.getRequestURI())
+                .append(request.getQueryString() != null ? "?" + request.getQueryString() : "").append(", ");
+        if (VeeamControlService.DeveloperLogs.value()) {
+            sb.append("headers: [");
+            final Enumeration<String> headerNames = request.getHeaderNames();
+            while (headerNames.hasMoreElements()) {
+                final String name = headerNames.nextElement();
+                final Enumeration<String> values = request.getHeaders(name);
+                while (values.hasMoreElements()) {
+                    sb.append(name).append("=").append(values.nextElement()).append("; ");
+                }
             }
+            sb.append("], ");
         }
+        sb.append("status: ").append(response.getStatus());
         return sb.toString();
     }
 }

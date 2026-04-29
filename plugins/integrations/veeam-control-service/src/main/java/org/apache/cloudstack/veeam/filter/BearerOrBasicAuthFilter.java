@@ -128,7 +128,7 @@ public class BearerOrBasicAuthFilter implements Filter {
         final byte[] expectedSig;
         try {
             expectedSig = JwtUtil.hmacSha256((headerB64 + "." + payloadB64).getBytes(StandardCharsets.UTF_8),
-                    SsoService.HMAC_SECRET.getBytes(StandardCharsets.UTF_8));
+                    veeamControlService.getHmacSecret().getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             return false;
         }

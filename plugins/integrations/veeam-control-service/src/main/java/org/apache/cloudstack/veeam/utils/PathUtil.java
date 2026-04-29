@@ -30,46 +30,46 @@ public class PathUtil {
     public static List<String> extractIdAndSubPath(final String path, final String baseRoute) {
 
         if (StringUtils.isBlank(path)) {
-                return null;
+            return null;
+        }
+
+        // Remove base route (be tolerant of trailing slash in baseRoute)
+        String rest = path;
+        if (StringUtils.isNotBlank(baseRoute)) {
+            String normalizedBase = baseRoute.endsWith("/") && baseRoute.length() > 1
+                    ? baseRoute.substring(0, baseRoute.length() - 1)
+                    : baseRoute;
+            if (rest.startsWith(normalizedBase)) {
+                rest = rest.substring(normalizedBase.length());
             }
+        }
 
-            // Remove base route (be tolerant of trailing slash in baseRoute)
-            String rest = path;
-            if (StringUtils.isNotBlank(baseRoute)) {
-                String normalizedBase = baseRoute.endsWith("/") && baseRoute.length() > 1
-                        ? baseRoute.substring(0, baseRoute.length() - 1)
-                        : baseRoute;
-                if (rest.startsWith(normalizedBase)) {
-                    rest = rest.substring(normalizedBase.length());
-                }
+        // Expect "/{id}" or "/{id}/..." (no empty segments)
+        if (StringUtils.isBlank(rest) || !rest.startsWith("/")) {
+            return null; // /api/datacenters (no id) or invalid format
+        }
+
+        rest = rest.substring(1); // remove leading '/'
+
+        if (StringUtils.isBlank(rest)) {
+            return null;
+        }
+
+        final String[] parts = rest.split("/", -1);
+
+        // Collect non-blank segments
+        List<String> validParts = new ArrayList<>();
+        for (String part : parts) {
+            if (StringUtils.isNotBlank(part)) {
+                validParts.add(part);
             }
+        }
 
-            // Expect "/{id}" or "/{id}/..." (no empty segments)
-            if (StringUtils.isBlank(rest) || !rest.startsWith("/")) {
-                return null; // /api/datacenters (no id) or invalid format
-            }
+        // Validate first segment, check if it is a UUID if enabled
+        if (validParts.isEmpty() || (CONSIDER_ONLY_UUID_AS_ID && !UuidUtils.isUuid(validParts.get(0)))) {
+            return null;
+        }
 
-            rest = rest.substring(1); // remove leading '/'
-
-            if (StringUtils.isBlank(rest)) {
-                return null;
-            }
-
-            final String[] parts = rest.split("/", -1);
-
-            // Collect non-blank segments
-            List<String> validParts = new ArrayList<>();
-            for (String part : parts) {
-                if (StringUtils.isNotBlank(part)) {
-                    validParts.add(part);
-                }
-            }
-
-            // Validate first segment is a UUID
-            if (validParts.isEmpty() || (CONSIDER_ONLY_UUID_AS_ID && !UuidUtils.isUuid(validParts.get(0)))) {
-                return null;
-            }
-
-            return validParts;
+        return validParts;
     }
 }

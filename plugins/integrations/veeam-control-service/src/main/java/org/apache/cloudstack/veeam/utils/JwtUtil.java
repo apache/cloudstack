@@ -23,6 +23,8 @@ import java.time.Instant;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import com.google.gson.JsonObject;
+
 public class JwtUtil {
     public static final String ALGORITHM = "HmacSHA256";
     public static final String ISSUER = "veeam-control";
@@ -31,15 +33,17 @@ public class JwtUtil {
         long now = Instant.now().getEpochSecond();
         long exp = now + ttlSeconds;
 
-        String headerJson = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
-        String payloadJson =
-                "{"
-                        + "\"iss\":\"" + DataUtil.jsonEscape(ISSUER) + "\","
-                        + "\"sub\":\"" + DataUtil.jsonEscape(subject) + "\","
-                        + "\"scope\":\"" + DataUtil.jsonEscape(scope) + "\","
-                        + "\"iat\":" + now + ","
-                        + "\"exp\":" + exp
-                        + "}";
+        JsonObject headerObject = new JsonObject();
+        headerObject.addProperty("alg", "HS256");
+        headerObject.addProperty("typ", "JWT");
+        String headerJson = headerObject.toString();
+        JsonObject payloadObject = new JsonObject();
+        payloadObject.addProperty("iss", ISSUER);
+        payloadObject.addProperty("sub", subject);
+        payloadObject.addProperty("scope", scope);
+        payloadObject.addProperty("iat", now);
+        payloadObject.addProperty("exp", exp);
+        String payloadJson = payloadObject.toString();
 
         String header = DataUtil.b64Url(headerJson.getBytes(StandardCharsets.UTF_8));
         String payload = DataUtil.b64Url(payloadJson.getBytes(StandardCharsets.UTF_8));

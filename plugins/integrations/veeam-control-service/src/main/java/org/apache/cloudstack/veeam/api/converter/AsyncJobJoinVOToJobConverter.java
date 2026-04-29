@@ -71,7 +71,7 @@ public class AsyncJobJoinVOToJobConverter {
 
     protected static void fillAction(final ResourceAction action, final AsyncJobJoinVO vo) {
         final String basePath = VeeamControlService.ContextPath.value();
-        action.setJob(Ref.of(basePath + JobsRouteHandler.BASE_ROUTE + vo.getUuid(), vo.getUuid()));
+        action.setJob(Ref.of(basePath + JobsRouteHandler.BASE_ROUTE + "/" + vo.getUuid(), vo.getUuid()));
         action.setStatus("complete");
     }
 
