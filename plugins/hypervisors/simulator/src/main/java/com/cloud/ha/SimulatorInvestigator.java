@@ -54,7 +54,7 @@ public class SimulatorInvestigator extends AdapterBase implements Investigator {
     }
 
     @Override
-    public Status isAgentAlive(Host agent) {
+    public Status getHostAgentStatus(Host agent) {
         if (agent.getHypervisorType() != HypervisorType.Simulator) {
             return null;
         }
