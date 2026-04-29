@@ -19,6 +19,7 @@ package org.apache.cloudstack.veeam;
 
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,7 +60,7 @@ public class VeeamControlServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         String method = req.getMethod();
-        String path = normalize(req.getPathInfo());
+        String path = normalize(req);
         Negotiation.OutFormat outFormat = Negotiation.responseFormat(req);
 
         LOGGER.info("Received {} request for {} with out format: {}", method, path, outFormat);
@@ -107,9 +108,15 @@ public class VeeamControlServlet extends HttpServlet {
         }
     }
 
-    private String normalize(String pathInfo) {
-        if (pathInfo == null || pathInfo.isBlank()) return "/";
-        return pathInfo;
+    private String normalize(HttpServletRequest req) {
+        String path = req.getPathInfo();
+        if (path == null || path.isBlank()) {
+            path = req.getRequestURI();
+        }
+        if (path == null || path.isBlank()) {
+            return "/";
+        }
+        return path;
     }
 
     protected void handleRoot(HttpServletRequest req, HttpServletResponse resp, Negotiation.OutFormat outFormat)
@@ -117,13 +124,13 @@ public class VeeamControlServlet extends HttpServlet {
 
         String method = req.getMethod();
         if (!"GET".equals(method) && !"POST".equals(method)) {
-            // You didn’t list 405; keep it simple with 400
             throw Error.badRequest("Unsupported method for root: " + method);
         }
+        Map<String, String> responseData = new HashMap<>();
+        responseData.put("name", VeeamControlService.PLUGIN_NAME);
+        responseData.put("pluginVersion", this.getClass().getPackage().getImplementationVersion());
 
-        writer.write(resp, 200, Map.of(
-                "name", VeeamControlService.PLUGIN_NAME,
-                "pluginVersion", this.getClass().getPackage().getImplementationVersion()), outFormat);
+        writer.write(resp, 200, responseData, outFormat);
     }
 
     public void methodNotAllowed(final HttpServletResponse resp, final String allow, final Negotiation.OutFormat outFormat) throws IOException {

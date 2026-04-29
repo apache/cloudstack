@@ -26,17 +26,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermissionEntity;
-import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.Rule;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -58,7 +52,6 @@ import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
@@ -77,11 +70,8 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DestroyVolumeCmd;
-import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -100,7 +90,6 @@ import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.veeam.VeeamControlService;
-import org.apache.cloudstack.veeam.api.TagsRouteHandler;
 import org.apache.cloudstack.veeam.api.converter.AsyncJobJoinVOToJobConverter;
 import org.apache.cloudstack.veeam.api.converter.BackupVOToBackupConverter;
 import org.apache.cloudstack.veeam.api.converter.ClusterVOToClusterConverter;
@@ -190,7 +179,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.User;
-import com.cloud.user.UserAccount;
 import com.cloud.user.UserDataVO;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
@@ -211,28 +199,7 @@ import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-// ToDo: check access for list APIs when not ROOT admin
-
 public class ServerAdapter extends ManagerBase {
-    private static final String SERVICE_ACCOUNT_NAME = "veemserviceuser";
-    private static final String SERVICE_ACCOUNT_ROLE_NAME = "Veeam Service Role";
-    private static final String SERVICE_ACCOUNT_FIRST_NAME = "Veeam";
-    private static final String SERVICE_ACCOUNT_LAST_NAME = "Service User";
-    private static final List<Class<?>> SERVICE_ACCOUNT_ROLE_ALLOWED_APIS = Arrays.asList(
-            QueryAsyncJobResultCmd.class,
-            ListVMsCmd.class,
-            DeployVMCmd.class,
-            StartVMCmd.class,
-            StopVMCmd.class,
-            DestroyVMCmd.class,
-            ListVolumesCmd.class,
-            CreateVolumeCmd.class,
-            DeleteVolumeCmd.class,
-            AttachVolumeCmd.class,
-            DetachVolumeCmd.class,
-            ResizeVolumeCmd.class,
-            ListNetworksCmd.class
-    );
     private static final List<Storage.StoragePoolType> SUPPORTED_STORAGE_TYPES = Arrays.asList(
             Storage.StoragePoolType.Filesystem,
             Storage.StoragePoolType.NetworkFilesystem,
@@ -240,9 +207,6 @@ public class ServerAdapter extends ManagerBase {
     );
     private static final String VM_TA_KEY = "veeam_tag";
     private static final String WORKER_VM_GUEST_CPU_MODE = "host-passthrough";
-
-    @Inject
-    RoleService roleService;
 
     @Inject
     AccountService accountService;
@@ -346,72 +310,11 @@ public class ServerAdapter extends ManagerBase {
     @Inject
     DomainDao domainDao;
 
-    protected static Tag getDummyTagByName(String name) {
-        Tag tag = new Tag();
-        String id = UUID.nameUUIDFromBytes(String.format("veeam:%s", name.toLowerCase()).getBytes()).toString();
-        tag.setId(id);
-        tag.setName(name);
-        tag.setDescription(String.format("Default %s tag", name.toLowerCase()));
-        tag.setHref(VeeamControlService.ContextPath.value() + TagsRouteHandler.BASE_ROUTE + "/" + id);
-        tag.setParent(ResourceTagVOToTagConverter.getRootTagRef());
-        return tag;
-    }
-
     protected static Map<String, Tag> getDummyTags() {
         Map<String, Tag> tags = new HashMap<>();
         Tag rootTag = ResourceTagVOToTagConverter.getRootTag();
         tags.put(rootTag.getId(), rootTag);
         return tags;
-    }
-
-    protected Role createServiceAccountRole() {
-        Role role = roleService.createRole(SERVICE_ACCOUNT_ROLE_NAME, RoleType.User,
-                SERVICE_ACCOUNT_ROLE_NAME, false);
-        for (Class<?> allowedApi : SERVICE_ACCOUNT_ROLE_ALLOWED_APIS) {
-            final String apiName = BaseCmd.getCommandNameByClass(allowedApi);
-            roleService.createRolePermission(role, new Rule(apiName), RolePermissionEntity.Permission.ALLOW,
-                    String.format("Allow %s", apiName));
-        }
-        roleService.createRolePermission(role, new Rule("*"), RolePermissionEntity.Permission.DENY,
-                "Deny all");
-        logger.debug("Created default role for Veeam service account in projects: {}", role);
-        return role;
-    }
-
-    protected Role getServiceAccountRole() {
-        List<Role> roles = roleService.findRolesByName(SERVICE_ACCOUNT_ROLE_NAME);
-        if (CollectionUtils.isNotEmpty(roles)) {
-            Role role = roles.get(0);
-            logger.debug("Found default role for Veeam service account in projects: {}", role);
-            return role;
-        }
-        return createServiceAccountRole();
-    }
-
-    protected UserAccount createServiceAccount() {
-        CallContext.register(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM);
-        try {
-            Role role = getServiceAccountRole();
-            UserAccount userAccount = accountService.createUserAccount(SERVICE_ACCOUNT_NAME,
-                    UUID.randomUUID().toString(), SERVICE_ACCOUNT_FIRST_NAME,
-                    SERVICE_ACCOUNT_LAST_NAME, null, null, SERVICE_ACCOUNT_NAME, Account.Type.NORMAL, role.getId(),
-                    1L, null, null, null, null, User.Source.NATIVE);
-            logger.debug("Created Veeam service account: {}", userAccount);
-            return userAccount;
-        } finally {
-            CallContext.unregister();
-        }
-    }
-
-    protected Pair<User, Account> getDefaultServiceAccount() {
-        UserAccount userAccount = accountService.getActiveUserAccount(SERVICE_ACCOUNT_NAME, 1L);
-        if (userAccount == null) {
-            userAccount =  createServiceAccount();
-        } else {
-            logger.debug("Veeam service user account found: {}", userAccount);
-        }
-        return new Pair<>(accountService.getActiveUser(userAccount.getId()),
-                accountService.getActiveAccountById(userAccount.getAccountId()));
     }
 
     protected void waitForJobCompletion(long jobId) {
