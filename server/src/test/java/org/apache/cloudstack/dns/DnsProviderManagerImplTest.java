@@ -38,7 +38,9 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.dns.CreateDnsZoneCmd;
 import org.apache.cloudstack.api.command.user.dns.DeleteDnsServerCmd;
@@ -158,6 +160,10 @@ public class DnsProviderManagerImplTest {
         serverVO = Mockito.spy(
                 new DnsServerVO("test-server", "http://pdns:8081", 8081, DnsProviderType.PowerDNS, null,
                         "apikey", false, null, Collections.singletonList("ns1.example.com"), ACCOUNT_ID, DOMAIN_ID));
+
+        Map<String, String> serverDetails = new HashMap<>();
+        serverDetails.put("pdsnServerId", "localhost");
+        serverVO.setDetails(serverDetails);
         Mockito.lenient().doReturn(SERVER_ID).when(serverVO).getId();
 
         zoneVO = Mockito.spy(

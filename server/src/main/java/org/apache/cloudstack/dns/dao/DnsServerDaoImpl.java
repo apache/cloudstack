@@ -75,6 +75,13 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
     }
 
     @Override
+    public DnsServerVO findById(Long dnsServerId) {
+        DnsServerVO dnsServer = super.findById(dnsServerId);
+        loadDetails(dnsServer);
+        return dnsServer;
+    }
+
+    @Override
     public DnsServer findByUrlAndAccount(String url, long accountId) {
         SearchCriteria<DnsServerVO> sc = AccountUrlSearch.create();
         sc.setParameters(ApiConstants.URL, url);

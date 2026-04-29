@@ -76,7 +76,6 @@ public class UpdateDnsServerCmd extends BaseCmd {
     private String publicDomainSuffix;
 
     @Parameter(name = ApiConstants.NAME_SERVERS, type = CommandType.LIST, collectionType = CommandType.STRING,
-            required = true,
             description = "Comma separated list of name servers; used to create NS records for the DNS Zone (for example, ns1.example.com, ns2.example.com)")
     private List<String> nameServers;
 
