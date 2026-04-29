@@ -354,7 +354,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         cmd.setNatRuleType("STATICNAT");
         cmd.setNatIp(staticNatIp);
         cmd.setVmIp(vmIp);
-        String[] suffixes = getStaticNatResourceSuffixes(vpcId, networkId, isForVpc, vmId);
+        String[] suffixes = getStaticNatResourceSuffixes(vpcId, networkId, isForVpc, vmId, staticNatIp);
         String dnatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.STATICNAT, suffixes);
         cmd.setNatRuleName(dnatRuleName);
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
@@ -375,7 +375,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
             networkId = networkResourceId;
         }
         DeleteNetrisNatRuleCommand cmd = new DeleteNetrisNatRuleCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, isForVpc);
-        String suffixes[] = getStaticNatResourceSuffixes(vpcId, networkId, isForVpc, vmId);
+        String suffixes[] = getStaticNatResourceSuffixes(vpcId, networkId, isForVpc, vmId, staticNatIp);
         String dnatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.STATICNAT, suffixes);
         cmd.setNatRuleName(dnatRuleName);
         cmd.setNatRuleType("STATICNAT");
@@ -547,10 +547,9 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         return answer.getResult();
     }
 
-    public static String[] getStaticNatResourceSuffixes(Long vpcId, Long networkId, boolean isForVpc, long vmId) {
-        String[] suffixes = new String[2];
-        suffixes[0] = isForVpc ? String.valueOf(vpcId) : String.valueOf(networkId);
-        suffixes[1] = String.valueOf(vmId);
-        return suffixes;
+    public static String[] getStaticNatResourceSuffixes(Long vpcId, Long networkId, boolean isForVpc, long vmId, String publicIp) {
+        String resourceId = isForVpc ? String.valueOf(vpcId) : String.valueOf(networkId);
+        // Always include the public IP to ensure uniqueness across multiple static NATs on the same VM
+        return new String[]{resourceId, String.valueOf(vmId), publicIp};
     }
 }

@@ -622,7 +622,7 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
                 .setNetworkResourceName(netrisObject.getNetworkResourceName())
                 .setVpcResource(netrisObject.isVpcResource())
                 .setVmId(Objects.nonNull(vm) ? vm.getId() : 0)
-                .setVmIp(Objects.nonNull(vm) ? vm.getPrivateIpAddress() : null)
+                .setVmIp(rule.getDestinationIpAddress().addr())
                 .setPublicIp(publicIp.getAddress().addr())
                 .setPrivatePort(privatePort)
                 .setPublicPort(publicPort)

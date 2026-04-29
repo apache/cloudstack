@@ -372,6 +372,17 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             }
             String natRuleName = cmd.getNatRuleName();
             NatGetBody existingNatRule = netrisNatRuleExists(natRuleName);
+            // Backward compatibility: rules created before the public-IP suffix was added use the legacy name
+            if (existingNatRule == null && "STATICNAT".equals(cmd.getNatRuleType())) {
+                String legacyName = getLegacyStaticNatRuleName(natRuleName);
+                if (legacyName != null) {
+                    logger.debug("Static NAT rule not found with name '{}', falling back to legacy name '{}'", natRuleName, legacyName);
+                    existingNatRule = netrisNatRuleExists(legacyName);
+                    if (existingNatRule != null) {
+                        natRuleName = legacyName;
+                    }
+                }
+            }
             boolean ruleExists = Objects.nonNull(existingNatRule);
             if (ruleExists) {
                 deleteNatRule(natRuleName, existingNatRule.getId(), vpcResource.getName());
@@ -1544,6 +1555,18 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
                 return false;
             }
+
+            NatGetBody existingRule = netrisNatRuleExists(staticNatRuleName);
+            if (existingRule != null) {
+                logger.debug("Static NAT rule '{}' already exists on Netris, skipping creation", staticNatRuleName);
+                return true;
+            }
+            // Backward compatibility: rule with legacy naming convention (no public IP post-fixed) exists - don't create a duplicate
+            String legacyName = getLegacyStaticNatRuleName(staticNatRuleName);
+            if (legacyName != null && netrisNatRuleExists(legacyName) != null) {
+                logger.debug("Legacy static NAT rule '{}' already exists on Netris, skipping creation of '{}'", legacyName, staticNatRuleName);
+                return true;
+            }
             // Create a /32 subnet for the DNAT IP
             createNatSubnet(cmd, natIP, vpcResource.getId());
             NatApi natApi = apiClient.getApiStubForMethod(NatApi.class);
@@ -1975,10 +1998,23 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 return null;
             }
             return data.get(0);
-
         } catch (ApiException e) {
             throw new CloudRuntimeException("Failed to list Netris NAT rules");
         }
+    }
+
+    /**
+     * Derives the legacy static NAT rule name (without the public IP suffix) from the new name format.
+     * New format: ...-VM{vmId}-STATICNAT-{publicIp}
+     * Legacy format: ...-VM{vmId}-STATICNAT
+     * Returns null if the name doesn't match the new format.
+     */
+    private String getLegacyStaticNatRuleName(String newName) {
+        int idx = newName.indexOf("-STATICNAT-");
+        if (idx == -1) {
+            return null;
+        }
+        return newName.substring(0, idx + "-STATICNAT".length());
     }
 
     private VPCListing getNetrisVpcResource(String netrisVpcName) {

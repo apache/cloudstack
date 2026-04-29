@@ -73,7 +73,7 @@ public class NetrisResourceObjectUtils {
                 break;
             case STATICNAT:
                 stringBuilder.append(String.format("%s%s-VM%s-%s", prefix, suffixes[0], suffixes[1], "STATICNAT"));
-                suffixes = new String[0];
+                suffixes = ArrayUtils.subarray(suffixes, 2, suffixes.length);
                 break;
             case DNAT:
                 stringBuilder.append(String.format("%s%s-%s", prefix, suffixes[0], "DNAT"));
