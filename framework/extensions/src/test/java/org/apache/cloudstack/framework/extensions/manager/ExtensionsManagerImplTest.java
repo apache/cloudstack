@@ -2572,36 +2572,8 @@ public class ExtensionsManagerImplTest {
     }
 
     // -----------------------------------------------------------------------
-    // Tests for ExtensionHelper methods (external network device support)
+    // Tests for network custom action behavior
     // -----------------------------------------------------------------------
-
-    @Test
-    public void getExtensionForPhysicalNetworkReturnsExtensionWhenRegistered() {
-        long physNetId = 10L;
-        long extensionId = 5L;
-        ExtensionResourceMapVO mapVO = mock(ExtensionResourceMapVO.class);
-        when(mapVO.getExtensionId()).thenReturn(extensionId);
-        when(extensionResourceMapDao.listByResourceIdAndType(physNetId,
-                ExtensionResourceMap.ResourceType.PhysicalNetwork)).thenReturn(List.of(mapVO));
-        ExtensionVO ext = mock(ExtensionVO.class);
-        when(extensionDao.findById(extensionId)).thenReturn(ext);
-
-        Extension result = extensionsManager.getExtensionForPhysicalNetwork(physNetId);
-
-        assertNotNull(result);
-        assertEquals(ext, result);
-    }
-
-    @Test
-    public void getExtensionForPhysicalNetworkReturnsNullWhenNotRegistered() {
-        long physNetId = 10L;
-        when(extensionResourceMapDao.listByResourceIdAndType(physNetId,
-                ExtensionResourceMap.ResourceType.PhysicalNetwork)).thenReturn(Collections.emptyList());
-
-        Extension result = extensionsManager.getExtensionForPhysicalNetwork(physNetId);
-
-        assertNull(result);
-    }
 
 
     // Helper: a mock object that is both a NetworkElement and a NetworkCustomActionProvider
@@ -2684,8 +2656,8 @@ public class ExtensionsManagerImplTest {
         when(network.getPhysicalNetworkId()).thenReturn(5L);
         when(entityManager.findByUuid(eq(Network.class), eq("net-uuid"))).thenReturn(network);
 
-        List<String> providers = List.of("my-ext-provider");
-        when(networkServiceMapDao.getDistinctProviders(10L)).thenReturn(providers);
+        String providerName ="my-ext-provider";
+        when(networkServiceMapDao.getProviderForServiceInNetwork(10L, Network.Service.CustomAction)).thenReturn(providerName);
 
         ExtensionVO ext = mock(ExtensionVO.class);
         doReturn(ext).when(extensionsManager).getExtensionForPhysicalNetworkAndProvider(5L, "my-ext-provider");
@@ -2720,6 +2692,54 @@ public class ExtensionsManagerImplTest {
         when(entityManager.findByUuid(eq(Network.class), eq("net-uuid"))).thenReturn(network);
 
         Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Network, "net-uuid");
+        assertNull(result);
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests for getExtensionFromResource with Vpc resource type
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void getExtensionFromResourceReturnsExtensionForVpcWithProviderMatch() {
+        Vpc vpc = mock(Vpc.class);
+        when(vpc.getId()).thenReturn(20L);
+        when(entityManager.findByUuid(eq(Vpc.class), eq("vpc-uuid"))).thenReturn(vpc);
+
+        when(vpcServiceMapDao.getProviderForServiceInVpc(20L, Network.Service.CustomAction)).thenReturn("my-vpc-provider");
+
+        ExtensionVO ext = mock(ExtensionVO.class);
+        when(extensionDao.findByName("my-vpc-provider")).thenReturn(ext);
+
+        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Vpc, "vpc-uuid");
+
+        assertEquals(ext, result);
+    }
+
+    @Test
+    public void getExtensionFromResourceReturnsNullForVpcWithoutProvider() {
+        Vpc vpc = mock(Vpc.class);
+        when(vpc.getId()).thenReturn(20L);
+        when(entityManager.findByUuid(eq(Vpc.class), eq("vpc-uuid"))).thenReturn(vpc);
+
+        when(vpcServiceMapDao.getProviderForServiceInVpc(20L, Network.Service.CustomAction)).thenReturn(null);
+
+        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Vpc, "vpc-uuid");
+
+        assertNull(result);
+        verify(extensionDao, never()).findByName(anyString());
+    }
+
+    @Test
+    public void getExtensionFromResourceReturnsNullForVpcWhenProviderExtensionNotFound() {
+        Vpc vpc = mock(Vpc.class);
+        when(vpc.getId()).thenReturn(20L);
+        when(entityManager.findByUuid(eq(Vpc.class), eq("vpc-uuid"))).thenReturn(vpc);
+
+        when(vpcServiceMapDao.getProviderForServiceInVpc(20L, Network.Service.CustomAction)).thenReturn("missing-provider");
+        when(extensionDao.findByName("missing-provider")).thenReturn(null);
+
+        Extension result = extensionsManager.getExtensionFromResource(ExtensionCustomAction.ResourceType.Vpc, "vpc-uuid");
+
         assertNull(result);
     }
 
@@ -2825,29 +2845,6 @@ public class ExtensionsManagerImplTest {
         extensionsManager.registerExtensionWithResource(cmd);
     }
 
-    // -----------------------------------------------------------------------
-    // Tests for getExtensionIdForPhysicalNetwork
-    // -----------------------------------------------------------------------
-
-    @Test
-    public void getExtensionIdForPhysicalNetworkReturnsIdWhenMapped() {
-        ExtensionResourceMapVO mapVO = mock(ExtensionResourceMapVO.class);
-        when(mapVO.getExtensionId()).thenReturn(55L);
-        when(extensionResourceMapDao.listByResourceIdAndType(10L, ExtensionResourceMap.ResourceType.PhysicalNetwork))
-                .thenReturn(List.of(mapVO));
-
-        Long result = extensionsManager.getExtensionIdForPhysicalNetwork(10L);
-        assertEquals(Long.valueOf(55L), result);
-    }
-
-    @Test
-    public void getExtensionIdForPhysicalNetworkReturnsNullWhenNotMapped() {
-        when(extensionResourceMapDao.listByResourceIdAndType(10L, ExtensionResourceMap.ResourceType.PhysicalNetwork))
-                .thenReturn(Collections.emptyList());
-
-        Long result = extensionsManager.getExtensionIdForPhysicalNetwork(10L);
-        assertNull(result);
-    }
 
     // -----------------------------------------------------------------------
     // Tests for getExtensionForPhysicalNetworkAndProvider

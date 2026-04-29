@@ -461,27 +461,20 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             // Use provider-based lookup: match the network's service-map providers
             // against extension names registered on the physical network.
             // This correctly handles multiple different extensions on the same physical network.
-            List<String> providers = networkServiceMapDao.getDistinctProviders(network.getId());
-            if (CollectionUtils.isNotEmpty(providers)) {
-                for (String providerName : providers) {
-                    Extension ext = getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName);
-                    if (ext != null) {
-                        return ext;
-                    }
+            String providerName = networkServiceMapDao.getProviderForServiceInNetwork(network.getId(), Service.CustomAction);
+            if (providerName != null) {
+                Extension ext = getExtensionForPhysicalNetworkAndProvider(physicalNetworkId, providerName);
+                if (ext != null) {
+                    return ext;
                 }
             }
             return null;
         } else if (resourceType == ExtensionCustomAction.ResourceType.Vpc) {
             Vpc vpc = (Vpc) object;
-            // Find extension via the VPC's tier networks
-            List<NetworkVO> tierNetworks = networkDao.listByVpc(vpc.getId());
-            if (CollectionUtils.isNotEmpty(tierNetworks)) {
-                for (NetworkVO tierNetwork : tierNetworks) {
-                    Extension ext = getExtensionFromResource(ExtensionCustomAction.ResourceType.Network, tierNetwork.getUuid());
-                    if (ext != null) {
-                        return ext;
-                    }
-                }
+            // Find extension via the VPC's CustomAction service provider
+            String providerName = vpcServiceMapDao.getProviderForServiceInVpc(vpc.getId(), Service.CustomAction);
+            if (providerName != null) {
+                return extensionDao.findByName(providerName);
             }
             return null;
         }
@@ -2387,26 +2380,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
-    public Long getExtensionIdForPhysicalNetwork(long physicalNetworkId) {
-        // Returns the first (primary) extension for backward compatibility
-        List<ExtensionResourceMapVO> maps = extensionResourceMapDao.listByResourceIdAndType(physicalNetworkId,
-                ExtensionResourceMap.ResourceType.PhysicalNetwork);
-        if (maps == null || maps.isEmpty()) {
-            return null;
-        }
-        return maps.get(0).getExtensionId();
-    }
-
-    @Override
-    public Extension getExtensionForPhysicalNetwork(long physicalNetworkId) {
-        Long extensionId = getExtensionIdForPhysicalNetwork(physicalNetworkId);
-        if (extensionId == null) {
-            return null;
-        }
-        return extensionDao.findById(extensionId);
-    }
-
-    @Override
     public boolean start() {
         long pathStateCheckInterval = PathStateCheckInterval.value();
         long pathStateCheckInitialDelay = Math.min(60, pathStateCheckInterval);
@@ -2502,11 +2475,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             return null;
         }
         return externalProvisioner.getExtensionPath(extension.getRelativePath());
-    }
-
-    @Override
-    public Map<String, String> getExtensionDetails(long extensionId) {
-        return extensionDetailsDao.listDetailsKeyPairs(extensionId);
     }
 
     @Override
