@@ -295,12 +295,34 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
+    private boolean hasReachedSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
+        boolean isPrivate = !template.isPublicTemplate() && !template.isFeatured()
+                && !TemplateType.SYSTEM.equals(template.getTemplateType());
+        int copyLimit = isPrivate
+                ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId)
+                : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId);
+        if (copyLimit <= 0) {
+            return false;
+        }
+        List<TemplateDataStoreVO> existing = _vmTemplateStoreDao.listByTemplateZoneDownloadStatus(
+                template.getId(), zoneId,
+                Status.DOWNLOADED, Status.DOWNLOAD_IN_PROGRESS, Status.NOT_DOWNLOADED);
+        int currentCopies = existing == null ? 0 : existing.size();
+        return currentCopies >= copyLimit;
+    }
+
     protected boolean shouldDownloadTemplateToStore(VMTemplateVO template, DataStore store) {
         Long zoneId = store.getScope().getScopeId();
         DataStore directedStore = _tmpltMgr.verifyHeuristicRulesForZone(template, zoneId);
         if (directedStore != null && store.getId() != directedStore.getId()) {
             logger.info("Template [{}] will not be download to image store [{}], as a heuristic rule is directing it to another store.",
                     template.getUniqueName(), store.getName());
+            return false;
+        }
+
+        if (zoneId != null && hasReachedSecStorageCopyLimit(template, zoneId)) {
+            logger.info("Skipping sync of template [{}] to image store [{}]: zone [{}] has reached the configured copy limit.",
+                    template.getUniqueName(), store.getName(), zoneId);
             return false;
         }
 
