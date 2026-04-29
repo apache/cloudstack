@@ -22,8 +22,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
+import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import java.util.Date;
 
 @Entity
 @Table(name = "load_balancer_vm_map")
@@ -47,6 +52,10 @@ public class LoadBalancerVMMapVO implements InternalIdentity {
 
     @Column(name = "state")
     private String state;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed = null;
 
     public LoadBalancerVMMapVO() {
     }

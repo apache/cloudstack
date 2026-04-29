@@ -32,6 +32,8 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
@@ -81,6 +83,10 @@ public class FirewallRuleVO implements FirewallRule {
 
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed;
 
     @Column(name = "network_id")
     Long networkId;
@@ -201,6 +207,10 @@ public class FirewallRuleVO implements FirewallRule {
 
     public Date getCreated() {
         return created;
+    }
+
+    public Date getRemoved() {
+        return removed;
     }
 
     protected FirewallRuleVO() {
