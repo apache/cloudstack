@@ -282,4 +282,3 @@ CREATE TABLE IF NOT EXISTS `cloud`.`kms_database_kek_objects` (
 
 --- Disable/enable NICs
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics','enabled', 'TINYINT(1) NOT NULL DEFAULT 1 COMMENT ''Indicates whether the NIC is enabled or not'' ');
-
