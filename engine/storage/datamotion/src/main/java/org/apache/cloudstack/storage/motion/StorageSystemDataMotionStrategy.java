@@ -2015,11 +2015,15 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * not use incremental shared-backing semantics for a disk whose backing chain is not guaranteed on the destination.
      */
     protected boolean shouldForceFullCloneMigration(Map<VolumeInfo, DataStore> volumeDataStoreMap, Host destHost) {
+        return shouldForceFullCloneMigration(volumeDataStoreMap, destHost, new HashMap<>());
+    }
+
+    protected boolean shouldForceFullCloneMigration(Map<VolumeInfo, DataStore> volumeDataStoreMap, Host destHost, Map<Long, StoragePoolVO> storagePoolsById) {
         for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
             VolumeInfo srcVolumeInfo = entry.getKey();
             DataStore destDataStore = entry.getValue();
-            StoragePoolVO sourceStoragePool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
-            StoragePoolVO destStoragePool = _storagePoolDao.findById(destDataStore.getId());
+            StoragePoolVO sourceStoragePool = getStoragePool(storagePoolsById, srcVolumeInfo.getPoolId());
+            StoragePoolVO destStoragePool = getStoragePool(storagePoolsById, destDataStore.getId());
 
             if (shouldSkipVolumeMigration(sourceStoragePool, destHost, destStoragePool)) {
                 continue;
@@ -2030,6 +2034,17 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
         }
         return false;
+    }
+
+    private StoragePoolVO getStoragePool(Map<Long, StoragePoolVO> storagePoolsById, long storagePoolId) {
+        StoragePoolVO storagePool = storagePoolsById.get(storagePoolId);
+        if (storagePool == null) {
+            storagePool = _storagePoolDao.findById(storagePoolId);
+            if (storagePool != null) {
+                storagePoolsById.put(storagePoolId, storagePool);
+            }
+        }
+        return storagePool;
     }
 
     protected boolean shouldSkipVolumeMigration(StoragePoolVO sourceStoragePool, Host destHost, StoragePoolVO destStoragePool) {
@@ -2064,7 +2079,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<MigrateDiskInfo>();
 
             Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage = new HashMap<>();
-            boolean forceFullCloneMigration = shouldForceFullCloneMigration(volumeDataStoreMap, destHost);
+            Map<Long, StoragePoolVO> storagePoolsById = new HashMap<>();
+            boolean forceFullCloneMigration = shouldForceFullCloneMigration(volumeDataStoreMap, destHost, storagePoolsById);
             if (forceFullCloneMigration) {
                 logger.info("Using full clone live storage migration for VM [{}] because one or more migrated volumes are backed by direct-download templates.", vmTO);
             }
@@ -2076,8 +2092,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 DataStore destDataStore = entry.getValue();
 
                 VolumeVO srcVolume = _volumeDao.findById(srcVolumeInfo.getId());
-                StoragePoolVO destStoragePool = _storagePoolDao.findById(destDataStore.getId());
-                StoragePoolVO sourceStoragePool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+                StoragePoolVO destStoragePool = getStoragePool(storagePoolsById, destDataStore.getId());
+                StoragePoolVO sourceStoragePool = getStoragePool(storagePoolsById, srcVolumeInfo.getPoolId());
 
                 if (shouldSkipVolumeMigration(sourceStoragePool, destHost, destStoragePool)) {
                     continue;

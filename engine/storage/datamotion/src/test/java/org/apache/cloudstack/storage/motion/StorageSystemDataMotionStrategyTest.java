@@ -414,16 +414,18 @@ public class StorageSystemDataMotionStrategyTest {
         DataStore samePowerFlexStore = Mockito.mock(DataStore.class);
         DataStore destPrimary = Mockito.mock(DataStore.class);
         Host destHost = Mockito.mock(Host.class);
-        Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
+        Map<VolumeInfo, DataStore> volumeMap = new LinkedHashMap<>();
 
         configurePoolLookup(skippedDirectDownloadVolume, samePowerFlexStore, 1L, 1L, StoragePoolType.PowerFlex, StoragePoolType.PowerFlex);
         configurePoolLookup(regularVolume, destPrimary, 3L, 4L, StoragePoolType.NetworkFilesystem, StoragePoolType.NetworkFilesystem);
+        lenient().when(skippedDirectDownloadVolume.isDirectDownload()).thenReturn(true);
         Mockito.when(regularVolume.isDirectDownload()).thenReturn(false);
 
         volumeMap.put(skippedDirectDownloadVolume, samePowerFlexStore);
         volumeMap.put(regularVolume, destPrimary);
 
         Assert.assertFalse(strategy.shouldForceFullCloneMigration(volumeMap, destHost));
+        Mockito.verify(skippedDirectDownloadVolume, Mockito.never()).isDirectDownload();
     }
 
     @Test
