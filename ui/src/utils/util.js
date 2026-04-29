@@ -1,0 +1,125 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import semver from 'semver'
+
+export function timeFix () {
+  const time = new Date()
+  const hour = time.getHours()
+  return hour < 9 ? '早上好' : hour <= 11 ? '上午好' : hour <= 13 ? '中午好' : hour < 20 ? '下午好' : '晚上好'
+}
+
+export function triggerWindowResizeEvent () {
+  const event = document.createEvent('HTMLEvents')
+  event.initEvent('resize', true, true)
+  event.eventType = 'message'
+  window.dispatchEvent(event)
+}
+
+export function handleScrollHeader (callback) {
+  let timer = 0
+
+  let beforeScrollTop = window.pageYOffset
+  callback = callback || function () {}
+  window.addEventListener(
+    'scroll',
+    event => {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        let direction = 'up'
+        const afterScrollTop = window.pageYOffset
+        const delta = afterScrollTop - beforeScrollTop
+        if (delta === 0) {
+          return false
+        }
+        direction = delta > 0 ? 'down' : 'up'
+        callback(direction)
+        beforeScrollTop = afterScrollTop
+      }, 50)
+    },
+    false
+  )
+}
+
+export function removeLoadingAnimate (id = '', timeout = 1500) {
+  if (id === '') {
+    return
+  }
+  setTimeout(() => {
+    document.body.removeChild(document.getElementById(id))
+  }, timeout)
+}
+
+export function sanitizeReverse (value) {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+}
+
+export function getParsedVersion (version) {
+  version = version.split('-')[0]
+  if (semver.valid(version) === null) {
+    version = version.split('.').slice(1).join('.')
+  }
+  return version
+}
+
+export function toCsv ({ keys = null, data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
+  if (data === null || !data.length) {
+    return null
+  }
+
+  let result = ''
+  result += keys.join(columnDelimiter)
+  result += lineDelimiter
+
+  data.forEach(item => {
+    keys.forEach(key => {
+      if (item[key] === undefined) {
+        item[key] = ''
+      }
+      result += typeof item[key] === 'string' && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key]
+      result += columnDelimiter
+    })
+    result = result.slice(0, -1)
+    result += lineDelimiter
+  })
+
+  return result
+}
+
+export function isValidIPv4Cidr (rule, value) {
+  return new Promise((resolve, reject) => {
+    if (!value) {
+      reject(new Error())
+      return
+    }
+    const cidrRegex = /^(\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2])$/
+    if (!cidrRegex.test(value)) {
+      reject(new Error('Invalid CIDR format'))
+      return
+    }
+    const ip = value.split('/')[0]
+    const octets = ip.split('.').map(Number)
+    if (octets.some(octet => octet < 0 || octet > 255)) {
+      reject(new Error('Invalid CIDR format'))
+      return
+    }
+    resolve()
+  })
+}

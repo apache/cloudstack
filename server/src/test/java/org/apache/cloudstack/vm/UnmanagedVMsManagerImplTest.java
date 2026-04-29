@@ -1,0 +1,1612 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package org.apache.cloudstack.vm;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.vm.ImportUnmanagedInstanceCmd;
+import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
+import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.resourcelimit.Reserver;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.jetbrains.annotations.NotNull;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.BDDMockito;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckConvertInstanceAnswer;
+import com.cloud.agent.api.CheckConvertInstanceCommand;
+import com.cloud.agent.api.CheckVolumeAnswer;
+import com.cloud.agent.api.CheckVolumeCommand;
+import com.cloud.agent.api.ConvertInstanceAnswer;
+import com.cloud.agent.api.ConvertInstanceCommand;
+import com.cloud.agent.api.CopyRemoteVolumeAnswer;
+import com.cloud.agent.api.CopyRemoteVolumeCommand;
+import com.cloud.agent.api.GetRemoteVmsAnswer;
+import com.cloud.agent.api.GetRemoteVmsCommand;
+import com.cloud.agent.api.GetUnmanagedInstancesAnswer;
+import com.cloud.agent.api.GetUnmanagedInstancesCommand;
+import com.cloud.agent.api.ImportConvertedInstanceAnswer;
+import com.cloud.agent.api.ImportConvertedInstanceCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.VmwareDatacenterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VmwareDatacenterDao;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Grouping;
+import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
+import com.cloud.resourcelimit.CheckedReservation;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.ImportVMTaskVO;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+
+@RunWith(MockitoJUnitRunner.class)
+public class UnmanagedVMsManagerImplTest {
+
+    @Spy
+    @InjectMocks
+    private UnmanagedVMsManagerImpl unmanagedVMsManager;
+
+    @Mock
+    private UserVmManager userVmManager;
+    @Mock
+    private ClusterDao clusterDao;
+    @Mock
+    private ResourceManager resourceManager;
+    @Mock
+    private VMTemplatePoolDao templatePoolDao;
+    @Mock
+    private AgentManager agentManager;
+    @Mock
+    private AccountService accountService;
+    @Mock
+    private UserDao userDao;
+    @Mock
+    private DataCenterDao dataCenterDao;
+    @Mock
+    private VMTemplateDao templateDao;
+    @Mock
+    private VMInstanceDao vmDao;
+    @Mock
+    private ServiceOfferingDao serviceOfferingDao;
+    @Mock
+    private DiskOfferingDao diskOfferingDao;
+    @Mock
+    private NetworkDao networkDao;
+    @Mock
+    private NetworkOrchestrationService networkOrchestrationService;
+    @Mock
+    private VolumeOrchestrationService volumeManager;
+    @Mock
+    public ResponseGenerator responseGenerator;
+    @Mock
+    private VolumeDao volumeDao;
+    @Mock
+    private ResourceLimitService resourceLimitService;
+    @Mock
+    private PrimaryDataStoreDao primaryDataStoreDao;
+    @Mock
+    private VolumeApiService volumeApiService;
+    @Mock
+    private NetworkModel networkModel;
+    @Mock
+    private ConfigurationDao configurationDao;
+    @Mock
+    private UserVmDao userVmDao;
+    @Mock
+    private NicDao nicDao;
+    @Mock
+    private HostDao hostDao;
+    @Mock
+    private VmwareDatacenterDao vmwareDatacenterDao;
+    @Mock
+    private HypervisorGuruManager hypervisorGuruManager;
+    @Mock
+    private ImageStoreDao imageStoreDao;
+    @Mock
+    private DataStoreManager dataStoreManager;
+    @Mock
+    private StoragePoolHostDao storagePoolHostDao;
+    @Mock
+    private ImportVmTasksManager importVmTasksManager;
+    @Mock
+    private SnapshotDao snapshotDao;
+
+    @Mock
+    private VMInstanceVO virtualMachine;
+    @Mock
+    EntityManager entityMgr;
+    @Mock
+    DeploymentPlanningManager deploymentPlanningManager;
+    @Mock
+    ImportVMTaskVO importVMTaskVO;
+    @Mock
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
+    @Mock
+    private ConfigKey<Boolean> configKeyMockParamsAllowed;
+    @Mock
+    private ConfigKey<String> configKeyMockParamsAllowedList;
+    @Mock
+    private Account accountMock;
+    @Mock
+    private ServiceOfferingVO serviceOfferingMock;
+    @Mock
+    private VMTemplateVO templateMock;
+    @Mock
+    private UnmanagedInstanceTO unmanagedInstanceMock;
+
+    private static final long virtualMachineId = 1L;
+
+    private AutoCloseable closeable;
+
+    private MockedStatic<ActionEventUtils> actionEventUtilsMocked;
+
+    private UnmanagedInstanceTO instance;
+
+    @Before
+    public void setUp() throws Exception {
+        closeable = MockitoAnnotations.openMocks(this);
+        actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
+        BDDMockito.given(ActionEventUtils.onStartedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyLong(), anyString(), anyBoolean(), anyLong()))
+                .willReturn(1L);
+        BDDMockito.given(ActionEventUtils.onCompletedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyString(), anyLong(), anyString(), anyLong()))
+                .willReturn(1L);
+
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
+        UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+
+        instance = new UnmanagedInstanceTO();
+        instance.setName("TestInstance");
+        instance.setCpuCores(2);
+        instance.setCpuCoresPerSocket(1);
+        instance.setCpuSpeed(1000);
+        instance.setMemory(1024);
+        instance.setOperatingSystem("CentOS 7");
+        List<UnmanagedInstanceTO.Disk> instanceDisks = getDisks();
+        instance.setDisks(instanceDisks);
+        List<UnmanagedInstanceTO.Nic> instanceNics = new ArrayList<>();
+        UnmanagedInstanceTO.Nic instanceNic = new UnmanagedInstanceTO.Nic();
+        instanceNic.setNicId("NIC 1");
+        instanceNic.setAdapterType("VirtualE1000E");
+        instanceNic.setMacAddress("02:00:2e:0f:00:02");
+        instanceNic.setVlan(1024);
+        instanceNics.add(instanceNic);
+        instance.setNics(instanceNics);
+        instance.setPowerState(UnmanagedInstanceTO.PowerState.PowerOn);
+
+        ClusterVO clusterVO = new ClusterVO(1L, 1L, "Cluster");
+        clusterVO.setHypervisorType(Hypervisor.HypervisorType.VMware.toString());
+        when(clusterDao.findById(anyLong())).thenReturn(clusterVO);
+        when(configurationDao.getValue(Mockito.anyString())).thenReturn(null);
+        List<HostVO> hosts = new ArrayList<>();
+        HostVO hostVO = Mockito.mock(HostVO.class);
+        when(hostVO.isInMaintenanceStates()).thenReturn(false);
+        hosts.add(hostVO);
+        when(resourceManager.listHostsInClusterByStatus(anyLong(), any(Status.class))).thenReturn(hosts);
+        when(resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(any(Hypervisor.HypervisorType.class), anyLong())).thenReturn(hosts);
+        List<VMTemplateStoragePoolVO> templates = new ArrayList<>();
+        when(templatePoolDao.listAll()).thenReturn(templates);
+        List<VolumeVO> volumes = new ArrayList<>();
+        when(volumeDao.findIncludingRemovedByZone(anyLong())).thenReturn(volumes);
+        GetUnmanagedInstancesCommand cmd = Mockito.mock(GetUnmanagedInstancesCommand.class);
+        HashMap<String, UnmanagedInstanceTO> map = new HashMap<>();
+        map.put(instance.getName(), instance);
+        Answer answer = new GetUnmanagedInstancesAnswer(cmd, "", map);
+        when(agentManager.easySend(anyLong(), any(GetUnmanagedInstancesCommand.class))).thenReturn(answer);
+        GetRemoteVmsCommand remoteVmListcmd = Mockito.mock(GetRemoteVmsCommand.class);
+        Answer remoteVmListAnswer = new GetRemoteVmsAnswer(remoteVmListcmd, "", map);
+        when(agentManager.easySend(anyLong(), any(GetRemoteVmsCommand.class))).thenReturn(remoteVmListAnswer);
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        when(zone.getId()).thenReturn(1L);
+        when(dataCenterDao.findById(anyLong())).thenReturn(zone);
+        when(accountService.getActiveAccountById(anyLong())).thenReturn(Mockito.mock(Account.class));
+        List<UserVO> users = new ArrayList<>();
+        users.add(Mockito.mock(UserVO.class));
+        when(userDao.listByAccount(anyLong())).thenReturn(users);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(template.getName()).thenReturn("Template");
+        when(templateDao.findById(anyLong())).thenReturn(template);
+        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+        when(serviceOffering.getId()).thenReturn(1L);
+        when(serviceOffering.isDynamic()).thenReturn(false);
+        when(serviceOffering.getCpu()).thenReturn(instance.getCpuCores());
+        when(serviceOffering.getRamSize()).thenReturn(instance.getMemory());
+        when(serviceOffering.getSpeed()).thenReturn(instance.getCpuSpeed());
+        when(serviceOfferingDao.findById(anyLong())).thenReturn(serviceOffering);
+        when(serviceOfferingDao.findById(anyLong(), anyLong())).thenReturn(Mockito.mock(ServiceOfferingVO.class));
+        DiskOfferingVO diskOfferingVO = Mockito.mock(DiskOfferingVO.class);
+        when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVO);
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getAccountId()).thenReturn(1L);
+        when(userVm.getDataCenterId()).thenReturn(1L);
+        when(userVm.getHostName()).thenReturn(instance.getName());
+        when(userVm.getTemplateId()).thenReturn(1L);
+        when(userVm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+        when(userVm.getUuid()).thenReturn("abcd");
+        when(userVm.isDisplayVm()).thenReturn(true);
+        // Skip usage publishing and resource increment for test
+        userVm.setInstanceName(instance.getName());
+        userVm.setHostName(instance.getName());
+        StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+        when(poolVO.getDataCenterId()).thenReturn(1L);
+        when(poolVO.getClusterId()).thenReturn(clusterVO.getId());
+        List<StoragePoolVO> pools = new ArrayList<>();
+        pools.add(poolVO);
+        when(primaryDataStoreDao.listPoolByHostPath(Mockito.anyString(), Mockito.anyString())).thenReturn(pools);
+        when(userVmManager.importVM(nullable(DataCenter.class), nullable(Host.class), nullable(VirtualMachineTemplate.class), nullable(String.class), nullable(String.class),
+                nullable(Account.class), nullable(String.class), nullable(Account.class), nullable(Boolean.class), nullable(String.class),
+                nullable(Long.class), nullable(Long.class), nullable(ServiceOffering.class), nullable(String.class), nullable(Long.class),
+                nullable(String.class), nullable(Hypervisor.HypervisorType.class), nullable(Map.class), nullable(VirtualMachine.PowerState.class), nullable(LinkedHashMap.class))).thenReturn(userVm);
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        when(networkVO.getGuestType()).thenReturn(Network.GuestType.L2);
+        when(networkVO.getBroadcastUri()).thenReturn(URI.create(String.format("vlan://%d", instanceNic.getVlan())));
+        when(networkVO.getDataCenterId()).thenReturn(1L);
+        when(networkDao.findById(anyLong())).thenReturn(networkVO);
+        List<NetworkVO> networks = new ArrayList<>();
+        networks.add(networkVO);
+        when(networkDao.listByZone(anyLong())).thenReturn(networks);
+        doNothing().when(networkModel).checkNetworkPermissions(any(Account.class), any(Network.class));
+        NicProfile profile = Mockito.mock(NicProfile.class);
+        Integer deviceId = 100;
+        Pair<NicProfile, Integer> pair = new Pair<>(profile, deviceId);
+        when(networkOrchestrationService.importNic(nullable(String.class), nullable(Integer.class), nullable(Network.class), nullable(Boolean.class), nullable(VirtualMachine.class), nullable(Network.IpAddresses.class), nullable(DataCenter.class), Mockito.anyBoolean())).thenReturn(pair);
+        when(volumeDao.findByInstance(Mockito.anyLong())).thenReturn(volumes);
+        List<UserVmResponse> userVmResponses = new ArrayList<>();
+        UserVmResponse userVmResponse = new UserVmResponse();
+        userVmResponse.setInstanceName(instance.getName());
+        userVmResponses.add(userVmResponse);
+        when(responseGenerator.createUserVmResponse(any(ResponseObject.ResponseView.class), Mockito.anyString(), any(UserVm.class))).thenReturn(userVmResponses);
+
+        when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
+
+        when(unmanagedInstanceMock.getCpuCores()).thenReturn(8);
+        when(unmanagedInstanceMock.getMemory()).thenReturn(4096);
+        when(serviceOfferingMock.getCpu()).thenReturn(4);
+        when(serviceOfferingMock.getRamSize()).thenReturn(2048);
+    }
+
+    @NotNull
+    private static List<UnmanagedInstanceTO.Disk> getDisks() {
+        List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
+        UnmanagedInstanceTO.Disk instanceDisk = new UnmanagedInstanceTO.Disk();
+        instanceDisk.setDiskId("1000-1");
+        instanceDisk.setPosition(0);
+        instanceDisk.setLabel("DiskLabel");
+        instanceDisk.setController("scsi");
+        instanceDisk.setImagePath("[b6ccf44a1fa13e29b3667b4954fa10ee] TestInstance/ROOT-1.vmdk");
+        instanceDisk.setCapacity(5242880L);
+        instanceDisk.setDatastoreName("Test");
+        instanceDisk.setDatastoreHost("Test");
+        instanceDisk.setDatastorePath("Test");
+        instanceDisk.setDatastoreType("NFS");
+        instanceDisks.add(instanceDisk);
+        return instanceDisks;
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+        actionEventUtilsMocked.close();
+        CallContext.unregister();
+    }
+
+    @Test
+    public void listUnmanagedInstancesTest() {
+        ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
+        unmanagedVMsManager.listUnmanagedInstances(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void listUnmanagedInstancesInvalidHypervisorTest() {
+        ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
+        ClusterVO cluster = new ClusterVO(1, 1, "Cluster");
+        cluster.setHypervisorType(Hypervisor.HypervisorType.XenServer.toString());
+        when(clusterDao.findById(anyLong())).thenReturn(cluster);
+        unmanagedVMsManager.listUnmanagedInstances(cmd);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void listUnmanagedInstancesInvalidCallerTest() {
+        CallContext.unregister();
+        AccountVO account = new AccountVO("user", 1L, "", Account.Type.NORMAL, "uuid");
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+        ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
+        unmanagedVMsManager.listUnmanagedInstances(cmd);
+    }
+
+    @Test
+    public void importUnmanagedInstanceTest() {
+        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
+        when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
+        when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void importUnmanagedInstanceInvalidHostnameTest() {
+        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
+        when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
+        when(importUnmanageInstanceCmd.getName()).thenReturn("some name");
+        unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void importUnmanagedInstanceMissingInstanceTest() {
+        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
+        when(importUnmanageInstanceCmd.getName()).thenReturn("SomeInstance");
+        when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
+        try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void unmanageVMInstanceMissingInstanceTest() {
+        when(vmDao.findById(anyLong())).thenReturn(null);
+        unmanagedVMsManager.unmanageVMInstance(1L, null, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void unmanageVMInstanceRemovedInstanceTest() {
+        VMInstanceVO userVmVO = mock(VMInstanceVO.class);
+        when(vmDao.findById(anyLong())).thenReturn(userVmVO);
+        when(userVmVO.getRemoved()).thenReturn(new Date());
+        unmanagedVMsManager.unmanageVMInstance(1L, null, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void unmanageVMInstanceDestroyedInstanceTest() {
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Destroyed);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void unmanageVMInstanceExpungedInstanceTest() {
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Expunging);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceExistingVMSnapshotsTest() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceInvalidHyperVisor() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceInvalidVmType() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceExistingVolumeSnapshotsTest() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceExistingISOAttachedTest() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceVmwareHostIdParamTest() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, 1L, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceRunningHostIdParamTest() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, 1L, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void unmanageVMInstanceRunningForceParamTest() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        VMInstanceDetailVO vmInstanceDetailVO = mock(VMInstanceDetailVO.class);
+        when(vmInstanceDetailsDao.findDetail(virtualMachineId, VmDetailConstants.CONFIG_DRIVE_LOCATION)).thenReturn(vmInstanceDetailVO);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test
+    public void unmanageVMInstanceVMwareHostId() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmVO.getIsoId()).thenReturn(null);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, 1L, false);
+    }
+
+    @Test
+    public void unmanageVMInstanceStoppedInstanceTest() {
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        Mockito.doNothing().when(unmanagedVMsManager).performUnmanageVMInstancePrechecks(any());
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void testUnmanageVMInstanceWithVolumeSnapshotsFail() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(virtualMachine.getId()).thenReturn(virtualMachineId);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        VolumeVO volumeVO = mock(VolumeVO.class);
+        long volumeId = 20L;
+        when(volumeVO.getId()).thenReturn(volumeId);
+        SnapshotVO snapshotVO = mock(SnapshotVO.class);
+        when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
+        when(snapshotDao.listByVolumeId(volumeId)).thenReturn(Collections.singletonList(snapshotVO));
+        when(volumeDao.findByInstance(virtualMachineId)).thenReturn(Collections.singletonList(volumeVO));
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void testUnmanageVMInstanceWithAssociatedIsoFail() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(virtualMachine.getId()).thenReturn(virtualMachineId);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmVO.getIsoId()).thenReturn(null);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        when(userVmVO.getIsoId()).thenReturn(1L);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test(expected = UnsupportedServiceException.class)
+    public void testUnmanageVMInstanceBelongingToCksClusterFail() {
+        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+        when(virtualMachine.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(virtualMachine.getId()).thenReturn(virtualMachineId);
+        UserVmVO userVmVO = mock(UserVmVO.class);
+        when(userVmVO.getIsoId()).thenReturn(null);
+        when(userVmDao.findById(anyLong())).thenReturn(userVmVO);
+        when(vmDao.findById(virtualMachineId)).thenReturn(virtualMachine);
+        when(userVmManager.isVMPartOfAnyCKSCluster(virtualMachine)).thenReturn(true);
+        unmanagedVMsManager.unmanageVMInstance(virtualMachineId, null, false);
+    }
+
+    @Test
+    public void testListRemoteInstancesTest() {
+        ListVmsForImportCmd cmd = Mockito.mock(ListVmsForImportCmd.class);
+        when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
+        when(cmd.getUsername()).thenReturn("user");
+        when(cmd.getPassword()).thenReturn("pass");
+        ListResponse<UnmanagedInstanceResponse> response = unmanagedVMsManager.listVmsForImport(cmd);
+        Assert.assertEquals(1, response.getCount().intValue());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testListRemoteInstancesTestNonKVM() {
+        ListVmsForImportCmd cmd = Mockito.mock(ListVmsForImportCmd.class);
+        unmanagedVMsManager.listVmsForImport(cmd);
+    }
+    @Test
+    public void testImportFromExternalTest() throws InsufficientServerCapacityException {
+        String vmname = "TestInstance";
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
+        when(cmd.getName()).thenReturn(vmname);
+        when(cmd.getUsername()).thenReturn("user");
+        when(cmd.getPassword()).thenReturn("pass");
+        when(cmd.getImportSource()).thenReturn("external");
+        when(cmd.getDomainId()).thenReturn(null);
+        HostVO host = Mockito.mock(HostVO.class);
+        DeployDestination mockDest = Mockito.mock(DeployDestination.class);
+        when(deploymentPlanningManager.planDeployment(any(), any(), any(), any())).thenReturn(mockDest);
+        DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
+        when(volumeManager.allocateRawVolume(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean()))
+                .thenReturn(diskProfile);
+        Map<Volume, StoragePool> storage = new HashMap<>();
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+        storage.put(volume, storagePool);
+        when(mockDest.getStorageForDisks()).thenReturn(storage);
+        when(mockDest.getHost()).thenReturn(host);
+        when(volumeDao.findById(anyLong())).thenReturn(volume);
+        CopyRemoteVolumeAnswer copyAnswer = Mockito.mock(CopyRemoteVolumeAnswer.class);
+        when(copyAnswer.getResult()).thenReturn(true);
+        when(agentManager.easySend(anyLong(), any(CopyRemoteVolumeCommand.class))).thenReturn(copyAnswer);
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.importVm(cmd);
+        }
+    }
+
+    private void baseBasicParametersCheckForImportInstance(String name, Long domainId, String accountName) {
+        unmanagedVMsManager.basicParametersCheckForImportInstance(name, domainId, accountName);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testBasicParametersCheckForImportInstanceMissingName() {
+        baseBasicParametersCheckForImportInstance(null, 1L, "test");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testBasicParametersCheckForImportInstanceMissingDomainAndAccount() {
+        baseBasicParametersCheckForImportInstance("vm", 1L, "");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testBasicAccessChecksMissingClusterId() {
+        unmanagedVMsManager.basicAccessChecks(null);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testBasicAccessChecksNotAdminCaller() {
+        CallContext.unregister();
+        AccountVO account = new AccountVO("user", 1L, "", Account.Type.NORMAL, "uuid");
+        UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+        unmanagedVMsManager.basicAccessChecks(1L);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testBasicAccessChecksUnsupportedHypervisorType() {
+        ClusterVO clusterVO = new ClusterVO(1L, 1L, "Cluster");
+        clusterVO.setHypervisorType(Hypervisor.HypervisorType.XenServer.toString());
+        when(clusterDao.findById(anyLong())).thenReturn(clusterVO);
+        unmanagedVMsManager.basicAccessChecks(1L);
+    }
+
+    @Test
+    public void testGetTemplateForImportInstanceDefaultTemplate() {
+        String defaultTemplateName = "DefaultTemplate";
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(template.getName()).thenReturn(defaultTemplateName);
+        when(templateDao.findByName(anyString())).thenReturn(template);
+        VMTemplateVO templateForImportInstance = unmanagedVMsManager.getTemplateForImportInstance(null, Hypervisor.HypervisorType.KVM);
+        Assert.assertEquals(defaultTemplateName, templateForImportInstance.getName());
+    }
+
+    private enum VcenterParameter {
+        EXISTING,
+        EXTERNAL,
+        BOTH,
+        NONE,
+        EXISTING_INVALID,
+        AGENT_UNAVAILABLE,
+        CONVERT_FAILURE,
+        FORCE_MS_AND_USE_VDDK,
+        USE_VDDK_OVF_UNSUPPORTED,
+        USE_VDDK_OVF_SUPPORTED,
+        USE_VDDK_DETAILS_OVERRIDES
+    }
+
+    private void baseTestImportVmFromVmwareToKvm(VcenterParameter vcenterParameter, boolean selectConvertHost,
+                                                 boolean selectTemporaryStorage) throws OperationTimedoutException, AgentUnavailableException {
+        long clusterId = 1L;
+        long zoneId = 1L;
+        long existingDatacenterId = 1L;
+        String vcenterHost = "192.168.1.2";
+        String datacenter = "Datacenter";
+        String username = "administrator@vsphere.local";
+        String password = "password";
+        String host = "192.168.1.10";
+        String vmName = "TestInstanceFromVmware";
+        instance.setName(vmName);
+        String tmplFileName = "5b8d689a-e61a-4ac3-9b76-e121ff90fbd3";
+        long newVmId = 2L;
+        long networkId = 1L;
+
+        ClusterVO cluster = mock(ClusterVO.class);
+        when(cluster.getId()).thenReturn(clusterId);
+        when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+        when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(cluster.getDataCenterId()).thenReturn(zoneId);
+        when(clusterDao.findById(clusterId)).thenReturn(cluster);
+
+        ImportVmCmd importVmCmd = Mockito.mock(ImportVmCmd.class);
+
+        when(importVmCmd.getName()).thenReturn(vmName);
+        when(importVmCmd.getClusterId()).thenReturn(clusterId);
+        when(importVmCmd.getDomainId()).thenReturn(null);
+        when(importVmCmd.getImportSource()).thenReturn(VmImportService.ImportSource.VMWARE.toString());
+        when(importVmCmd.getHostIp()).thenReturn(host);
+        when(importVmCmd.getNicNetworkList()).thenReturn(Map.of("NIC 1", networkId));
+        when(importVmCmd.getConvertInstanceHostId()).thenReturn(null);
+        when(importVmCmd.getImportInstanceHostId()).thenReturn(null);
+        when(importVmCmd.getConvertStoragePoolId()).thenReturn(null);
+        when(importVmCmd.getExistingVcenterId()).thenReturn(null);
+        when(importVmCmd.getVcenter()).thenReturn(null);
+        when(importVmCmd.getDatacenterName()).thenReturn(null);
+        when(importVmCmd.getUsername()).thenReturn(null);
+        when(importVmCmd.getPassword()).thenReturn(null);
+        when(importVmCmd.getDetails()).thenReturn(new HashMap<>());
+
+        boolean forceMsToImportVmFiles = false;
+        boolean useVddk = false;
+        boolean ovfExportSupported = false;
+        if (VcenterParameter.FORCE_MS_AND_USE_VDDK == vcenterParameter) {
+            forceMsToImportVmFiles = true;
+            useVddk = true;
+        } else if (VcenterParameter.USE_VDDK_OVF_UNSUPPORTED == vcenterParameter) {
+            useVddk = true;
+        } else if (VcenterParameter.USE_VDDK_OVF_SUPPORTED == vcenterParameter) {
+            useVddk = true;
+            ovfExportSupported = true;
+        } else if (VcenterParameter.USE_VDDK_DETAILS_OVERRIDES == vcenterParameter) {
+            useVddk = true;
+            ovfExportSupported = true;
+            when(importVmCmd.getDetails()).thenReturn(Map.of(
+                    "vddk.lib.dir", "/opt/vmware-vddk/override",
+                    "vddk.transports", "nbd:nbdssl",
+                    "vddk.thumbprint", "AA:BB:CC:DD:EE"));
+        }
+        when(importVmCmd.getForceMsToImportVmFiles()).thenReturn(forceMsToImportVmFiles);
+        when(importVmCmd.getUseVddk()).thenReturn(useVddk);
+
+        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+        when(networkVO.getGuestType()).thenReturn(Network.GuestType.L2);
+        when(networkVO.getDataCenterId()).thenReturn(zoneId);
+        when(networkDao.findById(networkId)).thenReturn(networkVO);
+
+        HypervisorGuru vmwareGuru = mock(HypervisorGuru.class);
+        when(hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.VMware)).thenReturn(vmwareGuru);
+        when(vmwareGuru.getHypervisorVMOutOfBandAndCloneIfRequired(anyString(), anyString(), anyMap())).thenReturn(new Pair<>(instance, true));
+        when(vmwareGuru.removeClonedHypervisorVMOutOfBand(anyString(), anyString(), anyMap())).thenReturn(true);
+        when(vmwareGuru.createVMTemplateOutOfBand(anyString(), anyString(), anyMap(), any(DataStoreTO.class), anyInt())).thenReturn(tmplFileName);
+        when(vmwareGuru.removeVMTemplateOutOfBand(any(DataStoreTO.class), anyString())).thenReturn(true);
+
+        HostVO convertHost = mock(HostVO.class);
+        long convertHostId = 1L;
+        when(convertHost.getStatus()).thenReturn(Status.Up);
+        when(convertHost.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(convertHost.getId()).thenReturn(convertHostId);
+        when(convertHost.getType()).thenReturn(Host.Type.Routing);
+        when(convertHost.getDataCenterId()).thenReturn(zoneId);
+        when(convertHost.getClusterId()).thenReturn(clusterId);
+        if (selectConvertHost) {
+            when(importVmCmd.getConvertInstanceHostId()).thenReturn(convertHostId);
+            when(importVmCmd.getImportInstanceHostId()).thenReturn(convertHostId);
+            when(hostDao.findById(convertHostId)).thenReturn(convertHost);
+        } else {
+            when(hostDao.listByClusterAndHypervisorType(clusterId, Hypervisor.HypervisorType.KVM)).thenReturn(List.of(convertHost));
+        }
+
+        DataStoreTO dataStoreTO = mock(DataStoreTO.class);
+        DataStore dataStore = mock(DataStore.class);
+        when(dataStore.getTO()).thenReturn(dataStoreTO);
+
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        when(destPool.getDataCenterId()).thenReturn(zoneId);
+        when(destPool.getClusterId()).thenReturn(null);
+        when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        StoragePoolVO zoneDestPool = mock(StoragePoolVO.class);
+        if (selectTemporaryStorage) {
+            long temporaryStoragePoolId = 1L;
+            when(importVmCmd.getConvertStoragePoolId()).thenReturn(temporaryStoragePoolId);
+            when(primaryDataStoreDao.findById(temporaryStoragePoolId)).thenReturn(destPool);
+            when(dataStoreManager.getPrimaryDataStore(temporaryStoragePoolId)).thenReturn(dataStore);
+        } else {
+            ImageStoreVO imageStoreVO = mock(ImageStoreVO.class);
+            when(imageStoreVO.getId()).thenReturn(1L);
+            when(imageStoreDao.findOneByZoneAndProtocol(zoneId, "nfs")).thenReturn(imageStoreVO);
+            when(dataStoreManager.getDataStore(1L, DataStoreRole.Image)).thenReturn(dataStore);
+        }
+        when(primaryDataStoreDao.listPoolByHostPath(Mockito.anyString(), Mockito.anyString())).thenReturn(List.of(destPool));
+        when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(clusterId, Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem)).thenReturn(List.of(destPool));
+        when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(zoneId, Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem)).thenReturn(List.of(zoneDestPool));
+
+        if (VcenterParameter.EXISTING == vcenterParameter) {
+            VmwareDatacenterVO datacenterVO = mock(VmwareDatacenterVO.class);
+            when(datacenterVO.getVcenterHost()).thenReturn(vcenterHost);
+            when(datacenterVO.getVmwareDatacenterName()).thenReturn(datacenter);
+            when(datacenterVO.getUser()).thenReturn(username);
+            when(datacenterVO.getPassword()).thenReturn(password);
+            when(importVmCmd.getExistingVcenterId()).thenReturn(existingDatacenterId);
+            when(vmwareDatacenterDao.findById(existingDatacenterId)).thenReturn(datacenterVO);
+        }
+
+        if (VcenterParameter.BOTH == vcenterParameter) {
+            when(importVmCmd.getExistingVcenterId()).thenReturn(existingDatacenterId);
+            when(importVmCmd.getVcenter()).thenReturn(vcenterHost);
+        } else if (VcenterParameter.NONE == vcenterParameter) {
+            when(importVmCmd.getExistingVcenterId()).thenReturn(null);
+            when(importVmCmd.getVcenter()).thenReturn(null);
+        } else if (VcenterParameter.EXISTING_INVALID == vcenterParameter) {
+            when(importVmCmd.getExistingVcenterId()).thenReturn(existingDatacenterId);
+            when(vmwareDatacenterDao.findById(existingDatacenterId)).thenReturn(null);
+        }
+
+        if (VcenterParameter.FORCE_MS_AND_USE_VDDK == vcenterParameter
+                || VcenterParameter.USE_VDDK_OVF_UNSUPPORTED == vcenterParameter
+                || VcenterParameter.USE_VDDK_OVF_SUPPORTED == vcenterParameter
+                || VcenterParameter.USE_VDDK_DETAILS_OVERRIDES == vcenterParameter) {
+            Mockito.doReturn((Long) null).when(importVmCmd).getExistingVcenterId();
+            Mockito.doReturn(vcenterHost).when(importVmCmd).getVcenter();
+            Mockito.doReturn(datacenter).when(importVmCmd).getDatacenterName();
+            Mockito.doReturn(username).when(importVmCmd).getUsername();
+            Mockito.doReturn(password).when(importVmCmd).getPassword();
+        }
+
+        CheckConvertInstanceAnswer checkConvertInstanceAnswer = mock(CheckConvertInstanceAnswer.class);
+        when(checkConvertInstanceAnswer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
+        when(checkConvertInstanceAnswer.isOvfExportSupported()).thenReturn(ovfExportSupported);
+        if (VcenterParameter.AGENT_UNAVAILABLE != vcenterParameter) {
+            when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
+        }
+
+        when(importVmTasksManager.createImportVMTaskRecord(any(DataCenter.class), any(Account.class), anyLong(), anyString(),
+                anyString(), anyString(), anyString(), any(Host.class), any(Host.class))).thenReturn(importVMTaskVO);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any(DiskOffering.class))).thenReturn(true);
+
+        ConvertInstanceAnswer convertInstanceAnswer = mock(ConvertInstanceAnswer.class);
+        ImportConvertedInstanceAnswer convertImportedInstanceAnswer = mock(ImportConvertedInstanceAnswer.class);
+        when(convertInstanceAnswer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
+        Mockito.lenient().when(convertImportedInstanceAnswer.getConvertedInstance()).thenReturn(instance);
+        Mockito.lenient().when(convertImportedInstanceAnswer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
+        if (VcenterParameter.AGENT_UNAVAILABLE != vcenterParameter) {
+            when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(ConvertInstanceCommand.class))).thenReturn(convertInstanceAnswer);
+            Mockito.lenient().when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(ImportConvertedInstanceCommand.class))).thenReturn(convertImportedInstanceAnswer);
+        }
+
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.importVm(importVmCmd);
+            verify(vmwareGuru).getHypervisorVMOutOfBandAndCloneIfRequired(Mockito.eq(host), Mockito.eq(vmName), anyMap());
+            if (VcenterParameter.USE_VDDK_OVF_SUPPORTED == vcenterParameter) {
+                verify(vmwareGuru, Mockito.never()).createVMTemplateOutOfBand(anyString(), anyString(), anyMap(), any(DataStoreTO.class), anyInt());
+                verify(agentManager).send(Mockito.eq(convertHostId), Mockito.<com.cloud.agent.api.Command>argThat(command ->
+                        command instanceof ConvertInstanceCommand && ((ConvertInstanceCommand) command).isUseVddk()));
+                verify(vmwareGuru, Mockito.never()).removeVMTemplateOutOfBand(any(DataStoreTO.class), anyString());
+            } else if (VcenterParameter.USE_VDDK_DETAILS_OVERRIDES == vcenterParameter) {
+                verify(vmwareGuru, Mockito.never()).createVMTemplateOutOfBand(anyString(), anyString(), anyMap(), any(DataStoreTO.class), anyInt());
+                verify(agentManager).send(Mockito.eq(convertHostId), Mockito.<com.cloud.agent.api.Command>argThat(command -> {
+                    if (!(command instanceof ConvertInstanceCommand)) {
+                        return false;
+                    }
+                    ConvertInstanceCommand convertCmd = (ConvertInstanceCommand) command;
+                    return convertCmd.isUseVddk()
+                            && "/opt/vmware-vddk/override".equals(convertCmd.getVddkLibDir())
+                            && "nbd:nbdssl".equals(convertCmd.getVddkTransports())
+                            && "AA:BB:CC:DD:EE".equals(convertCmd.getVddkThumbprint());
+                }));
+                verify(vmwareGuru, Mockito.never()).removeVMTemplateOutOfBand(any(DataStoreTO.class), anyString());
+            } else {
+                verify(vmwareGuru).createVMTemplateOutOfBand(Mockito.eq(host), Mockito.eq(vmName), anyMap(), any(DataStoreTO.class), anyInt());
+                verify(vmwareGuru).removeVMTemplateOutOfBand(any(DataStoreTO.class), anyString());
+            }
+            verify(vmwareGuru).removeClonedHypervisorVMOutOfBand(Mockito.eq(host), Mockito.eq(vmName), anyMap());
+        }
+    }
+
+    @Test
+    public void importFromLocalDisk() throws InsufficientServerCapacityException {
+        importFromDisk("local");
+    }
+
+    @Test
+    public void importFromsharedStorage() throws InsufficientServerCapacityException {
+        importFromDisk("shared");
+    }
+
+    private void importFromDisk(String source) throws InsufficientServerCapacityException {
+        String vmname = "testVm";
+        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
+        when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
+        when(cmd.getName()).thenReturn(vmname);
+        when(cmd.getImportSource()).thenReturn(source);
+        when(cmd.getDiskPath()).thenReturn("/var/lib/libvirt/images/test.qcow2");
+        when(cmd.getDomainId()).thenReturn(null);
+        HostVO host = Mockito.mock(HostVO.class);
+        when(hostDao.findById(anyLong())).thenReturn(host);
+        NetworkOffering netOffering = Mockito.mock(NetworkOffering.class);
+        when(entityMgr.findById(NetworkOffering.class, 0L)).thenReturn(netOffering);
+        DeployDestination mockDest = Mockito.mock(DeployDestination.class);
+        when(deploymentPlanningManager.planDeployment(any(), any(), any(), any())).thenReturn(mockDest);
+        DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
+        when(volumeManager.allocateRawVolume(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean()))
+                        .thenReturn(diskProfile);
+        Map<Volume, StoragePool> storage = new HashMap<>();
+        VolumeVO volume = Mockito.mock(VolumeVO.class);
+        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+        storage.put(volume, storagePool);
+        when(mockDest.getStorageForDisks()).thenReturn(storage);
+        when(mockDest.getHost()).thenReturn(host);
+        when(volumeDao.findById(anyLong())).thenReturn(volume);
+        CheckVolumeAnswer answer = Mockito.mock(CheckVolumeAnswer.class);
+        when(answer.getResult()).thenReturn(true);
+        when(agentManager.easySend(anyLong(), any(CheckVolumeCommand.class))).thenReturn(answer);
+        List<StoragePoolVO> storagePools = new ArrayList<>();
+        storagePools.add(storagePool);
+        when(primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(anyLong(), any())).thenReturn(storagePools);
+        when(primaryDataStoreDao.findById(anyLong())).thenReturn(storagePool);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+        StoragePoolHostVO storagePoolHost = Mockito.mock(StoragePoolHostVO.class);
+        when(storagePoolHostDao.findByPoolHost(anyLong(), anyLong())).thenReturn(storagePoolHost);
+        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+             MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+                unmanagedVMsManager.importVm(cmd);
+        }
+    }
+
+    @Test
+    public void testImportVmFromVmwareToKvmExistingVcenter() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, false, false);
+    }
+
+    @Test
+    public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHost() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, true, false);
+    }
+
+    @Test
+    public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHostAndTemporaryStorage() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, true, true);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testImportVmFromVmwareToKvmExistingVcenterExclusiveParameters() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.BOTH, false, false);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testImportVmFromVmwareToKvmExistingVcenterMissingParameters() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.NONE, false, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testImportVmFromVmwareToKvmExistingVcenterInvalid() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING_INVALID, false, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testImportVmFromVmwareToKvmExistingVcenterAgentUnavailable() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.AGENT_UNAVAILABLE, false, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testImportVmFromVmwareToKvmExistingVcenterConvertFailure() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.CONVERT_FAILURE, false, false);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testImportVmFromVmwareToKvmForceMsMutuallyExclusiveWithUseVddk() throws OperationTimedoutException, AgentUnavailableException {
+        baseTestImportVmFromVmwareToKvm(VcenterParameter.FORCE_MS_AND_USE_VDDK, false, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateSelectedConversionStoragePoolForVddkFailsWhenPoolDoesNotSupportDiskOfferings() {
+        long poolId = 11L;
+        StoragePoolVO selectedPool = mock(StoragePoolVO.class);
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+        DiskOfferingVO dataDiskOffering = mock(DiskOfferingVO.class);
+
+        when(serviceOffering.getDiskOfferingId()).thenReturn(21L);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(selectedPool);
+        when(diskOfferingDao.findById(21L)).thenReturn(rootDiskOffering);
+        when(diskOfferingDao.findById(22L)).thenReturn(dataDiskOffering);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, rootDiskOffering)).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, dataDiskOffering)).thenReturn(false);
+
+        unmanagedVMsManager.validateSelectedConversionStoragePoolForVddk(true, poolId,
+                serviceOffering, Map.of("1000-2", 22L));
+    }
+
+    @Test
+    public void testValidateSelectedConversionStoragePoolForVddkPassesWhenPoolSupportsAllDiskOfferings() {
+        long poolId = 12L;
+        StoragePoolVO selectedPool = mock(StoragePoolVO.class);
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+        DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+        DiskOfferingVO dataDiskOffering = mock(DiskOfferingVO.class);
+
+        when(serviceOffering.getDiskOfferingId()).thenReturn(31L);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(selectedPool);
+        when(diskOfferingDao.findById(31L)).thenReturn(rootDiskOffering);
+        when(diskOfferingDao.findById(32L)).thenReturn(dataDiskOffering);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, rootDiskOffering)).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, dataDiskOffering)).thenReturn(true);
+
+        unmanagedVMsManager.validateSelectedConversionStoragePoolForVddk(true, poolId,
+                serviceOffering, Map.of("1000-2", 32L));
+    }
+
+    private ClusterVO getClusterForTests() {
+        ClusterVO cluster = mock(ClusterVO.class);
+        when(cluster.getId()).thenReturn(1L);
+        when(cluster.getDataCenterId()).thenReturn(1L);
+        return cluster;
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationInvalidStorage() {
+        ClusterVO cluster = getClusterForTests();
+
+        long poolId = 1L;
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(null);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null, poolId, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationPoolInvalidScope() {
+        ClusterVO cluster = getClusterForTests();
+        long poolId = 1L;
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
+        when(pool.getClusterId()).thenReturn(100L);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null, poolId, false);
+    }
+
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationPoolConvertHostDifferentCluster() {
+        ClusterVO cluster = getClusterForTests();
+        long poolId = 1L;
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
+        when(pool.getClusterId()).thenReturn(1L);
+        HostVO host = mock(HostVO.class);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        when(host.getClusterId()).thenReturn(2L);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, host, null, poolId, false);
+    }
+
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationLocalStoragePoolInvalid() {
+        ClusterVO cluster = getClusterForTests();
+        long poolId = 1L;
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getScope()).thenReturn(ScopeType.HOST);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null, poolId, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationStoragePoolInvalidType() {
+        ClusterVO cluster = getClusterForTests();
+        long poolId = 1L;
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
+        when(pool.getClusterId()).thenReturn(1L);
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null, poolId, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectInstanceConversionTemporaryLocationNoPoolAvailable() {
+        ClusterVO cluster = getClusterForTests();
+        when(imageStoreDao.findOneByZoneAndProtocol(anyLong(), anyString())).thenReturn(null);
+        unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null, null, false);
+    }
+
+    @Test
+    public void testSelectKVMHostForImportingInClusterWithImportInstanceIdSuccess() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getType()).thenReturn(Host.Type.Routing);
+        when(host.getClusterId()).thenReturn(1L);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForImportingInCluster(cluster, hostId);
+        Assert.assertEquals(host, returnedHost);
+    }
+
+    @Test
+    public void testSelectKVMHostForImportingInClusterWithNullImportInstanceIdSuccess() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of(host));
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForImportingInCluster(cluster, null);
+        Assert.assertEquals(host, returnedHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForImportingInClusterFailure() {
+        ClusterVO cluster = getClusterForTests();
+        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of());
+
+        unmanagedVMsManager.selectKVMHostForImportingInCluster(cluster, null);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForImportingInClusterWithImportInstanceIdInvalidCluster() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getType()).thenReturn(Host.Type.Routing);
+        when(host.getClusterId()).thenReturn(2L);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        unmanagedVMsManager.selectKVMHostForImportingInCluster(cluster, hostId);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForImportingInClusterWithImportInstanceIdInvalidType() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getType()).thenReturn(Host.Type.Storage);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        unmanagedVMsManager.selectKVMHostForImportingInCluster(cluster, hostId);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForImportingInClusterWithImportInstanceIdInvalidStatus() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(host.getStatus()).thenReturn(Status.Alert);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        unmanagedVMsManager.selectKVMHostForImportingInCluster(cluster, hostId);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForImportingInClusterWithImportInstanceIdInvalidResourceState() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Disabled);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        unmanagedVMsManager.selectKVMHostForImportingInCluster(cluster, hostId);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForImportingInClusterWithImportInstanceIdInvalidHostId() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+
+        when(hostDao.findById(hostId)).thenReturn(null);
+
+        unmanagedVMsManager.selectKVMHostForImportingInCluster(cluster, hostId);
+    }
+
+    @Test
+    public void testSelectKVMHostForConversionInClusterWithImportInstanceIdEnabledHost() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getType()).thenReturn(Host.Type.Routing);
+        when(host.getDataCenterId()).thenReturn(1L);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
+        Assert.assertEquals(host, returnedHost);
+    }
+
+    @Test
+    public void testSelectKVMHostForConversionInClusterWithImportInstanceIdDisabledHost() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Disabled);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getType()).thenReturn(Host.Type.Routing);
+        when(host.getDataCenterId()).thenReturn(1L);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
+        Assert.assertEquals(host, returnedHost);
+    }
+
+    @Test
+    public void testSelectKVMHostForConversionInClusterWithImportInstanceIdSuccessCompatible() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of(host));
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, false);
+        Assert.assertEquals(host, returnedHost);
+    }
+
+    @Test
+    public void testSelectKVMHostForConversionInClusterWithImportInstanceIdSuccessNonCompatible() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of());
+
+        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of(host));
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, false);
+        Assert.assertEquals(host, returnedHost);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterWithImportInstanceIdFailure() {
+        ClusterVO cluster = getClusterForTests();
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of());
+
+        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of());
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterWithImportInstanceIdInvalidZone() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getType()).thenReturn(Host.Type.Routing);
+        when(host.getDataCenterId()).thenReturn(2L);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterWithImportInstanceIdInvalidType() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(host.getStatus()).thenReturn(Status.Up);
+        when(host.getType()).thenReturn(Host.Type.SecondaryStorage);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterWithImportInstanceIdInvalidStatus() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+        when(host.getStatus()).thenReturn(Status.Down);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterWithImportInstanceIdInvalidResourceState() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+        HostVO host = Mockito.mock(HostVO.class);
+        when(host.getResourceState()).thenReturn(ResourceState.Maintenance);
+
+        when(hostDao.findById(hostId)).thenReturn(host);
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testSelectKVMHostForConversionInClusterWithImportInstanceIdInvalidHostId() {
+        Long hostId = 1L;
+        ClusterVO cluster = getClusterForTests();
+
+        when(hostDao.findById(hostId)).thenReturn(null);
+
+        unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, hostId, false);
+    }
+
+    @Test
+    public void testSelectKVMHostForConversionInClusterVddkAutoSelectsHostWithVddkSupport() {
+        ClusterVO cluster = getClusterForTests();
+        HostVO hostWithVddk = Mockito.mock(HostVO.class);
+        HostVO hostWithoutVddk = Mockito.mock(HostVO.class);
+        when(hostWithVddk.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn("true");
+        when(hostWithoutVddk.getDetail(Host.HOST_VDDK_SUPPORT)).thenReturn(null);
+
+        when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION))
+                .thenReturn(List.of(hostWithoutVddk, hostWithVddk));
+
+        HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, true);
+        Assert.assertEquals(hostWithVddk, returnedHost);
+    }
+
+    @Test
+    public void testCheckConversionStoragePoolSecondaryStorageStaging() {
+        unmanagedVMsManager.checkConversionStoragePool(null, false);
+        Mockito.verifyNoInteractions(primaryDataStoreDao);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckConversionStoragePoolTemporarySecondaryStorageForceConvertToPool() {
+        unmanagedVMsManager.checkConversionStoragePool(null, true);
+    }
+
+    @Test
+    public void testCheckConversionStoragePoolPrimaryStagingPool() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, false);
+    }
+
+    @Test
+    public void testCheckConversionStoragePoolPrimaryStagingPoolTypeAllowedForce() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, true);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testCheckConversionStoragePoolPrimaryStagingPoolTypeNotAllowedForce() {
+        StoragePoolVO destPool = mock(StoragePoolVO.class);
+        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+        long destPoolId = 1L;
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+        unmanagedVMsManager.checkConversionStoragePool(destPoolId, true);
+    }
+
+    @Test
+    public void testCheckExtraParamsAllowedEmptyParams() {
+        unmanagedVMsManager.checkExtraParamsAllowed(null);
+        Mockito.verifyNoInteractions(configKeyMockParamsAllowed);
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testCheckExtraParamsAllowedDisabledByAdministrator() {
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowed = configKeyMockParamsAllowed;
+        Mockito.when(configKeyMockParamsAllowed.value()).thenReturn(false);
+        unmanagedVMsManager.checkExtraParamsAllowed("--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x");
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testCheckExtraParamsAllowedEnabledButEmptyAllowedList() {
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowed = configKeyMockParamsAllowed;
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowedList = configKeyMockParamsAllowedList;
+        Mockito.when(configKeyMockParamsAllowed.value()).thenReturn(true);
+        Mockito.when(configKeyMockParamsAllowedList.value()).thenReturn(null);
+        unmanagedVMsManager.checkExtraParamsAllowed("--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x");
+    }
+
+    @Test
+    public void testCheckExtraParamsAllowedEnabledAndAllowedList() {
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowed = configKeyMockParamsAllowed;
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowedList = configKeyMockParamsAllowedList;
+        Mockito.when(configKeyMockParamsAllowed.value()).thenReturn(true);
+        Mockito.when(configKeyMockParamsAllowedList.value()).thenReturn("mac,network,x");
+        unmanagedVMsManager.checkExtraParamsAllowed("--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x");
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void testCheckExtraParamsAllowedEnabledParamNotInTheAllowedList() {
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowed = configKeyMockParamsAllowed;
+        unmanagedVMsManager.ConvertVmwareInstanceToKvmExtraParamsAllowedList = configKeyMockParamsAllowedList;
+        Mockito.when(configKeyMockParamsAllowed.value()).thenReturn(true);
+        Mockito.when(configKeyMockParamsAllowedList.value()).thenReturn("network,x");
+        unmanagedVMsManager.checkExtraParamsAllowed("--mac 00:0c:29:e6:3d:9d:ip:192.168.0.89,192.168.0.1,24,192.168.0.254 -x");
+    }
+
+    @Test
+    public void testAddServiceOfferingDetailsToParamsFixedOffering() {
+        Map<String, String> params = new HashMap<>();
+        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(2);
+        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(2048);
+        unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO);
+        Assert.assertEquals("2", params.get(VmDetailConstants.CPU_NUMBER));
+        Assert.assertEquals("2048", params.get(VmDetailConstants.MEMORY));
+    }
+
+    @Test
+    public void testAddServiceOfferingDetailsToParamsCustomConstrainedOffering() {
+        Map<String, String> params = new HashMap<>();
+        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.MIN_CPU_NUMBER, "1");
+        details.put(ApiConstants.MIN_MEMORY, "1024");
+        Mockito.when(serviceOfferingVO.getDetails()).thenReturn(details);
+        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(null);
+        Mockito.when(serviceOfferingVO.getSpeed()).thenReturn(1500);
+        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(null);
+        unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO);
+        Assert.assertEquals("1", params.get(VmDetailConstants.CPU_NUMBER));
+        Assert.assertEquals("1500", params.get(VmDetailConstants.CPU_SPEED));
+        Assert.assertEquals("1024", params.get(VmDetailConstants.MEMORY));
+    }
+
+    @Test
+    public void testAddServiceOfferingDetailsToParamsCustomUnconstrainedOffering() {
+        Map<String, String> params = new HashMap<>();
+        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
+        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(null);
+        Mockito.when(serviceOfferingVO.getSpeed()).thenReturn(null);
+        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(null);
+        unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO);
+        Assert.assertFalse(params.containsKey(VmDetailConstants.CPU_NUMBER));
+        Assert.assertFalse(params.containsKey(VmDetailConstants.CPU_SPEED));
+        Assert.assertFalse(params.containsKey(VmDetailConstants.MEMORY));
+    }
+
+    @Test
+    public void checkVmResourceLimitsForUnmanagedInstanceImportTestUsesInformationFromHypervisorWhenOfferingIsDynamic() throws Exception {
+        when(serviceOfferingMock.isDynamic()).thenReturn(true);
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockedConstruction = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.checkVmResourceLimitsForUnmanagedInstanceImport(accountMock, unmanagedInstanceMock, serviceOfferingMock, templateMock, reservations);
+
+            Assert.assertEquals(3, mockedConstruction.constructed().size());
+            Assert.assertEquals(3, reservations.size());
+            verify(unmanagedInstanceMock).getCpuCores();
+            verify(unmanagedInstanceMock).getMemory();
+        }
+    }
+
+    @Test
+    public void checkVmResourceLimitsForUnmanagedInstanceImportTestUsesInformationFromHypervisorWhenVmIsPoweredOn() throws Exception {
+        when(unmanagedInstanceMock.getPowerState()).thenReturn(UnmanagedInstanceTO.PowerState.PowerOn);
+        when(serviceOfferingMock.isDynamic()).thenReturn(false);
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockedConstruction = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.checkVmResourceLimitsForUnmanagedInstanceImport(accountMock, unmanagedInstanceMock, serviceOfferingMock, templateMock, reservations);
+
+            Assert.assertEquals(3, mockedConstruction.constructed().size());
+            Assert.assertEquals(3, reservations.size());
+            verify(unmanagedInstanceMock).getCpuCores();
+            verify(unmanagedInstanceMock).getMemory();
+        }
+    }
+
+    @Test
+    public void checkVmResourceLimitsForUnmanagedInstanceImportTestUsesInformationFromOfferingWhenOfferingIsNotDynamicAndVmIsPoweredOff() throws Exception {
+        when(unmanagedInstanceMock.getPowerState()).thenReturn(UnmanagedInstanceTO.PowerState.PowerOff);
+        when(serviceOfferingMock.isDynamic()).thenReturn(false);
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockedConstruction = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.checkVmResourceLimitsForUnmanagedInstanceImport(accountMock, unmanagedInstanceMock, serviceOfferingMock, templateMock, reservations);
+
+            Assert.assertEquals(3, mockedConstruction.constructed().size());
+            Assert.assertEquals(3, reservations.size());
+            verify(serviceOfferingMock).getCpu();
+            verify(serviceOfferingMock).getRamSize();
+            verify(unmanagedInstanceMock, Mockito.never()).getCpuCores();
+            verify(unmanagedInstanceMock, Mockito.never()).getMemory();
+        }
+    }
+
+    @Test
+    public void checkVmResourceLimitsForExternalKvmVmImportTestUsesInformationFromOfferingWhenOfferingIsNotDynamic() throws ResourceAllocationException {
+        when(serviceOfferingMock.isDynamic()).thenReturn(false);
+        Map<String, String> details = new HashMap<>();
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockedConstruction = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.checkVmResourceLimitsForExternalKvmVmImport(accountMock, serviceOfferingMock, templateMock, details, reservations);
+
+            Assert.assertEquals(3, mockedConstruction.constructed().size());
+            Assert.assertEquals(3, reservations.size());
+            verify(serviceOfferingMock).getCpu();
+            verify(serviceOfferingMock).getRamSize();
+            verify(unmanagedVMsManager, Mockito.never()).getDetailAsInteger(VmDetailConstants.CPU_NUMBER, details);
+            verify(unmanagedVMsManager, Mockito.never()).getDetailAsInteger(VmDetailConstants.MEMORY, details);
+        }
+    }
+
+    @Test
+    public void checkVmResourceLimitsForExternalKvmVmImportTestUsesInformationFromDetailsWhenOfferingIsDynamic() throws ResourceAllocationException {
+        when(serviceOfferingMock.isDynamic()).thenReturn(true);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.CPU_NUMBER, "8");
+        details.put(VmDetailConstants.MEMORY, "4096");
+        List<Reserver> reservations = new ArrayList<>();
+
+        try (MockedConstruction<CheckedReservation> mockedConstruction = Mockito.mockConstruction(CheckedReservation.class)) {
+            unmanagedVMsManager.checkVmResourceLimitsForExternalKvmVmImport(accountMock, serviceOfferingMock, templateMock, details, reservations);
+
+            Assert.assertEquals(3, mockedConstruction.constructed().size());
+            Assert.assertEquals(3, reservations.size());
+            verify(unmanagedVMsManager).getDetailAsInteger(VmDetailConstants.CPU_NUMBER, details);
+            verify(unmanagedVMsManager).getDetailAsInteger(VmDetailConstants.MEMORY, details);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getDetailAsIntegerTestThrowsInvalidParameterValueExceptionWhenDetailIsNull() {
+        Map<String, String> details = new HashMap<>();
+        unmanagedVMsManager.getDetailAsInteger("non-existent", details);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getDetailAsIntegerTestThrowsInvalidParameterValueExceptionWhenValueIsInvalid() {
+        Map<String, String> details = new HashMap<>();
+        details.put("key", "not-a-number");
+        unmanagedVMsManager.getDetailAsInteger("key", details);
+    }
+}

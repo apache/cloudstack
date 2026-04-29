@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor
+  license agreements. See the NOTICE file distributed with this work for additional
+  information regarding copyright ownership. The ASF licenses this file to you under
+  the Apache License, Version 2.0 (the "License"); you may not use this file except
+  in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+  OF ANY KIND, either express or implied. See the License for the specific language
+  governing permissions and limitations under the License. -->
+<!-- components.xml is the configuration file for the VM Ops insertion servers. Someone
+  can quickly pull together an insertion server by selecting the correct adapters to
+  use. Here are some places to look for information. - To find out the general functionality
+  that each Manager or Adapter provide, look at the javadoc for the interface that
+  it implements. The interface is usually the "key" attribute in the declaration. -
+  To find specific implementation of each Manager or Adapter, look at the javadoc for
+  the actual class. The class can be found in the <class> element. - To find out the
+  configuration parameters for each Manager or Adapter, look at the javadoc for the
+  actual implementation class. It should be documented in the description of the class.
+  - To know more about the components.xml in general, look for the javadoc for ComponentLocator.java.
+  If you found that the Manager or Adapter are not properly documented, please contact
+  the author. -->
+<components.xml>
+  <management-server class="com.vmops.server.ManagementServerImpl">
+    <dao name="domain router" class="com.cloud.vm.dao.DomainRouterDaoImpl" />
+    <dao name="host" class="com.cloud.host.dao.HostDaoImpl" />
+    <dao name="VM Instance" class="com.cloud.vm.dao.VMInstanceDaoImpl" />
+    <dao name="User VM" class="com.cloud.vm.dao.UserVmDaoImpl" />
+    <dao name="ServiceOffering" class="com.cloud.service.dao.ServiceOfferingDaoImpl">
+      <param name="cache.size">50</param>
+      <param name="cache.time.to.live">-1</param>
+    </dao>
+    <dao name="DiskOffering" class="com.cloud.storage.dao.DiskOfferingDaoImpl" />
+    <dao name="VMDisk" class="com.cloud.storage.dao.VmDiskDaoImpl" />
+    <dao name="host zone" class="com.cloud.dc.dao.DataCenterDaoImpl">
+      <param name="cache.size">50</param>
+      <param name="cache.time.to.live">-1</param>
+    </dao>
+    <dao name="host pod" class="com.cloud.dc.dao.HostPodDaoImpl">
+      <param name="cache.size">50</param>
+      <param name="cache.time.to.live">-1</param>
+    </dao>
+    <dao name="vlan" class="com.cloud.dc.dao.VlanDaoImpl">
+    </dao>
+    <dao name="Volume" class="com.cloud.storage.dao.VolumeDaoImpl" />
+    <dao name="Events" class="com.cloud.event.dao.EventDaoImpl" />
+    <dao name="VM Template" class="com.cloud.storage.dao.VMTemplateDaoImpl">
+      <param name="cache.size">50</param>
+      <param name="cache.time.to.live">-1</param>
+      <param name="routing.uniquename">routing</param>
+    </dao>
+    <dao name="User" class="com.cloud.user.dao.UserDaoImpl">
+      <param name="cache.size">5000</param>
+      <param name="cache.time.to.live">300</param>
+    </dao>
+    <dao name="UserStats" class="com.cloud.user.dao.UserStatisticsDaoImpl" />
+    <dao name="VmDiskStats" class="com.cloud.user.dao.VmDiskStatisticsDaoImpl" />
+    <dao name="Disk Template" class="com.cloud.storage.dao.DiskTemplateDaoImpl">
+      <param name="cache.size">50</param>
+      <param name="cache.time.to.live">-1</param>
+    </dao>
+    <dao name="Firewall Rules" class="com.cloud.network.dao.FirewallRulesDaoImpl" />
+    <dao name="Security Group" class="com.cloud.network.dao.SecurityGroupDaoImpl" />
+    <dao name="Load Balancer" class="com.cloud.network.dao.LoadBalancerDaoImpl" />
+    <dao name="Network Rule Config" class="com.cloud.network.dao.NetworkRuleConfigDaoImpl" />
+    <dao name="Security Group Mapping" class="com.cloud.network.dao.SecurityGroupVMMapDaoImpl" />
+    <dao name="Load Balancer Mapping" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
+    <dao name="IP Addresses" class="com.cloud.network.dao.IPAddressDaoImpl" />
+    <dao name="Datacenter IP Addresses" class="com.cloud.dc.dao.DataCenterIpAddressDaoImpl" />
+    <dao name="Pricing" class="com.cloud.pricing.dao.PricingDaoImpl" />
+    <dao name="Usage" class="com.cloud.usage.dao.UsageDaoImpl" />
+    <dao name="UsageJob" class="com.cloud.usage.dao.UsageJobDaoImpl" />
+    <dao name="Alert" class="com.cloud.alert.dao.AlertDaoImpl" />
+    <dao name="Capacity" class="com.cloud.capacity.dao.CapacityDaoImpl" />
+    <dao name="Domain" class="com.cloud.domain.dao.DomainDaoImpl" />
+    <dao name="Account" class="com.cloud.user.dao.AccountDaoImpl" />
+    <dao name="Limit" class="com.cloud.configuration.dao.LimitDaoImpl" />
+    <dao name="UserAccount" class="com.cloud.user.dao.UserAccountDaoImpl" />
+    <dao name="Usage IPAddress" class="com.cloud.usage.dao.UsageIPAddressDaoImpl" />
+    <dao name="Upload" class="com.cloud.storage.dao.UploadDaoImpl" />
+    <dao name="VM Template Pool" class="com.cloud.storage.dao.VMTemplatePoolDaoImpl" />
+    <dao name="Launch Permission" class="com.cloud.storage.dao.LaunchPermissionDaoImpl" />
+    <dao name="Configuration" class="com.cloud.configuration.dao.ConfigurationDaoImpl" />
+    <dao name="Configuration Group" class="com.cloud.configuration.dao.ConfigurationGroupDaoImpl" />
+    <dao name="Configuration SubGroup" class="com.cloud.configuration.dao.ConfigurationSubGroupDaoImpl" />
+    <dao name="HA" class="com.cloud.ha.dao.HighAvailabilityDaoImpl" />
+    <dao name="Console Proxy" class="com.cloud.vm.dao.ConsoleProxyDaoImpl" />
+    <dao name="Upgrade" class="com.cloud.maint.dao.AgentUpgradeDaoImpl" />
+    <dao name="Management Server Host" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
+    <dao name="Management Server Status" class="com.cloud.cluster.dao.ManagementServerStatusDaoImpl" />
+    <dao name="Snapshot" class="com.cloud.storage.dao.SnapshotDaoImpl" />
+    <dao name="ScheduledVMBackup" class="com.cloud.user.dao.ScheduledVMBackupDaoImpl" />
+    <dao name="AsyncJobDao" class="com.cloud.async.dao.AsyncJobDaoImpl" />
+    <dao name="SyncQueueDao" class="com.cloud.async.dao.SyncQueueDaoImpl" />
+    <dao name="SyncQueueItemDao" class="com.cloud.async.dao.SyncQueueItemDaoImpl" />
+    <dao name="GuestOSDao" class="com.cloud.storage.dao.GuestOSDaoImpl" />
+
+    <dao name="StoragePoolDao" class="com.cloud.storage.dao.StoragePoolDaoImpl" />
+    <dao name="StoragePoolHostDao" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
+    <dao name="HostDetails" class="com.cloud.host.dao.DetailsDaoImpl" />
+
+
+
+    <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
+      <adapter name="FirstFitRouting"
+        class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator" />
+      <adapter name="FirstFit"
+        class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator" />
+    </adapters>
+    <adapters key="com.cloud.agent.manager.allocator.StorageAllocator">
+      <adapter name="Storage"
+        class="org.apache.cloudstack.storage.allocator.RandomStoragePoolAllocator">
+        <param name="storage.overprovisioning.factor">2</param>
+      </adapter>
+    </adapters>
+    <adapters key="com.cloud.agent.manager.allocator.PodAllocator">
+      <adapter name="User First"
+        class="com.cloud.agent.manager.allocator.impl.UserConcentratedAllocator" />
+    </adapters>
+
+
+    <adapters key="com.cloud.consoleproxy.ConsoleProxyAllocator">
+      <adapter name="Balance"
+        class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator" />
+    </adapters>
+
+
+    <adapters key="org.apache.cloudstack.auth.UserAuthenticator">
+      <adapter name="MD5" class="org.apache.cloudstack.auth.MD5UserAuthenticator" />
+    </adapters>
+    <adapters key="com.cloud.ha.Investigator">
+      <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator" />
+      <adapter name="PingInvestigator" class="com.cloud.ha.InvestigatorImpl" />
+    </adapters>
+    <adapters key="com.cloud.ha.FenceBuilder">
+      <adapter name="StorageFenceBuilder" class="com.cloud.ha.StorageFence" />
+    </adapters>
+    <adapters key="com.cloud.cluster.ClusterServiceAdapter">
+      <adapter name="ClusterService" class="com.cloud.cluster.ClusterServiceServletAdapter" />
+    </adapters>
+    <adapters key="com.cloud.resource.Discoverer">
+      <adapter name="XenServer" class="com.cloud.resource.xenserver.XenServerDiscoverer" />
+      <adapter name="SecondaryStorage"
+        class="com.cloud.storage.secondary.SecondaryStorageDiscoverer" />
+      <adapter name="DummyHostServer" class="com.cloud.resource.DummyHostDiscoverer" />
+    </adapters>
+    <manager name="account manager" class="com.cloud.user.AccountManagerImpl">
+    </manager>
+    <manager name="agent manager" class="com.cloud.agent.manager.ClusteredAgentManagerImpl">
+    </manager>
+    <manager name="configuration manager" class="com.cloud.configuration.ConfigurationManagerImpl">
+      <param name="premium">true</param>
+    </manager>
+    <manager name="network manager" class="com.cloud.network.NetworkManagerImpl">
+    </manager>
+    <manager name="download manager" class="com.cloud.storage.download.DownloadMonitorImpl">
+    </manager>
+    <manager name="upload manager" class="com.cloud.storage.upload.UploadMonitorImpl">
+    </manager>
+    <manager name="console proxy manager" class="com.cloud.consoleproxy.ConsoleProxyManagerImpl">
+    </manager>
+    <manager name="vm manager" class="com.cloud.vm.UserVmManagerImpl" />
+    <manager name="upgrade manager" class="com.cloud.maint.UpgradeManagerImpl">
+    </manager>
+    <manager name="StorageManager" class="com.cloud.storage.StorageManagerImpl">
+    </manager>
+    <manager name="HA Manager" class="com.cloud.ha.HighAvailabilityManagerExtImpl">
+    </manager>
+    <manager name="Cluster Manager" class="com.cloud.cluster.ClusterManagerImpl">
+    </manager>
+    <manager name="SyncQueueManager" class="com.cloud.async.SyncQueueManagerImpl">
+    </manager>
+    <manager name="AsyncJobManager" class="com.cloud.async.AsyncJobManagerImpl">
+    </manager>
+    <manager name="AsyncJobExecutorContext" class="com.cloud.async.AsyncJobExecutorContextImpl">
+    </manager>
+
+    <manager name="Alert Manager" class="com.cloud.alert.AlertManagerImpl">
+    </manager>
+    <manager name="Template Manager" class="com.cloud.template.TemplateManagerImpl">
+    </manager>
+    <adapters key="com.cloud.alert.AlertAdapter">
+      <adapter name="ClusterAlert" class="com.cloud.alert.ClusterAlertAdapter" />
+      <adapter name="ConsoleProxyAlert" class="com.cloud.alert.ConsoleProxyAlertAdapter" />
+    </adapters>
+  </management-server>
+
+</components.xml>

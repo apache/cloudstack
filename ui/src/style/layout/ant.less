@@ -1,0 +1,321 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+// todo refactor this file
+.layout.ant-layout {
+  height: auto;
+  overflow-x: hidden;
+
+  &.mobile,
+  &.tablet {
+
+    .ant-table-wrapper {
+      .ant-table-content {
+        overflow-y: auto;
+      }
+
+      .ant-table-body {
+        min-width: 500px;
+      }
+    }
+
+    .topmenu {
+      &.content-width-Fluid {
+        .header-index-wide {
+          margin-left: 0;
+        }
+      }
+    }
+  }
+
+  &.mobile {
+    .sidemenu {
+      .ant-header-fixedHeader {
+
+        &.ant-header-side-opened,
+        &.ant-header-side-closed {
+          width: 100%
+        }
+      }
+    }
+  }
+
+  &.ant-layout-has-sider {
+    flex-direction: row;
+  }
+
+  .trigger {
+    font-size: 20px;
+    line-height: 64px;
+    padding: 0 24px;
+    cursor: pointer;
+    transition: color .3s;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.025);
+    }
+  }
+
+  .topmenu {
+    .ant-header-fixedHeader {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 9;
+      width: 100%;
+      transition: width .2s;
+
+      &.ant-header-side-opened {
+        width: 100%;
+      }
+
+      &.ant-header-side-closed {
+        width: 100%;
+      }
+    }
+
+    &.content-width-Fluid {
+      .header-index-wide {
+        max-width: unset;
+        margin-left: 24px;
+      }
+
+      .page-header-index-wide {
+        max-width: unset;
+      }
+    }
+
+  }
+
+  .sidemenu {
+    .ant-header-fixedHeader {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 9;
+      width: 100%;
+      transition: width .2s;
+
+      &.ant-header-side-opened {
+        width: calc(100% - 256px)
+      }
+
+      &.ant-header-side-closed {
+        width: calc(100% - 80px)
+      }
+    }
+  }
+
+  .header {
+    height: 64px;
+    padding: 0 12px 0 0;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 21, 41, .08);
+    position: relative;
+  }
+
+  .header,
+  .top-nav-header-index {
+
+    .user-menu {
+      float: right;
+      height: 100%;
+      padding: 0 2px;
+
+      .action {
+        cursor: pointer;
+        padding: 0 10px;
+        display: flex;
+        align-items: center;
+        float: left;
+        transition: all .3s;
+        height: 100%;
+        color: rgba(0, 0, 0, 0.65);
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.025);
+        }
+
+        .avatar {
+          margin: 20px 8px 20px 0;
+          color: #1890ff;
+          background: hsla(0, 0%, 100%, .85);
+          vertical-align: middle;
+        }
+
+        .icon {
+          font-size: 16px;
+          padding: 4px;
+        }
+      }
+    }
+
+    &.dark {
+
+      .user-menu {
+
+        .action {
+          color: rgba(255, 255, 255, 0.85);
+
+          a {
+            color: rgba(255, 255, 255, 0.85);
+          }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.16);
+          }
+        }
+      }
+    }
+  }
+
+  &.mobile,
+  &.tablet {
+    .top-nav-header-index {
+
+      .header-index-wide {
+
+        .header-index-left {
+
+          .trigger {
+            color: rgba(255, 255, 255, 0.85);
+            padding: 0 12px;
+          }
+
+          .logo.top-nav-header {
+            flex: 0 0 56px;
+            text-align: center;
+            line-height: 58px;
+
+            h1 {
+              display: none;
+            }
+          }
+        }
+      }
+
+      &.light {
+
+        .header-index-wide {
+
+          .header-index-left {
+            .trigger {
+              color: rgba(0, 0, 0, 0.65);
+            }
+          }
+        }
+
+        //
+      }
+    }
+  }
+
+  &.tablet {
+
+    // overflow: hidden; text-overflow:ellipsis; white-space: nowrap;
+    .top-nav-header-index {
+
+      .header-index-wide {
+
+        .header-index-left {
+          .logo > a {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        }
+
+        .ant-menu.ant-menu-horizontal {
+          flex: 1 1;
+          white-space: normal;
+        }
+      }
+    }
+
+  }
+
+  .top-nav-header-index {
+    box-shadow: 0 1px 4px rgba(0, 21, 41, .08);
+    position: relative;
+    transition: background .3s, width .2s;
+
+    .header-index-wide {
+      max-width: 1200px;
+      margin: auto;
+      padding-left: 0;
+      display: flex;
+      height: 64px;
+
+      .ant-menu.ant-menu-horizontal {
+        border: none;
+        height: 64px;
+        line-height: 64px;
+      }
+
+      .header-index-left {
+        flex: 1 1;
+        display: flex;
+
+        .logo.top-nav-header {
+          width: 165px;
+          height: 64px;
+          position: relative;
+          line-height: 64px;
+          transition: all .3s;
+          overflow: hidden;
+
+          img,
+          svg {
+            display: inline-block;
+            vertical-align: middle;
+            height: 32px;
+            width: 32px;
+          }
+
+          h1 {
+            color: #fff;
+            display: inline-block;
+            vertical-align: top;
+            font-size: 16px;
+            margin: 0 0 0 12px;
+            font-weight: 400;
+          }
+        }
+      }
+
+      .header-index-right {
+        flex: 0 0 auto;
+        height: 64px;
+        overflow: hidden;
+      }
+    }
+
+    &.light {
+      background-color: #fff;
+
+      .header-index-wide {
+        .header-index-left {
+          .logo {
+            h1 {
+              color: #002140;
+            }
+          }
+        }
+      }
+    }
+  }
+}

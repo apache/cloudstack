@@ -1,0 +1,34 @@
+{
+  "run_list": [
+    "recipe[binary-installation]",
+    "recipe[nat-router]"
+  ],
+  "set_fqdn": "*.localdomain",
+  "selinux": {
+      "state": "permissive"
+  },
+  "cloudstack": {
+      "db": {
+        "user": "cloud",
+        "password": "cloud",
+        "rootusername": "root",
+        "rootpassword": "password",
+        "management_server_key": "password",
+        "database_key": "password",
+        "prefill": "/vagrant/prefill.sql"
+      },
+      "secondary": {
+        "path": "/exports/secondary"
+      },
+      "primary": {
+        "path": "/exports/primary"
+      },
+      "hypervisor_tpl": {
+        "xenserver": "http://packages.shapeblue.com/systemvmtemplate/4.5/systemvm64template-4.5-xen.vhd.bz2"
+      },
+      "configuration": "/vagrant/marvin.cfg.erb",
+      "yum_repo": "http://packages.shapeblue.com/cloudstack/upstream/centos/4.5/",
+      "apt_repo": "http://packages.shapeblue.com/cloudstack/upstream/debian/4.5/",
+      "version": "4.5.0"
+  }
+}

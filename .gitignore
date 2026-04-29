@@ -1,0 +1,106 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+*~
+*_flymake.js
+*.bak
+*.css.map
+*.egginfo/
+*.egg-info/
+*.iml
+*.iso
+*.jar
+*.log
+*.log.*
+*.mar
+*.orig
+*.patch
+*.prefs
+*.pyc
+*.qcow2
+*.raw
+*.swp
+*.tar.gz
+*.tgz
+*.vscode
+*.war
+.DS_Store
+.checkstyle
+.classpath
+.idea
+.lock-wscript
+.metadata
+.pmd
+.pmdruleset.xml
+.project
+.pydevproject
+.reviewboardrc
+.settings.xml
+.settings/
+.vscode
+.waf-*
+Gemfile.lock
+build/build.number
+build.number
+build-indep-stamp
+cloud.log.*.*
+cloud-*.tar.bz2
+configure-stamp
+db.properties.override
+debian/*.debhelper
+debian/*.substvars
+debian/cloudstack-*/*
+debian/files
+debian/tmp
+deps/cloud.userlibraries
+dist/
+docs/publish
+docs/runbook/publish
+docs/runbook/tmp
+docs/tmp
+engine/storage/integration-test/test-output
+git-remote-https.exe.stackdump
+node_modules
+override/
+plugins/hypervisors/kvm/.pydevproject
+plugins/network-elements/juniper-contrail/logs/
+replace.properties.override
+replace.properties.tmp
+scripts/.pydevproject
+scripts/vm/hypervisor/xenserver/vhd-util
+systemvm/.pydevproject
+target/
+target-eclipse
+test/.pydevprojec
+tools/apidoc/log/
+tools/appliance/box/
+tools/appliance/systemvmtemplate/packer_cache/
+tools/cli/build/
+tools/cli/cloudmonkey/marvin/
+tools/cli/cloudmonkey/precache.py
+tools/devcloud/devcloudbox/.vagrant
+tools/marvin/build/
+tools/marvin/marvin/cloudstackAPI/
+tools/marvin/marvin/cloudstackAPI/*
+unittest
+venv
+waf-*
+
+# this ignores _all files starting with '.'. Don't do that!
+#.*
+
+!.gitignore

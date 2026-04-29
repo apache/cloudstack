@@ -1,0 +1,845 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
+package org.apache.cloudstack.direct.download;
+
+import static com.cloud.storage.Storage.ImageFormat;
+import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus.CertificateStatus;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand.DownloadProtocol;
+import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.RevokeDirectDownloadCertificateCommand;
+import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.poll.BackgroundPollManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.security.CertificateHelper;
+
+import sun.security.x509.X509CertImpl;
+
+public class DirectDownloadManagerImpl extends ManagerBase implements DirectDownloadManager {
+
+    protected static final String httpHeaderDetailKey = "HTTP_HEADER";
+    protected static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
+    protected static final String END_CERT = "-----END CERTIFICATE-----";
+    protected final static String LINE_SEPARATOR = "\n";
+
+    @Inject
+    private VMTemplateDao vmTemplateDao;
+    @Inject
+    private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private HostDao hostDao;
+    @Inject
+    private AgentManager agentManager;
+    @Inject
+    private VMTemplatePoolDao vmTemplatePoolDao;
+    @Inject
+    private DataStoreManager dataStoreManager;
+    @Inject
+    private DirectDownloadCertificateDao directDownloadCertificateDao;
+    @Inject
+    private DirectDownloadCertificateHostMapDao directDownloadCertificateHostMapDao;
+    @Inject
+    private BackgroundPollManager backgroundPollManager;
+    @Inject
+    private DataCenterDao dataCenterDao;
+    @Inject
+    private ConfigurationDao configDao;
+    @Inject
+    private TemplateDataFactory tmplFactory;
+    @Inject
+    private VolumeService volService;
+
+    protected ScheduledExecutorService executorService;
+
+    @Override
+    public List<Class<?>> getCommands() {
+        final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        return cmdList;
+    }
+
+    /**
+     * Return protocol to use from provided URL
+     * @param url
+     * @return
+     */
+    public static DownloadProtocol getProtocolFromUrl(String url) {
+        URI uri;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException("URI is incorrect: " + url);
+        }
+        if ((uri != null) && (uri.getScheme() != null)) {
+            if (uri.getPath().endsWith(".metalink")) {
+                return DownloadProtocol.METALINK;
+            } else if (uri.getScheme().equalsIgnoreCase("http")) {
+                return DownloadProtocol.HTTP;
+            } else if (uri.getScheme().equalsIgnoreCase("https")) {
+                return DownloadProtocol.HTTPS;
+            } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+                return DownloadProtocol.NFS;
+            } else {
+                throw new CloudRuntimeException("Scheme is not supported " + url);
+            }
+        } else {
+            throw new CloudRuntimeException("URI is incorrect: " + url);
+        }
+    }
+
+    /**
+     * Return HTTP headers from template details
+     * @param templateDetails
+     * @return
+     */
+    protected Map<String, String> getHeadersFromDetails(Map<String, String> templateDetails) {
+        if (MapUtils.isEmpty(templateDetails)) {
+            return new HashMap<>();
+        }
+        Map<String, String> headers = new HashMap<>();
+        for (String key : templateDetails.keySet()) {
+            if (key.startsWith(httpHeaderDetailKey)) {
+                String header = key.split(":")[1];
+                String value = templateDetails.get(key);
+                headers.put(header, value);
+            }
+        }
+        return headers;
+    }
+
+    /**
+     * Get running host IDs within the same hypervisor, cluster and datacenter than hostId. ID hostId is not included on the returned list
+     */
+    protected List<Long> getRunningHostIdsInTheSameCluster(Long clusterId, long dataCenterId, HypervisorType hypervisorType, long hostId) {
+        List<Long> list = hostDao.listByDataCenterIdAndHypervisorType(dataCenterId, hypervisorType)
+                .stream()
+                .filter(x -> x.getHypervisorType().equals(hypervisorType) && x.getStatus().equals(Status.Up) &&
+                        x.getType().equals(Host.Type.Routing) && x.getClusterId().equals(clusterId) &&
+                        x.getId() != hostId)
+                .map(x -> x.getId())
+                .collect(Collectors.toList());
+        Collections.shuffle(list);
+        return list;
+    }
+
+    /**
+     * Create host IDs array having hostId as the first element
+     */
+    protected Long[] createHostIdsList(List<Long> hostIds, long hostId) {
+        if (CollectionUtils.isEmpty(hostIds)) {
+            return Collections.singletonList(hostId).toArray(new Long[1]);
+        }
+        Long[] ids = new Long[hostIds.size() + 1];
+        ids[0] = hostId;
+        int i = 1;
+        for (Long id : hostIds) {
+            ids[i] = id;
+            i++;
+        }
+        return ids;
+    }
+
+    /**
+     * Get alternative hosts to retry downloading a template. The planner have previously selected a host and a storage pool
+     * @return array of host ids which can access the storage pool
+     */
+    protected Long[] getHostsToRetryOn(Host host, StoragePoolVO storagePool) {
+        List<Long> clusterHostIds = new ArrayList<>();
+        if (storagePool.getPoolType() != Storage.StoragePoolType.Filesystem || storagePool.getScope() != ScopeType.HOST) {
+            clusterHostIds = getRunningHostIdsInTheSameCluster(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType(), host.getId());
+        }
+        return createHostIdsList(clusterHostIds, host.getId());
+    }
+
+    @Override
+    public void downloadTemplate(long templateId, long poolId, long hostId) {
+        VMTemplateVO template = vmTemplateDao.findById(templateId);
+        StoragePoolVO pool = primaryDataStoreDao.findById(poolId);
+        HostVO host = hostDao.findById(hostId);
+        if (pool == null) {
+            throw new CloudRuntimeException("Storage pool " + poolId + " could not be found");
+        }
+        if (template == null) {
+            throw new CloudRuntimeException("Template " + templateId + " could not be found");
+        }
+        if (host == null) {
+            throw new CloudRuntimeException("Host " + hostId + " could not be found");
+        }
+        if (!template.isDirectDownload()) {
+            throw new CloudRuntimeException("Template " + templateId + " is not marked for direct download");
+        }
+        Map<String, String> details = template.getDetails();
+        String url = template.getUrl();
+        String checksum = template.getChecksum();
+        Map<String, String> headers = getHeadersFromDetails(details);
+        DataStore store = dataStoreManager.getDataStore(poolId, DataStoreRole.Primary);
+        if (store == null) {
+            throw new CloudRuntimeException("Data store " + poolId + " could not be found");
+        }
+        PrimaryDataStore primaryDataStore = (PrimaryDataStore) store;
+        PrimaryDataStoreTO to = (PrimaryDataStoreTO) primaryDataStore.getTO();
+
+        DownloadProtocol protocol = getProtocolFromUrl(url);
+        DirectDownloadCommand cmd = getDirectDownloadCommandFromProtocol(protocol, url, templateId, to, checksum,
+                headers);
+        cmd.setTemplateSize(template.getSize());
+        cmd.setFormat(template.getFormat());
+
+        if (tmplFactory.getTemplate(templateId, store) != null) {
+            cmd.setDestData((TemplateObjectTO) tmplFactory.getTemplate(templateId, store).getTO());
+        }
+
+        int cmdTimeOut = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
+        cmd.setWait(cmdTimeOut);
+
+        Answer answer = sendDirectDownloadCommand(cmd, template, poolId, host);
+
+        VMTemplateStoragePoolVO sPoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId, null);
+        if (sPoolRef == null) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Not found (template: {} pool: {}) in template_spool_ref, persisting it", template, pool);
+            }
+            DirectDownloadAnswer ans = (DirectDownloadAnswer) answer;
+            sPoolRef = new VMTemplateStoragePoolVO(poolId, templateId, null);
+            sPoolRef.setDownloadPercent(100);
+            sPoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+            sPoolRef.setState(ObjectInDataStoreStateMachine.State.Ready);
+            sPoolRef.setTemplateSize(ans.getTemplateSize());
+            sPoolRef.setLocalDownloadPath(ans.getInstallPath());
+            sPoolRef.setInstallPath(ans.getInstallPath());
+            vmTemplatePoolDao.persist(sPoolRef);
+        } else {
+            // For managed storage, update after template downloaded and copied to the disk
+            DirectDownloadAnswer ans = (DirectDownloadAnswer) answer;
+            sPoolRef.setDownloadPercent(100);
+            sPoolRef.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+            sPoolRef.setState(ObjectInDataStoreStateMachine.State.Ready);
+            sPoolRef.setTemplateSize(ans.getTemplateSize());
+            sPoolRef.setLocalDownloadPath(ans.getInstallPath());
+            sPoolRef.setInstallPath(ans.getInstallPath());
+            vmTemplatePoolDao.update(sPoolRef.getId(), sPoolRef);
+        }
+    }
+
+    /**
+     * Send direct download command for downloading template with ID templateId on storage pool with ID poolId.<br/>
+     * At first, cmd is sent to host, in case of failure it will retry on other hosts before failing
+     * @param cmd direct download command
+     * @param template template
+     * @param poolId pool id
+     * @param host first host to which send the command
+     * @return download answer from any host which could handle cmd
+     */
+    private Answer sendDirectDownloadCommand(DirectDownloadCommand cmd, VMTemplateVO template, long poolId, HostVO host) {
+        boolean downloaded = false;
+        int retry = 3;
+
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
+        // TODO: Move the host retry attempts to upper layer
+        Long[] hostsToRetry = getHostsToRetryOn(host, storagePoolVO);
+        int hostIndex = 0;
+        Answer answer = null;
+        String answerDetails = "";
+        String errorDetails = "";
+        Long hostToSendDownloadCmd = hostsToRetry[hostIndex];
+        boolean continueRetrying = true;
+        while (!downloaded && retry > 0 && continueRetrying) {
+            PrimaryDataStore primaryDataStore = null;
+            TemplateInfo templateOnPrimary = null;
+
+            try {
+                if (hostToSendDownloadCmd != host.getId() && storagePoolVO.isManaged()) {
+                    primaryDataStore = (PrimaryDataStore) dataStoreManager.getPrimaryDataStore(poolId);
+                    templateOnPrimary = primaryDataStore.getTemplate(template.getId(), null);
+                    if (templateOnPrimary != null) {
+                        volService.grantAccess(templateOnPrimary, host, primaryDataStore);
+                    }
+                }
+
+                logger.debug("Sending Direct download command to host " + hostToSendDownloadCmd);
+                answer = agentManager.easySend(hostToSendDownloadCmd, cmd);
+                if (answer != null) {
+                    DirectDownloadAnswer ans = (DirectDownloadAnswer)answer;
+                    downloaded = answer.getResult();
+                    answerDetails = answer.getDetails();
+                    continueRetrying = ans.isRetryOnOtherHosts();
+                }
+                hostToSendDownloadCmd = hostsToRetry[(hostIndex + 1) % hostsToRetry.length];
+            } finally {
+                if (templateOnPrimary != null) {
+                    volService.revokeAccess(templateOnPrimary, host, primaryDataStore);
+                }
+            }
+
+            retry --;
+        }
+        if (!downloaded) {
+            logUsageEvent(template, storagePoolVO);
+            if (!answerDetails.isEmpty()){
+                Account caller = CallContext.current().getCallingAccount();
+                if (caller != null && caller.getType() == Account.Type.ADMIN){
+                    errorDetails = String.format(" Details: %s", answerDetails);
+                }
+            }
+            throw new CloudRuntimeException(String.format("Template %s could not be downloaded on pool %s, failing after trying on several hosts%s", template, storagePoolVO, errorDetails));
+        }
+        return answer;
+    }
+
+    /**
+     * Log and persist event for direct download failure
+     */
+    private void logUsageEvent(VMTemplateVO template, StoragePoolVO pool) {
+        String event = EventTypes.EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE;
+        if (template.getFormat() == ImageFormat.ISO) {
+            event = EventTypes.EVENT_ISO_DIRECT_DOWNLOAD_FAILURE;
+        }
+        String description = String.format("Direct Download for template: %s on pool: %s failed", template, pool);
+        logger.error(description);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), template.getAccountId(), EventVO.LEVEL_INFO, event, description, template.getId(), ApiCommandResourceType.Template.toString(), 0);
+    }
+
+    /**
+     * Return DirectDownloadCommand according to the protocol
+     */
+    private DirectDownloadCommand getDirectDownloadCommandFromProtocol(DownloadProtocol protocol, String url,
+               Long templateId, PrimaryDataStoreTO destPool, String checksum, Map<String, String> httpHeaders) {
+        int connectTimeout = DirectDownloadConnectTimeout.value();
+        int soTimeout = DirectDownloadSocketTimeout.value();
+        int connectionRequestTimeout = DirectDownloadConnectionRequestTimeout.value();
+        boolean followRedirects = StorageManager.DataStoreDownloadFollowRedirects.value();
+        if (protocol.equals(DownloadProtocol.HTTP)) {
+            return new HttpDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout,
+                    soTimeout, followRedirects);
+        } else if (protocol.equals(DownloadProtocol.HTTPS)) {
+            return new HttpsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout,
+                    soTimeout, connectionRequestTimeout, followRedirects);
+        } else if (protocol.equals(DownloadProtocol.NFS)) {
+            return new NfsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
+        } else if (protocol.equals(DownloadProtocol.METALINK)) {
+            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders, connectTimeout,
+                    soTimeout, followRedirects);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Return the list of running hosts to which upload certificates for Direct Download
+     */
+    private List<HostVO> getRunningHostsToUploadCertificate(Long zoneId, HypervisorType hypervisorType) {
+        return hostDao.listAllHostsUpByZoneAndHypervisor(zoneId, hypervisorType);
+    }
+
+    /**
+     * Return pretified PEM certificate
+     */
+    protected String getPretifiedCertificate(String certificateCer) {
+        String cert = certificateCer.replaceAll("(.{64})", "$1\n");
+        if (!cert.startsWith(BEGIN_CERT) && !cert.endsWith(END_CERT)) {
+            cert = BEGIN_CERT + LINE_SEPARATOR + cert + LINE_SEPARATOR + END_CERT;
+        }
+        return cert;
+    }
+
+    /**
+     * Generate and return certificate from the string
+     * @throws CloudRuntimeException if the certificate is not well formed
+     */
+    private Certificate getCertificateFromString(String certificatePem) {
+        try {
+            return CertificateHelper.buildCertificate(certificatePem);
+        } catch (CertificateException e) {
+            e.printStackTrace();
+            throw new CloudRuntimeException("Cannot parse the certificate provided, please provide a PEM certificate. Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Perform sanity of string parsed certificate
+     */
+    protected void certificateSanity(String certificatePem) {
+        Certificate certificate = getCertificateFromString(certificatePem);
+
+        if (certificate instanceof X509CertImpl) {
+            X509CertImpl x509Cert = (X509CertImpl) certificate;
+            try {
+                x509Cert.checkValidity();
+            } catch (CertificateExpiredException | CertificateNotYetValidException e) {
+                String msg = "Certificate is invalid. Please provide a valid certificate. Error: " + e.getMessage();
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            if (x509Cert.getSubjectDN() != null) {
+                logger.debug("Valid certificate for domain name: " + x509Cert.getSubjectDN().getName());
+            }
+        }
+    }
+
+    @Override
+    public Pair<DirectDownloadCertificate, List<HostCertificateStatus>> uploadCertificateToHosts(
+            String certificateCer, String alias, String hypervisor, Long zoneId, Long hostId) {
+        if (StringUtils.isBlank(alias)) {
+            throw new CloudRuntimeException("Certificate name not provided, please provide a valid name");
+        }
+
+        if (alias.equalsIgnoreCase("cloud") || alias.startsWith("cloudca")) {
+            throw new CloudRuntimeException("Please provide a different alias name for the certificate");
+        }
+
+        if (!NetUtils.verifyDomainNameLabel(alias, false)) {
+            throw new CloudRuntimeException("The provided certificate name is invalid, please provide a valid name");
+        }
+
+        List<HostVO> hosts;
+        DirectDownloadCertificateVO certificateVO;
+        HypervisorType hypervisorType = HypervisorType.getType(hypervisor);
+
+        if (hypervisorType != HypervisorType.KVM) {
+            throw new CloudRuntimeException("Direct download certificates only supported on KVM");
+        }
+
+        if (hostId == null) {
+            hosts = getRunningHostsToUploadCertificate(zoneId, hypervisorType);
+
+            String certificatePem = getPretifiedCertificate(certificateCer);
+            certificateSanity(certificatePem);
+
+            certificateVO = directDownloadCertificateDao.findByAlias(alias, hypervisorType, zoneId);
+            if (certificateVO != null) {
+                throw new CloudRuntimeException("Certificate alias " + alias + " has been already created");
+            }
+            certificateVO = new DirectDownloadCertificateVO(alias, certificatePem, hypervisorType, zoneId);
+            directDownloadCertificateDao.persist(certificateVO);
+        } else {
+            HostVO host = hostDao.findById(hostId);
+            hosts = Collections.singletonList(host);
+            certificateVO = directDownloadCertificateDao.findByAlias(alias, hypervisorType, zoneId);
+            if (certificateVO == null) {
+                logger.info("Certificate must be uploaded on zone {}", () -> dataCenterDao.findById(zoneId));
+                return new Pair<>(certificateVO, new ArrayList<>());
+            }
+        }
+
+        logger.info("Attempting to upload certificate: {} to {} hosts on zone {}", () -> alias, hosts::size, () -> dataCenterDao.findById(zoneId));
+        int success = 0;
+        int failed = 0;
+        List<HostCertificateStatus> results = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(hosts)) {
+            for (HostVO host : hosts) {
+                if (host == null) {
+                    continue;
+                }
+                HostCertificateStatus hostStatus;
+                Pair<Boolean, String> result = provisionCertificate(certificateVO, host);
+                if (!result.first()) {
+                    String msg = String.format("Could not upload certificate %s on host: %s: %s", alias, host, result.second());
+                    logger.error(msg);
+                    failed++;
+                    hostStatus = new HostCertificateStatus(CertificateStatus.FAILED, host, result.second());
+                } else {
+                    success++;
+                    hostStatus = new HostCertificateStatus(CertificateStatus.UPLOADED, host, "");
+                }
+                results.add(hostStatus);
+            }
+        }
+        logger.info("Certificate was successfully uploaded to " + success + " hosts, " + failed + " failed");
+        return new Pair<>(certificateVO, results);
+    }
+
+    private Pair<Boolean, String> setupCertificateOnHost(DirectDownloadCertificate certificate, Host host) {
+        String certificateStr = certificate.getCertificate();
+        String alias = certificate.getAlias();
+        long certificateId = certificate.getId();
+
+        logger.debug("Uploading certificate: {} to host {}", alias, host);
+        SetupDirectDownloadCertificateCommand cmd = new SetupDirectDownloadCertificateCommand(certificateStr, alias);
+        Answer answer = agentManager.easySend(host.getId(), cmd);
+        Pair<Boolean, String> result;
+        if (answer == null || !answer.getResult()) {
+            String msg = String.format("Certificate %s could not be added to host %s", alias, host);
+            if (answer != null) {
+                msg += " due to: " + answer.getDetails();
+            }
+            logger.error(msg);
+            result = new Pair<>(false, msg);
+        } else {
+            result = new Pair<>(true, "OK");
+        }
+
+        logger.info("Certificate {} successfully uploaded to host: {}", alias, host);
+        DirectDownloadCertificateHostMapVO map = directDownloadCertificateHostMapDao.findByCertificateAndHost(certificateId, host.getId());
+        if (map != null) {
+            map.setRevoked(false);
+            directDownloadCertificateHostMapDao.update(map.getId(), map);
+        } else {
+            DirectDownloadCertificateHostMapVO mapVO = new DirectDownloadCertificateHostMapVO(certificateId, host.getId());
+            directDownloadCertificateHostMapDao.persist(mapVO);
+        }
+        return result;
+    }
+    /**
+     * Upload and import certificate to hostId on keystore
+     */
+    public Pair<Boolean, String> provisionCertificate(long certificateId, long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            throw new CloudRuntimeException("Cannot find a host with ID " + hostId);
+        }
+        DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findById(certificateId);
+        if (certificateVO == null) {
+            throw new CloudRuntimeException(String.format("Could not find certificate with id %d to upload to host: %s", certificateId, host));
+        }
+        return provisionCertificate(certificateVO, host);
+    }
+
+    public Pair<Boolean, String> provisionCertificate(DirectDownloadCertificate certificate, Host host) {
+        if (host.getHypervisorType() != HypervisorType.KVM) {
+            throw new CloudRuntimeException("Cannot provision certificate to host " + host.getName() + " since it is not KVM");
+        }
+        return setupCertificateOnHost(certificate, host);
+    }
+
+    @Override
+    public boolean syncCertificatesToHost(long hostId, long zoneId) {
+        List<DirectDownloadCertificateVO> zoneCertificates = directDownloadCertificateDao.listByZone(zoneId);
+        if (CollectionUtils.isEmpty(zoneCertificates)) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("No certificates to sync on host: {}", () -> hostDao.findById(hostId));
+            }
+            return true;
+        }
+
+        boolean syncCertificatesResult = true;
+        int certificatesSyncCount = 0;
+        HostVO host = hostDao.findById(hostId);
+        logger.debug("Syncing certificates on host: {}", host);
+        for (DirectDownloadCertificateVO certificateVO : zoneCertificates) {
+            DirectDownloadCertificateHostMapVO mapping = directDownloadCertificateHostMapDao.findByCertificateAndHost(certificateVO.getId(), hostId);
+            if (mapping == null) {
+                logger.debug("Syncing certificate {} on host: {}, uploading it", certificateVO, host);
+                Pair<Boolean, String> result = provisionCertificate(certificateVO.getId(), hostId);
+                if (!result.first()) {
+                    String msg = String.format("Could not sync certificate %s on host: %s, upload failed: %s", certificateVO, host, result.second());
+                    logger.error(msg);
+                    syncCertificatesResult = false;
+                } else {
+                    certificatesSyncCount++;
+                }
+            } else {
+                logger.debug("Certificate {} already synced on host: {}", certificateVO, host);
+            }
+        }
+
+        logger.debug("Synced {} out of {} certificates on host: {}", certificatesSyncCount, zoneCertificates.size(), host);
+        return syncCertificatesResult;
+    }
+
+    private List<DirectDownloadCertificateHostMapVO> getCertificateHostMappings(DirectDownloadCertificate certificate, Long hostId) {
+        List<DirectDownloadCertificateHostMapVO> maps;
+        if (hostId == null) {
+            maps = directDownloadCertificateHostMapDao.listByCertificateIdAndRevoked(certificate.getId(), false);
+        } else {
+            DirectDownloadCertificateHostMapVO hostMap = directDownloadCertificateHostMapDao.findByCertificateAndHost(certificate.getId(), hostId);
+            if (hostMap == null) {
+                String msg = String.format("Certificate %s cannot be revoked from host %s as it is not available on the host", certificate, hostDao.findById(hostId));
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            } else if (hostMap.isRevoked()) {
+                logger.debug("Certificate {} was already revoked from host {} skipping it", certificate, hostDao.findById(hostId));
+                return new LinkedList<>();
+            }
+            maps = Collections.singletonList(hostMap);
+        }
+        return maps;
+    }
+
+    @Override
+    public DirectDownloadCertificate findDirectDownloadCertificateByIdOrHypervisorAndAlias(Long id, String alias, String hypervisor, Long zoneId) {
+        DirectDownloadCertificateVO certificateVO;
+        if (id != null) {
+            certificateVO = directDownloadCertificateDao.findById(id);
+        } else if (StringUtils.isNotBlank(alias) && StringUtils.isNotBlank(hypervisor)) {
+            certificateVO = directDownloadCertificateDao.findByAlias(alias, HypervisorType.getType(hypervisor), zoneId);
+        } else {
+            throw new CloudRuntimeException("Please provide a hypervisor and certificate alias or certificate ID");
+        }
+        if (certificateVO == null) {
+            throw new CloudRuntimeException("Could not find certificate " +
+                    (id != null ? "with ID " + id : "with alias " + alias + " and hypervisor " + hypervisor));
+        }
+        return certificateVO;
+    }
+
+    @Override
+    public List<HostCertificateStatus> revokeCertificate(DirectDownloadCertificate certificate, Long zoneId, Long hostId) {
+        String certificateAlias = certificate.getAlias();
+        if (!certificate.getZoneId().equals(zoneId)) {
+            throw new CloudRuntimeException("The certificate with alias " + certificateAlias + " was uploaded " +
+                    " to the zone with ID=" + certificate.getZoneId() + " instead of the zone with ID=" + zoneId);
+        }
+
+        List<HostCertificateStatus> hostsList = new ArrayList<>();
+        List<DirectDownloadCertificateHostMapVO> maps = getCertificateHostMappings(certificate, hostId);
+        if (CollectionUtils.isEmpty(maps)) {
+            return hostsList;
+        }
+
+        int success = 0;
+        int failed = 0;
+        int skipped = 0;
+        logger.info("Attempting to revoke certificate alias: " + certificateAlias + " from " + maps.size() + " hosts");
+        for (DirectDownloadCertificateHostMapVO map : maps) {
+            Long mappingHostId = map.getHostId();
+            HostVO host = hostDao.findById(mappingHostId);
+            HostCertificateStatus hostStatus;
+            if (host == null || host.getDataCenterId() != zoneId || host.getHypervisorType() != HypervisorType.KVM) {
+                if (host != null) {
+                    String reason = host.getDataCenterId() != zoneId ? "Host is not in the zone " + zoneId : "Host hypervisor is not KVM";
+                    logger.debug("Skipping host {}: {}", host, reason);
+                    hostStatus = new HostCertificateStatus(CertificateStatus.SKIPPED, host, reason);
+                    hostsList.add(hostStatus);
+                }
+                skipped++;
+                continue;
+            }
+            Pair<Boolean, String> result = revokeCertificateAliasFromHost(certificateAlias, host);
+            if (!result.first()) {
+                String msg = String.format("Could not revoke certificate from host: %s: %s", host, result.second());
+                logger.error(msg);
+                hostStatus = new HostCertificateStatus(CertificateStatus.FAILED, host, result.second());
+                failed++;
+            } else {
+                logger.info("Certificate {} revoked from host {}", certificate, host);
+                map.setRevoked(true);
+                hostStatus = new HostCertificateStatus(CertificateStatus.REVOKED, host, null);
+                success++;
+                directDownloadCertificateHostMapDao.update(map.getId(), map);
+            }
+            hostsList.add(hostStatus);
+        }
+        logger.info("Certificate alias {} revoked from: {} hosts, {} failed, {} skipped", certificate, success, failed, skipped);
+        return hostsList;
+    }
+
+    @Override
+    public List<DirectDownloadCertificate> listDirectDownloadCertificates(Long certificateId, Long zoneId) {
+        if (zoneId != null && dataCenterDao.findById(zoneId) == null) {
+            throw new InvalidParameterValueException("Cannot find a zone with ID = " + zoneId);
+        }
+        List<DirectDownloadCertificate> certificates = new LinkedList<>();
+        if (certificateId != null) {
+            certificates.add(directDownloadCertificateDao.findById(certificateId));
+        } else if (zoneId != null) {
+            certificates.addAll(directDownloadCertificateDao.listByZone(zoneId));
+        } else {
+            certificates.addAll(directDownloadCertificateDao.listAll());
+        }
+        return certificates;
+    }
+
+    @Override
+    public List<DirectDownloadCertificateHostMap> getCertificateHostsMapping(Long certificateId) {
+        if (certificateId == null) {
+            throw new InvalidParameterValueException("Please specify a certificate ID");
+        }
+        return new LinkedList<>(directDownloadCertificateHostMapDao.listByCertificateId(certificateId));
+    }
+
+    protected Pair<Boolean, String> revokeCertificateAliasFromHost(String alias, Host host) {
+        RevokeDirectDownloadCertificateCommand cmd = new RevokeDirectDownloadCertificateCommand(alias);
+        try {
+            Answer answer = agentManager.send(host.getId(), cmd);
+            return new Pair<>(answer != null && answer.getResult(), answer != null ? answer.getDetails() : "");
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.error("Error revoking certificate {} from host {}", alias, host, e);
+            return new Pair<>(false, e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        executorService = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("DirectDownloadCertificateMonitor"));
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        executorService.shutdownNow();
+        return true;
+    }
+
+    @Override
+    public boolean start() {
+        if (DirectDownloadCertificateUploadInterval.value() > 0L) {
+            executorService.scheduleWithFixedDelay(
+                    new DirectDownloadCertificateUploadBackgroundTask(this, hostDao, dataCenterDao,
+                            directDownloadCertificateDao, directDownloadCertificateHostMapDao),
+                    1L, DirectDownloadCertificateUploadInterval.value(), TimeUnit.HOURS);
+        }
+        return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return DirectDownloadManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{
+                DirectDownloadCertificateUploadInterval,
+                DirectDownloadConnectTimeout,
+                DirectDownloadSocketTimeout,
+                DirectDownloadConnectionRequestTimeout
+        };
+    }
+
+    public static final class DirectDownloadCertificateUploadBackgroundTask extends ManagedContextRunnable {
+
+        private DirectDownloadManager directDownloadManager;
+        private HostDao hostDao;
+        private DirectDownloadCertificateDao directDownloadCertificateDao;
+        private DirectDownloadCertificateHostMapDao directDownloadCertificateHostMapDao;
+        private DataCenterDao dataCenterDao;
+
+        public DirectDownloadCertificateUploadBackgroundTask(
+                final DirectDownloadManager manager,
+                final HostDao hostDao,
+                final DataCenterDao dataCenterDao,
+                final DirectDownloadCertificateDao directDownloadCertificateDao,
+                final DirectDownloadCertificateHostMapDao directDownloadCertificateHostMapDao) {
+            this.directDownloadManager = manager;
+            this.hostDao = hostDao;
+            this.dataCenterDao = dataCenterDao;
+            this.directDownloadCertificateDao = directDownloadCertificateDao;
+            this.directDownloadCertificateHostMapDao = directDownloadCertificateHostMapDao;
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Direct Download Manager background task is running...");
+                }
+                final DateTime now = DateTime.now(DateTimeZone.UTC);
+                List<DataCenterVO> enabledZones = dataCenterDao.listEnabledZones();
+                for (DataCenterVO zone : enabledZones) {
+                    List<DirectDownloadCertificateVO> zoneCertificates = directDownloadCertificateDao.listByZone(zone.getId());
+                    if (CollectionUtils.isNotEmpty(zoneCertificates)) {
+                        for (DirectDownloadCertificateVO certificateVO : zoneCertificates) {
+                            List<HostVO> hostsToUpload = hostDao.listAllHostsUpByZoneAndHypervisor(certificateVO.getZoneId(), certificateVO.getHypervisorType());
+                            if (CollectionUtils.isNotEmpty(hostsToUpload)) {
+                                for (HostVO hostVO : hostsToUpload) {
+                                    DirectDownloadCertificateHostMapVO mapping = directDownloadCertificateHostMapDao.findByCertificateAndHost(certificateVO.getId(), hostVO.getId());
+                                    if (mapping == null) {
+                                        logger.debug("Certificate {} was not uploaded to host: {} uploading it", certificateVO, hostVO);
+                                        Pair<Boolean, String> result = directDownloadManager.provisionCertificate(certificateVO.getId(), hostVO.getId());
+                                        logger.debug("Certificate {} {} to host {}", certificateVO, result.first() ? "uploaded" : "could not be uploaded", hostVO);
+                                        if (!result.first()) {
+                                            logger.error("Certificate {} failed: {}", certificateVO, result.second());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (final Throwable t) {
+                logger.error("Error trying to run Direct Download background task", t);
+            }
+        }
+    }
+}

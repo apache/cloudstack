@@ -1,0 +1,109 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#  
+#    http://www.apache.org/licenses/LICENSE-2.0
+#  
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+#
+
+{
+    "zones": [
+        {
+            "name": "DevCloud-Basic-01",
+            "enabled": "True",
+            "physical_networks": [
+                {
+                    "broadcastdomainrange": "Zone",
+                    "name": "Devcloud-Network-01",
+                    "traffictypes": [
+                        {
+                            "typ": "Guest"
+                        },
+                        {
+                            "typ": "Management"
+                        }
+                    ],
+                    "providers": [
+                        {
+                            "broadcastdomainrange": "ZONE",
+                            "name": "VirtualRouter"
+                        },
+                        {
+                            "broadcastdomainrange": "Pod",
+                            "name": "SecurityGroupProvider"
+                        }
+                    ]
+                }
+            ],
+            "dns2": "8.8.4.4",
+            "dns1": "8.8.8.8",
+            "securitygroupenabled": "true",
+            "localstorageenabled": "true",
+            "networktype": "Basic",
+            "pods": [
+                {
+                    "endip": "192.168.22.220",
+                    "name": "DevCloud-POD-01",
+                    "startip": "192.168.22.200",
+                    "guestIpRanges": [
+                        {
+                            "startip": "192.168.22.100",
+                            "endip": "192.168.22.199",
+                            "netmask": "255.255.255.0",
+                            "gateway": "192.168.22.5"
+                        }
+                    ],
+                    "netmask": "255.255.255.0",
+                    "clusters": [
+                        {
+                            "clustername": "DevCloud-CLUSTER-01",
+                            "hypervisor": "XenServer",
+                            "hosts": [
+                                {
+                                    "username": "root",
+                                    "url": "http://192.168.22.10/",
+                                    "password": "password"
+                                }
+                            ],
+                            "clustertype": "CloudManaged"
+                        }
+                    ],
+                    "gateway": "192.168.22.5"
+                }
+            ],
+            "internaldns1": "8.8.8.8",
+            "secondaryStorages": [
+                {
+                    "url": "nfs://192.168.22.5/exports/secondary",
+                    "provider": "NFS"
+                }
+            ]
+        }
+    ],
+    "logger": {
+        "LogFolderPath": "/tmp/"
+    },
+    "mgtSvr": [
+        {
+            "mgtSvrIp": "<%= @management_server_ip %>",
+            "port": <%= @management_server_port %>
+        }
+    ],
+    "dbSvr": {
+        "dbSvr": "<%= @database_server_ip %>",
+        "port": <%= @database_server_port %>,
+        "user": "<%= @database_user %>",
+        "passwd": "<%= @database_password %>",
+        "db": "<%= @database %>"
+    }
+}

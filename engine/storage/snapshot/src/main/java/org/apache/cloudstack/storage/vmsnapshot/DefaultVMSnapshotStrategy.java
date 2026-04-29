@@ -1,0 +1,528 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.cloudstack.storage.vmsnapshot;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang3.StringUtils;
+
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CreateVMSnapshotAnswer;
+import com.cloud.agent.api.CreateVMSnapshotCommand;
+import com.cloud.agent.api.DeleteVMSnapshotAnswer;
+import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.RevertToVMSnapshotAnswer;
+import com.cloud.agent.api.RevertToVMSnapshotCommand;
+import com.cloud.agent.api.VMSnapshotTO;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventVO;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOSHypervisorVO;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.GuestOSHypervisorDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
+public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshotStrategy {
+    @Inject
+    VMSnapshotHelper vmSnapshotHelper;
+    @Inject
+    GuestOSDao guestOSDao;
+    @Inject
+    GuestOSHypervisorDao guestOsHypervisorDao;
+    @Inject
+    UserVmDao userVmDao;
+    @Inject
+    VMSnapshotDao vmSnapshotDao;
+    int _wait;
+    @Inject
+    ConfigurationDao configurationDao;
+    @Inject
+    AgentManager agentMgr;
+    @Inject
+    VolumeDao volumeDao;
+    @Inject
+    DiskOfferingDao diskOfferingDao;
+    @Inject
+    HostDao hostDao;
+    @Inject
+    PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Inject
+    VMSnapshotDetailsDao vmSnapshotDetailsDao;
+
+    protected static final String KVM_FILE_BASED_STORAGE_SNAPSHOT = "kvmFileBasedStorageSnapshot";
+
+    protected static final String STORAGE_SNAPSHOT = "kvmStorageSnapshot";
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        String value = configurationDao.getValue("vmsnapshot.create.wait");
+        _wait = NumbersUtil.parseInt(value, 1800);
+        return true;
+    }
+
+    @Override
+    public VMSnapshot takeVMSnapshot(VMSnapshot vmSnapshot) {
+        Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
+        UserVm userVm = userVmDao.findById(vmSnapshot.getVmId());
+        VMSnapshotVO vmSnapshotVO = (VMSnapshotVO)vmSnapshot;
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.CreateRequested);
+        } catch (NoTransitionException e) {
+            throw new CloudRuntimeException(e.getMessage());
+        }
+
+        CreateVMSnapshotAnswer answer = null;
+        boolean result = false;
+        try {
+            GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
+
+            List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
+
+            long prev_chain_size = 0;
+            long virtual_size=0;
+            for (VolumeObjectTO volume : volumeTOs) {
+                virtual_size += volume.getSize();
+                VolumeVO volumeVO = volumeDao.findById(volume.getId());
+                prev_chain_size += volumeVO.getVmSnapshotChainSize() == null ? 0 : volumeVO.getVmSnapshotChainSize();
+            }
+
+            VMSnapshotTO current = null;
+            VMSnapshotVO currentSnapshot = vmSnapshotDao.findCurrentSnapshotByVmId(userVm.getId());
+            if (currentSnapshot != null)
+                current = vmSnapshotHelper.getSnapshotWithParents(currentSnapshot);
+            VMSnapshotOptions options = ((VMSnapshotVO)vmSnapshot).getOptions();
+            boolean quiescevm = true;
+            if (options != null)
+                quiescevm = options.needQuiesceVM();
+            VMSnapshotTO target =
+                new VMSnapshotTO(vmSnapshot.getId(), vmSnapshot.getName(), vmSnapshot.getType(), null, vmSnapshot.getDescription(), false, current, quiescevm);
+            if (current == null)
+                vmSnapshotVO.setParent(null);
+            else
+                vmSnapshotVO.setParent(current.getId());
+
+            HostVO host = hostDao.findById(hostId);
+            GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
+
+            CreateVMSnapshotCommand ccmd = new CreateVMSnapshotCommand(userVm.getInstanceName(), userVm.getUuid(), target, volumeTOs, guestOS.getDisplayName());
+            if (guestOsMapping == null) {
+                ccmd.setPlatformEmulator(null);
+            } else {
+                ccmd.setPlatformEmulator(guestOsMapping.getGuestOsName());
+            }
+            ccmd.setWait(_wait);
+
+            answer = (CreateVMSnapshotAnswer)agentMgr.send(hostId, ccmd);
+            if (answer != null && answer.getResult()) {
+                processAnswer(vmSnapshotVO, userVm, answer, hostId);
+                logger.debug("Create Instance Snapshot " + vmSnapshot.getName() + " succeeded for Instance: " + userVm.getInstanceName());
+                result = true;
+                long new_chain_size=0;
+                for (VolumeObjectTO volumeTo : answer.getVolumeTOs()) {
+                    publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_CREATE, vmSnapshot, userVm, volumeTo);
+                    new_chain_size += volumeTo.getSize();
+                }
+                publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_ON_PRIMARY, vmSnapshot, userVm, new_chain_size - prev_chain_size, virtual_size);
+                return vmSnapshot;
+            } else {
+                String errMsg = "Creating Instance Snapshot: " + vmSnapshot.getName() + " failed";
+                if (answer != null && answer.getDetails() != null)
+                    errMsg = errMsg + " due to " + answer.getDetails();
+                logger.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+        } catch (OperationTimedoutException e) {
+            logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+            throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+        } catch (AgentUnavailableException e) {
+            logger.debug("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed", e);
+            throw new CloudRuntimeException("Creating Instance Snapshot: " + vmSnapshot.getName() + " failed: " + e.toString());
+        } finally {
+            if (!result) {
+                try {
+                    vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+                } catch (NoTransitionException e1) {
+                    logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean deleteVMSnapshot(VMSnapshot vmSnapshot) {
+        UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
+        VMSnapshotVO vmSnapshotVO = (VMSnapshotVO)vmSnapshot;
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
+        } catch (NoTransitionException e) {
+            logger.debug("Failed to change Instance Snapshot state with event ExpungeRequested");
+            throw new CloudRuntimeException("Failed to change Instance Snapshot state with event ExpungeRequested: " + e.getMessage());
+        }
+
+        try {
+            Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
+
+            List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
+
+            String vmInstanceName = userVm.getInstanceName();
+            VMSnapshotTO parent = vmSnapshotHelper.getSnapshotWithParents(vmSnapshotVO).getParent();
+            VMSnapshotTO vmSnapshotTO =
+                new VMSnapshotTO(vmSnapshot.getId(), vmSnapshot.getName(), vmSnapshot.getType(), vmSnapshot.getCreated().getTime(), vmSnapshot.getDescription(),
+                    vmSnapshot.getCurrent(), parent, true);
+            GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
+            DeleteVMSnapshotCommand deleteSnapshotCommand = new DeleteVMSnapshotCommand(vmInstanceName, vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
+
+            Answer answer = agentMgr.send(hostId, deleteSnapshotCommand);
+
+            if (answer != null && answer.getResult()) {
+                DeleteVMSnapshotAnswer deleteVMSnapshotAnswer = (DeleteVMSnapshotAnswer)answer;
+                processAnswer(vmSnapshotVO, userVm, answer, hostId);
+                long full_chain_size=0;
+                for (VolumeObjectTO volumeTo : deleteVMSnapshotAnswer.getVolumeTOs()) {
+                    publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE, vmSnapshot, userVm, volumeTo);
+                    full_chain_size += volumeTo.getSize();
+                }
+                publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY, vmSnapshot, userVm, full_chain_size, 0L);
+                return true;
+            } else {
+                String errMsg = (answer == null) ? null : answer.getDetails();
+                logger.error("Delete Instance Snapshot " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " failed due to " + errMsg);
+                processAnswer(vmSnapshotVO, userVm, answer, hostId);
+                throw new CloudRuntimeException("Delete Instance Snapshot " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " failed due to " + errMsg);
+            }
+        } catch (OperationTimedoutException | AgentUnavailableException e) {
+            throw new CloudRuntimeException("Delete Instance Snapshot " + vmSnapshot.getName() + " of Instance " + userVm.getInstanceName() + " failed due to " + e.getMessage());
+        }
+    }
+
+    @DB
+    protected void processAnswer(final VMSnapshotVO vmSnapshot, UserVm userVm, final Answer as, Long hostId) {
+        try {
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<NoTransitionException>() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) throws NoTransitionException {
+                    if (as instanceof CreateVMSnapshotAnswer) {
+                        CreateVMSnapshotAnswer answer = (CreateVMSnapshotAnswer)as;
+                        finalizeCreate(vmSnapshot, answer.getVolumeTOs());
+                        vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
+                    } else if (as instanceof RevertToVMSnapshotAnswer) {
+                        RevertToVMSnapshotAnswer answer = (RevertToVMSnapshotAnswer)as;
+                        finalizeRevert(vmSnapshot, answer.getVolumeTOs());
+                        vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationSucceeded);
+                    } else if (as instanceof DeleteVMSnapshotAnswer) {
+                        if (as.getResult()) {
+                            DeleteVMSnapshotAnswer answer = (DeleteVMSnapshotAnswer) as;
+                            finalizeDelete(vmSnapshot, answer.getVolumeTOs());
+                            vmSnapshotDao.remove(vmSnapshot.getId());
+                        } else {
+                            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+                        }
+                    }
+                }
+            });
+        } catch (Exception e) {
+            String errMsg = "Error while process answer: " + as.getClass() + " due to " + e.getMessage();
+            logger.error(errMsg, e);
+            throw new CloudRuntimeException(errMsg);
+        }
+    }
+
+    protected void finalizeDelete(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> volumeTOs) {
+        // update volumes path
+        updateVolumePath(volumeTOs);
+
+        // update children's parent snapshots
+        List<VMSnapshotVO> children = vmSnapshotDao.listByParent(vmSnapshot.getId());
+        for (VMSnapshotVO child : children) {
+            child.setParent(vmSnapshot.getParent());
+            vmSnapshotDao.persist(child);
+        }
+
+        // update current snapshot
+        VMSnapshotVO current = vmSnapshotDao.findCurrentSnapshotByVmId(vmSnapshot.getVmId());
+        if (current != null && current.getId() == vmSnapshot.getId() && vmSnapshot.getParent() != null) {
+            VMSnapshotVO parent = vmSnapshotDao.findById(vmSnapshot.getParent());
+            parent.setCurrent(true);
+            vmSnapshotDao.persist(parent);
+        }
+        vmSnapshot.setCurrent(false);
+        vmSnapshotDao.persist(vmSnapshot);
+    }
+
+    protected void finalizeCreate(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> volumeTOs) {
+        // update volumes path
+        updateVolumePath(volumeTOs);
+
+        vmSnapshot.setCurrent(true);
+
+        // change current snapshot
+        if (vmSnapshot.getParent() != null) {
+            VMSnapshotVO previousCurrent = vmSnapshotDao.findById(vmSnapshot.getParent());
+            previousCurrent.setCurrent(false);
+            vmSnapshotDao.persist(previousCurrent);
+        }
+        vmSnapshotDao.persist(vmSnapshot);
+    }
+
+    protected void finalizeRevert(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> volumeToList) {
+        // update volumes path
+        updateVolumePath(volumeToList);
+
+        // update current snapshot, current snapshot is the one reverted to
+        VMSnapshotVO previousCurrent = vmSnapshotDao.findCurrentSnapshotByVmId(vmSnapshot.getVmId());
+        if (previousCurrent != null) {
+            previousCurrent.setCurrent(false);
+            vmSnapshotDao.persist(previousCurrent);
+        }
+        vmSnapshot.setCurrent(true);
+        vmSnapshotDao.persist(vmSnapshot);
+    }
+
+    protected void updateVolumePath(List<VolumeObjectTO> volumeTOs) {
+        for (VolumeObjectTO volume : volumeTOs) {
+            if (StringUtils.isAllEmpty(volume.getDataStoreUuid(), volume.getPath(), volume.getChainInfo())) {
+                continue;
+            }
+            VolumeVO volumeVO = volumeDao.findById(volume.getId());
+            if (StringUtils.isNotEmpty(volume.getDataStoreUuid())) {
+                StoragePool pool = primaryDataStoreDao.findPoolByUUID(volume.getDataStoreUuid());
+                if (pool != null && pool.getId() != volumeVO.getPoolId()) {
+                    volumeVO.setPoolId(pool.getId());
+                    volumeVO.setPoolType(pool.getPoolType());
+                }
+            }
+            if (StringUtils.isNotEmpty(volume.getPath())) {
+                volumeVO.setPath(volume.getPath());
+            }
+            if (StringUtils.isNotEmpty(volume.getChainInfo())) {
+                volumeVO.setChainInfo(volume.getChainInfo());
+            }
+            volumeVO.setVmSnapshotChainSize(volume.getSize());
+            volumeDao.persist(volumeVO);
+        }
+    }
+
+    protected void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, VolumeObjectTO volumeTo) {
+        VolumeVO volume = volumeDao.findById(volumeTo.getId());
+        Long diskOfferingId = volume.getDiskOfferingId();
+        Long offeringId = null;
+        if (diskOfferingId != null) {
+            DiskOfferingVO offering = diskOfferingDao.findById(diskOfferingId);
+            if (offering != null && !offering.isComputeOnly()) {
+                offeringId = offering.getId();
+            }
+        }
+        Map<String, String> details = new HashMap<>();
+        if (vmSnapshot != null) {
+            details.put(UsageEventVO.DynamicParameters.vmSnapshotId.name(), String.valueOf(vmSnapshot.getId()));
+        }
+        UsageEventUtils.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), offeringId, volume.getId(), // save volume's id into templateId field
+                volumeTo.getSize(), VMSnapshot.class.getName(), vmSnapshot.getUuid(), details);
+    }
+
+    protected void publishUsageEvent(String type, VMSnapshot vmSnapshot, UserVm userVm, Long vmSnapSize, Long virtualSize) {
+        try {
+            Map<String, String> details = new HashMap<>();
+            if (vmSnapshot != null) {
+                details.put(UsageEventVO.DynamicParameters.vmSnapshotId.name(), String.valueOf(vmSnapshot.getId()));
+            }
+            UsageEventUtils.publishUsageEvent(type, vmSnapshot.getAccountId(), userVm.getDataCenterId(), userVm.getId(), vmSnapshot.getName(), 0L, 0L, vmSnapSize, virtualSize,
+                    VMSnapshot.class.getName(), vmSnapshot.getUuid(), details);
+        } catch (Exception e) {
+            logger.error("Failed to publis usage event " + type, e);
+        }
+    }
+
+    @Override
+    public boolean revertVMSnapshot(VMSnapshot vmSnapshot) {
+        VMSnapshotVO vmSnapshotVO = (VMSnapshotVO)vmSnapshot;
+        UserVmVO userVm = userVmDao.findById(vmSnapshot.getVmId());
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshotVO, VMSnapshot.Event.RevertRequested);
+        } catch (NoTransitionException e) {
+            throw new CloudRuntimeException(e.getMessage());
+        }
+
+        boolean result = false;
+        try {
+            VMSnapshotVO snapshot = vmSnapshotDao.findById(vmSnapshotVO.getId());
+            List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
+            String vmInstanceName = userVm.getInstanceName();
+            VMSnapshotTO parent = vmSnapshotHelper.getSnapshotWithParents(snapshot).getParent();
+
+            VMSnapshotTO vmSnapshotTO =
+                new VMSnapshotTO(snapshot.getId(), snapshot.getName(), snapshot.getType(), snapshot.getCreated().getTime(), snapshot.getDescription(),
+                    snapshot.getCurrent(), parent, true);
+            Long hostId = vmSnapshotHelper.pickRunningHost(vmSnapshot.getVmId());
+            GuestOSVO guestOS = guestOSDao.findById(userVm.getGuestOSId());
+            RevertToVMSnapshotCommand revertToSnapshotCommand = new RevertToVMSnapshotCommand(vmInstanceName, userVm.getUuid(), vmSnapshotTO, volumeTOs, guestOS.getDisplayName());
+            HostVO host = hostDao.findById(hostId);
+            GuestOSHypervisorVO guestOsMapping = guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), host.getHypervisorType().toString(), host.getHypervisorVersion());
+            if (guestOsMapping == null) {
+                revertToSnapshotCommand.setPlatformEmulator(null);
+            } else {
+                revertToSnapshotCommand.setPlatformEmulator(guestOsMapping.getGuestOsName());
+            }
+
+            RevertToVMSnapshotAnswer answer = (RevertToVMSnapshotAnswer)agentMgr.send(hostId, revertToSnapshotCommand);
+            if (answer != null && answer.getResult()) {
+                processAnswer(vmSnapshotVO, userVm, answer, hostId);
+                result = true;
+            } else {
+                String errMsg = "Revert VM: " + userVm.getInstanceName() + " to snapshot: " + vmSnapshotVO.getName() + " failed";
+                if (answer != null && answer.getDetails() != null)
+                    errMsg = errMsg + " due to " + answer.getDetails();
+                logger.error(errMsg);
+                throw new CloudRuntimeException(String.format("Unable to revert VM %s to snapshot %s.", userVm.getInstanceName(), vmSnapshotVO.getName()));
+            }
+        } catch (OperationTimedoutException e) {
+            logger.debug("Failed to revert Instance Snapshot", e);
+            throw new CloudRuntimeException(e.getMessage());
+        } catch (AgentUnavailableException e) {
+            logger.debug("Failed to revert Instance Snapshot", e);
+            throw new CloudRuntimeException(e.getMessage());
+        } finally {
+            if (!result) {
+                try {
+                    vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+                } catch (NoTransitionException e1) {
+                    logger.error("Cannot set Instance Snapshot state due to: " + e1.getMessage());
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public StrategyPriority canHandle(VMSnapshot vmSnapshot) {
+        return StrategyPriority.DEFAULT;
+    }
+
+    @Override
+    public boolean deleteVMSnapshotFromDB(VMSnapshot vmSnapshot, boolean unmanage) {
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.ExpungeRequested);
+        } catch (NoTransitionException e) {
+            logger.debug("Failed to change Instance Snapshot state with event ExpungeRequested");
+            throw new CloudRuntimeException("Failed to change Instance Snapshot state with event ExpungeRequested: " + e.getMessage());
+        }
+        UserVm userVm = userVmDao.findById(vmSnapshot.getVmId());
+        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
+        long full_chain_size = 0;
+        for (VolumeObjectTO volumeTo: volumeTOs) {
+            volumeTo.setSize(0);
+            publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE, vmSnapshot, userVm, volumeTo);
+            full_chain_size += volumeTo.getSize();
+        }
+        if (unmanage) {
+            publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY, vmSnapshot, userVm, full_chain_size, 0L);
+        }
+        return vmSnapshotDao.remove(vmSnapshot.getId());
+    }
+
+    @Override
+    public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
+        UserVmVO vm = userVmDao.findById(vmId);
+        if (State.Running.equals(vm.getState()) && !snapshotMemory) {
+            logger.debug("Default VM snapshot strategy cannot handle VM snapshot for [{}] as it is running and its memory will not be affected.", vm);
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        if (vmHasKvmDiskOnlySnapshot(vm)) {
+            logger.debug("Default VM snapshot strategy cannot handle VM snapshot for [{}] as it has a disk-only VM snapshot using kvmFileBasedStorageSnapshot strategy." +
+                    "These two strategies are not compatible, as reverting a disk-only VM snapshot will erase newer disk-and-memory VM snapshots.", vm);
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
+        for (VolumeVO volume : volumes) {
+            if (volume.getFormat() != ImageFormat.QCOW2) {
+                logger.debug("Default VM snapshot strategy cannot handle VM snapshot for [{}] as it has a volume [{}] that is not in the QCOW2 format.", vm, volume);
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
+        return StrategyPriority.DEFAULT;
+    }
+
+    private boolean vmHasKvmDiskOnlySnapshot(UserVm vm) {
+        if (!Hypervisor.HypervisorType.KVM.equals(vm.getHypervisorType())) {
+            return false;
+        }
+
+        for (VMSnapshotVO vmSnapshotVO : vmSnapshotDao.findByVmAndByType(vm.getId(), VMSnapshot.Type.Disk)) {
+            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
+            if (vmSnapshotDetails.stream().anyMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(KVM_FILE_BASED_STORAGE_SNAPSHOT))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public void updateOperationFailed(VMSnapshot vmSnapshot) throws NoTransitionException {
+        try {
+            vmSnapshotHelper.vmSnapshotStateTransitTo(vmSnapshot, VMSnapshot.Event.OperationFailed);
+        } catch (NoTransitionException e) {
+            logger.debug("Failed to change vm snapshot state with event OperationFailed");
+            throw e;
+        }
+    }
+}

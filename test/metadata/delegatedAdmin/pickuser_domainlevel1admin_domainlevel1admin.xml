@@ -1,0 +1,122 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<pickuser>
+
+<!-- PICK UP THE USERS FOR FUTURE EXECUTION - THIS PART CAN BE MODIFIED WITH DIFFERENT USERIDs -->
+
+<!--  User who executes first set of commands -->
+	<command>
+		<name>listUsers</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+			    <param>domain11adminid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid1</param>
+			</item>
+			<item setparam="true">
+				<name>domainid</name>
+				<param>domainid1</param>
+			</item>
+			<item setparam="true">
+				<name>accounttype</name>
+				<param>accounttype1</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>account1</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>listDomains</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>domainid1</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>name</name>
+				<param>domainname1</param>
+			</item>
+			<item setparam="true">
+				<name>level</name>
+				<param>domainlevel1</param>
+			</item>
+		</returnvalue>
+	</command>
+
+
+<!--  User who executes second set of commands -->
+	<command>
+		<name>listUsers</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>domain12adminid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>userid2</param>
+			</item>
+			<item setparam="true">
+				<name>domainid</name>
+				<param>domainid2</param>
+			</item>
+			<item setparam="true">
+				<name>accounttype</name>
+				<param>accounttype2</param>
+			</item>
+			<item setparam="true">
+				<name>account</name>
+				<param>account2</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>listDomains</name>
+		<parameters>
+			<item getparam="true">
+			    <name>id</name>
+				<param>domainid2</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>name</name>
+				<param>domainname2</param>
+			</item>
+			<item setparam="true">
+				<name>level</name>
+				<param>domainlevel2</param>
+			</item>
+		</returnvalue>
+	</command>
+
+</pickuser>

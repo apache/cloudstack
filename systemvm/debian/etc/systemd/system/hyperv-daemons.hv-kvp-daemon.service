@@ -1,0 +1,8 @@
+[Unit]
+Description=Hyper-V key-value pair (KVP) daemon
+
+[Service]
+ExecStart=/usr/sbin/hv_kvp_daemon -n
+
+[Install]
+WantedBy=multi-user.target

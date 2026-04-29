@@ -1,0 +1,39 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<configResolveChildren
+  cookie="%cookie%"
+  classId="fwInstance"
+  inDn="fw"
+  inHierarchical="false">
+  <inFilter>
+    <and>
+      <eq class="fwInstance" property="capability" value="infra-fw"/>
+      <eq class="fwInstance" property="assoc" value="none"/>
+    </and>
+  </inFilter>
+</configResolveChildren>
+
+<!-- resource-mgr -->
+<!--
+<configResolveChildren cookie="1349366974/592be573-8a27-48d3-aab1-cf6cb94f23ab" commCookie="5/12/0/1cae" srcExtSys="10.223.56.5" destExtSys="10.223.56.5" srcSvc="sam_extXMLApi" destSvc="resource-mgr_dme" response="yes" classId="fwInstance">
+  <outConfigs>
+    <fwInstance assignedToDn="" assoc="none" capability="infra-fw" descr="" dn="fw/inst-1007" fltAggr="0" fsmDescr="" fsmPrev="DisassociateSuccess" fsmProgr="100" fsmRmtInvErrCode="none" fsmRmtInvErrDescr="" fsmRmtInvRslt="" fsmStageDescr="" fsmStamp="2012-10-04T16:07:40.110" fsmStatus="nop" fsmTry="0" intId="11818" mgmtIp="10.223.56.7" model="" name="ASA 1000V" pooled="0" registeredClientDn="extpol/reg/clients/client-1007" revision="0" serial="" svcId="1007" vendor=""/>
+  </outConfigs>
+</configResolveChildren>
+-->

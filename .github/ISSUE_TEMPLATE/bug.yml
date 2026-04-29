@@ -1,0 +1,46 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+description: "Thank you for reporting a bug!"
+name: bug
+title: "[SHORT PROBLEM DESCRIPTION]"
+labels: bug, needs-triageing
+body:
+- type: markdown
+  attributes:
+    value: "## Welcome, please describe your problem below;"
+- type: textarea
+  attributes:
+    label: problem
+    value: The long description of your problem
+- type: markdown
+  attributes:
+    value: "## What versions of cloudstack and any infra components are you using"
+- type: textarea
+  attributes:
+    label: versions
+    value: The versions of ACS, hypervisors, storage, network etc..
+- type: textarea
+  attributes:
+    label: The steps to reproduce the bug
+    value: |
+      1.
+      2.
+      3.
+      ...
+- type: textarea
+  attributes:
+    label: "What to do about it?"

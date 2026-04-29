@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# CloudStack DB Schema Police
+# ===========================
+#
+# Modify and install in .git/hooks/
+# Use this script as following hooks:
+# post-merge  - when git merge or git pull runs
+# post-rewrite - whenever commit is ammended or git rebase is run
+# pre-rebase - before rebase runs
+#
+# Install:
+# for file in post-merge post-rewrite pre-rebase; do cp db-police "../../.git/hooks/$file"; done
+
+changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)"
+
+check_changes() {
+    echo "\nList of changed files since original refs:"
+    echo "$changed_files\n"
+
+    alert_command=""
+    if [ "$(uname)" == "Darwin" ]; then
+        alert_command="say '$1'"
+    elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+        alert_command="command -v festival && $(echo '$1' | festival --tts)"
+    fi
+
+    echo "$changed_files" | (grep --quiet "setup/db" && eval $alert_command) || true
+}
+
+check_changes "Alert, somebody changed CloudStack schemas"

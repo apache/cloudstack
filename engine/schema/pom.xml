@@ -1,0 +1,361 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>cloud-engine-schema</artifactId>
+    <name>Apache CloudStack Cloud Engine Schema Component</name>
+    <parent>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-engine</artifactId>
+        <version>4.22.1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-ipc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-db</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.ini4j</groupId>
+            <artifactId>ini4j</artifactId>
+            <version>${cs.ini.version}</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>${cs.gmavenplus.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-all</artifactId>
+                        <version>${cs.groovy.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>setproperty</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <scripts>
+                                <script><![CDATA[
+                                    def projectVersion = project.properties.getProperty('project.systemvm.template.version')
+                                    String[] versionParts = projectVersion.tokenize('.')
+                                    project.properties.setProperty('cs.version', versionParts[0] + "." + versionParts[1])
+                                    project.properties.setProperty('patch.version', versionParts[2])
+                                ]]></script>
+                            </scripts>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>set-properties</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <scripts>
+                                <script><![CDATA[
+                                    def csVersion = project.properties.getProperty('cs.version')
+                                    def patch = project.properties.getProperty('patch.version')
+                                    def templateList = []
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-kvm")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-vmware")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-xen")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-ovm")
+                                    templateList.add("systemvmtemplate-${csVersion}.${patch}-x86_64-hyperv")
+                                    File file = new File("./engine/schema/dist/systemvm-templates/sha512sum.txt")
+                                    def lines = file.readLines()
+                                    for (template in templateList) {
+                                        def data = lines.findAll { it.contains(template) }
+                                        if (data != null) {
+                                            if (data.size() > 0) {
+                                                def hypervisor =  template.tokenize('-')[-1]
+                                                project.properties["$hypervisor" + ".checksum"] = data[0].tokenize(' ')[0]
+                                            }
+                                        }
+                                    }
+                                ]]></script>
+                            </scripts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.6.3</version>
+                <executions>
+                    <execution>
+                        <id>download-checksums</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${project.systemvm.template.location}/${cs.version}/sha512sum.txt</url>
+                            <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                            <skipCache>true</skipCache>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${cs.exec-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>systemvm-template-metadata</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${basedir}/</workingDirectory>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>templateConfig.sh</argument>
+                                <argument>${project.systemvm.template.version}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <test.mode>true</test.mode>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <profile>
+            <id>download-kvm-systemvm-template</id>
+            <activation>
+                <property>
+                    <name>systemvm-kvm</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>download-kvm-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-kvm.qcow2.bz2</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <sha512>${kvm.checksum}</sha512>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>download-vmware-systemvm-template</id>
+            <activation>
+                <property>
+                    <name>systemvm-vmware</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>download-vmware-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-vmware.ova</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <sha512>${vmware.checksum}</sha512>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>download-xenserver-systemvm-template</id>
+            <activation>
+                <property>
+                    <name>systemvm-xen</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>download-xenserver-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-xen.vhd.bz2</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <sha512>${xen.checksum}</sha512>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>download-ovm-systemvm-template</id>
+            <activation>
+                <property>
+                    <name>systemvm-ovm</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>download-ovm-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-ovm.raw.bz2</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <sha512>${ovm.checksum}</sha512>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>download-hyperv-systemvm-template</id>
+            <activation>
+                <property>
+                    <name>systemvm-hyperv</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>download-hyperv-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+                                    <url>${project.systemvm.template.location}/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-x86_64-hyperv.vhd.zip</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <sha512>${hyperv.checksum}</sha512>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

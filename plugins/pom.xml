@@ -1,0 +1,264 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>cloudstack-plugins</artifactId>
+    <name>Apache CloudStack Plugin POM</name>
+    <packaging>pom</packaging>
+    <parent>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloudstack</artifactId>
+        <version>4.22.1.0-SNAPSHOT</version>
+    </parent>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>cloudstack-checkstyle</id>
+                        <phase>none</phase>
+                        <inherited>false</inherited>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    <modules>
+        <!-- keep in alphabetic order -->
+        <module>acl/dynamic-role-based</module>
+        <module>acl/static-role-based</module>
+        <module>acl/project-role-based</module>
+
+        <module>affinity-group-processors/explicit-dedication</module>
+        <module>affinity-group-processors/host-affinity</module>
+        <module>affinity-group-processors/host-anti-affinity</module>
+        <module>affinity-group-processors/non-strict-host-affinity</module>
+        <module>affinity-group-processors/non-strict-host-anti-affinity</module>
+
+        <module>alert-handlers/snmp-alerts</module>
+        <module>alert-handlers/syslog-alerts</module>
+
+        <module>api/discovery</module>
+        <module>api/rate-limit</module>
+        <module>api/solidfire-intg-test</module>
+
+        <module>backup/dummy</module>
+        <module>backup/networker</module>
+        <module>backup/nas</module>
+
+        <module>ca/root-ca</module>
+
+        <module>database/quota</module>
+
+        <module>dedicated-resources</module>
+
+        <module>deployment-planners/implicit-dedication</module>
+        <module>deployment-planners/user-concentrated-pod</module>
+        <module>deployment-planners/user-dispersing</module>
+
+        <module>drs/cluster/balanced</module>
+        <module>drs/cluster/condensed</module>
+
+        <module>event-bus/inmemory</module>
+        <module>event-bus/kafka</module>
+        <module>event-bus/rabbitmq</module>
+        <module>event-bus/webhook</module>
+
+        <module>ha-planners/skip-heurestics</module>
+
+        <module>host-allocators/random</module>
+
+        <module>hypervisors/baremetal</module>
+        <module>hypervisors/external</module>
+        <module>hypervisors/hyperv</module>
+        <module>hypervisors/kvm</module>
+        <module>hypervisors/ucs</module>
+        <module>hypervisors/xenserver</module>
+
+        <module>integrations/cloudian</module>
+        <module>integrations/prometheus</module>
+        <module>integrations/kubernetes-service</module>
+
+        <module>metrics</module>
+
+        <module>network-elements/bigswitch</module>
+        <module>network-elements/dns-notifier</module>
+        <module>network-elements/elastic-loadbalancer</module>
+        <module>network-elements/globodns</module>
+        <module>network-elements/internal-loadbalancer</module>
+        <module>network-elements/netscaler</module>
+        <module>network-elements/nicira-nvp</module>
+        <module>network-elements/opendaylight</module>
+        <module>network-elements/ovs</module>
+        <module>network-elements/palo-alto</module>
+        <module>network-elements/stratosphere-ssp</module>
+        <module>network-elements/brocade-vcs</module>
+        <module>network-elements/vxlan</module>
+
+        <module>outofbandmanagement-drivers/ipmitool</module>
+        <module>outofbandmanagement-drivers/nested-cloudstack</module>
+        <module>outofbandmanagement-drivers/redfish</module>
+
+        <module>maintenance</module>
+
+        <module>storage/sharedfs/storagevm</module>
+        <module>storage/image/default</module>
+        <module>storage/image/s3</module>
+        <module>storage/image/sample</module>
+        <module>storage/image/swift</module>
+        <module>storage/volume/cloudbyte</module>
+        <module>storage/volume/datera</module>
+        <module>storage/volume/default</module>
+        <module>storage/volume/nexenta</module>
+        <module>storage/volume/sample</module>
+        <module>storage/volume/solidfire</module>
+        <module>storage/volume/scaleio</module>
+        <module>storage/volume/linstor</module>
+        <module>storage/volume/storpool</module>
+        <module>storage/volume/adaptive</module>
+        <module>storage/volume/flasharray</module>
+        <module>storage/volume/primera</module>
+        <module>storage/object/minio</module>
+        <module>storage/object/ceph</module>
+        <module>storage/object/cloudian</module>
+        <module>storage/object/simulator</module>
+
+
+        <module>storage-allocators/random</module>
+
+        <module>user-authenticators/ldap</module>
+        <module>user-authenticators/md5</module>
+        <module>user-authenticators/oauth2</module>
+        <module>user-authenticators/pbkdf2</module>
+        <module>user-authenticators/plain-text</module>
+        <module>user-authenticators/saml2</module>
+        <module>user-authenticators/sha256salted</module>
+
+        <module>user-two-factor-authenticators/totp</module>
+        <module>user-two-factor-authenticators/static-pin</module>
+
+    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.taimos</groupId>
+            <artifactId>totp</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-api</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio-admin</artifactId>
+            <version>8.5.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage-object</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+    <profiles>
+        <profile>
+            <id>vmware</id>
+            <activation>
+                <property>
+                    <name>noredist</name>
+                </property>
+            </activation>
+            <modules>
+                <module>api/vmware-sioc</module>
+                <module>backup/veeam</module>
+                <module>hypervisors/vmware</module>
+                <module>network-elements/cisco-vnmc</module>
+                <module>network-elements/nsx</module>
+                <module>network-elements/netris</module>
+                <module>network-elements/juniper-contrail</module>
+                <module>network-elements/tungsten</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>mysqlha</id>
+            <activation>
+                <property>
+                    <name>noredist</name>
+                </property>
+            </activation>
+            <modules>
+                <module>database/mysql-ha</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>simulator</id>
+            <activation>
+                <property>
+                    <name>simulator</name>
+                </property>
+            </activation>
+            <modules>
+                <module>hypervisors/simulator</module>
+            </modules>
+        </profile>
+    </profiles>
+</project>

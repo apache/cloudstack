@@ -1,0 +1,16 @@
+{
+	"local_public_ip":"172.16.1.1",
+	"local_guest_cidr":"172.16.1.0/24",
+	"local_public_gateway":"172.16.1.1",
+	"peer_gateway_ip":"10.200.200.1",
+	"peer_guest_cidr_list":"10.0.0.0/24",
+	"esp_policy":"3des-md5",
+	"ike_policy":"3des-md5",
+	"ipsec_psk":"vpnblabla",
+	"ike_lifetime":86400,
+	"esp_lifetime":3600,
+	"create":true,
+	"dpd":false,
+	"passive":false,
+	"type":"site2sitevpn"
+}

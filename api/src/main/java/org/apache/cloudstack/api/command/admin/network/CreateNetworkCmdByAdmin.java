@@ -1,0 +1,96 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package org.apache.cloudstack.api.command.admin.network;
+
+import org.apache.cloudstack.api.ApiArgValidator;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.response.BgpPeerResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+
+import com.cloud.network.Network;
+
+import java.util.List;
+
+@APICommand(name = "createNetwork", description = "Creates a Network", responseObject = NetworkResponse.class, responseView = ResponseView.Full, entityType = {Network.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class CreateNetworkCmdByAdmin extends CreateNetworkCmd implements AdminCmd {
+
+    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description = "The ID or VID of the network")
+    private String vlan;
+
+    @Parameter(name=ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type=CommandType.BOOLEAN, description = "When true bypasses VLAN ID/range overlap check during Network creation for shared and L2 Networks")
+    private Boolean bypassVlanOverlapCheck;
+
+    @Parameter(name=ApiConstants.HIDE_IP_ADDRESS_USAGE, type=CommandType.BOOLEAN, description = "When true IP address usage for the Network will not be exported by the listUsageRecords API")
+    private Boolean hideIpAddressUsage;
+
+    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPv4 address to be assigned to a router in a shared Network", since = "4.16",
+            validations = {ApiArgValidator.NotNullOrEmpty})
+    private String routerIp;
+
+    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPv6 address to be assigned to a router in a shared Network", since = "4.16",
+            validations = {ApiArgValidator.NotNullOrEmpty})
+    private String routerIpv6;
+
+    @Parameter(name = ApiConstants.BGP_PEER_IDS,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = BgpPeerResponse.class,
+            description = "IDs of the Bgp Peer for the Network",
+            since = "4.20.0")
+    private List<Long> bgpPeerIds;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getVlan() {
+        return vlan;
+    }
+
+    public Boolean getBypassVlanOverlapCheck() {
+        if (bypassVlanOverlapCheck != null) {
+            return bypassVlanOverlapCheck;
+        }
+        return false;
+    }
+
+    public Boolean getHideIpAddressUsage() {
+        if (hideIpAddressUsage != null) {
+            return hideIpAddressUsage;
+        }
+        return false;
+    }
+
+    public String getRouterIp() {
+        return routerIp;
+    }
+
+    public String getRouterIpv6() {
+        return routerIpv6;
+    }
+
+    public List<Long> getBgpPeerIds() {
+        return bgpPeerIds;
+    }
+}

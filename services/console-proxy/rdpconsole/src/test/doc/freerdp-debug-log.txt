@@ -1,0 +1,772 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+connected to 192.168.1.3:3389
+NEGOTIATE_MESSAGE (length = 40)
+0000 4e 54 4c 4d 53 53 50 00 01 00 00 00 b7 82 08 e2 NTLMSSP.........
+0010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+0020 06 01 b1 1d 00 00 00 0f                         ........
+
+VERSION =
+{
+	ProductMajorVersion: 6
+	ProductMinorVersion: 1
+	ProductBuild: 7601
+	Reserved: 0x000000
+	NTLMRevisionCurrent: 0x0F
+ntlm_generate_client_challenge: ClientChallenge (random bytes): 
+0000 01 02 03 04 05 06 07 08                         ........
+
+CHALLENGE_MESSAGE (length = 238)
+0000 4e 54 4c 4d 53 53 50 00 02 00 00 00 1e 00 1e 00 NTLMSSP.........
+0010 38 00 00 00 35 82 8a e2 4a 25 50 a5 11 9b d6 16 8...5...J%P.....
+0020 00 00 00 00 00 00 00 00 98 00 98 00 56 00 00 00 ............V...
+0030 06 03 d7 24 00 00 00 0f 57 00 49 00 4e 00 2d 00 ...$....W.I.N.-.
+0040 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 4c 00 L.O.4.1.9.B.2.L.
+0050 53 00 52 00 30 00 02 00 1e 00 57 00 49 00 4e 00 S.R.0.....W.I.N.
+0060 2d 00 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 -.L.O.4.1.9.B.2.
+0070 4c 00 53 00 52 00 30 00 01 00 1e 00 57 00 49 00 L.S.R.0.....W.I.
+0080 4e 00 2d 00 4c 00 4f 00 34 00 31 00 39 00 42 00 N.-.L.O.4.1.9.B.
+0090 32 00 4c 00 53 00 52 00 30 00 04 00 1e 00 57 00 2.L.S.R.0.....W.
+00a0 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 39 00 I.N.-.L.O.4.1.9.
+00b0 42 00 32 00 4c 00 53 00 52 00 30 00 03 00 1e 00 B.2.L.S.R.0.....
+00c0 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 W.I.N.-.L.O.4.1.
+00d0 39 00 42 00 32 00 4c 00 53 00 52 00 30 00 07 00 9.B.2.L.S.R.0...
+00e0 08 00 a0 e8 85 2c e4 c9 ce 01 00 00 00 00       .....,........
+
+negotiateFlags "0xE28A8235"{
+	NTLMSSP_NEGOTIATE_56 (0),
+	NTLMSSP_NEGOTIATE_KEY_EXCH (1),
+	NTLMSSP_NEGOTIATE_128 (2),
+	NTLMSSP_NEGOTIATE_VERSION (6),
+	NTLMSSP_NEGOTIATE_TARGET_INFO (8),
+	NTLMSSP_NEGOTIATE_EXTENDED_SESSION_SECURITY (12),
+	NTLMSSP_TARGET_TYPE_SERVER (14),
+	NTLMSSP_NEGOTIATE_ALWAYS_SIGN (16),
+	NTLMSSP_NEGOTIATE_NTLM (22),
+	NTLMSSP_NEGOTIATE_SEAL (26),
+	NTLMSSP_NEGOTIATE_SIGN (27),
+	NTLMSSP_REQUEST_TARGET (29),
+	NTLMSSP_NEGOTIATE_UNICODE (31),
+}
+VERSION =
+{
+	ProductMajorVersion: 6
+	ProductMinorVersion: 3
+	ProductBuild: 9431
+	Reserved: 0x000000
+	NTLMRevisionCurrent: 0x0F
+TargetName (Len: 30 MaxLen: 30 BufferOffset: 56)
+0000 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 W.I.N.-.L.O.4.1.
+0010 39 00 42 00 32 00 4c 00 53 00 52 00 30 00       9.B.2.L.S.R.0.
+
+TargetInfo (Len: 152 MaxLen: 152 BufferOffset: 86)
+0000 02 00 1e 00 57 00 49 00 4e 00 2d 00 4c 00 4f 00 ....W.I.N.-.L.O.
+0010 34 00 31 00 39 00 42 00 32 00 4c 00 53 00 52 00 4.1.9.B.2.L.S.R.
+0020 30 00 01 00 1e 00 57 00 49 00 4e 00 2d 00 4c 00 0.....W.I.N.-.L.
+0030 4f 00 34 00 31 00 39 00 42 00 32 00 4c 00 53 00 O.4.1.9.B.2.L.S.
+0040 52 00 30 00 04 00 1e 00 57 00 49 00 4e 00 2d 00 R.0.....W.I.N.-.
+0050 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 4c 00 L.O.4.1.9.B.2.L.
+0060 53 00 52 00 30 00 03 00 1e 00 57 00 49 00 4e 00 S.R.0.....W.I.N.
+0070 2d 00 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 -.L.O.4.1.9.B.2.
+0080 4c 00 53 00 52 00 30 00 07 00 08 00 a0 e8 85 2c L.S.R.0........,
+0090 e4 c9 ce 01 00 00 00 00                         ........
+
+ChallengeTargetInfo (152):
+AV_PAIRs =
+{
+	MsvAvNbDomainName AvId: 2 AvLen: 30
+0000 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 W.I.N.-.L.O.4.1.
+0010 39 00 42 00 32 00 4c 00 53 00 52 00 30 00       9.B.2.L.S.R.0.
+	MsvAvNbComputerName AvId: 1 AvLen: 30
+0000 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 W.I.N.-.L.O.4.1.
+0010 39 00 42 00 32 00 4c 00 53 00 52 00 30 00       9.B.2.L.S.R.0.
+	MsvAvDnsDomainName AvId: 4 AvLen: 30
+0000 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 W.I.N.-.L.O.4.1.
+0010 39 00 42 00 32 00 4c 00 53 00 52 00 30 00       9.B.2.L.S.R.0.
+	MsvAvDnsComputerName AvId: 3 AvLen: 30
+0000 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 W.I.N.-.L.O.4.1.
+0010 39 00 42 00 32 00 4c 00 53 00 52 00 30 00       9.B.2.L.S.R.0.
+	MsvAvTimestamp AvId: 7 AvLen: 8
+0000 a0 e8 85 2c e4 c9 ce 01                         ...,....
+}
+ntlm_generate_timestamp: timestamp
+0000 a0 e8 85 2c e4 c9 ce 01                         ...,....
+
+ntlm_generate_timestamp: ChallengeTimestamp
+0000 a0 e8 85 2c e4 c9 ce 01                         ...,....
+
+NTOWFv1W: Password:
+0000 52 00 32 00 50 00 72 00 65 00 76 00 69 00 65 00 R.2.P.r.e.v.i.e.
+0010 77 00 21 00                                     w.!.
+
+NTOWFv1W: NtHash (MD4(Password)):
+0000 25 f3 39 c9 86 b5 c2 6f dc ab 91 34 93 a2 18 2a %.9....o...4...*
+
+NTOWFv2W: NtHashV1 (NTOWFv1W(Password)):
+0000 25 f3 39 c9 86 b5 c2 6f dc ab 91 34 93 a2 18 2a %.9....o...4...*
+
+NTOWFv2W: User:
+0000 41 00 64 00 6d 00 69 00 6e 00 69 00 73 00 74 00 A.d.m.i.n.i.s.t.
+0010 72 00 61 00 74 00 6f 00 72 00                   r.a.t.o.r.
+
+NTOWFv2W: Domain:
+0000 77 00 6f 00 72 00 6b 00 67 00 72 00 6f 00 75 00 w.o.r.k.g.r.o.u.
+0010 70 00                                           p.
+
+NTOWFv2W: buffer (User+Domain):
+0000 41 00 44 00 4d 00 49 00 4e 00 49 00 53 00 54 00 A.D.M.I.N.I.S.T.
+0010 52 00 41 00 54 00 4f 00 52 00 77 00 6f 00 72 00 R.A.T.O.R.w.o.r.
+0020 6b 00 67 00 72 00 6f 00 75 00 70 00             k.g.r.o.u.p.
+
+NTOWFv2W: NtHash (HMAC_MD5(NtHashV1, User+Domain)):
+0000 5f cc 4c 48 74 6b 94 ce b7 ae f1 0d c9 11 22 8f _.LHtk........".
+
+ntlm_compute_ntlm_v2_hash: hash (NTOWFv2W(Password, User, Domain)):
+0000 5f cc 4c 48 74 6b 94 ce b7 ae f1 0d c9 11 22 8f _.LHtk........".
+
+ntlm_compute_lm_v2_response: ntlm_v2_hash:
+0000 5f cc 4c 48 74 6b 94 ce b7 ae f1 0d c9 11 22 8f _.LHtk........".
+
+ntlm_compute_lm_v2_response: value (ServerChallenge + ClientChallenge):
+0000 4a 25 50 a5 11 9b d6 16 01 02 03 04 05 06 07 08 J%P.............
+
+ntlm_compute_lm_v2_response: response (HMAC_MD5(ntlm_v2_hash, value) + ClientChallenge):
+0000 7c c0 fd 08 c5 14 05 34 f3 12 9e 3e a3 09 bc c6 |......4...>....
+0010 01 02 03 04 05 06 07 08                         ........
+
+NTOWFv1W: Password:
+0000 52 00 32 00 50 00 72 00 65 00 76 00 69 00 65 00 R.2.P.r.e.v.i.e.
+0010 77 00 21 00                                     w.!.
+
+NTOWFv1W: NtHash (MD4(Password)):
+0000 25 f3 39 c9 86 b5 c2 6f dc ab 91 34 93 a2 18 2a %.9....o...4...*
+
+NTOWFv2W: NtHashV1 (NTOWFv1W(Password)):
+0000 25 f3 39 c9 86 b5 c2 6f dc ab 91 34 93 a2 18 2a %.9....o...4...*
+
+NTOWFv2W: User:
+0000 41 00 64 00 6d 00 69 00 6e 00 69 00 73 00 74 00 A.d.m.i.n.i.s.t.
+0010 72 00 61 00 74 00 6f 00 72 00                   r.a.t.o.r.
+
+NTOWFv2W: Domain:
+0000 77 00 6f 00 72 00 6b 00 67 00 72 00 6f 00 75 00 w.o.r.k.g.r.o.u.
+0010 70 00                                           p.
+
+NTOWFv2W: buffer (User+Domain):
+0000 41 00 44 00 4d 00 49 00 4e 00 49 00 53 00 54 00 A.D.M.I.N.I.S.T.
+0010 52 00 41 00 54 00 4f 00 52 00 77 00 6f 00 72 00 R.A.T.O.R.w.o.r.
+0020 6b 00 67 00 72 00 6f 00 75 00 70 00             k.g.r.o.u.p.
+
+NTOWFv2W: NtHash (HMAC_MD5(NtHashV1, User+Domain)):
+0000 5f cc 4c 48 74 6b 94 ce b7 ae f1 0d c9 11 22 8f _.LHtk........".
+
+ntlm_compute_ntlm_v2_hash: hash (NTOWFv2W(Password, User, Domain)):
+0000 5f cc 4c 48 74 6b 94 ce b7 ae f1 0d c9 11 22 8f _.LHtk........".
+
+ntlm_compute_ntlm_v2_response: Password (length = 20)
+0000 52 00 32 00 50 00 72 00 65 00 76 00 69 00 65 00 R.2.P.r.e.v.i.e.
+0010 77 00 21 00                                     w.!.
+
+ntlm_compute_ntlm_v2_response: Username (length = 26)
+0000 41 00 64 00 6d 00 69 00 6e 00 69 00 73 00 74 00 A.d.m.i.n.i.s.t.
+0010 72 00 61 00 74 00 6f 00 72 00                   r.a.t.o.r.
+
+ntlm_compute_ntlm_v2_response: Domain (length = 18)
+0000 77 00 6f 00 72 00 6b 00 67 00 72 00 6f 00 75 00 w.o.r.k.g.r.o.u.
+0010 70 00                                           p.
+
+ntlm_compute_ntlm_v2_response: Workstation (length = 12)
+0000 61 00 70 00 6f 00 6c 00 6c 00 6f 00             a.p.o.l.l.o.
+
+ntlm_compute_ntlm_v2_response: TargetInfo (length = 234)
+0000 02 00 1e 00 57 00 49 00 4e 00 2d 00 4c 00 4f 00 ....W.I.N.-.L.O.
+0010 34 00 31 00 39 00 42 00 32 00 4c 00 53 00 52 00 4.1.9.B.2.L.S.R.
+0020 30 00 01 00 1e 00 57 00 49 00 4e 00 2d 00 4c 00 0.....W.I.N.-.L.
+0030 4f 00 34 00 31 00 39 00 42 00 32 00 4c 00 53 00 O.4.1.9.B.2.L.S.
+0040 52 00 30 00 04 00 1e 00 57 00 49 00 4e 00 2d 00 R.0.....W.I.N.-.
+0050 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 4c 00 L.O.4.1.9.B.2.L.
+0060 53 00 52 00 30 00 03 00 1e 00 57 00 49 00 4e 00 S.R.0.....W.I.N.
+0070 2d 00 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 -.L.O.4.1.9.B.2.
+0080 4c 00 53 00 52 00 30 00 07 00 08 00 a0 e8 85 2c L.S.R.0........,
+0090 e4 c9 ce 01 06 00 04 00 02 00 00 00 0a 00 10 00 ................
+00a0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+00b0 09 00 26 00 54 00 45 00 52 00 4d 00 53 00 52 00 ..&.T.E.R.M.S.R.
+00c0 56 00 2f 00 31 00 39 00 32 00 2e 00 31 00 36 00 V./.1.9.2...1.6.
+00d0 38 00 2e 00 31 00 2e 00 33 00 00 00 00 00 00 00 8...1...3.......
+00e0 00 00 00 00 00 00 00 00 00 00                   ..........
+
+ntlm_compute_ntlm_v2_response: ntlm_v2_hash (ntlm_compute_ntlm_v2_hash(context, (char*) ntlm_v2_hash))
+0000 5f cc 4c 48 74 6b 94 ce b7 ae f1 0d c9 11 22 8f _.LHtk........".
+
+ntlm_compute_ntlm_v2_response: ntlm_v2_temp (0x0101 + reserved 6 bytes + Timestamp + ClientChallenge + TargetInfo)
+0000 01 01 00 00 00 00 00 00 a0 e8 85 2c e4 c9 ce 01 ...........,....
+0010 01 02 03 04 05 06 07 08 00 00 00 00 02 00 1e 00 ................
+0020 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 W.I.N.-.L.O.4.1.
+0030 39 00 42 00 32 00 4c 00 53 00 52 00 30 00 01 00 9.B.2.L.S.R.0...
+0040 1e 00 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 ..W.I.N.-.L.O.4.
+0050 31 00 39 00 42 00 32 00 4c 00 53 00 52 00 30 00 1.9.B.2.L.S.R.0.
+0060 04 00 1e 00 57 00 49 00 4e 00 2d 00 4c 00 4f 00 ....W.I.N.-.L.O.
+0070 34 00 31 00 39 00 42 00 32 00 4c 00 53 00 52 00 4.1.9.B.2.L.S.R.
+0080 30 00 03 00 1e 00 57 00 49 00 4e 00 2d 00 4c 00 0.....W.I.N.-.L.
+0090 4f 00 34 00 31 00 39 00 42 00 32 00 4c 00 53 00 O.4.1.9.B.2.L.S.
+00a0 52 00 30 00 07 00 08 00 a0 e8 85 2c e4 c9 ce 01 R.0........,....
+00b0 06 00 04 00 02 00 00 00 0a 00 10 00 00 00 00 00 ................
+00c0 00 00 00 00 00 00 00 00 00 00 00 00 09 00 26 00 ..............&.
+00d0 54 00 45 00 52 00 4d 00 53 00 52 00 56 00 2f 00 T.E.R.M.S.R.V./.
+00e0 31 00 39 00 32 00 2e 00 31 00 36 00 38 00 2e 00 1.9.2...1.6.8...
+00f0 31 00 2e 00 33 00 00 00 00 00 00 00 00 00 00 00 1...3...........
+0100 00 00 00 00 00 00                               ......
+
+ntlm_compute_ntlm_v2_response: ntlm_v2_chal (ServerChallenge + ntlm_v2_temp)
+0000 4a 25 50 a5 11 9b d6 16 01 01 00 00 00 00 00 00 J%P.............
+0010 a0 e8 85 2c e4 c9 ce 01 01 02 03 04 05 06 07 08 ...,............
+0020 00 00 00 00 02 00 1e 00 57 00 49 00 4e 00 2d 00 ........W.I.N.-.
+0030 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 4c 00 L.O.4.1.9.B.2.L.
+0040 53 00 52 00 30 00 01 00 1e 00 57 00 49 00 4e 00 S.R.0.....W.I.N.
+0050 2d 00 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 -.L.O.4.1.9.B.2.
+0060 4c 00 53 00 52 00 30 00 04 00 1e 00 57 00 49 00 L.S.R.0.....W.I.
+0070 4e 00 2d 00 4c 00 4f 00 34 00 31 00 39 00 42 00 N.-.L.O.4.1.9.B.
+0080 32 00 4c 00 53 00 52 00 30 00 03 00 1e 00 57 00 2.L.S.R.0.....W.
+0090 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 39 00 I.N.-.L.O.4.1.9.
+00a0 42 00 32 00 4c 00 53 00 52 00 30 00 07 00 08 00 B.2.L.S.R.0.....
+00b0 a0 e8 85 2c e4 c9 ce 01 06 00 04 00 02 00 00 00 ...,............
+00c0 0a 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+00d0 00 00 00 00 09 00 26 00 54 00 45 00 52 00 4d 00 ......&.T.E.R.M.
+00e0 53 00 52 00 56 00 2f 00 31 00 39 00 32 00 2e 00 S.R.V./.1.9.2...
+00f0 31 00 36 00 38 00 2e 00 31 00 2e 00 33 00 00 00 1.6.8...1...3...
+0100 00 00 00 00 00 00 00 00 00 00 00 00 00 00       ..............
+
+ntlm_compute_ntlm_v2_response: nt_proof_str ( HMAC_MD5(ntlm_v2_hash, ntlm_v2_temp_chal))
+0000 19 4b eb ad da 24 d5 96 85 2e 24 94 d6 4a b8 5e .K...$....$..J.^
+
+ntlm_compute_ntlm_v2_response: NtChallengeResponse ( nt_proof_str + ntlm_v2_temp)
+0000 19 4b eb ad da 24 d5 96 85 2e 24 94 d6 4a b8 5e .K...$....$..J.^
+0010 01 01 00 00 00 00 00 00 a0 e8 85 2c e4 c9 ce 01 ...........,....
+0020 01 02 03 04 05 06 07 08 00 00 00 00 02 00 1e 00 ................
+0030 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 W.I.N.-.L.O.4.1.
+0040 39 00 42 00 32 00 4c 00 53 00 52 00 30 00 01 00 9.B.2.L.S.R.0...
+0050 1e 00 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 ..W.I.N.-.L.O.4.
+0060 31 00 39 00 42 00 32 00 4c 00 53 00 52 00 30 00 1.9.B.2.L.S.R.0.
+0070 04 00 1e 00 57 00 49 00 4e 00 2d 00 4c 00 4f 00 ....W.I.N.-.L.O.
+0080 34 00 31 00 39 00 42 00 32 00 4c 00 53 00 52 00 4.1.9.B.2.L.S.R.
+0090 30 00 03 00 1e 00 57 00 49 00 4e 00 2d 00 4c 00 0.....W.I.N.-.L.
+00a0 4f 00 34 00 31 00 39 00 42 00 32 00 4c 00 53 00 O.4.1.9.B.2.L.S.
+00b0 52 00 30 00 07 00 08 00 a0 e8 85 2c e4 c9 ce 01 R.0........,....
+00c0 06 00 04 00 02 00 00 00 0a 00 10 00 00 00 00 00 ................
+00d0 00 00 00 00 00 00 00 00 00 00 00 00 09 00 26 00 ..............&.
+00e0 54 00 45 00 52 00 4d 00 53 00 52 00 56 00 2f 00 T.E.R.M.S.R.V./.
+00f0 31 00 39 00 32 00 2e 00 31 00 36 00 38 00 2e 00 1.9.2...1.6.8...
+0100 31 00 2e 00 33 00 00 00 00 00 00 00 00 00 00 00 1...3...........
+0110 00 00 00 00 00 00                               ......
+
+ntlm_compute_ntlm_v2_response: SessionBaseKey ( HMAC_MD5(ntlm_v2_hash, nt_proof_str)
+0000 8e 0f dd 12 4c 3b 11 7f 22 b9 4b 59 52 bc a7 18 ....L;..".KYR...
+
+ntlm_generate_key_exchange_key: KeyExchangeKey (SessionBaseKey): 
+0000 8e 0f dd 12 4c 3b 11 7f 22 b9 4b 59 52 bc a7 18 ....L;..".KYR...
+
+ntlm_generate_random_session_key: RandomSessionKey (random bytes): 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_generate_exported_session_key: ExportedSessionKey (RandomSessionKey): 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_rc4k: key, 
+0000 8e 0f dd 12 4c 3b 11 7f 22 b9 4b 59 52 bc a7 18 ....L;..".KYR...
+
+ntlm_rc4k: plaintext 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_rc4k: ciphertext (RC4K(key, plaintext)) 
+0000 e4 e9 c2 ad 41 02 2f 3c f9 4c 72 84 c5 2a 7c 6f ....A./<.Lr..*|o
+
+ntlm_encrypt_random_session_key: KeyExchangeKey: 
+0000 8e 0f dd 12 4c 3b 11 7f 22 b9 4b 59 52 bc a7 18 ....L;..".KYR...
+
+ntlm_encrypt_random_session_key: RandomSessionKey: 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_encrypt_random_session_key: EncryptedRandomSessionKey (RC4K(KeyExchangeKey, RandomSessionKey)): 
+0000 e4 e9 c2 ad 41 02 2f 3c f9 4c 72 84 c5 2a 7c 6f ....A./<.Lr..*|o
+
+ntlm_generate_signing_key: exported_session_key: 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_generate_signing_key: sign_magic: 
+0000 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 63 session key to c
+0010 6c 69 65 6e 74 2d 74 6f 2d 73 65 72 76 65 72 20 lient-to-server 
+0020 73 69 67 6e 69 6e 67 20 6b 65 79 20 6d 61 67 69 signing key magi
+0030 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_signing_key: value ( exported_session_key + sign_magic ): 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+0010 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 63 session key to c
+0020 6c 69 65 6e 74 2d 74 6f 2d 73 65 72 76 65 72 20 lient-to-server 
+0030 73 69 67 6e 69 6e 67 20 6b 65 79 20 6d 61 67 69 signing key magi
+0040 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_signing_key: signing_key (MD5(value)): 
+0000 f6 ae 96 cb 05 e2 ab 54 f6 dd 59 f3 c9 d9 a0 43 .......T..Y....C
+
+ntlm_generate_client_signing_key: ExportedSessionKey: 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_generate_client_signing_key: client_sign_magic: ":session key to client-to-server signing key magic constant"
+0000 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 63 session key to c
+0010 6c 69 65 6e 74 2d 74 6f 2d 73 65 72 76 65 72 20 lient-to-server 
+0020 73 69 67 6e 69 6e 67 20 6b 65 79 20 6d 61 67 69 signing key magi
+0030 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_client_signing_key: ClientSigningKey ( ntlm_generate_signing_key(context->ExportedSessionKey, &sign_magic, context->ClientSigningKey))
+0000 f6 ae 96 cb 05 e2 ab 54 f6 dd 59 f3 c9 d9 a0 43 .......T..Y....C
+
+ntlm_generate_signing_key: exported_session_key: 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_generate_signing_key: sign_magic: 
+0000 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 73 session key to s
+0010 65 72 76 65 72 2d 74 6f 2d 63 6c 69 65 6e 74 20 erver-to-client 
+0020 73 69 67 6e 69 6e 67 20 6b 65 79 20 6d 61 67 69 signing key magi
+0030 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_signing_key: value ( exported_session_key + sign_magic ): 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+0010 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 73 session key to s
+0020 65 72 76 65 72 2d 74 6f 2d 63 6c 69 65 6e 74 20 erver-to-client 
+0030 73 69 67 6e 69 6e 67 20 6b 65 79 20 6d 61 67 69 signing key magi
+0040 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_signing_key: signing_key (MD5(value)): 
+0000 b6 58 c5 98 7a 25 f8 6e d8 e5 6c e9 3e 3c c0 88 .X..z%.n..l.><..
+
+ntlm_generate_server_signing_key: ExportedSessionKey: 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_generate_server_signing_key: server_sign_magic: ":session key to server-to-client signing key magic constant"
+0000 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 73 session key to s
+0010 65 72 76 65 72 2d 74 6f 2d 63 6c 69 65 6e 74 20 erver-to-client 
+0020 73 69 67 6e 69 6e 67 20 6b 65 79 20 6d 61 67 69 signing key magi
+0030 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_server_signing_key: ServerSigningKey (ntlm_generate_signing_key(context->ExportedSessionKey, &sign_magic, context->ServerSigningKey))
+0000 b6 58 c5 98 7a 25 f8 6e d8 e5 6c e9 3e 3c c0 88 .X..z%.n..l.><..
+
+ntlm_generate_signing_key: exported_session_key: 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_generate_signing_key: sign_magic: 
+0000 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 63 session key to c
+0010 6c 69 65 6e 74 2d 74 6f 2d 73 65 72 76 65 72 20 lient-to-server 
+0020 73 65 61 6c 69 6e 67 20 6b 65 79 20 6d 61 67 69 sealing key magi
+0030 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_signing_key: value ( exported_session_key + sign_magic ): 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+0010 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 63 session key to c
+0020 6c 69 65 6e 74 2d 74 6f 2d 73 65 72 76 65 72 20 lient-to-server 
+0030 73 65 61 6c 69 6e 67 20 6b 65 79 20 6d 61 67 69 sealing key magi
+0040 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_signing_key: signing_key (MD5(value)): 
+0000 58 19 44 c2 7a c6 34 45 e4 b8 2b 55 b9 0b 1f b5 X.D.z.4E..+U....
+
+ntlm_generate_client_sealing_key: ExportedSessionKey: 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_generate_client_sealing_key: client_seal_magic: ":session key to client-to-server sealing key magic constant"
+0000 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 63 session key to c
+0010 6c 69 65 6e 74 2d 74 6f 2d 73 65 72 76 65 72 20 lient-to-server 
+0020 73 65 61 6c 69 6e 67 20 6b 65 79 20 6d 61 67 69 sealing key magi
+0030 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_client_sealing_key: ClientSealingKey (ntlm_generate_signing_key(context->ExportedSessionKey, &seal_magic, context->ClientSealingKey))
+0000 58 19 44 c2 7a c6 34 45 e4 b8 2b 55 b9 0b 1f b5 X.D.z.4E..+U....
+
+ntlm_generate_signing_key: exported_session_key: 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_generate_signing_key: sign_magic: 
+0000 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 73 session key to s
+0010 65 72 76 65 72 2d 74 6f 2d 63 6c 69 65 6e 74 20 erver-to-client 
+0020 73 65 61 6c 69 6e 67 20 6b 65 79 20 6d 61 67 69 sealing key magi
+0030 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_signing_key: value ( exported_session_key + sign_magic ): 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+0010 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 73 session key to s
+0020 65 72 76 65 72 2d 74 6f 2d 63 6c 69 65 6e 74 20 erver-to-client 
+0030 73 65 61 6c 69 6e 67 20 6b 65 79 20 6d 61 67 69 sealing key magi
+0040 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_signing_key: signing_key (MD5(value)): 
+0000 92 3a 73 5c 92 a7 04 34 be 9a a2 9f ed c1 e6 13 .:s\...4........
+
+ntlm_generate_server_sealing_key: ExportedSessionKey: 
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_generate_server_sealing_key: server_seal_magic: ":session key to server-to-client sealing key magic constant"
+0000 73 65 73 73 69 6f 6e 20 6b 65 79 20 74 6f 20 73 session key to s
+0010 65 72 76 65 72 2d 74 6f 2d 63 6c 69 65 6e 74 20 erver-to-client 
+0020 73 65 61 6c 69 6e 67 20 6b 65 79 20 6d 61 67 69 sealing key magi
+0030 63 20 63 6f 6e 73 74 61 6e 74 00                c constant.
+
+ntlm_generate_server_sealing_key: ServerSealingKey (ntlm_generate_signing_key(context->ExportedSessionKey, &seal_magic, context->ServerSealingKey))
+0000 92 3a 73 5c 92 a7 04 34 be 9a a2 9f ed c1 e6 13 .:s\...4........
+
+ntlm_init_rc4_seal_states: SendSigningKey (ClientSigningKey)
+0000 f6 ae 96 cb 05 e2 ab 54 f6 dd 59 f3 c9 d9 a0 43 .......T..Y....C
+
+ntlm_init_rc4_seal_states: RecvSigningKey (ServerSigningKey)
+0000 b6 58 c5 98 7a 25 f8 6e d8 e5 6c e9 3e 3c c0 88 .X..z%.n..l.><..
+
+ntlm_init_rc4_seal_states: SendSealingKey (ServerSealingKey)
+0000 92 3a 73 5c 92 a7 04 34 be 9a a2 9f ed c1 e6 13 .:s\...4........
+
+ntlm_init_rc4_seal_states: RecvSealingKey (ClientSealingKey)
+0000 58 19 44 c2 7a c6 34 45 e4 b8 2b 55 b9 0b 1f b5 X.D.z.4E..+U....
+
+ntlm_init_rc4_seal_states: SendRc4Seal = 0xb6a28da0 (RC4_set_key(&context->SendRc4Seal, 16, context->ClientSealingKey))
+ntlm_init_rc4_seal_states: RecvRc4Seal = 0xb6a291a8 (RC4_set_key(&context->RecvRc4Seal, 16, context->ServerSealingKey))
+ntlm_read_ChallengeMessage: ClientChallenge
+0000 01 02 03 04 05 06 07 08                         ........
+
+ntlm_read_ChallengeMessage: ServerChallenge
+0000 4a 25 50 a5 11 9b d6 16                         J%P.....
+
+ntlm_read_ChallengeMessage: SessionBaseKey
+0000 8e 0f dd 12 4c 3b 11 7f 22 b9 4b 59 52 bc a7 18 ....L;..".KYR...
+
+ntlm_read_ChallengeMessage: KeyExchangeKey
+0000 8e 0f dd 12 4c 3b 11 7f 22 b9 4b 59 52 bc a7 18 ....L;..".KYR...
+
+ntlm_read_ChallengeMessage: ExportedSessionKey
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_read_ChallengeMessage: RandomSessionKey
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_read_ChallengeMessage: ClientSigningKey
+0000 f6 ae 96 cb 05 e2 ab 54 f6 dd 59 f3 c9 d9 a0 43 .......T..Y....C
+
+ntlm_read_ChallengeMessage: ClientSealingKey
+0000 58 19 44 c2 7a c6 34 45 e4 b8 2b 55 b9 0b 1f b5 X.D.z.4E..+U....
+
+ntlm_read_ChallengeMessage: ServerSigningKey
+0000 b6 58 c5 98 7a 25 f8 6e d8 e5 6c e9 3e 3c c0 88 .X..z%.n..l.><..
+
+ntlm_read_ChallengeMessage: ServerSealingKey
+0000 92 3a 73 5c 92 a7 04 34 be 9a a2 9f ed c1 e6 13 .:s\...4........
+
+ntlm_read_ChallengeMessage: Timestamp
+0000 a0 e8 85 2c e4 c9 ce 01                         ...,....
+
+ntlm_compute_message_integrity_check: ExportedSessionKey
+0000 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 ................
+
+ntlm_compute_message_integrity_check: NegotiateMessage
+0000 4e 54 4c 4d 53 53 50 00 01 00 00 00 b7 82 08 e2 NTLMSSP.........
+0010 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+0020 06 01 b1 1d 00 00 00 0f                         ........
+
+ntlm_compute_message_integrity_check: ChallengeMessage
+0000 4e 54 4c 4d 53 53 50 00 02 00 00 00 1e 00 1e 00 NTLMSSP.........
+0010 38 00 00 00 35 82 8a e2 4a 25 50 a5 11 9b d6 16 8...5...J%P.....
+0020 00 00 00 00 00 00 00 00 98 00 98 00 56 00 00 00 ............V...
+0030 06 03 d7 24 00 00 00 0f 57 00 49 00 4e 00 2d 00 ...$....W.I.N.-.
+0040 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 4c 00 L.O.4.1.9.B.2.L.
+0050 53 00 52 00 30 00 02 00 1e 00 57 00 49 00 4e 00 S.R.0.....W.I.N.
+0060 2d 00 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 -.L.O.4.1.9.B.2.
+0070 4c 00 53 00 52 00 30 00 01 00 1e 00 57 00 49 00 L.S.R.0.....W.I.
+0080 4e 00 2d 00 4c 00 4f 00 34 00 31 00 39 00 42 00 N.-.L.O.4.1.9.B.
+0090 32 00 4c 00 53 00 52 00 30 00 04 00 1e 00 57 00 2.L.S.R.0.....W.
+00a0 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 39 00 I.N.-.L.O.4.1.9.
+00b0 42 00 32 00 4c 00 53 00 52 00 30 00 03 00 1e 00 B.2.L.S.R.0.....
+00c0 57 00 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 W.I.N.-.L.O.4.1.
+00d0 39 00 42 00 32 00 4c 00 53 00 52 00 30 00 07 00 9.B.2.L.S.R.0...
+00e0 08 00 a0 e8 85 2c e4 c9 ce 01 00 00 00 00       .....,........
+
+ntlm_compute_message_integrity_check: AuthenticateMessage
+0000 4e 54 4c 4d 53 53 50 00 03 00 00 00 18 00 18 00 NTLMSSP.........
+0010 90 00 00 00 16 01 16 01 a8 00 00 00 12 00 12 00 ................
+0020 58 00 00 00 1a 00 1a 00 6a 00 00 00 0c 00 0c 00 X.......j.......
+0030 84 00 00 00 10 00 10 00 be 01 00 00 35 b2 88 e2 ............5...
+0040 06 01 b1 1d 00 00 00 0f 00 00 00 00 00 00 00 00 ................
+0050 00 00 00 00 00 00 00 00 77 00 6f 00 72 00 6b 00 ........w.o.r.k.
+0060 67 00 72 00 6f 00 75 00 70 00 41 00 64 00 6d 00 g.r.o.u.p.A.d.m.
+0070 69 00 6e 00 69 00 73 00 74 00 72 00 61 00 74 00 i.n.i.s.t.r.a.t.
+0080 6f 00 72 00 61 00 70 00 6f 00 6c 00 6c 00 6f 00 o.r.a.p.o.l.l.o.
+0090 7c c0 fd 08 c5 14 05 34 f3 12 9e 3e a3 09 bc c6 |......4...>....
+00a0 01 02 03 04 05 06 07 08 19 4b eb ad da 24 d5 96 .........K...$..
+00b0 85 2e 24 94 d6 4a b8 5e 01 01 00 00 00 00 00 00 ..$..J.^........
+00c0 a0 e8 85 2c e4 c9 ce 01 01 02 03 04 05 06 07 08 ...,............
+00d0 00 00 00 00 02 00 1e 00 57 00 49 00 4e 00 2d 00 ........W.I.N.-.
+00e0 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 4c 00 L.O.4.1.9.B.2.L.
+00f0 53 00 52 00 30 00 01 00 1e 00 57 00 49 00 4e 00 S.R.0.....W.I.N.
+0100 2d 00 4c 00 4f 00 34 00 31 00 39 00 42 00 32 00 -.L.O.4.1.9.B.2.
+0110 4c 00 53 00 52 00 30 00 04 00 1e 00 57 00 49 00 L.S.R.0.....W.I.
+0120 4e 00 2d 00 4c 00 4f 00 34 00 31 00 39 00 42 00 N.-.L.O.4.1.9.B.
+0130 32 00 4c 00 53 00 52 00 30 00 03 00 1e 00 57 00 2.L.S.R.0.....W.
+0140 49 00 4e 00 2d 00 4c 00 4f 00 34 00 31 00 39 00 I.N.-.L.O.4.1.9.
+0150 42 00 32 00 4c 00 53 00 52 00 30 00 07 00 08 00 B.2.L.S.R.0.....
+0160 a0 e8 85 2c e4 c9 ce 01 06 00 04 00 02 00 00 00 ...,............
+0170 0a 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+0180 00 00 00 00 09 00 26 00 54 00 45 00 52 00 4d 00 ......&.T.E.R.M.
+0190 53 00 52 00 56 00 2f 00 31 00 39 00 32 00 2e 00 S.R.V./.1.9.2...
+01a0 31 00 36 00 38 00 2e 00 31 00 2e 00 33 00 00 00 1.6.8...1...3...
+01b0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 e4 e9 ................
+01c0 c2 ad 41 02 2f 3c f9 4c 72 84 c5 2a 7c 6f       ..A./<.Lr..*|o
+
+ntlm_compute_message_integrity_check: MessageIntegrityCheck (HMAC_MD5(ExportedSessionKey + NegotiateMessage + ChallengeMessage + AuthenticateMessage))
+0000 d9 e9 bc 9b 6f a5 f9 c8 70 16 10 20 f8 f1 61 42 ....o...p.. ..aB
+
+credssp_encrypt_public_key_echo: Server public key (length = 270):
+recv_seq_num: 0
+Public key before encryption:
+0000 30 82 01 0a 02 82 01 01 00 a8 56 65 d3 ce 8a 54 0.........Ve...T
+0010 4d 9d b0 84 31 19 71 7f dd 42 fb 2a 7a 72 13 a1 M...1.q..B.*zr..
+0020 b9 72 bb d3 08 ad 7d 6c 15 65 03 d1 c4 54 c5 33 .r....}l.e...T.3
+0030 6b 7d 69 89 5e fe e0 01 c0 7e 9b cb 5d 65 36 cd k}i.^....~..]e6.
+0040 77 5d f3 7a 5b 29 44 72 d5 38 e2 cf b1 c7 78 9b w].z[)Dr.8....x.
+0050 58 b9 17 7c b7 d6 c7 c7 bf 90 4e 7c 39 93 cb 2e X..|......N|9...
+0060 e0 c2 33 2d a5 7e e0 7b b6 f9 91 32 b7 d4 85 b7 ..3-.~.{...2....
+0070 35 2d 2b 00 6d f8 ea 8c 97 5f 51 1d 68 04 3c 79 5-+.m...._Q.h.<y
+0080 14 71 a7 c7 d7 70 7a e0 ba 12 69 c8 d3 d9 4e ab .q...pz...i...N.
+0090 51 47 a3 ec 99 d4 88 ca da c2 7f 79 4b 66 ed 87 QG.........yKf..
+00a0 be c2 5f ea cf e1 b5 f0 3d 9b f2 19 c3 e0 e1 7a .._.....=......z
+00b0 45 71 12 3d 72 1d 6f 2b 1c 46 68 c0 8f 4f ce 3a Eq.=r.o+.Fh..O.:
+00c0 c5 cd 22 65 2d 43 b0 5c dd 89 ae be 70 59 5e 0c .."e-C.\....pY^.
+00d0 bd f5 46 82 1e e4 86 95 7b 60 ae 45 50 c2 54 08 ..F.....{`.EP.T.
+00e0 49 9a 9e fb b2 b6 78 e5 2f 9c 5a d0 8a 03 77 68 I.....x./.Z...wh
+00f0 30 93 78 6d 90 6d 50 fa a7 65 fe 59 33 27 4e 4b 0.xm.mP..e.Y3'NK
+0100 f8 38 44 3a 12 f4 07 a0 8d 02 03 01 00 01       .8D:..........
+credssp_encrypt_public_key_echo: Signature for decryption:
+0000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................
+ntlm_EncryptMessage: data:
+0000 30 82 01 0a 02 82 01 01 00 a8 56 65 d3 ce 8a 54 0.........Ve...T
+0010 4d 9d b0 84 31 19 71 7f dd 42 fb 2a 7a 72 13 a1 M...1.q..B.*zr..
+0020 b9 72 bb d3 08 ad 7d 6c 15 65 03 d1 c4 54 c5 33 .r....}l.e...T.3
+0030 6b 7d 69 89 5e fe e0 01 c0 7e 9b cb 5d 65 36 cd k}i.^....~..]e6.
+0040 77 5d f3 7a 5b 29 44 72 d5 38 e2 cf b1 c7 78 9b w].z[)Dr.8....x.
+0050 58 b9 17 7c b7 d6 c7 c7 bf 90 4e 7c 39 93 cb 2e X..|......N|9...
+0060 e0 c2 33 2d a5 7e e0 7b b6 f9 91 32 b7 d4 85 b7 ..3-.~.{...2....
+0070 35 2d 2b 00 6d f8 ea 8c 97 5f 51 1d 68 04 3c 79 5-+.m...._Q.h.<y
+0080 14 71 a7 c7 d7 70 7a e0 ba 12 69 c8 d3 d9 4e ab .q...pz...i...N.
+0090 51 47 a3 ec 99 d4 88 ca da c2 7f 79 4b 66 ed 87 QG.........yKf..
+00a0 be c2 5f ea cf e1 b5 f0 3d 9b f2 19 c3 e0 e1 7a .._.....=......z
+00b0 45 71 12 3d 72 1d 6f 2b 1c 46 68 c0 8f 4f ce 3a Eq.=r.o+.Fh..O.:
+00c0 c5 cd 22 65 2d 43 b0 5c dd 89 ae be 70 59 5e 0c .."e-C.\....pY^.
+00d0 bd f5 46 82 1e e4 86 95 7b 60 ae 45 50 c2 54 08 ..F.....{`.EP.T.
+00e0 49 9a 9e fb b2 b6 78 e5 2f 9c 5a d0 8a 03 77 68 I.....x./.Z...wh
+00f0 30 93 78 6d 90 6d 50 fa a7 65 fe 59 33 27 4e 4b 0.xm.mP..e.Y3'NK
+0100 f8 38 44 3a 12 f4 07 a0 8d 02 03 01 00 01       .8D:..........
+
+ntlm_EncryptMessage: digest (HMAC_MD5(SendSigningKey, seq_num + data)), seq_num: 0
+0000 bf e8 70 ad ac d8 5b a8 33 1a 74 1f 6c ec c9 b3 ..p...[.3.t.l...
+
+ntlm_EncryptMessage: Data Buffer before encryption (length = 270)
+0000 30 82 01 0a 02 82 01 01 00 a8 56 65 d3 ce 8a 54 0.........Ve...T
+0010 4d 9d b0 84 31 19 71 7f dd 42 fb 2a 7a 72 13 a1 M...1.q..B.*zr..
+0020 b9 72 bb d3 08 ad 7d 6c 15 65 03 d1 c4 54 c5 33 .r....}l.e...T.3
+0030 6b 7d 69 89 5e fe e0 01 c0 7e 9b cb 5d 65 36 cd k}i.^....~..]e6.
+0040 77 5d f3 7a 5b 29 44 72 d5 38 e2 cf b1 c7 78 9b w].z[)Dr.8....x.
+0050 58 b9 17 7c b7 d6 c7 c7 bf 90 4e 7c 39 93 cb 2e X..|......N|9...
+0060 e0 c2 33 2d a5 7e e0 7b b6 f9 91 32 b7 d4 85 b7 ..3-.~.{...2....
+0070 35 2d 2b 00 6d f8 ea 8c 97 5f 51 1d 68 04 3c 79 5-+.m...._Q.h.<y
+0080 14 71 a7 c7 d7 70 7a e0 ba 12 69 c8 d3 d9 4e ab .q...pz...i...N.
+0090 51 47 a3 ec 99 d4 88 ca da c2 7f 79 4b 66 ed 87 QG.........yKf..
+00a0 be c2 5f ea cf e1 b5 f0 3d 9b f2 19 c3 e0 e1 7a .._.....=......z
+00b0 45 71 12 3d 72 1d 6f 2b 1c 46 68 c0 8f 4f ce 3a Eq.=r.o+.Fh..O.:
+00c0 c5 cd 22 65 2d 43 b0 5c dd 89 ae be 70 59 5e 0c .."e-C.\....pY^.
+00d0 bd f5 46 82 1e e4 86 95 7b 60 ae 45 50 c2 54 08 ..F.....{`.EP.T.
+00e0 49 9a 9e fb b2 b6 78 e5 2f 9c 5a d0 8a 03 77 68 I.....x./.Z...wh
+00f0 30 93 78 6d 90 6d 50 fa a7 65 fe 59 33 27 4e 4b 0.xm.mP..e.Y3'NK
+0100 f8 38 44 3a 12 f4 07 a0 8d 02 03 01 00 01       .8D:..........
+
+ntlm_EncryptMessage: SendRc4Seal = 0xe
+ntlm_EncryptMessage: Encrypted Data Buffer (RC4(&context->SendRc4Seal, length, data, data_buffer->pvBuffer))
+0000 15 f7 f2 54 da a9 e5 ad 85 04 67 4d 0b cb f9 b1 ...T......gM....
+0010 f8 02 8a 77 c2 63 ab d5 74 23 9f 9d 5d 1f d3 b3 ...w.c..t#..]...
+0020 a0 ac 16 8a 4b 08 f5 47 70 58 10 b4 e7 87 b3 4b ....K..GpX.....K
+0030 c9 a2 d5 d1 ca 0f d4 e3 8d 76 5a 60 28 f8 06 5d .........vZ`(..]
+0040 e4 7e 21 c8 bb ac e5 79 85 30 9b 88 13 2f 8f fc .~!....y.0.../..
+0050 04 52 fe 87 94 cf cb 49 4a da 6f dd ee 57 a5 e4 .R.....IJ.o..W..
+0060 4d 0e 5c 3d 0b 63 1f f6 3d 1b ae 5a f6 42 2a 46 M.\=.c..=..Z.B*F
+0070 fa 42 71 67 46 02 71 ea 51 98 f7 d4 43 bf 8e e8 .BqgF.q.Q...C...
+0080 3c c8 fa 79 9d 8c fc c2 42 c9 bb d0 ab 81 c4 53 <..y....B......S
+0090 fd 41 da ab 0f 25 79 5f bd a3 8c d3 f5 1b ab 20 .A...%y_....... 
+00a0 d1 f4 d8 81 9c 18 4a a4 77 ee e1 51 ee 2a c1 94 ......J.w..Q.*..
+00b0 37 c5 06 7a 3f 0f 25 5b 4e 6a dc 0b 62 6f 12 83 7..z?.%[Nj..bo..
+00c0 03 ae 4e ce 2b 6e d4 d5 23 27 f6 a6 38 67 ec 95 ..N.+n..#'..8g..
+00d0 82 c6 ba d4 f6 e6 22 7d b9 e4 81 97 24 ff 40 b2 ......"}....$.@.
+00e0 42 3c 11 24 d0 3a 96 d9 c1 13 d6 62 45 21 60 5b B<.$.:.....bE!`[
+00f0 7b 2b 62 44 f7 40 93 29 5b 44 b7 da 9c a6 a9 3b {+bD.@.)[D.....;
+0100 e1 3b 9d 31 f2 21 53 0f b3 70 55 84 2c b4       .;.1.!S..pU.,.
+
+ntlm_EncryptMessage: Checksum ( RC4(&context->SendRc4Seal, 8, digest, checksum), first 8 bytes of digest only!):
+0000 72 76 1e 57 49 b5 0f ad                         rv.WI...
+ntlm_EncryptMessage: signature (version + checksum + seq_num)
+0000 01 00 00 00 72 76 1e 57 49 b5 0f ad 00 00 00 00 ....rv.WI.......
+
+ntlm_EncryptMessage: SendSeqNum (after increase): 1, SeqNo: 0.
+credssp_encrypt_public_key_echo: Server public key (length = 270):
+recv_seq_num: 0
+Public key after encryption:
+0000 15 f7 f2 54 da a9 e5 ad 85 04 67 4d 0b cb f9 b1 ...T......gM....
+0010 f8 02 8a 77 c2 63 ab d5 74 23 9f 9d 5d 1f d3 b3 ...w.c..t#..]...
+0020 a0 ac 16 8a 4b 08 f5 47 70 58 10 b4 e7 87 b3 4b ....K..GpX.....K
+0030 c9 a2 d5 d1 ca 0f d4 e3 8d 76 5a 60 28 f8 06 5d .........vZ`(..]
+0040 e4 7e 21 c8 bb ac e5 79 85 30 9b 88 13 2f 8f fc .~!....y.0.../..
+0050 04 52 fe 87 94 cf cb 49 4a da 6f dd ee 57 a5 e4 .R.....IJ.o..W..
+0060 4d 0e 5c 3d 0b 63 1f f6 3d 1b ae 5a f6 42 2a 46 M.\=.c..=..Z.B*F
+0070 fa 42 71 67 46 02 71 ea 51 98 f7 d4 43 bf 8e e8 .BqgF.q.Q...C...
+0080 3c c8 fa 79 9d 8c fc c2 42 c9 bb d0 ab 81 c4 53 <..y....B......S
+0090 fd 41 da ab 0f 25 79 5f bd a3 8c d3 f5 1b ab 20 .A...%y_....... 
+00a0 d1 f4 d8 81 9c 18 4a a4 77 ee e1 51 ee 2a c1 94 ......J.w..Q.*..
+00b0 37 c5 06 7a 3f 0f 25 5b 4e 6a dc 0b 62 6f 12 83 7..z?.%[Nj..bo..
+00c0 03 ae 4e ce 2b 6e d4 d5 23 27 f6 a6 38 67 ec 95 ..N.+n..#'..8g..
+00d0 82 c6 ba d4 f6 e6 22 7d b9 e4 81 97 24 ff 40 b2 ......"}....$.@.
+00e0 42 3c 11 24 d0 3a 96 d9 c1 13 d6 62 45 21 60 5b B<.$.:.....bE!`[
+00f0 7b 2b 62 44 f7 40 93 29 5b 44 b7 da 9c a6 a9 3b {+bD.@.)[D.....;
+0100 e1 3b 9d 31 f2 21 53 0f b3 70 55 84 2c b4       .;.1.!S..pU.,.
+credssp_decrypt_public_key_echo: Server public key (length = 270):
+recv_seq_num: 0
+Public key before decryption:
+0000 03 12 dd ea 47 b3 ff e1 66 08 f6 6b a0 62 42 67 ....G...f..k.bBg
+0010 bf 3d 59 60 ef 52 b0 26 95 ed 84 48 44 bb 8d 65 .=Y`.R.&...HD..e
+0020 cf e4 8e 6f 69 ae ed 44 bb 49 1d 2a 40 29 2b 13 ...oi..D.I.*@)+.
+0030 42 1c eb b1 6c 8a 3b 80 d1 70 fd dd 79 e4 93 0b B...l.;..p..y...
+0040 47 bd 3a 7e 31 66 4b 65 8d 5c 2a cd c2 09 7a 3b G.:~1fKe.\*...z;
+0050 b2 fd 09 52 09 47 05 a4 6f 32 d1 76 b2 d4 59 e0 ...R.G..o2.v..Y.
+0060 85 f1 36 7d 76 50 21 0e 20 22 83 1a 08 c0 85 5d ..6}vP!. ".....]
+0070 4f 5c 77 68 32 95 a9 a2 59 69 ea 19 34 08 ed 76 O\wh2...Yi..4..v
+0080 a3 58 37 f2 0a 0c ba 4d bb 6f 82 94 d3 87 de c9 .X7....M.o......
+0090 8f ef 34 2d 8f d0 0c 91 59 fd ea 6b cb bd a2 20 ..4-....Y..k... 
+00a0 ed b9 76 d3 64 1b b3 3b f5 9b 61 d7 ab 26 9b 0d ..v.d..;..a..&..
+00b0 a0 ea bf ad 2c ad 63 65 c6 70 c4 e5 8d 40 aa 08 ....,.ce.p...@..
+00c0 45 66 e2 4d c9 46 00 33 43 e0 ba d6 80 29 21 5e Ef.M.F.3C....)!^
+00d0 d1 9a bc 44 fa 4d 46 f9 25 80 40 b5 27 dd c5 02 ...D.MF.%.@.'...
+00e0 f8 a4 9a cb cf 3f ef c7 cd 71 45 a5 35 b1 21 14 .....?...qE.5.!.
+00f0 39 57 f8 0a 24 98 ea 15 e1 e3 cb 9d f2 4e ef 89 9W..$........N..
+0100 97 c0 b2 96 9a 1e ad d0 9a 99 62 9f 13 2e       ..........b...
+credssp_decrypt_public_key_echo: Signature for decryption:
+0000 01 00 00 00 25 f8 2d 1e 4e 6a ec 4f 00 00 00 00 ....%.-.Nj.O....
+ntlm_DecryptMessage: Data Buffer before decryption (length = 270)
+0000 03 12 dd ea 47 b3 ff e1 66 08 f6 6b a0 62 42 67 ....G...f..k.bBg
+0010 bf 3d 59 60 ef 52 b0 26 95 ed 84 48 44 bb 8d 65 .=Y`.R.&...HD..e
+0020 cf e4 8e 6f 69 ae ed 44 bb 49 1d 2a 40 29 2b 13 ...oi..D.I.*@)+.
+0030 42 1c eb b1 6c 8a 3b 80 d1 70 fd dd 79 e4 93 0b B...l.;..p..y...
+0040 47 bd 3a 7e 31 66 4b 65 8d 5c 2a cd c2 09 7a 3b G.:~1fKe.\*...z;
+0050 b2 fd 09 52 09 47 05 a4 6f 32 d1 76 b2 d4 59 e0 ...R.G..o2.v..Y.
+0060 85 f1 36 7d 76 50 21 0e 20 22 83 1a 08 c0 85 5d ..6}vP!. ".....]
+0070 4f 5c 77 68 32 95 a9 a2 59 69 ea 19 34 08 ed 76 O\wh2...Yi..4..v
+0080 a3 58 37 f2 0a 0c ba 4d bb 6f 82 94 d3 87 de c9 .X7....M.o......
+0090 8f ef 34 2d 8f d0 0c 91 59 fd ea 6b cb bd a2 20 ..4-....Y..k... 
+00a0 ed b9 76 d3 64 1b b3 3b f5 9b 61 d7 ab 26 9b 0d ..v.d..;..a..&..
+00b0 a0 ea bf ad 2c ad 63 65 c6 70 c4 e5 8d 40 aa 08 ....,.ce.p...@..
+00c0 45 66 e2 4d c9 46 00 33 43 e0 ba d6 80 29 21 5e Ef.M.F.3C....)!^
+00d0 d1 9a bc 44 fa 4d 46 f9 25 80 40 b5 27 dd c5 02 ...D.MF.%.@.'...
+00e0 f8 a4 9a cb cf 3f ef c7 cd 71 45 a5 35 b1 21 14 .....?...qE.5.!.
+00f0 39 57 f8 0a 24 98 ea 15 e1 e3 cb 9d f2 4e ef 89 9W..$........N..
+0100 97 c0 b2 96 9a 1e ad d0 9a 99 62 9f 13 2e       ..........b...
+
+ntlm_DecryptMessage: RecvRc4Seal = 0xe
+ntlm_DecryptMessage: Data Buffer after decryption (RC4(&context->RecvRc4Seal, length, data, data_buffer->pvBuffer))
+0000 31 82 01 0a 02 82 01 01 00 a8 56 65 d3 ce 8a 54 1.........Ve...T
+0010 4d 9d b0 84 31 19 71 7f dd 42 fb 2a 7a 72 13 a1 M...1.q..B.*zr..
+0020 b9 72 bb d3 08 ad 7d 6c 15 65 03 d1 c4 54 c5 33 .r....}l.e...T.3
+0030 6b 7d 69 89 5e fe e0 01 c0 7e 9b cb 5d 65 36 cd k}i.^....~..]e6.
+0040 77 5d f3 7a 5b 29 44 72 d5 38 e2 cf b1 c7 78 9b w].z[)Dr.8....x.
+0050 58 b9 17 7c b7 d6 c7 c7 bf 90 4e 7c 39 93 cb 2e X..|......N|9...
+0060 e0 c2 33 2d a5 7e e0 7b b6 f9 91 32 b7 d4 85 b7 ..3-.~.{...2....
+0070 35 2d 2b 00 6d f8 ea 8c 97 5f 51 1d 68 04 3c 79 5-+.m...._Q.h.<y
+0080 14 71 a7 c7 d7 70 7a e0 ba 12 69 c8 d3 d9 4e ab .q...pz...i...N.
+0090 51 47 a3 ec 99 d4 88 ca da c2 7f 79 4b 66 ed 87 QG.........yKf..
+00a0 be c2 5f ea cf e1 b5 f0 3d 9b f2 19 c3 e0 e1 7a .._.....=......z
+00b0 45 71 12 3d 72 1d 6f 2b 1c 46 68 c0 8f 4f ce 3a Eq.=r.o+.Fh..O.:
+00c0 c5 cd 22 65 2d 43 b0 5c dd 89 ae be 70 59 5e 0c .."e-C.\....pY^.
+00d0 bd f5 46 82 1e e4 86 95 7b 60 ae 45 50 c2 54 08 ..F.....{`.EP.T.
+00e0 49 9a 9e fb b2 b6 78 e5 2f 9c 5a d0 8a 03 77 68 I.....x./.Z...wh
+00f0 30 93 78 6d 90 6d 50 fa a7 65 fe 59 33 27 4e 4b 0.xm.mP..e.Y3'NK
+0100 f8 38 44 3a 12 f4 07 a0 8d 02 03 01 00 01       .8D:..........
+
+ntlm_DecryptMessage: RecvSigningKey:
+0000 b6 58 c5 98 7a 25 f8 6e d8 e5 6c e9 3e 3c c0 88 .X..z%.n..l.><..
+
+ntlm_DecryptMessage: digest (HMAC_MD5(RecvSigningKey, seq_num + data)), seq_num: 0
+0000 33 77 62 77 99 a9 14 40 1d 76 17 98 21 65 36 05 3wbw...@.v..!e6.
+
+ntlm_DecryptMessage: Checksum (RC4(&context->RecvRc4Seal, 8, digest, checksum), first 8 bytes of digest only!):
+0000 25 f8 2d 1e 4e 6a ec 4f                         %.-.Nj.O
+ntlm_DecryptMessage: Expected Signature (version + checksum + seq_num):
+0000 01 00 00 00 25 f8 2d 1e 4e 6a ec 4f 00 00 00 00 ....%.-.Nj.O....
+ntlm_DecryptMessage: RecvSeqNum (after increase): 1, SeqNo: 0.
+credssp_decrypt_public_key_echo: Server public key (length = 270):
+recv_seq_num: 1
+Public key after decryption:
+0000 30 82 01 0a 02 82 01 01 00 a8 56 65 d3 ce 8a 54 0.........Ve...T
+0010 4d 9d b0 84 31 19 71 7f dd 42 fb 2a 7a 72 13 a1 M...1.q..B.*zr..
+0020 b9 72 bb d3 08 ad 7d 6c 15 65 03 d1 c4 54 c5 33 .r....}l.e...T.3
+0030 6b 7d 69 89 5e fe e0 01 c0 7e 9b cb 5d 65 36 cd k}i.^....~..]e6.
+0040 77 5d f3 7a 5b 29 44 72 d5 38 e2 cf b1 c7 78 9b w].z[)Dr.8....x.
+0050 58 b9 17 7c b7 d6 c7 c7 bf 90 4e 7c 39 93 cb 2e X..|......N|9...
+0060 e0 c2 33 2d a5 7e e0 7b b6 f9 91 32 b7 d4 85 b7 ..3-.~.{...2....
+0070 35 2d 2b 00 6d f8 ea 8c 97 5f 51 1d 68 04 3c 79 5-+.m...._Q.h.<y
+0080 14 71 a7 c7 d7 70 7a e0 ba 12 69 c8 d3 d9 4e ab .q...pz...i...N.
+0090 51 47 a3 ec 99 d4 88 ca da c2 7f 79 4b 66 ed 87 QG.........yKf..
+00a0 be c2 5f ea cf e1 b5 f0 3d 9b f2 19 c3 e0 e1 7a .._.....=......z
+00b0 45 71 12 3d 72 1d 6f 2b 1c 46 68 c0 8f 4f ce 3a Eq.=r.o+.Fh..O.:
+00c0 c5 cd 22 65 2d 43 b0 5c dd 89 ae be 70 59 5e 0c .."e-C.\....pY^.
+00d0 bd f5 46 82 1e e4 86 95 7b 60 ae 45 50 c2 54 08 ..F.....{`.EP.T.
+00e0 49 9a 9e fb b2 b6 78 e5 2f 9c 5a d0 8a 03 77 68 I.....x./.Z...wh
+00f0 30 93 78 6d 90 6d 50 fa a7 65 fe 59 33 27 4e 4b 0.xm.mP..e.Y3'NK
+0100 f8 38 44 3a 12 f4 07 a0 8d 02 03 01 00 01       .8D:..........
+ntlm_EncryptMessage: data:
+0000 30 57 a0 03 02 01 01 a1 50 04 4e 30 4c a0 14 04 0W......P.N0L...
+0010 12 77 00 6f 00 72 00 6b 00 67 00 72 00 6f 00 75 .w.o.r.k.g.r.o.u
+0020 00 70 00 a1 1c 04 1a 41 00 64 00 6d 00 69 00 6e .p.....A.d.m.i.n
+0030 00 69 00 73 00 74 00 72 00 61 00 74 00 6f 00 72 .i.s.t.r.a.t.o.r
+0040 00 a2 16 04 14 52 00 32 00 50 00 72 00 65 00 76 .....R.2.P.r.e.v
+0050 00 69 00 65 00 77 00 21 00                      .i.e.w.!.
+
+ntlm_EncryptMessage: digest (HMAC_MD5(SendSigningKey, seq_num + data)), seq_num: 1
+0000 40 75 a0 e9 45 65 d1 78 54 1c 7e 27 08 4c 6f bd @u..Ee.xT.~'.Lo.
+
+ntlm_EncryptMessage: Data Buffer before encryption (length = 89)
+0000 30 57 a0 03 02 01 01 a1 50 04 4e 30 4c a0 14 04 0W......P.N0L...
+0010 12 77 00 6f 00 72 00 6b 00 67 00 72 00 6f 00 75 .w.o.r.k.g.r.o.u
+0020 00 70 00 a1 1c 04 1a 41 00 64 00 6d 00 69 00 6e .p.....A.d.m.i.n
+0030 00 69 00 73 00 74 00 72 00 61 00 74 00 6f 00 72 .i.s.t.r.a.t.o.r
+0040 00 a2 16 04 14 52 00 32 00 50 00 72 00 65 00 76 .....R.2.P.r.e.v
+0050 00 69 00 65 00 77 00 21 00                      .i.e.w.!.
+
+ntlm_EncryptMessage: SendRc4Seal = 0x6f
+ntlm_EncryptMessage: Encrypted Data Buffer (RC4(&context->SendRc4Seal, length, data, data_buffer->pvBuffer))
+0000 5a 26 69 b7 70 4b 41 55 82 43 a2 3a 72 6a e0 69 Z&i.pKAU.C.:rj.i
+0010 9b 53 66 b6 70 75 c4 80 4f 61 e6 85 20 7e 3a 1b .Sf.pu..Oa.. ~:.
+0020 a9 6a da 69 0b a5 4e 16 d9 da 71 5e ce e4 60 89 .j.i..N...q^..`.
+0030 98 e6 30 59 d0 43 38 55 4a 97 e4 20 83 cd db 6b ..0Y.C8UJ.. ...k
+0040 2b ca ac 9d 99 e6 2b ea 47 5f c1 4c 54 67 d1 75 +.....+.G_.LTg.u
+0050 2c f7 d6 d6 04 8b 28 99 e9                      ,.....(..
+
+ntlm_EncryptMessage: Checksum ( RC4(&context->SendRc4Seal, 8, digest, checksum), first 8 bytes of digest only!):
+0000 7a 7e b7 6c 49 3e 6b 7a                         z~.lI>kz
+ntlm_EncryptMessage: signature (version + checksum + seq_num)
+0000 01 00 00 00 7a 7e b7 6c 49 3e 6b 7a 01 00 00 00 ....z~.lI>kz....
+
+ntlm_EncryptMessage: SendSeqNum (after increase): 2, SeqNo: 1.
+Unable to detect time zone
+Closed from X11

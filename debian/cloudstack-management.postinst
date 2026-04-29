@@ -1,0 +1,88 @@
+#!/bin/sh
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+set -e
+
+if [ "$1" = configure ]; then
+    if ! getent passwd cloud >/dev/null; then
+        adduser --quiet --system --group --no-create-home --home /var/lib/cloudstack/management cloud
+    else
+        usermod -m -d /var/lib/cloudstack/management cloud || true
+    fi
+
+    rm -fr /var/cache/cloudstack/management/work/*
+
+    for i in /var/cache/cloudstack/management \
+        /var/log/cloudstack/management \
+        /var/lib/cloudstack/management
+    do
+        chmod 0770 $i
+        chgrp cloud $i
+    done
+
+    OLDCONFDIR="/etc/cloud/management"
+    NEWCONFDIR="/etc/cloudstack/management"
+    CONFFILES="db.properties key"
+
+    # Copy old configuration so the admin doesn't have to do that
+    # Only do so when we are installing for the first time
+    if [ -z "$2" ]; then
+        for FILE in $CONFFILES; do
+            if [ -f "$OLDCONFDIR/${FILE}" ]; then
+                cp -a $OLDCONFDIR/$FILE $NEWCONFDIR/$FILE
+            fi
+        done
+    fi
+
+    CONFDIR="/etc/cloudstack/management"
+    DBPROPS="db.properties"
+
+    chmod 0640 ${CONFDIR}/${DBPROPS}
+    chgrp cloud ${CONFDIR}/${DBPROPS}
+    chown -R cloud:cloud /var/log/cloudstack/management
+    chown -R cloud:cloud /usr/share/cloudstack-management/templates
+    find /usr/share/cloudstack-management/templates -type d -exec chmod 0770 {} \;
+
+    chmod -R 0755 /etc/cloudstack/extensions
+    chown -R cloud:cloud /etc/cloudstack/extensions
+
+    ln -sf ${CONFDIR}/log4j-cloud.xml ${CONFDIR}/log4j2.xml
+
+    # Add jdbc MySQL driver settings to db.properties if not present
+    grep -s -q "db.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.cloud.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
+    grep -s -q "db.usage.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.usage.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
+    grep -s -q "db.simulator.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS} || sed -i -e "\$adb.simulator.driver=jdbc:mysql" ${CONFDIR}/${DBPROPS}
+
+    # Update DB properties having master and slave(s), with source and replica(s) respectively (for inclusiveness)
+    grep -s -q "^db.cloud.slaves=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.cloud.slaves=/db.cloud.replicas=/g" ${CONFDIR}/${DBPROPS}
+    grep -s -q "^db.cloud.secondsBeforeRetryMaster=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.cloud.secondsBeforeRetryMaster=/db.cloud.secondsBeforeRetrySource=/g" ${CONFDIR}/${DBPROPS}
+    grep -s -q "^db.cloud.queriesBeforeRetryMaster=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.cloud.queriesBeforeRetryMaster=/db.cloud.queriesBeforeRetrySource=/g" ${CONFDIR}/${DBPROPS}
+    grep -s -q "^db.usage.slaves=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.usage.slaves=/db.usage.replicas=/g" ${CONFDIR}/${DBPROPS}
+    grep -s -q "^db.usage.secondsBeforeRetryMaster=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.usage.secondsBeforeRetryMaster=/db.usage.secondsBeforeRetrySource=/g" ${CONFDIR}/${DBPROPS}
+    grep -s -q "^db.usage.queriesBeforeRetryMaster=" ${CONFDIR}/${DBPROPS} && sed -i "s/^db.usage.queriesBeforeRetryMaster=/db.usage.queriesBeforeRetrySource=/g" ${CONFDIR}/${DBPROPS}
+
+    # Print help message
+    if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+        acs_version=$(dpkg -l |grep cloudstack-management |head -n1 |awk '{print $3}')
+        sed -i "s,^ACS_VERSION=.*,ACS_VERSION=$acs_version,g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+        /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text management
+    fi
+fi
+
+#DEBHELPER#

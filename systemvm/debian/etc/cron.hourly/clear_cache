@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# clear memory cache to ultimately reduce swapping
+
+phymem=$(free|awk '/^Mem:/{print $2}')
+if [ $phymem -lt 513000 ]; then
+  sync && echo 1 > /proc/sys/vm/drop_caches
+fi

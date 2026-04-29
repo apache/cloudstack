@@ -1,0 +1,151 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+version: 1
+
+dn: ou=groups,dc=am,dc=echt,dc=net
+objectClass: organizationalUnit
+objectClass: top
+ou: Groups
+
+dn: cn=JuniorAdmins,ou=groups,dc=am,dc=echt,dc=net
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: JuniorAdmins
+uniqueMember: uid=demo,ou=acsadmins,dc=am,dc=echt,dc=net
+uniqueMember: uid=demo2,ou=acsadmins,dc=am,dc=echt,dc=net
+uniqueMember: uid=double,ou=acsadmins,dc=am,dc=echt,dc=net
+
+dn: ou=acsadmins,dc=am,dc=echt,dc=net
+objectClass: organizationalUnit
+objectClass: top
+ou: acsadmins
+
+dn: uid=dahn,ou=acsadmins,dc=am,dc=echt,dc=net
+objectClass: person
+objectClass: organizationalPerson
+objectClass: top
+objectClass: inetOrgPerson
+cn: dahn
+sn: Hoogland
+givenName: Daan
+mail: d@b.c
+uid: dahn
+
+dn: uid=demo,ou=acsadmins,dc=am,dc=echt,dc=net
+objectClass: person
+objectClass: organizationalPerson
+objectClass: top
+objectClass: inetOrgPerson
+cn: demo
+sn: User
+givenName: demo
+mail: d@b.c
+uid: demo
+
+dn: cn=SeniorAdmins,ou=groups,dc=am,dc=echt,dc=net
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: SeniorAdmins
+uniqueMember: uid=pga,ou=acsadmins,dc=am,dc=echt,dc=net
+uniqueMember: uid=demo4,ou=acsadmins,dc=am,dc=echt,dc=net
+
+dn: cn=admins,ou=acsadmins,dc=am,dc=echt,dc=net
+objectClass: groupOfNames
+objectClass: top
+cn: admins
+member: uid=dahn,ou=acsadmins,dc=am,dc=echt,dc=net
+member: uid=demo,ou=acsadmins,dc=am,dc=echt,dc=net
+member: uid=demo2,ou=acsadmins,dc=am,dc=echt,dc=net
+member: uid=demo3,ou=acsadmins,dc=am,dc=echt,dc=net
+member: uid=demo4,ou=acsadmins,dc=am,dc=echt,dc=net
+member: uid=pga,ou=acsadmins,dc=am,dc=echt,dc=net
+member: uid=double,ou=acsadmins,dc=am,dc=echt,dc=net
+
+dn: uid=pga,ou=acsadmins,dc=am,dc=echt,dc=net
+objectClass: person
+objectClass: organizationalperson
+objectClass: top
+objectClass: inetorgperson
+cn: Paul Angus
+sn: angus
+givenName: paul
+mail: paul.angus@shapeblue.com
+uid: pga
+
+dn: uid=demo2,ou=acsadmins,dc=am,dc=echt,dc=net
+objectClass: person
+objectClass: organizationalPerson
+objectClass: top
+objectClass: inetOrgPerson
+cn: demo
+sn: User
+givenName: demo
+mail: d@b.c
+uid: demo2
+
+dn: uid=demo3,ou=acsadmins,dc=am,dc=echt,dc=net
+objectClass: person
+objectClass: organizationalPerson
+objectClass: top
+objectClass: inetOrgPerson
+cn: demo
+sn: User
+givenName: demo
+mail: d@b.c
+uid: demo3
+
+dn: uid=demo4,ou=acsadmins,dc=am,dc=echt,dc=net
+objectClass: person
+objectClass: organizationalPerson
+objectClass: top
+objectClass: inetOrgPerson
+cn: demo
+sn: User
+givenName: demo
+mail: d@b.c
+uid: demo4
+
+dn: cn=Admins,ou=groups,dc=am,dc=echt,dc=net
+objectClass: groupOfUniqueNames
+objectClass: top
+cn: Admins
+uniqueMember: uid=dahn,ou=acsadmins,dc=am,dc=echt,dc=net
+uniqueMember: uid=demo3,ou=acsadmins,dc=am,dc=echt,dc=net
+uniqueMember: uid=double,ou=acsadmins,dc=am,dc=echt,dc=net
+uniqueMember: uid=noadmin,ou=acsadmins,dc=am,dc=echt,dc=net
+
+dn: uid=double,ou=acsadmins,dc=am,dc=echt,dc=net
+objectClass: person
+objectClass: organizationalPerson
+objectClass: top
+objectClass: inetOrgPerson
+cn: demo
+sn: User
+givenName: demo
+mail: d@b.c
+uid: double
+
+dn: uid=noadmin,ou=acsadmins,dc=am,dc=echt,dc=net
+objectClass: person
+objectClass: organizationalPerson
+objectClass: top
+objectClass: inetOrgPerson
+cn: demo
+sn: User
+givenName: demo
+mail: d@b.c
+uid: noadmin

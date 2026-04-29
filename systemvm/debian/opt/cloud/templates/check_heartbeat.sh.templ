@@ -1,0 +1,67 @@
+#!/bin/bash
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+ROUTER_BIN_PATH="/ramdisk/rrouter"
+ROUTER_LOG="${ROUTER_BIN_PATH}/keepalived.log"
+STRIKE_FILE="$ROUTER_BIN_PATH/keepalived.strikes"
+TS_FILE="$ROUTER_BIN_PATH/keepalived.ts"
+CT_FILE="$ROUTER_BIN_PATH/keepalived.ct"
+
+checktime=$(date +%s)
+hbtime=$(cat $TS_FILE)
+diff=$(($checktime - $hbtime))
+
+lastcheck=0
+if [ -e $CT_FILE ]
+then
+    lastcheck=$(cat $CT_FILE 2>/dev/null)
+fi
+checkdiff=$(($checktime - $lastcheck))
+if [ $checkdiff -ge 0 ] && [ $checkdiff -lt 30 ]
+then
+    exit
+fi
+echo $checktime > $CT_FILE
+
+s=0
+if [ $diff -gt 10 ]
+then
+    if [ -e $STRIKE_FILE ]
+    then
+        s=$(cat $STRIKE_FILE 2>/dev/null)
+    fi
+    s=$(($s+1))
+    echo $s > $STRIKE_FILE
+    echo "Check time: $checktime, last heartbeat time: $hbtime, time diff: $diff, strike count: $s" >> $ROUTER_LOG
+else
+    rm -f $STRIKE_FILE
+fi
+
+if [ $s -gt 3 ]
+then
+    systemctl stop --now keepalived >> $ROUTER_LOG 2>&1
+    systemctl stop --now conntrackd >> $ROUTER_LOG 2>&1
+
+    #Set fault so we have the same effect as a KeepaliveD fault.
+    python /opt/cloud/bin/configure_router.py --fault
+
+    pkill -9 keepalived >> $ROUTER_LOG 2>&1 || true
+    pkill -9 conntrackd >> $ROUTER_LOG 2>&1 || true
+    echo Status: FAULT \(keepalived process is dead\) >> $ROUTER_LOG
+    exit
+fi

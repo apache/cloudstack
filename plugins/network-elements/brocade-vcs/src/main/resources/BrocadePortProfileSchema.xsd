@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="urn:brocade.com:mgmt:brocade-port-profile"
+	xmlns:tns="urn:brocade.com:mgmt:brocade-port-profile"
+	elementFormDefault="qualified">
+	<annotation>
+		<documentation>
+
+			Licensed to the Apache Software Foundation (ASF) under
+			one
+			or more contributor license agreements. See the NOTICE file
+			distributed with this work for additional information
+			regarding
+			copyright ownership. The ASF licenses this file
+			to you under the
+			Apache License, Version 2.0 (the
+			"License"); you may not use this file
+			except in compliance
+			with the License. You may obtain a copy of the
+			License at
+
+			http://www.apache.org/licenses/LICENSE-2.0
+
+			Unless required
+			by applicable law or agreed to in writing,
+			software distributed under
+			the License is distributed on an
+			"AS IS" BASIS, WITHOUT WARRANTIES OR
+			CONDITIONS OF ANY
+			KIND, either express or implied. See the License for
+			the
+			specific language governing permissions and limitations
+			under the
+			License.
+		</documentation>
+	</annotation>
+
+	<element name="port-profile">
+		<complexType>
+			<sequence>
+				<element name="name" type="string"></element>
+				<element name="activate">
+					<complexType>
+						<attribute name="operation" type="string"></attribute>
+					</complexType>
+				</element>
+				<element name="static">
+					<complexType>
+						<sequence>
+							<element name="mac-address" type="string"></element>
+						</sequence>
+						<attribute name="operation" type="string"></attribute>
+					</complexType>
+				</element>
+				<element ref="tns:vlan-profile"></element>
+			</sequence>
+			<attribute name="operation" type="string"></attribute>
+		</complexType>
+	</element>
+
+	<element name="port-profile-global">
+		<complexType>
+			<sequence>
+				<element ref="tns:port-profile"></element>
+			</sequence>
+		</complexType>
+	</element>
+
+
+	<element name="vlan-profile">
+		<complexType>
+			<sequence>
+				<element name="switchport-basic">
+					<complexType>
+						<sequence>
+							<element name="basic">
+								<complexType>
+								</complexType>
+							</element>
+						</sequence>
+					</complexType>
+				</element>
+				<element name="switchport">
+					<complexType>
+						<sequence>
+							<element name="mode">
+								<complexType>
+									<sequence>
+										<element name="vlan-mode" type="string"></element>
+									</sequence>
+								</complexType>
+							</element>
+
+							<element name="trunk">
+								<complexType>
+									<sequence>
+										<element name="allowed">
+											<complexType>
+												<sequence>
+													<element name="vlan">
+														<complexType>
+															<sequence>
+																<element name="add" type="int"></element>
+															</sequence>
+														</complexType>
+													</element>
+												</sequence>
+											</complexType>
+										</element>
+									</sequence>
+								</complexType>
+							</element>
+						</sequence>
+					</complexType>
+				</element>
+			</sequence>
+		</complexType>
+	</element>
+</schema>

@@ -1,0 +1,184 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<deploy>
+
+<!-- SETUP YOUR ZONES, PODS, VLANS HERE -->
+
+<!-- Zone configuration (I do delete default pod and zone)-->
+	<command>
+		<name>deletePod</name>
+		<parameters>
+			<item>
+				<name>id</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>deleteZone</name>
+		<parameters>
+			<item>
+				<name>id</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>createZone</name>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>ZONE1</value>
+			</item>
+			<item>
+				<name>dns1</name>
+				<value>192.168.10.253</value>
+			</item>
+			<item>
+				<name>dns2</name>
+				<value>192.168.10.254</value>
+			</item>
+			<item>
+				<name>internaldns1</name>
+				<value>192.168.10.253</value>
+			</item>
+			<item>
+				<name>vlan</name>
+				<value>400-499</value>
+			</item>
+			<item>
+                	<name>guestcidraddress</name>
+                    <value>10.1.1.0/24</value>
+            </item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>createVlanIpRange</name>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>Public</value>
+			</item>
+			<item>
+				<name>zoneid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>vlan</name>
+				<value>19</value>
+			</item>
+			<item>
+				<name>gateway</name>
+				<value>172.19.0.1</value>
+			</item>
+			<item>
+				<name>netmask</name>
+				<value>255.255.0.0</value>
+			</item>
+			<item>
+				<name>startip</name>
+				<value>172.19.0.100</value>
+			</item>
+			<item>
+				<name>endip</name>
+				<value>172.19.0.254</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>createPod</name>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>POD1</value>
+			</item>
+			<item>
+				<name>zoneid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>cidr</name>
+				<value>192.168.161.0/24</value>
+			</item>
+			<item>
+				<name>startip</name>
+				<value>192.168.161.100</value>
+			</item>
+			<item>
+				<name>endip</name>
+				<value>192.168.161.200</value>
+			</item>
+			<item>
+				<name>gateway</name>
+				<value>192.168.161.1</value>
+			</item>
+		</parameters>
+	</command>
+
+
+<!-- SETUP YOUR CONFIGURATION VALUES HERE -->
+
+<!--  Network setup - vmName, guest network config -->
+	<command>
+		<name>updateConfiguration</name>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>instance.name</value>
+			</item>
+			<item>
+				<name>value</name>
+				<value>sanity</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>updateConfiguration</name>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>expunge.delay</value>
+			</item>
+			<item>
+				<name>value</name>
+				<value>60</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>updateConfiguration</name>
+		<parameters>
+			<item>
+				<name>name</name>
+				<value>expunge.interval</value>
+			</item>
+			<item>
+				<name>value</name>
+				<value>60</value>
+			</item>
+		</parameters>
+	</command>
+
+</deploy>

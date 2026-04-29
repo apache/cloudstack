@@ -1,0 +1,91 @@
+#!/usr/bin/python3
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+from subprocess import *
+import sys
+import logging
+
+LOG_FILE='/var/log/cloudstack/agent/rolling-maintenance.log'
+AVOID_MAINTENANCE_EXIT_STATUS=70
+
+logging.basicConfig(filename=LOG_FILE,
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    datefmt='%H:%M:%S',
+                    level=logging.INFO)
+logger = logging.getLogger('rolling-maintenance')
+
+
+def execute_script(stage, script, payload, timeout):
+    logger.info("Executing script: %s for stage: %s" % (script, stage))
+
+    try:
+        command = "timeout %s %s " % (str(timeout), script)
+        if payload:
+            logger.info("Adding payload: %s" % payload)
+            command += " " + payload
+        pout = Popen(command, shell=True, stdout=PIPE, stderr=PIPE)
+        exitStatus = pout.wait()
+        stdout, stderr = pout.communicate()
+
+        success = True if exitStatus == 0 or exitStatus == AVOID_MAINTENANCE_EXIT_STATUS else False
+        avoid_maintenance = True if exitStatus == AVOID_MAINTENANCE_EXIT_STATUS else False
+        return {"success": success, "message": stdout.decode('utf-8').strip(), "avoidmaintenance": avoid_maintenance}
+    except Exception as e:
+        logger.error("Error in stage %s: %s" % (script, e))
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    try:
+        logger.info(sys.argv)
+        if len(sys.argv) < 2:
+            logger.error("Arguments missing")
+            sys.exit(0)
+
+        args = sys.argv[1]
+        params = args.split(',')
+        if len(params) < 5:
+            logger.error("Wrong number of parameters received, STAGE,SCRIPT,TIMEOUT,RESULTS_FILE,OUTPUT_FILE"
+                         "[,PAYLOAD] expected")
+            sys.exit(0)
+
+        stage = params[0]
+        script = params[1]
+        timeout = params[2]
+        results_file_path = params[3]
+        output_file_path = params[4]
+        payload = params[5] if len(params) > 5 else None
+        logger.info("Received parameters: stage: %s, script: %s, timeout: %s, results_file: %s, output_file: %s "
+                    "and payload: %s" % (stage, script, timeout, results_file_path, output_file_path, payload))
+
+        results = execute_script(stage, script, payload, timeout)
+
+        # Persist results and output on a file
+        output_file = open(output_file_path, "w+")
+        output_file.write(results['message'])
+        output_file.close()
+
+        results_file = open(results_file_path, "w+")
+        results_file.write("%s,%s,%s" % (stage, str(results['success']), str(results['avoidmaintenance'])))
+        results_file.close()
+
+        msg = "Successful execution of %s" if results['success'] else "Script execution failed: %s"
+        logger.info(results['message'])
+        logger.info(msg % script)
+    except Exception as e:
+        logger.error("Unexpected error on systemd service: %s" % e)
+        sys.exit(1)

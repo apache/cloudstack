@@ -1,0 +1,103 @@
+<config>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<!-- HERE IS THE POST DEPLOYMENT SECTIION; YOU ADD HOSTS/SECONDARY AND PRIMARY STORAGE HERE -->
+	<command>
+		<name>addSecondaryStorage</name>
+		<parameters>
+			<item>
+				<name>zoneid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>nfs://192.168.161.21/export/regression/secondary</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>addHost</name>
+		<parameters>
+			<item>
+				<name>zoneid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>podid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>http://192.168.161.25</value>
+			</item>
+			<item>
+				<name>username</name>
+				<value>root</value>
+			</item>
+			<item>
+				<name>password</name>
+				<value>password</value>
+			</item>
+			<item>
+				<name>clustername</name>
+				<value>firstcluster</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 3 min to ensure that host is in UP state</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>180</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>createStoragePool</name>
+		<parameters>
+			<item>
+				<name>zoneid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>podid</name>
+				<value>2</value>
+			</item>
+			<item>
+				<name>name</name>
+				<value>primary storage</value>
+			</item>
+			<item>
+				<name>url</name>
+				<value>nfs://192.168.161.21/export/regression/primary</value>
+			</item>
+			<item>
+				<name>clusterid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+	</command>
+
+</config>

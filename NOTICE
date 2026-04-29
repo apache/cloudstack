@@ -1,0 +1,79 @@
+Apache CloudStack
+Copyright 2014 The Apache Software Foundation
+  
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
+      
+
+
+  
+  This distribution contains third party resources requiring the following notices:
+
+    
+  For 
+    jquery.js
+  
+
+        jQuery JavaScript Library v1.3.2
+        http://jquery.com/
+        
+        Copyright (c) 2009 John Resig
+        Dual licensed under the MIT and GPL licenses.
+        http://docs.jquery.com/License
+        
+        Date: 2009-02-19 17:34:21 -0500 (Thu, 19 Feb 2009)
+        Revision: 6246
+
+    
+  For 
+    jquery.js
+  
+
+        jQuery JavaScript Library v1.6.4
+        http://jquery.com/
+        
+        Copyright 2011, John Resig
+        Dual licensed under the MIT or GPL Version 2 licenses.
+        http://jquery.org/license
+        
+        Includes Sizzle.js
+        http://sizzlejs.com/
+        Copyright 2011, The Dojo Foundation
+        Released under the MIT, BSD, and GPL Licenses.
+        
+        Date: Mon Sep 12 18:54:48 2011 -0400
+
+    
+  For 
+    jquery.md5.js
+  
+
+        jQuery MD5 Plugin 1.2.1
+        https://github.com/blueimp/jQuery-MD5
+        
+        Copyright 2010, Sebastian Tschan
+        https://blueimp.net
+        
+        Licensed under the MIT license:
+        http://creativecommons.org/licenses/MIT/
+        
+        Based on
+        A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
+        Digest Algorithm, as defined in RFC 1321.
+        Version 2.2 Copyright (C) Paul Johnston 1999 - 2009
+        Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
+        Distributed under the BSD License
+        See http://pajhome.org.uk/crypt/md5 for more info.
+
+    
+  For 
+    jquery.colorhelpers.js
+  
+
+        Plugin for jQuery for working with colors.
+        
+        Version 1.1.
+        
+        Inspiration from jQuery color animation plugin by John Resig.
+        
+        Released under the MIT license by Ole Laursen, October 2009.

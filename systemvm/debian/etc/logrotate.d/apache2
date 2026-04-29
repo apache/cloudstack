@@ -1,0 +1,9 @@
+/var/log/apache2/*.log {
+       missingok
+       copytruncate
+       rotate 3
+       compress
+       dateext
+       maxsize 10M
+       notifempty
+}

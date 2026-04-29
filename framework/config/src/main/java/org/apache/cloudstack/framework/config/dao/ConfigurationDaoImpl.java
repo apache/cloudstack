@@ -1,0 +1,221 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package org.apache.cloudstack.framework.config.dao;
+
+import java.sql.PreparedStatement;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.springframework.stereotype.Component;
+
+import com.cloud.utils.component.ComponentLifecycle;
+import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+@Component
+public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
+    private Map<String, String> _configs = null;
+    private boolean _premium;
+
+    final SearchBuilder<ConfigurationVO> InstanceSearch;
+    final SearchBuilder<ConfigurationVO> NameSearch;
+    final SearchBuilder<ConfigurationVO> PartialSearch;
+
+    public static final String UPDATE_CONFIGURATION_SQL = "UPDATE configuration SET value = ? WHERE name = ?";
+
+    public ConfigurationDaoImpl() {
+        InstanceSearch = createSearchBuilder();
+        InstanceSearch.and("instance", InstanceSearch.entity().getInstance(), SearchCriteria.Op.EQ);
+
+        NameSearch = createSearchBuilder();
+        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM_BOOTSTRAP);
+
+        PartialSearch = createSearchBuilder();
+        PartialSearch.select("name", SearchCriteria.Func.NATIVE, PartialSearch.entity().getName());
+        PartialSearch.select("groupId", SearchCriteria.Func.NATIVE, PartialSearch.entity().getGroupId());
+        PartialSearch.select("subGroupId", SearchCriteria.Func.NATIVE, PartialSearch.entity().getSubGroupId());
+    }
+
+    @Override
+    public boolean isPremium() {
+        return _premium;
+    }
+
+    @Override
+    public void invalidateCache() {
+        _configs = null;
+    }
+
+    @Override
+    public Map<String, String> getConfiguration(String instance, Map<String, ? extends Object> params) {
+        if (_configs == null) {
+            _configs = new HashMap<String, String>();
+
+            SearchCriteria<ConfigurationVO> sc = InstanceSearch.create();
+            sc.setParameters("instance", "DEFAULT");
+
+            List<ConfigurationVO> configurations = listIncludingRemovedBy(sc);
+
+            for (ConfigurationVO config : configurations) {
+                if (config.getValue() != null)
+                    _configs.put(config.getName(), config.getValue());
+            }
+
+            if (!"DEFAULT".equals(instance)) {
+                //Default instance params are already added, need not add again
+                sc = InstanceSearch.create();
+                sc.setParameters("instance", instance);
+
+                configurations = listIncludingRemovedBy(sc);
+
+                for (ConfigurationVO config : configurations) {
+                        _configs.put(config.getName(), config.getValue());
+                }
+            }
+
+        }
+
+        mergeConfigs(_configs, params);
+        return _configs;
+    }
+
+    @Override
+    public Map<String, String> getConfiguration(Map<String, ? extends Object> params) {
+        return getConfiguration("DEFAULT", params);
+    }
+
+    @Override
+    public Map<String, String> getConfiguration() {
+        return getConfiguration("DEFAULT", new HashMap<String, Object>());
+    }
+
+    protected void mergeConfigs(Map<String, String> dbParams, Map<String, ? extends Object> xmlParams) {
+        for (Map.Entry<String, ? extends Object> param : xmlParams.entrySet()) {
+            dbParams.put(param.getKey(), (String)param.getValue());
+        }
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+
+        Object premium = params.get("premium");
+        _premium = (premium != null) && ((String)premium).equals("true");
+
+        return true;
+    }
+
+    @PostConstruct
+    public void init() throws ConfigurationException {
+        /* This bean is loaded in bootstrap and beans
+         * in bootstrap don't go through the CloudStackExtendedLifeCycle
+         */
+        configure(getName(), getConfigParams());
+    }
+
+    //Use update method with category instead
+    @Override
+    @Deprecated
+    public boolean update(String name, String value) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try (PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);){
+            stmt.setString(1, value);
+            stmt.setString(2, name);
+            stmt.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.warn("Unable to update Configuration Value", e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean update(String name, String category, String value) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            value = ("Hidden".equals(category) || "Secure".equals(category)) ? DBEncryptionUtil.encrypt(value) : value;
+            try (PreparedStatement stmt = txn.prepareStatement(UPDATE_CONFIGURATION_SQL);) {
+                stmt.setString(1, value);
+                stmt.setString(2, name);
+                stmt.executeUpdate();
+                return true;
+            }
+        } catch (Exception e) {
+            logger.warn("Unable to update Configuration Value", e);
+        }
+        return false;
+    }
+
+    @Override
+    public String getValue(String name) {
+        ConfigurationVO config = findByName(name);
+        return (config == null) ? null : config.getValue();
+    }
+
+    @Override
+    public String getValueAndInitIfNotExist(String name, String category, String initValue) {
+        return getValueAndInitIfNotExist(name, category, initValue, "");
+    }
+
+    @Override
+    @DB
+    public String getValueAndInitIfNotExist(String name, String category, String initValue, String desc) {
+        String returnValue = initValue;
+        try {
+            ConfigurationVO config = findByName(name);
+            if (config != null) {
+                if (config.getValue() != null) {
+                    returnValue = config.getValue();
+                } else {
+                    update(name, category, initValue);
+                }
+            } else {
+                ConfigurationVO newConfig = new ConfigurationVO(category, "DEFAULT", "management-server", name, initValue, desc);
+                persist(newConfig);
+            }
+            return returnValue;
+        } catch (Exception e) {
+            logger.warn("Unable to update Configuration Value", e);
+            throw new CloudRuntimeException("Unable to initialize configuration variable: " + name);
+
+        }
+    }
+
+    @Override
+    public ConfigurationVO findByName(String name) {
+        SearchCriteria<ConfigurationVO> sc = NameSearch.create();
+        sc.setParameters("name", name);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<ConfigurationVO> searchPartialConfigurations() {
+        SearchCriteria<ConfigurationVO> sc = PartialSearch.create();
+        return searchIncludingRemoved(sc, null, null, false);
+    }
+}

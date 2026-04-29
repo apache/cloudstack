@@ -1,0 +1,9 @@
+/var/log/haproxy.log {
+    rotate 5
+    missingok
+    notifempty
+    maxsize 10M
+    postrotate
+      /usr/lib/rsyslog/rsyslog-rotate
+    endscript
+}

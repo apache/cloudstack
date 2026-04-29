@@ -1,0 +1,536 @@
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+CS-ROOT-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+        MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE,
+        Unsigned32, enterprises
+                FROM SNMPv2-SMI
+
+        OBJECT-GROUP, NOTIFICATION-GROUP, MODULE-COMPLIANCE
+                FROM SNMPv2-CONF
+
+        DisplayString
+                FROM SNMPv2-TC;
+
+cloudstack MODULE-IDENTITY
+            LAST-UPDATED "201208130000Z"
+            ORGANIZATION "Apache Cloudstack"
+            CONTACT-INFO
+                "Apache Cloudstack"
+            DESCRIPTION
+                "This file defines the Objects
+                 used to receive traps from Cloudstack
+                 (C) Apache Foundation"
+            REVISION "201208130000Z"
+            DESCRIPTION
+                "MIB file for cloudstack
+                 "
+            ::= { apache 15 }
+
+
+apache         OBJECT IDENTIFIER
+    ::= {enterprises 18060}
+
+csRoot         OBJECT IDENTIFIER
+    ::= {cloudstack 1}
+
+csObjects      OBJECT IDENTIFIER
+    ::= {csRoot 1}
+
+csTraps        OBJECT IDENTIFIER
+    ::= {csRoot 2}
+
+csConformance  OBJECT IDENTIFIER
+    ::= {csRoot 3}
+
+csAlertTraps   OBJECT IDENTIFIER
+    ::= {csTraps 0}
+
+csGroups       OBJECT IDENTIFIER
+    ::= {csConformance 1}
+
+csCompliances  OBJECT IDENTIFIER
+    ::= {csConformance 2}
+
+dataCenterId OBJECT-TYPE
+  SYNTAX  Unsigned32
+  MAX-ACCESS read-only
+  STATUS  current
+  DESCRIPTION
+          "This represents the Data Center Id of alert."
+  ::= {csObjects 1}
+
+podId OBJECT-TYPE
+  SYNTAX  Unsigned32
+  MAX-ACCESS read-only
+  STATUS  current
+  DESCRIPTION
+          "This represents the Pod Id of alert."
+  ::= {csObjects 2}
+
+clusterId OBJECT-TYPE
+  SYNTAX  Unsigned32
+  MAX-ACCESS read-only
+  STATUS  current
+  DESCRIPTION
+          "This represents the Cluster Id of alert."
+  ::= {csObjects 3}
+
+message OBJECT-TYPE
+  SYNTAX  DisplayString
+  MAX-ACCESS read-only
+  STATUS  current
+  DESCRIPTION
+          "This contains the message of alert"
+  ::= {csObjects 4}
+
+generationTime OBJECT-TYPE
+  SYNTAX  DisplayString
+  MAX-ACCESS read-only
+  STATUS  current
+  DESCRIPTION
+          "This contains the generation time of alert"
+  ::= {csObjects 5}
+
+availableMemory NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Available Memory below configured threshold"
+    ::= { csAlertTraps 1 }
+
+availableCpu NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Unallocated CPU below configured threshold"
+    ::= { csAlertTraps 2 }
+
+availableStorage NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Available Storage below configured threshold"
+    ::= { csAlertTraps 3 }
+
+remainingStorageAllocated NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Remaining unallocated Storage is below configured threshold"
+    ::= { csAlertTraps 4 }
+
+unallocatedVirtualNetworkpublicIp NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Number of unallocated virtual network public IPs is below configured threshold"
+    ::= { csAlertTraps 5 }
+
+unallocatedPrivateIp NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Number of unallocated private IPs is below configured threshold"
+    ::= { csAlertTraps 6 }
+
+availableSecondaryStorage NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Available Secondary Storage in availability zone is below configured threshold"
+    ::= { csAlertTraps 7 }
+
+host NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "host related alerts like host disconnected etc"
+    ::= { csAlertTraps 8 }
+
+userVmState NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "User VM stopped unexpectedly"
+    ::= { csAlertTraps 9 }
+
+domainRouterVmState NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Domain Router VM stopped unexpectedly"
+    ::= { csAlertTraps 10 }
+
+consoleProxyVmState NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Console Proxy VM stopped unexpectedly"
+    ::= { csAlertTraps 11 }
+
+routingConnection NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "lost connection to default route (to the gateway)"
+    ::= { csAlertTraps 12 }
+
+storageIssueSystemVms NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "storage issue in system VMs"
+    ::= { csAlertTraps 13 }
+
+usageServerStatus NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "No usage server process running"
+    ::= { csAlertTraps 14 }
+
+managementNode NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Management network CIDR is not configured originally"
+    ::= { csAlertTraps 15 }
+
+domainRouterMigrate NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Domain Router VM Migration was unsuccessful"
+    ::= { csAlertTraps 16 }
+
+consoleProxyMigrate NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        " Console Proxy VM Migration was unsuccessful"
+    ::= { csAlertTraps 17 }
+
+userVmMigrate NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "User  VM Migration was unsuccessful"
+    ::= { csAlertTraps 18 }
+
+unallocatedVlan NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Number of unallocated VLANs is below configured threshold in availability zone"
+    ::= { csAlertTraps 19 }
+
+ssvmStopped NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "SSVM stopped unexpectedly"
+    ::= { csAlertTraps 20 }
+
+usageServerResult NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Usage job failed"
+    ::= { csAlertTraps 21 }
+
+storageDelete NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Failed to Delete storage pool"
+    ::= { csAlertTraps 22 }
+
+updateResourceCount NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        " Failed to update the resource count"
+    ::= { csAlertTraps 23 }
+
+usageSanityResult NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Usage Sanity Check failed"
+    ::= { csAlertTraps 24 }
+
+unallocatedDirectAttachedPublicIp NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Number of unallocated shared network IPs is low in availability zone"
+    ::= { csAlertTraps 25 }
+
+unallocatedLocalStorage NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Remaining unallocated Local Storage is below configured threshold"
+    ::= { csAlertTraps 26 }
+
+resourceLimitExceeded NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Resource limit exceeds the limit"
+    ::= { csAlertTraps 27 }
+
+sync NOTIFICATION-TYPE
+    OBJECTS {
+            dataCenterId,
+            podId,
+            clusterId,
+            message,
+            generationTime
+        }
+    STATUS current
+    DESCRIPTION
+        "Out of context risky state transitions of VM"
+    ::= { csAlertTraps 28 }
+
+csCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "The compliance statement for the CS-ROOT-MIB."
+    MODULE  -- this module
+        MANDATORY-GROUPS {
+                            csAlertObjectsGroup,
+                            csAlertNotificationsGroup
+                         }
+    ::= { csCompliances 1 }
+
+csAlertObjectsGroup OBJECT-GROUP
+    OBJECTS {
+             dataCenterId,
+             podId,
+             clusterId,
+             message,
+             generationTime
+            }
+    STATUS current
+    DESCRIPTION
+        "The objects defined in this group
+         will be present in Cloudstack Alerts"
+    ::= { csGroups 1 }
+
+csAlertNotificationsGroup NOTIFICATION-GROUP
+    NOTIFICATIONS {
+                    availableMemory,
+                    availableCpu,
+                    availableStorage,
+                    remainingStorageAllocated,
+                    unallocatedVirtualNetworkpublicIp,
+                    unallocatedPrivateIp,
+                    availableSecondaryStorage,
+                    host,
+                    userVmState,
+                    domainRouterVmState,
+                    consoleProxyVmState,
+                    routingConnection,
+                    storageIssueSystemVms,
+                    usageServerStatus,
+                    managementNode,
+                    domainRouterMigrate,
+                    consoleProxyMigrate,
+                    userVmMigrate,
+                    unallocatedVlan,
+                    ssvmStopped,
+                    usageServerResult,
+                    storageDelete,
+                    updateResourceCount,
+                    usageSanityResult,
+                    unallocatedDirectAttachedPublicIp,
+                    unallocatedLocalStorage,
+                    resourceLimitExceeded,
+                    sync
+            }
+    STATUS current
+    DESCRIPTION
+        "The objects defined in this group
+         are the alerts/traps sent by Cloudstack "
+    ::= { csGroups 2 }
+
+END

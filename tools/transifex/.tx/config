@@ -1,0 +1,21 @@
+[main]
+host = https://www.transifex.com
+
+[CloudStack_UI.410_messagesjson]
+source_file = work-dir/en.json
+source_lang = en
+trans.ar = work-dir/ar.json
+trans.ca = work-dir/ca.json
+trans.de_DE = work-dir/de_DE.json
+trans.es = work-dir/es.json
+trans.fr_FR = work-dir/fr_FR.json
+trans.hu = work-dir/hu.json
+trans.it_IT = work-dir/it_IT.json
+trans.ja_JP = work-dir/ja_JP.json
+trans.ko_KR = work-dir/ko_KR.json
+trans.nb_NO = work-dir/nb_NO.json
+trans.nl_NL = work-dir/nl_NL.json
+trans.pl = work-dir/pl.json
+trans.pt_BR = work-dir/pt_BR.json
+trans.ru_RU = work-dir/ru_RU.json
+trans.zh_CN = work-dir/zh_CN.json

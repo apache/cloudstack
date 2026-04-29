@@ -1,0 +1,13 @@
+/var/log/conntrackd-stats.log {
+    maxsize 10M
+    rotate 2
+    missingok
+    compress
+    delaycompress
+
+    postrotate
+        if [ -e /var/run/conntrackd.sock ]; then
+            /usr/sbin/invoke-rc.d conntrackd restart > /dev/null
+        fi
+    endscript
+}

@@ -1,0 +1,13 @@
+/var/log/dnsmasq.log {
+    maxsize 10M
+    missingok
+    rotate 5
+    notifempty
+    compress
+    delaycompress
+    sharedscripts
+    postrotate
+        [ ! -f /var/run/dnsmasq/dnsmasq.pid ] || kill -USR2 `cat /var/run/dnsmasq/dnsmasq.pid`
+    endscript
+    create 0640 dnsmasq root
+}

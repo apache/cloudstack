@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<Configuration monitorInterval="60" packages="org.apache.cloudstack.alert.snmp,org.apache.cloudstack.syslog">
+   <Appenders>
+
+      <properties>
+        <property name="filters">net.sf.cglib.proxy</property>
+      </properties>
+
+      <!-- ================================= -->
+      <!-- Preserve messages in a local file -->
+      <!-- ================================= -->
+
+      <!-- A regular appender -->
+      <RollingFile name="FILE" append="true" fileName="@MSLOG@" filePattern="@MSLOG@.%d{yyyy-MM-dd}.gz">
+         <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
+         <Policies>
+            <TimeBasedTriggeringPolicy/>
+         </Policies>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+      </RollingFile>
+
+
+      <RollingFile name="APISERVER" append="true" fileName="@APISERVERLOG@" filePattern="@APISERVERLOG@.%d{yyyy-MM-dd}.gz">
+         <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+         <Policies>
+            <TimeBasedTriggeringPolicy/>
+         </Policies>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+      </RollingFile>
+
+      <!-- ============================== -->
+      <!-- Append warnings+ to the syslog if it is listening on UDP port -->
+      <!-- ============================== -->
+
+      <Syslog name="SYSLOG" host="localhost" facility="LOCAL6">
+         <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+      </Syslog>
+
+      <!-- ============================== -->
+      <!-- Append alerts to the syslog if it is configured -->
+      <!-- ============================== -->
+
+      <AlertSyslogAppender name="ALERTSYSLOG" syslogHosts="" facility="LOCAL6">
+         <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%d{DEFAULT} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+      </AlertSyslogAppender>
+
+      <!-- ============================== -->
+      <!-- Append messages to the console -->
+      <!-- ============================== -->
+
+      <Console name="CONSOLE" target="SYSTEM_OUT">
+         <ThresholdFilter level="OFF" onMatch="ACCEPT" onMismatch="DENY"/>
+         <PatternLayout pattern="%-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%ex{filters(${filters})}%n"/>
+      </Console>
+
+      <!-- ============================== -->
+      <!-- send alert warnings+ as the SNMP trap if it is configured! -->
+      <!-- ============================== -->
+
+      <SnmpTrapAppender name="SNMP" SnmpManagerIpAddresses="" SnmpManagerPorts="" SnmpManagerCommunities="">
+               <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+      </SnmpTrapAppender>
+   </Appenders>
+
+   <Loggers>
+
+      <Logger name="com.cloud" level="DEBUG"/>
+
+      <Logger name="org.apache.cloudstack" level="DEBUG"/>
+
+      <Logger name="com.cloud.utils.nio" level="INFO"/>
+
+      <Logger name="org.apache" level="INFO"/>
+
+      <Logger name="org.apache.cloudstack.api.command" level="DEBUG"/>
+
+      <Logger name="org" level="INFO"/>
+
+      <Logger name="org.springframework" level="WARN"/>
+
+      <Logger name="org.apache.cloudstack.spring.module.context.ResourceApplicationContext" level="WARN"/>
+
+      <Logger name="net" level="INFO"/>
+
+      <Logger name="apiserver.com.cloud"  level="DEBUG"/>
+
+      <Logger name="apiserver.com.cloud" level="DEBUG" additivity="false">
+         <AppenderRef ref="APISERVER"/>
+      </Logger>
+
+      <Logger name="com.amazonaws" level="INFO"/>
+
+      <Logger name="httpclient.wire" level="INFO"/>
+
+      <Logger name="org.apache.cloudstack.alert" additivity="false" level="WARN">
+         <AppenderRef ref="SYSLOG"/>
+         <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="FILE"/>
+         <AppenderRef ref="SNMP"/>
+         <AppenderRef ref="ALERTSYSLOG"/>
+      </Logger>
+
+      <!-- ======================= -->
+      <!-- Setup the Root category -->
+      <!-- ======================= -->
+
+      <Root level="INFO">
+         <AppenderRef ref="SYSLOG"/>
+         <AppenderRef ref="CONSOLE"/>
+         <AppenderRef ref="FILE"/>
+      </Root>
+
+   </Loggers>
+</Configuration>

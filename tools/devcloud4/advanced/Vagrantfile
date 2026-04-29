@@ -1,0 +1,115 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#  
+#    http://www.apache.org/licenses/LICENSE-2.0
+#  
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+#
+
+VAGRANTFILE_API_VERSION = '2'
+
+Vagrant.require_version '>= 1.5.0'
+
+unless Vagrant.has_plugin?('vagrant-berkshelf')
+  raise 'vagrant-berkshelf is not installed!'
+end
+
+unless Vagrant.has_plugin?('vagrant-omnibus')
+  raise 'vagrant-omnibus is not installed!'
+end
+
+xenserver_networking_script = File.join(File.dirname(__FILE__), '../common/', 'configure-network.sh')
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.define 'xenserver' do |xenserver|
+    xenserver.vm.box = 'duffy/xenserver'
+
+    # Public Network (IP address is ignored.)
+    xenserver.vm.network :private_network, :auto_config => false, :ip => '192.168.23.10'
+
+    # Guest Network (IP address is ignored.)
+    xenserver.vm.network :private_network, :auto_config => false, :ip => '192.168.24.10'
+
+    # Configure Interfaces
+
+    ## Configure Management Interface
+    xenserver.vm.provision 'shell' do |s|
+      s.path = xenserver_networking_script
+      s.args = %w(eth1 192.168.22.10 255.255.255.0 MGMT)
+    end
+
+    ## Configure Public Interface
+    xenserver.vm.provision 'shell' do |s|
+      s.path = xenserver_networking_script
+      s.args = %w(eth2 na na PUBLIC)
+    end
+
+    ## Configure Guest Interface
+    xenserver.vm.provision 'shell' do |s|
+      s.path = xenserver_networking_script
+      s.args = %w(eth3 na na GUEST)
+    end
+
+    ## Tweak kernel
+    xenserver.vm.provision "shell", inline: "sed -i -e 's/net.bridge.bridge-nf-call-iptables = 1/net.bridge.bridge-nf-call-iptables = 0/g' -e 's/net.bridge.bridge-nf-call-arptables = 1/net.bridge.bridge-nf-call-arptables = 0/g' /etc/sysctl.conf && /sbin/sysctl -p /etc/sysctl.conf"
+
+    ## Map host only networks and the adapters
+    xenserver.vm.provider 'virtualbox' do |v|
+      v.customize ['modifyvm', :id, '--nicpromisc2', 'allow-all']
+      v.customize ['modifyvm', :id, '--nicpromisc3', 'allow-all']
+      v.customize ['modifyvm', :id, '--nicpromisc4', 'allow-all']
+      v.customize ['modifyvm', :id, '--hostonlyadapter2', 'vboxnet0']
+      v.customize ['modifyvm', :id, '--hostonlyadapter3', 'vboxnet1']
+      v.customize ['modifyvm', :id, '--hostonlyadapter4', 'vboxnet2']
+      v.customize ["modifyvm", :id, '--nictype2', 'Am79C973']
+      v.customize ["modifyvm", :id, '--nictype3', 'Am79C973']
+      v.customize ["modifyvm", :id, '--nictype4', 'Am79C973']
+    end
+  end
+
+  config.vm.define 'management' do |management|
+    management.vm.box = 'bento/centos-6.7'
+
+    # Configure management interface
+    management.vm.network :private_network, :auto_config => true, :ip => '192.168.22.5'
+
+    # Configure public interface
+    management.vm.network :private_network, :auto_config => true, :ip => '192.168.23.5'
+
+    # Port forward MySQL
+    management.vm.network 'forwarded_port', guest: 3306, host: 3306
+
+    management.vm.provider 'virtualbox' do |v|
+      v.customize ['modifyvm', :id, '--memory', 512]
+      v.customize ['modifyvm', :id, '--hostonlyadapter2', 'vboxnet0']
+      v.customize ['modifyvm', :id, '--hostonlyadapter3', 'vboxnet1']
+      v.customize ["modifyvm", :id, '--nictype2', 'Am79C973']
+      v.customize ["modifyvm", :id, '--nictype3', 'Am79C973']
+    end
+
+    management.omnibus.chef_version = "11.16.4" 
+    management.berkshelf.berksfile_path = File.join(File.dirname(__FILE__), 'Berksfile')
+    management.berkshelf.enabled = true
+
+    CHEF_CONFIGURATION = JSON.parse(Pathname(__FILE__).dirname.join('chef_configuration.json').read)
+
+    management.vm.provision 'chef_solo' do |chef|
+      chef.run_list = CHEF_CONFIGURATION.delete('run_list')
+      chef.json = CHEF_CONFIGURATION
+    end
+  end
+end

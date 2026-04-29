@@ -1,0 +1,262 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+package org.apache.cloudstack.api.response;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+
+@EntityReference(value = UnmanagedInstanceTO.class)
+public class UnmanagedInstanceResponse extends BaseResponse {
+
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "The name of the Instance")
+    private String name;
+
+    @SerializedName(ApiConstants.CLUSTER_ID)
+    @Param(description = "The ID of the cluster to which Instance belongs")
+    private String clusterId;
+
+    @SerializedName(ApiConstants.CLUSTER_NAME)
+    @Param(description = "the name of the cluster to which virtual machine belongs")
+    private String clusterName;
+
+    @SerializedName(ApiConstants.HOST_ID)
+    @Param(description = "The ID of the host to which Instance belongs")
+    private String hostId;
+
+    @SerializedName(ApiConstants.HOST_NAME)
+    @Param(description = "The name of the host to which Instance belongs")
+    private String hostName;
+
+    @SerializedName(ApiConstants.HYPERVISOR)
+    @Param(description = "The hypervisor to which Instance belongs")
+    private String hypervisor;
+
+    @SerializedName(ApiConstants.HYPERVISOR_VERSION)
+    @Param(description = "The hypervisor version of the host to which Instance belongs")
+    private String hypervisorVersion;
+
+    @SerializedName(ApiConstants.POWER_STATE)
+    @Param(description = "The power state of the Instance")
+    private String  powerState;
+
+    @SerializedName(ApiConstants.CPU_NUMBER)
+    @Param(description = "The CPU cores of the Instance")
+    private Integer cpuCores;
+
+    @SerializedName(ApiConstants.CPU_CORE_PER_SOCKET)
+    @Param(description = "The CPU cores per socket for the Instance. VMware specific")
+    private Integer cpuCoresPerSocket;
+
+    @SerializedName(ApiConstants.CPU_SPEED)
+    @Param(description = "The CPU speed of the Instance")
+    private Integer cpuSpeed;
+
+    @SerializedName(ApiConstants.MEMORY)
+    @Param(description = "The memory of the Instance in MB")
+    private Integer memory;
+
+    @SerializedName(ApiConstants.OS_ID)
+    @Param(description = "The operating system ID of the Instance")
+    private String operatingSystemId;
+
+    @SerializedName(ApiConstants.OS_DISPLAY_NAME)
+    @Param(description = "The operating system of the Instance")
+    private String operatingSystem;
+
+    @SerializedName(ApiConstants.BOOT_MODE)
+    @Param(description = "indicates the boot mode")
+    private String bootMode;
+
+    @SerializedName(ApiConstants.BOOT_TYPE)
+    @Param(description = "indicates the boot type")
+    private String bootType;
+
+    @SerializedName(ApiConstants.DISK)
+    @Param(description = "The list of disks associated with the Instance", responseObject = UnmanagedInstanceDiskResponse.class)
+    private Set<UnmanagedInstanceDiskResponse> disks;
+
+    @SerializedName(ApiConstants.NIC)
+    @Param(description = "The list of NICs associated with the Instance", responseObject = NicResponse.class)
+    private Set<NicResponse> nics;
+
+    public UnmanagedInstanceResponse() {
+        disks = new LinkedHashSet<UnmanagedInstanceDiskResponse>();
+        nics = new LinkedHashSet<NicResponse>();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getClusterId() {
+        return clusterId;
+    }
+
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
+
+    public String getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
+    }
+
+    public String getHypervisorVersion() {
+        return hypervisorVersion;
+    }
+
+    public void setHypervisorVersion(String hypervisorVersion) {
+        this.hypervisorVersion = hypervisorVersion;
+    }
+
+    public String getPowerState() {
+        return powerState;
+    }
+
+    public void setPowerState(String powerState) {
+        this.powerState = powerState;
+    }
+
+    public Integer getCpuCores() {
+        return cpuCores;
+    }
+
+    public void setCpuCores(Integer cpuCores) {
+        this.cpuCores = cpuCores;
+    }
+
+    public Integer getCpuCoresPerSocket() {
+        return cpuCoresPerSocket;
+    }
+
+    public void setCpuCoresPerSocket(Integer cpuCoresPerSocket) {
+        this.cpuCoresPerSocket = cpuCoresPerSocket;
+    }
+
+    public Integer getCpuSpeed() {
+        return cpuSpeed;
+    }
+
+    public void setCpuSpeed(Integer cpuSpeed) {
+        this.cpuSpeed = cpuSpeed;
+    }
+
+    public Integer getMemory() {
+        return memory;
+    }
+
+    public void setMemory(Integer memory) {
+        this.memory = memory;
+    }
+
+    public String getOperatingSystemId() {
+        return operatingSystemId;
+    }
+
+    public void setOperatingSystemId(String operatingSystemId) {
+        this.operatingSystemId = operatingSystemId;
+    }
+
+    public String getOperatingSystem() {
+        return operatingSystem;
+    }
+
+    public void setOperatingSystem(String operatingSystem) {
+        this.operatingSystem = operatingSystem;
+    }
+
+    public Set<UnmanagedInstanceDiskResponse> getDisks() {
+        return disks;
+    }
+
+    public void setDisks(Set<UnmanagedInstanceDiskResponse> disks) {
+        this.disks = disks;
+    }
+
+    public void addDisk(UnmanagedInstanceDiskResponse disk) {
+        this.disks.add(disk);
+    }
+
+    public Set<NicResponse> getNics() {
+        return nics;
+    }
+
+    public void setNics(Set<NicResponse> nics) {
+        this.nics = nics;
+    }
+
+    public void addNic(NicResponse nic) {
+        this.nics.add(nic);
+    }
+
+    public String getBootMode() {
+        return bootMode;
+    }
+
+    public void setBootMode(String bootMode) {
+        this.bootMode = bootMode;
+    }
+
+    public String getBootType() {
+        return bootType;
+    }
+
+    public void setBootType(String bootType) {
+        this.bootType = bootType;
+    }
+}

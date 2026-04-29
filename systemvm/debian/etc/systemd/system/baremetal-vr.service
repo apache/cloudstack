@@ -1,0 +1,12 @@
+[Unit]
+Description=CloudStack Baremetal VR service
+After=network.target local-fs.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/cloud/bin
+ExecStart=/usr/bin/python3 /opt/cloud/bin/baremetal-vr.py
+Restart=on-failure

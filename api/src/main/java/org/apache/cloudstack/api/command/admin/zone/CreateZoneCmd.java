@@ -1,0 +1,195 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package org.apache.cloudstack.api.command.admin.zone;
+
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.context.CallContext;
+
+import com.cloud.dc.DataCenter;
+import com.cloud.user.Account;
+
+import java.util.List;
+
+@APICommand(name = "createZone", description = "Creates a Zone.", responseObject = ZoneResponse.class,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+public class CreateZoneCmd extends BaseCmd {
+
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, required = true, description = "The first DNS for the Zone")
+    private String dns1;
+
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "The second DNS for the Zone")
+    private String dns2;
+
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "The first DNS for IPv6 network in the Zone")
+    private String ip6Dns1;
+
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "The second DNS for IPv6 network in the Zone")
+    private String ip6Dns2;
+
+    @Parameter(name = ApiConstants.GUEST_CIDR_ADDRESS, type = CommandType.STRING, description = "The guest CIDR address for the Zone")
+    private String guestCidrAddress;
+
+    @Parameter(name = ApiConstants.INTERNAL_DNS1, type = CommandType.STRING, required = true, description = "The first internal DNS for the Zone")
+    private String internalDns1;
+
+    @Parameter(name = ApiConstants.INTERNAL_DNS2, type = CommandType.STRING, description = "The second internal DNS for the Zone")
+    private String internalDns2;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "The name of the Zone")
+    private String zoneName;
+
+    @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING, description = "Network domain name for the networks in the zone")
+    private String domain;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "The ID of the containing domain, null for public zones")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.NETWORK_TYPE, type = CommandType.STRING, required = true, description = "Network type of the zone, can be Basic or Advanced")
+    private String networkType;
+
+    @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Allocation state of this Zone for allocation of new resources")
+    private String allocationState;
+
+    @Parameter(name = ApiConstants.SECURITY_GROUP_EANBLED, type = CommandType.BOOLEAN, description = "True if network is security group enabled, false otherwise")
+    private Boolean securitygroupenabled;
+
+    @Parameter(name = ApiConstants.LOCAL_STORAGE_ENABLED, type = CommandType.BOOLEAN, description = "True if local storage offering enabled, false otherwise")
+    private Boolean localStorageEnabled;
+
+    @Parameter(name = ApiConstants.IS_EDGE, type = CommandType.BOOLEAN, description = "True if the zone is an edge zone, false otherwise", since = "4.18.0")
+    private Boolean isEdge;
+
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
+            type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "comma separated list of storage access groups for the hosts in the zone",
+            since = "4.21.0")
+    private List<String> storageAccessGroups;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getDns1() {
+        return dns1;
+    }
+
+    public String getDns2() {
+        return dns2;
+    }
+
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
+
+    public String getGuestCidrAddress() {
+        return guestCidrAddress;
+    }
+
+    public String getInternalDns1() {
+        return internalDns1;
+    }
+
+    public String getInternalDns2() {
+        return internalDns2;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getNetworkType() {
+        return networkType;
+    }
+
+    public String getAllocationState() {
+        return allocationState;
+    }
+
+    public Boolean getSecuritygroupenabled() {
+        if (securitygroupenabled == null) {
+            return false;
+        }
+        return securitygroupenabled;
+    }
+
+    public Boolean getLocalStorageEnabled() {
+        if (localStorageEnabled == null) {
+            return false;
+        }
+        return localStorageEnabled;
+    }
+
+    public boolean isEdge() {
+        if (isEdge == null) {
+            return false;
+        }
+        return isEdge;
+    }
+
+    public List<String> getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public void execute() {
+        CallContext.current().setEventDetails("Zone Name: " + getZoneName());
+        DataCenter result = _configService.createZone(this);
+        if (result != null){
+            ZoneResponse response = _responseGenerator.createZoneResponse(ResponseView.Full, result, false, false);
+            response.setResponseName(getCommandName());
+            setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a zone");
+        }
+    }
+}

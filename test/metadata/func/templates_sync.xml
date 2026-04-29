@@ -1,0 +1,1060 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<templatesync>
+
+<!-- MAKE SURE THAT THE OSTYPE OF TEMPLATES ARE CHANGED IN CASE OF USING TEMPLATE OTHER THAN THE DEFAULT CENTOS 5.3 64bit TEMPLATE -->
+<!--  Make some preparations - create a couple of private templates -->
+	<!--
+	<command>
+		<name>createVolume</name>
+		<testcase>Create a volume</testcase>
+		<parameters>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item random="true">
+				<name>name</name>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>volumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+	-->
+
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>Deploy a VM </testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>globaltemplateid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>TempSyncVM</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group1</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>select id from volumes</name>
+		<mysql>true</mysql>
+		<testcase>Getting volume id for the VM created</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>instance_id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+			    <name>id</name>
+				<param>volumeid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>stopVirtualMachine</name>
+		<testcase>Stop the Virtual Machine</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+
+<!--  Create template, delete it and restart management server -->
+	<command>
+		<name>createTemplate</name>
+		<testcase>Create template</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volumeid</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+	<command>
+		<name>listtemplate.sh</name>
+		<script>true</script>
+		<testcase>List template directory after it was created</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+			    <name>p</name>
+				<param>template_path</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>removetemplate.sh</name>
+		<script>true</script>
+		<testcase>Removing template file from secondary storage</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+			    <name>p</name>
+				<param>template_path</param>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Restarting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>restart</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Restarting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms2</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>restart</value>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 4 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>240</value>
+			</item>
+		</parameters>
+	</command>
+
+<!--  Create template, corrupt it by removing lines from templates.properties file and restart management server -->
+	<command>
+		<name>createTemplate</name>
+		<testcase>Create template</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volumeid</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>listtemplate.sh</name>
+		<script>true</script>
+		<testcase>List template directory after it was created</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+			    <name>p</name>
+				<param>template_path</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>corrupttemplate.sh</name>
+		<script>true</script>
+		<testcase>Corrupting template file on secondary storage</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+				<name>i</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item>
+				<name>a</name>
+				<value>2</value>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Restarting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>restart</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Restarting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms2</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>restart</value>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 4 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>240</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>listtemplate.sh</name>
+		<script>true</script>
+		<error>true</error>
+		<testcase>Verify that template got removed from the secondary storage by template sync</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+			    <name>p</name>
+				<param>template_path</param>
+			</item>
+		</parameters>
+	</command>
+
+
+<!--  Create a template directory on the secondary storage, reboot management server and make sure that template directory got cleanedup -->
+	<command>
+		<name>createTemplate</name>
+		<testcase>Create template</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volumeid</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>listtemplate.sh</name>
+		<script>true</script>
+		<testcase>List template directory after it was created</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+			    <name>p</name>
+				<param>template_path</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>createfaketemplate.sh</name>
+		<script>true</script>
+		<testcase>Corrupting template file on secondary storage</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+				<name>i</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item>
+				<name>a</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>dir</name>
+				<value>300556</value>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Restarting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>restart</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Restarting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms2</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>restart</value>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 4 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>240</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>listtemplate.sh</name>
+		<script>true</script>
+		<error>true</error>
+		<testcase>Verify that template got removed from the secondary storage by template sync</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item>
+			    <name>p</name>
+				<value>/template/tmpl/1/300556/template.properties</value>
+			</item>
+		</parameters>
+	</command>
+
+
+<!--  Create template, delete it and stop/start management server -->
+	<command>
+		<name>createTemplate</name>
+		<testcase>Create template</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volumeid</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>listtemplate.sh</name>
+		<script>true</script>
+		<testcase>List template directory after it was created</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+			    <name>p</name>
+				<param>template_path</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>removetemplate.sh</name>
+		<script>true</script>
+		<testcase>Removing template file from secondary storage</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+			    <name>p</name>
+				<param>template_path</param>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Stopping management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>stop</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Stopping management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms2</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>stop</value>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Starting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>start</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Starting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms2</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>start</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 4 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>240</value>
+			</item>
+		</parameters>
+	</command>
+
+<!--  Create template, don't delete it and restart management server. Make sure that the template is still available, and you can stat a vm from it -->
+	<command>
+		<name>createTemplate</name>
+		<testcase>Create template</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>volumeid</name>
+				<param>volumeid</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>privatetemplatename</param>
+			</item>
+			<item>
+				<name>displaytext</name>
+				<value>newtext</value>
+			</item>
+			<item>
+				<name>osTypeId</name>
+				<value>12</value>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>listtemplate.sh</name>
+		<script>true</script>
+		<testcase>List template directory after it was created</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+			    <name>p</name>
+				<param>template_path</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Restarting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>restart</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Restarting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms2</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>restart</value>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 4 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>240</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>deployVirtualMachine</name>
+		<testcase>Deploy vm from private template after management server was rebooted</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item getparam="true">
+			    <name>serviceofferingid</name>
+				<param>globalserviceofferingid</param>
+			</item>
+			<item getparam="true">
+			    <name>diskofferingid</name>
+				<param>globaldiskofferingid</param>
+			</item>
+			<item getparam="true">
+				<name>templateid</name>
+				<param>privatetemplateid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+			<item>
+				<name>displayname</name>
+				<value>PrivateTempSyncVM</value>
+			</item>
+			<item>
+				<name>group</name>
+				<value>group2</value>
+			</item>
+			<item getparam="true">
+				<name>networkids</name>
+				<param>globalnetworkid</param>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+
+<!--  Register template, delete it from the secondary storage and restart management server. Make sure that template download started again -->
+	<command>
+		<name>registerTemplate</name>
+		<testcase>Register template</testcase>
+		<parameters>
+			<item random="true" setparam="true">
+				<name>name</name>
+				<param>registername</param>
+			</item>
+			<item random="true" setparam="true">
+				<name>displaytext</name>
+				<param>registerdisplay</param>
+			</item>
+			<item getparam="true">
+				<name>url</name>
+				<param>globaltemplateurl</param>
+			</item>
+			<item>
+				<name>ostypeid</name>
+				<value>12</value>
+			</item>
+			<item>
+				<name>format</name>
+				<value>vhd</value>
+			</item>
+			<item getparam="true">
+				<name>zoneid</name>
+				<param>globalzoneid</param>
+			</item>
+			<item>
+				<name>account</name>
+				<value>admin</value>
+			</item>
+			<item>
+				<name>domainid</name>
+				<value>1</value>
+			</item>
+		</parameters>
+		<returnvalue>
+			<item setparam="true">
+				<name>id</name>
+				<param>privatetemplateid</param>
+			</item>
+		</returnvalue>
+	</command>
+
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 5 min</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>300</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>listtemplate.sh</name>
+		<script>true</script>
+		<testcase>List template directory after it was created</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+			    <name>p</name>
+				<param>template_path</param>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>removetemplate.sh</name>
+		<script>true</script>
+		<testcase>Removing template file from secondary storage</testcase>
+		<parameters>
+		<item getparam="true">
+			    <name>h</name>
+				<param>secondary_storage_ip</param>
+			</item>
+			<item getparam="true">
+			    <name>s</name>
+				<param>secondary_storage_dir</param>
+			</item>
+			<item getparam="true">
+			    <name>p</name>
+				<param>template_path</param>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Stopping management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>stop</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Stopping management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms2</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>stop</value>
+			</item>
+		</parameters>
+	</command>
+
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Starting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms1</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>start</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>ms.sh</name>
+		<script>true</script>
+		<testcase>Starting management server</testcase>
+		<parameters>
+			<item getparam="true">
+			    <name>h</name>
+				<param>ms2</param>
+			</item>
+			<item>
+			    <name>o</name>
+				<value>start</value>
+			</item>
+		</parameters>
+	</command>
+
+	<command>
+		<name>sleep.sh</name>
+		<script>true</script>
+		<testcase>Sleep for 15 seconds</testcase>
+		<parameters>
+			<item>
+			    <name>s</name>
+				<value>15</value>
+			</item>
+		</parameters>
+	</command>
+
+<!--  Execute a cleanup -->
+	<command>
+		<name>destroyVirtualMachine</name>
+		<testcase>Destroy virtual machine as a part of cleanup</testcase>
+		<parameters>
+			<item getparam="true">
+				<name>id</name>
+				<param>vmid</param>
+			</item>
+		</parameters>
+	</command>
+
+
+</templatesync>

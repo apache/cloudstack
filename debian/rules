@@ -1,0 +1,192 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+VERSION := $(shell grep '<version>' pom.xml | head -2 | tail -1 | cut -d'>' -f2 |cut -d'<' -f1)
+PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
+SYSCONFDIR = "/etc"
+DESTDIR = "debian/tmp"
+
+%:
+	dh $@ --with systemd
+
+override_dh_auto_configure:
+	cp packaging/debian/replace.properties replace.properties.tmp
+	echo VERSION=${VERSION} >> replace.properties.tmp
+
+override_dh_auto_build:
+	mvn clean package -Psystemvm,developer -Dsystemvm \
+	    -Dcs.replace.properties=replace.properties.tmp \
+	    -Dmaven.repo.local=$(HOME)/.m2/repository \
+	     ${ACS_BUILD_OPTS}
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -f replace.properties.tmp
+
+override_dh_auto_install:
+	# Common packages
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/default
+
+	mkdir -p $(DESTDIR)/var/cache/$(PACKAGE)
+	mkdir -p $(DESTDIR)/var/log/$(PACKAGE)
+	mkdir -p $(DESTDIR)/var/lib/$(PACKAGE)
+	mkdir -p $(DESTDIR)/usr/bin
+	mkdir -p $(DESTDIR)/usr/share
+
+	# cloudstack-agent
+	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/agent
+	mkdir $(DESTDIR)/$(SYSCONFDIR)/profile.d
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/plugins
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib
+	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	install -D plugins/storage/volume/storpool/target/cloud-plugin-storage-volume-storpool-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	install -D plugins/storage/volume/linstor/target/cloud-plugin-storage-volume-linstor-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+
+	install -d -m0755 debian/$(PACKAGE)-agent/lib/systemd/system
+	install -m0644 packaging/systemd/$(PACKAGE)-agent.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-agent.service
+	install -m0644 packaging/systemd/$(PACKAGE)-agent.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-agent
+	install -m0644 packaging/systemd/$(PACKAGE)-rolling-maintenance@.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-rolling-maintenance@.service
+
+	install -D -m0644 agent/target/transformed/cloudstack-agent.logrotate $(DESTDIR)/$(SYSCONFDIR)/logrotate.d/cloudstack-agent
+
+	install -D agent/target/transformed/cloud-setup-agent $(DESTDIR)/usr/bin/cloudstack-setup-agent
+	install -D agent/target/transformed/cloud-ssh $(DESTDIR)/usr/bin/cloudstack-ssh
+	install -D agent/target/transformed/cloudstack-agent-profile.sh $(DESTDIR)/$(SYSCONFDIR)/profile.d/cloudstack-agent-profile.sh
+	install -D agent/target/transformed/cloudstack-agent-upgrade $(DESTDIR)/usr/bin/cloudstack-agent-upgrade
+	install -D agent/target/transformed/cloud-guest-tool $(DESTDIR)/usr/bin/cloudstack-guest-tool
+	install -D agent/target/transformed/libvirtqemuhook $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	install -D agent/target/transformed/rolling-maintenance $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	install -D agent/target/transformed/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/agent
+
+	# cloudstack-management
+	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server
+	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
+	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/lib
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/setup
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf
+	mkdir $(DESTDIR)/var/log/$(PACKAGE)/management
+	mkdir $(DESTDIR)/var/cache/$(PACKAGE)/management
+	mkdir $(DESTDIR)/var/log/$(PACKAGE)/ipallocator
+	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/management
+	mkdir $(DESTDIR)/var/lib/$(PACKAGE)/mnt
+
+	cp -r client/target/utilities/scripts/db/* $(DESTDIR)/usr/share/$(PACKAGE)-management/setup/
+	cp -r client/target/classes/META-INF/webapp $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp
+	cp server/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/
+	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
+	cp -r extensions/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/extensions/
+	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/cloudstack-$(VERSION).jar
+	cp client/target/lib/*jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
+	cp -r engine/schema/dist/systemvm-templates/* $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/
+	cp -r plugins/integrations/kubernetes-service/src/main/resources/conf/* $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/
+	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/sha512sum.txt
+
+	# Bundle cmk in cloudstack-management
+	wget https://github.com/apache/cloudstack-cloudmonkey/releases/latest/download/cmk.linux.x86-64 -O $(DESTDIR)/usr/bin/cmk
+	chmod +x $(DESTDIR)/usr/bin/cmk
+
+	# nast hack for a couple of configuration files
+	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-limits.conf $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
+	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-sudoers $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
+	chmod 0440 $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
+
+	install -D client/target/utilities/bin/cloud-update-xenserver-licenses $(DESTDIR)/usr/bin/cloudstack-update-xenserver-licenses
+
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/etcd-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/etcd-node.yml
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-control-node.yml
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node-add.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-control-node-add.yml
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-node.yml
+
+	# Remove configuration in /ur/share/cloudstack-management/webapps/client/WEB-INF
+	# This should all be in /etc/cloudstack/management
+	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/conf
+	ln -s ../../..$(SYSCONFDIR)/$(PACKAGE)/extensions $(DESTDIR)/usr/share/$(PACKAGE)-management/extensions
+	ln -s ../../../var/log/$(PACKAGE)/management $(DESTDIR)/usr/share/$(PACKAGE)-management/logs
+
+	install -d -m0755 debian/$(PACKAGE)-management/lib/systemd/system
+	install -m0644 packaging/systemd/$(PACKAGE)-management.service debian/$(PACKAGE)-management/lib/systemd/system/$(PACKAGE)-management.service
+	install -m0644 packaging/systemd/$(PACKAGE)-management.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-management
+
+	install -D -m0644 server/target/conf/cloudstack-management.logrotate $(DESTDIR)/$(SYSCONFDIR)/logrotate.d/cloudstack-management
+
+	# cloudstack-ui
+	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/ui
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-ui
+	cd ui && npm install && npm run build && cd ..
+	cp -r ui/dist/config.json $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/ui/
+	cp -r ui/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-ui/
+	rm -f $(DESTDIR)/usr/share/$(PACKAGE)-ui/config.json
+	ln -s /$(SYSCONFDIR)/$(PACKAGE)/ui/config.json $(DESTDIR)/usr/share/$(PACKAGE)-ui/config.json
+	# copy ui to cloudstack-management
+	cp -r ui/dist/config.json $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
+	cp -r ui/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp/
+	rm -f $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp/config.json
+	ln -s /$(SYSCONFDIR)/$(PACKAGE)/management/config.json $(DESTDIR)/usr/share/$(PACKAGE)-management/webapp/config.json
+
+	# cloudstack-common
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-common
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/setup
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/vms
+	cp -r scripts/installer $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
+	cp -r scripts/network $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
+	cp -r scripts/storage $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
+	cp -r scripts/util $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
+	cp -r scripts/vm $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
+	cp -r systemvm/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-common/vms
+	install -D client/target/utilities/bin/cloud-migrate-databases $(DESTDIR)/usr/bin/cloudstack-migrate-databases
+	install -D client/target/utilities/bin/cloud-set-guest-password $(DESTDIR)/usr/bin/cloudstack-set-guest-password
+	install -D client/target/utilities/bin/cloud-set-guest-sshkey $(DESTDIR)/usr/bin/cloudstack-set-guest-sshkey
+	install -D client/target/utilities/bin/cloud-setup-databases $(DESTDIR)/usr/bin/cloudstack-setup-databases
+	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin/cloudstack-setup-management
+	install -D client/target/utilities/bin/cloud-setup-encryption $(DESTDIR)/usr/bin/cloudstack-setup-encryption
+	install -D client/target/utilities/bin/cloud-sysvmadm $(DESTDIR)/usr/bin/cloudstack-sysvmadm
+	install -D systemvm/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/
+	# We need jasypt for cloud-install-sys-tmplt, so this is a nasty hack to get it into the right place
+	install -D agent/target/dependencies/jasypt-1.9.3.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
+	install -D utils/target/cloud-utils-$(VERSION)-bundled.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib/$(PACKAGE)-utils.jar
+
+	# cloudstack-python
+	mkdir -p $(DESTDIR)/usr/share/pyshared
+	cp -r python/lib/cloud* $(DESTDIR)/usr/share/pyshared
+
+	# cloudstack-usage
+	mkdir $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-usage/plugins
+	install -D usage/target/cloud-usage-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/$(PACKAGE)-usage.jar
+	install -D usage/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/
+	cp client/target/lib/mysql*jar $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/
+	cp usage/target/transformed/db.properties $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/
+	cp usage/target/transformed/log4j-cloud_usage.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/log4j-cloud.xml
+
+	install -d -m0755 debian/$(PACKAGE)-usage/lib/systemd/system
+	install -m0644 packaging/systemd/$(PACKAGE)-usage.service debian/$(PACKAGE)-usage/lib/systemd/system/$(PACKAGE)-usage.service
+	install -m0644 packaging/systemd/$(PACKAGE)-usage.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-usage
+
+	install -D -m0644 usage/target/transformed/cloudstack-usage.logrotate $(DESTDIR)/$(SYSCONFDIR)/logrotate.d/cloudstack-usage
+
+	# cloudstack-marvin
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-marvin
+	cp tools/marvin/dist/Marvin-*.tar.gz $(DESTDIR)/usr/share/$(PACKAGE)-marvin/
+
+	# cloudstack-integration-tests
+	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests
+	cp -r test/integration/* $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests/
+
+override_dh_systemd_enable:
+	dh_systemd_enable -pcloudstack-management -pcloudstack-agent -pcloudstack-usage
+
+override_dh_strip_nondeterminism:
+	# Disable dh_strip_nondeterminism to speed up the build
+
+override_dh_installdocs:
+	dh_installdocs -A tools/whisker/LICENSE tools/whisker/NOTICE INSTALL.md

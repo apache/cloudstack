@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# Init file for SSH Public Keys Download Client
+#
+# chkconfig: 345 98 02
+# description: SSH Public Keys Download Client
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+
+# Modify this line to specify the user (default is root)
+user=root
+
+# Add your DHCP lease folders here
+DHCP_FOLDERS="/var/lib/dhclient/* /var/lib/dhcp3/* /var/lib/dhcp/*"
+keys_received=0
+file_count=0
+
+for DHCP_FILE in $DHCP_FOLDERS; do
+    if [ -f $DHCP_FILE ]; then
+        file_count=$((file_count+1))
+        SSHKEY_SERVER_IP=$(grep dhcp-server-identifier $DHCP_FILE | tail -1 | awk '{print $NF}' | tr -d '\;')
+
+        if [ -n "$SSHKEY_SERVER_IP" ]; then
+            logger -t "cloud" "Found ssh key server at $SSHKEY_SERVER_IP"
+            break
+        else
+            logger -t "cloud" "Could not find ssh key server IP in $DHCP_FILE"
+        fi
+    fi
+done
+
+if [ -z "$SSHKEY_SERVER_IP" ]; then
+     logger -t "cloud" "Unable to determine the password server, falling back to data-server"
+     SSHKEY_SERVER_IP=data-server
+fi
+
+logger -t "cloud" "Sending request to ssh key server at $SSHKEY_SERVER_IP"
+publickey=$(wget -q -t 3 -T 20 -O - http://$SSHKEY_SERVER_IP/latest/public-keys)
+if [ $? -eq 0 ]; then
+    logger -t "cloud" "Got response from server at $SSHKEY_SERVER_IP"
+    keys_received=1
+fi
+
+if [ "$keys_received" == "0" ]; then
+    logger -t "cloud" "Failed to get ssh keys from any server"
+    exit 1
+fi
+
+if [ -z "$publickey" ]; then
+    logger -t "cloud" "Did not receive any keys from any server"
+    exit 1
+fi
+
+homedir=$(getent passwd $user|awk -F ":" '{print $6}')
+sshdir=$homedir/.ssh
+authorized=$sshdir/authorized_keys
+
+if [ ! -e $sshdir ]; then
+    mkdir $sshdir
+    chmod 700 $sshdir
+fi
+
+if [ ! -e $authorized ]; then
+    touch $authorized
+    chmod 600 $authorized
+fi
+
+sed -i "/ cloudstack@apache.org$/d" $authorized
+echo "$publickey cloudstack@apache.org" >> $authorized
+
+which restorecon && restorecon -R -v $sshdir
+
+exit 0

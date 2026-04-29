@@ -1,0 +1,320 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package org.apache.cloudstack.api.response;
+
+import java.util.Date;
+
+import com.cloud.user.Account;
+import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+
+import com.cloud.serializer.Param;
+import com.cloud.user.User;
+
+@EntityReference(value = User.class)
+public class UserResponse extends BaseResponse implements SetResourceIconResponse {
+    @SerializedName("id")
+    @Param(description = "The user ID")
+    private String id;
+
+    @SerializedName("username")
+    @Param(description = "The user name")
+    private String username;
+
+    @SerializedName("firstname")
+    @Param(description = "The user firstname")
+    private String firstname;
+
+    @SerializedName("lastname")
+    @Param(description = "The user lastname")
+    private String lastname;
+
+    @SerializedName("email")
+    @Param(description = "The user email address")
+    private String email;
+
+    @SerializedName("created")
+    @Param(description = "The date and time the user Account was created")
+    private Date created;
+
+    @SerializedName("state")
+    @Param(description = "The user state")
+    private String state;
+
+    @SerializedName("account")
+    @Param(description = "The Account name of the user")
+    private String accountName;
+
+    @SerializedName("accounttype")
+    @Param(description = "The Account type of the user")
+    private Integer accountType;
+
+    @SerializedName(ApiConstants.USER_SOURCE)
+    @Param(description = "The source type of the user in lowercase, such as native, ldap, saml2")
+    private String userSource;
+
+    @SerializedName(ApiConstants.ROLE_ID)
+    @Param(description = "The ID of the role")
+    private String roleId;
+
+    @SerializedName(ApiConstants.ROLE_TYPE)
+    @Param(description = "The type of the role")
+    private String roleType;
+
+    @SerializedName(ApiConstants.ROLE_NAME)
+    @Param(description = "The name of the role")
+    private String roleName;
+
+    @SerializedName("domainid")
+    @Param(description = "The domain ID of the user")
+    private String domainId;
+
+    @SerializedName("domain")
+    @Param(description = "The domain name of the user")
+    private String domainName;
+
+    @SerializedName("timezone")
+    @Param(description = "The timezone user was created in")
+    private String timezone;
+
+    @SerializedName("apikey")
+    @Param(description = "The API key of the user", isSensitive = true)
+    private String apiKey;
+
+    @Deprecated
+    @SerializedName("secretkey")
+    @Param(description = "The secret key of the user", isSensitive = true)
+    private String secretKey;
+
+    @SerializedName("accountid")
+    @Param(description = "The Account ID of the user")
+    private String accountId;
+
+    @SerializedName("iscallerchilddomain")
+    @Param(description = "The boolean value representing if the updating target is in caller's child domain")
+    private boolean isCallerChildDomain;
+
+    @SerializedName(ApiConstants.IS_DEFAULT)
+    @Param(description = "True if user is default, false otherwise", since = "4.2.0")
+    private Boolean isDefault;
+
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
+
+    @SerializedName(ApiConstants.IS_2FA_ENABLED)
+    @Param(description = "True if user has two factor authentication enabled", since = "4.18.0.0")
+    private Boolean is2FAenabled;
+
+    @SerializedName(ApiConstants.IS_2FA_MANDATED)
+    @Param(description = "True if user has two factor authentication is mandated", since = "4.18.0.0")
+    private Boolean is2FAmandated;
+
+    @SerializedName(ApiConstants.API_KEY_ACCESS)
+    @Param(description = "Whether api key access is Enabled, Disabled or set to Inherit (it inherits the value from the parent)", since = "4.20.1.0")
+    ApiConstants.ApiKeyAccess apiKeyAccess;
+
+    @Override
+    public String getObjectId() {
+        return this.getId();
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public void setFirstname(String firstname) {
+        this.firstname = firstname;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public Integer getAccountType() {
+        return accountType;
+    }
+
+    public void setAccountType(Account.Type accountType) {
+        this.accountType = accountType.ordinal();
+    }
+
+    public void setRoleId(String roleId) {
+        this.roleId = roleId;
+    }
+
+    public void setRoleType(RoleType roleType) {
+        if (roleType != null) {
+            this.roleType = roleType.name();
+        }
+    }
+
+    public void setRoleName(String roleName) {
+        this.roleName = roleName;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
+    }
+
+    public boolean getIsCallerSubdomain() {
+        return this.isCallerChildDomain;
+    }
+
+    public void setIsCallerChildDomain(boolean isCallerChildDomain) {
+        this.isCallerChildDomain = isCallerChildDomain;
+    }
+
+    public void setIsDefault(Boolean isDefault) {
+        this.isDefault = isDefault;
+    }
+
+    public String getUserSource() {
+        return userSource;
+    }
+
+    public void setUserSource(User.Source userSource) {
+        this.userSource = userSource.toString().toLowerCase();
+        if (this.userSource.equals(User.Source.UNKNOWN.toString().toLowerCase())) {
+            this.userSource = User.Source.NATIVE.toString().toLowerCase();
+        }
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
+    }
+
+    public Boolean is2FAenabled() {
+        return is2FAenabled;
+    }
+
+    public void set2FAenabled(Boolean is2FAenabled) {
+        this.is2FAenabled = is2FAenabled;
+    }
+
+    public Boolean getIs2FAmandated() {
+        return is2FAmandated;
+    }
+
+    public void set2FAmandated(Boolean is2FAmandated) {
+        this.is2FAmandated = is2FAmandated;
+    }
+
+    public void setApiKeyAccess(Boolean apiKeyAccess) {
+        this.apiKeyAccess = ApiConstants.ApiKeyAccess.fromBoolean(apiKeyAccess);
+    }
+}

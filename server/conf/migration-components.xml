@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<components.xml>
+    <migration class="com.cloud.migration.Db21to22MigrationUtil">
+        <dao name="host pod dao" class="com.cloud.dc.dao.HostPodDaoImpl" />
+        <dao name="Datacenter dao" class="com.cloud.dc.dao.DataCenterDaoImpl" />
+        <dao name="Configuration dao" class="com.cloud.configuration.dao.ConfigurationDaoImpl" />
+        <dao name="Configuration group dao" class="com.cloud.configuration.dao.ConfigurationGroupDaoImpl" />
+        <dao name="Configuration subgroup dao" class="com.cloud.configuration.dao.ConfigurationSubGroupDaoImpl" />
+        <dao name="Cluster dao" class="com.cloud.dc.dao.ClusterDaoImpl" />
+        <dao name="Host dao" class="com.cloud.host.dao.HostDaoImpl" />
+        <dao name="StoragePool dao" class="com.cloud.storage.dao.StoragePoolDaoImpl" />
+        <dao name="Domain dao" class="com.cloud.domain.dao.DomainDaoImpl" />
+        <dao name="DiskOffering20 dao" class="com.cloud.migration.DiskOffering20DaoImpl" />
+        <dao name="DiskOffering21 dao" class="com.cloud.migration.DiskOffering21DaoImpl" />
+        <dao name="ServiceOffering20 dao" class="com.cloud.migration.ServiceOffering20DaoImpl" />
+        <dao name="ServiceOffering21 dao" class="com.cloud.migration.ServiceOffering21DaoImpl" />
+        <dao name="Console Proxy dao" class="com.cloud.vm.dao.ConsoleProxyDaoImpl" />
+        <dao name="Secondary Storage VM dao" class="com.cloud.vm.dao.SecondaryStorageVmDaoImpl" />
+        <dao name="VM Instance dao" class="com.cloud.vm.dao.VMInstanceDaoImpl" />
+        <dao name="Volume dao" class="com.cloud.storage.dao.VolumeDaoImpl" />
+        <dao name="User VM dao" class="com.cloud.vm.dao.UserVmDaoImpl" />
+        <dao name="User VM clone setting dao" class="com.cloud.vm.dao.UserVmCloneSettingDaoImpl" />
+        <dao name="domain router dao" class="com.cloud.vm.dao.DomainRouterDaoImpl" />
+        <dao name="Storage pool dao" class="com.cloud.storage.dao.StoragePoolDaoImpl" />
+        <dao name="Account dao" class="com.cloud.user.dao.AccountDaoImpl" />
+        <dao name="Resource count dao" class="com.cloud.configuration.dao.ResourceCountDaoImpl" />
+        <dao name="Instance group dao" class="com.cloud.vm.dao.InstanceGroupDaoImpl" />
+        <dao name="Instance group vm map dao" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl" />
+    </migration>
+</components.xml>

@@ -1,0 +1,120 @@
+{
+  "apiBase": "/client/api",
+  "servers": [
+    {
+      "name": "Local-Server",
+      "apiHost": "",
+      "apiBase": "/client/api"
+    }
+  ],
+  "docBase": "http://docs.cloudstack.apache.org/en/latest",
+  "appTitle": "CloudStack",
+  "footer": "Licensed under the <a href='http://www.apache.org/licenses/' target='_blank'>Apache License</a>, Version 2.0.",
+  "loginTitle": "CloudStack",
+  "loginFavicon": "assets/logo.svg",
+  "loginFooter": "",
+  "resetPasswordFooter": "",
+  "logo": "assets/logo.svg",
+  "minilogo": "assets/mini-logo.svg",
+  "banner": "assets/banner.svg",
+  "favicon": "cloud.ico",
+  "error": {
+    "403": "assets/403.png",
+    "404": "assets/404.png",
+    "500": "assets/500.png"
+  },
+  "theme": {
+    "@layout-mode": "light",
+    "@logo-background-color": "#ffffff",
+    "@mini-logo-background-color": "#ffffff",
+    "@navigation-background-color": "#ffffff",
+    "@project-nav-background-color": "#001529",
+    "@project-nav-text-color": "rgba(255, 255, 255, 0.65)",
+    "@navigation-text-color": "rgba(0, 0, 0, 0.65)",
+    "@primary-color": "#1890ff",
+    "@link-color": "#1890ff",
+    "@link-hover-color": "#40a9ff",
+    "@loading-color": "#1890ff",
+    "@processing-color": "#1890ff",
+    "@success-color": "#52c41a",
+    "@warning-color": "#faad14",
+    "@error-color": "#f5222d",
+    "@font-size-base": "14px",
+    "@heading-color": "rgba(0, 0, 0, 0.85)",
+    "@text-color": "rgba(0, 0, 0, 0.65)",
+    "@text-color-secondary": "rgba(0, 0, 0, 0.45)",
+    "@disabled-color": "rgba(0, 0, 0, 0.25)",
+    "@border-color-base": "#d9d9d9",
+    "@border-radius-base": "4px",
+    "@box-shadow-base": "0 2px 8px rgba(0, 0, 0, 0.15)",
+    "@logo-width": "256px",
+    "@logo-height": "64px",
+    "@mini-logo-width": "80px",
+    "@mini-logo-height": "64px",
+    "@banner-width": "700px",
+    "@banner-height": "110px",
+    "@error-width": "256px",
+    "@error-height": "256px"
+  },
+  "keyboardOptions": {
+    "us": "label.standard.us.keyboard",
+    "uk": "label.uk.keyboard",
+    "fr": "label.french.azerty.keyboard",
+    "jp": "label.japanese.keyboard",
+    "sc": "label.simplified.chinese.keyboard",
+    "es-latam": "Spanish Latin American Keyboard"
+  },
+  "userCard": {
+    "enabled": true,
+    "title": "label.help",
+    "icon": "question-circle-outlined",
+    "links": [
+      {
+        "title": "Documentation",
+        "text": "CloudStack documentation website",
+        "link": "https://docs.cloudstack.apache.org/en/latest/",
+        "icon": "read-outlined"
+      },
+      {
+        "title": "API Documentation",
+        "text": "Refer to API documentation",
+        "link": "https://cloudstack.apache.org/api.html",
+        "icon": "api-outlined"
+      },
+      {
+        "title": "Email Support",
+        "text": "Join CloudStack users mailing list to seek and provide support",
+        "link": "mailto:users-subscribe@cloudstack.apache.org",
+        "icon": "mail-outlined"
+      },
+      {
+        "title": "Report Issue",
+        "text": "Submit a bug or improvement request",
+        "link": "https://github.com/apache/cloudstack/issues/new",
+        "icon": "bug-outlined"
+      }
+    ]
+  },
+  "plugins": [],
+  "apidocs": true,
+  "basicZoneEnabled": true,
+  "multipleServer": false,
+  "allowSettingTheme": true,
+  "displayProjectFieldOnLogin": false,
+  "imageSelectionInterface": "modern",
+  "showUserCategoryForModernImageSelection": true,
+  "showAllCategoryForModernImageSelection": false,
+  "docHelpMappings": {},
+  "notifyLatestCSVersion": true,
+  "showSearchFilters": true,
+  "announcementBanner": {
+    "enabled": false,
+    "showIcon": false,
+    "closable": true,
+    "persistDismissal": true,
+    "type": "info",
+    "message": "🤔 <strong>Sample Announcement</strong>: New Feature Available: Check out our latest dashboard improvements! <a href='/features'>Learn more</a>",
+    "startDate": "2025-06-01T00:00:00Z",
+    "endDate": "2025-07-16T00:00:00Z"
+  }
+}

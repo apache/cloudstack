@@ -1,0 +1,65 @@
+#!/bin/sh
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+set -e
+
+case "$1" in
+    configure)
+        if ! getent passwd cloud >/dev/null; then
+            adduser --quiet --system --group --no-create-home --home /var/lib/cloudstack/management cloud
+        else
+            usermod -m -d /var/lib/cloudstack/management cloud || true
+        fi
+
+        # Linking usage server db.properties to management server db.properties
+        if [ -f "/etc/cloudstack/management/db.properties" ]; then
+            echo "Replacing usage server's db.properties with a link to the management server's db.properties"
+            rm -f /etc/cloudstack/usage/db.properties
+            ln -s /etc/cloudstack/management/db.properties /etc/cloudstack/usage/db.properties
+        fi
+
+        # We also retain the log4j configuration
+        if [ -f "/etc/cloud/usage/log4j-cloud.xml" ]; then
+            cp -a /etc/cloud/usage/log4j-cloud.xml /etc/cloudstack/usage/log4j-cloud.xml
+        fi
+
+        # Replacing key with management server key
+        if [ -f "/etc/cloudstack/management/key" ]; then
+            echo "Replacing usage server's key with a link to the management server's key"
+            rm -f /etc/cloudstack/usage/key
+            ln -s /etc/cloudstack/management/key /etc/cloudstack/usage/key
+        fi
+
+        # creating the last sanity checked id pointer
+        mkdir -p /usr/local/libexec
+        if [ ! -f "/usr/local/libexec/sanity-check-last-id" ]; then
+            echo 1 > /usr/local/libexec/sanity-check-last-id
+        fi
+        chown cloud:cloud /usr/local/libexec/sanity-check-last-id
+
+        # Print help message
+        if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+            acs_version=$(dpkg -l |grep cloudstack-usage |head -n1 |awk '{print $3}')
+            sed -i "s,^ACS_VERSION=.*,ACS_VERSION=$acs_version,g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+            /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text usage
+        fi
+        ;;
+esac
+
+#DEBHELPER#

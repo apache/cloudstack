@@ -1,0 +1,161 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+package org.apache.cloudstack.api.response;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+
+/**
+ * the placeholder of parameters to fill for deployment
+ */
+public class TemplateOVFPropertyResponse extends BaseResponse {
+
+    @SerializedName(ApiConstants.KEY)
+    @Param(description = "The ovf property key")
+    private String key;
+
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "The ovf property type")
+    private String type;
+
+    @SerializedName(ApiConstants.VALUE)
+    @Param(description = "The ovf property value")
+    private String value;
+
+    @SerializedName(ApiConstants.PASSWORD)
+    @Param(description = "Is the ovf property a password")
+    private Boolean password;
+
+    @SerializedName(ApiConstants.QUALIFIERS)
+    @Param(description = "The ovf property qualifiers")
+    private String qualifiers;
+
+    @SerializedName(ApiConstants.USER_CONFIGURABLE)
+    @Param(description = "Is the ovf property user configurable")
+    private Boolean userConfigurable;
+
+    @SerializedName(ApiConstants.LABEL)
+    @Param(description = "The ovf property label")
+    private String label;
+
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "The ovf property label")
+    private String description;
+
+    @SerializedName(ApiConstants.INDEX)
+    @Param(description = "The ovf property index")
+    private Integer index;
+
+    @SerializedName(ApiConstants.CATEGORY)
+    @Param(description = "The ovf property category")
+    private String category;
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof TemplateOVFPropertyResponse)) {
+            return false;
+        }
+        return key != null && key.equals(((TemplateOVFPropertyResponse)other).key);
+    }
+
+    @Override
+    public int hashCode() {
+        return key.hashCode();
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public String getQualifiers() {
+        return qualifiers;
+    }
+
+    public void setQualifiers(String qualifiers) {
+        this.qualifiers = qualifiers;
+    }
+
+    public Boolean getUserConfigurable() {
+        return userConfigurable;
+    }
+
+    public void setUserConfigurable(Boolean userConfigurable) {
+        this.userConfigurable = userConfigurable;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Boolean getPassword() {
+        return password;
+    }
+
+    public void setPassword(Boolean password) {
+        this.password = password;
+    }
+
+    public Integer getIndex() {
+        return index;
+    }
+
+    public void setIndex(Integer index) {
+        this.index = index;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+}
