@@ -304,11 +304,29 @@ public class TemplateServiceImpl implements TemplateService {
         if (copyLimit <= 0) {
             return false;
         }
-        List<TemplateDataStoreVO> existing = _vmTemplateStoreDao.listByTemplateZoneDownloadStatus(
-                template.getId(), zoneId,
-                Status.DOWNLOADED, Status.DOWNLOAD_IN_PROGRESS, Status.NOT_DOWNLOADED);
-        int currentCopies = existing == null ? 0 : existing.size();
-        return currentCopies >= copyLimit;
+        List<DataStore> stores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        if (stores == null || stores.isEmpty()) {
+            return false;
+        }
+        int count = 0;
+        for (DataStore ds : stores) {
+            List<TemplateDataStoreVO> rows = _vmTemplateStoreDao.listByTemplateStore(template.getId(), ds.getId());
+            if (rows == null) {
+                continue;
+            }
+            for (TemplateDataStoreVO row : rows) {
+                State st = row.getState();
+                Status ds_state = row.getDownloadState();
+                if (st != State.Failed && st != State.Destroyed
+                        && ds_state != Status.ABANDONED && ds_state != Status.DOWNLOAD_ERROR) {
+                    count++;
+                    break;
+                }
+            }
+        }
+        logger.debug("Template [{}] secstorage copy check in zone [{}]: count={}, limit={}",
+                template.getUniqueName(), zoneId, count, copyLimit);
+        return count >= copyLimit;
     }
 
     protected boolean shouldDownloadTemplateToStore(VMTemplateVO template, DataStore store) {
