@@ -25,12 +25,21 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import java.util.AbstractMap;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.PrimaryDataStoreImpl;
@@ -42,26 +51,35 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.ModifyTargetsAnswer;
+import com.cloud.agent.api.ModifyTargetsCommand;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ImageStore;
+import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import java.util.AbstractMap;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageSystemDataMotionStrategyTest {
@@ -80,6 +98,12 @@ public class StorageSystemDataMotionStrategyTest {
     private ImageStore destinationStore;
     @Mock
     private PrimaryDataStoreDao primaryDataStoreDao;
+    @Mock
+    private AgentManager agentManager;
+    @Mock
+    private VMTemplatePoolDao templatePoolDao;
+    @Mock
+    private VMTemplateDao vmTemplateDao;
 
     @Mock
     StoragePoolVO sourceStoragePoolVoMock, destinationStoragePoolVoMock;
@@ -186,6 +210,53 @@ public class StorageSystemDataMotionStrategyTest {
     }
 
     @Test
+    public void connectHostToVolumeSurfacesOriginalAgentErrorWhenAnswerTypeIsGeneric() {
+        Host host = mock(Host.class);
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+        Answer answer = new Answer(mock(ModifyTargetsCommand.class), false, "Can't find volume:volume-1");
+
+        Mockito.when(host.getId()).thenReturn(42L);
+        Mockito.doReturn(storagePool).when(primaryDataStoreDao).findById(0L);
+        Mockito.when(storagePool.getPoolType()).thenReturn(StoragePoolType.NetworkFilesystem);
+        Mockito.when(storagePool.getUuid()).thenReturn("pool-uuid");
+        Mockito.when(storagePool.getHostAddress()).thenReturn("10.0.0.10");
+        Mockito.when(storagePool.getPort()).thenReturn(2049);
+        Mockito.doReturn(answer).when(agentManager).easySend(Mockito.eq(42L), Mockito.any(ModifyTargetsCommand.class));
+
+        try {
+            strategy.connectHostToVolume(host, 0L, "volume-1");
+            Assert.fail("Expected CloudRuntimeException to be thrown");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Can't find volume:volume-1"));
+            Assert.assertFalse(e.getMessage().contains("ClassCastException"));
+        }
+    }
+
+    @Test
+    public void connectHostToVolumeThrowsWhenConnectedPathIsMissing() {
+        Host host = mock(Host.class);
+        StoragePoolVO storagePool = mock(StoragePoolVO.class);
+        ModifyTargetsAnswer answer = new ModifyTargetsAnswer();
+        answer.setConnectedPaths(Collections.emptyList());
+
+        Mockito.when(host.getId()).thenReturn(42L);
+        Mockito.doReturn(storagePool).when(primaryDataStoreDao).findById(0L);
+        Mockito.when(storagePool.getPoolType()).thenReturn(StoragePoolType.NetworkFilesystem);
+        Mockito.when(storagePool.getUuid()).thenReturn("pool-uuid");
+        Mockito.when(storagePool.getHostAddress()).thenReturn("10.0.0.10");
+        Mockito.when(storagePool.getPort()).thenReturn(2049);
+        Mockito.doReturn(answer).when(agentManager).easySend(Mockito.eq(42L), Mockito.any(ModifyTargetsCommand.class));
+
+        try {
+            strategy.connectHostToVolume(host, 0L, "volume-1");
+            Assert.fail("Expected CloudRuntimeException to be thrown");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("no connected path was returned"));
+            Assert.assertTrue(e.getMessage().contains("volume-1"));
+        }
+    }
+
+    @Test
     public void configureMigrateDiskInfoTest() {
         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
         Mockito.doReturn("volume path").when(srcVolumeInfo).getPath();
@@ -208,6 +279,222 @@ public class StorageSystemDataMotionStrategyTest {
         Assert.assertEquals("destPath", migrateDiskInfo.getSourceText());
         Assert.assertEquals("volume path", migrateDiskInfo.getSerialNumber());
         Assert.assertEquals("backingPath", migrateDiskInfo.getBackingStoreText());
+    }
+
+    @Test
+    public void createLinkedCloneMigrationOptionsUsesSourceBackingFileWhenDestinationReferencePathDiffers() {
+        VolumeInfo srcVolumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeInfo destVolumeInfo = Mockito.mock(VolumeInfo.class);
+        StoragePoolVO srcPool = Mockito.mock(StoragePoolVO.class);
+        DataStore srcDataStore = Mockito.mock(DataStore.class);
+        Scope scope = Mockito.mock(Scope.class);
+        VMTemplateStoragePoolVO ref = Mockito.mock(VMTemplateStoragePoolVO.class);
+
+        Mockito.when(srcPool.getUuid()).thenReturn("src-pool");
+        Mockito.when(srcPool.getPoolType()).thenReturn(StoragePoolType.NetworkFilesystem);
+        Mockito.when(srcPool.getClusterId()).thenReturn(1L);
+        Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(13L);
+        Mockito.when(srcVolumeInfo.getDataStore()).thenReturn(srcDataStore);
+        Mockito.when(srcDataStore.getScope()).thenReturn(scope);
+        Mockito.when(scope.getScopeType()).thenReturn(ScopeType.CLUSTER);
+        Mockito.when(destVolumeInfo.getPoolId()).thenReturn(4L);
+        Mockito.when(templatePoolDao.findByPoolTemplate(4L, 13L, null)).thenReturn(ref);
+        Mockito.when(ref.getInstallPath()).thenReturn("target-backing.qcow2");
+
+        MigrationOptions options = strategy.createLinkedCloneMigrationOptions(srcVolumeInfo, destVolumeInfo, "source-backing.qcow2", srcPool);
+
+        Assert.assertTrue(options.isCopySrcTemplate());
+        Assert.assertEquals("source-backing.qcow2", options.getSrcBackingFilePath());
+    }
+
+    @Test
+    public void updateCopiedTemplateReferenceUpdatesExistingDestinationReference() {
+        VolumeInfo srcVolumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeInfo destVolumeInfo = Mockito.mock(VolumeInfo.class);
+        VMTemplateStoragePoolVO srcRef = Mockito.mock(VMTemplateStoragePoolVO.class);
+        VMTemplateStoragePoolVO destRef = Mockito.mock(VMTemplateStoragePoolVO.class);
+
+        Mockito.when(srcVolumeInfo.getPoolId()).thenReturn(5L);
+        Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(13L);
+        Mockito.when(destVolumeInfo.getPoolId()).thenReturn(4L);
+        Mockito.when(srcRef.getTemplateId()).thenReturn(13L);
+        Mockito.when(srcRef.getTemplateSize()).thenReturn(1851129856L);
+        Mockito.when(srcRef.getLocalDownloadPath()).thenReturn("d06b4640-d7d3-45d7-92c1-8cd3c8eb1eb7");
+        Mockito.when(srcRef.getInstallPath()).thenReturn("d06b4640-d7d3-45d7-92c1-8cd3c8eb1eb7");
+        Mockito.when(destRef.getId()).thenReturn(19L);
+        Mockito.when(templatePoolDao.findByPoolTemplate(5L, 13L, null)).thenReturn(srcRef);
+        Mockito.when(templatePoolDao.findByPoolTemplate(4L, 13L, null)).thenReturn(destRef);
+
+        strategy.updateCopiedTemplateReference(srcVolumeInfo, destVolumeInfo);
+
+        Mockito.verify(destRef).setDownloadPercent(100);
+        Mockito.verify(destRef).setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        Mockito.verify(destRef).setState(ObjectInDataStoreStateMachine.State.Ready);
+        Mockito.verify(destRef).setTemplateSize(1851129856L);
+        Mockito.verify(destRef).setLocalDownloadPath("d06b4640-d7d3-45d7-92c1-8cd3c8eb1eb7");
+        Mockito.verify(destRef).setInstallPath("d06b4640-d7d3-45d7-92c1-8cd3c8eb1eb7");
+        Mockito.verify(templatePoolDao).update(19L, destRef);
+        Mockito.verify(templatePoolDao, Mockito.never()).persist(Mockito.any(VMTemplateStoragePoolVO.class));
+    }
+
+    @Test
+    public void updateCopiedTemplateReferencePersistsDestinationReferenceWhenMissing() {
+        VolumeInfo srcVolumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeInfo destVolumeInfo = Mockito.mock(VolumeInfo.class);
+        VMTemplateStoragePoolVO srcRef = Mockito.mock(VMTemplateStoragePoolVO.class);
+        ArgumentCaptor<VMTemplateStoragePoolVO> captor = ArgumentCaptor.forClass(VMTemplateStoragePoolVO.class);
+
+        Mockito.when(srcVolumeInfo.getPoolId()).thenReturn(5L);
+        Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(13L);
+        Mockito.when(destVolumeInfo.getPoolId()).thenReturn(4L);
+        Mockito.when(srcRef.getTemplateId()).thenReturn(13L);
+        Mockito.when(srcRef.getTemplateSize()).thenReturn(1851129856L);
+        Mockito.when(srcRef.getLocalDownloadPath()).thenReturn("d06b4640-d7d3-45d7-92c1-8cd3c8eb1eb7");
+        Mockito.when(srcRef.getInstallPath()).thenReturn("d06b4640-d7d3-45d7-92c1-8cd3c8eb1eb7");
+        Mockito.when(templatePoolDao.findByPoolTemplate(5L, 13L, null)).thenReturn(srcRef);
+        Mockito.when(templatePoolDao.findByPoolTemplate(4L, 13L, null)).thenReturn(null);
+
+        strategy.updateCopiedTemplateReference(srcVolumeInfo, destVolumeInfo);
+
+        Mockito.verify(templatePoolDao).persist(captor.capture());
+        VMTemplateStoragePoolVO persistedRef = captor.getValue();
+        Assert.assertEquals(4L, persistedRef.getPoolId());
+        Assert.assertEquals(13L, persistedRef.getTemplateId());
+        Assert.assertEquals(100, persistedRef.getDownloadPercent());
+        Assert.assertEquals(VMTemplateStorageResourceAssoc.Status.DOWNLOADED, persistedRef.getDownloadState());
+        Assert.assertEquals(ObjectInDataStoreStateMachine.State.Ready, persistedRef.getState());
+        Assert.assertEquals(1851129856L, persistedRef.getTemplateSize());
+        Assert.assertEquals("d06b4640-d7d3-45d7-92c1-8cd3c8eb1eb7", persistedRef.getLocalDownloadPath());
+        Assert.assertEquals("d06b4640-d7d3-45d7-92c1-8cd3c8eb1eb7", persistedRef.getInstallPath());
+        Mockito.verify(templatePoolDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any(VMTemplateStoragePoolVO.class));
+    }
+
+    @Test
+    public void updateCopiedTemplateReferenceThrowsWhenSourceReferenceMissing() {
+        VolumeInfo srcVolumeInfo = Mockito.mock(VolumeInfo.class);
+        VolumeInfo destVolumeInfo = Mockito.mock(VolumeInfo.class);
+
+        Mockito.when(srcVolumeInfo.getPoolId()).thenReturn(5L);
+        Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(13L);
+        Mockito.when(templatePoolDao.findByPoolTemplate(5L, 13L, null)).thenReturn(null);
+
+        try {
+            strategy.updateCopiedTemplateReference(srcVolumeInfo, destVolumeInfo);
+            Assert.fail("Expected CloudRuntimeException to be thrown");
+        } catch (CloudRuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("source template reference was not found"));
+            Assert.assertTrue(e.getMessage().contains("pool [5]"));
+            Assert.assertTrue(e.getMessage().contains("template [13]"));
+        }
+    }
+
+    @Test
+    public void shouldForceFullCloneMigrationReturnsTrueForMixedDirectDownloadVolumes() {
+        VolumeInfo directDownloadVolume = Mockito.mock(VolumeInfo.class);
+        VolumeInfo regularVolume = Mockito.mock(VolumeInfo.class);
+        DataStore destPrimary = Mockito.mock(DataStore.class);
+        DataStore otherDestPrimary = Mockito.mock(DataStore.class);
+        Host destHost = Mockito.mock(Host.class);
+        Map<VolumeInfo, DataStore> volumeMap = new LinkedHashMap<>();
+
+        configurePoolLookup(directDownloadVolume, destPrimary, 1L, 2L, StoragePoolType.NetworkFilesystem, StoragePoolType.NetworkFilesystem);
+        configurePoolLookup(regularVolume, otherDestPrimary, 3L, 4L, StoragePoolType.NetworkFilesystem, StoragePoolType.NetworkFilesystem);
+        Mockito.when(directDownloadVolume.isDirectDownload()).thenReturn(true);
+
+        volumeMap.put(regularVolume, otherDestPrimary);
+        volumeMap.put(directDownloadVolume, destPrimary);
+
+        Assert.assertTrue(strategy.shouldForceFullCloneMigration(volumeMap, destHost));
+    }
+
+    @Test
+    public void shouldForceFullCloneMigrationIgnoresSkippedDirectDownloadVolumes() {
+        VolumeInfo skippedDirectDownloadVolume = Mockito.mock(VolumeInfo.class);
+        VolumeInfo regularVolume = Mockito.mock(VolumeInfo.class);
+        DataStore samePowerFlexStore = Mockito.mock(DataStore.class);
+        DataStore destPrimary = Mockito.mock(DataStore.class);
+        Host destHost = Mockito.mock(Host.class);
+        Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
+
+        configurePoolLookup(skippedDirectDownloadVolume, samePowerFlexStore, 1L, 1L, StoragePoolType.PowerFlex, StoragePoolType.PowerFlex);
+        configurePoolLookup(regularVolume, destPrimary, 3L, 4L, StoragePoolType.NetworkFilesystem, StoragePoolType.NetworkFilesystem);
+        Mockito.when(regularVolume.isDirectDownload()).thenReturn(false);
+
+        volumeMap.put(skippedDirectDownloadVolume, samePowerFlexStore);
+        volumeMap.put(regularVolume, destPrimary);
+
+        Assert.assertFalse(strategy.shouldForceFullCloneMigration(volumeMap, destHost));
+    }
+
+    @Test
+    public void shouldForceFullCloneMigrationReturnsFalseWhenNoVolumeIsDirectDownload() {
+        VolumeInfo regularVolume = Mockito.mock(VolumeInfo.class);
+        DataStore destPrimary = Mockito.mock(DataStore.class);
+        Host destHost = Mockito.mock(Host.class);
+        Map<VolumeInfo, DataStore> volumeMap = new HashMap<>();
+
+        configurePoolLookup(regularVolume, destPrimary, 3L, 4L, StoragePoolType.NetworkFilesystem, StoragePoolType.NetworkFilesystem);
+        Mockito.when(regularVolume.isDirectDownload()).thenReturn(false);
+        volumeMap.put(regularVolume, destPrimary);
+
+        Assert.assertFalse(strategy.shouldForceFullCloneMigration(volumeMap, destHost));
+    }
+
+    private void configurePoolLookup(VolumeInfo volume, DataStore destStore, long sourcePoolId, long destPoolId, StoragePoolType sourcePoolType, StoragePoolType destPoolType) {
+        StoragePoolVO sourcePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO destPool = sourcePoolId == destPoolId ? sourcePool : Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(volume.getPoolId()).thenReturn(sourcePoolId);
+        Mockito.when(destStore.getId()).thenReturn(destPoolId);
+        Mockito.when(sourcePool.getId()).thenReturn(sourcePoolId);
+        Mockito.lenient().when(destPool.getId()).thenReturn(destPoolId);
+        Mockito.when(sourcePool.getPoolType()).thenReturn(sourcePoolType);
+        Mockito.lenient().when(destPool.getPoolType()).thenReturn(destPoolType);
+        Mockito.when(primaryDataStoreDao.findById(sourcePoolId)).thenReturn(sourcePool);
+        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+    }
+
+    @Test
+    public void decideMigrationTypeAndCopyTemplateIfNeededUsesFullCloneWhenForced() {
+        Host destHost = Mockito.mock(Host.class);
+        VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
+        VolumeInfo srcVolumeInfo = Mockito.mock(VolumeInfo.class);
+        StoragePoolVO sourceStoragePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO destStoragePool = Mockito.mock(StoragePoolVO.class);
+        DataStore destDataStore = Mockito.mock(DataStore.class);
+
+        Mockito.when(srcVolumeInfo.getId()).thenReturn(61L);
+
+        MigrationOptions.Type migrationType = strategy.decideMigrationTypeAndCopyTemplateIfNeeded(destHost, vmInstance, srcVolumeInfo, sourceStoragePool,
+                destStoragePool, destDataStore, true);
+
+        Assert.assertEquals(MigrationOptions.Type.FullClone, migrationType);
+        Mockito.verify(strategy, Mockito.never()).copyTemplateToTargetFilesystemStorageIfNeeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void decideMigrationTypeAndCopyTemplateIfNeededUsesLinkedCloneWhenForcedFlagIsFalse() {
+        Host destHost = Mockito.mock(Host.class);
+        VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
+        VolumeInfo srcVolumeInfo = Mockito.mock(VolumeInfo.class);
+        StoragePoolVO sourceStoragePool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO destStoragePool = Mockito.mock(StoragePoolVO.class);
+        DataStore destDataStore = Mockito.mock(DataStore.class);
+        VMTemplateVO vmTemplate = Mockito.mock(VMTemplateVO.class);
+
+        Mockito.when(vmInstance.getTemplateId()).thenReturn(101L);
+        Mockito.when(vmTemplateDao.findById(101L)).thenReturn(vmTemplate);
+        Mockito.when(vmTemplate.getName()).thenReturn("rocky-template");
+        Mockito.when(srcVolumeInfo.getId()).thenReturn(61L);
+        Mockito.when(srcVolumeInfo.getTemplateId()).thenReturn(13L);
+        Mockito.when(destStoragePool.getPoolType()).thenReturn(StoragePoolType.Filesystem);
+        Mockito.doReturn("source-backing.qcow2").when(strategy).getVolumeBackingFile(srcVolumeInfo);
+
+        MigrationOptions.Type migrationType = strategy.decideMigrationTypeAndCopyTemplateIfNeeded(destHost, vmInstance, srcVolumeInfo, sourceStoragePool,
+                destStoragePool, destDataStore, false);
+
+        Assert.assertEquals(MigrationOptions.Type.LinkedClone, migrationType);
+        Mockito.verify(strategy).copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
     }
 
     @Test
