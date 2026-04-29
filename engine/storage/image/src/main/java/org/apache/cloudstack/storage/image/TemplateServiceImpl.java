@@ -571,10 +571,13 @@ public class TemplateServiceImpl implements TemplateService {
                                         && tmpltStore.getState() == State.Ready
                                         && tmpltStore.getInstallPath() == null) {
                                     logger.info("Keep fake entry in template store table for migration of previous NFS to object store");
-                                } else {
+                                } else if (tmpltStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED
+                                        || tmpltStore.getState() == State.Ready) {
                                     logger.info("Removing leftover template {} entry from template store table", tmplt);
-                                    // remove those leftover entries
                                     _vmTemplateStoreDao.remove(tmpltStore.getId());
+                                } else {
+                                    logger.debug("Template {} entry on store {} is in pre-download state ({}/{}); not treating as leftover.",
+                                            tmplt, store, tmpltStore.getState(), tmpltStore.getDownloadState());
                                 }
                             }
                         }
