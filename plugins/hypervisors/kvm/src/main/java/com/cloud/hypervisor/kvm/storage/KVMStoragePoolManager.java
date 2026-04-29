@@ -527,7 +527,7 @@ public class KVMStoragePoolManager {
 
     public void createTemplateOnClvmNg(String templatePath, String templateUuid, int timeout, KVMStoragePool pool) {
         StorageAdaptor adaptor = getStorageAdaptor(pool.getType());
-        adaptor.createTemplateOnClvmNg(templatePath, templateUuid, timeout, pool);
+        adaptor.createTemplate(templatePath, templateUuid, timeout, pool);
     }
 
     public Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {

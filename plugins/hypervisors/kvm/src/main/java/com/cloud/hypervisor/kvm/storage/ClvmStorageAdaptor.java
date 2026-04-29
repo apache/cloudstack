@@ -207,7 +207,7 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
     }
 
     @Override
-    public void createTemplateOnClvmNg(String templatePath, String templateUuid, int timeout, KVMStoragePool pool) {
+    public void createTemplate(String templatePath, String templateUuid, int timeout, KVMStoragePool pool) {
         String vgName = getVgName(pool.getLocalPath());
         String lvName = "template-" + templateUuid;
         String lvPath = "/dev/" + vgName + "/" + lvName;
