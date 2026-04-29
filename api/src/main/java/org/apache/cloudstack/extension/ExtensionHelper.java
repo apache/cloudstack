@@ -43,10 +43,7 @@ public interface ExtensionHelper {
      */
     String NETWORK_SERVICE_CAPABILITIES_DETAIL_KEY = "network.service.capabilities";
 
-    Long getExtensionIdForPhysicalNetwork(long physicalNetworkId);
-    Extension getExtensionForPhysicalNetwork(long physicalNetworkId);
     String getExtensionScriptPath(Extension extension);
-    Map<String, String> getExtensionDetails(long extensionId);
 
     /**
      * Finds the extension registered with the given physical network whose name

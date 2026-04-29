@@ -119,6 +119,7 @@ import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.extension.NetworkCustomActionProvider;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -380,7 +381,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 }
             }
         }
-        return extensionHelper.getExtensionForPhysicalNetwork(physicalNetworkId);
+        return null;
     }
 
     protected boolean canHandle(Network network, Service service) {
@@ -1264,13 +1265,6 @@ public class NetworkExtensionElement extends AdapterBase implements
         }
 
         File extensionDir = new File(extensionPath);
-
-        // <extensionPath>/<extensionName>.sh  (preferred convention)
-        File namedScript = new File(extensionDir, extension.getName() + ".sh");
-        if (namedScript.exists() && namedScript.canExecute()) {
-            return namedScript;
-        }
-        // <extensionPath> itself is the script file
         if (extensionDir.isFile() && extensionDir.canExecute()) {
             return extensionDir;
         }
@@ -2256,15 +2250,12 @@ public class NetworkExtensionElement extends AdapterBase implements
         if (physNetworks == null || physNetworks.isEmpty()) {
             return null;
         }
-        for (PhysicalNetworkVO pn : physNetworks) {
-            Extension ext;
-            if (providerName != null && !providerName.isBlank()) {
-                ext = extensionHelper.getExtensionForPhysicalNetworkAndProvider(pn.getId(), providerName);
-            } else {
-                ext = extensionHelper.getExtensionForPhysicalNetwork(pn.getId());
-            }
-            if (ext != null) {
-                return new Pair<>(pn.getId(), ext);
+        if (StringUtils.isNotBlank(providerName)) {
+            for (PhysicalNetworkVO pn : physNetworks) {
+                Extension ext = extensionHelper.getExtensionForPhysicalNetworkAndProvider(pn.getId(), providerName);
+                if (ext != null) {
+                    return new Pair<>(pn.getId(), ext);
+                }
             }
         }
         return null;
@@ -2294,10 +2285,6 @@ public class NetworkExtensionElement extends AdapterBase implements
             throw new CloudRuntimeException("Could not resolve path for extension " + extension.getName());
         }
         File extensionDir = new File(extensionPath);
-        File namedScript = new File(extensionDir, extension.getName() + ".sh");
-        if (namedScript.exists() && namedScript.canExecute()) {
-            return namedScript;
-        }
         if (extensionDir.isFile() && extensionDir.canExecute()) {
             return extensionDir;
         }

@@ -431,6 +431,13 @@ export default {
         this.zoneLoading = false
       })
     },
+    isVpcCoreProvider (providerName) {
+      return ['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive'].includes(providerName)
+    },
+    isDynamicExtensionProvider (providerName) {
+      const knownProviders = ['VirtualRouter', 'VpcVirtualRouter', 'InternalLbVm', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive', 'Nsx', 'Netris']
+      return !knownProviders.includes(providerName)
+    },
     fetchSupportedServiceData () {
       var services = []
       if (this.provider === 'NSX') {
@@ -520,6 +527,7 @@ export default {
           provider: [{ name: 'VpcVirtualRouter' }]
         })
       } else {
+        this.supportedServices = []
         this.supportedServiceLoading = true
         getAPI('listSupportedNetworkServices').then(json => {
           const vpcServices = ['Dhcp', 'Dns', 'Lb', 'Gateway', 'StaticNat', 'SourceNat', 'NetworkACL', 'PortForwarding', 'UserData', 'Vpn', 'Connectivity', 'CustomAction']
@@ -532,7 +540,7 @@ export default {
                   const providerName = provider.name === 'VirtualRouter' ? 'VpcVirtualRouter' : provider.name
                   const enabled = providerName === 'InternalLbVm'
                     ? service.name === 'Lb'
-                    : !['VirtualRouter', 'Nsx', 'Netris'].includes(providerName)
+                    : this.isVpcCoreProvider(providerName) || this.isDynamicExtensionProvider(providerName)
                   return {
                     name: providerName,
                     description: providerName,
@@ -558,6 +566,9 @@ export default {
             services = services.filter(service => !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name))
           }
           this.supportedServices = services
+        }).catch(error => {
+          this.supportedServices = []
+          this.$notifyError(error)
         }).finally(() => {
           this.supportedServiceLoading = false
         })
