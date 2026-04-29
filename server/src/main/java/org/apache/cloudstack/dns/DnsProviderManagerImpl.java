@@ -57,25 +57,27 @@ import org.apache.cloudstack.api.response.DnsZoneNetworkMapResponse;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.dns.dao.NicDnsJoinDao;
 import org.apache.cloudstack.dns.dao.DnsServerDao;
+import org.apache.cloudstack.dns.dao.DnsServerDetailsDao;
 import org.apache.cloudstack.dns.dao.DnsServerJoinDao;
 import org.apache.cloudstack.dns.dao.DnsZoneDao;
 import org.apache.cloudstack.dns.dao.DnsZoneJoinDao;
 import org.apache.cloudstack.dns.dao.DnsZoneNetworkMapDao;
+import org.apache.cloudstack.dns.dao.NicDnsJoinDao;
 import org.apache.cloudstack.dns.exception.DnsConflictException;
 import org.apache.cloudstack.dns.exception.DnsNotFoundException;
 import org.apache.cloudstack.dns.exception.DnsProviderException;
 import org.apache.cloudstack.dns.exception.DnsTransportException;
-import org.apache.cloudstack.dns.vo.NicDnsJoinVO;
 import org.apache.cloudstack.dns.vo.DnsServerJoinVO;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
 import org.apache.cloudstack.dns.vo.DnsZoneJoinVO;
 import org.apache.cloudstack.dns.vo.DnsZoneNetworkMapVO;
 import org.apache.cloudstack.dns.vo.DnsZoneVO;
+import org.apache.cloudstack.dns.vo.NicDnsJoinVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.domain.Domain;
@@ -142,6 +144,8 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     VMInstanceDao vmInstanceDao;
     @Inject
     NicDnsJoinDao nicDnsJoinDao;
+    @Inject
+    DnsServerDetailsDao dnsServerDetailsDao;
 
     private static final Set<VirtualMachine.State> VM_ALLOWED_STATES = EnumSet.of(VirtualMachine.State.Running, VirtualMachine.State.Stopped);
 
@@ -180,15 +184,17 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         }
 
         DnsProviderType type = cmd.getProvider();
-        DnsServerVO server = new DnsServerVO(cmd.getName(), cmd.getUrl(), cmd.getPort(), cmd.getExternalServerId(), type,
+        DnsServerVO server = new DnsServerVO(cmd.getName(), cmd.getUrl(), cmd.getPort(), type,
                 cmd.getDnsUserName(), cmd.getDnsApiKey(), isDnsPublic, publicDomainSuffix, cmd.getNameServers(),
                 caller.getAccountId(), caller.getDomainId());
+
+        if (MapUtils.isNotEmpty(cmd.getDetails())) {
+            server.setDetails(cmd.getDetails());
+        }
+
         try {
             DnsProvider provider = getProviderByType(type);
-            String dnsServerId = provider.validateAndResolveServer(server); // returns localhost for PowerDNS
-            if (StringUtils.isNotBlank(dnsServerId)) {
-                server.setExternalServerId(dnsServerId);
-            }
+            provider.validateAndResolveServer(server);
             return dnsServerDao.persist(server);
         } catch (Exception ex) {
             logger.error("Failed to validate DNS server", ex);

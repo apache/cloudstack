@@ -132,7 +132,6 @@ CREATE TABLE IF NOT EXISTS `cloud`.`dns_server` (
     `url` varchar(1024) NOT NULL COMMENT 'dns server url',
     `dns_username` varchar(255) COMMENT 'username or email for dns server credentials',
     `dns_api_key` varchar(255) NOT NULL COMMENT 'api key or token for the dns server ',
-    `external_server_id` varchar(255) COMMENT 'dns server id e.g. localhost for powerdns',
     `port` int(11) DEFAULT NULL COMMENT 'optional dns server port',
     `name_servers` varchar(1024) DEFAULT NULL COMMENT 'Comma separated list of name servers',
     `is_public` tinyint(1) NOT NULL DEFAULT '0',
@@ -145,6 +144,17 @@ CREATE TABLE IF NOT EXISTS `cloud`.`dns_server` (
     PRIMARY KEY (`id`),
     KEY `i_dns_server__account_id` (`account_id`),
     CONSTRAINT `fk_dns_server__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- DNS Server Details Table
+CREATE TABLE IF NOT EXISTS `cloud`.`dns_server_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `dns_server_id` bigint unsigned NOT NULL COMMENT 'dns_server the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should detail be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_dns_server_details__dns_server_id` FOREIGN KEY (`dns_server_id`) REFERENCES `dns_server`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- DNS Zone Table (Stores DNS Zone Metadata)

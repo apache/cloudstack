@@ -17,7 +17,10 @@
 
 package org.apache.cloudstack.api.command.user.dns;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -30,6 +33,7 @@ import org.apache.cloudstack.api.response.DnsServerResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsServer;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -82,9 +86,9 @@ public class AddDnsServerCmd extends BaseCmd {
             description = "Comma separated list of name servers; used to create NS records for the DNS Zone (for example, ns1.example.com, ns2.example.com)")
     private List<String> nameServers;
 
-    @Parameter(name = "externalserverid", type = CommandType.STRING,
-            description = "External server id or hostname for the DNS server, e.g., 'localhost' for PowerDNS")
-    private String externalServerId;
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using " +
+            "format details[i].keyname=keyvalue. Example: details[0].pdnsServerId=localhost")
+    protected Map details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -145,11 +149,21 @@ public class AddDnsServerCmd extends BaseCmd {
         }
     }
 
-    public String getExternalServerId() {
-        return externalServerId;
-    }
-
     public String getDnsUserName() {
         return dnsUserName;
+    }
+
+    public Map<String, String> getDetails() {
+        Map<String, String> detailsMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(details)) {
+            Collection<?> props = details.values();
+            for (Object prop : props) {
+                HashMap<String, String> detail = (HashMap<String, String>) prop;
+                for (Map.Entry<String, String> entry: detail.entrySet()) {
+                    detailsMap.put(entry.getKey(),entry.getValue());
+                }
+            }
+        }
+        return detailsMap;
     }
 }

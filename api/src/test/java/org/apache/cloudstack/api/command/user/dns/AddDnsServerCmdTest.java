@@ -45,7 +45,6 @@ public class AddDnsServerCmdTest extends BaseDnsCmdTest {
         setField(cmd, "isPublic", true);
         setField(cmd, "publicDomainSuffix", "public.example.com");
         setField(cmd, "nameServers", Arrays.asList("ns1.example.com", "ns2.example.com"));
-        setField(cmd, "externalServerId", "localhost");
         setField(cmd, "dnsUserName", "admin@example.com");
         return cmd;
     }
@@ -62,7 +61,6 @@ public class AddDnsServerCmdTest extends BaseDnsCmdTest {
         assertEquals("public.example.com", cmd.getPublicDomainSuffix());
         assertEquals(Arrays.asList("ns1.example.com", "ns2.example.com"), cmd.getNameServers());
         assertEquals(DnsProviderType.PowerDNS, cmd.getProvider());
-        assertEquals("localhost", cmd.getExternalServerId());
         assertEquals("admin@example.com", cmd.getDnsUserName());
     }
 

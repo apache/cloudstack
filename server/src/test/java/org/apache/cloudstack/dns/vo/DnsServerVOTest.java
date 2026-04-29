@@ -42,14 +42,13 @@ public class DnsServerVOTest {
     @Test
     public void testParameterizedConstructor() {
         List<String> nameServers = Arrays.asList("ns1.example.com", "ns2.example.com");
-        DnsServerVO vo = new DnsServerVO("test-server", "http://pdns:8081", 8081,
-                "localhost", DnsProviderType.PowerDNS, "admin", "api-key-123",
+        DnsServerVO vo = new DnsServerVO("test-server", "http://pdns:8081", 8081, DnsProviderType.PowerDNS, "admin", "api-key-123",
                 true, "public.example.com", nameServers, 10L, 20L);
 
         assertEquals("test-server", vo.getName());
         assertEquals("http://pdns:8081", vo.getUrl());
         assertEquals(Integer.valueOf(8081), vo.getPort());
-        assertEquals("localhost", vo.getExternalServerId());
+//        assertEquals("localhost", vo.getDetail());
         assertEquals(DnsProviderType.PowerDNS, vo.getProviderType());
         assertEquals("api-key-123", vo.getDnsApiKey());
         assertTrue(vo.getPublicServer());
@@ -91,9 +90,6 @@ public class DnsServerVOTest {
         vo.setPublicDomainSuffix("new.suffix.com");
         assertEquals("new.suffix.com", vo.getPublicDomainSuffix());
 
-        vo.setExternalServerId("remote-host");
-        assertEquals("remote-host", vo.getExternalServerId());
-
         vo.setState(DnsServer.State.Disabled);
         assertEquals(DnsServer.State.Disabled, vo.getState());
 
@@ -124,8 +120,7 @@ public class DnsServerVOTest {
     @Test
     public void testToString() {
         List<String> nameServers = Collections.singletonList("ns1.example.com");
-        DnsServerVO vo = new DnsServerVO("test-server", "http://pdns:8081", 8081,
-                "localhost", DnsProviderType.PowerDNS, null, "secret-key",
+        DnsServerVO vo = new DnsServerVO("test-server", "http://pdns:8081", 8081, DnsProviderType.PowerDNS, null, "secret-key",
                 false, null, nameServers, 1L, 10L);
 
         String result = vo.toString();
@@ -139,7 +134,7 @@ public class DnsServerVOTest {
     @Test
     public void testConstructorNotPublicServer() {
         List<String> nameServers = Collections.singletonList("ns1.example.com");
-        DnsServerVO vo = new DnsServerVO("srv", "http://url", null, null,
+        DnsServerVO vo = new DnsServerVO("srv", "http://url", null,
                 DnsProviderType.PowerDNS, null, "key",
                 false, null, nameServers, 1L, 1L);
 

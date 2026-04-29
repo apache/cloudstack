@@ -19,6 +19,7 @@ package org.apache.cloudstack.dns;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
@@ -49,7 +50,13 @@ public interface DnsServer extends InternalIdentity, Identity, ControlledEntity 
 
     String getPublicDomainSuffix();
 
-    String getExternalServerId();
-
     Integer getPort();
+
+    Map<String, String> getDetails();
+
+    String getDetail(String name);
+
+    void setDetails(Map<String, String> details);
+
+    void appendDetails(String name, String value);
 }

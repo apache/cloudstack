@@ -91,15 +91,15 @@
             :placeholder="apiParams.dnsapikey?.description || 'Enter API Key'" />
         </a-form-item>
 
-        <a-form-item name="externalserverid" ref="externalserverid">
+        <a-form-item v-if="form.provider === 'PowerDNS'" name="pdnsserverid" ref="pdnsserverid">
           <template #label>
             <tooltip-label
-              :title="$t('label.dns.externalserverid')"
-              :tooltip="apiParams.externalserverid?.description" />
+              :title="$t('label.dns.pdnsserverid')"
+              :tooltip="'PowerDNS Server ID'" />
           </template>
           <a-input
-            v-model:value="form.externalserverid"
-            :placeholder="apiParams.externalserverid?.description || 'Enter Server ID of PowerDNS e.g. localhost'" />
+            v-model:value="form.pdnsserverid"
+            :placeholder="'Enter PowerDNS Server ID (optional if localhost)'" />
         </a-form-item>
 
         <a-form-item v-if="isAdminOrDomainAdmin()" name="publicdomainsuffix" ref="publicdomainsuffix">
@@ -175,7 +175,7 @@ export default {
         nameservers: [],
         ispublic: false,
         publicdomainsuffix: '',
-        externalserverid: 'localhost'
+        pdnsserverid: ''
       },
       rules: {},
       fetchingProviders: false,
@@ -196,7 +196,6 @@ export default {
       ],
       provider: [{ required: true, message: this.$t('message.error.required.input') }],
       dnsapikey: [{ required: true, message: this.$t('message.error.required.input') }],
-      externalserverid: [{ required: true, message: this.$t('message.error.required.input') }],
       nameservers: [
         { required: true, type: 'array', min: 1, message: this.$t('message.error.required.input') },
         { validator: this.validateNameservers }
@@ -226,12 +225,14 @@ export default {
           port: this.form.port,
           provider: this.form.provider,
           dnsapikey: this.form.dnsapikey?.trim(),
-          externalserverid: this.form.externalserverid?.trim(),
           nameservers: this.form.nameservers || [],
           ispublic: this.form.ispublic
         }
         if (this.form.publicdomainsuffix) {
           params.publicdomainsuffix = this.form.publicdomainsuffix?.toLowerCase().trim()
+        }
+        if (this.form.pdnsserverid) {
+          params['details[0].pdnsServerId'] = this.form.pdnsserverid?.trim()
         }
         await postAPI('addDnsServer', params)
         this.$notification.success({

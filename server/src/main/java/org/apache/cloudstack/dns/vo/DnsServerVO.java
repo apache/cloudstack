@@ -20,7 +20,9 @@ package org.apache.cloudstack.dns.vo;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -33,6 +35,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsServer;
@@ -72,9 +75,6 @@ public class DnsServerVO implements DnsServer {
     @Column(name = "dns_api_key")
     private String dnsApiKey;
 
-    @Column(name = "external_server_id")
-    private String externalServerId;
-
     @Column(name = "is_public")
     private boolean publicServer;
 
@@ -102,18 +102,20 @@ public class DnsServerVO implements DnsServer {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date removed = null;
 
+    @Transient
+    Map<String, String> details;
+
     DnsServerVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
     }
 
-    public DnsServerVO(String name, String url, Integer port, String externalServerId, DnsProviderType providerType, String dnsUserName, String dnsApiKey,
+    public DnsServerVO(String name, String url, Integer port, DnsProviderType providerType, String dnsUserName, String dnsApiKey,
                        boolean isPublic, String publicDomainSuffix, List<String> nameServers, Long accountId, Long domainId) {
         this();
         this.name = name;
         this.url = url;
         this.port = port;
-        this.externalServerId = externalServerId;
         this.providerType = providerType;
         this.dnsUserName = dnsUserName;
         this.dnsApiKey = dnsApiKey;
@@ -241,15 +243,29 @@ public class DnsServerVO implements DnsServer {
         return publicDomainSuffix;
     }
 
-    public String getExternalServerId() {
-        return externalServerId;
-    }
-
-    public void setExternalServerId(String externalServerId) {
-        this.externalServerId = externalServerId;
-    }
-
     public Integer getPort() {
         return this.port;
+    }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    @Override
+    public String getDetail(String name) {
+        return details != null ? details.get(name) : null;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
+
+    @Override
+    public void appendDetails(String name, String value) {
+        if (details == null) {
+            details = new HashMap<>();
+        }
+        details.put(name, value);
     }
 }

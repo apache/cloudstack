@@ -156,7 +156,7 @@ public class DnsProviderManagerImplTest {
         when(callerMock.getDomainId()).thenReturn(DOMAIN_ID);
 
         serverVO = Mockito.spy(
-                new DnsServerVO("test-server", "http://pdns:8081", 8081, "localhost", DnsProviderType.PowerDNS, null,
+                new DnsServerVO("test-server", "http://pdns:8081", 8081, DnsProviderType.PowerDNS, null,
                         "apikey", false, null, Collections.singletonList("ns1.example.com"), ACCOUNT_ID, DOMAIN_ID));
         Mockito.lenient().doReturn(SERVER_ID).when(serverVO).getId();
 

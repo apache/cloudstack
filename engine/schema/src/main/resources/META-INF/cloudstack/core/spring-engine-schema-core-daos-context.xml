@@ -318,5 +318,6 @@
   <bean id="dnsServerJoinDao" class="org.apache.cloudstack.dns.dao.DnsServerJoinDaoImpl" />
   <bean id="dnsZoneJoinDao" class="org.apache.cloudstack.dns.dao.DnsZoneJoinDaoImpl" />
   <bean id="dnsNicJoinDao" class="org.apache.cloudstack.dns.dao.NicDnsJoinDaoImpl" />
+  <bean id="dnsServerDetailsDao" class="org.apache.cloudstack.dns.dao.DnsServerDetailsDaoImpl" />
 
 </beans>

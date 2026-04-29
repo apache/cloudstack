@@ -17,12 +17,17 @@
 
 package org.apache.cloudstack.dns.dao;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.dns.DnsProviderType;
 import org.apache.cloudstack.dns.DnsServer;
+import org.apache.cloudstack.dns.vo.DnsServerDetailVO;
 import org.apache.cloudstack.dns.vo.DnsServerVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
@@ -33,9 +38,14 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 
 @Component
 public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implements DnsServerDao {
+    @Inject
+    DnsServerDetailsDao dnsServerDetailsDao;
+
     SearchBuilder<DnsServerVO> AllFieldsSearch;
     SearchBuilder<DnsServerVO> AccountUrlSearch;
     GenericSearchBuilder<DnsServerVO, Long> DnsServerIdsByAccountSearch;
@@ -120,5 +130,57 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
         }
         sc.setParameters(ApiConstants.STATE, DnsServer.State.Enabled);
         return searchAndCount(sc, filter);
+    }
+
+    @Override
+    public DnsServerVO persist(DnsServerVO dnsServer) {
+        return Transaction.execute((TransactionCallback<DnsServerVO>) status -> {
+            DnsServerVO dnsServerDb = super.persist(dnsServer);
+            saveDetails(dnsServer);
+            loadDetails(dnsServerDb);
+            return dnsServerDb;
+        });
+    }
+
+    @Override
+    public boolean update(Long id, DnsServerVO dnsServer) {
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            boolean result = super.update(id, dnsServer);
+            if (result) {
+                saveDetails(dnsServer);
+            }
+            return result;
+        });
+    }
+
+    @Override
+    public boolean remove(Long dnsServerId) {
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            boolean result = super.remove(dnsServerId);
+            if (result) {
+                dnsServerDetailsDao.removeDetails(dnsServerId);
+            }
+            return result;
+        });
+    }
+
+    @Override
+    public void loadDetails(DnsServer dnsServer) {
+        Map<String, String> details = dnsServerDetailsDao.listDetailsKeyPairs(dnsServer.getId());
+        dnsServer.setDetails(details);
+    }
+
+    @Override
+    public void saveDetails(DnsServer dnsServer) {
+        Map<String, String> detailsStr = dnsServer.getDetails();
+        if (detailsStr == null) {
+            return;
+        }
+        List<DnsServerDetailVO> details = new ArrayList<>();
+        for (String key : detailsStr.keySet()) {
+            DnsServerDetailVO detail = new DnsServerDetailVO(dnsServer.getId(), key, detailsStr.get(key), true);
+            details.add(detail);
+        }
+        dnsServerDetailsDao.saveDetails(details);
     }
 }

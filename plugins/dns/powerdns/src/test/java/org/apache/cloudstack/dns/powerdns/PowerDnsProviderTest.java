@@ -75,7 +75,7 @@ public class PowerDnsProviderTest {
         when(serverMock.getUrl()).thenReturn("http://pdns:8081");
         when(serverMock.getDnsApiKey()).thenReturn("secret");
         when(serverMock.getPort()).thenReturn(8081);
-        when(serverMock.getExternalServerId()).thenReturn("localhost");
+        when(serverMock.getDetail(PowerDnsProvider.PDNS_SERVER_ID)).thenReturn("localhost");
         when(serverMock.getNameServers()).thenReturn(Arrays.asList("ns1.example.com"));
 
         when(zoneMock.getName()).thenReturn("example.com");

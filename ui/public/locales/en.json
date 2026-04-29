@@ -958,7 +958,7 @@
 "label.dns.delete.server": "Delete DNS Server",
 "label.dns.delete.zone": "Delete DNS Zone",
 "label.dns.dnsapikey": "DNS API key",
-"label.dns.externalserverid": "DNS server ID",
+"label.dns.pdnsserverid": "PowerDNS server ID",
 "label.dns.name": "DNS Name",
 "label.dns.publicdomainsuffix": "Public domain suffix",
 "label.dns.records": "DNS Records",

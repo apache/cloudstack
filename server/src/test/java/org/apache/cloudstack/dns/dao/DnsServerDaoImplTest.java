@@ -50,7 +50,7 @@ public class DnsServerDaoImplTest {
     @Before
     public void setUp() {
         dao = spy(new DnsServerDaoImpl());
-        mockServer = new DnsServerVO("test-server", "http://pdns:8081", 8081, "localhost", DnsProviderType.PowerDNS, null, "apikey", false, null, Collections.singletonList("ns1.example.com"), 1L, 10L);
+        mockServer = new DnsServerVO("test-server", "http://pdns:8081", 8081, DnsProviderType.PowerDNS, null, "apikey", false, null, Collections.singletonList("ns1.example.com"), 1L, 10L);
     }
 
     @Test

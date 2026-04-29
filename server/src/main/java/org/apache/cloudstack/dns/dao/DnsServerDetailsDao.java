@@ -17,25 +17,10 @@
 
 package org.apache.cloudstack.dns.dao;
 
-import java.util.List;
-import java.util.Set;
+import org.apache.cloudstack.dns.vo.DnsServerDetailVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-import org.apache.cloudstack.dns.DnsProviderType;
-import org.apache.cloudstack.dns.DnsServer;
-import org.apache.cloudstack.dns.vo.DnsServerVO;
-
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
-public interface DnsServerDao extends GenericDao<DnsServerVO, Long> {
-    DnsServer findByUrlAndAccount(String url, long accountId);
-
-    List<Long> listDnsServerIdsByAccountId(Long accountId);
-
-    Pair<List<DnsServerVO>, Integer> searchDnsServer(Long dnsServerId, Long accountId, Set<Long> domainIds, DnsProviderType providerType, String keyword, Filter filter);
-
-    void loadDetails(DnsServer dnsServer);
-
-    void saveDetails(DnsServer dnsServer);
+public interface DnsServerDetailsDao extends GenericDao<DnsServerDetailVO, Long>, ResourceDetailsDao<DnsServerDetailVO> {
 }
