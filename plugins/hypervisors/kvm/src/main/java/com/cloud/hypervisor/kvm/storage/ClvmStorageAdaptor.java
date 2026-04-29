@@ -1070,5 +1070,3 @@ public class ClvmStorageAdaptor extends LibvirtStorageAdaptor {
         }
     }
 }
-
-
