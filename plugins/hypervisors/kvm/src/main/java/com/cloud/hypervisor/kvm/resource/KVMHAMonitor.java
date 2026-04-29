@@ -91,7 +91,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                 result = executePoolHeartBeatCommand(uuid, primaryStoragePool, result);
 
                 if (result != null && rebootHostAndAlertManagementOnHeartbeatTimeout) {
-                    logger.warn(String.format("Write heartbeat for pool [%s] failed: %s; stopping cloudstack-agent.", uuid, result));
+                    logger.warn("Write heartbeat for pool [{}] failed: {}; stopping cloudstack-agent.", uuid, result);
                     primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, null, false);;
                 }
             }
@@ -108,9 +108,9 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             result = primaryStoragePool.getPool().createHeartBeatCommand(primaryStoragePool, hostPrivateIp, true);
 
             if (result != null) {
-                logger.warn(String.format("Write heartbeat for pool [%s] failed: %s; try: %s of %s.", uuid, result, i, _heartBeatUpdateMaxTries));
+                logger.warn("Write heartbeat for pool [{}] failed: {}; try: {} of {}.", uuid, result, i, _heartBeatUpdateMaxTries);
                 try {
-                    Thread.sleep(_heartBeatUpdateRetrySleep);
+                    Thread.sleep(_heartBeatUpdateRetrySleepInMs);
                 } catch (InterruptedException e) {
                     logger.debug("[IGNORED] Interrupted between heartbeat retries.", e);
                 }
@@ -128,21 +128,21 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             StoragePool storage = conn.storagePoolLookupByUUIDString(uuid);
             if (storage == null || storage.getInfo().state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
                 if (storage == null) {
-                    logger.debug(String.format("Libvirt storage pool [%s] not found, removing from HA list.", uuid));
+                    logger.debug("Libvirt storage pool [{}] not found, removing from HA list.", uuid);
                 } else {
-                    logger.debug(String.format("Libvirt storage pool [%s] found, but not running, removing from HA list.", uuid));
+                    logger.debug("Libvirt storage pool [{}] found, but not running, removing from HA list.", uuid);
                 }
 
                 removedPools.add(uuid);
             }
 
-            logger.debug(String.format("Found NFS storage pool [%s] in libvirt, continuing.", uuid));
+            logger.debug("Found NFS storage pool [{}] in libvirt, continuing.", uuid);
 
         } catch (LibvirtException e) {
-            logger.debug(String.format("Failed to lookup libvirt storage pool [%s].", uuid), e);
+            logger.debug("Failed to lookup libvirt storage pool [{}].", uuid, e);
 
             if (e.toString().contains("pool not found")) {
-                logger.debug(String.format("Removing pool [%s] from HA monitor since it was deleted.", uuid));
+                logger.debug("Removing pool [{}] from HA monitor since it was deleted.", uuid);
                 removedPools.add(uuid);
             }
         }
@@ -155,11 +155,10 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             runHeartBeat();
 
             try {
-                Thread.sleep(_heartBeatUpdateFreq);
+                Thread.sleep(_heartBeatUpdateFreqInMs);
             } catch (InterruptedException e) {
                 logger.debug("[IGNORED] Interrupted between heartbeats.", e);
             }
         }
     }
-
 }

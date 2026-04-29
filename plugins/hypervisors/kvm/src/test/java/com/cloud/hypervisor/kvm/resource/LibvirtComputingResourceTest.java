@@ -3130,7 +3130,7 @@ public class LibvirtComputingResourceTest {
         assertNotNull(wrapper);
 
         final Answer answer = wrapper.execute(command, libvirtComputingResourceMock);
-        assertTrue(answer.getResult());
+        assertFalse(answer.getResult());
 
         verify(libvirtComputingResourceMock, times(1)).getMonitor();
     }

@@ -35,10 +35,9 @@ import com.cloud.agent.properties.AgentPropertiesFileHandler;
 public class KVMHABase {
     protected Logger logger = LogManager.getLogger(getClass());
     private long _timeout = 60000; /* 1 minutes */
-    protected long _heartBeatUpdateTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HEARTBEAT_UPDATE_TIMEOUT);
-    protected long _heartBeatUpdateFreq = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_FREQUENCY);
+    protected long _heartBeatUpdateFreqInMs = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_FREQUENCY);
     protected long _heartBeatUpdateMaxTries = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_MAX_TRIES);
-    protected long _heartBeatUpdateRetrySleep = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
+    protected long _heartBeatUpdateRetrySleepInMs = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_HEARTBEAT_UPDATE_RETRY_SLEEP);
 
     public static enum PoolType {
         PrimaryStorage, SecondaryStorage
@@ -234,7 +233,7 @@ public class KVMHABase {
         return result;
     }
 
-    public Boolean checkingHeartBeat() {
+    public Boolean hasHeartBeat() {
         // TODO Auto-generated method stub
         return null;
     }

@@ -362,7 +362,7 @@ public class HighAvailabilityManagerImplTest {
         investigators.add(investigator);
         highAvailabilityManager.setInvestigators(investigators);
         // Mock isAgentAlive to return host status as Down
-        Mockito.when(investigator.isAgentAlive(hostVO)).thenReturn(Status.Down);
+        Mockito.when(investigator.getHostAgentStatus(hostVO)).thenReturn(Status.Down);
 
         ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
         highAvailabilityManager.VmHaEnabled = haEnabled;
