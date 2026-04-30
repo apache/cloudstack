@@ -26,6 +26,8 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.projects.ProjectManager;
+import com.cloud.user.AccountService;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
@@ -51,10 +53,10 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
-import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.quota.dao.QuotaUsageJoinDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
-import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
@@ -62,7 +64,6 @@ import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
@@ -75,9 +76,11 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     @Inject
     private AccountDao _accountDao;
     @Inject
+    private AccountService accountService;
+    @Inject
     private QuotaAccountDao _quotaAcc;
     @Inject
-    private QuotaUsageDao _quotaUsageDao;
+    private QuotaUsageJoinDao quotaUsageJoinDao;
     @Inject
     private DomainDao _domainDao;
     @Inject
@@ -86,10 +89,10 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
     private QuotaResponseBuilder _respBldr;
+    @Inject
+    private ProjectManager projectMgr;
 
     private TimeZone _usageTimezone;
-
-    private boolean jsInterpretationEnabled = false;
 
     public QuotaServiceImpl() {
         super();
@@ -101,8 +104,6 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
 
         String timeZoneStr = ObjectUtils.defaultIfNull(_configDao.getValue(Config.UsageAggregationTimezone.toString()), "GMT");
         _usageTimezone = TimeZone.getTimeZone(timeZoneStr);
-
-        jsInterpretationEnabled = ManagementService.JsInterpretationEnabled.value();
 
         return true;
     }
@@ -212,27 +213,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     }
 
     @Override
-    public List<QuotaUsageVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate) {
-        // if accountId is not specified, use accountName and domainId
-        if ((accountId == null) && (accountName != null) && (domainId != null)) {
-            Account userAccount = null;
-            Account caller = CallContext.current().getCallingAccount();
-            if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-                Filter filter = new Filter(AccountVO.class, "id", Boolean.FALSE, null, null);
-                List<AccountVO> accounts = _accountDao.listAccounts(accountName, domainId, filter);
-                if (!accounts.isEmpty()) {
-                    userAccount = accounts.get(0);
-                }
-                if (userAccount != null) {
-                    accountId = userAccount.getId();
-                } else {
-                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                }
-            } else {
-                throw new PermissionDeniedException("Invalid Domain Id or Account");
-            }
-        }
-
+    public List<QuotaUsageJoinVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate) {
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
@@ -240,7 +221,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         logger.debug("Getting quota records of type [{}] for account [{}] in domain [{}], between [{}] and [{}].",
                 usageType, accountId, domainId, startDate, endDate);
 
-        return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, startDate, endDate);
+        return quotaUsageJoinDao.findQuotaUsage(accountId, domainId, usageType, null, null, null, startDate, endDate, null);
     }
 
     @Override
@@ -291,10 +272,5 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
             acc.setQuotaMinBalance(new BigDecimal(balance));
             _quotaAcc.updateQuotaAccount(accountId, acc);
         }
-    }
-
-    @Override
-    public boolean isJsInterpretationEnabled() {
-        return jsInterpretationEnabled;
     }
 }

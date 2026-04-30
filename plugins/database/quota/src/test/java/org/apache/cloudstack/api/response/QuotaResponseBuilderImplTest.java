@@ -16,13 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.function.Consumer;
 
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
@@ -43,10 +44,11 @@ import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaStatementCmd;
+import org.apache.cloudstack.api.command.QuotaSummaryCmd;
 import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.discovery.ApiDiscoveryService;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.jsinterpreter.JsInterpreterHelper;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
@@ -68,6 +70,7 @@ import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 
 import org.apache.commons.lang3.time.DateUtils;
@@ -79,7 +82,10 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -89,8 +95,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.User;
 
 import junit.framework.TestCase;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaResponseBuilderImplTest extends TestCase {
@@ -153,13 +158,16 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     Account accountMock;
 
     @Mock
-    DomainVO domainVOMock;
+    DomainVO domainVoMock;
 
     @Mock
     QuotaConfigureEmailCmd quotaConfigureEmailCmdMock;
 
     @Mock
     QuotaAccountVO quotaAccountVOMock;
+
+    @Mock
+    CallContext callContextMock;
 
     @Mock
     QuotaEmailTemplatesVO quotaEmailTemplatesVoMock;
@@ -184,17 +192,8 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         CallContext.register(callerUserMock, callerAccountMock);
     }
 
-    private void overrideDefaultQuotaEnabledConfigValue(final Object value) throws IllegalAccessException, NoSuchFieldException {
-        Field f = ConfigKey.class.getDeclaredField("_defaultValue");
-        f.setAccessible(true);
-        f.set(QuotaConfig.QuotaAccountEnabled, value);
-    }
-
-    private Calendar[] createPeriodForQuotaSummary() {
-        final Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR, 0);
-        return new Calendar[] {calendar, calendar};
-    }
+    @Mock
+    Pair<List<QuotaSummaryResponse>, Integer> quotaSummaryResponseMock1, quotaSummaryResponseMock2;
 
     @Mock
     QuotaValidateActivationRuleCmd quotaValidateActivationRuleCmdMock = Mockito.mock(QuotaValidateActivationRuleCmd.class);
@@ -467,36 +466,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     }
 
     @Test
-    public void getQuotaSummaryResponseTestAccountIsNotNullQuotaIsDisabledShouldReturnFalse() throws NoSuchFieldException, IllegalAccessException {
-        Calendar[] period = createPeriodForQuotaSummary();
-        overrideDefaultQuotaEnabledConfigValue("false");
-
-        Mockito.doReturn(period).when(quotaStatementMock).getCurrentStatementTime();
-        Mockito.doReturn(domainVOMock).when(domainDaoMock).findById(Mockito.anyLong());
-        Mockito.doReturn(BigDecimal.ZERO).when(quotaBalanceDaoMock).lastQuotaBalance(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Date.class));
-        Mockito.doReturn(BigDecimal.ZERO).when(quotaUsageDaoMock).findTotalQuotaUsage(Mockito.anyLong(), Mockito.anyLong(), Mockito.isNull(), Mockito.any(Date.class), Mockito.any(Date.class));
-
-        QuotaSummaryResponse quotaSummaryResponse = quotaResponseBuilderSpy.getQuotaSummaryResponse(accountMock);
-
-        assertFalse(quotaSummaryResponse.getQuotaEnabled());
-    }
-
-    @Test
-    public void getQuotaSummaryResponseTestAccountIsNotNullQuotaIsEnabledShouldReturnTrue() throws NoSuchFieldException, IllegalAccessException {
-        Calendar[] period = createPeriodForQuotaSummary();
-        overrideDefaultQuotaEnabledConfigValue("true");
-
-        Mockito.doReturn(period).when(quotaStatementMock).getCurrentStatementTime();
-        Mockito.doReturn(domainVOMock).when(domainDaoMock).findById(Mockito.anyLong());
-        Mockito.doReturn(BigDecimal.ZERO).when(quotaBalanceDaoMock).lastQuotaBalance(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Date.class));
-        Mockito.doReturn(BigDecimal.ZERO).when(quotaUsageDaoMock).findTotalQuotaUsage(Mockito.anyLong(), Mockito.anyLong(), Mockito.isNull(), Mockito.any(Date.class), Mockito.any(Date.class));
-
-        QuotaSummaryResponse quotaSummaryResponse = quotaResponseBuilderSpy.getQuotaSummaryResponse(accountMock);
-
-        assertTrue(quotaSummaryResponse.getQuotaEnabled());
-    }
-
-    @Test
     public void filterSupportedTypesTestReturnWhenQuotaTypeDoesNotMatch() throws NoSuchFieldException {
         List<Pair<String, String>> variables = new ArrayList<>();
         Class<?> clazz = Value.class;
@@ -574,6 +543,63 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Mockito.doReturn(QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW.toString()).when(quotaConfigureEmailCmdMock).getTemplateName();
         Mockito.doReturn(true).when(quotaConfigureEmailCmdMock).getEnable();
         quotaResponseBuilderSpy.validateQuotaConfigureEmailCmdParameters(quotaConfigureEmailCmdMock);
+    }
+
+    @Test
+    public void createQuotaSummaryResponseTestNotListAllAndAllAccountTypesReturnsSingleRecord() {
+        QuotaSummaryCmd cmd = new QuotaSummaryCmd();
+
+        try(MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
+
+            Mockito.doReturn(quotaSummaryResponseMock1).when(quotaResponseBuilderSpy).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+
+            for (Account.Type type : Account.Type.values()) {
+                Mockito.doReturn(type).when(accountMock).getType();
+
+                Pair<List<QuotaSummaryResponse>, Integer> result = quotaResponseBuilderSpy.createQuotaSummaryResponse(cmd);
+                Assert.assertEquals(quotaSummaryResponseMock1, result);
+            }
+
+            Mockito.verify(quotaResponseBuilderSpy, Mockito.times(Account.Type.values().length)).getQuotaSummaryResponse(Mockito.any(), Mockito.any(), Mockito.any(),
+                    Mockito.any());
+        };
+    }
+
+    @Test
+    public void getDomainPathByDomainIdForDomainAdminTestAccountNotDomainAdminReturnsNull() {
+        for (Account.Type type : Account.Type.values()) {
+            if (Account.Type.DOMAIN_ADMIN.equals(type)) {
+                continue;
+            }
+
+            Mockito.doReturn(type).when(accountMock).getType();
+            Assert.assertNull(quotaResponseBuilderSpy.getDomainPathByDomainIdForDomainAdmin(accountMock));
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void getDomainPathByDomainIdForDomainAdminTestDomainFromCallerIsNullThrowsInvalidParameterValueException() {
+        Mockito.doReturn(Account.Type.DOMAIN_ADMIN).when(accountMock).getType();
+        Mockito.doReturn(null).when(domainDaoMock).findById(Mockito.anyLong());
+        Mockito.lenient().doNothing().when(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
+
+        quotaResponseBuilderSpy.getDomainPathByDomainIdForDomainAdmin(accountMock);
+    }
+
+    @Test
+    public void getDomainPathByDomainIdForDomainAdminTestDomainFromCallerIsNotNullReturnsPath() {
+        String expected = "/test/";
+
+        Mockito.doReturn(Account.Type.DOMAIN_ADMIN).when(accountMock).getType();
+        Mockito.doReturn(domainVoMock).when(domainDaoMock).findById(Mockito.anyLong());
+        Mockito.doNothing().when(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
+        Mockito.doReturn(expected).when(domainVoMock).getPath();
+
+        String result = quotaResponseBuilderSpy.getDomainPathByDomainIdForDomainAdmin(accountMock);
+        Assert.assertEquals(expected, result);
     }
 
     @Test
@@ -891,5 +917,200 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
         Assert.assertTrue(formattedVariables.containsValue("accountname"));
         Assert.assertTrue(formattedVariables.containsValue("zonename"));
+    }
+
+    @Test
+    public void createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformedTestUsageTypeDifferentFromNullDoNothing() {
+        List<QuotaUsageJoinVO> listUsage = new ArrayList<>();
+
+        quotaResponseBuilderSpy.createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(listUsage, 1);
+
+        Assert.assertTrue(listUsage.isEmpty());
+    }
+
+    @Test
+    public void createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformedTestUsageTypeIsNullAddDummyForAllQuotaTypes() {
+        List<QuotaUsageJoinVO> listUsage = new ArrayList<>();
+        listUsage.add(new QuotaUsageJoinVO());
+
+        quotaResponseBuilderSpy.createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(listUsage, null);
+
+        Assert.assertEquals(QuotaTypes.listQuotaTypes().size() + 1, listUsage.size());
+
+        QuotaTypes.listQuotaTypes().entrySet().forEach(entry -> {
+            Assert.assertTrue(listUsage.stream().anyMatch(usage -> usage.getUsageType() == entry.getKey() && usage.getQuotaUsed().equals(BigDecimal.ZERO)));
+        });
+    }
+
+    private List<QuotaUsageJoinVO> getQuotaUsagesForTest() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        List<QuotaUsageJoinVO> quotaUsages = new ArrayList<>();
+
+        QuotaUsageJoinVO quotaUsage = new QuotaUsageJoinVO();
+        quotaUsage.setAccountId(1l);
+        quotaUsage.setDomainId(2l);
+        quotaUsage.setUsageType(3);
+        quotaUsage.setQuotaUsed(BigDecimal.valueOf(10));
+        try {
+            quotaUsage.setStartDate(sdf.parse("2022-01-01"));
+            quotaUsage.setEndDate(sdf.parse("2022-01-02"));
+        } catch (ParseException ignored) {
+        }
+        quotaUsages.add(quotaUsage);
+
+        quotaUsage = new QuotaUsageJoinVO();
+        quotaUsage.setAccountId(4l);
+        quotaUsage.setDomainId(5l);
+        quotaUsage.setUsageType(3);
+        quotaUsage.setQuotaUsed(null);
+        try {
+            quotaUsage.setStartDate(sdf.parse("2022-01-03"));
+            quotaUsage.setEndDate(sdf.parse("2022-01-04"));
+        } catch (ParseException ignored) {
+        }
+        quotaUsages.add(quotaUsage);
+
+        quotaUsage = new QuotaUsageJoinVO();
+        quotaUsage.setAccountId(6l);
+        quotaUsage.setDomainId(7l);
+        quotaUsage.setUsageType(3);
+        quotaUsage.setQuotaUsed(BigDecimal.valueOf(5));
+        try {
+            quotaUsage.setStartDate(sdf.parse("2022-01-05"));
+            quotaUsage.setEndDate(sdf.parse("2022-01-06"));
+        } catch (ParseException ignored) {
+        }
+        quotaUsages.add(quotaUsage);
+
+        return quotaUsages;
+    }
+
+    @Test
+    public void createStatementItemTestReturnItem() {
+        List<QuotaUsageJoinVO> quotaUsages = getQuotaUsagesForTest();
+        Mockito.doNothing().when(quotaResponseBuilderSpy).setStatementItemResources(Mockito.any(), Mockito.anyInt(), Mockito.any(), Mockito.anyBoolean());
+
+        QuotaStatementItemResponse result = quotaResponseBuilderSpy.createStatementItem(0, quotaUsages, false);
+
+        QuotaUsageJoinVO expected = quotaUsages.get(0);
+        QuotaTypes quotaTypeExpected = QuotaTypes.listQuotaTypes().get(expected.getUsageType());
+        Assert.assertEquals(BigDecimal.valueOf(15), result.getQuotaUsed());
+        Assert.assertEquals(quotaTypeExpected.getQuotaUnit(), result.getUsageUnit());
+        Assert.assertEquals(quotaTypeExpected.getQuotaName(), result.getUsageName());
+    }
+
+    @Test
+    public void setStatementItemResourcesTestDoNotShowResourcesDoNothing() {
+        QuotaStatementItemResponse item = new QuotaStatementItemResponse(1);
+
+        quotaResponseBuilderSpy.setStatementItemResources(item, 0, getQuotaUsagesForTest(), false);
+
+        Assert.assertNull(item.getResources());
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestLimitsToCallingAccountForNormalUser() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+
+        Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
+        Mockito.doReturn(Account.Type.NORMAL).when(accountMock).getType();
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
+
+            Assert.assertEquals(Long.valueOf(callerAccountMock.getAccountId()), result);
+        }
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestReturnsEntityOwnerIdWhenProvided() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+
+        Mockito.doReturn(42L).when(cmd).getEntityOwnerId();
+
+        Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
+
+        Assert.assertEquals(Long.valueOf(42L), result);
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestLimitsToCallingAccountWhenCallerIsAdminAndDomainIsNotProvided() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+
+        Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
+        Mockito.doReturn(Account.Type.ADMIN).when(accountMock).getType();
+        Mockito.doReturn(-1L).when(cmd).getEntityOwnerId();
+        Mockito.doReturn(null).when(cmd).getDomainId();
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
+
+            Assert.assertEquals(Long.valueOf(callerAccountMock.getAccountId()), result);
+        }
+    }
+
+    @Test
+    public void getAccountIdForQuotaStatementTestReturnsNullWhenCallerIsAdminAndDomainIsProvided() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+
+        Mockito.doReturn(accountMock).when(callContextMock).getCallingAccount();
+        Mockito.doReturn(Account.Type.ADMIN).when(accountMock).getType();
+        Mockito.doReturn(-1L).when(cmd).getEntityOwnerId();
+        Mockito.doReturn(10L).when(cmd).getDomainId();
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Long result = quotaResponseBuilderSpy.getAccountIdForQuotaStatement(cmd);
+
+            Assert.assertNull(result);
+        }
+    }
+
+    @Test
+    public void getDomainIdForQuotaStatementTestReturnsAccountDomainIdWhenAccountIdIsProvided() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+        AccountVO account = Mockito.mock(AccountVO.class);
+
+        Mockito.doReturn(account).when(accountDaoMock).findByIdIncludingRemoved(55L);
+        Mockito.doReturn(77L).when(account).getDomainId();
+
+        Long result = quotaResponseBuilderSpy.getDomainIdForQuotaStatement(cmd, 55L);
+
+        Assert.assertEquals(Long.valueOf(77L), result);
+    }
+
+    @Test
+    public void getDomainIdForQuotaStatementTestReturnsProvidedDomainIdWhenAccountIdIsNull() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+
+        Mockito.doReturn(99L).when(cmd).getDomainId();
+
+        Long result = quotaResponseBuilderSpy.getDomainIdForQuotaStatement(cmd, null);
+
+        Assert.assertEquals(Long.valueOf(99L), result);
+    }
+
+    @Test
+    public void getDomainIdForQuotaStatementTestFallsBackToCallingAccountDomainIdWhenNeitherAccountNorDomainIsProvided() {
+        QuotaStatementCmd cmd = Mockito.mock(QuotaStatementCmd.class);
+        Account account = Mockito.mock(Account.class);
+
+        Mockito.doReturn(null).when(cmd).getDomainId();
+        Mockito.doReturn(123L).when(account).getDomainId();
+        Mockito.doReturn(account).when(callContextMock).getCallingAccount();
+
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+
+            Long result = quotaResponseBuilderSpy.getDomainIdForQuotaStatement(cmd, null);
+
+            Assert.assertEquals(123L, result.longValue());
+        }
     }
 }
