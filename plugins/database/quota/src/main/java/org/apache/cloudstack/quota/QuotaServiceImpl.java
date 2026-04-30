@@ -26,11 +26,9 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.ProjectManager;
 import com.cloud.user.AccountService;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.db.Filter;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsCmd;
