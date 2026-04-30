@@ -46,7 +46,7 @@ public class ChangeBgpPeersForNetworkCmdTest {
     @Test
     public void testChangeBgpPeersForNetworkCmd() {
         Long networkId = 10L;
-        UUID networkUuid = UUID.randomUUID();
+        String networkUuid = UUID.randomUUID().toString();
         List<Long> bgpPeerIds = Arrays.asList(20L, 21L);
 
         ChangeBgpPeersForNetworkCmd cmd = new ChangeBgpPeersForNetworkCmd();
