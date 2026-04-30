@@ -50,17 +50,17 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ResourceState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
-import com.cloud.event.UsageEventVO;
-import com.cloud.resource.ResourceState;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -377,6 +377,7 @@ public class CapacityManagerImplTest {
         verify(capacityDao, never()).incrementUsedCapacity(anyLong(), anyLong());
         verify(capacityDao, never()).incrementUsedDecrementReservedCapacity(anyLong(), anyLong(), anyLong());
     }
+
     @Test
     public void testUpdateCapacityForHostMixedStaticAndDynamic() throws Exception {
         HostVO testHost = mock(HostVO.class);
