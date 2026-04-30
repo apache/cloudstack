@@ -99,6 +99,7 @@ import com.cloud.network.element.IpDeployingRequester;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.router.VirtualRouter;
+import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.extensions.network.NetworkExtensionElement;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -1310,34 +1311,46 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
         }
 
-        // Also include extension-backed NetworkExtension providers registered in
-        // physical_network_service_providers whose provider name matches a registered
-        // NetworkOrchestrator extension (detected via extensionHelper.isNetworkExtensionProvider).
-        //
-        // We use _pNSPDao.listBy(physNetId) to enumerate all NSP entries, then check
-        // each provider name against the extension registry.  This avoids a separate
-        // pass over all physical-network/extension combinations.
+        // Also include extension-backed NetworkExtension providers.
         // resolveProvider() creates a transient Provider (not added to the static list)
         // for extension names that are not in the built-in registry.
         try {
-            List<PhysicalNetworkVO> physNets = _physicalNetworkDao.listAll();
-            if (physNets != null) {
-                // Use a set to avoid adding the same provider name twice (multiple phys-nets)
-                Set<String> addedExtProviders = new HashSet<>();
-                for (PhysicalNetworkVO physNet : physNets) {
-                    List<PhysicalNetworkServiceProviderVO> nsps = _pNSPDao.listBy(physNet.getId());
-                    if (nsps == null) continue;
+            List<PhysicalNetworkServiceProviderVO> nsps = _pNSPDao.listAll();
+            if (CollectionUtils.isNotEmpty(nsps)) {
+                Set<String> extensionProviderNames = new HashSet<>();
+                List<Extension> extensions = extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator);
+                if (extensions != null) {
+                    for (Extension extension : extensions) {
+                        if (extension == null || StringUtils.isBlank(extension.getName())) {
+                            continue;
+                        }
+                        extensionProviderNames.add(extension.getName().toLowerCase());
+                    }
+                }
+
+                if (!extensionProviderNames.isEmpty()) {
+                    // Avoid duplicate provider names across multiple physical networks.
+                    Set<String> addedExtProviders = new HashSet<>();
                     for (PhysicalNetworkServiceProviderVO nsp : nsps) {
                         String provName = nsp.getProviderName();
-                        if (provName == null || addedExtProviders.contains(provName)) continue;
-                        if (!extensionHelper.isNetworkExtensionProvider(provName)) continue;
+                        if (StringUtils.isBlank(provName)) {
+                            continue;
+                        }
 
-                        // Filter by service if requested: check the NSP's service flags
-                        if (service != null && !isServiceProvidedByNsp(nsp, service)) continue;
+                        if (addedExtProviders.contains(provName) || !extensionProviderNames.contains(provName)) {
+                            continue;
+                        }
+
+                        // Filter by service if requested: check the NSP's service flags.
+                        if (service != null && !isServiceProvidedByNsp(nsp, service)) {
+                            continue;
+                        }
 
                         // Resolve or create a transient Provider for the extension name.
                         Provider extProvider = resolveProvider(provName);
-                        if (extProvider == null) continue;
+                        if (extProvider == null) {
+                            continue;
+                        }
                         supportedProviders.add(extProvider);
                         addedExtProviders.add(provName);
                     }
@@ -1355,7 +1368,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
      * has its service flag set for {@code service}.
      *
      * <p>This is used by {@link #listSupportedNetworkServiceProviders} to filter extension-backed
-     * providers (looked up via {@link com.cloud.network.dao.PhysicalNetworkServiceProviderDao#listBy})
+     * providers (looked up via {@link com.cloud.network.dao.PhysicalNetworkServiceProviderDao#listAll})
      * without having to query each extension's capability JSON.</p>
      */
     private boolean isServiceProvidedByNsp(

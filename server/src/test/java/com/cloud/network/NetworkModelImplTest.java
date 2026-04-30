@@ -60,7 +60,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
-import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.vpc.VpcVO;
@@ -73,6 +72,7 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.extension.ExtensionHelper;
 import org.apache.cloudstack.framework.extensions.network.NetworkExtensionElement;
 
@@ -392,13 +392,14 @@ public class NetworkModelImplTest {
 
     @Test
     public void listSupportedNetworkServiceProvidersIncludesExtensionBackedProviders() {
-        PhysicalNetworkVO physNet = mock(PhysicalNetworkVO.class);
-        when(physNet.getId()).thenReturn(1L);
-        when(physicalNetworkDao.listAll()).thenReturn(List.of(physNet));
-
         PhysicalNetworkServiceProviderVO nsp = mock(PhysicalNetworkServiceProviderVO.class);
         when(nsp.getProviderName()).thenReturn("my-ext");
-        when(physicalNetworkServiceProviderDao.listBy(1L)).thenReturn(List.of(nsp));
+        when(physicalNetworkServiceProviderDao.listAll()).thenReturn(List.of(nsp));
+
+        Extension extension = mock(Extension.class);
+        when(extension.getName()).thenReturn("my-ext");
+        when(extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator)).thenReturn(List.of(extension));
+
         when(extensionHelper.isNetworkExtensionProvider("my-ext")).thenReturn(true);
 
         // networkElements is empty so no standard providers found
@@ -409,5 +410,8 @@ public class NetworkModelImplTest {
 
         boolean found = result.stream().anyMatch(p -> "my-ext".equalsIgnoreCase(p.getName()));
         assertTrue("Extension-backed provider should be included", found);
+
+        Mockito.verify(physicalNetworkServiceProviderDao, Mockito.times(1)).listAll();
+        Mockito.verify(physicalNetworkServiceProviderDao, Mockito.never()).listBy(Mockito.anyLong());
     }
 }
