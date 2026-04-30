@@ -16,6 +16,25 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
@@ -34,23 +53,6 @@ import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KVMGuruTest {
@@ -111,8 +113,15 @@ public class KVMGuruTest {
     private static final String detail2Key = "detail2";
     private static final String detail2Value = "value2";
 
+    private ConfigKey<Integer> originalVmServiceOfferingMaxCpuCores;
+    private ConfigKey<Integer> originalVmServiceOfferingMaxRAMSize;
+
     @Before
     public void setup() throws UnsupportedEncodingException {
+        // Preserve the original value for restoration in tearDown
+        originalVmServiceOfferingMaxCpuCores = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES;
+        originalVmServiceOfferingMaxRAMSize = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE;
+
         Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
         Mockito.when(vm.getHostId()).thenReturn(hostId);
@@ -132,6 +141,13 @@ public class KVMGuruTest {
 
         Mockito.lenient().when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(
                 Arrays.asList(detail1, detail2));
+    }
+
+    @After
+    public void tearDown() {
+        // Restore the original value
+        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES = originalVmServiceOfferingMaxCpuCores;
+        ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE = originalVmServiceOfferingMaxRAMSize;
     }
 
     @Test

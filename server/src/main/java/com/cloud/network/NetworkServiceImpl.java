@@ -1162,21 +1162,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         long reservedIpAddressesAmount = ipDedicatedAccountId == null ? 1L : 0L;
         try (CheckedReservation publicIpAddressReservation = new CheckedReservation(account, Resource.ResourceType.public_ip, reservedIpAddressesAmount, reservationDao, _resourceLimitMgr)) {
-
-        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
-        ipVO.setAllocatedTime(new Date());
-        ipVO.setAllocatedToAccountId(account.getAccountId());
-        ipVO.setAllocatedInDomainId(account.getDomainId());
-        ipVO.setState(State.Reserved);
-        if (displayIp != null) {
-            ipVO.setDisplay(displayIp);
-        }
-        ipVO = _ipAddressDao.persist(ipVO);
-        if (reservedIpAddressesAmount > 0) {
-            _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
-        }
-        return ipVO;
-
+            List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
+            ipVO.setAllocatedTime(new Date());
+            ipVO.setAllocatedToAccountId(account.getAccountId());
+            ipVO.setAllocatedInDomainId(account.getDomainId());
+            ipVO.setState(State.Reserved);
+            if (displayIp != null) {
+                ipVO.setDisplay(displayIp);
+            }
+            ipVO = _ipAddressDao.persist(ipVO);
+            if (reservedIpAddressesAmount > 0) {
+                _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
+            }
+            return ipVO;
         } catch (ResourceAllocationException ex) {
             logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + account);
             throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
