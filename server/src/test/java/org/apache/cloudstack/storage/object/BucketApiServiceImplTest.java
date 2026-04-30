@@ -199,7 +199,7 @@ public class BucketApiServiceImplTest {
     }
 
     @Test
-    public void testDeleteBucket() {
+    public void testDeleteBucket() throws ResourceAllocationException {
         Long bucketId = 1L;
         Long objectStoreId = 3L;
         String bucketName = "bucket1";

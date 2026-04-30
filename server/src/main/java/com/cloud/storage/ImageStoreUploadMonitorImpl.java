@@ -361,7 +361,7 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
             boolean success = true;
             Long currentSize = answer.getVirtualSize() != 0 ? answer.getVirtualSize() : answer.getPhysicalSize();
             Long lastSize = volume.getSize() != null ? volume.getSize() : 0L;
-            if (!checkAndUpdateSecondaryStorageResourceLimit(volume.getAccountId(), volume.getSize(), currentSize)) {
+            if (!checkAndUpdateSecondaryStorageResourceLimit(volume.getAccountId(), lastSize, currentSize)) {
                 volumeDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
                 volumeDataStore.setState(State.Failed);
                 volumeDataStore.setErrorString("Storage Limit Reached");

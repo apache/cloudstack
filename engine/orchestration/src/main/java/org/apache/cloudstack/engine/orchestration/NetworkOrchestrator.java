@@ -2776,219 +2776,218 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         boolean ipv6 = false;
 
         try (CheckedReservation networkReservation = new CheckedReservation(owner, domainId, Resource.ResourceType.network, null, null, 1L, reservationDao, _resourceLimitMgr)) {
-
-        if (StringUtils.isNoneBlank(ip6Gateway, ip6Cidr)) {
-            ipv6 = true;
-        }
-        // Validate zone
-        if (zone.getNetworkType() == NetworkType.Basic) {
-            // In Basic zone the network should have aclType=Domain, domainId=1, subdomainAccess=true
-            if (aclType == null || aclType != ACLType.Domain) {
-                throw new InvalidParameterValueException("Only AclType=Domain can be specified for network creation in Basic zone");
+            if (StringUtils.isNoneBlank(ip6Gateway, ip6Cidr)) {
+                ipv6 = true;
             }
+            // Validate zone
+            if (zone.getNetworkType() == NetworkType.Basic) {
+                // In Basic zone the network should have aclType=Domain, domainId=1, subdomainAccess=true
+                if (aclType == null || aclType != ACLType.Domain) {
+                    throw new InvalidParameterValueException("Only AclType=Domain can be specified for network creation in Basic zone");
+                }
 
-            // Only one guest network is supported in Basic zone
-            final List<NetworkVO> guestNetworks = _networksDao.listByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
-            if (!guestNetworks.isEmpty()) {
-                throw new InvalidParameterValueException("Can't have more than one Guest network in zone with network type " + NetworkType.Basic);
-            }
+                // Only one guest network is supported in Basic zone
+                final List<NetworkVO> guestNetworks = _networksDao.listByZoneAndTrafficType(zone.getId(), TrafficType.Guest);
+                if (!guestNetworks.isEmpty()) {
+                    throw new InvalidParameterValueException("Can't have more than one Guest network in zone with network type " + NetworkType.Basic);
+                }
 
-            // if zone is basic, only Shared network offerings w/o source nat service are allowed
-            if (!(ntwkOff.getGuestType() == GuestType.Shared && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))) {
-                throw new InvalidParameterValueException("For zone of type " + NetworkType.Basic + " only offerings of " + "guestType " + GuestType.Shared + " with disabled "
-                        + Service.SourceNat.getName() + " service are allowed");
-            }
+                // if zone is basic, only Shared network offerings w/o source nat service are allowed
+                if (!(ntwkOff.getGuestType() == GuestType.Shared && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))) {
+                    throw new InvalidParameterValueException("For zone of type " + NetworkType.Basic + " only offerings of " + "guestType " + GuestType.Shared + " with disabled "
+                            + Service.SourceNat.getName() + " service are allowed");
+                }
 
-            if (domainId == null || domainId != Domain.ROOT_DOMAIN) {
-                throw new InvalidParameterValueException("Guest network in Basic zone should be dedicated to ROOT domain");
-            }
+                if (domainId == null || domainId != Domain.ROOT_DOMAIN) {
+                    throw new InvalidParameterValueException("Guest network in Basic zone should be dedicated to ROOT domain");
+                }
 
-            if (subdomainAccess == null) {
-                subdomainAccess = true;
-            } else if (!subdomainAccess) {
-                throw new InvalidParameterValueException("Subdomain access should be set to true for the" + " guest network in the Basic zone");
-            }
+                if (subdomainAccess == null) {
+                    subdomainAccess = true;
+                } else if (!subdomainAccess) {
+                    throw new InvalidParameterValueException("Subdomain access should be set to true for the" + " guest network in the Basic zone");
+                }
 
-            if (vlanId == null) {
-                vlanId = Vlan.UNTAGGED;
-            } else {
-                if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
-                    throw new InvalidParameterValueException("Only vlan " + Vlan.UNTAGGED + " can be created in " + "the zone of type " + NetworkType.Basic);
+                if (vlanId == null) {
+                    vlanId = Vlan.UNTAGGED;
+                } else {
+                    if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
+                        throw new InvalidParameterValueException("Only vlan " + Vlan.UNTAGGED + " can be created in " + "the zone of type " + NetworkType.Basic);
+                    }
+                }
+
+            } else if (zone.getNetworkType() == NetworkType.Advanced) {
+                if (zone.isSecurityGroupEnabled()) {
+                    if (isolatedPvlan != null) {
+                        throw new InvalidParameterValueException("Isolated Private VLAN is not supported with security group!");
+                    }
+                    // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
+                    // enabled zone
+                    if ((ntwkOff.getGuestType() != GuestType.Shared) && (ntwkOff.getGuestType() != GuestType.L2)) {
+                        throw new InvalidParameterValueException("Only shared or L2 guest network can be created in security group enabled zone");
+                    }
+                    if (_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
+                        throw new InvalidParameterValueException("Service SourceNat is not allowed in security group enabled zone");
+                    }
+                }
+
+                //don't allow eip/elb networks in Advance zone
+                if (ntwkOff.isElasticIp() || ntwkOff.isElasticLb()) {
+                    throw new InvalidParameterValueException("Elastic IP and Elastic LB services are supported in zone of type " + NetworkType.Basic);
                 }
             }
 
-        } else if (zone.getNetworkType() == NetworkType.Advanced) {
-            if (zone.isSecurityGroupEnabled()) {
-                if (isolatedPvlan != null) {
-                    throw new InvalidParameterValueException("Isolated Private VLAN is not supported with security group!");
-                }
-                // Only Account specific Isolated network with sourceNat service disabled are allowed in security group
-                // enabled zone
-                if ((ntwkOff.getGuestType() != GuestType.Shared) && (ntwkOff.getGuestType() != GuestType.L2)) {
-                    throw new InvalidParameterValueException("Only shared or L2 guest network can be created in security group enabled zone");
-                }
-                if (_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
-                    throw new InvalidParameterValueException("Service SourceNat is not allowed in security group enabled zone");
+            if (ipv6 && !GuestType.Shared.equals(ntwkOff.getGuestType())) {
+                _networkModel.checkIp6CidrSizeEqualTo64(ip6Cidr);
+            }
+
+            //TODO(VXLAN): Support VNI specified
+            // VlanId can be specified only when network offering supports it
+            final boolean vlanSpecified = vlanId != null;
+            if (vlanSpecified != ntwkOff.isSpecifyVlan()) {
+                if (vlanSpecified) {
+                    if (!isSharedNetworkWithoutSpecifyVlan(ntwkOff) && !isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
+                        throw new InvalidParameterValueException("Can't specify vlan; corresponding offering says specifyVlan=false");
+                    }
+                } else {
+                    throw new InvalidParameterValueException("Vlan has to be specified; corresponding offering says specifyVlan=true");
                 }
             }
 
-            //don't allow eip/elb networks in Advance zone
-            if (ntwkOff.isElasticIp() || ntwkOff.isElasticLb()) {
-                throw new InvalidParameterValueException("Elastic IP and Elastic LB services are supported in zone of type " + NetworkType.Basic);
-            }
-        }
-
-        if (ipv6 && !GuestType.Shared.equals(ntwkOff.getGuestType())) {
-            _networkModel.checkIp6CidrSizeEqualTo64(ip6Cidr);
-        }
-
-        //TODO(VXLAN): Support VNI specified
-        // VlanId can be specified only when network offering supports it
-        final boolean vlanSpecified = vlanId != null;
-        if (vlanSpecified != ntwkOff.isSpecifyVlan()) {
             if (vlanSpecified) {
-                if (!isSharedNetworkWithoutSpecifyVlan(ntwkOff) && !isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
-                    throw new InvalidParameterValueException("Can't specify vlan; corresponding offering says specifyVlan=false");
+                URI uri = encodeVlanIdIntoBroadcastUri(vlanId, pNtwk);
+                // Aux: generate secondary URI for secondary VLAN ID (if provided) for performing checks
+                URI secondaryUri = StringUtils.isNotBlank(isolatedPvlan) ? BroadcastDomainType.fromString(isolatedPvlan) : null;
+                if (isSharedNetworkWithoutSpecifyVlan(ntwkOff) || isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
+                    bypassVlanOverlapCheck = true;
                 }
-            } else {
-                throw new InvalidParameterValueException("Vlan has to be specified; corresponding offering says specifyVlan=true");
-            }
-        }
-
-        if (vlanSpecified) {
-            URI uri = encodeVlanIdIntoBroadcastUri(vlanId, pNtwk);
-            // Aux: generate secondary URI for secondary VLAN ID (if provided) for performing checks
-            URI secondaryUri = StringUtils.isNotBlank(isolatedPvlan) ? BroadcastDomainType.fromString(isolatedPvlan) : null;
-            if (isSharedNetworkWithoutSpecifyVlan(ntwkOff) || isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
-                bypassVlanOverlapCheck = true;
-            }
-            //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
-            if (!(bypassVlanOverlapCheck && (ntwkOff.getGuestType() == GuestType.Shared || isPrivateNetwork))
-                    && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
-                throw new InvalidParameterValueException("The VLAN tag to use for new guest network, " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
-                        + zone.getName());
-            }
-            if (secondaryUri != null && !(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.Shared) &&
-                    _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(secondaryUri)).size() > 0) {
-                throw new InvalidParameterValueException(String.format(
-                        "The VLAN tag for isolated PVLAN %s is already being used for dynamic vlan allocation for the guest network in zone %s",
-                        isolatedPvlan, zone));
-            }
-            if (!UuidUtils.isUuid(vlanId)) {
-                // For Isolated and L2 networks, don't allow to create network with vlan that already exists in the zone
-                if (!hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff, isPrivateNetwork)) {
-                    if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
-                        throw new InvalidParameterValueException(String.format(
-                                "Network with vlan %s already exists or overlaps with other network vlans in zone %s",
-                                vlanId, zone));
-                    } else if (secondaryUri != null && _networksDao.listByZoneAndUriAndGuestType(zoneId, secondaryUri.toString(), null).size() > 0) {
-                        throw new InvalidParameterValueException(String.format(
-                                "Network with vlan %s already exists or overlaps with other network vlans in zone %s",
-                                isolatedPvlan, zone));
-                    } else {
-                        final List<DataCenterVnetVO> dcVnets = _datacenterVnetDao.findVnet(zoneId, BroadcastDomainType.getValue(uri));
-                        //for the network that is created as part of private gateway,
-                        //the vnet is not coming from the data center vnet table, so the list can be empty
-                        if (!dcVnets.isEmpty()) {
-                            final DataCenterVnetVO dcVnet = dcVnets.get(0);
-                            // Fail network creation if specified vlan is dedicated to a different account
-                            if (dcVnet.getAccountGuestVlanMapId() != null) {
-                                final Long accountGuestVlanMapId = dcVnet.getAccountGuestVlanMapId();
-                                final AccountGuestVlanMapVO map = _accountGuestVlanMapDao.findById(accountGuestVlanMapId);
-                                if (map.getAccountId() != owner.getAccountId()) {
-                                    throw new InvalidParameterValueException("Vlan " + vlanId + " is dedicated to a different account");
-                                }
-                                // Fail network creation if owner has a dedicated range of vlans but the specified vlan belongs to the system pool
-                            } else {
-                                final List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(owner.getAccountId());
-                                if (maps != null && !maps.isEmpty()) {
-                                    final int vnetsAllocatedToAccount = _datacenterVnetDao.countVnetsAllocatedToAccount(zoneId, owner.getAccountId());
-                                    final int vnetsDedicatedToAccount = _datacenterVnetDao.countVnetsDedicatedToAccount(zoneId, owner.getAccountId());
-                                    if (vnetsAllocatedToAccount < vnetsDedicatedToAccount) {
-                                        throw new InvalidParameterValueException("Specified vlan " + vlanId + " doesn't belong" + " to the vlan range dedicated to the owner "
-                                                + owner.getAccountName());
+                //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
+                if (!(bypassVlanOverlapCheck && (ntwkOff.getGuestType() == GuestType.Shared || isPrivateNetwork))
+                        && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
+                    throw new InvalidParameterValueException("The VLAN tag to use for new guest network, " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
+                            + zone.getName());
+                }
+                if (secondaryUri != null && !(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.Shared) &&
+                        _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(secondaryUri)).size() > 0) {
+                    throw new InvalidParameterValueException(String.format(
+                            "The VLAN tag for isolated PVLAN %s is already being used for dynamic vlan allocation for the guest network in zone %s",
+                            isolatedPvlan, zone));
+                }
+                if (!UuidUtils.isUuid(vlanId)) {
+                    // For Isolated and L2 networks, don't allow to create network with vlan that already exists in the zone
+                    if (!hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff, isPrivateNetwork)) {
+                        if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
+                            throw new InvalidParameterValueException(String.format(
+                                    "Network with vlan %s already exists or overlaps with other network vlans in zone %s",
+                                    vlanId, zone));
+                        } else if (secondaryUri != null && _networksDao.listByZoneAndUriAndGuestType(zoneId, secondaryUri.toString(), null).size() > 0) {
+                            throw new InvalidParameterValueException(String.format(
+                                    "Network with vlan %s already exists or overlaps with other network vlans in zone %s",
+                                    isolatedPvlan, zone));
+                        } else {
+                            final List<DataCenterVnetVO> dcVnets = _datacenterVnetDao.findVnet(zoneId, BroadcastDomainType.getValue(uri));
+                            //for the network that is created as part of private gateway,
+                            //the vnet is not coming from the data center vnet table, so the list can be empty
+                            if (!dcVnets.isEmpty()) {
+                                final DataCenterVnetVO dcVnet = dcVnets.get(0);
+                                // Fail network creation if specified vlan is dedicated to a different account
+                                if (dcVnet.getAccountGuestVlanMapId() != null) {
+                                    final Long accountGuestVlanMapId = dcVnet.getAccountGuestVlanMapId();
+                                    final AccountGuestVlanMapVO map = _accountGuestVlanMapDao.findById(accountGuestVlanMapId);
+                                    if (map.getAccountId() != owner.getAccountId()) {
+                                        throw new InvalidParameterValueException("Vlan " + vlanId + " is dedicated to a different account");
+                                    }
+                                    // Fail network creation if owner has a dedicated range of vlans but the specified vlan belongs to the system pool
+                                } else {
+                                    final List<AccountGuestVlanMapVO> maps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByAccount(owner.getAccountId());
+                                    if (maps != null && !maps.isEmpty()) {
+                                        final int vnetsAllocatedToAccount = _datacenterVnetDao.countVnetsAllocatedToAccount(zoneId, owner.getAccountId());
+                                        final int vnetsDedicatedToAccount = _datacenterVnetDao.countVnetsDedicatedToAccount(zoneId, owner.getAccountId());
+                                        if (vnetsAllocatedToAccount < vnetsDedicatedToAccount) {
+                                            throw new InvalidParameterValueException("Specified vlan " + vlanId + " doesn't belong" + " to the vlan range dedicated to the owner "
+                                                    + owner.getAccountName());
+                                        }
                                     }
                                 }
                             }
                         }
+                    } else {
+                        // don't allow to creating shared network with given Vlan ID, if there already exists a isolated network or
+                        // shared network with same Vlan ID in the zone
+                        if (!bypassVlanOverlapCheck && _networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), GuestType.Isolated).size() > 0) {
+                            throw new InvalidParameterValueException(String.format(
+                                    "There is an existing isolated/shared network that overlaps with vlan id:%s in zone %s", vlanId, zone));
+                        }
                     }
-                } else {
-                    // don't allow to creating shared network with given Vlan ID, if there already exists a isolated network or
-                    // shared network with same Vlan ID in the zone
-                    if (!bypassVlanOverlapCheck && _networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), GuestType.Isolated).size() > 0) {
+                }
+
+            }
+
+            // If networkDomain is not specified, take it from the global configuration
+            if (_networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
+                final Map<Network.Capability, String> dnsCapabilities = _networkModel.getNetworkOfferingServiceCapabilities(_entityMgr.findById(NetworkOffering.class, networkOfferingId),
+                        Service.Dns);
+                final String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
+                if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
+                    if (networkDomain != null) {
+                        // TBD: NetworkOfferingId and zoneId. Send uuids instead.
                         throw new InvalidParameterValueException(String.format(
-                                "There is an existing isolated/shared network that overlaps with vlan id:%s in zone %s", vlanId, zone));
+                                "Domain name change is not supported by network offering id=%d in zone %s",
+                                networkOfferingId, zone));
                     }
-                }
-            }
-
-        }
-
-        // If networkDomain is not specified, take it from the global configuration
-        if (_networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
-            final Map<Network.Capability, String> dnsCapabilities = _networkModel.getNetworkOfferingServiceCapabilities(_entityMgr.findById(NetworkOffering.class, networkOfferingId),
-                    Service.Dns);
-            final String isUpdateDnsSupported = dnsCapabilities.get(Capability.AllowDnsSuffixModification);
-            if (isUpdateDnsSupported == null || !Boolean.valueOf(isUpdateDnsSupported)) {
-                if (networkDomain != null) {
-                    // TBD: NetworkOfferingId and zoneId. Send uuids instead.
-                    throw new InvalidParameterValueException(String.format(
-                            "Domain name change is not supported by network offering id=%d in zone %s",
-                            networkOfferingId, zone));
-                }
-            } else {
-                if (networkDomain == null) {
-                    // 1) Get networkDomain from the corresponding account/domain/zone
-                    if (aclType == ACLType.Domain) {
-                        networkDomain = _networkModel.getDomainNetworkDomain(domainId, zoneId);
-                    } else if (aclType == ACLType.Account) {
-                        networkDomain = _networkModel.getAccountNetworkDomain(owner.getId(), zoneId);
-                    }
-
-                    // 2) If null, generate networkDomain using domain suffix from the global config variables
-                    if (networkDomain == null) {
-                        networkDomain = "cs" + Long.toHexString(owner.getId()) + GuestDomainSuffix.valueIn(zoneId);
-                    }
-
                 } else {
-                    // validate network domain
-                    if (!NetUtils.verifyDomainName(networkDomain)) {
-                        throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain "
-                                + "label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                + "and the hyphen ('-'); can't start or end with \"-\"");
+                    if (networkDomain == null) {
+                        // 1) Get networkDomain from the corresponding account/domain/zone
+                        if (aclType == ACLType.Domain) {
+                            networkDomain = _networkModel.getDomainNetworkDomain(domainId, zoneId);
+                        } else if (aclType == ACLType.Account) {
+                            networkDomain = _networkModel.getAccountNetworkDomain(owner.getId(), zoneId);
+                        }
+
+                        // 2) If null, generate networkDomain using domain suffix from the global config variables
+                        if (networkDomain == null) {
+                            networkDomain = "cs" + Long.toHexString(owner.getId()) + GuestDomainSuffix.valueIn(zoneId);
+                        }
+
+                    } else {
+                        // validate network domain
+                        if (!NetUtils.verifyDomainName(networkDomain)) {
+                            throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain "
+                                    + "label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
+                                    + "and the hyphen ('-'); can't start or end with \"-\"");
+                        }
                     }
                 }
             }
-        }
 
-        // In Advance zone Cidr for Shared networks and Isolated networks w/o source nat service can't be NULL - 2.2.x
-        // limitation, remove after we introduce support for multiple ip ranges
-        // with different Cidrs for the same Shared network
-        final boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced
-                && ntwkOff.getTrafficType() == TrafficType.Guest
-                && (ntwkOff.getGuestType() == GuestType.Shared || (ntwkOff.getGuestType() == GuestType.Isolated
-                && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)
-                && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.Gateway)));
-        if (cidr == null && ip6Cidr == null && cidrRequired) {
-            if (ntwkOff.getGuestType() == GuestType.Shared) {
-                throw new InvalidParameterValueException(String.format("Gateway/netmask are required when creating %s networks.", Network.GuestType.Shared));
-            } else {
-                throw new InvalidParameterValueException("gateway/netmask are required when create network of" + " type " + GuestType.Isolated + " with service " + Service.SourceNat.getName() + " disabled");
+            // In Advance zone Cidr for Shared networks and Isolated networks w/o source nat service can't be NULL - 2.2.x
+            // limitation, remove after we introduce support for multiple ip ranges
+            // with different Cidrs for the same Shared network
+            final boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced
+                    && ntwkOff.getTrafficType() == TrafficType.Guest
+                    && (ntwkOff.getGuestType() == GuestType.Shared || (ntwkOff.getGuestType() == GuestType.Isolated
+                    && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)
+                    && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.Gateway)));
+            if (cidr == null && ip6Cidr == null && cidrRequired) {
+                if (ntwkOff.getGuestType() == GuestType.Shared) {
+                    throw new InvalidParameterValueException(String.format("Gateway/netmask are required when creating %s networks.", Network.GuestType.Shared));
+                } else {
+                    throw new InvalidParameterValueException("gateway/netmask are required when create network of" + " type " + GuestType.Isolated + " with service " + Service.SourceNat.getName() + " disabled");
+                }
             }
-        }
 
-        checkL2OfferingServices(ntwkOff);
+            checkL2OfferingServices(ntwkOff);
 
-        // No cidr can be specified in Basic zone
-        if (zone.getNetworkType() == NetworkType.Basic && cidr != null) {
-            throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask can't be specified for zone of type " + NetworkType.Basic);
-        }
+            // No cidr can be specified in Basic zone
+            if (zone.getNetworkType() == NetworkType.Basic && cidr != null) {
+                throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask can't be specified for zone of type " + NetworkType.Basic);
+            }
 
-        // Check if cidr is RFC1918 compliant if the network is Guest Isolated for IPv4
-        if (cidr != null && (ntwkOff.getGuestType() == Network.GuestType.Isolated && ntwkOff.getTrafficType() == TrafficType.Guest) &&
-                !NetUtils.validateGuestCidr(cidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
+            // Check if cidr is RFC1918 compliant if the network is Guest Isolated for IPv4
+            if (cidr != null && (ntwkOff.getGuestType() == Network.GuestType.Isolated && ntwkOff.getTrafficType() == TrafficType.Guest) &&
+                    !NetUtils.validateGuestCidr(cidr, !ConfigurationManager.AllowNonRFC1918CompliantIPs.value())) {
                 throw new InvalidParameterValueException("Virtual Guest Cidr " + cidr + " is not RFC 1918 or 6598 compliant");
-        }
+            }
 
         final String networkDomainFinal = networkDomain;
         final String vlanIdFinal = vlanId;
@@ -3004,75 +3003,75 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final NetworkVO userNetwork = new NetworkVO();
                 userNetwork.setNetworkDomain(networkDomainFinal);
 
-                if (cidr != null && gateway != null) {
-                    userNetwork.setCidr(cidr);
-                    userNetwork.setGateway(gateway);
-                }
+                    if (cidr != null && gateway != null) {
+                        userNetwork.setCidr(cidr);
+                        userNetwork.setGateway(gateway);
+                    }
 
-                if (StringUtils.isNoneBlank(ip6Gateway, ip6Cidr)) {
-                    userNetwork.setIp6Cidr(ip6Cidr);
-                    userNetwork.setIp6Gateway(ip6Gateway);
-                }
+                    if (StringUtils.isNoneBlank(ip6Gateway, ip6Cidr)) {
+                        userNetwork.setIp6Cidr(ip6Cidr);
+                        userNetwork.setIp6Gateway(ip6Gateway);
+                    }
 
-                if (externalId != null) {
-                    userNetwork.setExternalId(externalId);
-                }
+                    if (externalId != null) {
+                        userNetwork.setExternalId(externalId);
+                    }
 
-                if (StringUtils.isNotBlank(routerIp)) {
-                    userNetwork.setRouterIp(routerIp);
-                }
+                    if (StringUtils.isNotBlank(routerIp)) {
+                        userNetwork.setRouterIp(routerIp);
+                    }
 
-                if (StringUtils.isNotBlank(routerIpv6)) {
-                    userNetwork.setRouterIpv6(routerIpv6);
-                }
+                    if (StringUtils.isNotBlank(routerIpv6)) {
+                        userNetwork.setRouterIpv6(routerIpv6);
+                    }
 
-                if (vrIfaceMTUs != null) {
-                    if (vrIfaceMTUs.first() != null && vrIfaceMTUs.first() > 0) {
-                        userNetwork.setPublicMtu(vrIfaceMTUs.first());
+                    if (vrIfaceMTUs != null) {
+                        if (vrIfaceMTUs.first() != null && vrIfaceMTUs.first() > 0) {
+                            userNetwork.setPublicMtu(vrIfaceMTUs.first());
+                        } else {
+                            userNetwork.setPublicMtu(Integer.valueOf(NetworkService.VRPublicInterfaceMtu.defaultValue()));
+                        }
+
+                        if (vrIfaceMTUs.second() != null && vrIfaceMTUs.second() > 0) {
+                            userNetwork.setPrivateMtu(vrIfaceMTUs.second());
+                        } else {
+                            userNetwork.setPrivateMtu(Integer.valueOf(NetworkService.VRPrivateInterfaceMtu.defaultValue()));
+                        }
                     } else {
                         userNetwork.setPublicMtu(Integer.valueOf(NetworkService.VRPublicInterfaceMtu.defaultValue()));
-                    }
-
-                    if (vrIfaceMTUs.second() != null && vrIfaceMTUs.second() > 0) {
-                        userNetwork.setPrivateMtu(vrIfaceMTUs.second());
-                    } else {
                         userNetwork.setPrivateMtu(Integer.valueOf(NetworkService.VRPrivateInterfaceMtu.defaultValue()));
                     }
-                } else {
-                    userNetwork.setPublicMtu(Integer.valueOf(NetworkService.VRPublicInterfaceMtu.defaultValue()));
-                    userNetwork.setPrivateMtu(Integer.valueOf(NetworkService.VRPrivateInterfaceMtu.defaultValue()));
-                }
 
-                if (!GuestType.L2.equals(userNetwork.getGuestType())) {
-                    if (StringUtils.isNotBlank(ip4Dns1)) {
-                        userNetwork.setDns1(ip4Dns1);
-                    }
-                    if (StringUtils.isNotBlank(ip4Dns2)) {
-                        userNetwork.setDns2(ip4Dns2);
-                    }
-                    if (StringUtils.isNotBlank(ip6Dns1)) {
-                        userNetwork.setIp6Dns1(ip6Dns1);
-                    }
-                    if (StringUtils.isNotBlank(ip6Dns2)) {
-                        userNetwork.setIp6Dns2(ip6Dns2);
-                    }
-                }
-
-                if (vlanIdFinal != null) {
-                    if (isolatedPvlan == null) {
-                        URI uri = null;
-                        if (UuidUtils.isUuid(vlanIdFinal)) {
-                            //Logical router's UUID provided as VLAN_ID
-                            userNetwork.setVlanIdAsUUID(vlanIdFinal); //Set transient field
-                        } else {
-                            uri = encodeVlanIdIntoBroadcastUri(vlanIdFinal, pNtwk);
+                    if (!GuestType.L2.equals(userNetwork.getGuestType())) {
+                        if (StringUtils.isNotBlank(ip4Dns1)) {
+                            userNetwork.setDns1(ip4Dns1);
                         }
-
-                        if (_networksDao.listByPhysicalNetworkPvlan(physicalNetworkId, uri.toString()).size() > 0) {
-                            throw new InvalidParameterValueException(String.format(
-                                    "Network with vlan %s already exists or overlaps with other network pvlans in zone %s",
-                                    vlanIdFinal, zone));
+                        if (StringUtils.isNotBlank(ip4Dns2)) {
+                            userNetwork.setDns2(ip4Dns2);
                         }
+                        if (StringUtils.isNotBlank(ip6Dns1)) {
+                            userNetwork.setIp6Dns1(ip6Dns1);
+                        }
+                        if (StringUtils.isNotBlank(ip6Dns2)) {
+                            userNetwork.setIp6Dns2(ip6Dns2);
+                        }
+                    }
+
+                    if (vlanIdFinal != null) {
+                        if (isolatedPvlan == null) {
+                            URI uri = null;
+                            if (UuidUtils.isUuid(vlanIdFinal)) {
+                                //Logical router's UUID provided as VLAN_ID
+                                userNetwork.setVlanIdAsUUID(vlanIdFinal); //Set transient field
+                            } else {
+                                uri = encodeVlanIdIntoBroadcastUri(vlanIdFinal, pNtwk);
+                            }
+
+                            if (_networksDao.listByPhysicalNetworkPvlan(physicalNetworkId, uri.toString()).size() > 0) {
+                                throw new InvalidParameterValueException(String.format(
+                                        "Network with vlan %s already exists or overlaps with other network pvlans in zone %s",
+                                        vlanIdFinal, zone));
+                            }
 
                         userNetwork.setBroadcastUri(uri);
                         if (!vlanIdFinal.equalsIgnoreCase(Vlan.UNTAGGED)) {
@@ -4940,6 +4939,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return new ConfigKey<?>[]{NetworkGcWait, NetworkGcInterval, NetworkLockTimeout, DeniedRoutes,
                 GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion,
                 PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RollingRestartEnabled,
-                TUNGSTEN_ENABLED, NSX_ENABLED, NETRIS_ENABLED, NETWORK_LB_HAPROXY_MAX_CONN};
+                TUNGSTEN_ENABLED, NSX_ENABLED, NETRIS_ENABLED, NETWORK_LB_HAPROXY_MAX_CONN,
+                NETWORK_LB_HAPROXY_IDLE_TIMEOUT};
     }
 }
