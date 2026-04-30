@@ -417,8 +417,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public static final ConfigKey<Boolean> AllowCheckAndRepairVolume = new ConfigKey<>("Advanced", Boolean.class, "volume.check.and.repair.leaks.before.use", "false",
             "To check and repair the volume if it has any leaks before performing volume attach or VM start operations", true, ConfigKey.Scope.StoragePool);
 
-
-
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
     private static final Set<Volume.State> STATES_VOLUME_CANNOT_BE_DESTROYED = new HashSet<>(Arrays.asList(Volume.State.Destroy, Volume.State.Expunging, Volume.State.Expunged, Volume.State.Allocated));
