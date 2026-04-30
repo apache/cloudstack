@@ -1280,7 +1280,7 @@ public class ManagementServerImpl extends MutualExclusiveIdsManagerBase implemen
             throw new InvalidParameterValueException("Either 'ids', 'type' or 'enddate' must be specified.");
         }
         if (startDate != null && endDate == null) {
-            throw new InvalidParameterValueException("'startdate' must be specified with 'enddate' parameter.");
+            throw new InvalidParameterValueException("'enddate' must be specified when 'startdate' parameter is provided.");
         }
     }
 
