@@ -2974,7 +2974,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return volService.findVolumeLockHost(volume);
     }
 
-
     public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS) {
         Account caller = CallContext.current().getCallingAccount();
 
@@ -5734,7 +5733,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 MatchStoragePoolTagsWithDiskOffering,
                 UseHttpsToUpload,
                 WaitDetachDevice,
-                AllowCheckAndRepairVolume,
+                AllowCheckAndRepairVolume
         };
     }
 }
