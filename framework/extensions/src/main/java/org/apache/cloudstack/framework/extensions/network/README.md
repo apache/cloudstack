@@ -71,8 +71,9 @@ hosts.  Use it as a working example.
 8. [Capabilities Configuration](#capabilities-configuration)
 9. [VPC Networks](#vpc-networks)
 10. [Extension IP](#extension-ip)
-11. [Exit Codes](#exit-codes)
-12. [Minimal Script Skeleton](#minimal-script-skeleton)
+11. [VIF Binding for OVS-backed Extensions](#vif-binding-for-ovs-backed-extensions)
+12. [Exit Codes](#exit-codes)
+13. [Minimal Script Skeleton](#minimal-script-skeleton)
 
 ---
 
@@ -636,6 +637,7 @@ network whose DHCP service is provided by this extension.
 | `--default-nic <bool>` | `true` if this is the VM's default NIC. |
 | `--domain <name>` | Network domain suffix (e.g. `cs.example.com`). |
 | `--extension-ip <ip>` | |
+| `--nic-uuid <uuid>` | (optional) Present only when the extension declared `vif.binding=lswitch`.  Carries `nic.getUuid()` so the extension can use it as the SDN-side port identifier (matches `external_ids:iface-id` set by libvirt on the OVS tap).  See [VIF Binding for OVS-backed Extensions](#vif-binding-for-ovs-backed-extensions). |
 | `--vpc-id <N>` | (optional) |
 
 **`remove-dhcp-entry` arguments:**
@@ -1103,6 +1105,77 @@ To use this extension as a VPC provider:
   helper): CloudStack allocates a dedicated IP from the guest subnet and passes
   it.  The device must listen on this IP for DHCP, DNS, and metadata (port 80)
   requests.
+
+---
+
+## VIF Binding for OVS-backed Extensions
+
+Extensions that drive OVS-based fabrics (OVN, NSX-OVS, …) need the OVS
+tap interface that libvirt creates for each VM NIC to carry the
+`external_ids:iface-id` value that the SDN controller expects.  CloudStack
+already does the right thing for `BroadcastDomainType.Lswitch` networks:
+its `OvsVifDriver` emits
+
+```xml
+<virtualport type='openvswitch'>
+  <parameters interfaceid='<nic.getUuid()>'/>
+</virtualport>
+```
+
+and libvirt sets `external_ids:iface-id=<nic-uuid>` on the tap atomically
+with port creation.  No agent patch is required.
+
+To opt into this binding mode an extension declares it as a top-level
+capability hint in its `extension_details`:
+
+```bash
+cmk createExtension \
+    name=my-ovs-sdn \
+    type=NetworkOrchestrator \
+    "details[0].key=network.services" \
+    "details[0].value=Dhcp,Dns,UserData,SourceNat,…" \
+    "details[1].key=network.service.capabilities" \
+    "details[1].value=$(cat my-caps.json)" \
+    "details[2].key=vif.binding" \
+    "details[2].value=lswitch"
+```
+
+When `vif.binding=lswitch` is present:
+
+1. **`prepare()` overrides the NIC broadcast type.**
+   `NetworkExtensionElement.prepare(...)` calls
+   `nic.setBroadcastType(Networks.BroadcastDomainType.Lswitch)` so
+   `OvsVifDriver` on the KVM agent picks the existing Lswitch path and
+   emits the libvirt `<virtualport>` shown above.
+
+2. **Per-NIC commands receive `--nic-uuid <uuid>`.**
+   `add-dhcp-entry`, `remove-dhcp-entry`, `add-dns-entry`, `save-vm-data`,
+   `save-password`, `save-userdata`, `save-sshkey`, and
+   `save-hypervisor-hostname` all gain a `--nic-uuid <uuid>` argument
+   carrying `nic.getUuid()`.
+
+3. **The script must use `--nic-uuid` as the SDN-side port identifier.**
+   Whatever object the extension creates on its controller (OVN
+   Logical_Switch_Port, NSX logical port, …) **must be named exactly the
+   value of `--nic-uuid`**.  That is the string libvirt will write to
+   `external_ids:iface-id` on the tap, so the SDN controller's local
+   agent (e.g. `ovn-controller`) finds a match and binds the port.
+
+When the extension does not declare `vif.binding`, the framework keeps
+the default `BroadcastDomainType.Vlan` and does not propagate
+`--nic-uuid` -- existing reference extensions (e.g.
+`network-namespace`) are unaffected.
+
+### Why not the extension setting `iface-id` remotely?
+
+The OVS tap only exists *after* libvirt creates the VM, so any remote
+write from the extension would race `ovn-controller` on the host.  By
+letting libvirt do the write atomically with tap creation, the binding
+is ready by the time the controller scans the bridge.
+
+The extension may still talk OVSDB to the host (read-only checks,
+`bridge-mappings` setup, post-incident repair) -- but never for the
+boot path.
 
 ---
 
