@@ -70,10 +70,40 @@ public class DnsProviderUtil {
             normalized = normalized.substring(0, normalized.length() - 1);
         }
         // Validate domain, allow local/private TLDs
-        if (!validator.isValid(normalized)) {
+        boolean valid = isValidInternalDnsZoneName(normalized) || validator.isValid(normalized);
+        if (!valid) {
             throw new IllegalArgumentException("Invalid domain name: " + domain);
         }
         return normalized;
+    }
+
+    static boolean isValidInternalDnsZoneName(String domain) {
+        // Total length limit (DNS standard)
+        if (domain.length() > 253) {
+            return false;
+        }
+
+        String[] labels = domain.split("\\.");
+        // Must have at least 2 labels (zone + suffix like internal/test/etc.)
+        if (labels.length < 2) {
+            return false;
+        }
+        for (String label : labels) {
+            if (label.isEmpty() || label.length() > 63) {
+                return false;
+            }
+
+            // Must start and end with alphanumeric (even if underscores exist inside)
+            if (!label.matches("^[a-z0-9](?:[a-z0-9_-]{0,61}[a-z0-9])?$")) {
+                return false;
+            }
+
+            // Prevent obviously invalid cases like "__" only labels
+            if (label.equals("_")) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // DNS wire form: lowercase, validated, WITH trailing dot (used in record values)

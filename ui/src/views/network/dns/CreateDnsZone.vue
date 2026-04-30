@@ -24,18 +24,6 @@
         :rules="rules"
         layout="vertical">
 
-        <a-form-item name="name" ref="name">
-          <template #label>
-            <tooltip-label
-              :title="$t('label.name')"
-              :tooltip="apiParams.name?.description" />
-          </template>
-          <a-input
-            v-model:value="form.name"
-            :placeholder="apiParams.name?.description || 'e.g. example.com'"
-            v-focus="true" />
-        </a-form-item>
-
         <a-form-item name="dnsserverid" ref="dnsserverid">
           <template #label>
             <tooltip-label
@@ -58,6 +46,18 @@
           </a-select>
         </a-form-item>
 
+        <a-form-item name="name" ref="name">
+          <template #label>
+            <tooltip-label
+              :title="$t('label.name')"
+              :tooltip="apiParams.name?.description" />
+          </template>
+          <a-input
+            v-model:value="form.name"
+            :placeholder="apiParams.name?.description || 'e.g. example.com'"
+            v-focus="true" />
+        </a-form-item>
+
         <a-form-item name="description" ref="description">
           <template #label>
             <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
@@ -65,6 +65,13 @@
           <a-input
             v-model:value="form.description"
             :placeholder="apiParams.description.description"/>
+        </a-form-item>
+
+        <a-form-item name="import" ref="import">
+          <template #label>
+            <tooltip-label :title="$t('label.import')" :tooltip="apiParams.import?.description" />
+          </template>
+          <a-switch v-model:checked="form.import" />
         </a-form-item>
 
         <div class="action-button">
@@ -99,7 +106,8 @@ export default {
       form: {
         name: '',
         dnsserverid: undefined,
-        description: ''
+        description: '',
+        import: false
       },
       rules: {},
       fetchingServers: false,
@@ -134,7 +142,8 @@ export default {
         const params = {
           name: this.form.name.trim(),
           dnsserverid: this.form.dnsserverid,
-          description: this.form.description?.trim()
+          description: this.form.description?.trim(),
+          import: this.form.import
         }
 
         const response = await postAPI('createDnsZone', params)

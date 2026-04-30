@@ -79,26 +79,26 @@ public class DeleteDnsZoneCmdTest extends BaseDnsCmdTest {
     @Test
     public void testExecuteSuccess() throws Exception {
         DeleteDnsZoneCmd cmd = createCmd();
-        when(dnsProviderManager.deleteDnsZone(ENTITY_ID)).thenReturn(true);
+        when(dnsProviderManager.deleteDnsZone(ENTITY_ID, false)).thenReturn(true);
 
         cmd.execute();
 
         SuccessResponse response = (SuccessResponse) cmd.getResponseObject();
         assertNotNull(response);
-        verify(dnsProviderManager).deleteDnsZone(ENTITY_ID);
+        verify(dnsProviderManager).deleteDnsZone(ENTITY_ID, false);
     }
 
     @Test(expected = ServerApiException.class)
     public void testExecuteReturnsFalse() throws Exception {
         DeleteDnsZoneCmd cmd = createCmd();
-        when(dnsProviderManager.deleteDnsZone(ENTITY_ID)).thenReturn(false);
+        when(dnsProviderManager.deleteDnsZone(ENTITY_ID, false)).thenReturn(false);
         cmd.execute();
     }
 
     @Test(expected = ServerApiException.class)
     public void testExecuteThrowsException() throws Exception {
         DeleteDnsZoneCmd cmd = createCmd();
-        when(dnsProviderManager.deleteDnsZone(ENTITY_ID)).thenThrow(new RuntimeException("Error"));
+        when(dnsProviderManager.deleteDnsZone(ENTITY_ID, false)).thenThrow(new RuntimeException("Error"));
         cmd.execute();
     }
 }

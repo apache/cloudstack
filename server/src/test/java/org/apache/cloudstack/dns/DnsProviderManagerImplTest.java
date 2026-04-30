@@ -189,7 +189,7 @@ public class DnsProviderManagerImplTest {
         // Trigger via provisionDnsZone which calls getProviderByType
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
-        manager.provisionDnsZone(ZONE_ID);
+        manager.provisionDnsZone(ZONE_ID, false);
     }
 
     @Test
@@ -265,7 +265,7 @@ public class DnsProviderManagerImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void testProvisionDnsZoneNotFound() {
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(null);
-        manager.provisionDnsZone(ZONE_ID);
+        manager.provisionDnsZone(ZONE_ID, false);
     }
 
     @Test
@@ -274,7 +274,7 @@ public class DnsProviderManagerImplTest {
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
         when(dnsProviderMock.provisionZone(any(), any())).thenReturn("example.com.");
         when(dnsZoneDao.update(anyLong(), any())).thenReturn(true);
-        DnsZone result = manager.provisionDnsZone(ZONE_ID);
+        DnsZone result = manager.provisionDnsZone(ZONE_ID, false);
         assertNotNull(result);
         verify(dnsProviderMock).provisionZone(serverVO, zoneVO);
         verify(dnsZoneDao).update(anyLong(), any());
@@ -285,7 +285,7 @@ public class DnsProviderManagerImplTest {
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
         when(dnsProviderMock.provisionZone(any(), any())).thenThrow(new DnsConflictException("conflict"));
-        manager.provisionDnsZone(ZONE_ID);
+        manager.provisionDnsZone(ZONE_ID, false);
         verify(dnsZoneDao).remove(ZONE_ID);
     }
 
@@ -295,21 +295,21 @@ public class DnsProviderManagerImplTest {
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
         when(dnsProviderMock.provisionZone(any(), any()))
                 .thenThrow(new DnsTransportException("unreachable", new IOException("i/o")));
-        manager.provisionDnsZone(ZONE_ID);
+        manager.provisionDnsZone(ZONE_ID, false);
         verify(dnsZoneDao).remove(ZONE_ID);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testDeleteDnsZoneNotFound() {
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(null);
-        manager.deleteDnsZone(ZONE_ID);
+        manager.deleteDnsZone(ZONE_ID, false);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testDeleteDnsZoneServerMissing() {
         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(null);
-        manager.deleteDnsZone(ZONE_ID);
+        manager.deleteDnsZone(ZONE_ID, false);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -407,7 +407,7 @@ public class DnsProviderManagerImplTest {
                 return callback.doInTransaction(null);
             });
 
-            boolean res = manager.deleteDnsZone(ZONE_ID);
+            boolean res = manager.deleteDnsZone(ZONE_ID, false);
             assertTrue(res);
             verify(dnsZoneDao).remove(ZONE_ID);
             verify(dnsProviderMock).deleteZone(any(), any());

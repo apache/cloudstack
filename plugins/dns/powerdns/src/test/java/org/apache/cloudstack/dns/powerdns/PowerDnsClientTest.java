@@ -354,7 +354,7 @@ public class PowerDnsClientTest {
         client.validateServerId("http://pdns", 8081, "apikey", "abc");
     }
     // Route helper: GET /servers/abc → validate; GET /zones/... → zone response
-    private void mockDnsRecordExists(String zoneJson) throws IOException {
+    private void mockRecordExists(String zoneJson) throws IOException {
         when(httpClientMock.execute(any(HttpUriRequest.class))).thenAnswer(new Answer<CloseableHttpResponse>() {
             @Override
             public CloseableHttpResponse answer(InvocationOnMock invocation) {
@@ -373,42 +373,42 @@ public class PowerDnsClientTest {
     }
 
     @Test
-    public void testDnsRecordExistsZoneNodeNull() throws Exception {
+    public void testRecordExistsZoneNodeNull() throws Exception {
         // execute() returns null → zoneNode == null → false
-        mockDnsRecordExists(null);
-        boolean result = client.dnsRecordExists("http://pdns", 8081, "apikey", "abc", "example.com", "www", "A");
+        mockRecordExists(null);
+        boolean result = client.recordExists("http://pdns", 8081, "apikey", "abc", "example.com", "www", "A");
         assertEquals(false, result);
     }
 
     @Test
-    public void testDnsRecordExistsMissingRrSetsField() throws Exception {
+    public void testRecordExistsMissingRrSetsField() throws Exception {
         // response has no "rrsets" key → !zoneNode.has(RR_SETS) → false
-        mockDnsRecordExists("{}");
-        boolean result = client.dnsRecordExists("http://pdns", 8081, "apikey", "abc", "example.com", "www", "A");
+        mockRecordExists("{}");
+        boolean result = client.recordExists("http://pdns", 8081, "apikey", "abc", "example.com", "www", "A");
         assertEquals(false, result);
     }
 
     @Test
-    public void testDnsRecordExistsRrSetsNotArray() throws Exception {
+    public void testRecordExistsRrSetsNotArray() throws Exception {
         // rrsets is a scalar string, not an ArrayNode → isArray() == false → false
-        mockDnsRecordExists("{\"rrsets\":\"not-an-array\"}");
-        boolean result = client.dnsRecordExists("http://pdns", 8081, "apikey", "abc", "example.com", "www", "A");
+        mockRecordExists("{\"rrsets\":\"not-an-array\"}");
+        boolean result = client.recordExists("http://pdns", 8081, "apikey", "abc", "example.com", "www", "A");
         assertEquals(false, result);
     }
 
     @Test
-    public void testDnsRecordExistsEmptyRrSetsArray() throws Exception {
+    public void testRecordExistsEmptyRrSetsArray() throws Exception {
         // rrsets is an empty array → isArray() == true && isEmpty() == true → false
-        mockDnsRecordExists("{\"rrsets\":[]}");
-        boolean result = client.dnsRecordExists("http://pdns", 8081, "apikey", "abc", "example.com", "www", "A");
+        mockRecordExists("{\"rrsets\":[]}");
+        boolean result = client.recordExists("http://pdns", 8081, "apikey", "abc", "example.com", "www", "A");
         assertEquals(false, result);
     }
 
     @Test
-    public void testDnsRecordExistsNonEmptyRrSetsArray() throws Exception {
+    public void testRecordExistsNonEmptyRrSetsArray() throws Exception {
         // rrsets is a non-empty array → isArray() == true && !isEmpty() → true
-        mockDnsRecordExists("{\"rrsets\":[{\"name\":\"www.example.com.\",\"type\":\"A\"}]}");
-        boolean result = client.dnsRecordExists("http://pdns", 8081, "apikey", "abc", "example.com", "www", "A");
+        mockRecordExists("{\"rrsets\":[{\"name\":\"www.example.com.\",\"type\":\"A\"}]}");
+        boolean result = client.recordExists("http://pdns", 8081, "apikey", "abc", "example.com", "www", "A");
         assertEquals(true, result);
     }
 

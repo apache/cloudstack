@@ -159,8 +159,13 @@ public class PowerDnsProvider extends AdapterBase implements DnsProvider {
     }
 
     public boolean dnsRecordExists(DnsServer server, DnsZone zone, String recordName, String recordType) throws DnsProviderException {
-        return client.dnsRecordExists(server.getUrl(), server.getPort(), server.getDnsApiKey(),
+        return client.recordExists(server.getUrl(), server.getPort(), server.getDnsApiKey(),
                 server.getDetail(PDNS_SERVER_ID), zone.getName(), recordName, recordType);
+    }
+
+    @Override
+    public boolean dnsZoneExists(DnsServer server, DnsZone zone) {
+        return client.zoneExists(server.getUrl(), server.getPort(), server.getDnsApiKey(), server.getDetail(PDNS_SERVER_ID), zone.getName());
     }
 
     void validateRequiredServerAndZoneFields(DnsServer server, DnsZone zone) {

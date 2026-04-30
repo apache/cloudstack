@@ -127,7 +127,7 @@ public class CreateDnsZoneCmdTest extends BaseDnsCmdTest {
         DnsZoneResponse mockResponse = new DnsZoneResponse();
         mockResponse.setName("example.com");
 
-        when(dnsProviderManager.provisionDnsZone(ENTITY_ID)).thenReturn(mockZone);
+        when(dnsProviderManager.provisionDnsZone(ENTITY_ID, false)).thenReturn(mockZone);
         when(dnsProviderManager.createDnsZoneResponse(mockZone)).thenReturn(mockResponse);
 
         cmd.execute();
@@ -142,7 +142,7 @@ public class CreateDnsZoneCmdTest extends BaseDnsCmdTest {
         CreateDnsZoneCmd cmd = createCmd();
         cmd.setEntityId(ENTITY_ID);
 
-        when(dnsProviderManager.provisionDnsZone(ENTITY_ID)).thenReturn(null);
+        when(dnsProviderManager.provisionDnsZone(ENTITY_ID, false)).thenReturn(null);
         cmd.execute();
     }
 
@@ -151,7 +151,7 @@ public class CreateDnsZoneCmdTest extends BaseDnsCmdTest {
         CreateDnsZoneCmd cmd = createCmd();
         cmd.setEntityId(ENTITY_ID);
 
-        when(dnsProviderManager.provisionDnsZone(ENTITY_ID)).thenThrow(new RuntimeException("Provider error"));
+        when(dnsProviderManager.provisionDnsZone(ENTITY_ID, false)).thenThrow(new RuntimeException("Provider error"));
         cmd.execute();
     }
 }

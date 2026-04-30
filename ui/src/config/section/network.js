@@ -1526,53 +1526,6 @@ export default {
       ]
     },
     {
-      name: 'dnsserver',
-      title: 'label.dns.servers',
-      icon: 'cloud-server-outlined',
-      permission: ['listDnsServers'],
-      columns: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix'],
-      details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix', 'domain', 'account'],
-      related: [{
-        name: 'dnszone',
-        title: 'label.dns.zone',
-        param: 'dnsserverid'
-      }],
-      actions: [
-        {
-          api: 'addDnsServer',
-          icon: 'plus-outlined',
-          label: 'label.dns.add.server',
-          listView: true,
-          popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AddDnsServer.vue'))),
-          show: () => {
-            return true
-          }
-        },
-        {
-          api: 'updateDnsServer',
-          icon: 'edit-outlined',
-          label: 'label.dns.update.server',
-          dataView: true,
-          popup: true,
-          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsServer.vue')))
-        },
-        {
-          api: 'deleteDnsServer',
-          icon: 'delete-outlined',
-          label: 'label.dns.delete.server',
-          message: 'message.action.delete.dns.server',
-          dataView: true,
-          popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DeleteDnsServer.vue'))),
-          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
-          groupAction: false,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
-        }
-      ]
-    },
-    {
       name: 'dnszone',
       title: 'label.dns.zones',
       icon: 'apartment-outlined',
@@ -1619,6 +1572,53 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DeleteDnsZone.vue'))),
           show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
           groupAction: false
+        }
+      ]
+    },
+    {
+      name: 'dnsserver',
+      title: 'label.dns.servers',
+      icon: 'cloud-server-outlined',
+      permission: ['listDnsServers'],
+      columns: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix'],
+      details: ['name', 'url', 'provider', 'ispublic', 'port', 'nameservers', 'publicdomainsuffix', 'domain', 'account'],
+      related: [{
+        name: 'dnszone',
+        title: 'label.dns.zone',
+        param: 'dnsserverid'
+      }],
+      actions: [
+        {
+          api: 'addDnsServer',
+          icon: 'plus-outlined',
+          label: 'label.dns.add.server',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/AddDnsServer.vue'))),
+          show: () => {
+            return true
+          }
+        },
+        {
+          api: 'updateDnsServer',
+          icon: 'edit-outlined',
+          label: 'label.dns.update.server',
+          dataView: true,
+          popup: true,
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/UpdateDnsServer.vue')))
+        },
+        {
+          api: 'deleteDnsServer',
+          icon: 'delete-outlined',
+          label: 'label.dns.delete.server',
+          message: 'message.action.delete.dns.server',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/dns/DeleteDnsServer.vue'))),
+          show: (record, store) => { return record.account === store.userInfo.account || isAdminOrDomainAdmin(store.userInfo.roletype) },
+          groupAction: false,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
     }

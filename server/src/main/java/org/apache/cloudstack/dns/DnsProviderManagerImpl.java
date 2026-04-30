@@ -316,7 +316,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 List<DnsZoneVO> dnsZones = dnsZoneDao.findDnsZonesByServerId(dnsServerId);
                 for (DnsZoneVO dnsZone : dnsZones) {
                     try {
-                        deleteDnsZone(dnsZone.getId());
+                        deleteDnsZone(dnsZone.getId(), false);
                     } catch (Exception ex) {
                         logger.error("Error cleaning up DNS zone: {} during DNS server: {} deletion", dnsZone.getName(), dnsServer.getName());
                     }
@@ -328,7 +328,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DNS_ZONE_DELETE, eventDescription = "Deleting DNS Zone")
-    public boolean deleteDnsZone(Long zoneId) {
+    public boolean deleteDnsZone(Long zoneId, boolean isUnmanage) {
         DnsZoneVO dnsZone = dnsZoneDao.findById(zoneId);
         if (dnsZone == null) {
             throw new InvalidParameterValueException("DNS zone not found for the given ID.");
@@ -361,14 +361,16 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             }
 
             // Remove DNS zone from provider and cleanup DB
-            try {
-                provider.deleteZone(server, dnsZone);
-                logger.debug("Deleted DNS zone: {} from provider", dnsZoneName);
-            } catch (DnsNotFoundException ex) {
-                logger.warn("DNS zone: {} is not present in the provider, proceeding with cleanup", dnsZoneName);
-            } catch (Exception ex) {
-                logger.error("Failed to delete DNS zone from provider", ex);
-                throw new CloudRuntimeException(String.format("Failed to delete DNS zone: %s.", dnsZoneName));
+            if (!isUnmanage) {
+                try {
+                    provider.deleteZone(server, dnsZone);
+                    logger.debug("Deleted DNS zone: {} from provider", dnsZoneName);
+                } catch (DnsNotFoundException ex) {
+                    logger.warn("DNS zone: {} is not present in the provider, proceeding with cleanup", dnsZoneName);
+                } catch (Exception ex) {
+                    logger.error("Failed to delete DNS zone from provider", ex);
+                    throw new CloudRuntimeException(String.format("Failed to delete DNS zone: %s.", dnsZoneName));
+                }
             }
             return dnsZoneDao.remove(zoneId);
         });
@@ -585,7 +587,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
-    public DnsZone provisionDnsZone(long dnsZoneId) {
+    public DnsZone provisionDnsZone(long dnsZoneId, boolean isImport) {
         DnsZoneVO dnsZone = dnsZoneDao.findById(dnsZoneId);
         if (dnsZone == null) {
             throw new CloudRuntimeException("DNS zone not found during provisioning");
@@ -593,8 +595,14 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
         try {
             DnsProvider provider = getProviderByType(server.getProviderType());
-            String externalReferenceId = provider.provisionZone(server, dnsZone);
-            dnsZone.setExternalReference(externalReferenceId);
+            if (isImport) {
+                if (!provider.dnsZoneExists(server, dnsZone)) {
+                    throw new CloudRuntimeException(String.format("DNS zone '%s' cannot be imported because it does not exist in the DNS provider", dnsZone));
+                }
+            } else {
+                String externalReferenceId = provider.provisionZone(server, dnsZone);
+                dnsZone.setExternalReference(externalReferenceId);
+            }
             dnsZone.setState(DnsZone.State.Active);
             dnsZoneDao.update(dnsZone.getId(), dnsZone);
             logger.debug("DNS zone: {} created successfully on DNS server: {} with ID: {}", dnsZone.getName(), server.getName(), dnsZoneId);

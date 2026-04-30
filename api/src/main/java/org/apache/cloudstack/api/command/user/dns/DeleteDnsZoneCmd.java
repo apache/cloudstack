@@ -51,6 +51,11 @@ public class DeleteDnsZoneCmd extends BaseAsyncCmd {
             description = "The ID of the DNS zone")
     private Long id;
 
+    @Parameter(name = ApiConstants.UNMANAGE, type = CommandType.BOOLEAN, entityType = DnsZoneResponse.class,
+            description = "If true, removes the DNS zone from CloudStack; if false, " +
+                    "removes it from both CloudStack and the DNS provider.")
+    private Boolean unmanage = false;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -66,7 +71,7 @@ public class DeleteDnsZoneCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         try {
-            boolean result = dnsProviderManager.deleteDnsZone(getId());
+            boolean result = dnsProviderManager.deleteDnsZone(getId(), isUnmanage());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 setResponseObject(response);
@@ -96,5 +101,9 @@ public class DeleteDnsZoneCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Deleting DNS Zone ID: " + getId();
+    }
+
+    public Boolean isUnmanage() {
+        return Boolean.TRUE.equals(unmanage);
     }
 }

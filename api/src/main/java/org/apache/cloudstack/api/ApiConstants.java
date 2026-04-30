@@ -1378,7 +1378,8 @@ public class ApiConstants {
     public static final String OLD_STATE = "oldState";
     public static final String NEW_STATE = "newState";
     public static final String OLD_HOST_NAME = "oldHostName";
-
+    public static final String IMPORT = "import";
+    public static final String UNMANAGE = "unmanage";
 
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +

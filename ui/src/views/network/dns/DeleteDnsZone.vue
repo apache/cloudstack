@@ -43,6 +43,13 @@
             v-focus="true" />
         </a-form-item>
 
+        <a-form-item name="unmanage" ref="unmanage">
+          <template #label>
+            <tooltip-label :title="$t('label.dns.unmanage.zone')" :tooltip="apiParams.unmanage?.description" />
+          </template>
+          <a-switch v-model:checked="form.unmanage" />
+        </a-form-item>
+
         <div class="action-button">
           <a-button @click="closeAction">
             {{ $t('label.cancel') }}
@@ -63,9 +70,13 @@
 
 <script>
 import { postAPI } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'DeleteDnsZone',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -75,13 +86,18 @@ export default {
   data () {
     return {
       loading: false,
+      apiParams: {},
       form: {
-        name: ''
+        name: '',
+        unmanage: false
       },
       rules: {
         name: [{ required: true, message: this.$t('message.error.required.input') }]
       }
     }
+  },
+  created () {
+    this.apiParams = this.$getApiParams('deleteDnsZone') || {}
   },
   methods: {
     async handleSubmit () {
@@ -91,7 +107,8 @@ export default {
 
       try {
         const params = {
-          id: this.resource.id
+          id: this.resource.id,
+          unmanage: this.form.unmanage
         }
 
         const response = await postAPI('deleteDnsZone', params)

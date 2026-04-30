@@ -177,7 +177,7 @@ export default {
         this.total = response.count || 0
         this.records = response.dnsrecord || []
       }).catch(error => {
-        console.error('Failed to fetch DNS records', error)
+        this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
       })

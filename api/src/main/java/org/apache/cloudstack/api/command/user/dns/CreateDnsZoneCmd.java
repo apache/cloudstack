@@ -66,6 +66,11 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description =  "The description of the DNS zone")
     private String description;
 
+    @Parameter(name = ApiConstants.IMPORT, type = CommandType.BOOLEAN, entityType = DnsZoneResponse.class,
+            description = "If true, imports an existing DNS zone from the DNS provider into CloudStack. " +
+                    "If false, creates the zone in the DNS provider and registers it in CloudStack.")
+    private Boolean importDnsZone = false;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -115,7 +120,7 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         try {
-            DnsZone result = dnsProviderManager.provisionDnsZone(getEntityId());
+            DnsZone result = dnsProviderManager.provisionDnsZone(getEntityId(), isImportDnsZone());
             if (result != null) {
                 DnsZoneResponse response = dnsProviderManager.createDnsZoneResponse(result);
                 response.setResponseName(getCommandName());
@@ -141,5 +146,9 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
     @Override
     public String getEventDescription() {
         return "creating DNS zone: " + getName();
+    }
+
+    public Boolean isImportDnsZone() {
+        return Boolean.TRUE.equals(importDnsZone);
     }
 }

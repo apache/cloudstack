@@ -52,10 +52,10 @@ public interface DnsProviderManager extends Manager, PluggableService {
     // Allocates the DB row (State: Inactive)
     DnsZone allocateDnsZone(CreateDnsZoneCmd cmd);
     // Calls the Plugin (State: Inactive -> Active)
-    DnsZone provisionDnsZone(long zoneId);
+    DnsZone provisionDnsZone(long zoneId, boolean isImport);
 
     DnsZone updateDnsZone(UpdateDnsZoneCmd cmd);
-    boolean deleteDnsZone(Long id);
+    boolean deleteDnsZone(Long id, boolean isUnmanage);
     ListResponse<DnsZoneResponse> listDnsZones(ListDnsZonesCmd cmd);
 
     DnsRecordResponse createDnsRecord(CreateDnsRecordCmd cmd);

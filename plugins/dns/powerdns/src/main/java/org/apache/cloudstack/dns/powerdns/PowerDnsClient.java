@@ -240,7 +240,20 @@ public class PowerDnsClient implements AutoCloseable {
         return rrsets.isArray() ? rrsets : Collections.emptyList();
     }
 
-    public boolean dnsRecordExists(String baseUrl, Integer port, String apiKey,
+    public boolean zoneExists(String baseUrl, Integer port, String apiKey, String externalServerId, String zoneName) {
+        try {
+            validateServerId(baseUrl, port, apiKey, externalServerId);
+            String normalizedZone = normalizeZone(zoneName);
+            String encodedZone = URLEncoder.encode(normalizedZone, StandardCharsets.UTF_8);
+            HttpGet request = new HttpGet(buildUrl(baseUrl, port, "/servers/" + externalServerId + "/zones/" + encodedZone));
+            execute(request, apiKey, 200);
+            return true;
+        } catch (DnsProviderException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public boolean recordExists(String baseUrl, Integer port, String apiKey,
                                 String externalServerId, String zoneName,
                                 String recordName, String type) throws DnsProviderException {
 

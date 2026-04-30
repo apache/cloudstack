@@ -975,6 +975,7 @@
 "label.dns.zones": "DNS Zones",
 "label.dns.update.server": "Update DNS Server",
 "label.dns.update.zone": "Update DNS Zone",
+"label.dns.unmanage.zone": "Unmanage",
 "label.dns.zone.select": "Select a DNS zone",
 "label.dnsrecords": "DNS Records",
 "label.dnszone": "DNS Zone",
