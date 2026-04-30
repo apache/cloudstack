@@ -118,6 +118,16 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','conserve_mode', 'tin
 --- Disable/enable NICs
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics','enabled', 'TINYINT(1) NOT NULL DEFAULT 1 COMMENT ''Indicates whether the NIC is enabled or not'' ');
 
+--- Quota tariff/usage mapping
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff_usage` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `tariff_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the tariff of the Quota usage detail calculated, foreign key to quota_tariff table',
+    `quota_usage_id` bigint(20) unsigned NOT NULL COMMENT 'ID of the aggregation of Quota usage details, foreign key to quota_usage table',
+    `quota_used` decimal(20,8) NOT NULL COMMENT 'Amount of quota used',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_quota_tariff_usage__tariff_id` FOREIGN KEY (`tariff_id`) REFERENCES `cloud_usage`.`quota_tariff` (`id`),
+    CONSTRAINT `fk_quota_tariff_usage__quota_usage_id` FOREIGN KEY (`quota_usage_id`) REFERENCES `cloud_usage`.`quota_usage` (`id`));
+
 -- Add management_server_details table to allow ManagementServer scope configs
 CREATE TABLE IF NOT EXISTS `management_server_details` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',

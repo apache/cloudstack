@@ -2816,13 +2816,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         try (CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, resourceLimitStorageTags, requiredPrimaryStorageSpace, reservationDao, _resourceLimitMgr)) {
 
-        _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
+            _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
 
-        if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            return safelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
-        } else {
-            return getVolumeAttachJobResult(vmId, volumeId, deviceId);
-        }
+            if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+                return safelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
+            } else {
+                return getVolumeAttachJobResult(vmId, volumeId, deviceId);
+            }
 
         } catch (ResourceAllocationException e) {
             logger.error("primary storage resource limit check failed", e);
@@ -4455,12 +4455,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         try {
         _resourceLimitMgr.checkVolumeResourceLimit(newAccount, true, volume.getSize(), _diskOfferingDao.findById(volume.getDiskOfferingId()), reservations);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                updateVolumeAccount(oldAccount, volume, newAccount);
-            }
-        });
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    updateVolumeAccount(oldAccount, volume, newAccount);
+                }
+            });
 
         return volume;
 
