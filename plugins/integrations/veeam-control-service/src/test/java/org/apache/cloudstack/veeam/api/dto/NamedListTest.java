@@ -91,4 +91,3 @@ public class NamedListTest {
         assertEquals(map, namedList.asMap());
     }
 }
-

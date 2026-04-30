@@ -80,4 +80,3 @@ public class DtoSerializationTest {
         assertTrue(xml.contains("<migration/>"));
     }
 }
-

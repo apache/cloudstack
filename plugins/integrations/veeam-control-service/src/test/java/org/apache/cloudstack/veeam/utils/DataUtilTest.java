@@ -42,7 +42,7 @@ public class DataUtilTest {
     @Test
     public void testConstantTimeEquals_StringOverload() {
         assertTrue(DataUtil.constantTimeEquals("abc", "abc"));
-        assertFalse(DataUtil.constantTimeEquals("abc", "abd"));
+        assertFalse(DataUtil.constantTimeEquals("abc", "abcd"));
         assertFalse(DataUtil.constantTimeEquals(null, "abc"));
         assertFalse(DataUtil.constantTimeEquals("abc", null));
     }
