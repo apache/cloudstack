@@ -92,7 +92,7 @@ public class ListExtensionsCmdTest {
     }
 
     // -----------------------------------------------------------------------
-    // Tests for new getters: type, resourceId, resourceType
+    // Tests for type getter
     // -----------------------------------------------------------------------
 
     @Test
@@ -107,27 +107,4 @@ public class ListExtensionsCmdTest {
         assertNull(cmd.getType());
     }
 
-    @Test
-    public void testGetResourceIdReturnsValueWhenSet() {
-        setPrivateField("resourceId", "pnet-uuid-123");
-        assertEquals("pnet-uuid-123", cmd.getResourceId());
-    }
-
-    @Test
-    public void testGetResourceIdReturnsNullWhenUnset() {
-        setPrivateField("resourceId", null);
-        assertNull(cmd.getResourceId());
-    }
-
-    @Test
-    public void testGetResourceTypeReturnsValueWhenSet() {
-        setPrivateField("resourceType", "PhysicalNetwork");
-        assertEquals("PhysicalNetwork", cmd.getResourceType());
-    }
-
-    @Test
-    public void testGetResourceTypeReturnsNullWhenUnset() {
-        setPrivateField("resourceType", null);
-        assertNull(cmd.getResourceType());
-    }
 }

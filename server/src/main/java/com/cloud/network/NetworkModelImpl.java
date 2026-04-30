@@ -1325,8 +1325,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 // Use a set to avoid adding the same provider name twice (multiple phys-nets)
                 Set<String> addedExtProviders = new HashSet<>();
                 for (PhysicalNetworkVO physNet : physNets) {
-                    List<com.cloud.network.dao.PhysicalNetworkServiceProviderVO> nsps =
-                            _pNSPDao.listBy(physNet.getId());
+                    List<PhysicalNetworkServiceProviderVO> nsps = _pNSPDao.listBy(physNet.getId());
                     if (nsps == null) continue;
                     for (PhysicalNetworkServiceProviderVO nsp : nsps) {
                         String provName = nsp.getProviderName();

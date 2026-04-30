@@ -70,16 +70,10 @@ public class ListExtensionsCmd extends BaseListCmd {
                     + " When no parameters are passed, all the details are returned.")
     private List<String> details;
 
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "Type of the extension (e.g. Orchestrator, NetworkOrchestrator)")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING,
+            description = "Type of the extension (e.g. Orchestrator, NetworkOrchestrator)",
+            since = "4.23.0")
     private String type;
-
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING,
-            description = "ID of the resource to list registered extensions for (e.g. cluster UUID, physical network UUID)")
-    private String resourceId;
-
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING,
-            description = "Type of the resource (e.g. Cluster, PhysicalNetwork)")
-    private String resourceType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -95,14 +89,6 @@ public class ListExtensionsCmd extends BaseListCmd {
 
     public String getType() {
         return type;
-    }
-
-    public String getResourceId() {
-        return resourceId;
-    }
-
-    public String getResourceType() {
-        return resourceType;
     }
 
     public EnumSet<ApiConstants.ExtensionDetails> getDetails() throws InvalidParameterValueException {
