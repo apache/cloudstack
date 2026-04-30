@@ -43,13 +43,17 @@ hosts.  Use it as a working example.
 5. [Shared Arguments Reference](#shared-arguments-reference)
 6. [Command Reference](#command-reference)
    - [ensure-network-device](#ensure-network-device)
-   - [implement](#implement)
-   - [shutdown](#shutdown)
-   - [destroy](#destroy)
+   - [implement-network](#implement-network)
+   - [shutdown-network](#shutdown-network)
+   - [destroy-network](#destroy-network)
+   - [implement-vpc](#implement-vpc)
+   - [shutdown-vpc](#shutdown-vpc)
+   - [update-vpc-source-nat-ip](#update-vpc-source-nat-ip)
    - [assign-ip / release-ip](#assign-ip--release-ip)
    - [add-static-nat / delete-static-nat](#add-static-nat--delete-static-nat)
    - [add-port-forward / delete-port-forward](#add-port-forward--delete-port-forward)
    - [apply-fw-rules](#apply-fw-rules)
+   - [apply-network-acl](#apply-network-acl)
    - [add-dhcp-entry / remove-dhcp-entry](#add-dhcp-entry--remove-dhcp-entry)
    - [config-dhcp-subnet / remove-dhcp-subnet](#config-dhcp-subnet--remove-dhcp-subnet)
    - [set-dhcp-options](#set-dhcp-options)
@@ -226,7 +230,7 @@ Example call line built by CloudStack:
 
 ```
 /usr/share/cloudstack-management/extensions/my-sdn/my-sdn.sh \
-    implement \
+    implement-network \
     --network-id 42 \
     --vlan 100 \
     --gateway 10.0.0.1 \
@@ -279,10 +283,10 @@ forwarded back as `--network-extension-details` on every future call.
 
 | Argument | Description |
 |---|---|
-| `--network-id <N>` | Network ID. |
-| `--vlan <tag>` | Guest VLAN. |
+| `--network-id <N>` | Network ID. (omitted for VPC-level calls; `--vpc-id` is used instead) |
+| `--vlan <tag>` | Guest VLAN. (network-level calls only) |
 | `--zone-id <N>` | CloudStack zone ID. |
-| `--vpc-id <N>` | VPC ID (optional). |
+| `--vpc-id <N>` | VPC ID (optional for network-level calls; sole identifier for VPC-level calls). |
 | `--current-details <json>` | Previously stored per-network blob (`{}` on first call). |
 | `--physical-network-extension-details <json>` | Physical network details. |
 | `--network-extension-details <json>` | Same as `--current-details`. |
@@ -300,7 +304,7 @@ ID, namespace name, etc.).
 
 ---
 
-### `implement`
+### `implement-network`
 
 **Called:** When a network is implemented (first VM deployed, or network
 restart).
@@ -322,7 +326,7 @@ configure the gateway.
 
 ---
 
-### `shutdown`
+### `shutdown-network`
 
 **Called:** When a network is shut down (e.g., all VMs removed, before
 deletion).
@@ -341,15 +345,74 @@ return.
 
 ---
 
-### `destroy`
+### `destroy-network`
 
 **Called:** When a network is permanently deleted.
 
-**Purpose:** Same as `shutdown`, but called at hard-delete time.  The
+**Purpose:** Same as `shutdown-network`, but called at hard-delete time.  The
 placeholder NIC IP (if any) and the `extension.details` blob are cleaned up
 automatically by CloudStack after a successful return.
 
-**Arguments:** Identical to `shutdown`.
+**Arguments:** Identical to `shutdown-network`.
+
+---
+
+### `implement-vpc`
+
+**Called:** When a VPC is implemented (before any tier is set up).
+
+**Purpose:** Create the VPC-level networking state on the device (e.g., a
+shared namespace or VRF that all tiers will attach to).  If a source-NAT IP
+is already allocated for the VPC, its details are also included so the script
+can set up the VPC-level SNAT rule at this stage.
+
+**Arguments:**
+
+| Argument | Description |
+|---|---|
+| `--vpc-id <N>` | |
+| `--cidr <cidr>` | VPC supernet CIDR. |
+| `--public-ip <ip>` | Source-NAT IP (optional; present only if already allocated). |
+| `--public-vlan <tag>` | VLAN of the source-NAT IP (optional). |
+| `--public-gateway <ip>` | Gateway of the source-NAT IP segment (optional). |
+| `--public-cidr <cidr>` | CIDR of the source-NAT IP (optional). |
+| `--source-nat <true>` | Always `true` when public IP args are present. |
+
+---
+
+### `shutdown-vpc`
+
+**Called:** During `shutdownVpc` after all tier networks have been destroyed.
+
+**Purpose:** Remove the VPC-level namespace / VRF and all associated state.
+The `extension.details` blob is removed from CloudStack after a successful return.
+
+**Arguments:**
+
+| Argument | Description |
+|---|---|
+| `--vpc-id <N>` | |
+
+---
+
+### `update-vpc-source-nat-ip`
+
+**Called:** When the VPC source-NAT IP changes
+(`updateVpcSourceNatIp` API).
+
+**Purpose:** Update the VPC-level SNAT rule to point to the new public IP.
+
+**Arguments:**
+
+| Argument | Description |
+|---|---|
+| `--vpc-id <N>` | |
+| `--cidr <cidr>` | VPC supernet CIDR. |
+| `--public-ip <ip>` | New source-NAT IP. |
+| `--public-vlan <tag>` | VLAN of the new source-NAT IP. |
+| `--public-gateway <ip>` | Gateway of the new source-NAT IP segment. |
+| `--public-cidr <cidr>` | CIDR of the new source-NAT IP. |
+| `--source-nat <true>` | Always `true`. |
 
 ---
 
@@ -435,7 +498,7 @@ APIs, and during network restart).
 
 **Purpose:** Rebuild the entire firewall policy for the network from scratch.
 CloudStack calls this with a *narrow* scope (one IP's ingress rules or egress
-rules per call), but the `--fw-rules` payload always contains **all** active
+rules per call), but the `--fw-rules-file` payload always contains **all** active
 rules for the network, so a full rebuild is always safe.
 
 **Arguments:**
@@ -446,10 +509,14 @@ rules for the network, so a full rebuild is always safe.
 | `--vlan <tag>` | |
 | `--gateway <ip>` | |
 | `--cidr <cidr>` | |
-| `--fw-rules <base64>` | Base64-encoded JSON firewall payload (see below). |
+| `--fw-rules-file <path>` | Path to a temporary file containing the Base64-encoded JSON firewall payload (see below). |
 | `--vpc-id <N>` | (optional) |
 
-**`--fw-rules` payload** (decode base64, then parse JSON):
+> **Note:** The payload is written to a temporary file to avoid shell argument
+> length limits for large rule sets.  Read the file contents and then
+> Base64-decode to obtain the JSON.
+
+**`--fw-rules-file` payload** (read file, decode base64, then parse JSON):
 
 ```json
 {
@@ -493,6 +560,61 @@ rules for the network, so a full rebuild is always safe.
 
 ---
 
+### `apply-network-acl`
+
+**Called:** When a VPC network ACL is applied to a tier network
+(`createNetworkACLList`, `replaceNetworkACLList`, `updateNetworkACLItem`,
+`moveNetworkAclItem` APIs, and during network restart).
+
+**Purpose:** Rebuild the entire ACL policy for the VPC tier from scratch.
+Rules are applied in ascending `number` order.
+
+**Arguments:**
+
+| Argument | Description |
+|---|---|
+| `--network-id <N>` | |
+| `--vlan <tag>` | |
+| `--gateway <ip>` | |
+| `--cidr <cidr>` | |
+| `--acl-rules-file <path>` | Path to a temporary file containing the Base64-encoded JSON ACL rules array (see below). |
+| `--vpc-id <N>` | (VPC tier; always present) |
+
+**`--acl-rules-file` payload** (read file, decode base64, then parse JSON):
+
+```json
+[
+  {
+    "number":      10,
+    "action":      "allow",
+    "trafficType": "ingress",
+    "protocol":    "tcp",
+    "portStart":   22,
+    "portEnd":     22,
+    "sourceCidrs": ["0.0.0.0/0"]
+  },
+  {
+    "number":      20,
+    "action":      "deny",
+    "trafficType": "egress",
+    "protocol":    "all",
+    "sourceCidrs": []
+  }
+]
+```
+
+| Field | Description |
+|---|---|
+| `number` | Rule priority (lower number = higher priority). |
+| `action` | `"allow"` or `"deny"`. |
+| `trafficType` | `"ingress"` or `"egress"`. |
+| `protocol` | `"tcp"`, `"udp"`, `"icmp"`, `"all"`. |
+| `portStart` / `portEnd` | TCP/UDP port range (absent for ICMP/all). |
+| `icmpType` / `icmpCode` | ICMP type/code (absent for TCP/UDP). |
+| `sourceCidrs` | Source CIDR filter list. |
+
+---
+
 ### `add-dhcp-entry` / `remove-dhcp-entry`
 
 **Called:** When a VM NIC is reserved (`add`) or released (`remove`) on a
@@ -500,7 +622,7 @@ network whose DHCP service is provided by this extension.
 
 **Purpose:** Add or remove a static DHCP lease for the VM.
 
-**Arguments:**
+**`add-dhcp-entry` arguments:**
 
 | Argument | Description |
 |---|---|
@@ -513,6 +635,16 @@ network whose DHCP service is provided by this extension.
 | `--dns <list>` | Comma-separated DNS server IPs, e.g. `8.8.8.8,8.8.4.4`. |
 | `--default-nic <bool>` | `true` if this is the VM's default NIC. |
 | `--domain <name>` | Network domain suffix (e.g. `cs.example.com`). |
+| `--extension-ip <ip>` | |
+| `--vpc-id <N>` | (optional) |
+
+**`remove-dhcp-entry` arguments:**
+
+| Argument | Description |
+|---|---|
+| `--network-id <N>` | |
+| `--mac <addr>` | VM NIC MAC address. |
+| `--ip <ip>` | VM's assigned IP. |
 | `--extension-ip <ip>` | |
 | `--vpc-id <N>` | (optional) |
 
@@ -624,11 +756,15 @@ meta-data/*, password) for the VM so the metadata HTTP server can serve it.
 | `--network-id <N>` | |
 | `--ip <ip>` | VM's IP. |
 | `--gateway <ip>` | |
-| `--vm-data <base64>` | Base64-encoded JSON array of metadata entries (see below). |
+| `--vm-data-file <path>` | Path to a temporary file containing the Base64-encoded JSON array of metadata entries (see below). |
 | `--extension-ip <ip>` | |
 | `--vpc-id <N>` | (optional) |
 
-**`--vm-data` payload** (decode base64, then parse JSON):
+> **Note:** The payload is written to a temporary file to avoid shell argument
+> length limits for large user-data blobs.  Read the file contents and then
+> Base64-decode to obtain the JSON array.
+
+**`--vm-data-file` payload** (read file, decode base64, then parse JSON):
 
 ```json
 [
@@ -790,10 +926,14 @@ calls).
 | `--extension-ip <ip>` | |
 | `--dns <list>` | |
 | `--domain <name>` | |
-| `--restore-data <base64>` | Base64-encoded JSON restore payload (see below). |
+| `--restore-data-file <path>` | Path to a temporary file containing the Base64-encoded JSON restore payload (see below). |
 | `--vpc-id <N>` | (optional) |
 
-**`--restore-data` payload** (decode base64, then parse JSON):
+> **Note:** The payload is written to a temporary file to avoid shell argument
+> length limits for large networks.  Read the file contents and then
+> Base64-decode to obtain the JSON.
+
+**`--restore-data-file` payload** (read file, decode base64, then parse JSON):
 
 ```json
 {
@@ -827,11 +967,22 @@ Each `vm_data[].content` is **base64-encoded** (same as in `save-vm-data`).
 **Purpose:** Allows operators to trigger ad-hoc operations on the device
 without defining new CloudStack API calls.
 
-**Arguments:**
+**Arguments (network-level):**
 
 | Argument | Description |
 |---|---|
 | `--network-id <N>` | |
+| `--vpc-id <N>` | (optional, for VPC-tier networks) |
+| `--action <name>` | The action name passed by the operator. |
+| `--action-params <json>` | JSON object with arbitrary key/value parameters. |
+| `--physical-network-extension-details <json>` | |
+| `--network-extension-details <json>` | |
+
+**Arguments (VPC-level):**
+
+| Argument | Description |
+|---|---|
+| `--vpc-id <N>` | |
 | `--action <name>` | The action name passed by the operator. |
 | `--action-params <json>` | JSON object with arbitrary key/value parameters. |
 | `--physical-network-extension-details <json>` | |
@@ -850,10 +1001,12 @@ without defining new CloudStack API calls.
 | **PortForwarding** | `add-port-forward`, `delete-port-forward` |
 | **Firewall** | `apply-fw-rules` |
 | **Lb** | `apply-lb-rules` |
+| **NetworkACL** | `apply-network-acl` |
 | **Dhcp** | `add-dhcp-entry`, `remove-dhcp-entry`, `config-dhcp-subnet`, `remove-dhcp-subnet`, `set-dhcp-options` |
 | **Dns** | `add-dns-entry`, `config-dns-subnet`, `remove-dns-subnet` |
 | **UserData** | `save-vm-data`, `save-password`, `save-userdata`, `save-sshkey`, `save-hypervisor-hostname` |
-| *(lifecycle — all)* | `ensure-network-device`, `implement`, `shutdown`, `destroy`, `restore-network` |
+| *(network lifecycle — all)* | `ensure-network-device`, `implement-network`, `shutdown-network`, `destroy-network`, `restore-network` |
+| *(VPC lifecycle)* | `ensure-network-device`, `implement-vpc`, `shutdown-vpc`, `update-vpc-source-nat-ip` |
 | *(operator)* | `custom-action` |
 
 Your script only needs to implement the commands for the services it declares
@@ -927,6 +1080,12 @@ single VRF or namespace per VPC instead of per tier).
 In `ensure-network-device`, use `--vpc-id` (when present) as the hash key for
 host selection so all tiers of a VPC always land on the same device.
 
+VPC lifecycle commands (`implement-vpc`, `shutdown-vpc`,
+`update-vpc-source-nat-ip`) are invoked at the VPC level with no
+`--network-id` — only `--vpc-id`.  Tier-level commands such as
+`implement-network` and `destroy-network` still receive both
+`--network-id` and `--vpc-id`.
+
 To use this extension as a VPC provider:
 
 1. Create the NetworkOffering with `useVpc=on`.
@@ -991,6 +1150,16 @@ phys()    { echo "${ARGS[physical-network-extension-details]:-{}}"; }
 netdetail(){ echo "${ARGS[network-extension-details]:-{}}"; }
 arg()     { echo "${ARGS[$1]:-}"; }
 
+# Read a file-payload argument, base64-decode, and echo the JSON
+read_payload() {
+    local filepath="${ARGS[$1]:-}"
+    if [[ -z "${filepath}" || ! -f "${filepath}" ]]; then
+        echo "{}"
+        return
+    fi
+    base64 -d < "${filepath}"
+}
+
 case "${COMMAND}" in
 
     ensure-network-device)
@@ -999,13 +1168,26 @@ case "${COMMAND}" in
         printf '{"device":"%s"}\n' "$(arg hosts | cut -d, -f1)"
         ;;
 
-    implement)
+    implement-network)
         # TODO: create virtual segment (VRF / VLAN / namespace / …)
         # TODO: configure gateway IP $(arg extension-ip) on $(arg cidr)
         ;;
 
-    shutdown|destroy)
+    shutdown-network|destroy-network)
         # TODO: tear down the virtual segment
+        ;;
+
+    implement-vpc)
+        # TODO: create VPC-level namespace / VRF for vpc=$(arg vpc-id)
+        # Optional source-NAT IP: $(arg public-ip)
+        ;;
+
+    shutdown-vpc)
+        # TODO: remove VPC namespace / VRF for vpc=$(arg vpc-id)
+        ;;
+
+    update-vpc-source-nat-ip)
+        # TODO: update VPC SNAT rule to use new public IP $(arg public-ip)
         ;;
 
     assign-ip)
@@ -1033,9 +1215,15 @@ case "${COMMAND}" in
         ;;
 
     apply-fw-rules)
-        # TODO: decode base64 --fw-rules, rebuild firewall policy
-        FW_JSON=$(printf '%s' "$(arg fw-rules)" | base64 -d)
-        # parse $FW_JSON and apply to device
+        # Read base64 payload from file, decode, then apply
+        FW_JSON=$(read_payload fw-rules-file)
+        # TODO: parse $FW_JSON and apply to device
+        ;;
+
+    apply-network-acl)
+        # Read base64 payload from file, decode, then apply
+        ACL_JSON=$(read_payload acl-rules-file)
+        # TODO: parse $ACL_JSON and apply to VPC tier
         ;;
 
     add-dhcp-entry)
@@ -1057,8 +1245,9 @@ case "${COMMAND}" in
     config-dns-subnet|remove-dns-subnet) ;;
 
     save-vm-data)
-        # TODO: decode base64 --vm-data; store metadata for ip=$(arg ip)
-        VM_DATA_JSON=$(printf '%s' "$(arg vm-data)" | base64 -d)
+        # Read base64 payload from file, decode, then store metadata for ip=$(arg ip)
+        VM_DATA_JSON=$(read_payload vm-data-file)
+        # TODO: iterate entries and write to metadata store
         ;;
 
     save-password|save-userdata|save-sshkey|save-hypervisor-hostname) ;;
@@ -1068,8 +1257,9 @@ case "${COMMAND}" in
         ;;
 
     restore-network)
-        # TODO: decode base64 --restore-data; rebuild DHCP/DNS/metadata
-        RESTORE_JSON=$(printf '%s' "$(arg restore-data)" | base64 -d)
+        # Read base64 payload from file, decode, then rebuild DHCP/DNS/metadata
+        RESTORE_JSON=$(read_payload restore-data-file)
+        # TODO: iterate vms and restore leases / DNS / metadata
         ;;
 
     custom-action)
