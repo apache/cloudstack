@@ -288,6 +288,39 @@ public class NetworkExtensionElement extends AdapterBase implements
     /** CLI argument carrying per-action parameters as a JSON object. */
     public static final String ARG_ACTION_PARAMS = "--action-params";
 
+    // ---- Script command names ----
+
+    public static final String CMD_IMPLEMENT_NETWORK = "implement-network";
+    public static final String CMD_SHUTDOWN_NETWORK = "shutdown-network";
+    public static final String CMD_DESTROY_NETWORK = "destroy-network";
+    public static final String CMD_ENSURE_NETWORK_DEVICE = "ensure-network-device";
+    public static final String CMD_ASSIGN_IP = "assign-ip";
+    public static final String CMD_RELEASE_IP = "release-ip";
+    public static final String CMD_ADD_STATIC_NAT = "add-static-nat";
+    public static final String CMD_DELETE_STATIC_NAT = "delete-static-nat";
+    public static final String CMD_ADD_PORT_FORWARD = "add-port-forward";
+    public static final String CMD_DELETE_PORT_FORWARD = "delete-port-forward";
+    public static final String CMD_ADD_DHCP_ENTRY = "add-dhcp-entry";
+    public static final String CMD_CONFIG_DHCP_SUBNET = "config-dhcp-subnet";
+    public static final String CMD_REMOVE_DHCP_SUBNET = "remove-dhcp-subnet";
+    public static final String CMD_SET_DHCP_OPTIONS = "set-dhcp-options";
+    public static final String CMD_REMOVE_DHCP_ENTRY = "remove-dhcp-entry";
+    public static final String CMD_ADD_DNS_ENTRY = "add-dns-entry";
+    public static final String CMD_CONFIG_DNS_SUBNET = "config-dns-subnet";
+    public static final String CMD_REMOVE_DNS_SUBNET = "remove-dns-subnet";
+    public static final String CMD_SAVE_VM_DATA = "save-vm-data";
+    public static final String CMD_SAVE_PASSWORD = "save-password";
+    public static final String CMD_SAVE_USERDATA = "save-userdata";
+    public static final String CMD_SAVE_SSHKEY = "save-sshkey";
+    public static final String CMD_SAVE_HYPERVISOR_HOSTNAME = "save-hypervisor-hostname";
+    public static final String CMD_APPLY_LB_RULES = "apply-lb-rules";
+    public static final String CMD_APPLY_FW_RULES = "apply-fw-rules";
+    public static final String CMD_RESTORE_NETWORK = "restore-network";
+    public static final String CMD_IMPLEMENT_VPC = "implement-vpc";
+    public static final String CMD_SHUTDOWN_VPC = "shutdown-vpc";
+    public static final String CMD_UPDATE_VPC_SOURCE_NAT_IP = "update-vpc-source-nat-ip";
+    public static final String CMD_APPLY_NETWORK_ACL = "apply-network-acl";
+
     // ---- Network detail key ----
 
     /**
@@ -465,7 +498,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         implArgs.add("--extension-ip"); implArgs.add(safeStr(extensionIp));
         implArgs.addAll(vpcArgs);
 
-        boolean result = executeScript(network, "implement-network", implArgs.toArray(new String[0]));
+        boolean result = executeScript(network, CMD_IMPLEMENT_NETWORK, implArgs.toArray(new String[0]));
 
         if (!result) {
             return false;
@@ -638,7 +671,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--network-id"); args.add(String.valueOf(network.getId()));
         args.add("--vlan");       args.add(safeStr(getVlanId(network)));
         args.addAll(getVpcIdArgs(network));
-        boolean result = executeScript(network, "shutdown-network", args.toArray(new String[0]));
+        boolean result = executeScript(network, CMD_SHUTDOWN_NETWORK, args.toArray(new String[0]));
         if (result) {
             // Remove stored per-network extension details (e.g. namespace). For VPC-backed networks
             // the namespace is named cs-vpc-<vpcId>, stored in the extension details. Removing the
@@ -663,7 +696,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         // For both isolated and VPC tier networks, use destroy-network.
         // For VPC tiers, the script preserves the shared namespace;
         // the VPC namespace is removed only when shutdownVpc() calls shutdown-vpc.
-        boolean result = executeScript(network, "destroy-network", args.toArray(new String[0]));
+        boolean result = executeScript(network, CMD_DESTROY_NETWORK, args.toArray(new String[0]));
         if (result) {
             cleanupPlaceholderNicIp(network, context);
             networkDetailsDao.removeDetail(network.getId(), NETWORK_DETAIL_EXTENSION_DETAILS);
@@ -774,7 +807,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         List<String> cmdLine = new ArrayList<>();
         cmdLine.add(scriptFile.getAbsolutePath());
-        cmdLine.add("ensure-network-device");
+        cmdLine.add(CMD_ENSURE_NETWORK_DEVICE);
         cmdLine.add("--network-id");
         cmdLine.add(String.valueOf(network.getId()));
         cmdLine.add("--vlan");
@@ -875,7 +908,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         for (PublicIpAddress ip : ipAddress) {
             boolean isSourceNat = ip.isSourceNat();
             boolean isRevoke = ip.getState() == IpAddress.State.Releasing;
-            String action = isRevoke ? "release-ip" : "assign-ip";
+            String action = isRevoke ? CMD_RELEASE_IP : CMD_ASSIGN_IP;
 
             // Public VLAN tag (e.g. "101") from the IP's VLAN record.
             String publicVlanTag = safeStr(ip.getVlanTag());
@@ -956,7 +989,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         List<String> vpcArgs = getVpcIdArgs(config);
 
         for (StaticNat rule : rules) {
-            String action = rule.isForRevoke() ? "delete-static-nat" : "add-static-nat";
+            String action = rule.isForRevoke() ? CMD_DELETE_STATIC_NAT : CMD_ADD_STATIC_NAT;
             String publicCidr = getPublicCidr(rule.getSourceIpAddressId());
             String publicVlanTag = getPublicVlanTag(rule.getSourceIpAddressId());
 
@@ -994,7 +1027,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         for (PortForwardingRule rule : rules) {
             boolean isRevoke = rule.getState() == FirewallRule.State.Revoke;
-            String action = isRevoke ? "delete-port-forward" : "add-port-forward";
+            String action = isRevoke ? CMD_DELETE_PORT_FORWARD : CMD_ADD_PORT_FORWARD;
             String publicPort  = PortForwardingServiceProvider.getPublicPortRange(rule);
             String privatePort = PortForwardingServiceProvider.getPrivatePFPortRange(rule);
             String publicCidr  = getPublicCidr(rule.getSourceIpAddressId());
@@ -1460,7 +1493,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getNicUuidArgs(network, nic));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "add-dhcp-entry", args.toArray(new String[0]));
+        return executeScript(network, CMD_ADD_DHCP_ENTRY, args.toArray(new String[0]));
     }
 
     @Override
@@ -1481,7 +1514,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--domain");       args.add(safeStr(network.getNetworkDomain()));
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "config-dhcp-subnet", args.toArray(new String[0]));
+        return executeScript(network, CMD_CONFIG_DHCP_SUBNET, args.toArray(new String[0]));
     }
 
     @Override
@@ -1495,7 +1528,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--network-id");   args.add(String.valueOf(network.getId()));
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "remove-dhcp-subnet", args.toArray(new String[0]));
+        return executeScript(network, CMD_REMOVE_DHCP_SUBNET, args.toArray(new String[0]));
     }
 
     @Override
@@ -1526,7 +1559,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getVpcIdArgs(network));
         try {
-            return executeScript(network, "set-dhcp-options", args.toArray(new String[0]));
+            return executeScript(network, CMD_SET_DHCP_OPTIONS, args.toArray(new String[0]));
         } catch (Exception e) {
             logger.warn("setExtraDhcpOptions failed for network {}: {}", network.getId(), e.getMessage());
             return false;
@@ -1549,7 +1582,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getNicUuidArgs(network, nic));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "remove-dhcp-entry", args.toArray(new String[0]));
+        return executeScript(network, CMD_REMOVE_DHCP_ENTRY, args.toArray(new String[0]));
     }
 
     // ---- DnsServiceProvider ----
@@ -1572,7 +1605,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getNicUuidArgs(network, nic));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "add-dns-entry", args.toArray(new String[0]));
+        return executeScript(network, CMD_ADD_DNS_ENTRY, args.toArray(new String[0]));
     }
 
     @Override
@@ -1593,7 +1626,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--domain");       args.add(safeStr(network.getNetworkDomain()));
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "config-dns-subnet", args.toArray(new String[0]));
+        return executeScript(network, CMD_CONFIG_DNS_SUBNET, args.toArray(new String[0]));
     }
 
     @Override
@@ -1607,7 +1640,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--network-id");   args.add(String.valueOf(network.getId()));
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "remove-dns-subnet", args.toArray(new String[0]));
+        return executeScript(network, CMD_REMOVE_DNS_SUBNET, args.toArray(new String[0]));
     }
 
     // ---- UserDataServiceProvider ----
@@ -1749,7 +1782,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--extension-ip"); args.add(safeStr(ensureExtensionIp(network)));
         args.addAll(getNicUuidArgs(network, nic));
         args.addAll(getVpcIdArgs(network));
-        return executeScriptWithFilePayload(network, "save-vm-data", "--vm-data-file",
+        return executeScriptWithFilePayload(network, CMD_SAVE_VM_DATA, "--vm-data-file",
                 vmDataArg, args.toArray(new String[0]));
     }
 
@@ -1773,7 +1806,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getNicUuidArgs(network, nic));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "save-password", args.toArray(new String[0]));
+        return executeScript(network, CMD_SAVE_PASSWORD, args.toArray(new String[0]));
     }
 
     @Override
@@ -1800,7 +1833,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getNicUuidArgs(network, nic));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "save-userdata", args.toArray(new String[0]));
+        return executeScript(network, CMD_SAVE_USERDATA, args.toArray(new String[0]));
     }
 
     @Override
@@ -1824,7 +1857,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--extension-ip"); args.add(safeStr(extensionIp));
         args.addAll(getNicUuidArgs(network, nic));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "save-sshkey", args.toArray(new String[0]));
+        return executeScript(network, CMD_SAVE_SSHKEY, args.toArray(new String[0]));
     }
 
     @Override
@@ -1848,7 +1881,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--extension-ip");        args.add(safeStr(extensionIp));
         args.addAll(getNicUuidArgs(network, nic));
         args.addAll(getVpcIdArgs(network));
-        return executeScript(network, "save-hypervisor-hostname", args.toArray(new String[0]));
+        return executeScript(network, CMD_SAVE_HYPERVISOR_HOSTNAME, args.toArray(new String[0]));
     }
 
     // ---- LoadBalancingServiceProvider ----
@@ -1905,7 +1938,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--vlan");       args.add(safeStr(vlanId));
         args.add("--lb-rules");   args.add(json.toString());
         args.addAll(vpcArgs);
-        boolean result = executeScript(network, "apply-lb-rules", args.toArray(new String[0]));
+        boolean result = executeScript(network, CMD_APPLY_LB_RULES, args.toArray(new String[0]));
         if (!result) {
             throw new ResourceUnavailableException("Failed to apply LB rules for network " + network.getId(),
                     Network.class, network.getId());
@@ -2091,7 +2124,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--cidr");        args.add(safeStr(network.getCidr()));
         args.addAll(getVpcIdArgs(network));
 
-        boolean result = executeScriptWithFilePayload(network, "apply-fw-rules", "--fw-rules-file",
+        boolean result = executeScriptWithFilePayload(network, CMD_APPLY_FW_RULES, "--fw-rules-file",
                 rulesBase64, args.toArray(new String[0]));
         if (!result) {
             throw new ResourceUnavailableException(
@@ -2170,7 +2203,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--domain");        args.add(safeStr(network.getNetworkDomain()));
         args.addAll(getVpcIdArgs(network));
 
-        return executeScriptWithFilePayload(network, "restore-network", "--restore-data-file",
+        return executeScriptWithFilePayload(network, CMD_RESTORE_NETWORK, "--restore-data-file",
                 restoreDataBase64, args.toArray(new String[0]));
     }
 
@@ -2439,7 +2472,7 @@ public class NetworkExtensionElement extends AdapterBase implements
 
         List<String> cmdLine = new ArrayList<>();
         cmdLine.add(scriptFile.getAbsolutePath());
-        cmdLine.add("ensure-network-device");
+        cmdLine.add(CMD_ENSURE_NETWORK_DEVICE);
         cmdLine.add("--vpc-id");
         cmdLine.add(String.valueOf(vpc.getId()));
         cmdLine.add("--zone-id");
@@ -2606,7 +2639,7 @@ public class NetworkExtensionElement extends AdapterBase implements
             implArgs.add("--source-nat");     implArgs.add("true");
         }
 
-        if (!executeVpcScript(vpc, "implement-vpc", implArgs.toArray(new String[0]))) {
+        if (!executeVpcScript(vpc, CMD_IMPLEMENT_VPC, implArgs.toArray(new String[0]))) {
             return false;
         }
 
@@ -2639,7 +2672,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 args.add("--vlan");       args.add(safeStr(getVlanId(network)));
                 args.addAll(getVpcIdArgs(network));
 
-                final boolean tierResult = executeScript(network, "destroy-network", args.toArray(new String[0]));
+                final boolean tierResult = executeScript(network, CMD_DESTROY_NETWORK, args.toArray(new String[0]));
                 result = result && tierResult;
             }
         }
@@ -2647,7 +2680,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         // Remove the VPC namespace and VPC-level details regardless of tier result.
         List<String> vpcArgs = new ArrayList<>();
         vpcArgs.add("--vpc-id"); vpcArgs.add(String.valueOf(vpc.getId()));
-        boolean vpcResult = executeVpcScript(vpc, "shutdown-vpc", vpcArgs.toArray(new String[0]));
+        boolean vpcResult = executeVpcScript(vpc, CMD_SHUTDOWN_VPC, vpcArgs.toArray(new String[0]));
         if (vpcResult) {
             try {
                 vpcDetailsDao.removeDetail(vpc.getId(), NETWORK_DETAIL_EXTENSION_DETAILS);
@@ -2704,7 +2737,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--public-cidr");    args.add(safeStr(getPublicCidr(address.getId())));
         args.add("--source-nat");     args.add("true");
 
-        final boolean result = executeVpcScript(vpc, "update-vpc-source-nat-ip", args.toArray(new String[0]));
+        final boolean result = executeVpcScript(vpc, CMD_UPDATE_VPC_SOURCE_NAT_IP, args.toArray(new String[0]));
         if (!result) {
             logger.warn("updateVpcSourceNatIp: failed to update source NAT IP for VPC {} to {}",
                     vpc.getId(), address.getAddress().addr());
@@ -2743,7 +2776,7 @@ public class NetworkExtensionElement extends AdapterBase implements
         args.add("--cidr");       args.add(safeStr(config.getCidr()));
         args.addAll(getVpcIdArgs(config));
 
-        boolean result = executeScriptWithFilePayload(config, "apply-network-acl",
+        boolean result = executeScriptWithFilePayload(config, CMD_APPLY_NETWORK_ACL,
                 "--acl-rules-file", aclRulesBase64, args.toArray(new String[0]));
         if (!result) {
             throw new ResourceUnavailableException(
@@ -2784,7 +2817,7 @@ public class NetworkExtensionElement extends AdapterBase implements
                 args.add("--cidr");       args.add(safeStr(network.getCidr()));
                 args.addAll(getVpcIdArgs(network));
 
-                boolean r = executeScriptWithFilePayload(network, "apply-network-acl",
+                boolean r = executeScriptWithFilePayload(network, CMD_APPLY_NETWORK_ACL,
                         "--acl-rules-file", aclRulesBase64, args.toArray(new String[0]));
                 result = result && r;
             } catch (Exception e) {
