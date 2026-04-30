@@ -2743,52 +2743,6 @@ public class ExtensionsManagerImplTest {
         assertNull(result);
     }
 
-    // -----------------------------------------------------------------------
-    // Tests for listExtensions with resourceId + resourceType (PhysicalNetwork)
-    // -----------------------------------------------------------------------
-
-    @Test
-    public void listExtensionsWithPhysicalNetworkResourceReturnsFilteredExtensions() {
-        ListExtensionsCmd cmd = mock(ListExtensionsCmd.class);
-        when(cmd.getResourceId()).thenReturn("pnet-uuid");
-        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.PhysicalNetwork.name());
-        when(cmd.getExtensionId()).thenReturn(null);
-        when(cmd.getName()).thenReturn(null);
-        when(cmd.getType()).thenReturn(null);
-        when(cmd.getDetails()).thenReturn(null);
-
-        PhysicalNetworkVO physNet = mock(PhysicalNetworkVO.class);
-        when(physNet.getId()).thenReturn(42L);
-        when(physicalNetworkDao.findByUuid("pnet-uuid")).thenReturn(physNet);
-
-        ExtensionResourceMapVO mapVO = mock(ExtensionResourceMapVO.class);
-        when(mapVO.getExtensionId()).thenReturn(100L);
-        when(extensionResourceMapDao.listByResourceIdAndType(42L, ExtensionResourceMap.ResourceType.PhysicalNetwork))
-                .thenReturn(List.of(mapVO));
-
-        ExtensionVO ext = mock(ExtensionVO.class);
-        when(ext.getType()).thenReturn(Extension.Type.NetworkOrchestrator);
-        when(extensionDao.findById(100L)).thenReturn(ext);
-
-        ExtensionResponse resp = mock(ExtensionResponse.class);
-        doReturn(resp).when(extensionsManager).createExtensionResponse(eq(ext), any());
-
-        List<ExtensionResponse> result = extensionsManager.listExtensions(cmd);
-        assertEquals(1, result.size());
-        assertEquals(resp, result.get(0));
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void listExtensionsWithInvalidResourceTypeThrows() {
-        ListExtensionsCmd cmd = mock(ListExtensionsCmd.class);
-        when(cmd.getResourceId()).thenReturn("resource-uuid");
-        when(cmd.getResourceType()).thenReturn("InvalidType");
-        when(cmd.getExtensionId()).thenReturn(null);
-        when(cmd.getName()).thenReturn(null);
-        when(cmd.getType()).thenReturn(null);
-
-        extensionsManager.listExtensions(cmd);
-    }
 
     // -----------------------------------------------------------------------
     // Tests for registerExtensionWithPhysicalNetwork

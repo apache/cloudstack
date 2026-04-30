@@ -794,40 +794,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         String name = cmd.getName();
         String keyword = cmd.getKeyword();
         String typeStr = cmd.getType();
-        String resourceIdStr = cmd.getResourceId();
-        String resourceTypeStr = cmd.getResourceType();
-
-        // If resourceId + resourceType are specified, return only extensions registered to that resource
-        if (StringUtils.isNotBlank(resourceIdStr) && StringUtils.isNotBlank(resourceTypeStr)) {
-            if (!EnumUtils.isValidEnum(ExtensionResourceMap.ResourceType.class, resourceTypeStr)) {
-                throw new InvalidParameterValueException("Invalid resourcetype: " + resourceTypeStr);
-            }
-            ExtensionResourceMap.ResourceType resType = ExtensionResourceMap.ResourceType.valueOf(resourceTypeStr);
-            // Resolve resourceId to a DB id
-            long resolvedResourceId;
-            if (ExtensionResourceMap.ResourceType.PhysicalNetwork.equals(resType)) {
-                PhysicalNetworkVO pn = physicalNetworkDao.findByUuid(resourceIdStr);
-                if (pn == null) {
-                    try { pn = physicalNetworkDao.findById(Long.parseLong(resourceIdStr)); } catch (NumberFormatException ignored) {}
-                }
-                if (pn == null) throw new InvalidParameterValueException("Invalid physical network ID: " + resourceIdStr);
-                resolvedResourceId = pn.getId();
-            } else {
-                try { resolvedResourceId = Long.parseLong(resourceIdStr); } catch (NumberFormatException e) {
-                    throw new InvalidParameterValueException("Invalid resource ID: " + resourceIdStr);
-                }
-            }
-            List<ExtensionResourceMapVO> maps = extensionResourceMapDao.listByResourceIdAndType(resolvedResourceId, resType);
-            List<ExtensionResponse> responses = new ArrayList<>();
-            for (ExtensionResourceMapVO map : maps) {
-                ExtensionVO ext = extensionDao.findById(map.getExtensionId());
-                if (ext == null) continue;
-                if (typeStr != null && !typeStr.equalsIgnoreCase(ext.getType().name())) continue;
-                if (name != null && !name.equalsIgnoreCase(ext.getName())) continue;
-                responses.add(createExtensionResponse(ext, cmd.getDetails()));
-            }
-            return responses;
-        }
 
         final SearchBuilder<ExtensionVO> sb = extensionDao.createSearchBuilder();
         final Filter searchFilter = new Filter(ExtensionVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1033,20 +999,20 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (ExtensionResourceMap.ResourceType.PhysicalNetwork.equals(resType)) {
             PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findByUuid(resourceId);
             if (physicalNetwork == null) {
-                physicalNetwork = physicalNetworkDao.findById(Long.parseLong(resourceId));
-            }
-            if (physicalNetwork == null) {
                 throw new InvalidParameterValueException("Invalid physical network ID specified");
             }
             ExtensionResourceMap extensionResourceMap = registerExtensionWithPhysicalNetwork(physicalNetwork, extension, cmd.getDetails());
             return extensionDao.findById(extensionResourceMap.getExtensionId());
+        } else if (ExtensionResourceMap.ResourceType.Cluster.equals(resType)) {
+            ClusterVO clusterVO = clusterDao.findByUuid(resourceId);
+            if (clusterVO == null) {
+                throw new InvalidParameterValueException("Invalid cluster ID specified");
+            }
+            ExtensionResourceMap extensionResourceMap = registerExtensionWithCluster(clusterVO, extension, cmd.getDetails());
+            return extensionDao.findById(extensionResourceMap.getExtensionId());
+        } else {
+            throw new InvalidParameterValueException("Unsupported resource type specified");
         }
-        ClusterVO clusterVO = clusterDao.findByUuid(resourceId);
-        if (clusterVO == null) {
-            throw new InvalidParameterValueException("Invalid cluster ID specified");
-        }
-        ExtensionResourceMap extensionResourceMap = registerExtensionWithCluster(clusterVO, extension, cmd.getDetails());
-        return extensionDao.findById(extensionResourceMap.getExtensionId());
     }
 
     @Override
