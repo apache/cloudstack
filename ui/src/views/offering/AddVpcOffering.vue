@@ -154,7 +154,7 @@
                     :checkBoxLabel="item.description"
                     :forExternalNetProvider="form.provider === 'NSX' || form.provider === 'Netris'"
                     :defaultCheckBoxValue="form.provider === 'NSX' || form.provider === 'Netris'"
-                    :selectOptions="item.provider"
+                    :selectOptions="item.provider || []"
                     @handle-checkselectpair-change="handleSupportedServiceChange"/>
                 </a-list-item>
               </template>
@@ -624,7 +624,7 @@ export default {
       if (service === 'SourceNat') {
         this.sourceNatServiceChecked = checked
       }
-      if (checked && provider != null & provider !== undefined) {
+      if (checked && provider != null && provider !== undefined) {
         this.selectedServiceProviderMap[service] = provider
       } else {
         delete this.selectedServiceProviderMap[service]
