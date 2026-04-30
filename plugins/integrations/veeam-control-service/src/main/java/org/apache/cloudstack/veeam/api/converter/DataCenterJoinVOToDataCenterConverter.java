@@ -36,7 +36,7 @@ public class DataCenterJoinVOToDataCenterConverter {
     public static DataCenter toDataCenter(final DataCenterJoinVO zone) {
         final String id = zone.getUuid();
         final String basePath = VeeamControlService.ContextPath.value();
-        final String href = basePath + DataCentersRouteHandler.BASE_ROUTE + DataCentersRouteHandler.BASE_ROUTE + "/" + id;
+        final String href = basePath + DataCentersRouteHandler.BASE_ROUTE + "/" + id;
 
         final DataCenter dc = new DataCenter();
 
