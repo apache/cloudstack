@@ -587,7 +587,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     @Override
-    public DnsZone provisionDnsZone(long dnsZoneId, boolean isImport) {
+    public DnsZone provisionDnsZone(long dnsZoneId, boolean isExistingZone) {
         DnsZoneVO dnsZone = dnsZoneDao.findById(dnsZoneId);
         if (dnsZone == null) {
             throw new CloudRuntimeException("DNS zone not found during provisioning");
@@ -595,9 +595,10 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
         try {
             DnsProvider provider = getProviderByType(server.getProviderType());
-            if (isImport) {
+            if (isExistingZone) {
                 if (!provider.dnsZoneExists(server, dnsZone)) {
-                    throw new CloudRuntimeException(String.format("DNS zone '%s' cannot be imported because it does not exist in the DNS provider", dnsZone));
+                    throw new CloudRuntimeException(
+                            String.format("DNS zone '%s' cannot be imported because it does not exist in the DNS provider", dnsZone.getName()));
                 }
             } else {
                 String externalReferenceId = provider.provisionZone(server, dnsZone);
@@ -610,10 +611,12 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             dnsZoneDao.remove(dnsZoneId);
             logger.error("Failed to provision DNS zone: {} on DNS server: {}", dnsZone.getName(), server.getName(), ex);
             String errorMsg = "";
-            if ( ex instanceof DnsConflictException) {
+            if (ex instanceof DnsConflictException) {
                 errorMsg = String.format("DNS zone: %s already exists", dnsZone.getName());
-            } else if (ex instanceof DnsTransportException){
+            } else if (ex instanceof DnsTransportException) {
                 errorMsg = String.format("DNS server: %s not reachable", server.getName());
+            } else if (ex instanceof CloudRuntimeException) {
+                errorMsg = ex.getMessage();
             }
             throw new CloudRuntimeException(errorMsg);
         }

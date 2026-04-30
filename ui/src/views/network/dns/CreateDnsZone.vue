@@ -67,11 +67,11 @@
             :placeholder="apiParams.description.description"/>
         </a-form-item>
 
-        <a-form-item name="import" ref="import">
+        <a-form-item name="existing" ref="existing">
           <template #label>
-            <tooltip-label :title="$t('label.import')" :tooltip="apiParams.import?.description" />
+            <tooltip-label :title="$t('label.existing')" :tooltip="apiParams.existing?.description" />
           </template>
-          <a-switch v-model:checked="form.import" />
+          <a-switch v-model:checked="form.existing" />
         </a-form-item>
 
         <div class="action-button">
@@ -107,7 +107,7 @@ export default {
         name: '',
         dnsserverid: undefined,
         description: '',
-        import: false
+        existing: false
       },
       rules: {},
       fetchingServers: false,
@@ -143,7 +143,7 @@ export default {
           name: this.form.name.trim(),
           dnsserverid: this.form.dnsserverid,
           description: this.form.description?.trim(),
-          import: this.form.import
+          existing: this.form.existing
         }
 
         const response = await postAPI('createDnsZone', params)
