@@ -43,6 +43,30 @@ public interface ExtensionHelper {
      */
     String NETWORK_SERVICE_CAPABILITIES_DETAIL_KEY = "network.service.capabilities";
 
+    /**
+     * Detail key used by an OVS-backed NetworkOrchestrator extension to declare
+     * how its Logical Switch Port name should be matched against the OVS
+     * {@code external_ids:iface-id} written by libvirt on the hypervisor.
+     *
+     * <p>Currently supported value:</p>
+     * <ul>
+     *   <li>{@code "lswitch"} — the framework sets {@code BroadcastDomainType.Lswitch}
+     *   on the {@link com.cloud.vm.NicProfile} during {@code prepare(...)} and
+     *   propagates {@code nic.getUuid()} to per-NIC script commands as
+     *   {@code --nic-uuid}.  The extension is then expected to use that UUID as
+     *   the LSP name, so it matches the {@code interfaceid} that
+     *   {@code OvsVifDriver} emits in the libvirt {@code <virtualport>} for
+     *   {@code Lswitch} broadcast type.</li>
+     * </ul>
+     *
+     * <p>If absent, the framework keeps the network's broadcast type unchanged
+     * (typically {@code Vlan}) and does not propagate {@code --nic-uuid}.</p>
+     */
+    String VIF_BINDING_DETAIL_KEY = "vif.binding";
+
+    /** Value of {@link #VIF_BINDING_DETAIL_KEY} that selects the Lswitch path. */
+    String VIF_BINDING_LSWITCH = "lswitch";
+
     String getExtensionScriptPath(Extension extension);
 
     /**
