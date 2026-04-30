@@ -19,6 +19,8 @@ package com.cloud.capacity;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -47,6 +49,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -57,6 +60,8 @@ import com.cloud.utils.Pair;
 import com.cloud.event.UsageEventVO;
 import com.cloud.resource.ResourceState;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -80,11 +85,24 @@ public class CapacityManagerImplTest {
 
     private Host host;
     private ServiceOffering offering;
+    private VirtualMachine vm;
+    private HostVO hostVO;
+    private ServiceOfferingVO svo;
+    private CapacityVO cpuCap;
+    private CapacityVO memCap;
+    private CapacityVO cpuCoreCap;
     private static final long CLUSTER_ID = 1L;
     private static final long HOST_ID = 100L;
     private static final int OFFERING_CPU = 4;
     private static final int OFFERING_CPU_SPEED = 2000;
     private static final int OFFERING_MEMORY = 4096;
+    private static final long VM_ID = 200L;
+    private static final long SERVICE_OFFERING_ID = 300L;
+    private static final long CAPACITY_CPU_ID = 10L;
+    private static final long CAPACITY_MEM_ID = 11L;
+    private static final long CAPACITY_CPUCORE_ID = 12L;
+    private static final String CPU_OVERCOMMIT = "2.0";
+    private static final String MEM_OVERCOMMIT = "1.5";
 
     @Before
     public void setUp() {
@@ -198,6 +216,167 @@ public class CapacityManagerImplTest {
                 eq(false), eq(cpuOvercommit), eq(memoryOvercommit), eq(false));
     }
 
+    private void setUpReleaseMocks() {
+        vm = mock(VirtualMachine.class);
+        when(vm.getId()).thenReturn(VM_ID);
+        when(vm.getServiceOfferingId()).thenReturn(SERVICE_OFFERING_ID);
+
+        hostVO = mock(HostVO.class);
+        when(hostVO.getId()).thenReturn(HOST_ID);
+        when(hostDao.findById(HOST_ID)).thenReturn(hostVO);
+
+        svo = mock(ServiceOfferingVO.class);
+        when(svo.getCpu()).thenReturn(OFFERING_CPU);
+        when(svo.getSpeed()).thenReturn(OFFERING_CPU_SPEED);
+        when(svo.getRamSize()).thenReturn(OFFERING_MEMORY);
+        when(serviceOfferingDao.findById(VM_ID, SERVICE_OFFERING_ID)).thenReturn(svo);
+
+        cpuCap = mock(CapacityVO.class);
+        when(cpuCap.getId()).thenReturn(CAPACITY_CPU_ID);
+        memCap = mock(CapacityVO.class);
+        when(memCap.getId()).thenReturn(CAPACITY_MEM_ID);
+        cpuCoreCap = mock(CapacityVO.class);
+        when(cpuCoreCap.getId()).thenReturn(CAPACITY_CPUCORE_ID);
+
+        when(capacityDao.findByHostIdType(HOST_ID, Capacity.CAPACITY_TYPE_CPU)).thenReturn(cpuCap);
+        when(capacityDao.findByHostIdType(HOST_ID, Capacity.CAPACITY_TYPE_MEMORY)).thenReturn(memCap);
+        when(capacityDao.findByHostIdType(HOST_ID, Capacity.CAPACITY_TYPE_CPU_CORE)).thenReturn(cpuCoreCap);
+    }
+
+    private void setUpAllocateMocks() {
+        setUpReleaseMocks();
+        when(vm.getHostId()).thenReturn(HOST_ID);
+        when(hostVO.getClusterId()).thenReturn(CLUSTER_ID);
+
+        ClusterDetailsVO cpuDetail = mock(ClusterDetailsVO.class);
+        when(cpuDetail.getValue()).thenReturn(CPU_OVERCOMMIT);
+        ClusterDetailsVO memDetail = mock(ClusterDetailsVO.class);
+        when(memDetail.getValue()).thenReturn(MEM_OVERCOMMIT);
+        when(clusterDetailsDao.findDetail(CLUSTER_ID, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cpuDetail);
+        when(clusterDetailsDao.findDetail(CLUSTER_ID, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(memDetail);
+    }
+
+    @Test
+    public void testReleaseVmCapacityNullHostReturnsTrue() {
+        assertTrue(capacityManager.releaseVmCapacity(mock(VirtualMachine.class), false, false, (Long) null));
+    }
+
+    @Test
+    public void testReleaseVmCapacityNullCapacityReturnsFalse() {
+        vm = mock(VirtualMachine.class);
+        when(vm.getId()).thenReturn(VM_ID);
+        when(vm.getServiceOfferingId()).thenReturn(SERVICE_OFFERING_ID);
+        hostVO = mock(HostVO.class);
+        when(hostVO.getId()).thenReturn(HOST_ID);
+        when(hostDao.findById(HOST_ID)).thenReturn(hostVO);
+
+        assertFalse(capacityManager.releaseVmCapacity(vm, false, false, HOST_ID));
+    }
+
+    @Test
+    public void testReleaseVmCapacityDecrementUsed() {
+        setUpReleaseMocks();
+        int expectedCpu = OFFERING_CPU * OFFERING_CPU_SPEED;
+        long expectedMem = OFFERING_MEMORY * 1024L * 1024L;
+
+        assertTrue(capacityManager.releaseVmCapacity(vm, false, false, HOST_ID));
+
+        verify(capacityDao).decrementUsedCapacity(CAPACITY_CPU_ID, expectedCpu);
+        verify(capacityDao).decrementUsedCapacity(CAPACITY_MEM_ID, expectedMem);
+        verify(capacityDao).decrementUsedCapacity(CAPACITY_CPUCORE_ID, OFFERING_CPU);
+        verify(capacityDao, never()).lockRow(anyLong(), anyBoolean());
+    }
+
+    @Test
+    public void testReleaseVmCapacityDecrementUsedIncrementReserved() {
+        setUpReleaseMocks();
+        when(hostVO.getClusterId()).thenReturn(CLUSTER_ID);
+        ClusterDetailsVO cpuDetail = mock(ClusterDetailsVO.class);
+        when(cpuDetail.getValue()).thenReturn(CPU_OVERCOMMIT);
+        ClusterDetailsVO memDetail = mock(ClusterDetailsVO.class);
+        when(memDetail.getValue()).thenReturn(MEM_OVERCOMMIT);
+        when(clusterDetailsDao.findDetail(CLUSTER_ID, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cpuDetail);
+        when(clusterDetailsDao.findDetail(CLUSTER_ID, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(memDetail);
+
+        int expectedCpu = OFFERING_CPU * OFFERING_CPU_SPEED;
+        long expectedMem = OFFERING_MEMORY * 1024L * 1024L;
+
+        assertTrue(capacityManager.releaseVmCapacity(vm, false, true, HOST_ID));
+
+        verify(capacityDao).decrementUsedIncrementReservedCapacity(CAPACITY_CPU_ID, expectedCpu, expectedCpu, Float.parseFloat(CPU_OVERCOMMIT));
+        verify(capacityDao).decrementUsedIncrementReservedCapacity(CAPACITY_MEM_ID, expectedMem, expectedMem, Float.parseFloat(MEM_OVERCOMMIT));
+        verify(capacityDao).decrementUsedIncrementReservedCapacity(CAPACITY_CPUCORE_ID, (long) OFFERING_CPU, (long) OFFERING_CPU);
+        verify(capacityDao, never()).lockRow(anyLong(), anyBoolean());
+    }
+
+    @Test
+    public void testReleaseVmCapacityDecrementReserved() {
+        setUpReleaseMocks();
+        int expectedCpu = OFFERING_CPU * OFFERING_CPU_SPEED;
+        long expectedMem = OFFERING_MEMORY * 1024L * 1024L;
+
+        assertTrue(capacityManager.releaseVmCapacity(vm, true, false, HOST_ID));
+
+        verify(capacityDao).decrementReservedCapacity(CAPACITY_CPU_ID, expectedCpu);
+        verify(capacityDao).decrementReservedCapacity(CAPACITY_MEM_ID, expectedMem);
+        verify(capacityDao).decrementReservedCapacity(CAPACITY_CPUCORE_ID, OFFERING_CPU);
+        verify(capacityDao, never()).lockRow(anyLong(), anyBoolean());
+    }
+
+    @Test
+    public void testAllocateVmCapacityNewHost() {
+        setUpAllocateMocks();
+        int expectedCpu = OFFERING_CPU * OFFERING_CPU_SPEED;
+        long expectedMem = OFFERING_MEMORY * 1024L * 1024L;
+
+        doReturn(true).when(capacityManager).checkIfHostHasCpuCapability(any(Host.class), any(Integer.class), any(Integer.class));
+        doReturn(true).when(capacityManager).checkIfHostHasCapacity(any(Host.class), any(Integer.class), anyLong(), anyBoolean(), anyFloat(), anyFloat(), anyBoolean());
+
+        capacityManager.allocateVmCapacity(vm, false);
+
+        verify(capacityDao).incrementUsedCapacity(CAPACITY_CPU_ID, expectedCpu);
+        verify(capacityDao).incrementUsedCapacity(CAPACITY_MEM_ID, expectedMem);
+        verify(capacityDao).incrementUsedCapacity(CAPACITY_CPUCORE_ID, OFFERING_CPU);
+        verify(capacityDao, never()).lockRow(anyLong(), anyBoolean());
+    }
+
+    @Test
+    public void testAllocateVmCapacityFromLastHost() {
+        setUpAllocateMocks();
+        int expectedCpu = OFFERING_CPU * OFFERING_CPU_SPEED;
+        long expectedMem = OFFERING_MEMORY * 1024L * 1024L;
+
+        doReturn(true).when(capacityManager).checkIfHostHasCpuCapability(any(Host.class), any(Integer.class), any(Integer.class));
+        doReturn(true).when(capacityManager).checkIfHostHasCapacity(any(Host.class), any(Integer.class), anyLong(), anyBoolean(), anyFloat(), anyFloat(), anyBoolean());
+
+        capacityManager.allocateVmCapacity(vm, true);
+
+        verify(capacityDao).incrementUsedDecrementReservedCapacity(CAPACITY_CPU_ID, expectedCpu, expectedCpu);
+        verify(capacityDao).incrementUsedDecrementReservedCapacity(CAPACITY_MEM_ID, expectedMem, expectedMem);
+        verify(capacityDao).incrementUsedDecrementReservedCapacity(CAPACITY_CPUCORE_ID, (long) OFFERING_CPU, (long) OFFERING_CPU);
+        verify(capacityDao, never()).lockRow(anyLong(), anyBoolean());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testAllocateVmCapacityInsufficientThrows() {
+        setUpAllocateMocks();
+
+        doReturn(true).when(capacityManager).checkIfHostHasCpuCapability(any(Host.class), any(Integer.class), any(Integer.class));
+        doReturn(false).when(capacityManager).checkIfHostHasCapacity(any(Host.class), any(Integer.class), anyLong(), anyBoolean(), anyFloat(), anyFloat(), anyBoolean());
+
+        capacityManager.allocateVmCapacity(vm, false);
+    }
+
+    @Test
+    public void testAllocateVmCapacityNullCapacityReturnsEarly() {
+        setUpAllocateMocks();
+        when(capacityDao.findByHostIdType(HOST_ID, Capacity.CAPACITY_TYPE_CPU)).thenReturn(null);
+
+        capacityManager.allocateVmCapacity(vm, false);
+
+        verify(capacityDao, never()).incrementUsedCapacity(anyLong(), anyLong());
+        verify(capacityDao, never()).incrementUsedDecrementReservedCapacity(anyLong(), anyLong(), anyLong());
+    }
     @Test
     public void testUpdateCapacityForHostMixedStaticAndDynamic() throws Exception {
         HostVO testHost = mock(HostVO.class);
