@@ -893,7 +893,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Assert.assertTrue(formattedVariables.containsValue("zonename"));
     }
 
-<<<<<<< HEAD
     private List<QuotaBalanceVO> getQuotaBalancesForTest() {
         List<QuotaBalanceVO> balances = new ArrayList<>();
 
