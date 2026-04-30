@@ -21,14 +21,14 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
-import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 
 import com.cloud.user.AccountVO;
 import com.cloud.utils.component.PluggableService;
 
 public interface QuotaService extends PluggableService {
 
-    List<QuotaUsageVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate);
+    List<QuotaUsageJoinVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate);
 
     List<QuotaBalanceVO> listQuotaBalancesForAccount(Long accountId, Date startDate, Date endDate);
 

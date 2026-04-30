@@ -29,6 +29,7 @@ import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
 import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.quota.dao.QuotaUsageJoinDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.commons.lang3.time.DateUtils;
@@ -67,6 +68,8 @@ public class QuotaServiceImplTest extends TestCase {
     @Mock
     QuotaBalanceDao quotaBalanceDao;
     @Mock
+    QuotaUsageJoinDao quotaUsageJoinDaoMock;
+    @Mock
     QuotaResponseBuilder respBldr;
     @Spy
     @InjectMocks
@@ -86,9 +89,9 @@ public class QuotaServiceImplTest extends TestCase {
         quotaAccountDaoField.setAccessible(true);
         quotaAccountDaoField.set(quotaServiceImplSpy, quotaAcc);
 
-        Field quotaUsageDaoField = QuotaServiceImpl.class.getDeclaredField("_quotaUsageDao");
+        Field quotaUsageDaoField = QuotaServiceImpl.class.getDeclaredField("quotaUsageJoinDao");
         quotaUsageDaoField.setAccessible(true);
-        quotaUsageDaoField.set(quotaServiceImplSpy, quotaUsageDao);
+        quotaUsageDaoField.set(quotaServiceImplSpy, quotaUsageJoinDaoMock);
 
         Field domainDaoField = QuotaServiceImpl.class.getDeclaredField("_domainDao");
         domainDaoField.setAccessible(true);
@@ -119,7 +122,8 @@ public class QuotaServiceImplTest extends TestCase {
         final Date endDate = new Date();
 
         quotaServiceImplSpy.getQuotaUsage(accountId, accountName, domainId, QuotaTypes.IP_ADDRESS, startDate, endDate);
-        Mockito.verify(quotaUsageDao, Mockito.times(1)).findQuotaUsage(Mockito.eq(accountId), Mockito.eq(domainId), Mockito.eq(QuotaTypes.IP_ADDRESS), Mockito.any(Date.class), Mockito.any(Date.class));
+        Mockito.verify(quotaUsageJoinDaoMock, Mockito.times(1)).findQuotaUsage(Mockito.eq(accountId), Mockito.eq(domainId), Mockito.eq(QuotaTypes.IP_ADDRESS), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(Date.class), Mockito.any(Date.class), Mockito.any());
     }
 
     @Test
