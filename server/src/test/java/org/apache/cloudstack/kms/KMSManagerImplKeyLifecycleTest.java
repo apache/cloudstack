@@ -28,6 +28,7 @@ import org.apache.cloudstack.kms.dao.HSMProfileDao;
 import org.apache.cloudstack.kms.dao.KMSKekVersionDao;
 import org.apache.cloudstack.kms.dao.KMSKeyDao;
 import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,8 +38,11 @@ import org.mockito.Mockito;
 import org.mockito.MockedStatic;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -82,11 +86,26 @@ public class KMSManagerImplKeyLifecycleTest {
     @Mock
     private KMSProvider kmsProvider;
 
+    private ExecutorService executor;
+
     @Before
     public void setUp() {
+        executor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "kms-test");
+            t.setDaemon(true);
+            return t;
+        });
+        ReflectionTestUtils.setField(kmsManager, "kmsOperationExecutor", executor);
         doReturn(5).when(kmsManager).getOperationTimeoutSec();
         doReturn(0).when(kmsManager).getRetryCount();
         doReturn(0).when(kmsManager).getRetryDelayMs();
+    }
+
+    @After
+    public void tearDown() {
+        if (executor != null) {
+            executor.shutdownNow();
+        }
     }
 
     @Test(expected = KMSException.class)

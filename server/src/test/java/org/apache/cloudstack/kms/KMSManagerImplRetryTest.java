@@ -18,12 +18,17 @@
 package org.apache.cloudstack.kms;
 
 import org.apache.cloudstack.framework.kms.KMSException;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -45,6 +50,25 @@ public class KMSManagerImplRetryTest {
     @Spy
     @InjectMocks
     private KMSManagerImpl kmsManager;
+
+    private ExecutorService executor;
+
+    @Before
+    public void setUp() {
+        executor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "kms-test");
+            t.setDaemon(true);
+            return t;
+        });
+        ReflectionTestUtils.setField(kmsManager, "kmsOperationExecutor", executor);
+    }
+
+    @After
+    public void tearDown() {
+        if (executor != null) {
+            executor.shutdownNow();
+        }
+    }
 
     /**
      * Configure the spy to use a 1-second timeout, the given retry count, and no delay.
