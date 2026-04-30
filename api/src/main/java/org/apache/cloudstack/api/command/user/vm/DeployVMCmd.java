@@ -66,7 +66,7 @@ public class DeployVMCmd extends BaseDeployVMCmd {
     @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.UUID, entityType = SnapshotResponse.class, since = "4.21")
     private Long snapshotId;
 
-    @Parameter(name = "blank", type = CommandType.BOOLEAN, since = "4.22.1")
+    @Parameter(name = "blank", type = CommandType.BOOLEAN, since = "4.23.0")
     private Boolean blankInstance;
 
 

@@ -114,7 +114,8 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
             type = CommandType.UUID,
             entityType = StoragePoolResponse.class,
             description = "Storage pool ID to create the volume in. Cannot be used with the snapshotid parameter.",
-            authorized = {RoleType.Admin})
+            authorized = {RoleType.Admin},
+            since = "4.23.0")
     private Long storageId;
 
     /////////////////////////////////////////////////////
@@ -150,6 +151,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
     }
 
     public Long getSnapshotId() {
+        if (storageId != null && snapshotId != null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Snapshot ID cannot be specified with the Storage ID.");
+        }
         return snapshotId;
     }
 
@@ -164,7 +169,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
     public Long getStorageId() {
         if (snapshotId != null && storageId != null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                    "StorageId parameter cannot be specified with the SnapshotId parameter.");
+                    "Storage ID cannot be specified with the Snapshot ID.");
         }
         return storageId;
     }

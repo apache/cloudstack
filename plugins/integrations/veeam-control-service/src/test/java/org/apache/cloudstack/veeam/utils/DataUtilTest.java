@@ -29,7 +29,7 @@ public class DataUtilTest {
 
     @Test
     public void testB64Url_UsesUrlSafeAlphabetAndNoPadding() {
-        final String encoded = DataUtil.b64Url(new byte[]{(byte)0xfb, (byte)0xff});
+        final String encoded = DataUtil.b64Url(new byte[]{(byte) 0xfb, (byte) 0xff});
         assertEquals("-_8", encoded);
     }
 

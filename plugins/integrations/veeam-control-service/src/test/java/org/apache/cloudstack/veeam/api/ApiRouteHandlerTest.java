@@ -89,4 +89,3 @@ public class ApiRouteHandlerTest extends RouteHandlerTestSupport {
         assertContains(response.body(), "\"reason\":\"Not found\"");
     }
 }
-
