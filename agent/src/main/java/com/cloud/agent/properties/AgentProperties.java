@@ -599,6 +599,25 @@ public class AgentProperties{
         = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
 
     /**
+     * Action taken by the KVM agent's storage heartbeat scripts (kvmheartbeat.sh / kvmspheartbeat.sh)
+     * when a heartbeat write fails persistently. Allowed values:
+     * <ul>
+     *   <li>{@code reboot} (default) — immediate sysrq-trigger reboot; original behavior</li>
+     *   <li>{@code graceful-reboot} — {@code systemctl reboot} instead of sysrq, lets VMs stop cleanly</li>
+     *   <li>{@code restart-agent} — restart cloudstack-agent only; running VMs preserved</li>
+     *   <li>{@code log-only} — log + alert, no automatic action</li>
+     * </ul>
+     * The non-default values are recommended for setups using LINSTOR/DRBD or other replicated
+     * local storage, where transient I/O contention can cause a heartbeat write to time out
+     * without the host actually being unhealthy.<br>
+     * Read by the heartbeat shell scripts directly from agent.properties.<br>
+     * Data type: String.<br>
+     * Default value: {@code reboot}
+     */
+    public static final Property<String> KVM_HEARTBEAT_FENCE_ACTION
+        = new Property<>("kvm.heartbeat.fence.action", "reboot");
+
+    /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
      * Data type: Boolean.<br>
      * Default value: <code>true</code>
