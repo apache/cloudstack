@@ -418,7 +418,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         try {
             JmxReporter.forRegistry(METRIC_REGISTRY).inDomain("vm-extra").build().start();
         } catch (Exception e) {
-            LOGGER.warn("Failed to start JMX reporter for METRIC_REGISTRY; CloudOS metrics will not be visible via JMX: " + e.getMessage());
+            LOGGER.warn("Failed to start JMX reporter for METRIC_REGISTRY; CloudOS metrics will not be visible via JMX", e);
         }
         return true;
     }
