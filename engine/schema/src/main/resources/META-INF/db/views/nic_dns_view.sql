@@ -37,4 +37,4 @@ FROM
         LEFT JOIN
     `cloud`.`nic_details` nd ON n.id = nd.nic_id AND nd.name = 'nicdnsname'
 WHERE
-    map.removed IS NULL;
+    n.instance_id IS NOT NULL AND map.removed IS NULL;

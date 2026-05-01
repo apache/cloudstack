@@ -1194,7 +1194,7 @@ public class DnsProviderManagerImplTest {
         NicDnsJoinVO existing =
                 mock(NicDnsJoinVO.class);
         when(existing.getInstanceId()).thenReturn(99L);
-        when(nicDnsJoinDao.findActiveByDnsRecordAndZone("vm.example.com", ZONE_ID)).thenReturn(existing);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(ZONE_ID, "vm.example.com")).thenReturn(existing);
 
         try (MockedStatic<com.cloud.event.ActionEventUtils> aeMock =
                 Mockito.mockStatic(com.cloud.event.ActionEventUtils.class)) {
@@ -1209,7 +1209,7 @@ public class DnsProviderManagerImplTest {
 
     @Test
     public void testIsDnsCollisionReturnsFalseWhenNoExistingRecord() {
-        when(nicDnsJoinDao.findActiveByDnsRecordAndZone("vm.example.com", ZONE_ID)).thenReturn(null);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(ZONE_ID, "vm.example.com")).thenReturn(null);
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(
                 manager, "isDnsCollision", "vm.example.com", ZONE_ID, 42L);
         assertFalse(result);
@@ -1220,7 +1220,7 @@ public class DnsProviderManagerImplTest {
         NicDnsJoinVO existing =
                 mock(NicDnsJoinVO.class);
         when(existing.getInstanceId()).thenReturn(42L);
-        when(nicDnsJoinDao.findActiveByDnsRecordAndZone("vm.example.com", ZONE_ID)).thenReturn(existing);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(ZONE_ID, "vm.example.com")).thenReturn(existing);
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(
                 manager, "isDnsCollision", "vm.example.com", ZONE_ID, 42L);
         assertFalse(result);
@@ -1325,7 +1325,7 @@ public class DnsProviderManagerImplTest {
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
 
         // no collision
-        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(null);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(eq(ZONE_ID), anyString())).thenReturn(null);
         // sync: no IPs → delete both
         when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(51L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
@@ -1367,7 +1367,7 @@ public class DnsProviderManagerImplTest {
         NicDnsJoinVO colliding =
                 mock(NicDnsJoinVO.class);
         when(colliding.getInstanceId()).thenReturn(999L);
-        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(colliding);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(eq(ZONE_ID), anyString())).thenReturn(colliding);
 
         try (MockedStatic<com.cloud.utils.db.Transaction> txMock =
                 Mockito.mockStatic(com.cloud.utils.db.Transaction.class);
@@ -1438,7 +1438,7 @@ public class DnsProviderManagerImplTest {
         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
 
         // no collision for new record
-        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(null);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(eq(ZONE_ID), anyString())).thenReturn(null);
         // sync always returns empty → deleteRecord called
         when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(62L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
@@ -1486,7 +1486,7 @@ public class DnsProviderManagerImplTest {
         NicDnsJoinVO colliding =
                 mock(NicDnsJoinVO.class);
         when(colliding.getInstanceId()).thenReturn(999L);
-        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(anyString(), eq(ZONE_ID))).thenReturn(colliding);
+        when(nicDnsJoinDao.findActiveByDnsRecordAndZone(eq(ZONE_ID), anyString())).thenReturn(colliding);
         when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(63L), eq(ZONE_ID), anyString()))
                 .thenReturn(Collections.emptyList());
 

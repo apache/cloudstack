@@ -27,20 +27,22 @@ public interface NicDnsJoinDao extends GenericDao<NicDnsJoinVO, Long> {
 
     /**
      * Used for Collision Checks.
-     * @param dnsRecordUrl
+     *
      * @param dnsZoneId
+     * @param nicDnsName
      * @return active records to see who currently owns the dnsRecordUrl.
      */
-    NicDnsJoinVO findActiveByDnsRecordAndZone(String dnsRecordUrl, long dnsZoneId);
+    NicDnsJoinVO findActiveByDnsRecordAndZone(long dnsZoneId, String nicDnsName);
 
     /**
      * Used to sync DNS record url based on available ips for vmId in the dnsZone
+     *
      * @param vmId
      * @param dnsZoneId
-     * @param dnsRecordUrl
+     * @param nicDnsName
      * @return list of active nics using the dnsRecordUrl, supports null vmId for dnsZone wide query
      */
-    List<NicDnsJoinVO> listActiveByVmIdZoneAndDnsRecord(Long vmId, long dnsZoneId, String dnsRecordUrl);
+    List<NicDnsJoinVO> listActiveByVmIdZoneAndDnsRecord(Long vmId, long dnsZoneId, String nicDnsName);
 
     /**
      * Used for VM Start/Running
@@ -55,4 +57,11 @@ public interface NicDnsJoinDao extends GenericDao<NicDnsJoinVO, Long> {
      * @return records with soft-delete
      */
     List<NicDnsJoinVO> listIncludingRemovedByVmId(long vmId);
+
+    /**
+     * Find all records for dnsZoneId with valid nicDnsName
+     * @param dnsZoneId
+     * @return
+     */
+    List<NicDnsJoinVO> listByZoneId(long dnsZoneId);
 }

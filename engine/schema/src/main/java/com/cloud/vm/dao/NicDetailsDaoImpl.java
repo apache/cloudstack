@@ -17,13 +17,12 @@
 package com.cloud.vm.dao;
 
 
-import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -31,14 +30,14 @@ import com.cloud.vm.NicDetailVO;
 
 @Component
 public class NicDetailsDaoImpl extends ResourceDetailsDaoBase<NicDetailVO> implements NicDetailsDao {
-    private final SearchBuilder<NicDetailVO> NameValuesSearch;
+    private final SearchBuilder<NicDetailVO> ResourceIdNameSearch;
 
     public NicDetailsDaoImpl() {
         super();
-        NameValuesSearch = createSearchBuilder();
-        NameValuesSearch.and(ApiConstants.NAME, NameValuesSearch.entity().getName(), SearchCriteria.Op.EQ);
-        NameValuesSearch.and(ApiConstants.VALUE, NameValuesSearch.entity().getValue(), SearchCriteria.Op.IN);
-        NameValuesSearch.done();
+        ResourceIdNameSearch = createSearchBuilder();
+        ResourceIdNameSearch.and(ApiConstants.NAME, ResourceIdNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        ResourceIdNameSearch.and(ApiConstants.RESOURCE_ID, ResourceIdNameSearch.entity().getResourceId(), SearchCriteria.Op.IN);
+        ResourceIdNameSearch.done();
     }
 
 
@@ -48,13 +47,13 @@ public class NicDetailsDaoImpl extends ResourceDetailsDaoBase<NicDetailVO> imple
     }
 
     @Override
-    public void removeDetailsForValuesIn(String resourceName, List<String> values) {
-        if (CollectionUtils.isEmpty(values)) {
+    public void removeDetailsForNicIds(String resourceName, Set<Long> nicIds) {
+        if (CollectionUtils.isEmpty(nicIds)) {
             return;
         }
-        SearchCriteria<NicDetailVO> sc = NameValuesSearch.create();
+        SearchCriteria<NicDetailVO> sc = ResourceIdNameSearch.create();
         sc.setParameters(ApiConstants.NAME, resourceName);
-        sc.setParameters(ApiConstants.VALUE, values.toArray());
+        sc.setParameters(ApiConstants.RESOURCE_ID, nicIds.toArray());
         remove(sc);
     }
 }

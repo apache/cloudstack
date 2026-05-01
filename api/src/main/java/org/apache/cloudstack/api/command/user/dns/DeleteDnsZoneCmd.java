@@ -52,8 +52,8 @@ public class DeleteDnsZoneCmd extends BaseAsyncCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.UNMANAGE, type = CommandType.BOOLEAN, entityType = DnsZoneResponse.class,
-            description = "If true, removes the DNS zone from CloudStack; if false, " +
-                    "removes it from both CloudStack and the DNS provider.")
+            description = "If true, imports an existing DNS zone from the DNS provider into CloudStack; " +
+                    "if false, creates the DNS zone in the provider and registers it with CloudStack. Default: false")
     private Boolean unmanage = false;
 
     /////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public class DeleteDnsZoneCmd extends BaseAsyncCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete DNS Zone");
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete DNS Zone: " + e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 

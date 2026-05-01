@@ -53,8 +53,14 @@ public class DeleteDnsServerCmd extends BaseAsyncCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN,
-            entityType = DnsZoneResponse.class, description = "True if all associated DNS zones have to be cleaned up with this server")
+            entityType = DnsZoneResponse.class, description = "If true, all associated DNS zones will be cleaned up " +
+            "when the server is removed. Default: true")
     private Boolean cleanup = true;
+
+    @Parameter(name = ApiConstants.UNMANAGE, type = CommandType.BOOLEAN, entityType = DnsZoneResponse.class,
+            description = "If true, the DNS zone is only removed from CloudStack (unmanaged); if false, it is removed " +
+                    "from both CloudStack and the DNS provider. Default: false")
+    private Boolean unmanage = false;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -101,5 +107,9 @@ public class DeleteDnsServerCmd extends BaseAsyncCmd {
 
     public Boolean getCleanup() {
         return Boolean.TRUE.equals(cleanup);
+    }
+
+    public Boolean isUnmanage() {
+        return Boolean.TRUE.equals(unmanage);
     }
 }

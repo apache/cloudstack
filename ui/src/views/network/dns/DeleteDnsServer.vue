@@ -59,6 +59,20 @@
             v-focus="true" />
         </a-form-item>
 
+        <a-form-item name="cleanup" ref="cleanup">
+          <template #label>
+            <tooltip-label :title="$t('label.cleanup')" :tooltip="apiParams.cleanup?.description" />
+          </template>
+          <a-switch v-model:checked="form.cleanup" @change="onCleanupChange" />
+        </a-form-item>
+
+        <a-form-item v-if="form.cleanup" name="unmanage" ref="unmanage">
+          <template #label>
+            <tooltip-label :title="$t('label.dns.unmanage.zone')" :tooltip="apiParams.unmanage?.description" />
+          </template>
+          <a-switch v-model:checked="form.unmanage" />
+        </a-form-item>
+
         <div class="action-button">
           <a-button @click="closeAction">
             {{ $t('label.cancel') }}
@@ -79,9 +93,13 @@
 
 <script>
 import { getAPI, postAPI } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'DeleteDnsServer',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -91,9 +109,12 @@ export default {
   data () {
     return {
       loading: false,
+      apiParams: {},
       dnsZones: [],
       form: {
-        name: ''
+        name: '',
+        cleanup: true,
+        unmanage: false
       },
       rules: {
         name: [{ required: true, message: this.$t('message.error.required.input') }]
@@ -103,9 +124,15 @@ export default {
     }
   },
   created () {
+    this.apiParams = this.$getApiParams('deleteDnsServer') || {}
     this.fetchDnsZones()
   },
   methods: {
+    onCleanupChange (checked) {
+      if (!checked) {
+        this.form.unmanage = false
+      }
+    },
     async fetchDnsZones () {
       this.loading = true
       try {
@@ -125,7 +152,12 @@ export default {
 
       try {
         const params = {
-          id: this.resource.id
+          id: this.resource.id,
+          cleanup: this.form.cleanup
+        }
+
+        if (this.form.cleanup) {
+          params.unmanage = this.form.unmanage
         }
 
         const response = await postAPI('deleteDnsServer', params)

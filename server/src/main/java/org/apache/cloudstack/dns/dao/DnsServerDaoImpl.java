@@ -173,6 +173,9 @@ public class DnsServerDaoImpl extends GenericDaoBase<DnsServerVO, Long> implemen
 
     @Override
     public void loadDetails(DnsServer dnsServer) {
+        if (dnsServer == null) {
+            return;
+        }
         Map<String, String> details = dnsServerDetailsDao.listDetailsKeyPairs(dnsServer.getId());
         dnsServer.setDetails(details);
     }

@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -316,7 +315,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
                 List<DnsZoneVO> dnsZones = dnsZoneDao.findDnsZonesByServerId(dnsServerId);
                 for (DnsZoneVO dnsZone : dnsZones) {
                     try {
-                        deleteDnsZone(dnsZone.getId(), false);
+                        deleteDnsZone(dnsZone.getId(), cmd.isUnmanage());
                     } catch (Exception ex) {
                         logger.error("Error cleaning up DNS zone: {} during DNS server: {} deletion", dnsZone.getName(), dnsServer.getName());
                     }
@@ -328,7 +327,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DNS_ZONE_DELETE, eventDescription = "Deleting DNS Zone")
-    public boolean deleteDnsZone(Long zoneId, boolean isUnmanage) {
+    public boolean deleteDnsZone(Long zoneId, boolean retainInProvider) {
         DnsZoneVO dnsZone = dnsZoneDao.findById(zoneId);
         if (dnsZone == null) {
             throw new InvalidParameterValueException("DNS zone not found for the given ID.");
@@ -336,23 +335,16 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
         String dnsZoneName = dnsZone.getName();
         Account caller = CallContext.current().getCallingAccount();
         accountMgr.checkAccess(caller, null, true, dnsZone);
-        DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
-        if (server == null) {
-            throw new CloudRuntimeException(String.format("The DNS server not found for DNS zone: %s", dnsZoneName));
-        }
 
         boolean dbResult = Transaction.execute((TransactionCallback<Boolean>) status -> {
             DnsZoneNetworkMapVO networkMapVO = dnsZoneNetworkMapDao.findByZoneId(zoneId);
-            DnsProvider provider = getProviderByType(server.getProviderType());
             // Remove DNS records from nic_details if there are any
             if (networkMapVO != null) {
                 try {
-                    List<DnsRecord> records = provider.listRecords(server, dnsZone);
-                    if (CollectionUtils.isNotEmpty(records)) {
-                        List<String> dnsRecordNames = records.stream().map(DnsRecord::getName).filter(Objects::nonNull)
-                                .map(name -> name.replaceAll("\\.+$", ""))
-                                .collect(Collectors.toList());
-                        nicDetailsDao.removeDetailsForValuesIn(ApiConstants.NIC_DNS_NAME, dnsRecordNames);
+                    List<NicDnsJoinVO> nicDnsJoinVOS = nicDnsJoinDao.listByZoneId(zoneId);
+                    if (CollectionUtils.isNotEmpty(nicDnsJoinVOS)) {
+                        Set<Long> nicIds = nicDnsJoinVOS.stream().map(NicDnsJoinVO::getId).collect(Collectors.toSet());
+                        nicDetailsDao.removeDetailsForNicIds(ApiConstants.NIC_DNS_NAME, nicIds);
                     }
                 } catch (Exception ex) {
                     logger.warn("Failed to fetch DNS records for dnsZone: {}, perform manual cleanup.", dnsZoneName, ex);
@@ -361,14 +353,22 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
             }
 
             // Remove DNS zone from provider and cleanup DB
-            if (!isUnmanage) {
+            if (!retainInProvider) {
                 try {
+                    DnsServerVO server = dnsServerDao.findById(dnsZone.getDnsServerId());
+                    if (server == null) {
+                        throw new CloudRuntimeException(String.format("The DNS server not found for DNS zone: %s", dnsZoneName));
+                    }
+                    DnsProvider provider = getProviderByType(server.getProviderType());
                     provider.deleteZone(server, dnsZone);
                     logger.debug("Deleted DNS zone: {} from provider", dnsZoneName);
                 } catch (DnsNotFoundException ex) {
                     logger.warn("DNS zone: {} is not present in the provider, proceeding with cleanup", dnsZoneName);
                 } catch (Exception ex) {
                     logger.error("Failed to delete DNS zone from provider", ex);
+                    if (ex instanceof CloudRuntimeException) {
+                        throw new CloudRuntimeException(ex.getMessage());
+                    }
                     throw new CloudRuntimeException(String.format("Failed to delete DNS zone: %s.", dnsZoneName));
                 }
             }
@@ -1151,7 +1151,7 @@ public class DnsProviderManagerImpl extends ManagerBase implements DnsProviderMa
     }
 
     private boolean isDnsCollision(String dnsRecordUrl, long targetZoneId, long instanceId) {
-        NicDnsJoinVO existing = nicDnsJoinDao.findActiveByDnsRecordAndZone(dnsRecordUrl, targetZoneId);
+        NicDnsJoinVO existing = nicDnsJoinDao.findActiveByDnsRecordAndZone(targetZoneId, dnsRecordUrl);
         if (existing != null && existing.getInstanceId() != instanceId) {
             logger.error("DNS collision: cannot register DNS record: {}. Already owned by Instance: {}.",
                     dnsRecordUrl, existing.getInstanceId());

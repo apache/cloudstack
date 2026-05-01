@@ -68,7 +68,7 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.EXISTING, type = CommandType.BOOLEAN, entityType = DnsZoneResponse.class,
             description = "If true, imports an existing DNS zone from the DNS provider into CloudStack. " +
-                    "If false, creates the zone in the DNS provider and registers it in CloudStack.")
+                    "If false, creates the zone in the DNS provider and registers it in CloudStack. Default is false")
     private Boolean existing = false;
 
     /////////////////////////////////////////////////////
