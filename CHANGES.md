@@ -4,6 +4,11 @@ Apache CloudStack CHANGES
 
 Full release notes for each release are located in the project's documentation [website](https://docs.cloudstack.apache.org/en/latest/releasenotes/index.html)
 
+NexaCloud Rebranding
+-------------------
+
+- CloudStack rebranded to NexaCloud; monochrome theme; communication links removed.
+
 Version 4.5.0
 -------------
 
