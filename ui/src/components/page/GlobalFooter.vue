@@ -32,10 +32,10 @@
         </a>
       </span>
       <a-divider type="vertical" />
-      <a href="https://github.com/apache/cloudstack/discussions" target="_blank">
+      <span>
         <github-outlined />
-        {{ $t('label.report.bug') }}
-      </a>
+        {{ $t('label.product.support.notice') }}
+      </span>
     </div>
   </div>
 </template>
