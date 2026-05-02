@@ -31,11 +31,6 @@
             {{ $t('label.new.version.available') + ': ' + $store.getters.latestVersion.version }}
         </a>
       </span>
-      <a-divider type="vertical" />
-      <a href="https://github.com/apache/cloudstack/discussions" target="_blank">
-        <github-outlined />
-        {{ $t('label.report.bug') }}
-      </a>
     </div>
   </div>
 </template>
