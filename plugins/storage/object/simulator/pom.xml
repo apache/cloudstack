@@ -46,12 +46,12 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.5.2</version>
+            <version>${cs.minio.version}</version>
         </dependency>
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio-admin</artifactId>
-            <version>8.5.2</version>
+            <version>${cs.minio.version}</version>
         </dependency>
     </dependencies>
 </project>
