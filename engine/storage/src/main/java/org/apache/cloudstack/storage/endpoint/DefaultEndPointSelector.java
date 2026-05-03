@@ -32,8 +32,11 @@ import javax.inject.Inject;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
+import com.cloud.storage.clvm.ClvmPoolManager;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.QueryBuilder;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -46,6 +49,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -59,8 +63,8 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.TemplateType;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -75,6 +79,12 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private HostDao hostDao;
     @Inject
     private DedicatedResourceDao dedicatedResourceDao;
+    @Inject
+    private PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private VolumeDetailsDao _volDetailsDao;
+    @Inject
+    private ClvmPoolManager clvmPoolManager;
 
     private static final String VOL_ENCRYPT_COLUMN_NAME = "volume_encryption_support";
     private final String findOneHostOnPrimaryStorage = "select t.id from "
@@ -264,6 +274,36 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject srcData, DataObject destData, boolean volumeEncryptionSupportRequired) {
+        if (destData instanceof VolumeInfo) {
+            EndPoint clvmEndpoint = selectClvmEndpointIfApplicable((VolumeInfo) destData, "template-to-volume copy");
+            if (clvmEndpoint != null) {
+                return clvmEndpoint;
+            }
+        }
+
+        // Check if SOURCE is a CLVM volume with active lock (for operations copying FROM CLVM to secondary storage)
+        if (srcData instanceof VolumeInfo) {
+            VolumeInfo srcVolume = (VolumeInfo) srcData;
+            DataStore srcStore = srcVolume.getDataStore();
+            if (srcStore.getRole() == DataStoreRole.Primary) {
+                StoragePoolVO pool = _storagePoolDao.findById(srcStore.getId());
+                if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+                    Long lockHostId = getClvmLockHostId(srcVolume);
+                    if (lockHostId != null) {
+                        logger.info("Routing CLVM volume {} copy operation to source lock holder host {}",
+                                srcVolume.getUuid(), lockHostId);
+                        EndPoint ep = getEndPointFromHostId(lockHostId);
+                        if (ep != null) {
+                            return ep;
+                        }
+                        logger.warn("Could not get endpoint for CLVM lock host {}, falling back to default selection",
+                                lockHostId);
+                    }
+                }
+            }
+        }
+
+        // Default behavior for non-CLVM or when no destination host is set
         DataStore srcStore = srcData.getDataStore();
         DataStore destStore = destData.getDataStore();
         if (moveBetweenPrimaryImage(srcStore, destStore)) {
@@ -388,18 +428,100 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return sc.list();
     }
 
+    /**
+     * Selects endpoint for CLVM volumes with destination host hint.
+     * This ensures volumes are created on the correct host with exclusive locks.
+     *
+     * @param volume The volume to check for CLVM routing
+     * @param operation Description of the operation (for logging)
+     * @return EndPoint for the destination host if CLVM routing applies, null otherwise
+     */
+    private EndPoint selectClvmEndpointIfApplicable(VolumeInfo volume, String operation) {
+        DataStore store = volume.getDataStore();
+
+        if (store.getRole() != DataStoreRole.Primary) {
+            return null;
+        }
+
+        // Check if this is a CLVM pool
+        StoragePoolVO pool = _storagePoolDao.findById(store.getId());
+        if (pool == null || !ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+            return null;
+        }
+
+        // Check if destination host hint is set
+        Long destHostId = volume.getDestinationHostId();
+        if (destHostId == null) {
+            return null;
+        }
+
+        logger.info("CLVM {}: routing volume {} to destination host {} for optimal exclusive lock placement",
+                operation, volume.getUuid(), destHostId);
+
+        EndPoint ep = getEndPointFromHostId(destHostId);
+        if (ep != null) {
+            return ep;
+        }
+
+        logger.warn("Could not get endpoint for destination host {}, falling back to default selection", destHostId);
+        return null;
+    }
+
     @Override
     public EndPoint select(DataObject object, boolean encryptionSupportRequired) {
         DataStore store = object.getDataStore();
+
+        // This ensures volumes are created on the correct host with exclusive locks
+        String operation = "";
+        if (DataStoreRole.Primary == store.getRole()) {
+            VolumeInfo volume = null;
+            if (object instanceof VolumeInfo) {
+                volume = (VolumeInfo) object;
+                operation = "volume creation";
+            } else if (object instanceof SnapshotInfo) {
+                volume = ((SnapshotInfo) object).getBaseVolume();
+                operation = "snapshot creation";
+            }
+
+            if (volume != null) {
+                EndPoint clvmEndpoint = selectClvmEndpointIfApplicable(volume, operation);
+                if (clvmEndpoint != null) {
+                    return clvmEndpoint;
+                }
+            }
+        }
+
+        // Default behavior for non-CLVM or when no destination host is set
         if (store.getRole() == DataStoreRole.Primary) {
             return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage, store.getId(), encryptionSupportRequired);
         }
         throw new CloudRuntimeException(String.format("Storage role %s doesn't support encryption", store.getRole()));
     }
 
+
     @Override
     public EndPoint select(DataObject object) {
         DataStore store = object.getDataStore();
+
+        // For CLVM volumes, check if there's a lock host ID to route to
+        if (object instanceof VolumeInfo && store.getRole() == DataStoreRole.Primary) {
+            VolumeInfo volume = (VolumeInfo) object;
+            StoragePoolVO pool = _storagePoolDao.findById(store.getId());
+            if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+                Long lockHostId = getClvmLockHostId(volume);
+                if (lockHostId != null) {
+                    logger.debug("Routing CLVM volume {} operation to lock holder host {}",
+                            volume.getUuid(), lockHostId);
+                    EndPoint ep = getEndPointFromHostId(lockHostId);
+                    if (ep != null) {
+                        return ep;
+                    }
+                    logger.warn("Could not get endpoint for CLVM lock host {}, falling back to default selection",
+                            lockHostId);
+                }
+            }
+        }
+
         EndPoint ep = select(store);
         if (ep != null) {
             return ep;
@@ -493,6 +615,31 @@ public class DefaultEndPointSelector implements EndPointSelector {
             }
             case DELETEVOLUME: {
                 VolumeInfo volume = (VolumeInfo) object;
+
+                // For CLVM volumes, route to the host holding the exclusive lock
+                if (volume.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+                    DataStore store = volume.getDataStore();
+                    if (store.getRole() == DataStoreRole.Primary) {
+                        StoragePoolVO pool = _storagePoolDao.findById(store.getId());
+                        if (pool != null && ClvmPoolManager.isClvmPoolType(pool.getPoolType())) {
+                            Long lockHostId = getClvmLockHostId(volume);
+                            if (lockHostId != null) {
+                                logger.info("Routing CLVM volume {} deletion to lock holder host {}",
+                                        volume.getUuid(), lockHostId);
+                                EndPoint ep = getEndPointFromHostId(lockHostId);
+                                if (ep != null) {
+                                    return ep;
+                                }
+                                logger.warn("Could not get endpoint for CLVM lock host {}, falling back to default selection",
+                                        lockHostId);
+                            } else {
+                                logger.debug("No CLVM lock host tracked for volume {}, using default endpoint selection",
+                                        volume.getUuid());
+                            }
+                        }
+                    }
+                }
+
                 if (volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
                     VirtualMachine vm = volume.getAttachedVM();
                     if (vm != null) {
@@ -588,5 +735,30 @@ public class DefaultEndPointSelector implements EndPointSelector {
             throw new CloudRuntimeException("shouldn't use it for other scope");
         }
         return endPoints;
+    }
+
+    /**
+    /**
+     * Gets the CLVM lock host ID for a volume by querying actual LVM state.
+     *
+     * @param volume The CLVM volume
+     * @return Host ID holding the lock, or null if not found
+     */
+    protected Long getClvmLockHostId(VolumeInfo volume) {
+        StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+
+        Long lockHostId = clvmPoolManager.getClvmLockHostId(
+                volume.getId(),
+                volume.getUuid(),
+                volume.getPath(),
+                pool,
+                true
+        );
+
+        if (lockHostId != null) {
+            logger.debug("Found actual lock host {} for volume {} via LVM query", lockHostId, volume.getUuid());
+        }
+
+        return lockHostId;
     }
 }

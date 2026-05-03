@@ -233,6 +233,11 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
             parameters.setHost(storageHost);
             parameters.setPort(0);
             parameters.setPath(hostPath.replaceFirst("/", ""));
+        } else if (scheme.equalsIgnoreCase("clvm_ng")) {
+            parameters.setType(StoragePoolType.CLVM_NG);
+            parameters.setHost(storageHost);
+            parameters.setPort(0);
+            parameters.setPath(hostPath.replaceFirst("/", ""));
         } else if (scheme.equalsIgnoreCase("rbd")) {
             if (port == -1) {
                 port = 0;
