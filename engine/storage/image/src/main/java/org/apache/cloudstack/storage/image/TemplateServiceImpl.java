@@ -295,12 +295,52 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
+    private boolean hasReachedSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
+        boolean isPrivate = !template.isPublicTemplate() && !template.isFeatured()
+                && !TemplateType.SYSTEM.equals(template.getTemplateType());
+        int copyLimit = isPrivate
+                ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId)
+                : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId);
+        if (copyLimit <= 0) {
+            return false;
+        }
+        List<DataStore> stores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
+        if (stores == null || stores.isEmpty()) {
+            return false;
+        }
+        int count = 0;
+        for (DataStore ds : stores) {
+            List<TemplateDataStoreVO> rows = _vmTemplateStoreDao.listByTemplateStore(template.getId(), ds.getId());
+            if (rows == null) {
+                continue;
+            }
+            for (TemplateDataStoreVO row : rows) {
+                State st = row.getState();
+                Status ds_state = row.getDownloadState();
+                if (st != State.Failed && st != State.Destroyed
+                        && ds_state != Status.ABANDONED && ds_state != Status.DOWNLOAD_ERROR) {
+                    count++;
+                    break;
+                }
+            }
+        }
+        logger.debug("Template [{}] secstorage copy check in zone [{}]: count={}, limit={}",
+                template.getUniqueName(), zoneId, count, copyLimit);
+        return count >= copyLimit;
+    }
+
     protected boolean shouldDownloadTemplateToStore(VMTemplateVO template, DataStore store) {
         Long zoneId = store.getScope().getScopeId();
         DataStore directedStore = _tmpltMgr.verifyHeuristicRulesForZone(template, zoneId);
         if (directedStore != null && store.getId() != directedStore.getId()) {
             logger.info("Template [{}] will not be download to image store [{}], as a heuristic rule is directing it to another store.",
                     template.getUniqueName(), store.getName());
+            return false;
+        }
+
+        if (zoneId != null && hasReachedSecStorageCopyLimit(template, zoneId)) {
+            logger.info("Skipping sync of template [{}] to image store [{}]: zone [{}] has reached the configured copy limit.",
+                    template.getUniqueName(), store.getName(), zoneId);
             return false;
         }
 
@@ -531,10 +571,13 @@ public class TemplateServiceImpl implements TemplateService {
                                         && tmpltStore.getState() == State.Ready
                                         && tmpltStore.getInstallPath() == null) {
                                     logger.info("Keep fake entry in template store table for migration of previous NFS to object store");
-                                } else {
+                                } else if (tmpltStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED
+                                        || tmpltStore.getState() == State.Ready) {
                                     logger.info("Removing leftover template {} entry from template store table", tmplt);
-                                    // remove those leftover entries
                                     _vmTemplateStoreDao.remove(tmpltStore.getId());
+                                } else {
+                                    logger.debug("Template {} entry on store {} is in pre-download state ({}/{}); not treating as leftover.",
+                                            tmplt, store, tmpltStore.getState(), tmpltStore.getDownloadState());
                                 }
                             }
                         }

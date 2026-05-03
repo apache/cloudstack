@@ -20,11 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -169,7 +167,13 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         return heuristicRuleHelper.getImageStoreIfThereIsHeuristicRule(zoneId, heuristicType, template);
     }
 
-    protected boolean isZoneAndImageStoreAvailable(DataStore imageStore, Long zoneId, Set<Long> zoneSet, boolean isTemplatePrivate) {
+    protected int getSecStorageCopyLimit(VMTemplateVO template, long zoneId) {
+        return isPrivateTemplate(template)
+                ? TemplateManager.PrivateTemplateSecStorageCopy.valueIn(zoneId)
+                : TemplateManager.PublicTemplateSecStorageCopy.valueIn(zoneId);
+    }
+
+    protected boolean isZoneAndImageStoreAvailable(DataStore imageStore, Long zoneId, Map<Long, Integer> zoneCopyCount, int copyLimit) {
         if (zoneId == null) {
             logger.warn(String.format("Zone ID is null, cannot allocate ISO/template in image store [%s].", imageStore));
             return false;
@@ -191,19 +195,13 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             return false;
         }
 
-        if (zoneSet == null) {
-            logger.info(String.format("Zone set is null; therefore, the ISO/template should be allocated in every secondary storage of zone [%s].", zone));
-            return true;
-        }
-
-        if (isTemplatePrivate && zoneSet.contains(zoneId)) {
-            logger.info(String.format("The template is private and it is already allocated in a secondary storage in zone [%s]; therefore, image store [%s] will be skipped.",
-                    zone, imageStore));
+        int currentCount = zoneCopyCount.getOrDefault(zoneId, 0);
+        if (copyLimit > 0 && currentCount >= copyLimit) {
+            logger.info("Copy limit of {} reached for zone [{}]; skipping image store [{}].", copyLimit, zone, imageStore);
             return false;
         }
 
-        logger.info(String.format("Private template will be allocated in image store [%s] in zone [%s].", imageStore, zone));
-        zoneSet.add(zoneId);
+        zoneCopyCount.put(zoneId, currentCount + 1);
         return true;
     }
 
@@ -212,12 +210,13 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
      * {@link TemplateProfile#getZoneIdList()}.
      */
     protected void postUploadAllocation(List<DataStore> imageStores, VMTemplateVO template, List<TemplateOrVolumePostUploadCommand> payloads) {
-        Set<Long> zoneSet = new HashSet<>();
+        Map<Long, Integer> zoneCopyCount = new HashMap<>();
         Collections.shuffle(imageStores);
         for (DataStore imageStore : imageStores) {
             Long zoneId_is = imageStore.getScope().getScopeId();
+            int copyLimit = zoneId_is == null ? 0 : getSecStorageCopyLimit(template, zoneId_is);
 
-            if (!isZoneAndImageStoreAvailable(imageStore, zoneId_is, zoneSet, isPrivateTemplate(template))) {
+            if (!isZoneAndImageStoreAvailable(imageStore, zoneId_is, zoneCopyCount, copyLimit)) {
                 continue;
             }
 

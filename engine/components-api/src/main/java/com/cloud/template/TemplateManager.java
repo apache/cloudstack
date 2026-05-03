@@ -45,6 +45,8 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface TemplateManager {
     static final String AllowPublicUserTemplatesCK = "allow.public.user.templates";
     static final String TemplatePreloaderPoolSizeCK = "template.preloader.pool.size";
+    static final String PublicTemplateSecStorageCopyCK = "secstorage.public.template.copy.max";
+    static final String PrivateTemplateSecStorageCopyCK = "secstorage.private.template.copy.max";
 
     static final ConfigKey<Boolean> AllowPublicUserTemplates = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowPublicUserTemplatesCK, "true",
         "If false, users will not be able to create public Templates.", true, ConfigKey.Scope.Account);
@@ -63,6 +65,18 @@ public interface TemplateManager {
             "Template when deleted will be instantly deleted from the Primary Storage",
             true,
             ConfigKey.Scope.Global);
+
+    ConfigKey<Integer> PublicTemplateSecStorageCopy = new ConfigKey<Integer>("Advanced", Integer.class,
+            PublicTemplateSecStorageCopyCK, "0",
+            "Maximum number of secondary storage pools to which a public template is copied. " +
+            "0 means copy to all secondary storage pools (default behavior).",
+            true, ConfigKey.Scope.Zone);
+
+    ConfigKey<Integer> PrivateTemplateSecStorageCopy = new ConfigKey<Integer>("Advanced", Integer.class,
+            PrivateTemplateSecStorageCopyCK, "1",
+            "Maximum number of secondary storage pools to which a private template is copied. " +
+            "Default is 1 to preserve existing behavior.",
+            true, ConfigKey.Scope.Zone);
 
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
