@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -87,16 +88,16 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class CapacityManagerImpl extends ManagerBase implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener,
@@ -288,7 +289,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     public void allocateVmCapacity(VirtualMachine vm, final boolean fromLastHost) {
 
         final long hostId = vm.getHostId();
-        final HostVO host = _hostDao.findById(hostId);
+        final HostVO host = CallContext.current().getRequestEntityCache().get(HostVO.class, hostId,
+                () -> _hostDao.findById(hostId));
         if (HypervisorType.External.equals(host.getHypervisorType())) {
             return;
         }
@@ -956,9 +958,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
       State oldState = transition.getCurrentState();
       State newState = transition.getToState();
       Event event = transition.getEvent();
-      Host lastHost = _hostDao.findById(vm.getLastHostId());
-      Host oldHost = _hostDao.findById(oldHostId);
-      Host newHost = _hostDao.findById(vm.getHostId());
+      Host lastHost = vm.getLastHostId() == null ? null : CallContext.current().getRequestEntityCache()
+              .get(HostVO.class, vm.getLastHostId(), () -> _hostDao.findById(vm.getLastHostId()));
+      Host oldHost = oldHostId == null ? null : CallContext.current().getRequestEntityCache()
+              .get(HostVO.class, oldHostId, () -> _hostDao.findById(oldHostId));
+      Host newHost = vm.getHostId() == null ? null : CallContext.current().getRequestEntityCache()
+              .get(HostVO.class, vm.getHostId(), () -> _hostDao.findById(vm.getHostId()));
       logger.debug(String.format("%s state transited from [%s] to [%s] with event [%s]. VM's original host: %s, new host: %s, host before state transition: %s", vm, oldState,
                 newState, event, lastHost, newHost, oldHost));
 

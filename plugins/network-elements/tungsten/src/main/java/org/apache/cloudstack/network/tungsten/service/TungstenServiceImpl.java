@@ -24,6 +24,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
@@ -2224,7 +2225,8 @@ public class TungstenServiceImpl extends ManagerBase implements TungstenService 
 
     @Override
     public boolean addTungstenVmSecurityGroup(VMInstanceVO vm) {
-        DataCenter dataCenter = dataCenterDao.findById(vm.getDataCenterId());
+        DataCenter dataCenter = CallContext.current().getRequestEntityCache()
+                .get(DataCenterVO.class, vm.getDataCenterId(), () -> dataCenterDao.findById(vm.getDataCenterId()));
         if (!dataCenter.isSecurityGroupEnabled()) {
             return true;
         }
