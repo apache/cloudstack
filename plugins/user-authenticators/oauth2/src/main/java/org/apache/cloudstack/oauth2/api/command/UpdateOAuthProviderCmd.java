@@ -16,8 +16,11 @@
 // under the License.
 package org.apache.cloudstack.oauth2.api.command;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.domain.Domain;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.auth.UserOAuth2Authenticator;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
@@ -114,8 +117,9 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
     public void execute() {
         OauthProviderVO result = _oauthMgr.updateOauthProvider(this);
         if (result != null) {
+            Domain domain = result.getDomainId() != null ? ApiDBUtils.findDomainById(result.getDomainId()) : null;
             OauthProviderResponse r = new OauthProviderResponse(result.getUuid(), result.getProvider(),
-                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri());
+                    result.getDescription(), result.getClientId(), result.getSecretKey(), result.getRedirectUri(), domain);
 
             List<UserOAuth2Authenticator> userOAuth2AuthenticatorPlugins = _oauthMgr.listUserOAuth2AuthenticationProviders();
             List<String> authenticatorPluginNames = new ArrayList<>();
@@ -123,7 +127,10 @@ public final class UpdateOAuthProviderCmd extends BaseCmd {
                 String name = authenticator.getName();
                 authenticatorPluginNames.add(name);
             }
-            if (OAuth2AuthManager.OAuth2IsPluginEnabled.value() && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
+            boolean oauthEnabled = result.getDomainId() == null
+                    ? Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.value())
+                    : Boolean.TRUE.equals(OAuth2AuthManager.OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, result.getDomainId(), true));
+            if (oauthEnabled && authenticatorPluginNames.contains(result.getProvider()) && result.isEnabled()) {
                 r.setEnabled(true);
             } else {
                 r.setEnabled(false);

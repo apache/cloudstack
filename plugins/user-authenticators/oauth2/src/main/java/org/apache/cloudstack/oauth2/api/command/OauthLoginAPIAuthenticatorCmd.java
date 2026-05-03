@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.oauth2.api.command;
 
+import java.util.Objects;
+
 import com.cloud.api.ApiServlet;
 import com.cloud.domain.Domain;
 import com.cloud.user.User;
@@ -47,6 +49,8 @@ import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
 import java.net.InetAddress;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import static org.apache.cloudstack.oauth2.OAuth2AuthManager.OAuth2IsPluginEnabled;
 
@@ -120,9 +124,6 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
     @Override
     public String authenticate(String command, Map<String, Object[]> params, HttpSession session, InetAddress remoteAddress, String responseType, StringBuilder auditTrailSb, final HttpServletRequest req, final HttpServletResponse resp) throws ServerApiException {
-        if (!OAuth2IsPluginEnabled.value()) {
-            throw new CloudAuthenticationException("OAuth is not enabled in CloudStack, users cannot login using OAuth");
-        }
         final String[] provider = (String[])params.get(ApiConstants.PROVIDER);
         final String[] emailArray = (String[])params.get(ApiConstants.EMAIL);
         final String[] secretCodeArray = (String[])params.get(ApiConstants.SECRET_CODE);
@@ -137,6 +138,19 @@ public class OauthLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
         Long domainId = getDomainIdFromParams(params, auditTrailSb, responseType);
         final String[] domainName = (String[])params.get(ApiConstants.DOMAIN);
         String domain = getDomainName(auditTrailSb, domainName);
+
+        final Domain userDomain = _domainService.findDomainByIdOrPath(domainId, domain);
+        if (Objects.nonNull(userDomain)) {
+            domainId = userDomain.getId();
+        }
+
+        boolean oauthEnabled = domainId == null
+                ? Boolean.TRUE.equals(OAuth2IsPluginEnabled.value())
+                : Boolean.TRUE.equals(OAuth2IsPluginEnabled.valueInScope(ConfigKey.Scope.Domain, domainId, true));
+        if (!oauthEnabled) {
+            logger.debug(String.format("OAuth is not enabled %s, users cannot login using OAuth", domainId == null ? "globally" : "in domain " + domainId));
+            throw new CloudAuthenticationException("You are not allowed to login, please contact your administrator.");
+        }
 
         return doOauthAuthentication(session, domainId, domain, email, params, remoteAddress, responseType, auditTrailSb);
     }
