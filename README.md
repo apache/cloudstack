@@ -118,9 +118,7 @@ via GitHub pull requests.
 ## News and Events
 
 * [Blog](https://blogs.apache.org/cloudstack)
-* [Twitter](https://twitter.com/cloudstack)
 * [Events and meetup](http://cloudstackcollab.org/)
-* [YouTube channel](https://www.youtube.com/ApacheCloudStack)
 
 ## Getting Involved and Contributing
 
@@ -143,14 +141,13 @@ several communications channels, the [mailing lists](https://cloudstack.apache.o
 official channels for making decisions about the project itself.
 
 Mailing lists:
-- [Development Mailing List](mailto:dev-subscribe@cloudstack.apache.org)
-- [Users Mailing List](mailto:users-subscribe@cloudstack.apache.org)
-- [Commits Mailing List](mailto:commits-subscribe@cloudstack.apache.org)
-- [Issues Mailing List](mailto:issues-subscribe@cloudstack.apache.org)
-- [Marketing Mailing List](mailto:marketing-subscribe@cloudstack.apache.org)
+- Development Mailing List
+- Users Mailing List
+- Commits Mailing List
+- Issues Mailing List
+- Marketing Mailing List
 
-Report and/or check bugs on [GitHub](https://github.com/apache/cloudstack/issues) and check our
-developer [page](https://cloudstack.apache.org/developers.html) for contributing code.
+Check our developer [page](https://cloudstack.apache.org/developers.html) for contributing code.
 
 ## Reporting Security Vulnerabilities
 
