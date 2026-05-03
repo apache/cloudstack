@@ -87,6 +87,15 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/views/extension/CreateExtension.vue')))
     },
     {
+      api: 'importExtension',
+      icon: 'cloud-upload-outlined',
+      label: 'label.import.extension',
+      docHelp: 'adminguide/extensions.html',
+      listView: true,
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/extension/ImportExtension.vue')))
+    },
+    {
       api: 'updateExtension',
       icon: 'edit-outlined',
       label: 'label.update.extension',
