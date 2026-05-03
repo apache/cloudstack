@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.offering.DomainAndZoneIdResolver;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingCategoryResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -108,6 +109,14 @@ public class UpdateServiceOfferingCmd extends BaseCmd implements DomainAndZoneId
             since = "4.22.0")
     protected Boolean cleanupExternalDetails;
 
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_CATEGORY_ID,
+            type = CommandType.UUID,
+            entityType = ServiceOfferingCategoryResponse.class,
+            required = false,
+            description = "the ID of the service offering category to associate",
+            since = "4.23")
+    private Long categoryId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -163,6 +172,8 @@ public class UpdateServiceOfferingCmd extends BaseCmd implements DomainAndZoneId
     public boolean isCleanupExternalDetails() {
         return Boolean.TRUE.equals(cleanupExternalDetails);
     }
+
+    public Long getCategoryId() { return categoryId; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
