@@ -1,0 +1,405 @@
+Added commands:
+
+    samlSso (SP initiated SAML Single Sign On)
+
+    samlSlo (SAML Global Log Out API)
+
+    getSPMetadata (Returns SAML2 CloudStack Service Provider MetaData)
+
+    listHostTags (Lists host tags)
+
+    listStorageTags (Lists storage tags)
+
+    addBrocadeVcsDevice (Adds a Brocade VCS Switch)
+
+
+
+    deleteBrocadeVcsDevice ( delete a Brocade VCS Switch)
+
+    listBrocadeVcsDevices (Lists Brocade VCS Switches)
+
+    listBrocadeVcsDeviceNetworks (lists network that are using a brocade vcs switch)
+
+    addNuageVspDevice (Adds a Nuage VSP device)
+
+    deleteNuageVspDevice (delete a nuage vsp device)
+
+    listNuageVspDevices (Lists Nuage VSP devices)
+
+    issueNuageVspResourceRequest (Issues a Nuage VSP REST API resource request)
+
+
+
+    getSolidFireAccountId (Get SolidFire Account ID)
+
+    getSolidFireVolumeSize (Get the SF volume size including Hypervisor Snapshot Reserve)
+
+    getSolidFireVolumeAccessGroupId (Get the SF Volume Access Group ID)
+
+    getSolidFireVolumeIscsiName (Get SolidFire Volume's Iscsi Name)
+
+    addBaremetalRct (adds baremetal rack configuration text)
+
+    deleteBaremetalRct (deletes baremetal rack configuration text)
+
+    listBaremetalRct (list baremetal rack configuration)
+
+    createServiceInstance (Creates a system virtual-machine that implements network services)
+
+    addOpenDaylightController (Adds an OpenDyalight controler)
+
+    deleteOpenDaylightController (Removes an OpenDyalight controler)
+
+    listOpenDaylightControllers (Lists OpenDyalight controllers)
+
+    addGloboDnsHost (Adds the GloboDNS external host)
+
+Removed commands:
+
+Changes in command type (sync versus async)
+
+
+
+
+
+
+
+Changes in commands arguments:
+
+	reconnectHost
+
+		Response:
+
+			New parameters: details 
+
+	listRouters
+
+		Response:
+
+			New parameters: hypervisor 
+
+	listVolumes
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	migrateVolume
+
+		Response:
+
+			New parameters: provisioningtype 
+-
+	destroySystemVm
+
+		Response:
+
+			New parameters: hypervisor 
+
+	listPublicIpAddresses
+
+		Request:
+
+			New parameters: state (optional) 
+
+	stopRouter
+
+		Response:
+
+			New parameters: hypervisor 
+
+	attachVolume
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	updateVolume
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	cancelHostMaintenance
+
+		Response:
+
+			New parameters: details 
+
+	updateServiceOffering
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	addBaremetalHost
+
+		Response:
+
+			New parameters: details 
+
+	resizeVolume
+
+		Request:
+
+			New parameters: maxiops (optional), miniops (optional) 
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	updateDiskOffering
+
+		Response:
+
+			New parameters: provisioningtype 
+--
+	startInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: hypervisor 
+
+	destroyRouter
+
+		Response:
+
+			New parameters: hypervisor 
+
+	listUsageRecords
+
+		Request:
+
+			New parameters: usageid (optional) 
+
+	updateTrafficType
+
+		Request:
+
+			New parameters: xenservernetworklabel (optional) 
+
+			Removed parameters: xennetworklabel 
+
+		Response:
+
+			New parameters: xenservernetworklabel 
+
+			Removed parameters: xennetworklabel 
+
+	listLBHealthCheckPolicies
+
+		Request:
+
+			Removed parameters: id 
+
+			Changed parameters: lbruleid (old version - optional, new version - required) 
+
+	addHost
+
+		Response:
+
+			New parameters: details 
+
+	rebootRouter
+
+		Response:
+
+			New parameters: hypervisor 
+
+	updateHost
+
+		Response:
+
+			New parameters: details 
+
+	listDiskOfferings
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	detachVolume
+
+		Response:
+
+			New parameters: provisioningtype 
+---
+	prepareHostForMaintenance
+
+		Response:
+
+			New parameters: details 
+
+	stopInternalLoadBalancerVM
+
+		Response:
+
+			New parameters: hypervisor 
+
+	stopSystemVm
+
+		Response:
+
+			New parameters: hypervisor 
+
+	login
+
+		Response:
+
+			New parameters: registered 
+
+			Removed parameters: password, timezoneoffset 
+
+	changeServiceForRouter
+
+		Response:
+
+			New parameters: hypervisor 
+
+	updateZone
+
+		Response:
+
+			Removed parameters: vlan 
+
+	startSystemVm
+
+		Response:
+
+			New parameters: hypervisor 
+
+	createZone
+
+		Response:
+
+			Removed parameters: vlan 
+
+	listBaremetalPxeServers
+
+		Request:
+
+			New parameters: physicalnetworkid (required) 
+
+	changeServiceForSystemVm
+
+		Response:
+
+			New parameters: hypervisor 
+
+	listBaremetalDhcp
+
+		Request:
+
+			New parameters: physicalnetworkid (required) 
+
+	addTrafficType
+
+		Request:
+
+			New parameters: xenservernetworklabel (optional) 
+
+			Removed parameters: xennetworklabel 
+
+		Response:
+
+			New parameters: xenservernetworklabel 
+
+			Removed parameters: xennetworklabel 
+
+	migrateSystemVm
+
+		Response:
+
+			New parameters: hypervisor 
+
+	createServiceOffering
+
+		Request:
+
+			New parameters: provisioningtype (optional) 
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	listZones
+
+		Response:
+
+			Removed parameters: vlan 
+
+	listExternalLoadBalancers
+
+		Response:
+
+			New parameters: details 
+
+	createVolume
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	startRouter
+
+		Response:
+
+			New parameters: hypervisor 
+
+	listSystemVms
+
+		Response:
+
+			New parameters: hypervisor 
+
+	updateVirtualMachine
+
+		Request:
+
+			New parameters: instancename (optional) 
+
+	listServiceOfferings
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	uploadVolume
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	createDiskOffering
+
+		Request:
+
+			New parameters: provisioningtype (optional) 
+
+		Response:
+
+			New parameters: provisioningtype 
+
+	listInternalLoadBalancerVMs
+
+		Response:
+
+			New parameters: hypervisor 
+
+	rebootSystemVm
+
+		Response:
+
+			New parameters: hypervisor 
+
+	scaleSystemVm
+
+		Response:
+
+			New parameters: hypervisor 
+
+	listHosts
+
+		Response:
+
+			New parameters: details 
