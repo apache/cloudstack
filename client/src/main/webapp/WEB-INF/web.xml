@@ -54,6 +54,12 @@
         <load-on-startup>6</load-on-startup>
     </servlet>
 
+    <servlet>
+        <servlet-name>shareServlet</servlet-name>
+        <servlet-class>org.apache.cloudstack.servlet.ShareServlet</servlet-class>
+        <load-on-startup>7</load-on-startup>
+    </servlet>
+
     <servlet-mapping>
          <servlet-name>apiServlet</servlet-name>
          <url-pattern>/api/*</url-pattern>
@@ -64,9 +70,24 @@
          <url-pattern>/console</url-pattern>
     </servlet-mapping>
 
+    <servlet-mapping>
+        <servlet-name>shareServlet</servlet-name>
+        <url-pattern>/share/*</url-pattern>
+    </servlet-mapping>
+
     <error-page>
         <exception-type>java.lang.Exception</exception-type>
         <location>/error.html</location>
     </error-page>
+
+    <filter>
+        <filter-name>share-signed-url</filter-name>
+        <filter-class>org.apache.cloudstack.servlet.ShareSignedUrlFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>share-signed-url</filter-name>
+        <url-pattern>/share/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
 
 </web-app>

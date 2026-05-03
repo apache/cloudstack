@@ -64,6 +64,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     protected static final String EXTRACT_USERDATA_DIR = "userdata";
     protected static final String BASE_EXTRACT_PATH = String.format("/var/www/html/%s/", EXTRACT_USERDATA_DIR);
+    protected static final String BASE_MOUNT_PATH = "/mnt/SecStorage/";
 
     public class Completion implements UploadCompleteCallback {
         private final String jobId;
@@ -106,7 +107,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     private ExecutorService threadPool;
     private final Map<String, UploadJob> jobs = new ConcurrentHashMap<String, UploadJob>();
     private String parentDir;
-    private final String extractMountPoint = "/mnt/SecStorage/extractmnt";
+    private final String extractMountPoint = BASE_MOUNT_PATH + "extractmnt";
     private StorageLayer _storage;
     private boolean hvm;
 
@@ -274,8 +275,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
         // Create the directory structure so that its visible under apache server root
-        String extractDir = BASE_EXTRACT_PATH;
-        extractDir = extractDir + cmd.getFilepathInExtractURL() + File.separator;
+        String extractDir = BASE_EXTRACT_PATH + cmd.getFilepathInExtractURL() + File.separator;
         Script command = new Script("/bin/su", logger);
         command.add("-s");
         command.add("/bin/bash");
@@ -289,7 +289,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
 
-        File file = new File("/mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath());
+        File file = new File(BASE_MOUNT_PATH + cmd.getParent() + File.separator + cmd.getInstallPath());
         // Return error if the file does not exist or is a directory
         if (!file.exists() || file.isDirectory()) {
             String errorString = "Error in finding the file " + file.getAbsolutePath();
@@ -302,7 +302,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata/cmd.getInstallPath();
         command = new Script("/bin/bash", logger);
         command.add("-c");
-        command.add("ln -sf /mnt/SecStorage/" + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + filename);
+        command.add("ln -sf " + BASE_MOUNT_PATH + cmd.getParent() + File.separator + cmd.getInstallPath() + " " + extractDir + filename);
         result = command.execute();
         if (result != null) {
             String errorString = "Error in linking  err=" + result;
@@ -349,21 +349,23 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             if (result != null) {
                 // FIXME - Ideally should bail out if you can't delete symlink. Not doing it right now.
                 // This is because the ssvm might already be destroyed and the symlinks do not exist.
-                logger.warn("Error in deleting symlink :" + result);
+                logger.warn("Error in deleting symlink :{}", result);
             } else {
                 deleteEntitySymlinkRootDirectoryIfNeeded(cmd, linkPath);
             }
         }
 
-        // If its a volume also delete the Hard link since it was created only for the purpose of download.
-        if (cmd.getType() == Upload.Type.VOLUME) {
+        // If its a volume or archive also delete the Hard link since it was created only for the purpose of download.
+        if (cmd.getType() == Upload.Type.VOLUME || cmd.getType() == Upload.Type.ARCHIVE) {
+            String targetPath = BASE_MOUNT_PATH + cmd.getParentPath() + File.separator + path;
             command = new Script("/bin/bash", logger);
             command.add("-c");
-            command.add("rm -rf /mnt/SecStorage/" + cmd.getParentPath() + File.separator + path);
-            logger.warn(" " + parentDir + File.separator + path);
+            command.add("rm -rf " + targetPath);
+            logger.warn("Deleted {} {}", cmd.getType().name().toLowerCase(), targetPath);
             result = command.execute();
             if (result != null) {
-                String errorString = "Error in deleting volume " + path + " : " + result;
+                String errorString = String.format("Error in deleting %s %s : %s", cmd.getType().name().toLowerCase(),
+                        path, result);
                 logger.warn(errorString);
                 return new Answer(cmd, false, errorString);
             }
@@ -372,7 +374,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         if (Upload.Type.SNAPSHOT.equals(cmd.getType())) {
             try {
                 path = path.replace(ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME, "");
-                String fullPath = String.format("/mnt/SecStorage/%s%s%s%s", cmd.getParentPath(), File.separator, path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
+                String fullPath = String.format("%s%s%s%s%s", BASE_MOUNT_PATH, cmd.getParentPath(), File.separator, path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
                 Files.deleteIfExists(Path.of(fullPath));
             } catch (IOException e) {
                 String errorString = String.format("Error deleting temporary snapshot %s%s.", path, ConvertSnapshotCommand.TEMP_SNAPSHOT_NAME);
