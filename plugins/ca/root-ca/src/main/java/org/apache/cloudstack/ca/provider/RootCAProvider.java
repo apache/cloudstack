@@ -40,7 +40,6 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -92,6 +91,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     private static KeyPair caKeyPair = null;
     private static X509Certificate caCertificate = null;
+    private static List<X509Certificate> caCertificates = null;
     private static KeyStore managementKeyStore = null;
 
     @Inject
@@ -106,17 +106,22 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     private static ConfigKey<String> rootCAPrivateKey = new ConfigKey<>("Hidden", String.class,
             "ca.plugin.root.private.key",
             null,
-            "The ROOT CA private key.", true);
+            "The ROOT CA private key in PEM format. " +
+            "When set along with the public key and certificate, CloudStack uses this custom CA instead of auto-generating one. " +
+            "All three ca.plugin.root.* keys must be set together. Restart management server(s) when changed.", false);
 
     private static ConfigKey<String> rootCAPublicKey = new ConfigKey<>("Hidden", String.class,
             "ca.plugin.root.public.key",
             null,
-            "The ROOT CA public key.", true);
+            "The ROOT CA public key in PEM format (X.509/SPKI: must start with '-----BEGIN PUBLIC KEY-----'). " +
+            "Required when providing a custom CA. Restart management server(s) when changed.", false);
 
     private static ConfigKey<String> rootCACertificate = new ConfigKey<>("Hidden", String.class,
             "ca.plugin.root.ca.certificate",
             null,
-            "The ROOT CA certificate.", true);
+            "The CA certificate(s) in PEM format (must start with '-----BEGIN CERTIFICATE-----'). " +
+            "For intermediate CAs, concatenate the signing cert first, followed by intermediate(s) and root. " +
+            "Required when providing a custom CA. Restart management server(s) when changed.", false);
 
     private static ConfigKey<String> rootCAIssuerDN = new ConfigKey<>("Advanced", String.class,
             "ca.plugin.root.issuer.dn",
@@ -151,7 +156,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
                 caCertificate, caKeyPair, keyPair.getPublic(),
                 subject, CAManager.CertSignatureAlgorithm.value(),
                 validityDays, domainNames, ipAddresses);
-        return new Certificate(clientCertificate, keyPair.getPrivate(), Collections.singletonList(caCertificate));
+        return new Certificate(clientCertificate, keyPair.getPrivate(), caCertificates);
     }
 
     private Certificate generateCertificateUsingCsr(final String csr, final List<String> names, final List<String> ips, final int validityDays) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, CertificateException, SignatureException, IOException, OperatorCreationException {
@@ -205,7 +210,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
                 caCertificate, caKeyPair, request.getPublicKey(),
                 subject, CAManager.CertSignatureAlgorithm.value(),
                 validityDays, dnsNames, ipAddresses);
-        return new Certificate(clientCertificate, null, Collections.singletonList(caCertificate));
+        return new Certificate(clientCertificate, null, caCertificates);
     }
 
     ////////////////////////////////////////////////////////
@@ -219,7 +224,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     @Override
     public List<X509Certificate> getCaCertificate() {
-        return Collections.singletonList(caCertificate);
+        return caCertificates;
     }
 
     @Override
@@ -254,8 +259,8 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     private KeyStore getCaKeyStore() throws CertificateException, NoSuchAlgorithmException, IOException, KeyStoreException {
         final KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, null);
-        if (caKeyPair != null && caCertificate != null) {
-            ks.setKeyEntry(caAlias, caKeyPair.getPrivate(), getKeyStorePassphrase(), new X509Certificate[]{caCertificate});
+        if (caKeyPair != null && CollectionUtils.isNotEmpty(caCertificates)) {
+            ks.setKeyEntry(caAlias, caKeyPair.getPrivate(), getKeyStorePassphrase(), caCertificates.toArray(new X509Certificate[0]));
         } else {
             return null;
         }
@@ -274,7 +279,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         final boolean authStrictness = rootCAAuthStrictness.value();
         final boolean allowExpiredCertificate = rootCAAllowExpiredCert.value();
 
-        TrustManager[] tms = new TrustManager[]{new RootCACustomTrustManager(remoteAddress, authStrictness, allowExpiredCertificate, certMap, caCertificate, crlDao)};
+        TrustManager[] tms = new TrustManager[]{new RootCACustomTrustManager(remoteAddress, authStrictness, allowExpiredCertificate, certMap, caCertificates, crlDao)};
 
         sslContext.init(kmf.getKeyManagers(), tms, new SecureRandom());
         final SSLEngine sslEngine = sslContext.createSSLEngine();
@@ -360,9 +365,23 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             return false;
         }
         try {
-            caCertificate = CertUtils.pemToX509Certificate(rootCACertificate.value());
-            caCertificate.verify(caKeyPair.getPublic());
-        } catch (final IOException | CertificateException | NoSuchAlgorithmException | InvalidKeyException | SignatureException | NoSuchProviderException e) {
+            caCertificates = CertUtils.pemToX509Certificates(rootCACertificate.value());
+            if (CollectionUtils.isEmpty(caCertificates)) {
+                logger.error("No certificates found in ca.plugin.root.ca.certificate");
+                return false;
+            }
+            caCertificate = caCertificates.get(0);
+
+            // Verify key ownership without enforcing self-signature
+            if (!caCertificate.getPublicKey().equals(caKeyPair.getPublic())) {
+                logger.error("The public key in the CA certificate does not match the configured CA public key");
+                return false;
+            }
+
+            if (caCertificates.size() > 1) {
+                logger.info("Loaded CA certificate chain with {} certificate(s)", caCertificates.size());
+            }
+        } catch (final IOException | CertificateException e) {
             logger.error("Failed to load saved RootCA certificate due to exception:", e);
             return false;
         }
@@ -389,9 +408,15 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         try {
             managementKeyStore = KeyStore.getInstance("JKS");
             managementKeyStore.load(null, null);
-            managementKeyStore.setCertificateEntry(caAlias, caCertificate);
+            int caIndex = 0;
+            for (final X509Certificate cert : caCertificates) {
+                managementKeyStore.setCertificateEntry(caAlias + "-" + caIndex++, cert);
+            }
+            final List<X509Certificate> fullChain = new ArrayList<>();
+            fullChain.add(serverCertificate.getClientCertificate());
+            fullChain.addAll(caCertificates);
             managementKeyStore.setKeyEntry(managementAlias, serverCertificate.getPrivateKey(), getKeyStorePassphrase(),
-                    new X509Certificate[]{serverCertificate.getClientCertificate(), caCertificate});
+                    fullChain.toArray(new X509Certificate[0]));
         } catch (final CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException  e) {
             logger.error("Failed to load root CA management-server keystore due to exception: ", e);
             return false;
@@ -422,13 +447,28 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
 
     private boolean setupCA() {
-        if (!loadRootCAKeyPair() && !saveNewRootCAKeypair()) {
-            logger.error("Failed to save and load root CA keypair");
-            return false;
+        if (!loadRootCAKeyPair()) {
+            if (hasUserProvidedCAKeys()) {
+                logger.error("Failed to load user-provided CA keys from configuration. " +
+                    "Check that ca.plugin.root.private.key, ca.plugin.root.public.key, and " +
+                    "ca.plugin.root.ca.certificate are all set and in the correct PEM format. " +
+                    "Overwriting with auto-generated keys.");
+            }
+            if (!saveNewRootCAKeypair()) {
+                logger.error("Failed to save and load root CA keypair");
+                return false;
+            }
         }
-        if (!loadRootCACertificate() && !saveNewRootCACertificate()) {
-            logger.error("Failed to save and load root CA certificate");
-            return false;
+        if (!loadRootCACertificate()) {
+            if (hasUserProvidedCAKeys()) {
+                logger.error("Failed to load user-provided CA certificate. " +
+                    "Check that ca.plugin.root.ca.certificate is set and in PEM format. " +
+                    "Overwriting with auto-generated certificate.");
+            }
+            if (!saveNewRootCACertificate()) {
+                logger.error("Failed to save and load root CA certificate");
+                return false;
+            }
         }
         if (!loadManagementKeyStore()) {
             logger.error("Failed to check and configure management server keystore");
@@ -437,10 +477,16 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         return true;
     }
 
+    private boolean hasUserProvidedCAKeys() {
+        return StringUtils.isNotEmpty(rootCAPublicKey.value())
+            || StringUtils.isNotEmpty(rootCAPrivateKey.value())
+            || StringUtils.isNotEmpty(rootCACertificate.value());
+    }
+
     @Override
     public boolean start() {
         managementCertificateCustomSAN = CAManager.CertManagementCustomSubjectAlternativeName.value();
-        return loadRootCAKeyPair() && loadRootCAKeyPair() && loadManagementKeyStore();
+        return loadRootCAKeyPair() && loadRootCACertificate() && loadManagementKeyStore();
     }
 
     @Override

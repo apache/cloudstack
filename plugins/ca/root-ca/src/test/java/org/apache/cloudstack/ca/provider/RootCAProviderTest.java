@@ -31,6 +31,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -75,7 +76,7 @@ public class RootCAProviderTest {
 
         addField(provider, "caKeyPair", caKeyPair);
         addField(provider, "caCertificate", caCertificate);
-        addField(provider, "caKeyPair", caKeyPair);
+        addField(provider, "caCertificates", Collections.singletonList(caCertificate));
     }
 
     @After
@@ -127,6 +128,46 @@ public class RootCAProviderTest {
         Assert.assertEquals(certificate.getCaCertificates().get(0), caCertificate);
         Assert.assertTrue(certificate.getClientCertificate().getSubjectDN().toString().startsWith("CN=v-1-VM,"));
         certificate.getClientCertificate().verify(caCertificate.getPublicKey());
+    }
+
+    @Test
+    public void testGetCaCertificateWithChain() throws Exception {
+        final KeyPair rootKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate rootCert = CertUtils.generateV3Certificate(null, rootKeyPair, rootKeyPair.getPublic(),
+                "CN=root", "SHA256withRSA", 365, null, null);
+        final KeyPair intermediateKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate intermediateCert = CertUtils.generateV3Certificate(rootCert, rootKeyPair,
+                intermediateKeyPair.getPublic(), "CN=intermediate", "SHA256withRSA", 365, null, null);
+
+        final List<X509Certificate> chain = Arrays.asList(intermediateCert, rootCert);
+        addField(provider, "caKeyPair", intermediateKeyPair);
+        addField(provider, "caCertificate", intermediateCert);
+        addField(provider, "caCertificates", chain);
+
+        Assert.assertEquals(2, provider.getCaCertificate().size());
+        Assert.assertEquals(intermediateCert, provider.getCaCertificate().get(0));
+        Assert.assertEquals(rootCert, provider.getCaCertificate().get(1));
+    }
+
+    @Test
+    public void testIssueCertificateWithoutCsrAndChain() throws Exception {
+        final KeyPair rootKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate rootCert = CertUtils.generateV3Certificate(null, rootKeyPair, rootKeyPair.getPublic(),
+                "CN=root", "SHA256withRSA", 365, null, null);
+        final KeyPair intermediateKeyPair = CertUtils.generateRandomKeyPair(1024);
+        final X509Certificate intermediateCert = CertUtils.generateV3Certificate(rootCert, rootKeyPair,
+                intermediateKeyPair.getPublic(), "CN=intermediate", "SHA256withRSA", 365, null, null);
+
+        addField(provider, "caKeyPair", intermediateKeyPair);
+        addField(provider, "caCertificate", intermediateCert);
+        addField(provider, "caCertificates", Arrays.asList(intermediateCert, rootCert));
+
+        final Certificate certificate = provider.issueCertificate(Arrays.asList("domain1.com"), null, 1);
+        Assert.assertNotNull(certificate);
+        Assert.assertEquals(2, certificate.getCaCertificates().size());
+        Assert.assertEquals(intermediateCert, certificate.getCaCertificates().get(0));
+        Assert.assertEquals(rootCert, certificate.getCaCertificates().get(1));
+        certificate.getClientCertificate().verify(intermediateKeyPair.getPublic());
     }
 
     @Test

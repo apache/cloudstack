@@ -48,6 +48,8 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import javax.net.ssl.SSLContext;
+
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.entity.ContentType;
@@ -97,7 +99,9 @@ public class WebhookDeliveryThread implements Runnable {
 
     protected void setHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         if (webhook.isSslVerification()) {
-            httpClient = HttpClients.createDefault();
+            httpClient = HttpClients.custom()
+                    .setSSLContext(SSLContext.getDefault())
+                    .build();
             return;
         }
         httpClient = HttpClients
