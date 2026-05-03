@@ -431,6 +431,13 @@ export default {
         this.zoneLoading = false
       })
     },
+    isVpcCoreProvider (providerName) {
+      return ['VpcVirtualRouter', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive'].includes(providerName)
+    },
+    isDynamicExtensionProvider (providerName) {
+      const knownProviders = ['VirtualRouter', 'VpcVirtualRouter', 'InternalLbVm', 'Netscaler', 'BigSwitchBcf', 'ConfigDrive', 'Nsx', 'Netris']
+      return !knownProviders.includes(providerName)
+    },
     fetchSupportedServiceData () {
       var services = []
       if (this.provider === 'NSX') {
@@ -520,82 +527,52 @@ export default {
           provider: [{ name: 'VpcVirtualRouter' }]
         })
       } else {
-        services.push({
-          name: 'Dhcp',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'ConfigDrive' }
-          ]
+        this.supportedServices = []
+        this.supportedServiceLoading = true
+        getAPI('listSupportedNetworkServices').then(json => {
+          const vpcServices = ['Dhcp', 'Dns', 'Lb', 'Gateway', 'StaticNat', 'SourceNat', 'NetworkACL', 'PortForwarding', 'UserData', 'Vpn', 'Connectivity', 'CustomAction']
+          services = (json?.listsupportednetworkservicesresponse?.networkservice || [])
+            .filter(service => vpcServices.includes(service.name))
+            .map(service => {
+              const providerMap = {}
+              const providers = [...(service.provider || []), ...(service.name === 'Lb' ? [{ name: 'InternalLbVm' }] : [])]
+                .map(provider => {
+                  const providerName = provider.name === 'VirtualRouter' ? 'VpcVirtualRouter' : provider.name
+                  const enabled = providerName === 'InternalLbVm'
+                    ? service.name === 'Lb'
+                    : this.isVpcCoreProvider(providerName) || this.isDynamicExtensionProvider(providerName)
+                  return {
+                    name: providerName,
+                    description: providerName,
+                    enabled
+                  }
+                })
+                .filter(provider => {
+                  if (providerMap[provider.name]) {
+                    return false
+                  }
+                  providerMap[provider.name] = true
+                  return true
+                })
+              return {
+                ...service,
+                description: service.name,
+                provider: providers
+              }
+            })
+
+          this.supportedServices = []
+          if (this.networkmode === 'ROUTED') {
+            services = services.filter(service => !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name))
+          }
+          this.supportedServices = services
+        }).catch(error => {
+          this.supportedServices = []
+          this.$notifyError(error)
+        }).finally(() => {
+          this.supportedServiceLoading = false
         })
-        services.push({
-          name: 'Dns',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'ConfigDrive' }
-          ]
-        })
-        services.push({
-          name: 'Lb',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'InternalLbVm' }
-          ]
-        })
-        services.push({
-          name: 'Gateway',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'BigSwitchBcf' }
-          ]
-        })
-        services.push({
-          name: 'StaticNat',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'BigSwitchBcf' }
-          ]
-        })
-        services.push({
-          name: 'SourceNat',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'BigSwitchBcf' }
-          ]
-        })
-        services.push({
-          name: 'NetworkACL',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'BigSwitchBcf' }
-          ]
-        })
-        services.push({
-          name: 'PortForwarding',
-          provider: [{ name: 'VpcVirtualRouter' }]
-        })
-        services.push({
-          name: 'UserData',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'ConfigDrive' }
-          ]
-        })
-        services.push({
-          name: 'Vpn',
-          provider: [
-            { name: 'VpcVirtualRouter' },
-            { name: 'BigSwitchBcf' }
-          ]
-        })
-        services.push({
-          name: 'Connectivity',
-          provider: [
-            { name: 'BigSwitchBcf' },
-            { name: 'NiciraNvp' },
-            { name: 'Ovs' },
-            { name: 'JuniperContrailVpcRouter' }
-          ]
-        })
+        return
       }
       this.supportedServices = []
       if (this.networkmode === 'ROUTED') {

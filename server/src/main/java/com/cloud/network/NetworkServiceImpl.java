@@ -3067,8 +3067,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     protected boolean providersConfiguredForExternalNetworking(Collection<String> providers) {
         for (String providerStr : providers) {
-            Provider provider = Network.Provider.getProvider(providerStr);
-            if (provider.isExternal()) {
+            Provider provider = _networkModel.resolveProvider(providerStr);
+            if (provider != null && provider.isExternal()) {
                 return true;
             }
         }
@@ -4424,6 +4424,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             addOrRemoveVnets(listOfRanges, network);
         }
         _physicalNetworkDao.update(id, network);
+
         return network;
 
     }
@@ -5096,7 +5097,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Provider provider = null;
         if (providerName != null) {
-            provider = Network.Provider.getProvider(providerName);
+            provider = _networkModel.resolveProvider(providerName);
             if (provider == null) {
                 throw new InvalidParameterValueException("Invalid Network Service Provider=" + providerName);
             }
@@ -5133,7 +5134,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (providerName != null) {
-            Provider provider = Network.Provider.getProvider(providerName);
+            Provider provider = _networkModel.resolveProvider(providerName);
             if (provider == null) {
                 throw new InvalidParameterValueException("Invalid Network Service Provider=" + providerName);
             }

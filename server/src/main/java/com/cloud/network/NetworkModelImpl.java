@@ -99,6 +99,8 @@ import com.cloud.network.element.IpDeployingRequester;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.router.VirtualRouter;
+import org.apache.cloudstack.extension.ExtensionHelper;
+import org.apache.cloudstack.framework.extensions.network.NetworkExtensionElement;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
@@ -234,6 +236,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     private NetworkService _networkService;
     @Inject
     TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
+    @Inject
+    ExtensionHelper extensionHelper;
+    @Inject
+    private NetworkExtensionElement networkExtensionElement;
+
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -262,7 +269,27 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public NetworkElement getElementImplementingProvider(String providerName) {
         String elementName = s_providerToNetworkElementMap.get(providerName);
         NetworkElement element = AdapterBase.getAdapterByName(networkElements, elementName);
+        if (element == null && extensionHelper.isNetworkExtensionProvider(providerName)) {
+            // Provider is an extension-backed external network provider.
+            // Initialize a copy of NetworkExtensionElement
+            if (networkExtensionElement != null) {
+                element = networkExtensionElement.withProviderName(providerName);
+            }
+        }
         return element;
+    }
+
+    /**
+     * Returns the effective network capabilities for an extension-backed external
+     * network provider on the given physical network.
+     *
+     * @param physicalNetworkId physical network ID (may be null for offering-level queries)
+     * @param providerName      provider / extension name
+     * @return per-provider capabilities, or empty map if not found
+     */
+    protected Map<Service, Map<Capability, String>> getExternalProviderCapabilities(
+            Long physicalNetworkId, String providerName) {
+        return extensionHelper.getNetworkCapabilitiesForProvider(physicalNetworkId, providerName);
     }
 
     @Override
@@ -270,6 +297,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         NetworkElement element = getElementImplementingProvider(provider.getName());
         if (element == null) {
             throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + provider.getName() + "'");
+        }
+        if (extensionHelper.isNetworkExtensionProvider(provider.getName())) {
+            Map<Service, Map<Capability, String>> caps = getExternalProviderCapabilities(null, provider.getName());
+            return new ArrayList<Service>(caps.keySet());
         }
         return new ArrayList<Service>(element.getCapabilities().keySet());
     }
@@ -281,6 +312,24 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + provider.getName() + "'");
         }
         return element.canEnableIndividualServices();
+    }
+
+    @Override
+    public boolean canElementEnableIndividualServicesByName(String providerName) {
+        if (providerName == null) {
+            return false;
+        }
+        // Try resolve to enum Provider first
+        Provider provider = resolveProvider(providerName);
+        if (provider != null) {
+            try {
+                return canElementEnableIndividualServices(provider);
+            } catch (Exception e) {
+                logger.debug("canElementEnableIndividualServices failed for provider {}: {}", providerName, e.getMessage());
+            }
+        }
+        // Unknown provider: be conservative and return false
+        return false;
     }
 
     Set<Purpose> getPublicIpPurposeInRules(PublicIpAddress ip, boolean includeRevoked, boolean includingFirewall) {
@@ -435,8 +484,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }
-            providers.add(Provider.getProvider(nsm.getProvider()));
-            map.put(Service.getService(nsm.getService()), providers);
+            Provider provider = resolveProvider(nsm.getProvider());
+            if (provider != null) {
+                providers.add(provider);
+                map.put(Service.getService(nsm.getService()), providers);
+            }
         }
         return map;
     }
@@ -481,14 +533,43 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         Map<Provider, Set<Service>> map = new HashMap<Provider, Set<Service>>();
         List<NetworkServiceMapVO> nsms = _ntwkSrvcDao.getServicesInNetwork(networkId);
         for (NetworkServiceMapVO nsm : nsms) {
-            Set<Service> services = map.get(Provider.getProvider(nsm.getProvider()));
+            Provider provider = resolveProvider(nsm.getProvider());
+            if (provider == null) {
+                continue;
+            }
+            Set<Service> services = map.get(provider);
             if (services == null) {
                 services = new HashSet<Service>();
             }
             services.add(Service.getService(nsm.getService()));
-            map.put(Provider.getProvider(nsm.getProvider()), services);
+            map.put(provider, services);
         }
         return map;
+    }
+
+    /**
+     * Resolves a provider name to a {@link Provider} instance.
+     *
+     * <p>For well-known providers, returns the static constant from
+     * {@link Provider#getProvider(String)}.  For dynamic NetworkOrchestrator
+     * extension providers (whose names are not in the static registry), returns
+     * a transient {@link Provider} with the given name so that the caller can
+     * still dispatch to the correct {@link NetworkExtensionElement} via
+     * {@link #getElementImplementingProvider(String)}.</p>
+     *
+     * @param providerName the provider name from {@code ntwk_service_map}
+     * @return a {@link Provider} instance, or {@code null} if not resolvable
+     */
+    @Override
+    public Provider resolveProvider(String providerName) {
+        Provider provider = Provider.getProvider(providerName);
+        if (provider == null && extensionHelper.isNetworkExtensionProvider(providerName)) {
+            // Dynamic extension-backed provider: create a transient Provider that preserves
+            // the actual extension name.  getElementImplementingProvider() handles this name
+            // by detecting it as an extension provider and returning NetworkExtensionElement.
+            provider = Provider.createTransientProvider(providerName);
+        }
+        return provider;
     }
 
     @Override
@@ -694,11 +775,21 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
         // list all services of this networkOffering
         List<NetworkServiceMapVO> servicesMap = _ntwkSrvcDao.getServicesInNetwork(networkId);
+
+        // Resolve the physical network once for external provider lookups
+        NetworkVO network = _networksDao.findById(networkId);
+        Long physicalNetworkId = network != null ? network.getPhysicalNetworkId() : null;
+
         for (NetworkServiceMapVO instance : servicesMap) {
             Service service = Service.getService(instance.getService());
             NetworkElement element = getElementImplementingProvider(instance.getProvider());
             if (element != null) {
-                Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
+                Map<Service, Map<Capability, String>> elementCapabilities;
+                if (extensionHelper.isNetworkExtensionProvider(instance.getProvider()) && physicalNetworkId != null) {
+                    elementCapabilities = getExternalProviderCapabilities(physicalNetworkId, instance.getProvider());
+                } else {
+                    elementCapabilities = element.getCapabilities();
+                }
                 if (elementCapabilities != null) {
                     networkCapabilities.put(service, elementCapabilities.get(service));
                 }
@@ -724,10 +815,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
         NetworkElement element = getElementImplementingProvider(provider);
         if (element != null) {
-            Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
-            ;
+            Map<Service, Map<Capability, String>> elementCapabilities;
+            if (extensionHelper.isNetworkExtensionProvider(provider)) {
+                elementCapabilities = getExternalProviderCapabilities(null, provider);
+            } else {
+                elementCapabilities = element.getCapabilities();
+            }
 
             if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
+                // TBD: We should be sending providerId and not the offering object itself.
                 throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() +
                     " implementing Provider=" + provider);
             }
@@ -758,12 +854,22 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         // we have to calculate capabilities for all of them
         String provider = providers.get(0);
 
+        // Check if this is an extension-backed external network provider first.
+        // These providers are not in the static s_providerToNetworkElementMap so
+        // we resolve their capabilities from the extension details directly.
+        if (extensionHelper.isNetworkExtensionProvider(provider)) {
+            Map<Service, Map<Capability, String>> extCaps = getExternalProviderCapabilities(null, provider);
+            if (extCaps != null && extCaps.containsKey(service)) {
+                return extCaps.get(service);
+            }
+            return serviceCapabilities;
+        }
+
         // FIXME we return the capabilities of the first provider of the service - what if we have multiple providers
         // for same Service?
         NetworkElement element = getElementImplementingProvider(provider);
         if (element != null) {
             Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
-            ;
 
             if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
                 // TBD: We should be sending providerId and not the offering object itself.
@@ -979,7 +1085,6 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         return false;
     }
 
-
     @Override
     public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
         return (_ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(networkOfferingId, services));
@@ -1161,7 +1266,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             if (providers == null) {
                 providers = new HashSet<Provider>();
             }
-            providers.add(Provider.getProvider(instance.getProvider()));
+
+            final Provider provider = resolveProvider(instance.getProvider());
+            if (provider != null) {
+                providers.add(provider);
+            }
             serviceProviderMap.put(Service.getService(service), providers);
         }
 
@@ -1201,7 +1310,74 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
         }
 
+        // Also include extension-backed NetworkExtension providers registered in
+        // physical_network_service_providers whose provider name matches a registered
+        // NetworkOrchestrator extension (detected via extensionHelper.isNetworkExtensionProvider).
+        //
+        // We use _pNSPDao.listBy(physNetId) to enumerate all NSP entries, then check
+        // each provider name against the extension registry.  This avoids a separate
+        // pass over all physical-network/extension combinations.
+        // resolveProvider() creates a transient Provider (not added to the static list)
+        // for extension names that are not in the built-in registry.
+        try {
+            List<PhysicalNetworkVO> physNets = _physicalNetworkDao.listAll();
+            if (physNets != null) {
+                // Use a set to avoid adding the same provider name twice (multiple phys-nets)
+                Set<String> addedExtProviders = new HashSet<>();
+                for (PhysicalNetworkVO physNet : physNets) {
+                    List<com.cloud.network.dao.PhysicalNetworkServiceProviderVO> nsps =
+                            _pNSPDao.listBy(physNet.getId());
+                    if (nsps == null) continue;
+                    for (PhysicalNetworkServiceProviderVO nsp : nsps) {
+                        String provName = nsp.getProviderName();
+                        if (provName == null || addedExtProviders.contains(provName)) continue;
+                        if (!extensionHelper.isNetworkExtensionProvider(provName)) continue;
+
+                        // Filter by service if requested: check the NSP's service flags
+                        if (service != null && !isServiceProvidedByNsp(nsp, service)) continue;
+
+                        // Resolve or create a transient Provider for the extension name.
+                        Provider extProvider = resolveProvider(provName);
+                        if (extProvider == null) continue;
+                        supportedProviders.add(extProvider);
+                        addedExtProviders.add(provName);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to include extension-backed providers in listSupportedNetworkServiceProviders: {}", e.getMessage());
+        }
+
         return new ArrayList<Provider>(supportedProviders);
+    }
+
+    /**
+     * Returns {@code true} if the given {@link com.cloud.network.dao.PhysicalNetworkServiceProviderVO}
+     * has its service flag set for {@code service}.
+     *
+     * <p>This is used by {@link #listSupportedNetworkServiceProviders} to filter extension-backed
+     * providers (looked up via {@link com.cloud.network.dao.PhysicalNetworkServiceProviderDao#listBy})
+     * without having to query each extension's capability JSON.</p>
+     */
+    private boolean isServiceProvidedByNsp(
+            PhysicalNetworkServiceProviderVO nsp, Service service) {
+        if (service == null) {
+            return true;
+        }
+        if (service == Service.Dhcp)          return nsp.isDhcpServiceProvided();
+        if (service == Service.Dns)           return nsp.isDnsServiceProvided();
+        if (service == Service.Firewall)      return nsp.isFirewallServiceProvided();
+        if (service == Service.Gateway)       return nsp.isGatewayServiceProvided();
+        if (service == Service.Lb)            return nsp.isLbServiceProvided();
+        if (service == Service.PortForwarding) return nsp.isPortForwardingServiceProvided();
+        if (service == Service.SecurityGroup) return nsp.isSecuritygroupServiceProvided();
+        if (service == Service.SourceNat)     return nsp.isSourcenatServiceProvided();
+        if (service == Service.StaticNat)     return nsp.isStaticnatServiceProvided();
+        if (service == Service.UserData)      return nsp.isUserdataServiceProvided();
+        if (service == Service.Vpn)           return nsp.isVpnServiceProvided();
+        if (service == Service.NetworkACL)    return nsp.isNetworkAclServiceProvided();
+        // Unknown service: fall back to true so extension-backed providers are not filtered out
+        return true;
     }
 
     @Override
@@ -1540,13 +1716,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 throw new InvalidParameterValueException("Unable to find the Network Element implementing the Service Provider '" + provider.getName() + "'");
             }
 
+            // For external network providers, get per-provider capabilities
+            final boolean isExternal = extensionHelper.isNetworkExtensionProvider(provider.getName());
+            Map<Service, Map<Capability, String>> providerCaps = isExternal
+                    ? getExternalProviderCapabilities(null, provider.getName())
+                    : element.getCapabilities();
+
             Set<Service> enabledServices = new HashSet<Service>();
             enabledServices.addAll(providersMap.get(provider));
 
             if (enabledServices != null && !enabledServices.isEmpty()) {
-                if (!element.canEnableIndividualServices()) {
+                if (!element.canEnableIndividualServices() && !isExternal) {
                     Set<Service> requiredServices = new HashSet<Service>();
-                    requiredServices.addAll(element.getCapabilities().keySet());
+                    requiredServices.addAll(providerCaps.keySet());
 
                     if (requiredServices.contains(Network.Service.Gateway)) {
                         requiredServices.remove(Network.Service.Gateway);
@@ -1580,7 +1762,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 List<String> serviceList = new ArrayList<String>();
                 for (Service service : enabledServices) {
                     // check if the service is provided by this Provider
-                    if (!element.getCapabilities().containsKey(service)) {
+                    if (!providerCaps.containsKey(service)) {
                         throw new UnsupportedServiceException(provider.getName() + " Provider cannot provide service " + service.getName());
                     }
                     serviceList.add(service.getName());
@@ -1655,18 +1837,32 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         return true;
     }
 
+
     @Override
     public boolean providerSupportsCapability(Set<Provider> providers, Service service, Capability cap) {
         for (Provider provider : providers) {
             NetworkElement element = getElementImplementingProvider(provider.getName());
             if (element != null) {
-                Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
+                boolean isExtProvider = extensionHelper.isNetworkExtensionProvider(provider.getName());
+                Map<Service, Map<Capability, String>> elementCapabilities = isExtProvider
+                        ? getExternalProviderCapabilities(null, provider.getName())
+                        : element.getCapabilities();
                 if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
+                    if (isExtProvider) {
+                        // Extension provider with no declared capabilities for this service —
+                        // treat as "service supported but capability not constrained"
+                        return false;
+                    }
                     throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() +
                             " implementing Provider=" + provider.getName());
                 }
                 Map<Capability, String> serviceCapabilities = elementCapabilities.get(service);
                 if (serviceCapabilities == null || serviceCapabilities.isEmpty()) {
+                    if (isExtProvider) {
+                        // Extension provider declared the service but without specific capability
+                        // constraints — treat as "capability not constrained, not explicitly supported"
+                        return false;
+                    }
                     throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capabilites for element=" + element.getName() +
                             " implementing Provider=" + provider.getName());
                 }
@@ -1686,19 +1882,36 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         for (Provider provider : providers) {
             NetworkElement element = getElementImplementingProvider(provider.getName());
             if (element != null) {
-                Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
+                boolean isExtProvider = extensionHelper.isNetworkExtensionProvider(provider.getName());
+                Map<Service, Map<Capability, String>> elementCapabilities = isExtProvider
+                        ? getExternalProviderCapabilities(null, provider.getName())
+                        : element.getCapabilities();
                 if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
+                    if (isExtProvider) {
+                        // Extension provider with no declared capabilities for this service —
+                        // treat as supported without constraints; skip the capability check.
+                        continue;
+                    }
                     throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() +
                         " implementing Provider=" + provider.getName());
                 }
                 Map<Capability, String> serviceCapabilities = elementCapabilities.get(service);
                 if (serviceCapabilities == null || serviceCapabilities.isEmpty()) {
+                    if (isExtProvider) {
+                        // Extension provider declared the service without capability constraints —
+                        // accept any capability value (the extension handles it at runtime).
+                        continue;
+                    }
                     throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capabilities for element=" + element.getName() +
                         " implementing Provider=" + provider.getName());
                 }
 
                 String value = serviceCapabilities.get(cap);
                 if (value == null || value.isEmpty()) {
+                    if (isExtProvider) {
+                        // Capability not explicitly declared for this extension — accept it.
+                        continue;
+                    }
                     throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capability " + cap.getName() + " for element=" +
                         element.getName() + " implementing Provider=" + provider.getName());
                 }
@@ -1953,7 +2166,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         List<String> providerNames = _ntwkOfferingSrvcDao.getDistinctProviders(ntkwOffId);
         List<Provider> providers = new ArrayList<Provider>();
         for (String providerName : providerNames) {
-            providers.add(Network.Provider.getProvider(providerName));
+            providers.add(resolveProvider(providerName));
         }
 
         return providers;
@@ -2255,7 +2468,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         Map<String, Provider> providers = new HashMap<String, Provider>();
         for (String providerName : providerNames) {
             if (!providers.containsKey(providerName)) {
-                providers.put(providerName, Network.Provider.getProvider(providerName));
+                providers.put(providerName, resolveProvider(providerName));
             }
         }
 

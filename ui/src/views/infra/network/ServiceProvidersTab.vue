@@ -22,6 +22,7 @@
         :tabPosition="device === 'mobile' ? 'top' : 'left'"
         :animated="false"
         @change="onTabChange">
+        <!-- Hardcoded NSP tabs -->
         <a-tab-pane
           class="custom-tab-pane"
           v-for="item in hardcodedNsps"
@@ -41,8 +42,29 @@
             :zoneId="resource.zoneid"
             :tabKey="tabKey"/>
         </a-tab-pane>
+        <!-- Dynamic extension-based provider tabs (one per registered NetworkOrchestrator extension) -->
+        <a-tab-pane
+          class="custom-tab-pane"
+          v-for="ext in registeredExtensions"
+          :key="ext.name">
+          <template #tab>
+            <span>
+              {{ ext.name }}
+              <status :text="nsps[ext.name] ? nsps[ext.name].state : $t('label.not.added')" style="margin-bottom: 6px; margin-left: 6px" />
+            </span>
+          </template>
+          <provider-item
+            v-if="tabKey === ext.name"
+            :loading="loading"
+            :itemNsp="extensionNspItem(ext.name)"
+            :nsp="nsps[ext.name]"
+            :resourceId="resource.id"
+            :zoneId="resource.zoneid"
+            :tabKey="tabKey"/>
+        </a-tab-pane>
       </a-tabs>
     </a-spin>
+
     <div v-if="showFormAction">
       <keep-alive v-if="currentAction.component">
         <a-modal
@@ -170,7 +192,8 @@ export default {
       actionLoading: false,
       showFormAction: false,
       currentAction: {},
-      tabKey: 'BaremetalDhcpProvider'
+      tabKey: 'BaremetalDhcpProvider',
+      registeredExtensions: []
     }
   },
   computed: {
@@ -848,7 +871,7 @@ export default {
               listView: true,
               label: 'label.enable.provider',
               confirm: 'message.confirm.enable.provider',
-              show: (record) => { return (record && record.id && record.state === 'Disabled') },
+              show: (record) => { return record && record.id && record.state === 'Disabled' },
               mapping: {
                 state: {
                   value: (record) => { return 'Enabled' }
@@ -1148,6 +1171,51 @@ export default {
         return
       }
       this.fetchServiceProvider()
+      this.fetchRegisteredExtensions()
+    },
+    fetchRegisteredExtensions () {
+      // Load NetworkOrchestrator extensions registered to this physical network
+      getAPI('listExtensions', {
+        type: 'NetworkOrchestrator',
+        resourceid: this.resource.id,
+        resourcetype: 'PhysicalNetwork'
+      }).then(json => {
+        this.registeredExtensions = (json.listextensionsresponse && json.listextensionsresponse.extension) || []
+      }).catch(() => {
+        this.registeredExtensions = []
+      })
+    },
+    extensionNspItem (extName) {
+      // Build a ProviderItem-compatible itemNsp descriptor for extension-backed NSPs.
+      // Mirrors the structure of hardcoded entries in hardcodedNsps.
+      return {
+        title: extName,
+        details: ['name', 'state', 'id', 'physicalnetworkid', 'servicelist'],
+        actions: [
+          {
+            api: 'updateNetworkServiceProvider',
+            icon: 'play-circle-outlined',
+            listView: true,
+            label: 'label.enable.provider',
+            confirm: 'message.confirm.enable.provider',
+            show: (record) => record && record.id && record.state === 'Disabled',
+            mapping: {
+              state: { value: () => 'Enabled' }
+            }
+          },
+          {
+            api: 'updateNetworkServiceProvider',
+            icon: 'stop-outlined',
+            listView: true,
+            label: 'label.disable.provider',
+            confirm: 'message.confirm.disable.provider',
+            show: (record) => record && record.id && record.state === 'Enabled',
+            mapping: {
+              state: { value: () => 'Disabled' }
+            }
+          }
+        ]
+      }
     },
     fetchServiceProvider (name) {
       this.fetchLoading = true

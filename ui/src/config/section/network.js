@@ -113,6 +113,14 @@ export default {
         name: 'network.permissions',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/NetworkPermissions.vue'))),
         show: (record, route, user) => { return 'listNetworkPermissions' in store.getters.apis && record.acltype === 'Account' && !('vpcid' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account) && !record.projectid }
+      }, {
+        name: 'custom.actions',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RunCustomAction.vue'))),
+        show: (record) => {
+          return 'runCustomAction' in store.getters.apis &&
+            'listCustomActions' in store.getters.apis &&
+            record.service && record.service.some(s => s.name === 'CustomAction')
+        }
       },
       {
         name: 'events',
@@ -201,6 +209,19 @@ export default {
               value: (record) => { return record.id }
             }
           }
+        },
+        {
+          api: 'runCustomAction',
+          icon: 'thunderbolt-outlined',
+          label: 'label.run.custom.action',
+          dataView: true,
+          show: (record) => {
+            return 'runCustomAction' in store.getters.apis &&
+              'listCustomActions' in store.getters.apis &&
+              record.service && record.service.some(s => s.name === 'CustomAction')
+          },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RunCustomAction.vue')))
         },
         {
           api: 'deleteNetwork',

@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,11 +36,15 @@ import com.cloud.dc.DataCenter;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionHelper;
+import org.apache.cloudstack.framework.extensions.network.NetworkExtensionElement;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -68,6 +73,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.RouterNetworkDao;
 import com.cloud.network.element.DhcpServiceProvider;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.vpc.VpcManager;
@@ -105,6 +111,7 @@ public class NetworkOrchestratorTest extends TestCase {
     private String guruName = "GuestNetworkGuru";
     private String dhcpProvider = "VirtualRouter";
     private NetworkGuru guru = mock(NetworkGuru.class);
+    private NetworkExtensionElement networkExtensionElement;
 
     NetworkOfferingVO networkOffering = mock(NetworkOfferingVO.class);
 
@@ -135,6 +142,9 @@ public class NetworkOrchestratorTest extends TestCase {
         testOrchestrator.routerJoinDao = mock(DomainRouterJoinDao.class);
         testOrchestrator._ipAddrMgr = mock(IpAddressManager.class);
         testOrchestrator._entityMgr = mock(EntityManager.class);
+        testOrchestrator.extensionHelper = mock(ExtensionHelper.class);
+        networkExtensionElement = mock(NetworkExtensionElement.class);
+        ReflectionTestUtils.setField(testOrchestrator, "networkExtensionElement", networkExtensionElement);
         DhcpServiceProvider provider = mock(DhcpServiceProvider.class);
 
         Map<Network.Capability, String> capabilities = new HashMap<Network.Capability, String>();
@@ -1009,5 +1019,64 @@ public class NetworkOrchestratorTest extends TestCase {
             assertFalse(nicProfile.isSecurityGroupEnabled());
             assertEquals("testtag", nicProfile.getName());
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Tests for getNetworkElementsIncludingExtensions
+    // -----------------------------------------------------------------------
+
+    @Test
+    public void getNetworkElementsIncludingExtensionsReturnsBaseListWhenNoExtensions() {
+        when(testOrchestrator.extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator))
+                .thenReturn(Collections.emptyList());
+
+        DhcpServiceProvider dhcpProvider = mock(DhcpServiceProvider.class);
+        List<NetworkElement> elements = new ArrayList<>(List.of(dhcpProvider));
+        testOrchestrator.networkElements = elements;
+
+        @SuppressWarnings("unchecked")
+        List<NetworkElement> result =
+                (List<NetworkElement>) ReflectionTestUtils
+                        .invokeMethod(testOrchestrator, "getNetworkElementsIncludingExtensions");
+        assertNotNull(result);
+        assertEquals(elements.size(), result.size());
+    }
+
+    @Test
+    public void getNetworkElementsIncludingExtensionsAddsExtensionElements() {
+        Extension ext = mock(Extension.class);
+        when(ext.getName()).thenReturn("my-net-ext");
+        when(testOrchestrator.extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator))
+                .thenReturn(List.of(ext));
+
+        NetworkExtensionElement extElement = mock(NetworkExtensionElement.class);
+        when(networkExtensionElement.withProviderName("my-net-ext")).thenReturn(extElement);
+
+        DhcpServiceProvider dhcpProvider = mock(DhcpServiceProvider.class);
+        testOrchestrator.networkElements = new ArrayList<>(List.of(dhcpProvider));
+
+        @SuppressWarnings("unchecked")
+        List<NetworkElement> result =
+                (List<NetworkElement>) ReflectionTestUtils
+                        .invokeMethod(testOrchestrator, "getNetworkElementsIncludingExtensions");
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertTrue(result.contains(extElement));
+    }
+
+    @Test
+    public void getNetworkElementsIncludingExtensionsReturnsBaseListWhenExtensionHelperReturnsNull() {
+        when(testOrchestrator.extensionHelper.listExtensionsByType(Extension.Type.NetworkOrchestrator))
+                .thenReturn(null);
+
+        DhcpServiceProvider dhcpProvider = mock(DhcpServiceProvider.class);
+        testOrchestrator.networkElements = new ArrayList<>(List.of(dhcpProvider));
+
+        @SuppressWarnings("unchecked")
+        List<NetworkElement> result =
+                (List<NetworkElement>) ReflectionTestUtils
+                        .invokeMethod(testOrchestrator, "getNetworkElementsIncludingExtensions");
+        assertNotNull(result);
+        assertEquals(1, result.size());
     }
 }

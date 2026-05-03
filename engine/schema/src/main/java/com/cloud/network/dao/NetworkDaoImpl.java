@@ -37,7 +37,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Event;
 import com.cloud.network.Network.GuestType;
-import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -390,7 +389,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long>implements Ne
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         for (final String service : serviceProviderMap.keySet()) {
-            final NetworkServiceMapVO serviceMap = new NetworkServiceMapVO(networkId, Service.getService(service), Provider.getProvider(serviceProviderMap.get(service)));
+            final NetworkServiceMapVO serviceMap = new NetworkServiceMapVO(networkId, Service.getService(service).getName(), serviceProviderMap.get(service));
             _ntwkSvcMap.persist(serviceMap);
         }
         txn.commit();
