@@ -62,7 +62,7 @@ public class JsInterpreter implements Closeable {
     protected Logger logger = LogManager.getLogger(JsInterpreter.class);
 
     protected static final List<String> RESTRICTED_TOKENS = Arrays.asList( "engine", "context", "factory",
-            "Java", "java", "Packages"," javax", "load", "loadWithNewGlobal", "print", "factory", "getClass",
+            "Java", "java", "Packages", "javax", "load", "loadWithNewGlobal", "print", "factory", "getClass",
             "runCommand", "Runtime", "exec", "ProcessBuilder", "Thread", "thread", "Threads", "Class", "class");
 
     protected ScriptEngine interpreter;
