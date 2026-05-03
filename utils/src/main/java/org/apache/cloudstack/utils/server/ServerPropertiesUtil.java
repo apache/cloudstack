@@ -55,4 +55,12 @@ public class ServerPropertiesUtil {
         }
         return tempProps.getProperty(name);
     }
+
+    public static String getProperty(String name, String defaultValue) {
+        String value = getProperty(name);
+        if (value == null) {
+            value = defaultValue;
+        }
+        return value;
+    }
 }
