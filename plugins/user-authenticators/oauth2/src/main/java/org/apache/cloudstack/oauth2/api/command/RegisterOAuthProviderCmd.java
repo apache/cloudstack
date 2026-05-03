@@ -14,25 +14,27 @@
 // limitations under the License.
 package org.apache.cloudstack.oauth2.api.command;
 
+import java.util.Collection;
+import java.util.Map;
+
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
 import org.apache.commons.collections.MapUtils;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.ConcurrentOperationException;
-
-import java.util.Collection;
-import java.util.Map;
 
 @APICommand(name = "registerOauthProvider", responseObject = SuccessResponse.class, description = "Register the OAuth2 provider in CloudStack", since = "4.19.0")
 public class RegisterOAuthProviderCmd extends BaseCmd {
@@ -55,6 +57,12 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.REDIRECT_URI, type = CommandType.STRING, description = "Redirect URI pre-registered in the specific OAuth provider", required = true)
     private String redirectUri;
+
+    @Parameter(name = ApiConstants.AUTHORIZE_URL, type = CommandType.STRING, description = "Authorize URL for OAuth initialization (only required for keycloack provider)")
+    private String authorizeUrl;
+
+    @Parameter(name = ApiConstants.TOKEN_URL, type = CommandType.STRING, description = "Token URL for OAuth finalization (only required for keycloak provider)")
+    private String tokenUrl;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "Any OAuth provider details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].clientsecret=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")
@@ -85,6 +93,14 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
         return redirectUri;
     }
 
+    public String getAuthorizeUrl() {
+        return authorizeUrl;
+    }
+
+    public String getTokenUrl() {
+        return tokenUrl;
+    }
+
     public Map getDetails() {
         if (MapUtils.isEmpty(details)) {
             return null;
@@ -98,10 +114,20 @@ public class RegisterOAuthProviderCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException, EntityExistsException {
+        if (StringUtils.equals("keycloak", getProvider())) {
+            if (StringUtils.isBlank(getAuthorizeUrl())) {
+                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter authorizeurl is mandatory for keycloak OAuth Provider");
+            }
+            if (StringUtils.isBlank(getTokenUrl())) {
+                throw new ServerApiException(ApiErrorCode.BAD_REQUEST, "Parameter tokenurl is mandatory for keycloak OAuth Provider");
+            }
+        }
+
         OauthProviderVO provider = _oauth2mgr.registerOauthProvider(this);
 
         OauthProviderResponse response = new OauthProviderResponse(provider.getUuid(), provider.getProvider(),
-                provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri());
+                provider.getDescription(), provider.getClientId(), provider.getSecretKey(), provider.getRedirectUri(),
+                provider.getAuthorizeUrl(), provider.getTokenUrl());
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.OAUTH_PROVIDER);
         setResponseObject(response);
