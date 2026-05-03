@@ -127,3 +127,6 @@ CREATE TABLE IF NOT EXISTS `cloud_usage`.`quota_tariff_usage` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_quota_tariff_usage__tariff_id` FOREIGN KEY (`tariff_id`) REFERENCES `cloud_usage`.`quota_tariff` (`id`),
     CONSTRAINT `fk_quota_tariff_usage__quota_usage_id` FOREIGN KEY (`quota_usage_id`) REFERENCES `cloud_usage`.`quota_usage` (`id`));
+
+-- Add description for secondary IP addresses
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nic_secondary_ips','description', 'varchar(2048) DEFAULT NULL');

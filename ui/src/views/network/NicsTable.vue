@@ -39,7 +39,7 @@
           {{ record.traffictype }}
         </a-descriptions-item>
         <a-descriptions-item :label="$t('label.secondaryips')" v-if="record.secondaryip && record.secondaryip.length > 0 && record.type !== 'L2'">
-          {{ record.secondaryip.map(x => x.ipaddress).join(', ') }}
+          {{ record.secondaryip.map(x => x.description ? (x.ipaddress + ': ' + x.description) : x.ipaddress).join(', ') }}
         </a-descriptions-item>
         <a-descriptions-item :label="$t('label.ip6address')" v-if="record.ip6address">
           {{ record.ip6address }}

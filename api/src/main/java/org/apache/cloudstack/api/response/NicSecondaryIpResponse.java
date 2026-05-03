@@ -53,6 +53,10 @@ public class NicSecondaryIpResponse extends BaseResponse {
     @Param(description = "The ID of the Instance")
     private String vmId;
 
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "description")
+    private String description;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -96,6 +100,14 @@ public class NicSecondaryIpResponse extends BaseResponse {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public List<NicSecondaryIpResponse> getSecondaryIpsList() {
