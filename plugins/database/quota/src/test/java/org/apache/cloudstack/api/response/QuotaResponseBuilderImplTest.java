@@ -40,6 +40,7 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
@@ -249,7 +250,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         credit.setCredit(new BigDecimal(amount));
 
         Mockito.when(quotaCreditsDaoMock.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenReturn(credit);
-        Mockito.when(quotaBalanceDaoMock.lastQuotaBalance(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(Date.class))).thenReturn(new BigDecimal(111));
+        Mockito.when(quotaBalanceDaoMock.getLastQuotaBalance(Mockito.anyLong(), Mockito.anyLong())).thenReturn(new BigDecimal(111));
         Mockito.doReturn(userVoMock).when(quotaResponseBuilderSpy).getCreditorForQuotaCredits(credit);
 
         AccountVO account = new AccountVO();
@@ -293,33 +294,6 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         template.setTemplateName("template");
         templates.add(template);
         assertTrue(quotaResponseBuilderSpy.updateQuotaEmailTemplate(cmd));
-    }
-
-    @Test
-    public void testCreateQuotaLastBalanceResponse() {
-        List<QuotaBalanceVO> quotaBalance = new ArrayList<>();
-        // null balance test
-        try {
-            quotaResponseBuilderSpy.createQuotaLastBalanceResponse(null, new Date());
-        } catch (InvalidParameterValueException e) {
-            assertTrue(e.getMessage().equals("There are no balance entries on or before the requested date."));
-        }
-
-        // empty balance test
-        try {
-            quotaResponseBuilderSpy.createQuotaLastBalanceResponse(quotaBalance, new Date());
-        } catch (InvalidParameterValueException e) {
-            assertTrue(e.getMessage().equals("There are no balance entries on or before the requested date."));
-        }
-
-        // valid balance test
-        QuotaBalanceVO entry = new QuotaBalanceVO();
-        entry.setAccountId(2L);
-        entry.setCreditBalance(new BigDecimal(100));
-        quotaBalance.add(entry);
-        quotaBalance.add(entry);
-        QuotaBalanceResponse resp = quotaResponseBuilderSpy.createQuotaLastBalanceResponse(quotaBalance, null);
-        assertTrue(resp.getStartQuota().compareTo(new BigDecimal(200)) == 0);
     }
 
     @Test
@@ -917,6 +891,46 @@ public class QuotaResponseBuilderImplTest extends TestCase {
 
         Assert.assertTrue(formattedVariables.containsValue("accountname"));
         Assert.assertTrue(formattedVariables.containsValue("zonename"));
+    }
+
+    private List<QuotaBalanceVO> getQuotaBalancesForTest() {
+        List<QuotaBalanceVO> balances = new ArrayList<>();
+
+        QuotaBalanceVO balance = new QuotaBalanceVO();
+        balance.setUpdatedOn(new Date());
+        balance.setCreditBalance(BigDecimal.valueOf(-10.42));
+        balances.add(balance);
+
+        balance = new QuotaBalanceVO();
+        balance.setUpdatedOn(new Date());
+        balance.setCreditBalance(BigDecimal.valueOf(-18.94));
+        balances.add(balance);
+
+        balance = new QuotaBalanceVO();
+        balance.setUpdatedOn(new Date());
+        balance.setCreditBalance(BigDecimal.valueOf(-29.37));
+        balances.add(balance);
+
+        return balances;
+    }
+
+    @Test
+    public void createQuotaBalancesResponseTestCreateResponse() {
+        List<QuotaBalanceVO> balances = getQuotaBalancesForTest();
+
+        QuotaBalanceResponse expected = new QuotaBalanceResponse();
+        expected.setObjectName("balance");
+        expected.setCurrency("$");
+
+        Mockito.doReturn(balances).when(quotaServiceMock).listQuotaBalancesForAccount(Mockito.any(), Mockito.any(), Mockito.any());
+        QuotaBalanceResponse result = quotaResponseBuilderSpy.createQuotaBalanceResponse(new QuotaBalanceCmd());
+
+        Assert.assertEquals(expected.getCurrency(), result.getCurrency());
+
+        for (int i = 0; i < balances.size(); i++) {
+            Assert.assertEquals(balances.get(i).getUpdatedOn(), result.getBalances().get(i).getDate());
+            Assert.assertEquals(balances.get(i).getCreditBalance(), result.getBalances().get(i).getBalance());
+        }
     }
 
     @Test

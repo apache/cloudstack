@@ -150,8 +150,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             return;
         }
 
-        Date startDate = accountQuotaUsages.get(0).getStartDate();
-        Date endDate = accountQuotaUsages.get(0).getEndDate();
+        QuotaUsageVO firstQuotaUsage = accountQuotaUsages.get(0);
+        Date startDate = firstQuotaUsage.getStartDate();
+        Date endDate = firstQuotaUsage.getEndDate();
         Date lastQuotaUsageEndDate = accountQuotaUsages.get(accountQuotaUsages.size() - 1).getEndDate();
 
         LinkedHashSet<Pair<Date, Date>> periods = accountQuotaUsages.stream()
@@ -215,7 +216,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             logger.debug(String.format("Persisting the first quota balance [%s] for account [%s].", firstBalance, accountToString));
             _quotaBalanceDao.saveQuotaBalance(firstBalance);
         } else {
-            QuotaBalanceVO lastRealBalance = _quotaBalanceDao.findLastBalanceEntry(accountId, domainId, startDate);
+            QuotaBalanceVO lastRealBalance = _quotaBalanceDao.getLastQuotaBalanceEntry(accountId, domainId, startDate);
 
             if (lastRealBalance == null) {
                 logger.warn("Account [{}] has quota usage entries, however it does not have a quota balance.", accountToString);
@@ -244,7 +245,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     protected BigDecimal aggregateCreditBetweenDates(Long accountId, Long domainId, Date startDate, Date endDate, String accountToString) {
-        List<QuotaBalanceVO> creditsReceived = _quotaBalanceDao.findCreditBalance(accountId, domainId, startDate, endDate);
+        List<QuotaBalanceVO> creditsReceived = _quotaBalanceDao.findCreditBalances(accountId, domainId, startDate, endDate);
         logger.debug("Account [{}] has [{}] credit entries before [{}].", accountToString, creditsReceived.size(),
                 DateUtil.displayDateInTimezone(usageAggregationTimeZone, endDate));
 
