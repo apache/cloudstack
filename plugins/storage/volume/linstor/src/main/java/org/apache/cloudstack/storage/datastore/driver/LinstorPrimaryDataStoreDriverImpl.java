@@ -232,6 +232,20 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 throw new CloudRuntimeException("Linstor: Unable to delete resource definition: " + rscDefName);
             }
             logger.info("Linstor: Deleted resource {}", rscDefName);
+
+            // LINSTOR can return success on the delete API call while the resource lingers in
+            // DELETING state (peer issues, lost quorum, satellite down). Verify the resource is
+            // actually gone — if not, log a WARN so operators see it. We deliberately do NOT
+            // throw here: the volume is already considered gone on the CloudStack side, and
+            // throwing would leave the CS DB and LINSTOR in different states.
+            if (!LinstorUtil.waitForResourceDefinitionDeleted(linstorApi, rscDefName,
+                    LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS))
+            {
+                logger.warn("Linstor: resource {} still present {}ms after delete returned success — " +
+                        "may be stuck in DELETING. Check the LINSTOR controller (linstor resource list) " +
+                        "and clear manually if the resource has no live peers.",
+                        rscDefName, LinstorUtil.DEFAULT_RD_DELETE_VERIFY_TIMEOUT_MILLIS);
+            }
         } catch (ApiException apiEx)
         {
             logger.error("Linstor: ApiEx - " + apiEx.getMessage());
