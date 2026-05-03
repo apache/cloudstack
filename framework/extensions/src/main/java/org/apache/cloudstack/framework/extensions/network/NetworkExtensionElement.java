@@ -518,8 +518,33 @@ public class NetworkExtensionElement extends AdapterBase implements
         // libvirt sets external_ids:iface-id atomically with tap creation.
         // No agent patch is required for this binding mode.
         if (isLswitchVifBinding(network)) {
+            // Override broadcast type + URI on the NicProfile (in-memory),
+            // and persist the same to the underlying nics row so listNics
+            // / DB queries report consistent OVN identifiers instead of
+            // the stale VLAN URI the GuestNetworkGuru allocated at
+            // design-time.
+            java.net.URI ovnUri = null;
+            try {
+                ovnUri = java.net.URI.create("ovn://cs-net-" + network.getId());
+            } catch (Exception e) {
+                logger.warn("Failed to build OVN URI for NIC {}: {}", nic.getId(), e.getMessage());
+            }
             nic.setBroadcastType(Networks.BroadcastDomainType.Lswitch);
-            logger.debug("prepare: applied Lswitch broadcast type to NIC {} (uuid={}) on network {} per extension vif.binding hint",
+            if (ovnUri != null) {
+                nic.setBroadcastUri(ovnUri);
+                nic.setIsolationUri(ovnUri);
+                try {
+                    com.cloud.vm.NicVO nicVo = nicDao.findById(nic.getId());
+                    if (nicVo != null) {
+                        nicVo.setBroadcastUri(ovnUri);
+                        nicVo.setIsolationUri(ovnUri);
+                        nicDao.update(nicVo.getId(), nicVo);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed to persist OVN URI on nics row {}: {}", nic.getId(), e.getMessage());
+                }
+            }
+            logger.debug("prepare: applied Lswitch broadcast type and ovn:// URI to NIC {} (uuid={}) on network {} per extension vif.binding hint",
                     nic.getId(), nic.getUuid(), network.getId());
         }
 
