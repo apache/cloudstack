@@ -27,6 +27,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class FlashArrayVolume implements ProviderSnapshot {
     public static final String PURE_OUI = "24a9370";
+    // The 3-byte OUI as it appears inside an NVMe EUI-128 (no trailing nibble).
+    // FC WWNs use a 7-hex-digit Pure OUI; NVMe NGUIDs embed the same vendor
+    // prefix in its raw 6-hex-digit form.
+    public static final String PURE_OUI_EUI = "24a937";
 
     @JsonProperty("destroyed")
     private Boolean destroyed;
@@ -107,6 +111,19 @@ public class FlashArrayVolume implements ProviderSnapshot {
     @JsonIgnore
     public String getAddress() {
         if (serial == null) return null;
+        if (AddressType.NVMETCP.equals(addressType)) {
+            // EUI-128 layout for FlashArray NVMe namespaces:
+            //   00 + serial[0:14] + <Pure OUI (24a937)> + serial[14:24]
+            // This is the value the Linux kernel exposes as
+            //   /dev/disk/by-id/nvme-eui.<result>
+            if (serial.length() < 24) {
+                throw new RuntimeException("FlashArray serial [" + serial
+                        + "] is too short to build an NVMe EUI-128 address "
+                        + "(expected at least 24 hex characters, got "
+                        + serial.length() + ")");
+            }
+            return ("00" + serial.substring(0, 14) + PURE_OUI_EUI + serial.substring(14)).toLowerCase();
+        }
         return ("6" + PURE_OUI + serial).toLowerCase();
     }
     @Override
