@@ -19,13 +19,20 @@
 
 package com.cloud.agent.api;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class StartupAnswer extends Answer {
     long hostId;
     String hostName;
     String hostUuid;
     int pingInterval;
 
+    Integer agentHostStatusCheckDelaySec;
+    private Map<String, String> params;
+
     protected StartupAnswer() {
+        params = new HashMap<>();
     }
 
     public StartupAnswer(StartupCommand cmd, long hostId, String hostUuid, String hostName, int pingInterval) {
@@ -34,10 +41,12 @@ public class StartupAnswer extends Answer {
         this.hostUuid = hostUuid;
         this.hostName = hostName;
         this.pingInterval = pingInterval;
+        params = new HashMap<>();
     }
 
     public StartupAnswer(StartupCommand cmd, String details) {
         super(cmd, false, details);
+        params = new HashMap<>();
     }
 
     public long getHostId() {
@@ -54,5 +63,21 @@ public class StartupAnswer extends Answer {
 
     public int getPingInterval() {
         return pingInterval;
+    }
+
+    public Map<String, String> getParams() {
+        return params;
+    }
+
+    public void setParams(Map<String, String> params) {
+        this.params = params;
+    }
+
+    public Integer getAgentHostStatusCheckDelaySec() {
+        return agentHostStatusCheckDelaySec;
+    }
+
+    public void setAgentHostStatusCheckDelaySec(Integer agentHostStatusCheckDelaySec) {
+        this.agentHostStatusCheckDelaySec = agentHostStatusCheckDelaySec;
     }
 }

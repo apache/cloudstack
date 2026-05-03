@@ -21,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 
 import javax.naming.ConfigurationException;
@@ -67,21 +69,15 @@ public class AgentTest {
     }
 
     @Test
-    public void testGetLinkLogNullLinkReturnsEmptyString() {
-        Link link = null;
-        String result = agent.getLinkLog(link);
-        assertEquals("", result);
-    }
-
-    @Test
-    public void testGetLinkLogLinkWithTraceEnabledReturnsLinkLogWithHashCode() {
-        Link link = mock(Link.class);
-        InetSocketAddress socketAddress = new InetSocketAddress("192.168.1.100", 1111);
-        when(link.getSocketAddress()).thenReturn(socketAddress);
+    public void testGetLinkLogLinkWithTraceEnabledReturnsLinkLogWithHashCode() throws ReflectiveOperationException {
+        Link link = new Link(new InetSocketAddress("192.168.1.100", 8250), null);
+        // fix LOGGER access to inject mock
+        Field field = link.getClass().getDeclaredField("LOGGER");
+        field.setAccessible(true);
+        field.set(null, logger);
         when(logger.isTraceEnabled()).thenReturn(true);
 
-        String result = agent.getLinkLog(link);
-        System.out.println(result);
+        String result = link.toString();
         assertTrue(result.startsWith(System.identityHashCode(link) + "-"));
         assertTrue(result.contains("192.168.1.100"));
     }
@@ -115,7 +111,6 @@ public class AgentTest {
         when(shell.getPingRetries()).thenReturn(3);
         when(shell.getWorkers()).thenReturn(5);
         agent.setupShutdownHookAndInitExecutors();
-        assertNotNull(agent.selfTaskExecutor);
         assertNotNull(agent.outRequestHandler);
         assertNotNull(agent.requestHandler);
     }
@@ -211,7 +206,10 @@ public class AgentTest {
     @Test
     public void testCloseAndTerminateLinkValidLinkCallsCloseAndTerminate() {
         Link mockLink = mock(Link.class);
+        ServerAttache attache = new ServerAttache(mockLink);
+        when(mockLink.attachment()).thenReturn(attache);
         agent.closeAndTerminateLink(mockLink);
+        verify(mockLink).attachment();
         verify(mockLink).close();
         verify(mockLink).terminated();
     }
@@ -219,14 +217,14 @@ public class AgentTest {
     @Test
     public void testStopAndCleanupConnectionConnectionIsNullDoesNothing() {
         agent.connection = null;
-        agent.stopAndCleanupConnection(false);
+        agent.stopAndCleanupConnection();
     }
 
     @Test
     public void testStopAndCleanupConnectionValidConnectionNoWaitStopsAndCleansUp() throws IOException {
         NioConnection mockConnection = mock(NioConnection.class);
         agent.connection = mockConnection;
-        agent.stopAndCleanupConnection(false);
+        agent.stopAndCleanupConnection();
         verify(mockConnection).stop();
         verify(mockConnection).cleanUp();
     }
@@ -236,9 +234,9 @@ public class AgentTest {
         NioConnection mockConnection = mock(NioConnection.class);
         agent.connection = mockConnection;
         doThrow(new IOException("Cleanup failed")).when(mockConnection).cleanUp();
-        agent.stopAndCleanupConnection(false);
+        agent.stopAndCleanupConnection();
         verify(mockConnection).stop();
-        verify(logger).warn(eq("Fail to clean up old connection. {}"), any(IOException.class));
+        verify(logger).warn(eq("Fail to clean up old connection"), isA(IOException.class));
     }
 
     @Test
@@ -249,9 +247,47 @@ public class AgentTest {
         agent.connection = mockConnection;
         when(shell.getBackoffAlgorithm()).thenReturn(mockBackoff);
         when(mockConnection.isStartup()).thenReturn(true, true, false);
-        agent.stopAndCleanupConnection(true);
-        verify(mockConnection).stop();
+        agent.stopAndCleanupConnection();
+        verify(mockConnection, times(3)).stop();
         verify(mockConnection).cleanUp();
-        verify(mockBackoff, times(3)).waitBeforeRetry();
+        verify(mockBackoff, times(2)).waitBeforeRetry();
+    }
+
+    @Test
+    public void testSelectReconnectionHostWithPreferredHost() {
+        Link mockLink = mock(Link.class);
+        // No need to stub mockLink or shell since preferred host short-circuits
+        String result = agent.selectReconnectionHost("preferred.host.com", mockLink);
+        assertEquals("preferred.host.com", result);
+        verify(shell, times(0)).getNextHost();
+    }
+
+    @Test
+    public void testSelectReconnectionHostWithNullPreferredHostUsesLinkAddress() {
+        Link mockLink = mock(Link.class);
+        InetSocketAddress socketAddress = new InetSocketAddress("192.168.1.100", 8080);
+        when(mockLink.getSocketAddress()).thenReturn(socketAddress);
+        // No need to stub shell.getNextHost() since link address is used
+        String result = agent.selectReconnectionHost(null, mockLink);
+        assertEquals("192.168.1.100", result);
+        verify(shell, times(0)).getNextHost();
+    }
+
+    @Test
+    public void testSelectReconnectionHostWithNullLinkUsesShellNextHost() {
+        when(shell.getNextHost()).thenReturn("fallback.host.com");
+        String result = agent.selectReconnectionHost(null, null);
+        assertEquals("fallback.host.com", result);
+        verify(shell, times(1)).getNextHost();
+    }
+
+    @Test
+    public void testSelectReconnectionHostWithNullSocketAddressUsesShellNextHost() {
+        Link mockLink = mock(Link.class);
+        when(mockLink.getSocketAddress()).thenReturn(null);
+        when(shell.getNextHost()).thenReturn("fallback.host.com");
+        String result = agent.selectReconnectionHost(null, mockLink);
+        assertEquals("fallback.host.com", result);
+        verify(shell, times(1)).getNextHost();
     }
 }
