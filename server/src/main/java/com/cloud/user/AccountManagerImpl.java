@@ -201,6 +201,7 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.component.ComponentContext;
@@ -767,12 +768,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<>();
 
         for (ControlledEntity entity : entities) {
-            long domainId = entity.getDomainId();
-            if (entity.getAccountId() != -1 && domainId == -1) { // If account exists domainId should too so calculate
-                // it. This condition might be hit for templates or entities which miss domainId in their tables
-                Account account = ApiDBUtils.findAccountById(entity.getAccountId());
-                domainId = account != null ? account.getDomainId() : -1;
-            }
+            long domainId = getDomainIdFor(entity);
             if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)
                     && !(entity instanceof Network && (accessType == AccessType.UseEntry || accessType == AccessType.OperateEntry))
                     && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)) {
@@ -822,6 +818,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // check that resources belong to the same account
 
+    }
+
+    private static long getDomainIdFor(ControlledEntity entity) {
+        long domainId = entity.getDomainId();
+        if (entity.getAccountId() != -1 && domainId == -1) {
+            // If account exists domainId should too so calculate it.
+            // This condition might be hit for templates or entities which miss domainId in their tables
+            Account account = ApiDBUtils.findAccountById(entity.getAccountId());
+            domainId = account != null ? account.getDomainId() : -1;
+        }
+        return domainId;
     }
 
     @Override
@@ -2951,11 +2958,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             final Boolean ApiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
 
             if (ApiSourceCidrChecksEnabled) {
-                logger.debug("CIDRs from which account '{}' is allowed to perform API calls: {}", account.toString(), accessAllowedCidrs);
+                logger.debug("CIDRs from which account '{}' is allowed to perform API calls: {}", account, accessAllowedCidrs);
 
                 // Block when is not in the list of allowed IPs
                 if (!NetUtils.isIpInCidrList(loginIpAddress, accessAllowedCidrs.split(","))) {
-                    logger.warn("Request by account '{}' was denied since {} does not match {}", account.toString(), loginIpAddress.toString().replace("/", ""), accessAllowedCidrs);
+                    logger.warn("Request by account '{}' was denied since {} does not match {}", account , loginIpAddress.toString().replace("/", ""), accessAllowedCidrs);
                     throw new CloudAuthenticationException("Failed to authenticate user '" + username + "' in domain '" + domain.getPath() + "' from ip "
                             + loginIpAddress.toString().replace("/", "") + "; please provide valid credentials");
                 }
@@ -3125,7 +3132,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     if (unsignedRequestBuffer.length() != 0) {
                         unsignedRequestBuffer.append("&");
                     }
-                    unsignedRequestBuffer.append(paramName).append("=").append(URLEncoder.encode(paramValue, com.cloud.utils.StringUtils.getPreferredCharset()));
+                    unsignedRequestBuffer.append(paramName).append("=").append(URLEncoder.encode(paramValue, StringUtils.getPreferredCharset()));
                 }
             }
 
