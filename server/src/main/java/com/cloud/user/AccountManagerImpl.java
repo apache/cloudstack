@@ -174,8 +174,8 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -2563,7 +2563,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("ProjectId and account/domainId can't be specified together");
         }
 
-        if (projectId != null) {
+        if (projectId != null && projectId != -1L) {
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
                 throw new InvalidParameterValueException("Unable to find project by id=" + projectId);
