@@ -1256,23 +1256,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else {
             Long primaryIsoId = ((UserVm) virtualMachine).getIsoId();
             List<VmIsoMapVO> extras = _vmIsoMapDao.listByVmId(vmId);
-            if (isoParamId != null) {
-                boolean attached = (primaryIsoId != null && primaryIsoId.equals(isoParamId))
-                        || extras.stream().anyMatch(r -> r.getIsoId() == isoParamId);
-                if (!attached) {
-                    throw new InvalidParameterValueException("The specified ISO is not attached to this Instance.");
-                }
-                isoId = isoParamId;
-            } else {
-                int totalAttached = (primaryIsoId != null ? 1 : 0) + extras.size();
-                if (totalAttached == 0) {
-                    throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
-                } else if (totalAttached > 1) {
-                    throw new InvalidParameterValueException("Instance has more than one ISO attached; specify the 'id' parameter to choose which to detach.");
-                } else {
-                    isoId = primaryIsoId != null ? primaryIsoId : extras.get(0).getIsoId();
-                }
-            }
+            isoId = resolveIsoIdForDetach(primaryIsoId, extras, isoParamId);
         }
         if (isoId == null) {
             throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
@@ -1359,9 +1343,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         if (!isVirtualRouter) {
             Long primaryIsoId = ((UserVm) vm).getIsoId();
-            boolean alreadyAttached = (primaryIsoId != null && primaryIsoId.equals(isoId))
-                    || _vmIsoMapDao.findByVmIdIsoId(vmId, isoId) != null;
-            if (alreadyAttached) {
+            if (isIsoAlreadyAttached(vmId, primaryIsoId, isoId)) {
                 throw new InvalidParameterValueException("The specified ISO is already attached to this Instance.");
             }
             int effectiveMax = effectiveMaxCdroms(vm);
@@ -1505,6 +1487,32 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
         return highest;
+    }
+
+    Long resolveIsoIdForDetach(Long primaryIsoId, List<VmIsoMapVO> extras, Long isoParamId) {
+        if (isoParamId != null) {
+            boolean attached = (primaryIsoId != null && primaryIsoId.equals(isoParamId))
+                    || extras.stream().anyMatch(r -> r.getIsoId() == isoParamId);
+            if (!attached) {
+                throw new InvalidParameterValueException("The specified ISO is not attached to this Instance.");
+            }
+            return isoParamId;
+        }
+        int totalAttached = (primaryIsoId != null ? 1 : 0) + extras.size();
+        if (totalAttached == 0) {
+            throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
+        }
+        if (totalAttached > 1) {
+            throw new InvalidParameterValueException("Instance has more than one ISO attached; specify the 'id' parameter to choose which to detach.");
+        }
+        return primaryIsoId != null ? primaryIsoId : extras.get(0).getIsoId();
+    }
+
+    boolean isIsoAlreadyAttached(long vmId, Long primaryIsoId, long isoId) {
+        if (primaryIsoId != null && primaryIsoId.equals(isoId)) {
+            return true;
+        }
+        return _vmIsoMapDao.findByVmIdIsoId(vmId, isoId) != null;
     }
 
     private int effectiveMaxCdroms(VirtualMachine vm) {
