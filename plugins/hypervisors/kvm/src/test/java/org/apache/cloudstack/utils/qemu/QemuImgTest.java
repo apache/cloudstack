@@ -64,7 +64,7 @@ public class QemuImgTest {
             Connect conn = new Connect("qemu:///system", false);
             conn.getVersion();
             libVirtAvailable = true;
-        } catch (LibvirtException ignored) {}
+        } catch (LibvirtException | UnsatisfiedLinkError | ExceptionInInitializerError ignored) {}
         Assume.assumeTrue("libvirt not available", libVirtAvailable);
     }
 

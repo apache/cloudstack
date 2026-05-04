@@ -31,11 +31,13 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.host.HostTagVO;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.acl.dao.RoleDao;
@@ -238,6 +240,8 @@ public class PresetVariableHelperTest {
         value.setVmSnapshotType(VMSnapshot.Type.Disk.toString());
         value.setComputingResources(getComputingResourcesForTests());
         value.setVolumeType(Volume.Type.DATADISK.toString());
+        value.setState(Network.State.Implemented.toString());
+        value.setResourceCounting(getResourceCountingForTests());
         value.setNetworkOffering(getNetworkOfferingForTests());
         value.setVpcOffering(getVpcOfferingForTests());
         return value;
@@ -274,6 +278,13 @@ public class PresetVariableHelperTest {
         configuration.setName("config_name");
         configuration.setForceHa(false);
         return configuration;
+    }
+
+    private ResourceCounting getResourceCountingForTests() {
+        ResourceCounting resourceCounting = new ResourceCounting();
+        resourceCounting.setRunningVms(1);
+        resourceCounting.setStoppedVms(1);
+        return resourceCounting;
     }
 
     private List<HostTagVO> getHostTagsForTests() {
@@ -1343,8 +1354,8 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getId()).when(networkVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(networkVoMock).getName();
         Mockito.doReturn(expected.getState()).when(usageVoMock).getState();
+        Mockito.doReturn(expected.getResourceCounting()).when(presetVariableHelperSpy).getPresetVariableValueNetworkResourceCounting(Mockito.anyLong());
         Mockito.doReturn(expected.getNetworkOffering()).when(presetVariableHelperSpy).getPresetVariableValueNetworkOffering(Mockito.anyLong());
-
         Mockito.doReturn(UsageTypes.NETWORK).when(usageVoMock).getUsageType();
 
         Value result = new Value();
@@ -1352,7 +1363,27 @@ public class PresetVariableHelperTest {
 
         assertPresetVariableIdAndName(expected, result);
         Assert.assertEquals(expected.getState(), result.getState());
-        Assert.assertEquals(expected.getNetworkOffering(), result.getNetworkOffering());
+        Assert.assertEquals(expected.getResourceCounting(), result.getResourceCounting());
+    }
+
+    @Test
+    public void getPresetVariableValueNetworkResourceCountingTestSetValueAndReturnObject() {
+        VMInstanceVO vmInstanceVoMock1 = Mockito.spy(VMInstanceVO.class);
+        vmInstanceVoMock1.setState(VirtualMachine.State.Stopped);
+
+        VMInstanceVO vmInstanceVoMock2 = Mockito.spy(VMInstanceVO.class);
+        vmInstanceVoMock2.setState(VirtualMachine.State.Running);
+
+        Mockito.doReturn(List.of(vmInstanceVoMock1, vmInstanceVoMock2)).when(vmInstanceDaoMock).listNonRemovedVmsByTypeAndNetwork(Mockito.anyLong(), Mockito.any());
+
+        mockMethodValidateIfObjectIsNull();
+
+        ResourceCounting expected = getResourceCountingForTests();
+
+        ResourceCounting result = presetVariableHelperSpy.getPresetVariableValueNetworkResourceCounting(1L);
+
+        Assert.assertEquals(expected.getRunningVms(), result.getRunningVms());
+        Assert.assertEquals(expected.getStoppedVms(), result.getStoppedVms());
     }
 
     @Test
@@ -1362,7 +1393,7 @@ public class PresetVariableHelperTest {
             presetVariableHelperSpy.loadPresetVariableValueForVpc(usageVoMock, null);
         });
 
-        Mockito.verifyNoInteractions(networkDaoMock);
+        Mockito.verifyNoInteractions(vpcDaoMock);
     }
 
     @Test
