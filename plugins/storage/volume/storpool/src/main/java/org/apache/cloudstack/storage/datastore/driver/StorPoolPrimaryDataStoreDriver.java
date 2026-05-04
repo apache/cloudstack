@@ -399,7 +399,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private String resizeVolume(DataObject data, String path, VolumeObject vol) {
         String err = null;
         ResizeVolumePayload payload = (ResizeVolumePayload)vol.getpayload();
-        boolean needResize = vol.getSize() != payload.newSize;
+        boolean needResize = !vol.getSize().equals(payload.newSize);
 
         final String name = StorPoolStorageAdaptor.getVolumeNameFromPath(path, true);
         final long oldSize = vol.getSize();

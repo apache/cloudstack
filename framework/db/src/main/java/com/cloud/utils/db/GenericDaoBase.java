@@ -2061,8 +2061,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             }
         }
         if(attr == null) {
-            logger.warn(String.format("Failed to find attribute in the entity %s to map column %s.%s (%s)",
-                    ClassUtils.getUserClass(entity).getSimpleName(), tableName, columnName));
+            logger.warn("Failed to find attribute in the entity {} to map column {}.{}",
+                    ClassUtils.getUserClass(entity).getSimpleName(), tableName, columnName);
         } else {
             setField(entity, attr.field, rs, index);
         }
