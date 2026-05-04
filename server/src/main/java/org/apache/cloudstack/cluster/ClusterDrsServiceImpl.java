@@ -449,9 +449,15 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             ) {
                 continue;
             }
-            Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM = managementServer
-                    .listHostsForMigrationOfVM(
-                            vm, 0L, 500L, null, vmList);
+            Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigrationOfVM;
+            try {
+                hostsForMigrationOfVM = managementServer
+                        .listHostsForMigrationOfVM(
+                                vm, 0L, 500L, null, vmList);
+            } catch (InvalidParameterValueException e) {
+                logger.debug("Skipping VM {} for DRS, unsupported operation: {}", vm, e.getMessage());
+                continue;
+            }
             List<? extends Host> compatibleDestinationHosts = hostsForMigrationOfVM.first().first();
             List<? extends Host> suitableDestinationHosts = hostsForMigrationOfVM.second();
 

@@ -405,6 +405,49 @@ public class ClusterDrsServiceImplTest {
     }
 
     @Test
+    public void testGetBestMigrationSkipsPassthroughVm() throws ConfigurationException {
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster.getId()).thenReturn(1L);
+
+        HostVO destHost = Mockito.mock(HostVO.class);
+        Mockito.when(destHost.getClusterId()).thenReturn(1L);
+
+        VMInstanceVO vmPassthrough = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmPassthrough.getId()).thenReturn(1L);
+        Mockito.when(vmPassthrough.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(vmPassthrough.getState()).thenReturn(VirtualMachine.State.Running);
+        Mockito.when(vmPassthrough.getDetails()).thenReturn(Collections.emptyMap());
+
+        VMInstanceVO vmNormal = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vmNormal.getId()).thenReturn(2L);
+        Mockito.when(vmNormal.getType()).thenReturn(VirtualMachine.Type.User);
+        Mockito.when(vmNormal.getState()).thenReturn(VirtualMachine.State.Running);
+        Mockito.when(vmNormal.getDetails()).thenReturn(Collections.emptyMap());
+
+        List<VirtualMachine> vmList = new ArrayList<>();
+        vmList.add(vmPassthrough);
+        vmList.add(vmNormal);
+
+        ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
+        Map<Long, ServiceOffering> vmIdServiceOfferingMap = new HashMap<>();
+        vmIdServiceOfferingMap.put(vmPassthrough.getId(), serviceOffering);
+        vmIdServiceOfferingMap.put(vmNormal.getId(), serviceOffering);
+
+        Mockito.when(managementServer.listHostsForMigrationOfVM(vmPassthrough, 0L, 500L, null, vmList))
+                .thenThrow(new InvalidParameterValueException("Unsupported operation, VM uses host passthrough, cannot migrate"));
+        Mockito.when(managementServer.listHostsForMigrationOfVM(vmNormal, 0L, 500L, null, vmList)).thenReturn(
+                new Ternary<>(new Pair<>(List.of(destHost), 1), List.of(destHost), Map.of(destHost, false)));
+        Mockito.when(balancedAlgorithm.getMetrics(cluster, vmNormal, serviceOffering, destHost, new HashMap<>(),
+                new HashMap<>(), false)).thenReturn(new Ternary<>(1.0, 0.5, 1.5));
+
+        Pair<VirtualMachine, Host> bestMigration = clusterDrsService.getBestMigration(cluster, balancedAlgorithm,
+                vmList, vmIdServiceOfferingMap, new HashMap<>(), new HashMap<>());
+
+        assertEquals(vmNormal, bestMigration.first());
+        assertEquals(destHost, bestMigration.second());
+    }
+
+    @Test
     public void testGetBestMigrationDifferentCluster() throws ConfigurationException {
         ClusterVO cluster = Mockito.mock(ClusterVO.class);
         Mockito.when(cluster.getId()).thenReturn(1L);
