@@ -33,7 +33,7 @@ export default {
       permission: ['listKMSKeys'],
       resourceType: 'KMSKey',
       columns: () => {
-        const fields = ['name', 'enabled', 'purpose', 'hsmprofile']
+        const fields = ['name', 'enabled', 'hsmprofile']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
         }
@@ -215,7 +215,7 @@ export default {
           },
           args: (record, store, group) => {
             return ['Admin'].includes(store.userInfo.roletype)
-              ? ['name', 'zoneid', 'vendorname', 'domainid', 'account', 'projectid', 'details', 'system']
+              ? ['name', 'zoneid', 'vendorname', 'domainid', 'account', 'projectid', 'details', 'ispublic']
               : ['name', 'zoneid', 'vendorname', 'details']
           },
           mapping: {
