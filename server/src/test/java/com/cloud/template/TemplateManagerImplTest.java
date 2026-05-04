@@ -791,6 +791,53 @@ public class TemplateManagerImplTest extends TestCase {
     }
 
     @Test
+    public void resolveIsoIdForDetachReturnsPrimaryWhenOnlyPrimaryIsAttached() {
+        Long resolved = templateManager.resolveIsoIdForDetach(99L, new ArrayList<>(), null);
+        Assert.assertEquals(Long.valueOf(99L), resolved);
+    }
+
+    @Test
+    public void resolveIsoIdForDetachReturnsMapEntryWhenOnlyMapHasOne() {
+        com.cloud.vm.VmIsoMapVO row = new com.cloud.vm.VmIsoMapVO(1L, 100L, 4);
+        Long resolved = templateManager.resolveIsoIdForDetach(null, java.util.Arrays.asList(row), null);
+        Assert.assertEquals(Long.valueOf(100L), resolved);
+    }
+
+    @Test(expected = com.cloud.exception.InvalidParameterValueException.class)
+    public void resolveIsoIdForDetachThrowsWhenMultipleAttachedAndNoIdGiven() {
+        com.cloud.vm.VmIsoMapVO row = new com.cloud.vm.VmIsoMapVO(1L, 100L, 4);
+        templateManager.resolveIsoIdForDetach(99L, java.util.Arrays.asList(row), null);
+    }
+
+    @Test(expected = com.cloud.exception.InvalidParameterValueException.class)
+    public void resolveIsoIdForDetachThrowsWhenNothingAttached() {
+        templateManager.resolveIsoIdForDetach(null, new ArrayList<>(), null);
+    }
+
+    @Test(expected = com.cloud.exception.InvalidParameterValueException.class)
+    public void resolveIsoIdForDetachThrowsWhenIdNotAttached() {
+        templateManager.resolveIsoIdForDetach(99L, new ArrayList<>(), 42L);
+    }
+
+    @Test
+    public void isIsoAlreadyAttachedReturnsTrueWhenPrimaryMatches() {
+        Assert.assertTrue(templateManager.isIsoAlreadyAttached(1L, 42L, 42L));
+    }
+
+    @Test
+    public void isIsoAlreadyAttachedReturnsTrueWhenInMap() {
+        Mockito.when(_vmIsoMapDao.findByVmIdIsoId(1L, 42L))
+                .thenReturn(new com.cloud.vm.VmIsoMapVO(1L, 42L, 4));
+        Assert.assertTrue(templateManager.isIsoAlreadyAttached(1L, 99L, 42L));
+    }
+
+    @Test
+    public void isIsoAlreadyAttachedReturnsFalseWhenNotAttached() {
+        Mockito.when(_vmIsoMapDao.findByVmIdIsoId(1L, 42L)).thenReturn(null);
+        Assert.assertFalse(templateManager.isIsoAlreadyAttached(1L, null, 42L));
+    }
+
+    @Test
     public void attachISOToVMAttachWritesToVmIsoMapWhenPrimarySlotOccupied() {
         com.cloud.vm.UserVmVO vm = Mockito.mock(com.cloud.vm.UserVmVO.class);
         com.cloud.storage.VMTemplateVO iso = Mockito.mock(com.cloud.storage.VMTemplateVO.class);
