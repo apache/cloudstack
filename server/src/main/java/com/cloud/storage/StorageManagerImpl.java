@@ -57,10 +57,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.resource.ResourceManager;
-import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -190,9 +186,11 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -219,6 +217,7 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
+import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
@@ -231,6 +230,7 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
@@ -4023,7 +4023,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return;
         }
         String templateName = getValidTemplateName(zoneId, hypervisorType);
-        VMTemplateVO registeredTemplate = systemVmTemplateRegistration.getRegisteredTemplate(templateName, arch);
+        VMTemplateVO registeredTemplate = systemVmTemplateRegistration.getRegisteredTemplate(templateName,
+                hypervisorType, arch, null);
         TemplateDataStoreVO templateDataStoreVO = null;
         if (registeredTemplate != null) {
             templateDataStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), registeredTemplate.getId());

@@ -412,8 +412,47 @@ public class SystemVmTemplateRegistration {
         return NewTemplateMap.get(getHypervisorArchKey(hypervisorType, arch));
     }
 
-    public VMTemplateVO getRegisteredTemplate(String templateName, CPU.CPUArch arch) {
-        return vmTemplateDao.findLatestTemplateByName(templateName, arch);
+    /**
+     * Finds a registered system VM Template matching the provided criteria.
+     *
+     * <p>The method first attempts to locate the latest template by {@code templateName},
+     * {@code hypervisorType} and {@code arch}. If none is found and a non-blank {@code url}
+     * is provided, it falls back to searching for an active system template by the
+     * URL path segment (the substring after the last '/' in the URL).</p>
+     *
+     * @param templateName the template name to search for
+     * @param hypervisorType the hypervisor type
+     * @param arch the CPU architecture
+     * @param url optional download URL used as a fallback; may be {@code null} or blank
+     * @return the matching {@code VMTemplateVO} if found; {@code null} otherwise
+     */
+    public VMTemplateVO getRegisteredTemplate(String templateName, Hypervisor.HypervisorType hypervisorType,
+                                              CPU.CPUArch arch, String url) {
+        VMTemplateVO registeredTemplate = vmTemplateDao.findLatestTemplateByName(templateName, hypervisorType, arch);
+        if (registeredTemplate != null) {
+            LOGGER.debug("Found existing registered template for {}: {}",
+                    getHypervisorArchLog(hypervisorType, arch), registeredTemplate);
+            return registeredTemplate;
+        }
+        if (StringUtils.isBlank(url)) {
+            MetadataTemplateDetails details = getMetadataTemplateDetails(hypervisorType, arch);
+            if (details != null) {
+                url = details.getUrl();
+            }
+            String urlPath = url.substring(url.lastIndexOf("/") + 1);
+            LOGGER.debug("No template found by name: {}, falling back to search existing SYSTEM template by " +
+                    "urlPath: {}, {}", templateName, urlPath, getHypervisorArchLog(hypervisorType, arch));
+            registeredTemplate = vmTemplateDao.findActiveSystemTemplateByHypervisorArchAndUrlPath(hypervisorType, arch,
+                    urlPath);
+            if (registeredTemplate != null) {
+                LOGGER.debug("Found existing registered template by urlPath: {} for {}: {}",
+                        getHypervisorArchLog(hypervisorType, arch), registeredTemplate);
+                return registeredTemplate;
+            }
+        }
+        LOGGER.debug("No existing registered template found for {}",
+                getHypervisorArchLog(hypervisorType, arch));
+        return null;
     }
 
     private static boolean isRunningInTest() {
@@ -925,7 +964,8 @@ public class SystemVmTemplateRegistration {
             if (templateDetails == null) {
                 continue;
             }
-            VMTemplateVO templateVO  = getRegisteredTemplate(templateDetails.getName(), templateDetails.getArch());
+            VMTemplateVO templateVO  = getRegisteredTemplate(templateDetails.getName(),
+                    templateDetails.getHypervisorType(), templateDetails.getArch(), templateDetails.getUrl());
             if (templateVO != null) {
                 TemplateDataStoreVO templateDataStoreVO =
                         templateDataStoreDao.findByStoreTemplate(storeUrlAndId.second(), templateVO.getId());
@@ -1024,7 +1064,8 @@ public class SystemVmTemplateRegistration {
     protected boolean registerOrUpdateSystemVmTemplate(MetadataTemplateDetails templateDetails,
                    List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsInUse) {
         LOGGER.debug("Updating System VM template for {}", templateDetails.getHypervisorArchLog());
-        VMTemplateVO registeredTemplate = getRegisteredTemplate(templateDetails.getName(), templateDetails.getArch());
+        VMTemplateVO registeredTemplate  = getRegisteredTemplate(templateDetails.getName(),
+                templateDetails.getHypervisorType(), templateDetails.getArch(), templateDetails.getUrl());
         // change template type to SYSTEM
         if (registeredTemplate != null) {
             updateRegisteredTemplateDetails(registeredTemplate.getId(), templateDetails);
