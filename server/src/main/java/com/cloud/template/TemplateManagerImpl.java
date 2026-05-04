@@ -1263,12 +1263,15 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     throw new InvalidParameterValueException("The specified ISO is not attached to this Instance.");
                 }
                 isoId = isoParamId;
-            } else if (primaryIsoId == null && extras.isEmpty()) {
-                throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
-            } else if (!extras.isEmpty()) {
-                throw new InvalidParameterValueException("Instance has more than one ISO attached; specify the 'id' parameter to choose which to detach.");
             } else {
-                isoId = primaryIsoId;
+                int totalAttached = (primaryIsoId != null ? 1 : 0) + extras.size();
+                if (totalAttached == 0) {
+                    throw new InvalidParameterValueException("The specified instance has no ISO attached to it.");
+                } else if (totalAttached > 1) {
+                    throw new InvalidParameterValueException("Instance has more than one ISO attached; specify the 'id' parameter to choose which to detach.");
+                } else {
+                    isoId = primaryIsoId != null ? primaryIsoId : extras.get(0).getIsoId();
+                }
             }
         }
         if (isoId == null) {
@@ -1355,8 +1358,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
         }
         if (!isVirtualRouter) {
+            Long primaryIsoId = ((UserVm) vm).getIsoId();
+            boolean alreadyAttached = (primaryIsoId != null && primaryIsoId.equals(isoId))
+                    || _vmIsoMapDao.findByVmIdIsoId(vmId, isoId) != null;
+            if (alreadyAttached) {
+                throw new InvalidParameterValueException("The specified ISO is already attached to this Instance.");
+            }
             int effectiveMax = effectiveMaxCdroms(vm);
-            int attached = (((UserVm) vm).getIsoId() != null ? 1 : 0) + _vmIsoMapDao.listByVmId(vmId).size();
+            int attached = (primaryIsoId != null ? 1 : 0) + _vmIsoMapDao.listByVmId(vmId).size();
             if (attached >= effectiveMax) {
                 throw new InvalidParameterValueException(String.format(
                         "Instance has reached the maximum of %d attached CD-ROM(s); detach one before attaching another.", effectiveMax));
