@@ -101,7 +101,15 @@ public class UpdateDnsServerCmd extends BaseCmd {
     public String getPublicDomainSuffix() {
         return publicDomainSuffix;
     }
-    public String getNameServers() { return String.join(",", nameServers); }
+    public String getNameServers() {
+        if (nameServers == null) {
+            return null;
+        }
+        return StringUtils.join(nameServers.stream()
+                .filter(StringUtils::isNotBlank)
+                .map(StringUtils::trim)
+                .toArray(String[]::new), ",");
+    }
 
     @Override
     public long getEntityOwnerId() {

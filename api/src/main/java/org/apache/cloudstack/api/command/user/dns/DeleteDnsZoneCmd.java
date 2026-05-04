@@ -52,8 +52,8 @@ public class DeleteDnsZoneCmd extends BaseAsyncCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.UNMANAGE, type = CommandType.BOOLEAN, entityType = DnsZoneResponse.class,
-            description = "If true, imports an existing DNS zone from the DNS provider into CloudStack; " +
-                    "if false, creates the DNS zone in the provider and registers it with CloudStack. Default: false")
+            description = "If true, removes the DNS zone only from CloudStack; if false, removes it from " +
+                    "both CloudStack and the DNS provider. Default: false")
     private Boolean unmanage = false;
 
     /////////////////////////////////////////////////////

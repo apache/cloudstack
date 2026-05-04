@@ -26,11 +26,14 @@ import org.apache.cloudstack.api.response.DnsZoneResponse;
 import org.apache.cloudstack.dns.DnsZone;
 import org.junit.Test;
 
+import com.cloud.user.Account;
+
 public class UpdateDnsZoneCmdTest extends BaseDnsCmdTest {
 
     private UpdateDnsZoneCmd createCmd() throws Exception {
         UpdateDnsZoneCmd cmd = new UpdateDnsZoneCmd();
         setField(cmd, "dnsProviderManager", dnsProviderManager);
+        setField(cmd, "_entityMgr", entityManager);
         setField(cmd, "id", ENTITY_ID);
         setField(cmd, "description", "Updated description");
         return cmd;
@@ -44,9 +47,19 @@ public class UpdateDnsZoneCmdTest extends BaseDnsCmdTest {
     }
 
     @Test
-    public void testGetEntityOwnerId() throws Exception {
+    public void testGetEntityOwnerIdWhenZoneExists() throws Exception {
         UpdateDnsZoneCmd cmd = createCmd();
+        DnsZone mockZone = mock(DnsZone.class);
+        when(mockZone.getAccountId()).thenReturn(ACCOUNT_ID);
+        when(entityManager.findById(DnsZone.class, ENTITY_ID)).thenReturn(mockZone);
         assertEquals(ACCOUNT_ID, cmd.getEntityOwnerId());
+    }
+
+    @Test
+    public void testGetEntityOwnerIdWhenZoneNotFound() throws Exception {
+        UpdateDnsZoneCmd cmd = createCmd();
+        when(entityManager.findById(DnsZone.class, ENTITY_ID)).thenReturn(null);
+        assertEquals(Account.ACCOUNT_ID_SYSTEM, cmd.getEntityOwnerId());
     }
 
     @Test

@@ -1423,8 +1423,10 @@ public class EventTypes {
 
         // DNS Framework Events
         entityEventDetails.put(EVENT_DNS_SERVER_ADD, DnsServer.class);
+        entityEventDetails.put(EVENT_DNS_SERVER_UPDATE, DnsServer.class);
         entityEventDetails.put(EVENT_DNS_SERVER_DELETE, DnsServer.class);
         entityEventDetails.put(EVENT_DNS_ZONE_CREATE, DnsZone.class);
+        entityEventDetails.put(EVENT_DNS_ZONE_UPDATE, DnsZone.class);
         entityEventDetails.put(EVENT_DNS_ZONE_DELETE, DnsZone.class);
         entityEventDetails.put(EVENT_DNS_RECORD_CREATE, DnsRecord.class);
         entityEventDetails.put(EVENT_DNS_RECORD_DELETE, DnsRecord.class);

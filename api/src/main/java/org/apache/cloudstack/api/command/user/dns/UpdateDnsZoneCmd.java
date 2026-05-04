@@ -18,6 +18,8 @@
 package org.apache.cloudstack.api.command.user.dns;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -25,8 +27,9 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DnsZoneResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dns.DnsZone;
+
+import com.cloud.user.Account;
 
 @APICommand(name = "updateDnsZone",
         description = "Updates a DNS Zone's metadata",
@@ -41,6 +44,7 @@ public class UpdateDnsZoneCmd extends BaseCmd {
     //////////////// API Parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL(accessType = SecurityChecker.AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DnsZoneResponse.class,
             required = true, description = "The ID of the DNS zone")
     private Long id;
@@ -82,6 +86,10 @@ public class UpdateDnsZoneCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return CallContext.current().getCallingAccount().getId();
+        DnsZone dnsZone = _entityMgr.findById(DnsZone.class, id);
+        if (dnsZone != null) {
+            return dnsZone.getAccountId();
+        }
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

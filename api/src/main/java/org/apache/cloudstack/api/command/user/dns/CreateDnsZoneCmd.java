@@ -88,7 +88,7 @@ public class CreateDnsZoneCmd extends BaseAsyncCreateCmd {
             return DnsZone.ZoneType.Public;
         }
         DnsZone.ZoneType zoneType = EnumUtils.getEnumIgnoreCase(DnsZone.ZoneType.class, type);
-        if (type == null) {
+        if (zoneType == null) {
             throw new IllegalArgumentException("Invalid type value, supported values are: " + Arrays.toString(DnsZone.ZoneType.values()));
         }
         return zoneType;
