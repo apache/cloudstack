@@ -128,6 +128,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     @Inject
     VMTemplateDao vmTemplateDao;
     @Inject
+    com.cloud.vm.dao.VmIsoMapDao vmIsoMapDao;
+    @Inject
     ExtensionHelper extensionHelper;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
@@ -244,6 +246,20 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setIsoId(userVm.getIsoUuid());
             userVmResponse.setIsoName(userVm.getIsoName());
             userVmResponse.setIsoDisplayText(userVm.getIsoDisplayText());
+
+            java.util.List<org.apache.cloudstack.api.response.AttachedIsoResponse> attachedIsos = new java.util.ArrayList<>();
+            if (userVm.getIsoUuid() != null) {
+                attachedIsos.add(new org.apache.cloudstack.api.response.AttachedIsoResponse(
+                        userVm.getIsoUuid(), userVm.getIsoName(), userVm.getIsoDisplayText(), 3));
+            }
+            for (com.cloud.vm.VmIsoMapVO row : vmIsoMapDao.listByVmId(userVm.getId())) {
+                com.cloud.storage.VMTemplateVO tmpl = vmTemplateDao.findById(row.getIsoId());
+                if (tmpl != null) {
+                    attachedIsos.add(new org.apache.cloudstack.api.response.AttachedIsoResponse(
+                            tmpl.getUuid(), tmpl.getName(), tmpl.getDisplayText(), row.getDeviceSeq()));
+                }
+            }
+            userVmResponse.setIsos(attachedIsos);
         }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff)) {
             userVmResponse.setServiceOfferingId(userVm.getServiceOfferingUuid());
