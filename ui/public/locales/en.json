@@ -2484,6 +2484,7 @@
 "label.virtual.network": "Virtual Network",
 "label.virtual.networking": "Virtual Networking",
 "label.virtual.routers": "Virtual Routers",
+"label.virtual.routers.system.offering": "VR system offering",
 "label.virtualmachineid": "Instance ID",
 "label.virtualmachinename": "Instance name",
 "label.virtualsize": "Virtual Size",
