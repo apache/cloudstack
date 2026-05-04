@@ -503,6 +503,7 @@ export default {
           api: 'createVMSnapshot',
           icon: 'camera-outlined',
           label: 'label.action.vmsnapshot.create',
+          message: 'message.action.vmsnapshot.create',
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
           args: ['virtualmachineid', 'name', 'description', 'snapshotmemory', 'quiescevm'],

@@ -2914,6 +2914,7 @@
 "message.action.cancel.maintenance": "Your host has been successfully canceled for maintenance. This process can take up to several minutes.",
 "message.action.cancel.maintenance.mode": "Please confirm that you want to cancel this maintenance.",
 "message.action.create.snapshot.from.vmsnapshot": "Please confirm that you want to create Snapshot from Instance Snapshot",
+"message.action.vmsnapshot.create": "Please confirm that you want to create an Instance Snapshot.<br>Running KVM UEFI disk-only snapshots briefly suspend the Instance while NVRAM state is copied.",
 "message.action.create.instance.from.backup": "Please confirm that you want to create a new Instance from the given Backup.<br>Click on configure to edit the parameters for the new Instance before creation.",
 "message.create.instance.from.backup.different.zone": "Creating Instance from Backup on a different Zone. Please ensure that the backup repository is accessible in the selected Zone.",
 "message.csv.empty": "Empty CSV File",
