@@ -2002,7 +2002,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     private boolean assignLBruleToNewVm(long vmId, AutoScaleVmGroupVO asGroup) {
-        List<Long> lstVmId = new ArrayList<Long>();
+        List<Long> vmIds = new ArrayList<>();
         long lbId = asGroup.getLoadBalancerId();
 
         List<LoadBalancerVMMapVO> lbVmMapVos = lbVmMapDao.listByLoadBalancerId(lbId);
@@ -2015,9 +2015,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 }
             }
         }
-        lstVmId.add(new Long(vmId));
+        vmIds.add(new Long(vmId));
         try {
-            return loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<>(), true);
+            return loadBalancingRulesService.assignToLoadBalancer(lbId, vmIds, new HashMap<>(), true);
         } catch (CloudRuntimeException ex) {
             logger.warn("Caught exception: ", ex);
             return false;
