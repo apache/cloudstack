@@ -26,11 +26,14 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.cloudstack.storage.datastore.adapter.ProviderAdapter;
@@ -452,16 +455,77 @@ public class FlashArrayAdapter implements ProviderAdapter {
     @Override
     public ProviderVolumeStorageStats getManagedStorageStats() {
         FlashArrayPod pod = getVolumeNamespace(this.pod);
-        // just in case
-        if (pod == null || pod.getFootprint() == 0) {
+        if (pod == null) {
             return null;
         }
         Long capacityBytes = pod.getQuotaLimit();
-        Long usedBytes = pod.getQuotaLimit() - (pod.getQuotaLimit() - pod.getFootprint());
+        if (capacityBytes == null || capacityBytes == 0) {
+            // Pod has no explicit quota set; report the array total physical
+            // capacity so the CloudStack allocator has a real ceiling to plan
+            // against rather than bailing out with a zero-capacity pool.
+            capacityBytes = getArrayTotalCapacity();
+        }
+        if (capacityBytes == null || capacityBytes == 0) {
+            return null;
+        }
+        Long usedBytes = pod.getFootprint();
+        if (usedBytes == null) {
+            usedBytes = 0L;
+        }
         ProviderVolumeStorageStats stats = new ProviderVolumeStorageStats();
         stats.setCapacityInBytes(capacityBytes);
         stats.setActualUsedInBytes(usedBytes);
         return stats;
+    }
+
+    /**
+     * Cache of array total capacity keyed by FlashArray URL. The capacity of a
+     * physical FlashArray changes only when hardware is added or removed, so a
+     * several-minute TTL is safe and avoids an extra REST call on every
+     * storage stats refresh for every pool that has no pod quota set.
+     */
+    private static final ConcurrentMap<String, CachedCapacity> ARRAY_CAPACITY_CACHE = new ConcurrentHashMap<>();
+    private static final long ARRAY_CAPACITY_CACHE_TTL_MS = 5L * 60L * 1000L;
+
+    private static final class CachedCapacity {
+        final long capacityBytes;
+        final long expiresAtMs;
+
+        CachedCapacity(long capacityBytes, long ttlMs) {
+            this.capacityBytes = capacityBytes;
+            this.expiresAtMs = System.currentTimeMillis() + ttlMs;
+        }
+
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiresAtMs;
+        }
+    }
+
+    private Long getArrayTotalCapacity() {
+        CachedCapacity cached = ARRAY_CAPACITY_CACHE.get(this.url);
+        if (cached != null && !cached.isExpired()) {
+            return cached.capacityBytes;
+        }
+        try {
+            FlashArrayList<Map<String, Object>> list = GET("/arrays?space=true",
+                    new TypeReference<FlashArrayList<Map<String, Object>>>() {
+                    });
+            if (list != null && CollectionUtils.isNotEmpty(list.getItems())) {
+                Object cap = list.getItems().get(0).get("capacity");
+                if (cap instanceof Number) {
+                    long capacityBytes = ((Number) cap).longValue();
+                    ARRAY_CAPACITY_CACHE.put(this.url,
+                            new CachedCapacity(capacityBytes, ARRAY_CAPACITY_CACHE_TTL_MS));
+                    return capacityBytes;
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Could not retrieve total capacity for FlashArray [{}] (pod [{}]): {}",
+                    this.url, this.pod, e.getMessage());
+            logger.debug("Stack trace for array total capacity lookup failure on FlashArray [{}] (pod [{}])",
+                    this.url, this.pod, e);
+        }
+        return null;
     }
 
     @Override
