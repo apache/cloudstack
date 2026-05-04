@@ -697,7 +697,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         Map<Integer, Long> slotToIsoId = new HashMap<>();
         if (vm.getIsoId() != null) {
-            slotToIsoId.put(3, vm.getIsoId());
+            slotToIsoId.put(CDROM_PRIMARY_DEVICE_SEQ, vm.getIsoId());
         }
         for (VmIsoMapVO row : _vmIsoMapDao.listByVmId(vm.getId())) {
             slotToIsoId.put(row.getDeviceSeq(), row.getIsoId());
@@ -705,10 +705,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // Empty ISO DiskTOs pre-allocate cdrom drives at boot so runtime attachIso can media-swap into them.
         int cap = effectiveMaxCdroms(vm);
-        int neededForAttached = slotToIsoId.isEmpty() ? 0 : slotToIsoId.keySet().stream().max(Integer::compare).get() - 2;
+        int neededForAttached = slotToIsoId.isEmpty() ? 0
+                : slotToIsoId.keySet().stream().max(Integer::compare).get() - (CDROM_PRIMARY_DEVICE_SEQ - 1);
         int totalSlots = Math.max(cap, neededForAttached);
         for (int slot = 0; slot < totalSlots; slot++) {
-            int diskSeq = 3 + slot;
+            int diskSeq = CDROM_PRIMARY_DEVICE_SEQ + slot;
             Long isoId = slotToIsoId.get(diskSeq);
             if (isoId != null) {
                 TemplateInfo template = prepareIso(isoId, vm.getDataCenterId(), dest.getHost().getId(), poolId);
@@ -716,7 +717,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     logger.error("Failed to prepare ISO on secondary or cache storage");
                     throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
                 }
-                if (diskSeq == 3 && template.isBootable()) {
+                if (diskSeq == CDROM_PRIMARY_DEVICE_SEQ && template.isBootable()) {
                     profile.setBootLoaderType(BootloaderType.CD);
                 }
                 GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
@@ -1450,20 +1451,26 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VmIsoMapVO mapEntry = null;
         if (attach) {
             VmIsoMapVO highestExtra = highestCdromMapEntry(vmId);
-            targetSlot = vm.getIsoId() == null ? 3 : (highestExtra == null ? 4 : highestExtra.getDeviceSeq() + 1);
+            if (vm.getIsoId() == null) {
+                targetSlot = CDROM_PRIMARY_DEVICE_SEQ;
+            } else if (highestExtra == null) {
+                targetSlot = CDROM_PRIMARY_DEVICE_SEQ + 1;
+            } else {
+                targetSlot = highestExtra.getDeviceSeq() + 1;
+            }
         } else {
             if (vm.getIsoId() != null && vm.getIsoId() == isoId) {
-                targetSlot = 3;
+                targetSlot = CDROM_PRIMARY_DEVICE_SEQ;
             } else {
                 mapEntry = _vmIsoMapDao.findByVmIdIsoId(vmId, isoId);
-                targetSlot = mapEntry != null ? mapEntry.getDeviceSeq() : 3;
+                targetSlot = mapEntry != null ? mapEntry.getDeviceSeq() : CDROM_PRIMARY_DEVICE_SEQ;
             }
         }
 
         boolean success = attachISOToVM(vmId, isoId, targetSlot, attach, forced, isVirtualRouter);
 
         if (success && attach && !isVirtualRouter) {
-            if (targetSlot == 3) {
+            if (targetSlot == CDROM_PRIMARY_DEVICE_SEQ) {
                 vm.setIsoId(iso.getId());
                 _userVmDao.update(vmId, vm);
             } else {
@@ -1471,7 +1478,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
         if (success && !attach && !isVirtualRouter) {
-            if (targetSlot == 3) {
+            if (targetSlot == CDROM_PRIMARY_DEVICE_SEQ) {
                 vm.setIsoId(null);
                 _userVmDao.update(vmId, vm);
             } else if (mapEntry != null) {

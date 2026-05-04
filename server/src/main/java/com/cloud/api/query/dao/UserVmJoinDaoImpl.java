@@ -250,7 +250,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             java.util.List<org.apache.cloudstack.api.response.AttachedIsoResponse> attachedIsos = new java.util.ArrayList<>();
             if (userVm.getIsoUuid() != null) {
                 attachedIsos.add(new org.apache.cloudstack.api.response.AttachedIsoResponse(
-                        userVm.getIsoUuid(), userVm.getIsoName(), userVm.getIsoDisplayText(), 3));
+                        userVm.getIsoUuid(), userVm.getIsoName(), userVm.getIsoDisplayText(),
+                        com.cloud.template.TemplateManager.CDROM_PRIMARY_DEVICE_SEQ));
             }
             for (com.cloud.vm.VmIsoMapVO row : vmIsoMapDao.listByVmId(userVm.getId())) {
                 com.cloud.storage.VMTemplateVO tmpl = vmTemplateDao.findById(row.getIsoId());

@@ -71,6 +71,13 @@ public interface TemplateManager {
             true,
             ConfigKey.Scope.Global);
 
+    /**
+     * Device sequence for the bootable / primary cdrom slot. user_vm.iso_id has always pointed at this
+     * slot; the KVM agent's getDevLabel() maps it to hdc on the IDE bus. Any additional cdrom slots
+     * (held in vm_iso_map) start at {@code CDROM_PRIMARY_DEVICE_SEQ + 1} (hdd, hde, ...).
+     */
+    int CDROM_PRIMARY_DEVICE_SEQ = 3;
+
     static final String VMWARE_TOOLS_ISO = "vmware-tools.iso";
     static final String XS_TOOLS_ISO = "xs-tools.iso";
 
