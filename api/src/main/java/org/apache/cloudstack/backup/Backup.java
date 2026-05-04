@@ -39,7 +39,7 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     Long getHostId();
 
     enum Status {
-        Allocated, Queued, BackingUp, ReadyForTransfer, FinalizingTransfer, BackedUp, Error, Failed, Restoring, Removed, Expunged
+        Allocated, Queued, BackingUp, ReadyForImageTransfer, FinalizingImageTransfer, BackedUp, Error, Failed, Restoring, Removed, Expunged
     }
 
     class Metric {

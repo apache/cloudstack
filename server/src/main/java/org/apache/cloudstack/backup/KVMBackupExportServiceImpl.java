@@ -138,8 +138,11 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
     VmWorkJobHandlerProxy jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
-    private boolean isKVMBackupExportServiceSupported(Long zoneId) {
-        return !BackupFrameworkEnabled.value() || StringUtils.equals("dummy", BackupProviderPlugin.valueIn(zoneId));
+    private void verifyKVMBackupExportServiceSupported(Long zoneId) {
+        if (BackupFrameworkEnabled.value() && !StringUtils.equals("dummy", BackupProviderPlugin.valueIn(zoneId))) {
+            throw new CloudRuntimeException("Veeam-KVM integration can not be used along with the " + BackupProviderPlugin.valueIn(zoneId) +
+                    " backup provider. Either set backup.framework.enabled to false or set the Zone level config backup.framework.provider.plugin to \"dummy\".");
+        }
     }
 
     @Override
@@ -151,10 +154,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("VM not found: " + vmId);
         }
 
-        if (!isKVMBackupExportServiceSupported(vm.getDataCenterId())) {
-            throw new CloudRuntimeException("Veeam-KVM integration can not be used along with the " + BackupProviderPlugin.valueIn(vm.getDataCenterId()) +
-                    " backup provider. Either set backup.framework.enabled to false or set the Zone level config backup.framework.provider.plugin to \"dummy\".");
-        }
+        verifyKVMBackupExportServiceSupported(vm.getDataCenterId());
 
         if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
             throw new CloudRuntimeException("VM must be running or stopped to start backup");
@@ -281,7 +281,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
 
         // Update backup with checkpoint creation time
         backup.setCheckpointCreateTime(answer.getCheckpointCreateTime());
-        updateBackupState(backup, Backup.Status.ReadyForTransfer);
+        updateBackupState(backup, Backup.Status.ReadyForImageTransfer);
         queueBackupFinalizeWaitWorkJob(vm, backup);
         return backup;
     }
@@ -329,7 +329,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("VM not found: " + vmId);
         }
 
-        updateBackupState(backup, Backup.Status.FinalizingTransfer);
+        updateBackupState(backup, Backup.Status.FinalizingImageTransfer);
 
         List<ImageTransferVO> transfers = imageTransferDao.listByBackupId(backupId);
         for (ImageTransferVO transfer : transfers) {
@@ -607,10 +607,7 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
             throw new CloudRuntimeException("Volume not found with the specified Id");
         }
 
-        if (!isKVMBackupExportServiceSupported(volume.getDataCenterId())) {
-            throw new CloudRuntimeException("Veeam-KVM integration can not be used along with the " + BackupProviderPlugin.valueIn(volume.getDataCenterId()) +
-                    " backup provider. Either set backup.framework.enabled to false or set the Zone level config backup.framework.provider.plugin to \"dummy\".");
-        }
+        verifyKVMBackupExportServiceSupported(volume.getDataCenterId());
 
         ImageTransferVO existingTransfer = imageTransferDao.findByVolume(volume.getId());
         if (existingTransfer != null) {
@@ -805,10 +802,8 @@ public class KVMBackupExportServiceImpl extends ManagerBase implements KVMBackup
         if (vm == null) {
             throw new CloudRuntimeException("VM not found: " + cmd.getVmId());
         }
-        if (!isKVMBackupExportServiceSupported(vm.getDataCenterId())) {
-            throw new CloudRuntimeException("Veeam-KVM integration can not be used along with the " + BackupProviderPlugin.valueIn(vm.getDataCenterId()) +
-                    " backup provider. Either set backup.framework.enabled to false or set the Zone level config backup.framework.provider.plugin to \"dummy\".");
-        }
+
+        verifyKVMBackupExportServiceSupported(vm.getDataCenterId());
 
         if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
             throw new CloudRuntimeException("VM must be running or stopped to delete checkpoint");

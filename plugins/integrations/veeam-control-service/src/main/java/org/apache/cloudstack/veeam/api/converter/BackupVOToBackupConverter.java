@@ -86,9 +86,9 @@ public class BackupVOToBackupConverter {
                 return "initializing";
             case BackingUp:
                 return "starting";
-            case ReadyForTransfer:
+            case ReadyForImageTransfer:
                 return "ready";
-            case FinalizingTransfer:
+            case FinalizingImageTransfer:
                 return "finalizing";
             case Restoring:
             case BackedUp:

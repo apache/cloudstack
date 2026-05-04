@@ -32,7 +32,7 @@ import org.apache.cloudstack.backup.KVMBackupExportService;
 import org.apache.cloudstack.context.CallContext;
 
 @APICommand(name = "finalizeImageTransfer",
-        description = "Finalize an image transfe. This API is intended for testing only and is disabled by default.r",
+        description = "Finalize an image transfer. This API is intended for testing only and is disabled by default.",
         responseObject = SuccessResponse.class,
         since = "4.23.0",
         authorized = {RoleType.Admin})

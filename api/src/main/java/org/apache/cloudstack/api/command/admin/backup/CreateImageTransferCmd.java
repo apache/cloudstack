@@ -65,7 +65,8 @@ public class CreateImageTransferCmd extends BaseCmd implements AdminCmd {
 
     @Parameter(name = ApiConstants.FORMAT,
             type = CommandType.STRING,
-            description = "Format of the image: cow/raw. Currently only raw is supported for download. Defaults to raw if not provided")
+            description = "Format for the image transfer: raw/cow. 'raw' will create an NBD backend. 'cow' will use the File backend." +
+                    "For download, only the 'raw' format is supported. Default: raw")
     private String format;
 
     public Long getBackupId() {
