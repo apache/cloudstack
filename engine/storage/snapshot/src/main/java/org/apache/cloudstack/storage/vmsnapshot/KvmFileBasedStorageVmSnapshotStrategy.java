@@ -522,12 +522,12 @@ public class KvmFileBasedStorageVmSnapshotStrategy extends StorageVMSnapshotStra
 
         logger.info("Starting disk-only VM snapshot process for VM [{}].", userVm.getUuid());
 
+        transitStateWithoutThrow(vmSnapshot, VMSnapshot.Event.CreateRequested);
+
         Long hostId = pickHostForUefiNvramAwareDiskOnlySnapshot(userVm, "create");
         validateHostSupportsUefiNvramAwareDiskOnlySnapshots(hostId, userVm, "create");
         VMSnapshotVO vmSnapshotVO = (VMSnapshotVO) vmSnapshot;
         List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
-
-        transitStateWithoutThrow(vmSnapshot, VMSnapshot.Event.CreateRequested);
 
         VMSnapshotTO parentSnapshotTo = null;
         VMSnapshotVO parentSnapshotVo = vmSnapshotDao.findCurrentSnapshotByVmId(userVm.getId());
