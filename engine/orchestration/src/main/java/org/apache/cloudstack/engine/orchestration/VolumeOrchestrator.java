@@ -87,6 +87,13 @@ import org.apache.cloudstack.resourcelimit.Reserver;
 import org.apache.cloudstack.secret.PassphraseVO;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
+import org.apache.cloudstack.kms.KMSManager;
+import org.apache.cloudstack.kms.KMSKeyVO;
+import org.apache.cloudstack.kms.KMSWrappedKeyVO;
+import org.apache.cloudstack.kms.dao.KMSKeyDao;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
+import org.apache.cloudstack.framework.kms.KMSException;
+import org.apache.cloudstack.framework.kms.WrappedKey;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -281,6 +288,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Inject
     private DataStoreProviderManager dataStoreProviderMgr;
+    @Inject
+    private KMSManager kmsManager;
+    @Inject
+    private KMSKeyDao kmsKeyDao;
+    @Inject
+    private KMSWrappedKeyDao kmsWrappedKeyDao;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -509,7 +522,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
         if (diskOffering.getEncrypt()) {
             VolumeVO vol = (VolumeVO) volume;
-            volume = setPassphraseForVolumeEncryption(vol);
+            // Retrieve KMS key from volume's kmsKeyId if provided
+            KMSKeyVO kmsKey = getKmsKeyFromVolume(vol);
+            volume = setPassphraseForVolumeEncryption(vol, kmsKey, volume.getAccountId());
         }
         DataCenter dc = _entityMgr.findById(DataCenter.class, volume.getDataCenterId());
         DiskProfile dskCh = new DiskProfile(volume, diskOffering, snapshot.getHypervisorType());
@@ -726,7 +741,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             if (diskOffering.getEncrypt()) {
                 VolumeVO vol = _volsDao.findById(volumeInfo.getId());
-                setPassphraseForVolumeEncryption(vol);
+                // Retrieve KMS key from volume's kmsKeyId if provided
+                KMSKeyVO kmsKey = getKmsKeyFromVolume(vol);
+                setPassphraseForVolumeEncryption(vol, kmsKey, vol.getAccountId());
                 volumeInfo = volFactory.getVolume(volumeInfo.getId());
             }
         }
@@ -863,8 +880,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
     @Override
-    public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner,
-                                         Long deviceId, boolean incrementResourceCount) {
+    public DiskProfile allocateRawVolume(
+            Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm,
+            VirtualMachineTemplate template, Account owner, Long deviceId, Long kmsKeyId, boolean incrementResourceCount
+    ) {
         if (size == null) {
             size = offering.getDiskSize();
         } else {
@@ -897,6 +916,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setDisplayVolume(userVm.isDisplayVm());
         }
 
+        // Set KMS key ID if provided
+        if (kmsKeyId != null) {
+            vol.setKmsKeyId(kmsKeyId);
+        }
+
         vol.setFormat(getSupportedImageFormatForCluster(vm.getHypervisorType()));
         vol = _volsDao.persist(vol);
 
@@ -916,7 +940,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                Account owner, long deviceId, String configurationId, Volume volume, Snapshot snapshot) {
+                                                Account owner, long deviceId, String configurationId, Long kmsKeyId, Volume volume, Snapshot snapshot) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template.";
 
         if (volume != null) {
@@ -964,6 +988,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (vm.getType() == VirtualMachine.Type.User) {
             UserVmVO userVm = _userVmDao.findById(vm.getId());
             vol.setDisplayVolume(userVm.isDisplayVm());
+        }
+
+        // Set KMS key ID if provided
+        if (kmsKeyId != null) {
+            vol.setKmsKeyId(kmsKeyId);
         }
 
         vol = _volsDao.persist(vol);
@@ -1055,7 +1084,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating ROOT volume", create = true)
     @Override
     public List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                      Account owner, Volume volume, Snapshot snapshot) {
+                                                      Account owner, Long kmsKeyId, Volume volume, Snapshot snapshot) {
         String templateToString = getReflectOnlySelectedFields(template);
 
         int volumesNumber = 1;
@@ -1102,7 +1131,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
             logger.info("Adding disk object [{}] to VM [{}]", volumeName, vm);
             DiskProfile diskProfile = allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops,
-                    template, vm, owner, deviceId, configurationId, volume, snapshot);
+                    template, vm, owner, deviceId, configurationId, kmsKeyId, volume, snapshot);
             profiles.add(diskProfile);
         }
 
@@ -1777,7 +1806,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         if (vol.getState() == Volume.State.Allocated || vol.getState() == Volume.State.Creating) {
             DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, vol.getDiskOfferingId());
             if (diskOffering.getEncrypt()) {
-                vol = setPassphraseForVolumeEncryption(vol);
+                // Retrieve KMS key from volume's kmsKeyId if provided
+                KMSKeyVO kmsKey = getKmsKeyFromVolume(vol);
+                vol = setPassphraseForVolumeEncryption(vol, kmsKey, vol.getAccountId());
             }
             newVol = vol;
         } else {
@@ -1900,16 +1931,72 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return new Pair<>(newVol, destPool);
     }
 
-    private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume) {
-        if (volume.getPassphraseId() != null) {
+    /**
+     * Helper method to retrieve KMS key from volume's kmsKeyId
+     */
+    private KMSKeyVO getKmsKeyFromVolume(VolumeVO volume) {
+        if (volume.getKmsKeyId() == null) {
+            return null;
+        }
+        return kmsKeyDao.findById(volume.getKmsKeyId());
+    }
+
+    private VolumeVO setKmsKeyForVolumeEncryption(VolumeVO volume, KMSKeyVO kmsKey, Long callerAccountId) {
+        // Determine caller account ID if not provided
+        if (callerAccountId == null) {
+            callerAccountId = volume.getAccountId();
+        }
+
+        // Validate permission
+        if (!kmsManager.hasPermission(callerAccountId, kmsKey)) {
+            throw new CloudRuntimeException("No permission to use KMS key: " + kmsKey);
+        }
+
+        try {
+            logger.debug("Generating and wrapping DEK for volume {} using KMS key {}", volume.getName(), kmsKey.getUuid());
+            long startTime = System.currentTimeMillis();
+
+            // Generate and wrap DEK using active KEK version
+            WrappedKey wrappedKey = kmsManager.generateVolumeKeyWithKek(kmsKey, callerAccountId);
+
+            // The wrapped key is already persisted by generateVolumeKeyWithKek, get its ID
+            KMSWrappedKeyVO wrappedKeyVO = kmsWrappedKeyDao.findByUuid(wrappedKey.getUuid());
+            if (wrappedKeyVO == null) {
+                throw new CloudRuntimeException("Failed to find persisted wrapped key: " + wrappedKey.getUuid());
+            }
+
+            // Set the wrapped key ID on the volume
+            volume.setKmsWrappedKeyId(wrappedKeyVO.getId());
+
+            long finishTime = System.currentTimeMillis();
+            logger.debug("Generating and persisting wrapped key took {} ms for volume: {}",
+                    (finishTime - startTime), volume.getName());
+
+            return _volsDao.persist(volume);
+
+        } catch (KMSException e) {
+            throw new CloudRuntimeException("KMS failure while setting up volume encryption: " + e.getMessage(), e);
+        }
+    }
+    private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume, KMSKeyVO kmsKey, Long callerAccountId) {
+        // If volume already has encryption set up, return it
+        if (volume.getKmsWrappedKeyId() != null || volume.getPassphraseId() != null) {
             return volume;
         }
-        logger.debug("Creating passphrase for the volume: " + volume.getName());
+        if (kmsKey != null) {
+            return setKmsKeyForVolumeEncryption(volume, kmsKey, callerAccountId);
+        }
+        // Legacy: passphrase-based encryption (fallback when KMS not enabled or KMS key not specified)
+        return setPassphraseForVolumeEncryption(volume);
+    }
+
+    private VolumeVO setPassphraseForVolumeEncryption(VolumeVO volume) {
+        logger.debug("Creating passphrase for the volume: {}", volume.getName());
         long startTime = System.currentTimeMillis();
         PassphraseVO passphrase = passphraseDao.persist(new PassphraseVO(true));
         volume.setPassphraseId(passphrase.getId());
         long finishTime = System.currentTimeMillis();
-        logger.debug("Creating and persisting passphrase took: " + (finishTime - startTime) + " ms for the volume: " + volume.toString());
+        logger.debug("Creating and persisting passphrase took: {} ms for the volume: {}", finishTime - startTime, volume.toString());
         return _volsDao.persist(volume);
     }
 

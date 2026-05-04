@@ -29,6 +29,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
+import org.apache.cloudstack.kms.dao.KMSWrappedKeyDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -80,11 +81,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
     private final SearchBuilder<VolumeVO> poolAndPathSearch;
     final GenericSearchBuilder<VolumeVO, Integer> CountByOfferingId;
+    private final SearchBuilder<VolumeVO> kmsMigrationSearch;
 
     @Inject
     ReservationDao reservationDao;
     @Inject
     ResourceTagDao tagsDao;
+    @Inject
+    KMSWrappedKeyDao kmsWrappedKeyDao;
 
     // need to account for zone-wide primary storage where storage_pool has
     // null-value pod and cluster, where hypervisor information is stored in
@@ -401,6 +405,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("passphraseId", AllFieldsSearch.entity().getPassphraseId(), Op.EQ);
         AllFieldsSearch.and("iScsiName", AllFieldsSearch.entity().get_iScsiName(), Op.EQ);
         AllFieldsSearch.and("path", AllFieldsSearch.entity().getPath(), Op.EQ);
+        AllFieldsSearch.and("kmsKeyId", AllFieldsSearch.entity().getKmsKeyId(), Op.EQ);
         AllFieldsSearch.done();
 
         RootDiskStateSearch = createSearchBuilder();
@@ -517,6 +522,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         CountByOfferingId.select(null, Func.COUNT, CountByOfferingId.entity().getId());
         CountByOfferingId.and("diskOfferingId", CountByOfferingId.entity().getDiskOfferingId(), Op.EQ);
         CountByOfferingId.done();
+
+        kmsMigrationSearch = createSearchBuilder();
+        kmsMigrationSearch.and("passphraseId", kmsMigrationSearch.entity().getPassphraseId(), Op.NNULL);
+        kmsMigrationSearch.and("zoneId", kmsMigrationSearch.entity().getDataCenterId(), Op.EQ);
+        kmsMigrationSearch.and("accountId", kmsMigrationSearch.entity().getAccountId(), Op.EQ);
+        kmsMigrationSearch.and("domainId", kmsMigrationSearch.entity().getDomainId(), Op.EQ);
+        kmsMigrationSearch.done();
     }
 
     @Override
@@ -738,6 +750,21 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public Pair<List<VolumeVO>, Integer> listVolumesForKMSMigration(Long zoneId, Long accountId, Long domainId, Integer limit) {
+        SearchCriteria<VolumeVO> sc = kmsMigrationSearch.create();
+
+        Filter filter = new Filter(limit);
+        sc.setParameters("zoneId", zoneId);
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        }
+        if (domainId != null) {
+            sc.setParameters("domainId", domainId);
+        }
+        return searchAndCount(sc, filter);
+    }
+
+    @Override
     @DB
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -745,6 +772,17 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         logger.debug(String.format("Removing volume %s from DB", id));
         VolumeVO entry = findById(id);
         if (entry != null) {
+            // Clean up KMS wrapped key if volume was encrypted with KMS
+            if (entry.getKmsWrappedKeyId() != null) {
+                try {
+                    kmsWrappedKeyDao.remove(entry.getKmsWrappedKeyId());
+                    logger.debug("Removed KMS wrapped key [id={}] for volume [id={}, uuid={}]",
+                            entry.getKmsWrappedKeyId(), id, entry.getUuid());
+                } catch (Exception e) {
+                    logger.warn("Failed to remove KMS wrapped key [id={}] for volume [id={}, uuid={}]: {}",
+                            entry.getKmsWrappedKeyId(), id, entry.getUuid(), e.getMessage(), e);
+                }
+            }
             tagsDao.removeByIdAndType(id, ResourceObjectType.Volume);
         }
         boolean result = super.remove(id);
@@ -941,6 +979,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
+    public boolean existsWithKmsKey(long kmsKeyId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("kmsKeyId", kmsKeyId);
+        sc.setParameters("notDestroyed", Volume.State.Expunged, Volume.State.Destroy);
+        return findOneBy(sc) != null;
+    }
+
     public VolumeVO findByExternalUuid(String externalUuid) {
         SearchCriteria<VolumeVO> sc = ExternalUuidSearch.create();
         sc.setParameters("externalUuid", externalUuid);

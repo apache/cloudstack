@@ -36,6 +36,8 @@ import org.apache.cloudstack.gpu.GpuCard;
 import org.apache.cloudstack.gpu.GpuDevice;
 import org.apache.cloudstack.gpu.VgpuProfile;
 import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.kms.HSMProfile;
+import org.apache.cloudstack.kms.KMSKey;
 import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.quota.QuotaTariff;
@@ -270,6 +272,20 @@ public class EventTypes {
     public static final String EVENT_CA_CERTIFICATE_ISSUE = "CA.CERTIFICATE.ISSUE";
     public static final String EVENT_CA_CERTIFICATE_REVOKE = "CA.CERTIFICATE.REVOKE";
     public static final String EVENT_CA_CERTIFICATE_PROVISION = "CA.CERTIFICATE.PROVISION";
+
+    // KMS (Key Management Service) events
+    public static final String EVENT_KMS_KEY_WRAP = "KMS.KEY.WRAP";
+    public static final String EVENT_KMS_KEY_UNWRAP = "KMS.KEY.UNWRAP";
+    public static final String EVENT_KMS_KEY_CREATE = "KMS.KEY.CREATE";
+    public static final String EVENT_KMS_KEY_UPDATE = "KMS.KEY.UPDATE";
+    public static final String EVENT_KMS_KEY_ROTATE = "KMS.KEY.ROTATE";
+    public static final String EVENT_KMS_KEY_DELETE = "KMS.KEY.DELETE";
+    public static final String EVENT_VOLUME_MIGRATE_TO_KMS = "VOLUME.MIGRATE.TO.KMS";
+
+    // HSM Profile events
+    public static final String EVENT_HSM_PROFILE_CREATE = "HSM.PROFILE.CREATE";
+    public static final String EVENT_HSM_PROFILE_UPDATE = "HSM.PROFILE.UPDATE";
+    public static final String EVENT_HSM_PROFILE_DELETE = "HSM.PROFILE.DELETE";
 
     // Account events
     public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";
@@ -1014,6 +1030,20 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VOLUME_DESTROY, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_RECOVER, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_CHANGE_DISK_OFFERING, Volume.class);
+
+        // KMS Key Events
+        entityEventDetails.put(EVENT_KMS_KEY_CREATE, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_UPDATE, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_UNWRAP, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_WRAP, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_DELETE, KMSKey.class);
+        entityEventDetails.put(EVENT_KMS_KEY_ROTATE, KMSKey.class);
+        entityEventDetails.put(EVENT_VOLUME_MIGRATE_TO_KMS, KMSKey.class);
+
+        // HSM Profile Events
+        entityEventDetails.put(EVENT_HSM_PROFILE_CREATE, HSMProfile.class);
+        entityEventDetails.put(EVENT_HSM_PROFILE_UPDATE, HSMProfile.class);
+        entityEventDetails.put(EVENT_HSM_PROFILE_DELETE, HSMProfile.class);
 
         // Domains
         entityEventDetails.put(EVENT_DOMAIN_CREATE, Domain.class);

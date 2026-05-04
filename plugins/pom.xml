@@ -95,6 +95,8 @@
         <module>integrations/prometheus</module>
         <module>integrations/kubernetes-service</module>
 
+        <module>kms</module>
+
         <module>metrics</module>
 
         <module>network-elements/bigswitch</module>

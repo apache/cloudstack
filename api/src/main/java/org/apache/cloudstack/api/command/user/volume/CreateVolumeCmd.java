@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.KMSKeyResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
@@ -110,6 +111,13 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
                description = "The ID of the Instance; to be used with snapshot Id, Instance to which the volume gets attached after creation")
     private Long virtualMachineId;
 
+    @Parameter(name = ApiConstants.KMS_KEY_ID,
+               type = CommandType.UUID,
+               entityType = KMSKeyResponse.class,
+               description = "ID of the KMS Key for volume encryption (required if encryption enabled for zone)",
+               since = "4.23.0")
+    private Long kmsKeyId;
+
     @Parameter(name = ApiConstants.STORAGE_ID,
             type = CommandType.UUID,
             entityType = StoragePoolResponse.class,
@@ -182,6 +190,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd implements UserC
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
+    }
+
+    public Long getKmsKeyId() {
+        return kmsKeyId;
     }
 
     /////////////////////////////////////////////////////
