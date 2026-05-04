@@ -34,7 +34,11 @@ import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @ResourceWrapper(handles =  PlugNicCommand.class)
 public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCommand, Answer, LibvirtComputingResource> {
@@ -65,6 +69,17 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
             if (command.getDetails() != null) {
                 libvirtComputingResource.setInterfaceDefQueueSettings(command.getDetails(), null, interfaceDef);
             }
+
+            // Explicitly assign PCI slot to ensure sequential NIC naming in the guest.
+            // Without this, libvirt auto-assigns the next free PCI slot which may be
+            // non-sequential with existing NICs (e.g. ens9 instead of ens5), causing
+            // guest network configuration to fail.
+            Integer nextSlot = findNextAvailablePciSlot(vm, pluggedNics);
+            if (nextSlot != null) {
+                interfaceDef.setSlot(nextSlot);
+                logger.debug("Assigning PCI slot 0x" + String.format("%02x", nextSlot) + " to hot-plugged NIC");
+            }
+
             vm.attachDevice(interfaceDef.toString());
 
             // apply default network rules on new nic
@@ -94,6 +109,48 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
                     logger.trace("Ignoring libvirt error.", l);
                 }
             }
+        }
+    }
+
+    /**
+     * Finds the next available PCI slot for a hot-plugged NIC by examining
+     * all PCI slots currently in use by the domain. This ensures the new NIC
+     * gets a sequential PCI address relative to existing NICs, resulting in
+     * predictable interface naming in the guest OS (e.g. ens5 instead of ens9).
+     */
+    private Integer findNextAvailablePciSlot(final Domain vm, final List<InterfaceDef> pluggedNics) {
+        try {
+            String domXml = vm.getXMLDesc(0);
+
+            // Parse all PCI slot numbers currently in use
+            Set<Integer> usedSlots = new HashSet<>();
+            Pattern slotPattern = Pattern.compile("slot='0x([0-9a-fA-F]+)'");
+            Matcher matcher = slotPattern.matcher(domXml);
+            while (matcher.find()) {
+                usedSlots.add(Integer.parseInt(matcher.group(1), 16));
+            }
+
+            // Find the highest PCI slot used by existing NICs
+            int maxNicSlot = 0;
+            for (InterfaceDef pluggedNic : pluggedNics) {
+                if (pluggedNic.getSlot() != null && pluggedNic.getSlot() > maxNicSlot) {
+                    maxNicSlot = pluggedNic.getSlot();
+                }
+            }
+
+            // Find next free slot starting from maxNicSlot + 1
+            // PCI slots range from 0x01 to 0x1f (slot 0 is reserved for host bridge)
+            for (int slot = maxNicSlot + 1; slot <= 0x1f; slot++) {
+                if (!usedSlots.contains(slot)) {
+                    return slot;
+                }
+            }
+
+            logger.warn("No free PCI slots available, letting libvirt auto-assign");
+            return null;
+        } catch (LibvirtException e) {
+            logger.warn("Failed to get domain XML for PCI slot calculation, letting libvirt auto-assign", e);
+            return null;
         }
     }
 }
