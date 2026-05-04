@@ -718,6 +718,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
             profile.addDisk(disk);
         }
+        // FR283: pre-allocate an additional empty cdrom slot at diskSeq=4 (hdd).
+        // Hardcoded second slot for now; commit 2 makes this configurable.
+        TemplateObjectTO extraIso = new TemplateObjectTO();
+        extraIso.setFormat(ImageFormat.ISO);
+        profile.addDisk(new DiskTO(extraIso, 4L, null, Volume.Type.ISO));
     }
 
     private void prepareTemplateInOneStoragePool(final VMTemplateVO template, final StoragePoolVO pool) {
