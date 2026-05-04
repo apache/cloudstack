@@ -1443,7 +1443,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return (a != null && a.getResult());
     }
 
-    private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, boolean forced, boolean isVirtualRouter) {
+    boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, boolean forced, boolean isVirtualRouter) {
         UserVmVO vm = _userVmDao.findById(vmId);
         VMTemplateVO iso = _tmpltDao.findById(isoId);
 
@@ -1488,7 +1488,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         return success;
     }
 
-    private VmIsoMapVO highestCdromMapEntry(long vmId) {
+    VmIsoMapVO highestCdromMapEntry(long vmId) {
         VmIsoMapVO highest = null;
         for (VmIsoMapVO row : _vmIsoMapDao.listByVmId(vmId)) {
             if (highest == null || row.getDeviceSeq() > highest.getDeviceSeq()) {

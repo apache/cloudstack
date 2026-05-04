@@ -220,6 +220,12 @@ public class TemplateManagerImplTest extends TestCase {
     @Mock
     HeuristicRuleHelper heuristicRuleHelperMock;
 
+    @Mock
+    com.cloud.vm.dao.UserVmDao _userVmDao;
+
+    @Mock
+    com.cloud.vm.dao.VmIsoMapDao _vmIsoMapDao;
+
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
         public CustomThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
@@ -748,6 +754,59 @@ public class TemplateManagerImplTest extends TestCase {
         templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
 
         Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.TEMPLATE, vmTemplateVOMock);
+    }
+
+    @Test
+    public void highestCdromMapEntryReturnsNullWhenMapIsEmpty() {
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(new ArrayList<>());
+        Assert.assertNull(templateManager.highestCdromMapEntry(1L));
+    }
+
+    @Test
+    public void highestCdromMapEntryReturnsEntryWithMaxDeviceSeq() {
+        com.cloud.vm.VmIsoMapVO low = new com.cloud.vm.VmIsoMapVO(1L, 100L, 4);
+        com.cloud.vm.VmIsoMapVO high = new com.cloud.vm.VmIsoMapVO(1L, 200L, 5);
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(java.util.Arrays.asList(low, high));
+        com.cloud.vm.VmIsoMapVO result = templateManager.highestCdromMapEntry(1L);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(5, result.getDeviceSeq());
+    }
+
+    @Test
+    public void attachISOToVMAttachWritesToIsoIdWhenPrimarySlotEmpty() {
+        com.cloud.vm.UserVmVO vm = Mockito.mock(com.cloud.vm.UserVmVO.class);
+        com.cloud.storage.VMTemplateVO iso = Mockito.mock(com.cloud.storage.VMTemplateVO.class);
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        Mockito.when(vmTemplateDao.findById(42L)).thenReturn(iso);
+        Mockito.when(iso.getId()).thenReturn(42L);
+        Mockito.when(vm.getIsoId()).thenReturn(null);
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(new ArrayList<>());
+
+        boolean result = templateManager.attachISOToVM(1L, 1L, 42L, true, false, false);
+
+        Assert.assertTrue(result);
+        Mockito.verify(vm).setIsoId(42L);
+        Mockito.verify(_userVmDao).update(eq(1L), eq(vm));
+        Mockito.verify(_vmIsoMapDao, Mockito.never()).persist(any(com.cloud.vm.VmIsoMapVO.class));
+    }
+
+    @Test
+    public void attachISOToVMAttachWritesToVmIsoMapWhenPrimarySlotOccupied() {
+        com.cloud.vm.UserVmVO vm = Mockito.mock(com.cloud.vm.UserVmVO.class);
+        com.cloud.storage.VMTemplateVO iso = Mockito.mock(com.cloud.storage.VMTemplateVO.class);
+        Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+        Mockito.when(vmTemplateDao.findById(42L)).thenReturn(iso);
+        Mockito.when(iso.getId()).thenReturn(42L);
+        Mockito.when(vm.getIsoId()).thenReturn(99L);
+        Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(new ArrayList<>());
+
+        boolean result = templateManager.attachISOToVM(1L, 1L, 42L, true, false, false);
+
+        Assert.assertTrue(result);
+        Mockito.verify(_vmIsoMapDao).persist(Mockito.argThat(row ->
+                row.getVmId() == 1L && row.getIsoId() == 42L
+                        && row.getDeviceSeq() == TemplateManager.CDROM_PRIMARY_DEVICE_SEQ + 1));
+        Mockito.verify(vm, Mockito.never()).setIsoId(anyLong());
     }
 
     @Configuration
