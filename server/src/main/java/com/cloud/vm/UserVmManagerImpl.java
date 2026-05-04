@@ -4399,7 +4399,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template,
         HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso,
         Long rootDiskOfferingId, Long rootDiskKmsKeyId, long volumesSize, Volume volume, Snapshot snapshot) throws ResourceAllocationException {
-        List<CheckedReservation> checkedReservations = new ArrayList<>();
+        List<Reserver> checkedReservations = new ArrayList<>();
 
 
         try {
