@@ -4191,6 +4191,7 @@
 "message.warn.select.template": "Please select a Template for Registration.",
 "message.warn.zone.mtu.update": "Please note that this limit won't affect pre-existing Network's MTU settings",
 "message.webhook.deliveries.time.filter": "Webhook deliveries list can be filtered based on date-time. Select 'Custom' for specifying start and end date range.",
+"message.webhook.filter.add": "Webhook deliveries can be controlled using filters (currently by Event type). Please select the parameters to add to the applied filters list.",
 "message.zone.creation.complete": "Zone creation complete.",
 "message.zone.detail.description": "Populate Zone details.",
 "message.zone.detail.hint": "A Zone is the largest organizational unit in CloudStack, and it typically corresponds to a single datacenter. Zones provide physical isolation and redundancy. A zone consists of one or more Pods (each of which contains hosts and primary storage servers) and a secondary storage server which is shared by all pods in the zone.",
