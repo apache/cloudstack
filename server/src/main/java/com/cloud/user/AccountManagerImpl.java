@@ -43,6 +43,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.APIAclChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.QuerySelector;
@@ -1435,34 +1436,31 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     requested.getRoleId()));
         }
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
-        for (String command : apiNameList) {
-            try {
-                checkApiAccess(apiCheckers, requested, command);
-            } catch (PermissionDeniedException pde) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format(
-                            "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
-                            command,
-                            requested.getAccountName(),
-                            requested.getUuid()
-                        )
-                    );
-                }
-                continue;
+
+        // Only ACL checkers should influence the set of APIs allowed to an account.
+        List<APIAclChecker> aclCheckers = new ArrayList<>();
+        for (APIChecker apiChecker : apiCheckers) {
+            if (apiChecker instanceof APIAclChecker) {
+                aclCheckers.add((APIAclChecker) apiChecker);
             }
-            // so requested can, now make sure caller can as well
-            try {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("permission to \"%s\" is requested",
-                            command));
-                }
-                checkApiAccess(apiCheckers, caller, command);
-            } catch (PermissionDeniedException pde) {
-                String msg = String.format("User of Account %s and domain %s can not create an account with access to more privileges they have themself.",
-                        caller, _domainMgr.getDomain(caller.getDomainId()));
-                logger.warn(msg);
-                throw new PermissionDeniedException(msg,pde);
-            }
+        }
+
+        List<String> allApis = new ArrayList<>(apiNameList);
+        List<String> requestedAllowed = allApis;
+        for (final APIAclChecker apiChecker : aclCheckers) {
+            requestedAllowed = apiChecker.getApisAllowedToAccount(requested, requestedAllowed);
+        }
+        List<String> callerAllowed = requestedAllowed;
+        for (final APIAclChecker apiChecker : aclCheckers) {
+            callerAllowed = apiChecker.getApisAllowedToAccount(caller, callerAllowed);
+        }
+        if (callerAllowed.size() < requestedAllowed.size()) {
+            List<String> escalatedApis = new ArrayList<>(requestedAllowed);
+            escalatedApis.removeAll(callerAllowed);
+            String msg = String.format("User of Account %s and domain %s cannot create an account with access to more privileges than they have. Escalated APIs: %s",
+                    caller, _domainMgr.getDomain(caller.getDomainId()), escalatedApis);
+            logger.warn(msg);
+            throw new PermissionDeniedException(msg);
         }
     }
 
