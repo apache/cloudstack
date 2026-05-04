@@ -6778,6 +6778,13 @@ public class LibvirtComputingResourceTest {
             libvirtComputingResourceSpy.qcow2DeltaMergeTimeout = 10;
             libvirtUtilitiesHelperMockedStatic.when(() -> LibvirtUtilitiesHelper.isLibvirtSupportingFlagDeleteOnCommandVirshBlockcommit(Mockito.any())).thenReturn(false);
             threadContextMockedStatic.when(() -> ThreadContext.get(Mockito.anyString())).thenReturn("logid");
+            Mockito.doReturn(Boolean.TRUE).when(libvirtComputingResourceSpy).isLibvirtEventsEnabled();
+            Mockito.doNothing().when(domainMock).addBlockJobListener(Mockito.any());
+            Mockito.doReturn(null).when(domainMock).getBlockJobInfo(Mockito.anyString(), Mockito.anyInt());
+            Mockito.doNothing().when(domainMock).removeBlockJobListener(Mockito.any());
+
+            Mockito.doReturn(blockCommitListenerMock).when(libvirtComputingResourceSpy).getBlockCommitListener(Mockito.any());
+            Mockito.doReturn("Failed").when(blockCommitListenerMock).getResult();
 
             String diskLabel = "vda";
             String baseFilePath = "/file";

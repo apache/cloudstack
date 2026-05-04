@@ -619,7 +619,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     @Override
     public synchronized void registerStatusUpdater(AgentStatusUpdater updater) {
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
+        if (isLibvirtEventsEnabled()) {
             try {
                 Connect conn = LibvirtConnection.getConnection();
                 if (libvirtDomainListener != null) {
@@ -2325,7 +2325,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean stop() {
         try {
             final Connect conn = LibvirtConnection.getConnection();
-            if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED) && libvirtDomainListener != null) {
+            if (isLibvirtEventsEnabled() && libvirtDomainListener != null) {
                 LOGGER.debug("Clearing old domain listener");
                 conn.removeLifecycleListener(libvirtDomainListener);
             }
@@ -6402,11 +6402,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     public void mergeDeltaIntoBaseFile(Domain vm, String diskLabel, String baseFilePath, String topFilePath, boolean active, String snapshotName, VolumeObjectTO volume,
             Connect conn) throws LibvirtException {
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED)) {
+        if (isLibvirtEventsEnabled()) {
             mergeSnapshotIntoBaseFileWithEventsAndConfigurableTimeout(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
         } else {
             mergeSnapshotIntoBaseFileWithoutEvents(vm, diskLabel, baseFilePath, topFilePath, active, snapshotName, volume, conn);
         }
+    }
+
+    protected Boolean isLibvirtEventsEnabled() {
+        return AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_EVENTS_ENABLED);
     }
 
     /**
