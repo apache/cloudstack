@@ -24,25 +24,19 @@
         layout="vertical"
         @finish="handleSubmit">
         <a-form-item
-          :label="$t('label.iso.name') + ' (' + form.ids.length + ' / ' + maxSelections + ')'"
+          :label="$t('label.iso.name') + ' (' + form.ids.length + ' / ' + attached.length + ')'"
           ref="ids"
           name="ids">
           <a-select
             mode="multiple"
             :loading="loading"
             v-model:value="form.ids"
-            v-focus="true"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }">
+            v-focus="true">
             <a-select-option
-              v-for="iso in isos"
+              v-for="iso in attached"
               :key="iso.id"
-              :label="iso.displaytext || iso.name"
-              :disabled="form.ids.length >= maxSelections && !form.ids.includes(iso.id)">
-              {{ iso.displaytext || iso.name }}
+              :label="iso.displaytext || iso.name">
+              {{ (iso.displaytext || iso.name) + ' (' + slotLabel(iso.deviceseq) + ')' }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -63,11 +57,10 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { getAPI, postAPI } from '@/api'
-import _ from 'lodash'
+import { postAPI } from '@/api'
 
 export default {
-  name: 'AttachIso',
+  name: 'DetachIso',
   props: {
     resource: {
       type: Object,
@@ -77,36 +70,14 @@ export default {
   data () {
     return {
       loading: false,
-      isos: [],
-      maxSelections: 1
+      attached: []
     }
   },
   created () {
-    this.computeMaxSelections()
     this.initForm()
-    this.fetchData()
-  },
-  watch: {
-    'form.ids' (newVal) {
-      // Cap the multi-select at maxSelections — server-side cap enforcement still applies, but
-      // this prevents the user from picking more than the VM can hold and getting a partial-success
-      // response.
-      if (newVal && newVal.length > this.maxSelections) {
-        this.form.ids = newVal.slice(0, this.maxSelections)
-        this.$message.warning(this.$t('label.iso.name') + ': max ' + this.maxSelections)
-      }
-    }
+    this.populateAttached()
   },
   methods: {
-    computeMaxSelections () {
-      // Mirrors the server-side effectiveMaxCdroms: KVM caps at 2 cdrom slots (IDE bus reality),
-      // other hypervisors at 1. Subtract whatever's already attached to know how many MORE
-      // can be added in this dialog.
-      const hypervisorCap = this.resource.hypervisor === 'KVM' ? 2 : 1
-      const alreadyAttached = (this.resource.isos && this.resource.isos.length) ||
-        (this.resource.isoid ? 1 : 0)
-      this.maxSelections = Math.max(1, hypervisorCap - alreadyAttached)
-    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({ ids: [] })
@@ -119,37 +90,29 @@ export default {
         }]
       })
     },
-    fetchData () {
-      const isoFilters = ['featured', 'community', 'selfexecutable']
-      this.loading = true
-      const promises = []
-      isoFilters.forEach((filter) => {
-        promises.push(this.fetchIsos(filter))
-      })
-      Promise.all(promises).then(() => {
-        this.isos = _.uniqBy(this.isos, 'id')
-      }).catch((error) => {
-        console.log(error)
-      }).finally(() => {
-        this.loading = false
-      })
-    },
-    fetchIsos (isoFilter) {
-      const params = {
-        listall: true,
-        zoneid: this.resource.zoneid,
-        isofilter: isoFilter,
-        isready: true
+    populateAttached () {
+      // Prefer the multi-ISO array from listVirtualMachines (FR283); fall back to the legacy single isoid.
+      if (this.resource.isos && this.resource.isos.length > 0) {
+        this.attached = [...this.resource.isos].sort((a, b) => (a.deviceseq || 0) - (b.deviceseq || 0))
+      } else if (this.resource.isoid) {
+        this.attached = [{
+          id: this.resource.isoid,
+          name: this.resource.isoname,
+          displaytext: this.resource.isodisplaytext,
+          deviceseq: 3
+        }]
       }
-      return new Promise((resolve, reject) => {
-        getAPI('listIsos', params).then((response) => {
-          const isos = response.listisosresponse.iso || []
-          this.isos.push(...isos)
-          resolve(response)
-        }).catch((error) => {
-          reject(error)
-        })
-      })
+      // If only one is attached, pre-select it so the user just clicks OK.
+      if (this.attached.length === 1) {
+        this.form.ids = [this.attached[0].id]
+      }
+    },
+    slotLabel (deviceseq) {
+      // Map device_seq to its libvirt label so users can see which drive they're detaching.
+      // 3 -> hdc, 4 -> hdd, 5 -> hde ... matches LibvirtVMDef.getDevLabel for IDE bus.
+      if (typeof deviceseq !== 'number') return ''
+      const offset = deviceseq - 1
+      return 'hd' + String.fromCharCode('a'.charCodeAt(0) + offset)
     },
     closeAction () {
       this.$emit('close-action')
@@ -163,26 +126,34 @@ export default {
         if (ids.length === 0) return
 
         this.loading = true
-        const title = this.$t('label.action.attach.iso')
-        // CloudStack's attachIso API is single-ISO. We fan out one call per selected ISO and
-        // surface the first error if any. The server-side cap already prevents over-attachment.
+        const title = this.$t('label.action.detach.iso')
+        // CloudStack's detachIso API is single-ISO. We fan out one call per selected ISO and
+        // surface the first error if any.
         const sendOne = (isoId) => {
           const params = {
-            id: isoId,
             virtualmachineid: this.resource.id
+          }
+          // Always send id when we have it (multi-attached VMs require it server-side; single-attached
+          // tolerates it just fine).
+          if (this.attached.length > 1 || ids.length > 1) {
+            params.id = isoId
+          } else if (this.attached.length === 1) {
+            // Single attached and the user picked it: omit id for back-compat with older servers.
+          } else {
+            params.id = isoId
           }
           if (values.forced) {
             params.forced = values.forced
           }
           return new Promise((resolve, reject) => {
-            postAPI('attachIso', params).then(json => {
-              const jobId = json.attachisoresponse && json.attachisoresponse.jobid
+            postAPI('detachIso', params).then(json => {
+              const jobId = json.detachisoresponse && json.detachisoresponse.jobid
               if (jobId) {
                 this.$pollJob({
                   jobId,
                   title,
                   description: isoId,
-                  successMessage: `${this.$t('label.action.attach.iso')} ${this.$t('label.success')}`,
+                  successMessage: `${this.$t('label.action.detach.iso')} ${this.$t('label.success')}`,
                   loadingMessage: `${title} ${this.$t('label.in.progress')}`,
                   catchMessage: this.$t('error.fetching.async.job.result')
                 })

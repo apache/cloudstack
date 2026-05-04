@@ -299,7 +299,15 @@ export default {
           docHelp: 'adminguide/templates.html#attaching-an-iso-to-a-vm',
           dataView: true,
           popup: true,
-          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && !record.isoid && record.vmtype !== 'sharedfsvm' },
+          show: (record) => {
+            if (record.hypervisor === 'External' || !['Running', 'Stopped'].includes(record.state) || record.vmtype === 'sharedfsvm') {
+              return false
+            }
+
+            const attached = (record.isos && record.isos.length) ? record.isos.length : (record.isoid ? 1 : 0)
+            const cap = record.hypervisor === 'KVM' ? 2 : 1
+            return attached < cap
+          },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AttachIso.vue')))
         },
@@ -307,22 +315,17 @@ export default {
           api: 'detachIso',
           icon: 'link-outlined',
           label: 'label.action.detach.iso',
-          message: 'message.detach.iso.confirm',
           dataView: true,
-          args: (record, store) => {
-            var args = ['virtualmachineid']
-            if (record && record.hypervisor && record.hypervisor === 'VMware') {
-              args.push('forced')
+          popup: true,
+          show: (record) => {
+            if (record.hypervisor === 'External' || !['Running', 'Stopped'].includes(record.state) || record.vmtype === 'sharedfsvm') {
+              return false
             }
-            return args
+            const attached = (record.isos && record.isos.length) ? record.isos.length : (record.isoid ? 1 : 0)
+            return attached > 0
           },
-          show: (record) => { return record.hypervisor !== 'External' && ['Running', 'Stopped'].includes(record.state) && 'isoid' in record && record.isoid && record.vmtype !== 'sharedfsvm' },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' || record.hostcontrolstate === 'Maintenance' },
-          mapping: {
-            virtualmachineid: {
-              value: (record, params) => { return record.id }
-            }
-          }
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/DetachIso.vue')))
         },
         {
           api: 'updateVMAffinityGroup',
